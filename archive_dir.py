@@ -1,13 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that compresses a user-specified folder into a single archive file, offering a choice between an uncompressed tar archive and a gzip-compressed tar archive. The tool should accept the source folder path from the command line, validate that the folder exists and is actually a directory (expanding user home shortcuts and resolving relative paths before checking), and report clear, human-readable errors when validation fails. It should allow the user to optionally specify a custom output file path; when none is given, the archive should be created next to the source folder and named after it, with the appropriate extension for the chosen format.
+The script should support an option to delete the original folder after the archive has been successfully created, and this deletion must be handled carefully: it should refuse to remove the folder if doing so would be unsafe (for example, when the target is a symbolic link, the archive would be written inside the folder being deleted, or the path points to a critical or root-level location). If the archive creation fails partway through, any partially written output should be cleaned up so no corrupt archive is left behind.
+Include a parallelism option that lets the user specify a positive number of worker processes, which the tool may use to speed up the work where it is beneficial, with a sensible default. The command-line interface should provide helpful usage text, validate all numeric arguments (rejecting values below 1), and return a clear success or failure exit status. Print concise progress and result messages to the user, and send error messages to the standard error stream. The overall design should be modular, with separate, well-named helper routines for path validation, archive creation, and safe removal, and it should work on common desktop operating systems.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-from pathlib import Path
 from typing import Sequence
 
 

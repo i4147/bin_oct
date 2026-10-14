@@ -1,13 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Python source files and checks each file for syntax problems, reporting the results in a clear summary. The script should accept a target directory (defaulting to the current directory) and an optional flag that, when enabled, applies a safe automatic fix or cleanup step to files that are reported as problematic, while otherwise running in a read-only reporting mode.
+Key requirements:
+- **Discovery**: Recursively find all `.py` files under the given root path. Skip common non-source directories such as virtual environments, version control folders, and build or cache directories.
+- **Validation**: For each file, read it as UTF-8 text and determine its status in one of three categories:
+  - `ok` — the file parses and compiles cleanly with no warnings.
+  - `warn` — the file compiles but produces compiler warnings (for example, invalid escape sequences or other syntax-level warnings).
+  - `error` — the file cannot be read, fails to parse, or fails to compile.
+- **Parallel processing**: Process files concurrently across multiple CPU cores to keep runtime low on large projects, and ensure results from all workers are collected reliably.
+- **Progress feedback**: Display a live progress indicator in the terminal while files are being checked.
+- **Reporting**: After the scan, print a concise summary listing counts of files per status, and list the paths of all files with `error` or `warn` status grouped by category. Use colored, readable terminal output where appropriate, and return a non-zero exit code if any file has an `error` status.
+- **Apply mode**: When the apply flag is passed, perform a conservative, non-destructive remediation step on problematic files (such as creating a backup copy before modifying anything, and only making changes that are clearly safe). Clearly report what was changed, and never silently overwrite files without a backup.
+- **Robustness**: Handle unreadable files, encoding problems, and permission errors gracefully without crashing the whole run.
+- **Command-line interface**: Provide a helpful `--help` message describing the target path argument and the apply option.
+The script should be self-contained, well-structured, and documented with brief docstrings explaining its purpose and usage.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
-import shutil
-import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Literal, Tuple
-
+import shutil
+from typing import Literal
+import warnings
 from rich.progress import Progress
 
 Status = Literal["ok", "error", "warn"]
@@ -37,13 +52,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--apply", action="store_true")
     args = parser.parse_args()
-
     cwd = Path.cwd()
     files = list(cwd.glob("*.py"))
     if not files:
         print("No .py files found.")
         return
-
     results: list[tuple[Path, Status]] = []
     with Progress() as progress:
         task = progress.add_task("Processing .py files", total=len(files))
@@ -52,16 +65,13 @@ def main() -> None:
             for future in as_completed(futures):
                 results.append(future.result())
                 progress.update(task, advance=1)
-
     groups: dict[str, list[Path]] = {"ok": [], "error": [], "warn": []}
     for path, status in results:
         groups[status].append(path)
-
     for status, paths in groups.items():
         print(f"{status}: {len(paths)} files")
         for p in paths:
             print(f"  {p.name}")
-
     if args.apply:
         for status, paths in groups.items():
             if not paths:

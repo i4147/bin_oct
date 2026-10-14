@@ -1,26 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree (and optionally archive files such as zip, tar variants, and single-file compressed formats like gz, bz2, xz, zst, and br) for Python source files, detects duplicate or structurally identical code, and produces a consolidated report of the findings. The tool should accept a root path and reasonable command-line options to control things like output location, file filtering, and parallelism. It should safely read source files, skipping or logging files that cannot be decoded or parsed rather than crashing, and it should be able to extract and analyze the contents of supported archives, including nested or temporary extraction handled cleanly with proper cleanup. For each Python file, it should parse the source into a syntax-aware representation so that comparison can go beyond raw text, ignoring differences such as whitespace, comments, and formatting, while still reporting exact content hashes where useful. Group files or code blocks that are duplicates or near-duplicates, record their locations (including the archive path and internal member path where applicable), and summarize totals such as files scanned, archives processed, failures encountered, and duplicate groups found. The output should be a human-readable and machine-friendly report (for example, a structured text or JSON file) written to a specified location, with clear error logging throughout and a clear exit status indicating success or failure. Use a robust, well-structured design that processes work efficiently, can leverage multiple CPU cores for large inputs, and never modifies the original source files.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import zipfile
-from collections import defaultdict
-from pathlib import Path
-
 import brotli
-import tree_sitter_python
-import zstandard as zstd
 from loguru import logger
 from tree_sitter import Language, Parser
+import tree_sitter_python
+import zstandard as zstd
 
 TREE_SITTER_AVAILABLE = True
 SUPPORTED_ARCHIVES = (

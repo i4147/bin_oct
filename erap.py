@@ -1,30 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Consolidated code-checker runner (merges erap.py + ereport.py).
-
-Subcommands:
-  append  Run checkers and append their output into the target Python files.
-          (equivalent to erap.py)
-  report  Run checkers on every .py file in CWD and write one JSON report
-          per file into an output directory. (equivalent to ereport.py)
-
-Examples:
-  python merged.py append file.py
-  python merged.py append . -a
-  python merged.py append . -g -p
-  python merged.py append dir/ -r -w 8
-  python merged.py append file1.py file2.py -t -p
-  python merged.py report
-  python merged.py report -o reports/
-"""
+"""Write a Python script that acts as a multi-tool Python type-checking and linting aggregator. The script should accept a target file or directory of Python code and run several static analysis tools against it, either in parallel across multiple worker processes or sequentially, depending on user configuration. It should support selecting which tools to run, including common checkers such as mypy, pyright, pylint, ty, pyrefly, and pylyzer, and it should apply sensible default tool selections when the user does not specify any.
+The tool should handle missing executables gracefully, reporting clearly when a requested checker is not installed rather than crashing. It should capture each tool's output and exit status, and filter out known noise, such as unresolved-import errors for a specific project-internal module, so that the results remain meaningful.
+The script should produce a consolidated report written to a configurable output directory, with one result file per tool and an overall summary that lists each tool's status, the number of issues found, and the location of its detailed output. It should also print a concise summary to the console. Command-line options should allow the user to choose the target path, the number of workers, the output directory, and the specific tools to run, and it should provide helpful usage and error messages when arguments are invalid.
+The implementation should be robust, cross-platform where practical, and structured so that adding or removing supported tools is straightforward. Choose whatever internal design, libraries, and structure you consider best, provided the observable behavior described above is met.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import multiprocessing
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 from typing import Iterable, Iterator
 
 APPEND_TOOLS: dict[str, list[str]] = {
@@ -34,7 +21,6 @@ APPEND_TOOLS: dict[str, list[str]] = {
     "pyrefly": ["pyrefly", "check"],
     "mypy": ["mypy"],
 }
-
 REPORT_TOOLS: dict[str, list[str]] = {
     "mypy": ["mypy", "--ignore-missing-imports"],
     "pylyzer": ["pylyzer"],
@@ -42,12 +28,9 @@ REPORT_TOOLS: dict[str, list[str]] = {
     "pyrefly": ["pyrefly", "check"],
     "pylint": ["pylint", "--errors-only"],
 }
-
 DEFAULT_APPEND_TOOLS: list[str] = ["ty", "pyright", "pyrefly"]
 DEFAULT_WORKERS: int = 4
 DEFAULT_REPORT_DIR: str = "report"
-
-# Exact substring used by erap.py to treat a lone unresolved `dh` import as a non-issue.
 _DH_IMPORT_PATTERN = "error[unresolved-import]:cannot resolve imported module `dh`"
 
 
@@ -61,7 +44,7 @@ def _run_tool(name: str, base_cmd: list[str], target: Path) -> tuple[str, str | 
         _rc, out = _run(base_cmd + [str(target)])
     except FileNotFoundError:
         return name, f"ERROR:{name} not found in PATH"
-    except Exception as exc:  # noqa: BLE001 - mirror original broad catch
+    except Exception as exc:
         return name, f"ERROR:{exc!s}"
     return name, out if out.strip() else None
 
@@ -93,15 +76,10 @@ def _process_append(target: Path, tools: list[str]) -> str:
     for name in tools:
         key, value = _run_tool(name, APPEND_TOOLS[name], target)
         results[key] = value
-
     ty_out = (results.get("ty") or "").lower()
-    # Preserve erap.py's skip semantics: only skip when tools == ['ty'] AND
-    # ty reports "all checks passed", OR whenever the sole unresolved `dh`
-    # import error appears in ty's output.
     skip = (tools == ["ty"] and "all checks passed" in ty_out) or (_DH_IMPORT_PATTERN in ty_out)
     if skip:
         return f"✓ Skipped (ty:all checks passed):{target}"
-
     _append_outputs(target, results)
     return f"✓ Updated:{target}"
 
@@ -127,19 +105,17 @@ def _process_report(target: Path, out_dir: Path) -> None:
             entry["tools"][name] = {
                 "exit_code": rc,
                 "has_errors": rc != 0,
-                "output": out if out else "No output.",
+                "output": out or "No output.",
             }
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             entry["tools"][name] = {"status": "error", "error": str(exc)}
-
     report_path = out_dir / f"{target.stem}.json"
     report_path.write_text(json.dumps(entry, indent=2), encoding="utf-8")
     print(f"->Report saved:{report_path}")
 
 
 def _cmd_append(args: argparse.Namespace) -> int:
-    paths = args.paths if args.paths else ["."]
-
+    paths = args.paths or ["."]
     if args.all:
         tools = ["ty", "pyright", "pylint", "pyrefly", "mypy"]
     else:
@@ -155,12 +131,10 @@ def _cmd_append(args: argparse.Namespace) -> int:
                 tools.append(name)
         if not tools:
             tools = list(DEFAULT_APPEND_TOOLS)
-
     files = list(_iter_py_files(paths))
     if not files:
         print("No .py files found.")
         return 0
-
     with multiprocessing.Pool(processes=args.workers) as pool:
         futures = [pool.apply_async(_process_append, args=(f, tools)) for f in files]
         for fut in futures:
@@ -172,13 +146,11 @@ def _cmd_report(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     out_dir = Path(args.output) if args.output else cwd / DEFAULT_REPORT_DIR
     out_dir.mkdir(exist_ok=True)
-
     self_name = Path(__file__).name
     files = sorted(f for f in cwd.iterdir() if f.is_file() and f.suffix == ".py" and f.name != self_name)
     if not files:
         print("No .py files found in current directory.")
         return 0
-
     print(f"Found {len(files)} Python file(s). Generating reports in '{out_dir.name}/'...\n")
     for f in files:
         _process_report(f, out_dir)
@@ -202,7 +174,6 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="mode", required=True)
-
     ap = sub.add_parser(
         "append",
         help="Run checkers and append their output to Python files.",
@@ -231,7 +202,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"Number of parallel workers (default:{DEFAULT_WORKERS})",
     )
     ap.set_defaults(func=_cmd_append)
-
     rp = sub.add_parser(
         "report",
         help="Run checkers on every .py in CWD and write JSON reports per file.",
@@ -243,7 +213,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"Output directory for reports (default:'{DEFAULT_REPORT_DIR}')",
     )
     rp.set_defaults(func=_cmd_report)
-
     return parser
 
 

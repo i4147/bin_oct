@@ -1,16 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans one or more files or directories for Python source files, checks each file for syntax errors, and quarantines the invalid ones into an "error" folder located alongside each affected file.
+The script should accept a list of file or directory paths from the command line, defaulting to the current working directory when none are given. When a directory is provided, it should recursively discover all Python files within it. Each file should be validated by attempting to parse it as Python source, and any file that fails to parse should be handled as follows:
+- By default, copy the problematic file into a sibling "error" directory, leaving the original in place.
+- Provide an option to move the problematic file instead of copying it, so the original is removed from its location.
+- Provide a dry-run option that reports every intended action (which files would be copied or moved, and where) without modifying the filesystem.
+The processing of many files should run in parallel using multiple worker processes to improve throughput on large codebases. The user should be able to select which parallel execution strategy is used from a set of common multiprocessing pool methods, with a sensible default.
+The script should log its progress and results clearly, reporting which files passed, which failed with their syntax error details (file, line, and message), and a final summary of counts. It should handle missing paths and unreadable files gracefully with informative messages rather than crashing, and it should return a non-zero exit status if any syntax errors were found, so it can be used in automated pipelines.
+Include a help message that describes the purpose and every available option.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
-import shutil
-import sys
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import Sequence
-
 from dh import get_pyfiles
 from loguru import logger
 

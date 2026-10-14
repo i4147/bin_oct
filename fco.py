@@ -1,16 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts font files between common web and desktop font formats (TTF, OTF, WOFF, and WOFF2), intended for batch use from the command line.
+The tool should accept one or more input font files or directories containing fonts, and an output format selection that defaults to WOFF2. For source format, convert it to the requested target format, and write the result to an output location, either alongside the source or into a specified output directory. It should skip conversions that are unnecessary (for example, when the input is already in the target format) and report that clearly rather than failing. Where a format requires an optional compression capability that is not available, the tool should degrade gracefully with a clear message telling the user what to install.
+Key behaviors to include:
+- Process multiple font files in parallel using a configurable number of worker processes, with a sensible default.
+- For each conversion, record the input format, input and output file sizes, elapsed time, whether it succeeded, and whether it was skipped and why. Log failures without stopping the r Print a concise end-of-run summary showing how many files succeeded, were skipped, or failed, along with total size savings where applicable.
+- Handle errors such as corrupt fonts, unsupported extensions, missing files, and unwritable output locations gracefully, reporting each problem per file.
+- If the required font-processing library is not installed, exit early with a clear installation hint printed to the error stream.
+- Provide a command-line interface with options for input paths, output format, output directory, worker count, and verbosity or logging level.
+- Use structured logging for progress and diagnostics, and return a non-zero exit status if any conversion failed.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
-import sys
-import time
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
-from typing import List, Optional, Sequence
-
+import sys
+import time
+from typing import Optional, Sequence
 from dh import fsz
 from loguru import logger
 

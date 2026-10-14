@@ -1,11 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes a single file path as a command-line argument and reports the date that file was created, then lists all other files in the same directory that were created on that same calendar date.
+The tool should:
+- Accept exactly one command-line argument, the path to a target file. If the argument count is wrong, print a brief usage message and exit with a non-zero status.
+- Verify the target file exists. If it does not, print a clear error message and exit with a non-zero status.
+- Determine the target file's date using a timestamp appropriate to the operating system: use the creation time on Windows, and the most reliable available modification-based timestamp on other platforms. Handle any errors gracefully and report them to the user.
+- Print a header showing the input file name and its date, followed by a visual separator.
+- Scan the target file's containing directory (non-recursively) and check each entry. Only consider regular files; skip subdirectories and entries that cannot be accessed. Compare each file's timestamp date against the target's date.
+- Output the names of all matching files (including the target itself, if appropriate) in a clear, readable list, sorted alphabetically, along with a count of matches.
+- Handle a file in the current working directory (no parent folder specified) correctly.
+- Fail safely on permission errors or unreadable entries without crashing the whole run, continuing to process the remaining files.
+- Keep output concise, human-readable, and free of stack traces during normal error conditions.
+---"""
 
 from __future__ import annotations
-
-import os
-import sys
 from datetime import datetime
+import os
 from pathlib import Path
+import sys
 
 
 def get_file_creation_time(path: str) -> datetime | None:

@@ -1,36 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-merged.py - Unified PDF toolkit (consolidated from 10 legacy scripts).
-
-Usage examples:
-  python merged.py outline --html_path print.html --pdf_path output.pdf \
-                           --summary_path src/SUMMARY.md \
-                           --output_path output_with_outline.pdf
-  python merged.py merge -o merged.pdf a_1.pdf a_2.pdf
-  python merged.py to-img --directory . --dpi 300
-  python merged.py rename-pages --workers 8
-  python merged.py shrink --engine gs-basic input.pdf
-  python merged.py shrink --engine gs-screen input.pdf
-  python merged.py shrink --engine gs-mobile input.pdf
-  python merged.py shrink --engine qpdf input.pdf
-  python merged.py split-size --max-mb 5 input.pdf
-  python merged.py split-page input.pdf
-"""
+"""Write a Python script that acts as a command-line PDF utility for batch processing and analyzing PDF files. The tool should accept one or more input paths, where each path may be a single PDF file or a directory that is searched recursively for PDF files, and should gather all matching PDFs into a single working set before processing.
+The script should provide human-readable file size reporting (automatically scaling units from bytes up to larger units, with sensible decimal formatting and proper handling of negative values), and should be able to report the total size of files or directories, including nested contents.
+It should support running external command-line tools as subprocesses, optionally displaying the executed command and its output, and should be able to run such tools in parallel across multiple files to speed up processing of large PDF collections, with safe handling of errors and failed jobs.
+Key behaviors to include:
+- Recognize and process only valid PDF files, skipping unrelated files silently or with a clear note.
+- Provide a clear command-line interface with arguments for input paths, output location or destination, and options controlling verbosity, parallelism, and any optional processing mode.
+- Read PDF contents and metadata using a PDF-handling library, including page counts, document information, and the ability to extract or transform pages where relevant.
+- Sanitize and safely handle file names, paths, and URL-encoded or special-character names when reading or writing output.
+- Produce a clear summary report at the end showing the number of files processed, successes, failures, total and per-file sizes, and any errors encountered.
+- Handle missing files, permission problems, corrupted or encrypted PDFs gracefully with informative messages rather than crashing.
+- Ensure the tool is robust, cross-platform, and returns meaningful exit codes indicating overall success or failure.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+import contextlib
 import io
-import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+from typing import Iterable, Optional
 import urllib.parse
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
-from typing import Iterable, List, Optional
-
 import pypdf
 import pypdf.generic
 
@@ -69,10 +62,8 @@ def total_size(path: Path) -> int:
     total = 0
     for f in path.rglob("*"):
         if f.is_file():
-            try:
+            with contextlib.suppress(OSError):
                 total += f.stat().st_size
-            except OSError:
-                pass
     return total
 
 
@@ -101,7 +92,7 @@ class TreeNode:
         node: TreeNode = self
         while not node.is_root():
             parts.append(str(node.index + 1))
-            node = node.parent  # type: ignore[assignment]
+            node = node.parent
         return parts[::-1]
 
     def __str__(self) -> str:
@@ -206,34 +197,26 @@ def cmd_outline(args: argparse.Namespace) -> int:
     except ImportError:
         print("[ERROR] lxml is required for the `outline` subcommand.", file=sys.stderr)
         return 1
-
     html_path = Path(args.html_path)
     pdf_path = Path(args.pdf_path)
     summary_path = Path(args.summary_path)
     output_path = Path(args.output_path)
-
     for p in (html_path, pdf_path, summary_path):
         if not p.exists():
             raise FileNotFoundError(str(p))
-
     tree = parse_summary(summary_path.read_text(encoding="utf-8"))
-
     if args.check_titles:
         check_titles(Path(args.check_titles), tree, args.sync_titles)
-
     reader = pypdf.PdfReader(str(pdf_path))
     writer = pypdf.PdfWriter()
     writer.append(reader)
-
     import lxml.html as lxml_html
 
     html_root = lxml_html.fromstring(html_path.read_text(encoding="utf-8"))
     if html_root is None:
         print("[ERROR] html_root is None")
         return 1
-
     add_outline(html_root, reader, writer, tree)
-
     with output_path.open("wb") as f:
         writer.write(f)
     print(f"[INFO] Write to {output_path}")
@@ -263,17 +246,14 @@ def cmd_merge(args: argparse.Namespace) -> int:
         files = sorted(files, key=lambda p: _merge_sort_key(p.name))
     else:
         files = sorted(cwd.glob("*.pdf"), key=lambda p: _merge_sort_key(p.name))
-
     if not files:
         print("No PDF files found.")
         return 1
-
     writer = pypdf.PdfWriter()
     for f in files:
         reader = pypdf.PdfReader(str(f))
         for page in reader.pages:
             writer.add_page(page)
-
     out_path = cwd / args.output
     with out_path.open("wb") as f:
         writer.write(f)
@@ -318,7 +298,6 @@ def cmd_to_img(args: argparse.Namespace) -> int:
     out_root.mkdir(exist_ok=True)
     print(f"Starting PDF to JPG conversion in directory: {root}")
     print(f"Output will be saved in: {out_root}")
-
     succeeded = failed = 0
     for pdf in root.rglob("*"):
         if not (pdf.is_file() and pdf.suffix.lower() == ".pdf"):
@@ -338,7 +317,6 @@ def cmd_to_img(args: argparse.Namespace) -> int:
             succeeded += 1
         else:
             failed += 1
-
     print("\n---Conversion Summary---")
     print(f"Successfully converted and removed: {succeeded} PDF files.")
     print(f"Failed to convert: {failed} PDF files.")
@@ -393,7 +371,6 @@ _GS_BASIC = [
     "-dNOPAUSE",
     "-dBATCH",
 ]
-
 _GS_SCREEN = [
     "-dBATCH",
     "-dColorConversionStrategy=/sRGB",
@@ -415,7 +392,6 @@ _GS_SCREEN = [
     "-dSubsetFonts=true",
     "-sDEVICE=pdfwrite",
 ]
-
 _GS_MOBILE = [
     "-sDEVICE=pdfwrite",
     "-dCompatibilityLevel=1.4",
@@ -542,9 +518,7 @@ def cmd_shrink(args: argparse.Namespace) -> int:
     if not files:
         print("No PDF files found.")
         return 1
-
     fn = _SHRINK_ENGINES[args.engine]
-
     if len(files) == 1 or args.workers <= 1:
         before = total_size(Path.cwd())
         for f in files:
@@ -554,7 +528,6 @@ def cmd_shrink(args: argparse.Namespace) -> int:
             if freed > 0:
                 print(f"space freed: {human_size(freed)}")
         return 0
-
     before = total_size(Path.cwd())
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
         list(ex.map(_shrink_dispatch, [str(f) for f in files], [args.engine] * len(files)))
@@ -570,7 +543,6 @@ def _split_by_size(input_path: Path, output_dir: Path, max_mb: int) -> None:
     stem = input_path.stem
     writer = pypdf.PdfWriter()
     part = 1
-
     for page in reader.pages:
         writer.add_page(page)
         buf = io.BytesIO()
@@ -585,7 +557,6 @@ def _split_by_size(input_path: Path, output_dir: Path, max_mb: int) -> None:
             writer = pypdf.PdfWriter()
             writer.add_page(page)
             part += 1
-
     if len(writer.pages) > 0:
         out = output_dir / f"{stem}_{part}.pdf"
         buf = io.BytesIO()
@@ -645,7 +616,6 @@ def cmd_split_page(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="merged.py", description="Unified PDF toolkit.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("outline", help="Add outline to a PDF using a mdBook SUMMARY.md.")
     p.add_argument("--html_path", default="print.html")
     p.add_argument("--pdf_path", default="output.pdf")
@@ -658,12 +628,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--sync-titles", action="store_true", help="Overwrite mismatched titles when --check-titles is used."
     )
     p.set_defaults(func=cmd_outline)
-
     p = sub.add_parser("merge", help="Merge PDF files.")
     p.add_argument("-o", "--output", default="merged.pdf")
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_merge)
-
     p = sub.add_parser("to-img", help="Convert PDFs to JPG images.")
     p.add_argument("--directory", default=".")
     p.add_argument("--output-subdir", default="output_jpgs")
@@ -674,28 +642,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--keep", action="store_true", help="Keep the original PDFs after conversion (original deletes them)."
     )
     p.set_defaults(func=cmd_to_img)
-
     p = sub.add_parser("rename-pages", help="Rename PDFs appending their page count.")
     p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_rename_pages)
-
     p = sub.add_parser("shrink", help="Shrink PDF files with Ghostscript or qpdf.")
     p.add_argument("--engine", choices=sorted(_SHRINK_ENGINES.keys()), required=True)
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_shrink)
-
     p = sub.add_parser("split-size", help="Split PDFs into chunks no larger than --max-mb.")
     p.add_argument("--max-mb", type=int, default=5)
     p.add_argument("--output", default="output")
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_split_size)
-
     p = sub.add_parser("split-page", help="Split PDFs into one file per page.")
     p.add_argument("--output", default="output")
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_split_page)
-
     return parser
 
 

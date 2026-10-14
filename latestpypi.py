@@ -1,10 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that fetches the latest-updated packages feed from PyPI's public RSS feed, extracts the names of the listed Python packages, and saves them to a plain text file with one package name per line.
+The script should:
+- Retrieve the RSS feed over HTTPS from the PyPI packages feed URL, identifying itself with a custom user agent string and using a reasonable network timeout so it does not hang indefinitely.
+- Parse the returned XML and iterate over each entry in the feed. For each entry, determine the package name by preferring the project path embedded in the entry's link; if no link is available, fall back to deriving the name from the entry's title by discarding the trailing version portion.
+- Skip entries from which no name can be determined, and preserve the order in which packages appear in the feed.
+- Write the collected names to a UTF-8 encoded text file named latest_pypi_packages.txt in the current working directory, with each name on its own line and a trailing newline at the end.
+- Print a short confirmation message to the console after the file is written, indicating how many packages were saved.
+- Handle the case where the feed is empty by still producing a valid (empty) output file.
+The script should be self-contained, runnable from the command line with no arguments, and depend only on the Python standard library.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import urllib.request
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 RSS_URL = "https://pypi.org/rss/packages.xml"
 OUTPUT_FILE = Path("latest_pypi_packages.txt")

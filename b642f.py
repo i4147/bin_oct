@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a text or markdown file for embedded base64-encoded image data (such as data URIs of the form "data:image/...;base64,..."), decodes each embedded payload, and saves the recovered files into an output folder inside the current working directory. The script should accept a path to the source file as input and produce decoded image files as output, naming them in a clear, sequential or content-based way so they can be easily identified. It should handle common variations in how base64 data is embedded, such as payloads terminated by quotes, spaces, or closing parentheses, and tolerate malformed or truncated base64 strings by attempting a best-effort recovery (for example, by trimming a trailing character) rather than crashing. The script should skip entries that cannot be decoded, report a summary of how many files were successfully extracted and how many failed, and optionally clean up or leave intermediate artifacts depending on a configuration setting. Ensure the output directory is created automatically if it does not exist, and make the tool robust enough to process large files line by line without loading everything into memory at once.
+---"""
 
 from __future__ import annotations
-
 import base64
-import sys
 from pathlib import Path
-
+import sys
 from dh import cprint
 
 

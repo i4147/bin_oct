@@ -1,10 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects the recent history of a local Git repository and reports the files that were newly added within the last N commits. The script should accept the number of commits to examine as a command-line argument, and it should print the resulting list of added file paths to standard output, one per line, so the output is easy to read or pipe into other tools.
+Key behaviors to implement:
+- Require the commit count as a positional argument. If it is missing, display a brief usage message explaining how to run the script and exit with a non-zero status.
+- Query the repository's commit history for only the most recent N commits, considering only changes where a file was created (not modified, renamed, or deleted).
+- Skip any entries that are symbolic links, so that only regular files are reported.
+- Return the paths as path objects or normalized strings, preserving the order in which Git reports them.
+- If the Git command fails (for example, when the current directory is not a repository or Git is not installed), print a clear error message to standard error, including Git's own error output when available, and exit with a non-zero status.
+- Handle unexpected exceptions gracefully by printing a concise error message to standard error and exiting with a non-zero status rather than displaying a raw traceback.
+- Use a clean, well-structured layout with a clear separation between data retrieval and command-line handling, and include a `main` entry point that runs only when the script is executed directly.
+- Use clear status symbols or prefixes in error messages to make failures easy to spot, and keep normal output limited to the file list alone.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def get_created_files(n_commits: int) -> list:

@@ -1,12 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes a Python source tree (either a single .py file or a directory searched recursively for .py files) and produces a consolidated, human-readable report summarizing the structure of the code. The tool should accept a path as its main input from the command line, validate that it points to Python source, and gracefully exit with a clear error message if the input is not a Python file or contains no Python files. It should skip cache directories and hidden folders when scanning, and process files in a deterministic, sorted order.
+For each file, the script should parse the source into an abstract syntax tree and report any syntax errors clearly, identifying the offending file and the nature of the error, without crashing the entire run. From the parsed structure, it should extract and summarize top-level elements such as functions, classes, methods, imports, and module-level constants, including useful metadata like names, arguments, docstrings, and line numbers where available.
+The tool should also support a companion mode that reads a previously generated merged-output file, in which multiple source files are concatenated under standardized "# File: <path>" header markers, and splits it back into individual files, recreating the original directory layout under a chosen output location. The split mode should handle missing or malformed headers gracefully and report what it wrote.
+Processing of multiple files should be parallelized with a sensible, configurable number of concurrent workers (default around six) to speed up large repositories, while keeping the final output ordered and consistent. Logging should be timestamped, include the source file name and line number, and clearly indicate progress and any warnings or errors. Command-line options should allow the user to select the mode, specify input and output paths, set the worker count, and control verbosity.
+The final output should be well-organized, readable, and reliable, with errors reported to the user rather than silently ignored, and the script should exit with an appropriate non-zero status code when a fatal problem occurs.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Optional
 
 WORKERS = 6

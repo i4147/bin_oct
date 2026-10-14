@@ -1,16 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree and identifies duplicate files by content, reporting groups of identical files so the user can review or clean them up.
+The tool should accept a root directory path (and optionally a path to report results or a flag controlling behavior) from the command line. It should recursively walk the directory, ignoring symbolic links, empty files, unreadable or inaccessible files, and any files or folders inside common version-control, cache, or tooling directories such as Git metadata, Python bytecode caches, and linter or type-checker caches.
+For each eligible file, compute a fast, non-cryptographic content fingerprint by reading the file in fixed-size chunks so that large files do not exhaust memory. Because hashing many files is I/O- and CPU-bound, parallelize the fingerprinting across a pool of worker processes, with a sensible default worker count that can be adjusted. Handle files that vanish or fail to read during processing gracefully by logging a warning and continuing rather than aborting the whole run.
+After fingerprinting, group files by identical fingerprint and keep only groups with two or more members. Present the results clearly: for each duplicate group, list the shared fingerprint and every file path in that group, along with a summary of how many duplicate groups were found and how much total disk space could be reclaimed by removing redundant copies. Sort output in a readable, deterministic order.
+Use a logging facility to report progress, skipped items, and errors at appropriate severity levels, with a verbose option for more detail. The script should exit with a zero status on success and a non-zero status on invalid input, such as a nonexistent or non-directory root path. Optionally, support a dry-run or report-only mode as the default so nothing is deleted unless the user explicitly requests it. Include clear help text describing every command-line option.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from collections import defaultdict
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
-
-from dh import fsz, gsz  # type: ignore[import-untyped]
+from dh import fsz, gsz
 from loguru import logger
-from xxhash import xxh64  # type: ignore[import-untyped]
+from xxhash import xxh64
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

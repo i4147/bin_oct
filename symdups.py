@@ -1,13 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree recursively to find duplicate files and safely replaces the redundant copies with symbolic links pointing to a single retained original, while keeping a persistent record of every change so the operation can be reviewed or undone.
+The tool should accept a target directory from the command line (defaulting to the current working directory) and support a dry-run mode that reports what would be changed without modifying anything. It should ignore version-control internals, skip existing symbolic links and directories, and ignore trivially small or empty files. To keep the process efficient, it should first group candidate files by size and only compare contents of files that share the same size, using a fast non-cryptographic hashing approach to identify identical content. Hashing should read files in chunks so that large files do not exhaust memory, and unreadable files should be reported with a clear error message while the scan continues.
+For each set of duplicates, the tool should choose one file to keep deterministically (for example, the first encountered in a stable ordering) and replace every other copy with a relative symbolic link to that file, so the directory structure remains intact. Before replacing any file, it should verify that the duplicate is still identical and that the link can be created safely; failures on individual files should be logged and skipped rather than aborting the whole run.
+The script should maintain a JSON backup/manifest file in the scanned directory recording, for each replaced file, its original path, the path it now links to, its hash, and a UTC timestamp. Running the tool with an option to restore should read this manifest, remove the symbolic links, and recreate the original files by copying their contents back, after which the manifest entries are cleared. Progress and results should be printed as clear, prefixed status messages (informational, warning, and error levels), with a final summary reporting the number of files scanned, duplicate groups found, links created, files skipped, and any errors encountered. The script should be runnable as a standalone command-line program with helpful usage text.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import json
 from collections import defaultdict
 from datetime import UTC, datetime
+import json
 from pathlib import Path
-
 from xxhash import xxh64
 
 BACKUP_FILE = ".symlink_backup.json"

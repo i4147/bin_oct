@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects Python wheel archives (.whl files) and determines whether each wheel is effectively empty, meaning it contains no meaningful package content beyond its packaging metadata. The script should accept one or more wheel file paths, report which wheel is currently being examined as it processes it, and return a clear boolean verdict for each wheel indicating whether it is empty or contains real content. A wheel should be considered non-empty as soon as it includes any file outside its metadata directory, and it should be treated as empty only when every recorded entry belongs to that metadata directory. The script must handle malformed or unreadable archives gracefully, such as missing metadata, missing manifest files, or corrupt zip data, by returning a sensible result rather than crashing. Design the logic so it can be reused as a function that other tools can import, and provide a simple command-line entry point that prints a summary line per wheel with its path and verdict.
+---"""
 
 from __future__ import annotations
-
 import csv
-import zipfile
 from pathlib import Path
+import zipfile
 
 
 def is_empty_wheel(wheel_path: str) -> bool:

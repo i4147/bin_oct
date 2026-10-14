@@ -1,12 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory and all of its subdirectories for files modified within a user-specified time window, then reports the matching files along with their last-modified timestamps.
+The script should accept a single command-line argument: a non-negative whole number of minutes. If the argument is missing, not an integer, or negative, the script should print a brief usage or error message to the user and exit with a non-zero status code.
+Using that threshold, the script should recursively examine every regular file under the current directory, skipping symbolic links, and determine how many minutes have elapsed since each file was last modified. Files modified within the window (including exactly at the boundary) should be collected, while files that cannot be accessed due to permission or operating system errors should be silently skipped so the scan continues without interruption.
+Because the scan may involve many files, the script should take advantage of parallel processing to check file ages efficiently and should merge the results safely once all checks complete.
+For each recent file found, the output should show the file's path (as a string) and its modification time in a human-readable local date-and-time format. Results should be presented in a clear, readable list, and the script should indicate when no files matched the criteria. The script should run as a standalone command-line program with a conventional entry point.
+---"""
 
 from __future__ import annotations
-
-import sys
-import time
 from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import time
 
 
 def check_file_age(path):

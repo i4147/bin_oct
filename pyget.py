@@ -1,25 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line download manager for fetching files over HTTP/HTTPS. The tool should accept one or more URLs (and optionally a file listing URLs) along with an output directory and options such as the number of parallel connections, retry behavior, and a way to resume interrupted downloads. For each download, it should determine the file size when the server provides it, split large files into segments that are fetched concurrently when the server supports range requests, and fall back to a single stream otherwise. It should save files under sensible names derived from the URL or response headers, avoid overwriting existing files unless instructed, and verify integrity when a checksum is supplied.
+While downloading, the tool should display a live, human-readable progress view for each active file and an overall summary, showing bytes transferred, percentage complete, transfer speed, and estimated time remaining, with sizes formatted in friendly units (bytes, kB, MB, GB). The display should degrade gracefully when output is not a terminal, such as in logs or pipes. It should handle Ctrl+C cleanly by stopping all workers, preserving partial data so downloads can later resume, and reporting what was completed. Network errors and timeouts should trigger configurable retries with backoff, and a clear final report should list successes, failures, and total elapsed time, returning a non-zero exit status if any download failed. Include a version flag and a help message describing all options.
+---"""
 
 from __future__ import annotations
-
+from abc import ABC, abstractmethod
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager, suppress
+from dataclasses import dataclass
 import hashlib
 import os
+from pathlib import Path
 import queue
 import re
 import shutil
 import sys
 import threading
 import time
+from typing import Any, Iterator, Self
 import urllib.error
 import urllib.parse
 import urllib.request
-from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import contextmanager, suppress
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Iterator, Self
 
 __version__ = "2.0.0"
 CHUNK_SMALL: int = 64 * 1024
@@ -285,10 +287,8 @@ class PurePythonBackend(Backend):
 
             yield info, gen()
         finally:
-            try:
+            with suppress(Exception):
                 resp.close()
-            except Exception:
-                pass
 
 
 class RequestsBackend(Backend):

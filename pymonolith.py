@@ -1,17 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for saving a single, self-contained copy of a web page. Given a URL (or a local HTML file) and an output destination, the tool should fetch the page and all of its referenced external resources, such as stylesheets, scripts, images, fonts, and SVGs, and embed them directly into one HTML document so the result can be opened offline without any external dependencies.
+Key requirements:
+- **Inputs:** Accept a target URL or local file path as the main argument, along with optional flags to control behavior. These should include an output file path, a request timeout, a custom user agent, a character encoding override, an option to continue past resources that fail to load, an option to omit images entirely, a choice of how stylesheets are handled (embedded inline or left as links), and an option to pretty-print the resulting HTML. Provide sensible defaults for all optional settings.
+- **Resource handling:** Discover resources referenced in the HTML (linked stylesheets, scripts, images, icons, and media sources) and inside CSS (background images, `url()` references, and web fonts). Resolve relative paths against the page's base URL, and convert each resource into a data URI with the correct MIME type, guessing the type from the file extension when the server does not provide one. Handle `srcset` attributes and nested CSS imports where present.
+- **Output:** Write a single HTML file containing all embedded content. Ensure a character-set declaration is present in the output so the file renders correctly. Print clear progress or error messages to the console, and return a non-zero exit status on fatal failures.
+- **Error behavior:** By default, stop with a clear error message if a required resource cannot be fetched. When the "ignore errors" option is enabled, skip failed resources, leave their references intact, and continue processing, reporting which items were skipped.
+- **Extensibility:** Design the tool so its core logic is reusable as a library class, with the command-line interface as a thin wrapper around it. Allow callers to supply custom MIME type mappings.
+- **Robustness:** Handle malformed HTML gracefully, avoid duplicate downloads of the same resource, and respect reasonable timeouts so the tool never hangs indefinitely.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import base64
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin, urlparse
-
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 DEFAULT_MIME_TYPES: dict[str, str] = {
     ".css": "text/css",

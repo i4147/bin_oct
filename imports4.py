@@ -1,20 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a project directory (or a single Python file given on the command line) and produces a report of all third-party packages the code depends on, so that a user can generate an accurate requirements list.
+The tool should:
+- Accept a path to a project folder or file as its main input, plus optional flags for output format (plain text list, requirements-file style, or JSON), output destination, and options to include or exclude specific directories and to control verbosity.
+- Walk the source tree, skipping common non-source directories such as version control folders, virtual environments, build artifacts, caches, and IDE metadata, with the ability to override that exclusion list.
+- Parse each Python source file safely (handling syntax errors gracefully by logging and continuing) to find every import statement, including nested and conditional imports, and distinguish between top-level module names.
+- Filter out standard library modules, and map import names to their corresponding PyPI distribution names where they differ (for example, an import name that does not match its package name), using a bundled or downloadable mapping where available.
+- Optionally look up unresolved names against the PyPI index or the online package registry to confirm whether they exist, using a local cache with a configurable time-to-live to avoid repeated network requests; the tool must degrade gracefully when offline.
+- Ignore imports that are wrapped in optional-import guards (such as try/except ImportError blocks) when requested, and mark them separately otherwise.
+- Process files concurrently where it improves speed, and report progress only when verbose mode is enabled.
+- Produce deterministic, sorted, de-duplicated output, optionally including version pins if the user supplies or the tool can resolve them from the local environment.
+- Exit with a clear, non-zero status code on fatal errors (such as an invalid path) and with zero on success, printing human-readable messages to standard error and results to standard output or the chosen file.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
 import concurrent.futures
+import contextlib
 import hashlib
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import time
-from pathlib import Path
-
-import requests
 from dh import PKG_MAPPING, STDLIB
+import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
 
@@ -76,10 +89,8 @@ def read_cache(module):
 def write_cache(module, value):
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     p = CACHE_DIR / (cache_key(module) + ".json")
-    try:
+    with contextlib.suppress(Exception):
         p.write_text(json.dumps({"ts": time.time(), "value": value}))
-    except Exception:
-        pass
 
 
 def load_pypi_index(path=PYPI_INDEX_PATH):
@@ -163,11 +174,10 @@ def extract_imports_from_source(source, include_optional=False):
                 n = alias.name.split(".")[0]
                 if include_optional or not in_optional:
                     found.append(n)
-        elif isinstance(node, ast.ImportFrom):
-            if node.level == 0 and node.module:
-                n = node.module.split(".")[0]
-                if include_optional or not in_optional:
-                    found.append(n)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            n = node.module.split(".")[0]
+            if include_optional or not in_optional:
+                found.append(n)
         for child in ast.iter_child_nodes(node):
             stack.append((child, in_optional))
     return found
@@ -308,12 +318,11 @@ def init(args):
                 if info and "==" in info:
                     n, v = info.split("==", 1)
                     results[pkg] = (n, v)
+                elif index and normalize(pkg) not in index:
+                    log.warning("%s not on PyPI, skipping", pkg)
                 else:
-                    if index and normalize(pkg) not in index:
-                        log.warning("%s not on PyPI, skipping", pkg)
-                    else:
-                        log.warning("could not resolve version for %s", pkg)
-                        results[pkg] = (pkg, None)
+                    log.warning("could not resolve version for %s", pkg)
+                    results[pkg] = (pkg, None)
     lines = []
     for pkg in results:
         if args["strip_installed"] and normalize(pkg) in installed:

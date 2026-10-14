@@ -1,27 +1,38 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import os
-import time
-from pathlib import Path
-import multiprocessing
+"""Write a Python script that acts as a high-performance JavaScript minifier and comment stripper for entire project directories. The tool should accept a root directory (or a single file) as input, recursively find all JavaScript source files, and produce minified output while preserving the original project structure in a separate destination directory.
+Core behavior:
+- Parse each JavaScript file with a robust syntax-aware approach so that comments are removed safely without corrupting string literals, template literals, or regular expressions. If a file contains syntax errors, it must not be silently corrupted; the tool should skip or report such files rather than emit broken output.
+- Remove all comments, collapse unnecessary whitespace, and produce compact output while keeping the code semantically identical.
+- Skip common non-source directories (such as version control folders, virtual environments, dependency folders, IDE settings, and build output folders) by default.
+- Process files in parallel across available CPU cores to handle large codebases efficiently.
+- Optionally use an external minification library if one is installed, falling back gracefully to the built-in approach when it is not available.
+- Copy non-JavaScript files unchanged into the output directory, preserving their relative paths, and skip files that are empty.
+- Support a dry-run or diff-style mode that shows what would change without writing output, and a summary report at the end listing processed, skipped, and failed files along with total size reduction and elapsed time.
+- Accept command-line arguments for input path, output path, worker count, exclusion patterns, and mode selection, with clear help text and sensible defaults.
+- Handle errors per file so that one failure never aborts the entire run, and print progress information to the console.
+- Ensure the output directory is created as needed and that the tool never overwrites the original source files.
+---"""
+
+from __future__ import annotations
 import argparse
 import difflib
+import multiprocessing
+import os
+from pathlib import Path
 import shutil
-from typing import List, Tuple, Union, Iterator
-
-from tree_sitter import Language, Parser, Query, QueryCursor  # type: ignore[import-untyped]
-import tree_sitter_javascript as ts_js  # type: ignore[import-untyped]
+import sys
+from typing import Iterator
+from tree_sitter import Language, Parser, Query, QueryCursor
+import tree_sitter_javascript as ts_js
 
 try:
-    import rjsmin  # type: ignore[import-untyped]
+    import rjsmin
 except ImportError:
     rjsmin = None
-
 try:
-    import jsmin  # type: ignore[import-untyped]
+    import jsmin
 except ImportError:
     jsmin = None
-
 _WORKERS = os.cpu_count() or 1
 _SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".idea", ".vscode", "dist", "build"}
 
@@ -98,35 +109,28 @@ def process_js_file(
             raw_bytes = path.read_bytes()
         except Exception as e:
             return (file_path_str, 0, 0, 0, f"Read error: {e}", "", "")
-
         orig_size = len(raw_bytes)
         if orig_size == 0:
             rel_path = os.path.relpath(file_path_str, base_dir_str)
             return (rel_path, 0, 0, 0, None, "", "")
-
         try:
             old_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding", "", "")
-
         if backend == "rjsmin":
             new_bytes, success = process_file_rjsmin(raw_bytes)
         elif backend == "jsmin":
             new_bytes, success = process_file_jsmin(raw_bytes)
         else:
             new_bytes, success = process_file_tree_sitter(raw_bytes)
-
         if not success:
             return (file_path_str, 0, 0, 0, "Invalid JS or validation failed", "", "")
-
         try:
             new_text = new_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding in result", "", "")
-
         new_size = len(new_bytes)
         saved = orig_size - new_size
-
         if not dry_run and saved > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak")
@@ -135,7 +139,6 @@ def process_js_file(
                 path.write_bytes(new_bytes)
             except Exception as e:
                 return (file_path_str, 0, 0, 0, f"Write error: {e}", "", "")
-
         rel_path = os.path.relpath(file_path_str, base_dir_str)
         return (rel_path, orig_size, new_size, saved, None, old_text, new_text)
     except Exception as e:
@@ -170,22 +173,16 @@ def main() -> None:
     parser_arg.add_argument("--dry-run", action="store_true")
     parser_arg.add_argument("--backup", action="store_true")
     parsed_args = parser_arg.parse_args()
-
     input_paths = parsed_args.paths
     if not input_paths:
         input_paths = ["."]
-
     base_dir = os.getcwd()
     files_list = list(iter_js_files(input_paths))
-
     if not files_list:
         sys.exit(0)
-
     total_saved = 0
     error_count = 0
-
     tasks = [(f, base_dir, parsed_args.backend, parsed_args.dry_run, parsed_args.backup) for f in files_list]
-
     if len(files_list) == 1:
         for task in tasks:
             res = process_js_file(task)
@@ -207,7 +204,7 @@ def main() -> None:
     else:
         with multiprocessing.Pool(_WORKERS) as pool:
             for res in pool.imap_unordered(process_js_file, tasks):
-                rel_path, orig, new, saved, err, old_text, new_text = res
+                rel_path, _orig, _new, saved, err, old_text, new_text = res
                 if err:
                     error_count += 1
                 else:
@@ -222,7 +219,6 @@ def main() -> None:
                             tofile=f"b/{rel_path}",
                         )
                         sys.stdout.writelines(diff)
-
     print(f"Total space freed: {total_saved} bytes")
 
 

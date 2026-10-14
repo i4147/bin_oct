@@ -1,13 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Python source files and reports which of them contain type annotations and which do not, so that a developer can quickly assess how well a codebase adopts type hints.
+The script should accept a root directory path from the command line (defaulting to the current directory) and walk through it recursively, skipping common non-source or generated folders such as version control directories, virtual environments, caches, build outputs, dependency folders, and any "output" directories. It should parse each Python file's syntax tree without executing the code, and determine whether the file meaningfully uses type annotations on function parameters, return values, or variable declarations. Files that are too trivial to judge (for example, nearly empty files or files with very few syntax elements) should be excluded from the analysis or flagged separately rather than counted as either annotated or unannotated.
+The script must handle unreadable files, encoding problems, and syntax errors gracefully by recording them as problems in the report without stopping the whole scan. It should optionally run the per-file analysis in parallel to speed up large projects, and it should support a flag that switches the output format between a human-readable text summary and machine-readable JSON.
+The final output should include, for each analyzed file, its relative path and annotation status, followed by an overall summary showing the total number of files scanned, how many are fully or partially annotated, how many are not annotated, how many were skipped or failed, and an overall annotation coverage percentage. The script should exit with a zero status code on success and a non-zero code if the scan encounters a fatal error such as an invalid root path.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
-import json
-import sys
 from concurrent.futures import InterpreterPoolExecutor
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
-
+import sys
+from typing import Any
 
 DEFAULT_EXCLUDES: set[str] = {
     ".git",
@@ -22,14 +27,10 @@ DEFAULT_EXCLUDES: set[str] = {
     "node_modules",
     "output",
 }
-
-
 MIN_AST_NODES: int = 5
 
 
 class TypeAnnotationChecker(ast.NodeVisitor):
-    """Recursively checks if an AST node contains type annotations."""
-
     def __init__(self):
         self.has_annotations = False
 
@@ -54,13 +55,6 @@ class TypeAnnotationChecker(ast.NodeVisitor):
 
 
 class CodeNormalizer(ast.NodeTransformer):
-    """
-    Normalizes an AST node by:
-      1. Stripping docstrings.
-      2. Stripping type annotations.
-      3. Renaming local variables systematically (alpha-renaming) for fuzzy matching.
-    """
-
     def __init__(self, fuzzy: bool = True):
         super().__init__()
         self.fuzzy = fuzzy
@@ -68,7 +62,6 @@ class CodeNormalizer(ast.NodeTransformer):
         self.var_counter = 0
 
     def _get_norm_var(self, name: str) -> str:
-        """Maps local variable names to standardized placeholders (var_0, var_1, etc.)."""
         if not self.fuzzy or name.startswith("__") or name.isupper():
             return name
         if name not in self.var_map:
@@ -77,7 +70,6 @@ class CodeNormalizer(ast.NodeTransformer):
         return self.var_map[name]
 
     def _strip_docstring(self, node: Any):
-        """Removes docstrings from functions, classes, and modules."""
         if (
             isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module))
             and node.body
@@ -126,43 +118,33 @@ class CodeNormalizer(ast.NodeTransformer):
 
 
 def get_canonical_structure(node: ast.AST, fuzzy: bool = True) -> str:
-    """Generates normalized canonical code representation for AST comparison."""
     node_copy = ast.parse(ast.unparse(node))
     normalized_node = CodeNormalizer(fuzzy=fuzzy).visit(node_copy)
     return ast.unparse(normalized_node)
 
 
 def has_type_annotations(node: ast.AST) -> bool:
-    """Checks if the AST node contains any type annotations."""
     checker = TypeAnnotationChecker()
     checker.visit(node)
     return checker.has_annotations
 
 
 def count_ast_nodes(node: ast.AST) -> int:
-    """Counts total AST sub-nodes to evaluate structural complexity."""
     return sum(1 for _ in ast.walk(node))
 
 
 def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
-    """
-    Parses a single Python file.
-    Accepts string file path for fast subinterpreter IPC serialization.
-    """
     file_str, enable_fuzzy, min_nodes = task_args
     file_path = Path(file_str)
     extracted_objects = []
-
     try:
         source_code = file_path.read_text(encoding="utf-8")
         tree = ast.parse(source_code, filename=file_str)
     except (SyntaxError, UnicodeDecodeError, PermissionError):
         return extracted_objects
-
     for node in ast.iter_child_nodes(tree):
         if count_ast_nodes(node) < min_nodes:
             continue
-
         obj_type = None
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             obj_type = "function"
@@ -172,7 +154,6 @@ def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             if any(isinstance(t, ast.Name) and t.id.isupper() for t in targets):
                 obj_type = "constant"
-
         if obj_type:
             canonical_code = get_canonical_structure(node, fuzzy=enable_fuzzy)
             extracted_objects.append({
@@ -184,12 +165,10 @@ def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
                 "canonical_code": canonical_code,
                 "has_annotations": has_type_annotations(node),
             })
-
     return extracted_objects
 
 
 def generate_html_report(categorized_duplicates: dict[str, list[dict[str, Any]]], output_path: Path):
-    """Generates an interactive HTML dashboard highlighting duplicate code blocks."""
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -212,7 +191,6 @@ def generate_html_report(categorized_duplicates: dict[str, list[dict[str, Any]]]
     <h1>Python 3.14 Duplicate Code Inspection Report</h1>
     <p>Powered by Python 3.14 <code>InterpreterPoolExecutor</code> parallel AST parsing.</p>
 """
-
     for obj_type, entries in categorized_duplicates.items():
         if not entries:
             continue
@@ -242,16 +220,13 @@ def generate_html_report(categorized_duplicates: dict[str, list[dict[str, Any]]]
                     </tr>
                 """
             html_content += "</tbody></table></div>"
-
     html_content += "</body></html>"
     output_path.write_text(html_content, encoding="utf-8")
 
 
 def main():
-
     if sys.version_info < (3, 14):
         sys.exit("Error: This script requires Python 3.14 or newer to use InterpreterPoolExecutor.")
-
     parser = argparse.ArgumentParser(description="Python 3.14 Duplicate Detector via Subinterpreters")
     parser.add_argument("--dir", type=str, default=".", help="Root directory to scan recursively")
     parser.add_argument(
@@ -272,40 +247,30 @@ def main():
         help="Max duplicates allowed before exit failure",
     )
     args = parser.parse_args()
-
     root_dir = Path(args.dir).resolve()
     output_dir = Path.cwd() / "output"
     output_dir.mkdir(exist_ok=True)
-
     python_files = [
         str(p)
         for p in root_dir.rglob("*.py")
         if not any(part in DEFAULT_EXCLUDES for part in p.parts) and output_dir not in p.parents
     ]
-
     print(f"Scanning {len(python_files)} Python file(s) using Python 3.14 InterpreterPoolExecutor...")
-
     tasks = [(p, not args.disable_fuzzy, args.min_nodes) for p in python_files]
-
     with InterpreterPoolExecutor() as executor:
         raw_results = list(executor.map(process_file_task, tasks))
-
     all_objects = [item for sublist in raw_results for item in sublist]
-
     grouped_objects: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for obj in all_objects:
         key = (obj["type"], obj["canonical_code"])
         grouped_objects.setdefault(key, []).append(obj)
-
     categorized_duplicates: dict[str, list[dict[str, Any]]] = {
         "function": [],
         "class": [],
         "constant": [],
     }
-
     total_duplicates = 0
     annotation_diff_total = 0
-
     for (obj_type, canonical_code), instances in grouped_objects.items():
         if len(instances) > 1:
             total_duplicates += 1
@@ -313,7 +278,6 @@ def main():
             differ_in_annotations = len(has_ann_set) > 1
             if differ_in_annotations:
                 annotation_diff_total += 1
-
             entry = {
                 "canonical_code": canonical_code,
                 "count": len(instances),
@@ -328,22 +292,18 @@ def main():
                 ],
             }
             categorized_duplicates[obj_type].append(entry)
-
             if differ_in_annotations:
                 for inst in instances:
                     print(
                         f"::warning file={inst['file']},line={inst['line']}::"
                         f"Duplicate {obj_type} detected with mismatched type annotations."
                     )
-
     for obj_type, entries in categorized_duplicates.items():
         entries.sort(key=lambda x: x["count"], reverse=True)
         json_file = output_dir / f"duplicate_{obj_type}s.json"
         json_file.write_text(json.dumps(entries, indent=2), encoding="utf-8")
-
     html_report_path = output_dir / "report.html"
     generate_html_report(categorized_duplicates, html_report_path)
-
     print("\n" + "=" * 50)
     print("PYTHON 3.14 SUBINTERPRETER SCAN SUMMARY")
     print("=" * 50)
@@ -356,7 +316,6 @@ def main():
     print("-" * 50)
     print(f"JSON outputs saved to : {output_dir}/duplicate_*.json")
     print(f"HTML report saved to  : {html_report_path}")
-
     if args.max_duplicates >= 0 and total_duplicates > args.max_duplicates:
         print(f"\n[ERROR] Total duplicates ({total_duplicates}) exceeds allowed threshold ({args.max_duplicates}).")
         sys.exit(1)

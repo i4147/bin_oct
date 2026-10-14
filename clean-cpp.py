@@ -1,20 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a directory tree of C and C++ source and header files and removes all comments from them while preserving the rest of each file's code exactly as written. The tool should accept a root path (a single file or a directory) as input, recursively discover files with common C and C++ extensions (including .c, .h, .cc, .cpp, .cxx, .hpp, .hh, .hxx, .inl and similar), and process them in parallel using multiple worker processes to speed up large codebases.
+For each file, use a syntax-aware parser for the appropriate language (C or C++, chosen by file extension) so that comments are identified accurately, including correctly ignoring comment-like text inside string and character literals. Remove both line comments and block comments, and handle edge cases such as comments spanning multiple lines, comments at the end of code lines, and adjacent comments. Ensure the output preserves line structure reasonably so that code positions remain sensible, and avoid corrupting string literals, preprocessor directives, or code that happens to contain comment markers inside strings.
+The script should support an option to modify files in place, and an option to write output to a separate destination directory while mirroring the original folder structure. Include a dry-run or summary mode that reports how many files were processed, how many comments were removed, and any files that failed to parse or process, without crashing the whole run if a single file errors. Provide clear command-line usage with helpful help text, and log progress and errors through a logging facility with sensible verbosity levels. Handle unreadable files, encoding issues, and unsupported extensions gracefully, and exit with a non-zero status code when fatal errors occur.
+---"""
 
+from __future__ import annotations
 import argparse
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-
-import tree_sitter_c
-import tree_sitter_cpp
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_c
+import tree_sitter_cpp
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
-
+    from collections.abc import Iterable, Iterator
 CPP_EXTS: frozenset[str] = frozenset({
     ".cc",
     ".cpp",
@@ -55,8 +57,7 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         if node.type == "comment":
             comment_bytes = content[node.start_byte : node.end_byte]
             stripped = comment_bytes.lstrip()
-
-            if not (stripped.startswith(b"///") or stripped.startswith(b"/**") or stripped.startswith(b"/*!")):
+            if not (stripped.startswith((b"///", b"/**", b"/*!"))):
                 ranges.append((node.start_byte, node.end_byte))
             continue
         for child in reversed(node.children):
@@ -149,10 +150,8 @@ def main() -> int:
         logger.error("No C/C++ files to process.")
         return 1
     base: Path = Path.cwd()
-
     total_reduced: int = 0
     errors: int = 0
-
     if len(files) == 1:
         rel, reduced, count, err = process_file(files[0], base)
         if err:
@@ -166,7 +165,7 @@ def main() -> int:
         with Pool(processes=WORKERS) as pool:
             results = [pool.apply_async(process_file, (p, base)) for p in files]
             for res in results:
-                rel, reduced, count, err = res.get()
+                rel, reduced, _count, err = res.get()
                 if err:
                     errors += 1
                     logger.error(f"{rel}: ERROR: {err}")
@@ -174,7 +173,6 @@ def main() -> int:
                 total_reduced += reduced
                 green_reduced = f"\033[32m{reduced}\033[0m"
                 print(f"{rel}  {green_reduced}")
-
     print(f"\nTotal space freed: {total_reduced} bytes")
     return 1 if errors else 0
 

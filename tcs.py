@@ -1,183 +1,391 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Copy-utility with optional Python mangling.
 
+Usage:
+  script.py <path> [start [end]] [-m|--mangle]
+  script.py <path> -s <line> [<line> ...] [-m|--mangle]
+
+Without -m, content is copied as-is (whole file, a range, or an
+explicit ordered selection).  With -m on a Python file (or a range
+that parses as Python), the code is stripped/mangled and a usage
+prompt (TEXT1) is appended to the result.
+"""
 
 from __future__ import annotations
-
+import ast
+import builtins
+from collections import Counter
+from itertools import count, product
+import keyword
+from pathlib import Path
+import string
 import subprocess
 import sys
-from pathlib import Path
+
+TEXT1 = "Return full type-annotated code in one markdown block, no docstrings & no comments"
+
+USAGE = """\
+Usage: {prog} <path> [start [end]] [-m|--mangle]
+       {prog} <path> -s <line> [<line> ...] [-m|--mangle]
+  start/end  1-based inclusive line range (end defaults to last line)
+  -s         copy only the listed lines, in the order given
+  -m,--mangle
+             compress Python code (strip docstrings/comments, shorten
+             local names) and append a usage prompt.
+Without -m, content is copied as-is."""
+
+RESERVED = set(dir(builtins)) | set(keyword.kwlist)
+SCOPE_NODES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+BLOCK_NODES = (
+    ast.FunctionDef,
+    ast.AsyncFunctionDef,
+    ast.ClassDef,
+    ast.If,
+    ast.For,
+    ast.AsyncFor,
+    ast.While,
+    ast.With,
+    ast.AsyncWith,
+    ast.Try,
+    ast.ExceptHandler,
+)
 
 
-def send_to_process(txt: str) -> None:
+def die(msg: str, code: int = 1) -> None:
+    print(msg, file=sys.stderr)
+    sys.exit(code)
+
+
+def send_to_clipboard(text: str) -> bool:
+    """Best-effort clipboard copy. Returns True on success, False otherwise."""
     try:
-        process = subprocess.Popen(
+        proc = subprocess.run(
             ["termux-clipboard-set"],
-            stdin=subprocess.PIPE,
-            text=True,
-            stderr=subprocess.PIPE,
+            input=text.encode("utf-8"),
+            capture_output=True,
         )
-        _stdout, stderr = process.communicate(input=txt)
-        if process.returncode != 0:
-            print(f"Error: Failed to copy to clipboard. STDERR: {stderr}", file=sys.stderr)
-            sys.exit(1)
     except FileNotFoundError:
         print(
-            "Error: 'termux-clipboard-set' command not found. Is Termux:API installed?",
+            "Warning: 'termux-clipboard-set' not found; skipping clipboard copy. "
+            "Install the Termux:API app and run: pkg install termux-api",
             file=sys.stderr,
         )
-        sys.exit(1)
-    except Exception as e:
-        print(
-            f"An unexpected error occurred while copying to clipboard: {e}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-
-def selective_copy(path: Path, lines: list[str]) -> None:
-    cl = [p for p in lines if p != "-s"]
-    selected = []
-    nl = path.read_text(encoding="utf-8").splitlines()
-    total = len(nl)
-    for k in cl:
-        if 0 <= k <= total:
-            selected.append(nl[k])
-    content = "".join(selected)
-    send_to_process(content)
-
-
-def copy_lines_to_clipboard(path: str | Path, start_line: int | None = None, end_line: int | None = None) -> None:
-    content = ""
-    path = Path(path)
-    if not path.is_file():
-        print(f"Error: File not found at '{path}'", file=sys.stderr)
-        sys.exit(1)
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    except OSError as e:
-        print(f"Error reading file '{path}': {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"error occurred while reading the file: {e}", file=sys.stderr)
-        sys.exit(1)
-    total_lines = len(lines)
-    if start_line is None:
-        content = "".join(lines)
-    else:
-        start_index = start_line - 1
-        end_index = total_lines if end_line is None else end_line
-        if not 0 <= start_index <= total_lines:
-            start_index = 0
-        if not 0 <= end_index <= total_lines:
-            end_index = total_lines
-        if start_index >= end_index:
-            start_index, end_index = end_index, start_index
-        selected_lines = lines[start_index:end_index]
-        content = "".join(selected_lines)
-    if not content:
-        print("No content selected to copy.", file=sys.stderr)
-        sys.exit(1)
-    send_to_process(content)
-
-
-def is_valid_python(source: str) -> bool:
-    """Return True if `source` parses as valid Python."""
-    try:
-        ast.parse(source)
-    except (SyntaxError, ValueError):
+        return False
+    if proc.returncode != 0:
+        err = proc.stderr.decode(errors="replace").strip()
+        print(f"Warning: failed to copy to clipboard: {err}", file=sys.stderr)
         return False
     return True
 
 
-def _future_import_lines(tree: ast.Module) -> set[int]:
-    """Return the 1-based line numbers occupied by `__future__` imports."""
-    lines: set[int] = set()
-    for node in tree.body:
-        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
-            end_lineno = getattr(node, "end_lineno", node.lineno) or node.lineno
-            lines.update(range(node.lineno, end_lineno + 1))
-    return lines
+# ---------- Step 1: strip comments, docstrings, annotations ----------
+class Stripper(ast.NodeTransformer):
+    """Removes docstrings, annotations, and __future__ imports.
+    Comments and shebangs disappear automatically during ast.unparse."""
+
+    def _drop_docstring(self, node) -> None:
+        if node.body:
+            first = node.body[0]
+            if (
+                isinstance(first, ast.Expr)
+                and isinstance(first.value, ast.Constant)
+                and isinstance(first.value.value, str)
+            ):
+                node.body = node.body[1:]
+
+    def _scope(self, node):
+        self._drop_docstring(node)
+        return self.generic_visit(node)
+
+    visit_Module = _scope
+    visit_ClassDef = _scope
+
+    def visit_FunctionDef(self, node):
+        node.returns = None
+        return self._scope(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_arg(self, node):
+        node.annotation = None
+        return node
+
+    def visit_AnnAssign(self, node):
+        if node.value is None:  # bare "x: int" declares nothing at runtime
+            return None
+        return ast.copy_location(ast.Assign(targets=[node.target], value=node.value), node)
+
+    def visit_ImportFrom(self, node):
+        if node.module == "__future__":
+            return None
+        return node
 
 
-def strip_shebang_and_future_imports(source: str) -> str:
-    """Remove a leading shebang and any `__future__` imports from Python source."""
-    lines = source.splitlines(keepends=True)
-    remove: set[int] = set()
+def _fill_empty_blocks(tree: ast.AST) -> None:
+    """Stripping can empty a block body; insert `pass` so the code stays valid."""
+    for node in ast.walk(tree):
+        if isinstance(node, BLOCK_NODES) and not node.body:
+            node.body = [ast.Pass()]
 
-    if lines and lines[0].startswith("#!"):
-        remove.add(1)
 
+# ---------- Step 2: shorten identifiers ----------
+def _all_identifiers(tree: ast.AST) -> set[str]:
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            names.add(node.id)
+        elif isinstance(node, ast.arg):
+            names.add(node.arg)
+        elif isinstance(node, SCOPE_NODES):
+            names.add(node.name)
+        elif isinstance(node, ast.Attribute):
+            names.add(node.attr)
+        elif isinstance(node, ast.keyword) and node.arg:
+            names.add(node.arg)
+        elif isinstance(node, ast.alias):
+            names.update(node.name.split("."))
+            if node.asname:
+                names.add(node.asname)
+        elif isinstance(node, (ast.Global, ast.Nonlocal)):
+            names.update(node.names)
+        elif isinstance(node, ast.ExceptHandler) and node.name:
+            names.add(node.name)
+    return names
+
+
+def _unsafe_names(tree: ast.AST) -> set[str]:
+    """Names that must keep their spelling: attributes, keyword args,
+    imports, class members, and match-pattern captures."""
+    unsafe: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute):
+            unsafe.add(node.attr)
+        elif isinstance(node, ast.keyword) and node.arg:
+            unsafe.add(node.arg)
+        elif isinstance(node, ast.alias):
+            unsafe.update(node.name.split("."))
+            if node.asname:
+                unsafe.add(node.asname)
+        elif isinstance(node, ast.ClassDef):
+            for stmt in node.body:
+                if isinstance(stmt, SCOPE_NODES):
+                    unsafe.add(stmt.name)
+                elif isinstance(stmt, ast.Assign):
+                    for target in stmt.targets:
+                        for n in ast.walk(target):
+                            if isinstance(n, ast.Name):
+                                unsafe.add(n.id)
+        elif isinstance(node, (ast.MatchAs, ast.MatchStar)) and node.name:
+            unsafe.add(node.name)
+        elif isinstance(node, ast.MatchMapping) and node.rest:
+            unsafe.add(node.rest)
+    return unsafe
+
+
+def _name_stats(tree: ast.AST) -> tuple[set[str], Counter]:
+    defined: set[str] = set()
+    freq: Counter = Counter()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            freq[node.id] += 1
+            if isinstance(node.ctx, (ast.Store, ast.Del)):
+                defined.add(node.id)
+        elif isinstance(node, ast.arg):
+            freq[node.arg] += 1
+            defined.add(node.arg)
+        elif isinstance(node, SCOPE_NODES):
+            freq[node.name] += 1
+            defined.add(node.name)
+        elif isinstance(node, ast.ExceptHandler) and node.name:
+            freq[node.name] += 1
+            defined.add(node.name)
+    return defined, freq
+
+
+def _short_names(taken: set[str]):
+    """a, b, ..., Z, aa, ab, ... skipping anything already in use."""
+    for size in count(1):
+        for chars in product(string.ascii_letters, repeat=size):
+            name = "".join(chars)
+            if name not in taken:
+                yield name
+
+
+class Renamer(ast.NodeTransformer):
+    def __init__(self, mapping: dict[str, str]):
+        self.m = mapping
+
+    def _r(self, name: str) -> str:
+        return self.m.get(name, name)
+
+    def visit_Name(self, node):
+        node.id = self._r(node.id)
+        return node
+
+    def visit_arg(self, node):
+        node.arg = self._r(node.arg)
+        return self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        node.name = self._r(node.name)
+        return self.generic_visit(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node):
+        node.name = self._r(node.name)
+        return self.generic_visit(node)
+
+    def visit_ExceptHandler(self, node):
+        if node.name:
+            node.name = self._r(node.name)
+        return self.generic_visit(node)
+
+    def visit_Global(self, node):
+        node.names = [self._r(n) for n in node.names]
+        return node
+
+    visit_Nonlocal = visit_Global
+
+
+def rename_identifiers(tree: ast.AST) -> ast.AST:
+    defined, freq = _name_stats(tree)
+    unsafe = _unsafe_names(tree)
+    targets = [n for n in defined if n not in unsafe and n not in RESERVED and not n.startswith("__")]
+    targets.sort(key=lambda n: (-freq[n], n))  # most-used names get shortest spellings
+    taken = _all_identifiers(tree) | RESERVED | unsafe
+    gen = _short_names(taken)
+    mapping = {old: next(gen) for old in targets}
+    return Renamer(mapping).visit(tree)
+
+
+# ---------- Pipeline ----------
+def _shrink_indent(code: str) -> str:
+    """ast.unparse indents with 4 spaces; use 1 space per level and drop blank lines."""
+    out = []
+    for line in code.splitlines():
+        stripped = line.lstrip(" ")
+        if stripped:
+            out.append(" " * ((len(line) - len(stripped)) // 4) + stripped)
+    return "\n".join(out) + "\n" if out else ""
+
+
+def compress_source(source: str) -> str | None:
+    """Return compressed code, or None if the source is not valid Python."""
     try:
         tree = ast.parse(source)
     except (SyntaxError, ValueError):
-        for i, line in enumerate(lines, start=1):
-            if line.lstrip().startswith("from __future__ import"):
-                remove.add(i)
-    else:
-        remove |= _future_import_lines(tree)
+        return None
+    tree = Stripper().visit(tree)
+    _fill_empty_blocks(tree)
+    tree = rename_identifiers(tree)
+    code = _shrink_indent(ast.unparse(tree))
+    try:
+        compile(code, "<compressed>", "exec")  # sanity check before sending
+    except SyntaxError:
+        return None
+    return code
 
-    return "".join(line for i, line in enumerate(lines, start=1) if i not in remove)
 
-
-def should_strip_python(path: Path, source: str) -> bool:
-    """Whether the file at `path` should be treated as Python source."""
+def is_python_file(path: Path, source: str) -> bool:
     if path.suffix.lower() == ".py":
         return True
     if path.suffix == "":
-        return is_valid_python(source)
+        try:
+            ast.parse(source)
+            return True
+        except (SyntaxError, ValueError):
+            return False
     return False
 
 
-def main() -> None:
-    if len(sys.argv) < 2 or len(sys.argv) > 5:
-        print(f"Usage: {sys.argv[0]} <path> [start_line] [end_line]", file=sys.stderr)
-        print("  <path>: Path to the input file.", file=sys.stderr)
-        print(
-            "  [start_line]: The first line number to copy (1-based index). If omitted, copies the entire file.",
-            file=sys.stderr,
-        )
-        print(
-            "  [end_line]: The last line number to copy (1-based index). If omitted and start_line is given, copies to the end of the file.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    selective = "-s" in sys.argv[1:]
-    path = Path(sys.argv[1])
-    start_line = None
-    end_line = None
-    if len(sys.argv) >= 3:
-        try:
-            start_line = int(sys.argv[2])
-        except ValueError:
-            print("Error: <start_line> must be an integer.", file=sys.stderr)
-            sys.exit(1)
-    if len(sys.argv) == 4:
-        try:
-            end_line = int(sys.argv[3])
-        except ValueError:
-            print("Error: <end_line> must be an integer.", file=sys.stderr)
-            sys.exit(1)
-    if start_line is not None and end_line is None and len(sys.argv) == 3:
-        if not path.is_file():
-            print(f"Error: File not found at '{path}'", file=sys.stderr)
-            sys.exit(1)
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                total_lines = len(f.readlines())
-            if not 1 <= start_line <= total_lines:
-                print(
-                    f"Error: Start line ({start_line}) is out of bounds. File has {total_lines} lines.",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
-        except OSError as e:
-            print(f"Error reading file '{path}' for validation: {e}", file=sys.stderr)
-            sys.exit(1)
-    if not selective:
-        copy_lines_to_clipboard(path, start_line, end_line)
+def build_payload(path: Path, source: str, ranged: bool, mangle: bool) -> str:
+    """Return the final payload to copy.
+
+    Without mangle: verbatim source.
+    With mangle:    compressed Python (when possible) + TEXT1.
+    """
+    if not mangle:
+        return source
+
+    if ranged or is_python_file(path, source):
+        compressed = compress_source(source)
+        if compressed is not None:
+            return compressed.rstrip("\n") + "\n\n" + TEXT1 + "\n"
+        if ranged:
+            print("Note: selection is not valid Python; copied as-is.", file=sys.stderr)
+        else:
+            print("Warning: could not parse file; copied as-is.", file=sys.stderr)
+    return source
+
+
+# ---------- CLI ----------
+def main(argv: list[str]) -> None:
+    raw = argv[1:]
+
+    # Extract the mangling flag from anywhere on the command line.
+    mangle = False
+    rest: list[str] = []
+    for a in raw:
+        if a in ("-m", "--mangle"):
+            mangle = True
+        else:
+            rest.append(a)
+
+    args = [a for a in rest if a != "-s"]
+    selective = len(args) != len(rest)
+
+    if not args:
+        die(USAGE.format(prog=Path(argv[0]).name))
+
+    path = Path(args[0])
+    if not path.is_file():
+        die(f"Error: File not found at '{path}'")
+
+    try:
+        nums = [int(a) for a in args[1:]]
+    except ValueError:
+        die("Error: line numbers must be integers.")
+
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        die(f"Error reading '{path}': {e}")
+
+    lines = text.splitlines(keepends=True)
+    total = len(lines)
+
+    if selective:
+        if not nums:
+            die("Error: -s needs at least one line number.")
+        bad = [n for n in nums if not 1 <= n <= total]
+        if bad:
+            die(f"Error: line(s) {bad} out of range. File has {total} lines.")
+        source, ranged = "".join(lines[n - 1] for n in nums), True
+    elif not nums:
+        source, ranged = text, False
+    elif len(nums) <= 2:
+        start = nums[0]
+        end = nums[1] if len(nums) == 2 else total
+        if not 1 <= start <= total:
+            die(f"Error: start line ({start}) out of range. File has {total} lines.")
+        if not start <= end <= total:
+            die(f"Error: end line ({end}) must be between start line and {total}.")
+        source, ranged = "".join(lines[start - 1 : end]), True
     else:
-        selective_copy(path, sys.argv[2:])
+        die(USAGE.format(prog=Path(argv[0]).name))
+
+    if not source:
+        die("No content selected to copy.")
+
+    payload = build_payload(path, source, ranged, mangle)
+    ok = send_to_clipboard(payload)
+    status = "clipboard OK" if ok else "clipboard unavailable"
+    print(
+        f"Processed {len(payload)} chars (original {len(source)}); {status}.",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv))

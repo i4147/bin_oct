@@ -1,407 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-from __future__ import annotations
-
 import argparse
 import ast
-import contextlib
-import os
 import re
-import shutil
 import sys
 import time
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import NoReturn, Optional, Union
 
-WORKERS = 8
-LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
-MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
-RESET = "\033[0m"
-BOLD = "\033[1m"
-DIM = "\033[2m"
-ITALIC = "\033[3m"
-UNDERLINE = "\033[4m"
-FG_BLACK = "\033[30m"
-FG_RED = "\033[31m"
-FG_GREEN = "\033[32m"
-FG_YELLOW = "\033[33m"
-FG_BLUE = "\033[34m"
-FG_MAGENTA = "\033[35m"
-FG_CYAN = "\033[36m"
-FG_WHITE = "\033[37m"
-_ANSI_RE = re.compile(r"\033\[[0-9;]*m")
+from loguru import logger
 
+WORKERS: int = 8
+LOGURU_LOGFORMAT: str = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
+MERGED_FILE_HEADER_RE: re.Pattern[str] = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
+STDLIB_MODULES: frozenset[str] = frozenset(getattr(sys, "stdlib_module_names", ()))
 
-def visible_len(s: str) -> int:
-    return len(_ANSI_RE.sub("", s))
-
-
-def _fg256(n: int) -> str:
-    return f"\033[38;5;{n}m"
-
-
-class Style:
-    def __init__(self) -> None:
-        self.enabled = self._should_enable()
-        self.unicode = self._supports_unicode()
-
-    @staticmethod
-    def _should_enable() -> bool:
-        if os.environ.get("NO_COLOR"):
-            return False
-        if os.environ.get("FORCE_COLOR"):
-            return True
-        return sys.stdout.isatty()
-
-    @staticmethod
-    def _supports_unicode() -> bool:
-        enc = (sys.stdout.encoding or "").lower()
-        return "utf" in enc
-
-    def c(self, text: object, *codes: str) -> str:
-        if not self.enabled or not codes:
-            return str(text)
-        return "".join(codes) + str(text) + RESET
-
-    def bold(self, t: object) -> str:
-        return self.c(t, BOLD)
-
-    def dim(self, t: object) -> str:
-        return self.c(t, DIM)
-
-    def red(self, t: object) -> str:
-        return self.c(t, BOLD, FG_RED)
-
-    def green(self, t: object) -> str:
-        return self.c(t, BOLD, FG_GREEN)
-
-    def yellow(self, t: object) -> str:
-        return self.c(t, BOLD, FG_YELLOW)
-
-    def cyan(self, t: object) -> str:
-        return self.c(t, BOLD, FG_CYAN)
-
-    def magenta(self, t: object) -> str:
-        return self.c(t, BOLD, FG_MAGENTA)
-
-    def rainbow(self, text: object, i: int, total: int) -> str:
-        if not self.enabled:
-            return str(text)
-        if total <= 1:
-            n = 45
-        else:
-            t = i / max(1, total - 1)
-            n = 21 + int(t * 30)
-        return f"{_fg256(n)}{BOLD}{text}{RESET}"
-
-    def colorize_path(self, path_str: str) -> str:
-        if not self.enabled:
-            return path_str
-        if "/" in path_str:
-            dir_part, _, name = path_str.rpartition("/")
-            return self.c(dir_part + "/", DIM, FG_YELLOW) + self.c(name, BOLD, FG_CYAN)
-        return self.c(path_str, BOLD, FG_CYAN)
-
-
-def box(
-    title: str,
-    body_lines: list[str],
-    style: Style,
-    accent: str = FG_CYAN,
-    width: Optional[int] = None,
-) -> str:
-    term = get_terminal_width()
-    if width is None:
-        width = max(44, min(term - 2, 84))
-    if style.unicode:
-        tl, tr, bl, br, h, v = "╭", "╮", "╰", "╯", "─", "│"
-    else:
-        tl, tr, bl, br, h, v = "+", "+", "+", "+", "-", "|"
-    title_str = f" {title} "
-    if visible_len(title_str) > width - 2:
-        width = visible_len(title_str) + 2
-    top = tl + title_str + h * (width - visible_len(title_str) - 2) + tr
-    bottom = bl + h * (width - 2) + br
-    out = [style.c(top, accent)]
-    for line in body_lines:
-        pad = " " * max(0, width - visible_len(line) - 4)
-        out.append(style.c(v, accent) + " " + line + pad + " " + style.c(v, accent))
-    out.append(style.c(bottom, accent))
-    return "\n".join(out)
-
-
-def banner(
-    source_label: str,
-    output: Path,
-    module_count: int,
-    style: Style,
-) -> str:
-    arrow = style.dim("→")
-    lines = [
-        f"{style.dim('source ')} {arrow} {style.colorize_path(source_label)}",
-        f"{style.dim('output ')} {arrow} {style.colorize_path(str(output))}",
-        f"{style.dim('files  ')} {arrow} {style.bold(module_count)}",
-        f"{style.dim('workers')} {arrow} {style.bold(WORKERS)}",
-    ]
-    return box("refactor", lines, style, accent=FG_MAGENTA)
-
-
-def success_box(output: Path, in_bytes: int, out_bytes: int, elapsed: float, style: Style) -> str:
-    if style.unicode:
-        check = "✓"
-        warn = "⚠"
-    else:
-        check = "*"
-        warn = "!"
-    saved = in_bytes - out_bytes
-    if in_bytes > 0:
-        ratio = out_bytes / in_bytes
-        if ratio >= 1:
-            delta_str = style.yellow(f"+{saved * -1:,} B" if saved < 0 else f"{saved:,} B saved")
-        else:
-            delta_str = style.green(f"{abs(saved):,} B smaller ({ratio:.0%})")
-    else:
-        delta_str = style.dim("n/a")
-    lines = [
-        f"{style.green(check)} {style.bold('done')} in {style.cyan(f'{elapsed:.2f}s')}",
-        f"{style.dim('in  ')} {in_bytes:>10,} B",
-        f"{style.dim('out ')} {out_bytes:>10,} B   {delta_str}",
-        f"{style.dim('file')} {style.colorize_path(str(output))}",
-    ]
-    return box("result", lines, style, accent=FG_GREEN)
-
-
-def warning_box(items: list[tuple[str, int, str]], style: Style, verbose: bool) -> str:
-    if style.unicode:
-        mark = "⚠"
-    else:
-        mark = "!"
-    header = f"{style.yellow(mark)} {style.bold(len(items))} parser warning(s) suppressed"
-    lines = [
-        header,
-        style.dim("python 3.14+ flags invalid escape sequences in string literals"),
-    ]
-    shown = items if verbose else items[:5]
-    for filename, lineno, message in shown:
-        loc = style.colorize_path(filename) + style.dim(f":{lineno}")
-        msg = style.c(message, DIM)
-        lines.append(f"  {loc}  {msg}")
-    if not verbose and len(items) > len(shown):
-        lines.append(style.dim(f"  ... and {len(items) - len(shown)} more (use -v)"))
-    return box("warnings", lines, style, accent=FG_YELLOW)
-
-
-@dataclass
-class ParseReport:
-    items: list[tuple[str, int, str]] = field(default_factory=list)
-
-    def extend_from(self, caught: list[warnings.WarningMessage]) -> None:
-        for w in caught:
-            if isinstance(
-                w.message,
-                (SyntaxWarning, DeprecationWarning, PendingDeprecationWarning),
-            ):
-                self.items.append((str(w.filename or "<unknown>"), int(w.lineno or 0), str(w.message)))
-
-    def __bool__(self) -> bool:
-        return bool(self.items)
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-
-@contextlib.contextmanager
-def _collect_parse_warnings(report: ParseReport):
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        try:
-            yield
-        finally:
-            report.extend_from(caught)
-
-
-def get_terminal_width(default: int = 80) -> int:
-    try:
-        return shutil.get_terminal_size((default, 24)).columns
-    except Exception:
-        return default
-
-
-def format_numbered_list(
-    items: list[str],
-    style: Style,
-    indent: int = 2,
-    min_gap: int = 4,
-    max_gap: int = 16,
-    min_fname: int = 12,
-) -> str:
-    items = [str(x) for x in items]
-    if not items:
-        return ""
-    term = get_terminal_width()
-    num_width = len(str(len(items)))
-    prefix_w = indent + num_width + 2
-    longest = max(len(s) for s in items)
-    desired_gap = term - prefix_w - longest
-    gap = max(min_gap, min(desired_gap, max_gap))
-    avail = term - prefix_w - gap
-    if avail < min_fname:
-        avail = max(min_fname, term - prefix_w - min_gap)
-        gap = max(min_gap, term - prefix_w - avail)
-    total = len(items)
-    lines: list[str] = []
-    for i, s in enumerate(items):
-        num = str(i + 1).rjust(num_width)
-        num_colored = style.rainbow(num, i, total)
-        display = s
-        if len(display) > avail:
-            keep = max(1, avail - 3)
-            display = display[:keep] + "..."
-        lines.append(f"{' ' * indent}{num_colored}{style.dim('.')}{' ' * gap}{style.colorize_path(display)}")
-    return "\n".join(lines)
-
-
-def collect_python_files(root: Path) -> list[Path]:
-    if root.is_file():
-        if root.suffix != ".py":
-            msg = f"{root} is not a .py file"
-            raise SystemExit(msg)
-        return [root]
-    files = [
-        p
-        for p in root.rglob("*.py")
-        if "__pycache__" not in p.parts and not any(part.startswith(".") for part in p.parts)
-    ]
-    if not files:
-        msg = f"No .py files found under {root}"
-        raise SystemExit(msg)
-    return sorted(files)
-
-
-def parse_file(path: Path, report: ParseReport) -> ast.Module:
-    src = path.read_text(encoding="utf-8")
-    try:
-        with _collect_parse_warnings(report):
-            return ast.parse(src, filename=str(path))
-    except SyntaxError as exc:
-        msg = f"Syntax error in {path}: {exc}"
-        raise SystemExit(msg)
-
-
-def parse_merged_file(path: Path, report: ParseReport) -> list[tuple[str, ast.Module]]:
-    text = path.read_text(encoding="utf-8")
-    matches = list(MERGED_FILE_HEADER_RE.finditer(text))
-    if not matches:
-        msg = (
-            f"No '# File: <path>' headers found in {path}; "
-            "expected a merged file such as:\n"
-            "  # File: __init__.py\n"
-            "  ...\n"
-            "  # File: sub/mod.py\n"
-            "  ...\n"
-            "Use directory mode instead if you have loose .py files."
-        )
-        raise SystemExit(msg)
-    modules: list[tuple[str, ast.Module]] = []
-    for i, m in enumerate(matches):
-        header_path = m.group(1)
-        start = m.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        body = text[start:end]
-        if body.startswith("\r\n"):
-            body = body[2:]
-        elif body.startswith("\n"):
-            body = body[1:]
-        try:
-            with _collect_parse_warnings(report):
-                tree = ast.parse(body, filename=header_path)
-        except SyntaxError as exc:
-            msg = f"Syntax error in {path} section '{header_path}': {exc}"
-            raise SystemExit(msg)
-        modules.append((header_path, tree))
-    return modules
-
-
-def is_relative_import(node: ast.AST) -> bool:
-    return isinstance(node, ast.ImportFrom) and bool(node.level)
-
-
-def is_future_import(node: ast.AST) -> bool:
-    return isinstance(node, ast.ImportFrom) and node.module == "__future__"
-
-
-def is_six_import(node: ast.AST) -> bool:
-    if isinstance(node, ast.Import):
-        return any(a.name == "six" or a.name.startswith("six.") for a in node.names)
-    if isinstance(node, ast.ImportFrom):
-        m = node.module or ""
-        return m == "six" or m.startswith("six.")
-    return False
-
-
-def is_logging_import(node: ast.AST) -> bool:
-    if isinstance(node, ast.Import):
-        return any(a.name == "logging" for a in node.names)
-    if isinstance(node, ast.ImportFrom):
-        m = node.module or ""
-        return m == "logging" or m.startswith("logging.")
-    return False
-
-
-def _is_named_assign(node: ast.AST, name: str) -> bool:
-    return (
-        isinstance(node, ast.Assign)
-        and len(node.targets) == 1
-        and isinstance(node.targets[0], ast.Name)
-        and node.targets[0].id == name
-    )
-
-
-def _make_assign(name: str, value: ast.expr) -> ast.Assign:
-    return ast.Assign(targets=[ast.Name(id=name, ctx=ast.Store())], value=value)
-
-
-def _module_has_import_from_src(module: ast.Module, src_fragment: str) -> bool:
-    target = src_fragment.strip()
-    for node in module.body:
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            try:
-                if ast.unparse(node).strip() == target:
-                    return True
-            except Exception:
-                continue
-    return False
-
-
-def merge_modules(modules: list[tuple[str, ast.Module]]) -> list[ast.stmt]:
-    merged: list[ast.stmt] = []
-    seen_imports: set[str] = set()
-    for _name, tree in modules:
-        for node in tree.body:
-            if (
-                isinstance(node, ast.Expr)
-                and isinstance(node.value, ast.Constant)
-                and isinstance(node.value.value, str)
-            ):
-                continue
-            if is_future_import(node):
-                continue
-            if is_six_import(node) or is_logging_import(node):
-                continue
-            if is_relative_import(node):
-                continue
-            if _is_named_assign(node, "__all__"):
-                continue
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                key = ast.dump(node)
-                if key in seen_imports:
-                    continue
-                seen_imports.add(key)
-            merged.append(node)
-    return merged
-
+ModuleKey = tuple[str, ...]
+Renames = dict[tuple[ModuleKey, str], str]
+FuncNode = Union[ast.FunctionDef, ast.AsyncFunctionDef]
+FUNC_NODES: tuple[type, ...] = (ast.FunctionDef, ast.AsyncFunctionDef)
+DEFINITION_NODES: tuple[type, ...] = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+_DEF_NODES: tuple[type, ...] = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+_EXECUTOR_NAMES: set[str] = {"ProcessPoolExecutor", "ThreadPoolExecutor"}
+_STANDARD_HEADER: list[str] = [
+    "import sys",
+    "import multiprocessing as mp",
+    "from pathlib import Path",
+    "from loguru import logger",
+]
 
 SIX_ATTR_MAP: dict[str, str] = {
     "text_type": "str",
@@ -426,6 +53,161 @@ SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.input": "builtins",
     "six.moves": "builtins",
 }
+OSPATH_PROPERTY_MAP: dict[str, str] = {
+    "exists": "exists",
+    "isdir": "is_dir",
+    "isfile": "is_file",
+    "islink": "is_symlink",
+    "dirname": "parent",
+    "basename": "name",
+}
+OSPATH_METHOD_MAP: dict[str, str] = {
+    "abspath": "resolve",
+    "realpath": "resolve",
+    "expanduser": "expanduser",
+    "remove": "unlink",
+    "unlink": "unlink",
+    "stat": "stat",
+    "mkdir": "mkdir",
+}
+OSPATH_MAKEDIRS: str = "makedirs"
+OSPATH_GETSIZE: str = "getsize"
+
+
+@dataclass
+class ModuleInfo:
+    key: ModuleKey
+    label: str
+    package: ModuleKey
+    tree: ast.Module
+    names: dict[str, tuple[ModuleKey, str]] = field(default_factory=dict)
+    modules: dict[str, ModuleKey] = field(default_factory=dict)
+    defined: set[str] = field(default_factory=set)
+    external: set[str] = field(default_factory=set)
+
+
+class LoadNames(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.names: set[str] = set()
+
+    def visit_Name(self, node: ast.Name) -> None:
+        if isinstance(node.ctx, ast.Load):
+            self.names.add(node.id)
+
+    def visit_Lambda(self, node: ast.Lambda) -> None:
+        self.scan_defaults(node.args)
+
+    def visit_FunctionDef(self, node: FuncNode) -> None:
+        for decorator in node.decorator_list:
+            self.visit(decorator)
+        self.scan_defaults(node.args)
+        args = node.args
+        for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs, args.vararg, args.kwarg]:
+            if arg is not None and arg.annotation is not None:
+                self.visit(arg.annotation)
+        if node.returns is not None:
+            self.visit(node.returns)
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def scan_defaults(self, args: ast.arguments) -> None:
+        for default in [*args.defaults, *args.kw_defaults]:
+            if default is not None:
+                self.visit(default)
+
+
+class LocalImportResolver(ast.NodeTransformer):
+    def __init__(self, info: ModuleInfo, index: dict[ModuleKey, ModuleInfo], root_name: str) -> None:
+        super().__init__()
+        self.info = info
+        self.index = index
+        self.root_name = root_name
+
+    def locate(self, parts: ModuleKey, relative: bool) -> Optional[ModuleKey]:
+        if parts in self.index:
+            return parts
+        if not relative and self.root_name and parts[:1] == (self.root_name,) and parts[1:] in self.index:
+            return parts[1:]
+        return None
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> Optional[ast.AST]:
+        tail: ModuleKey = tuple(node.module.split(".")) if node.module else ()
+        relative = bool(node.level)
+        if relative:
+            package = self.info.package
+            cut = node.level - 1
+            if cut > len(package):
+                logger.warning("{}: relative import beyond top level: {}", self.info.label, ast.unparse(node))
+                return None
+            base: ModuleKey = package[: len(package) - cut] + tail
+        else:
+            base = tail
+        target = self.locate(base, relative)
+        subs = {alias.name: self.locate(base + (alias.name,), relative) for alias in node.names}
+        if not relative and target is None and all(value is None for value in subs.values()):
+            return node
+        for alias in node.names:
+            local = alias.asname or alias.name
+            sub = subs[alias.name]
+            if alias.name == "*":
+                logger.warning("{}: star import from local module dropped: {}", self.info.label, ast.unparse(node))
+            elif sub is not None:
+                self.info.modules[local] = sub
+            elif target is not None:
+                self.info.names[local] = (target, alias.name)
+            else:
+                logger.warning("{}: unresolved local import {}", self.info.label, ast.unparse(node))
+        return None
+
+    def visit_Import(self, node: ast.Import) -> Optional[ast.AST]:
+        kept: list[ast.alias] = []
+        for alias in node.names:
+            parts: ModuleKey = tuple(alias.name.split("."))
+            target = self.locate(parts, False)
+            if target is None:
+                kept.append(alias)
+            elif alias.asname:
+                self.info.modules[alias.asname] = target
+            elif len(parts) == 1:
+                self.info.modules[alias.name] = target
+            else:
+                logger.warning("{}: unsupported dotted local import kept: {}", self.info.label, alias.name)
+                kept.append(alias)
+        if not kept:
+            return None
+        node.names = kept
+        return node
+
+
+class NameRewriter(ast.NodeTransformer):
+    def __init__(
+        self,
+        info: ModuleInfo,
+        infos: dict[ModuleKey, ModuleInfo],
+        final: Renames,
+        rewrite: dict[str, str],
+    ) -> None:
+        super().__init__()
+        self.info = info
+        self.infos = infos
+        self.final = final
+        self.rewrite = rewrite
+
+    def visit_Name(self, node: ast.Name) -> ast.AST:
+        new = self.rewrite.get(node.id)
+        if new is not None:
+            node.id = new
+        return node
+
+    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+        value = node.value
+        if isinstance(value, ast.Name) and value.id in self.info.modules and isinstance(node.ctx, ast.Load):
+            resolved = resolve_name(self.infos, self.info.modules[value.id], node.attr, self.final)
+            if resolved is not None:
+                return ast.copy_location(ast.Name(id=resolved, ctx=ast.Load()), node)
+            logger.warning("{}: cannot resolve {}.{}", self.info.label, value.id, node.attr)
+        self.generic_visit(node)
+        return node
 
 
 class SixImportRewriter(ast.NodeTransformer):
@@ -481,31 +263,6 @@ class SixTransformer(ast.NodeTransformer):
         if method == "string_types" and not node.args:
             return ast.Name(id="str", ctx=ast.Load())
         return node
-
-
-OSPATH_PROPERTY_MAP: dict[str, str] = {
-    "exists": "exists",
-    "isdir": "is_dir",
-    "isfile": "is_file",
-    "islink": "is_symlink",
-    "dirname": "parent",
-    "basename": "name",
-}
-OSPATH_METHOD_MAP: dict[str, str] = {
-    "abspath": "resolve",
-    "realpath": "resolve",
-    "expanduser": "expanduser",
-    "remove": "unlink",
-    "unlink": "unlink",
-    "stat": "stat",
-    "mkdir": "mkdir",
-}
-OSPATH_MAKEDIRS = "makedirs"
-OSPATH_GETSIZE = "getsize"
-
-
-def _wrap_path(arg: ast.expr) -> ast.Call:
-    return ast.Call(func=ast.Name(id="Path", ctx=ast.Load()), args=[arg], keywords=[])
 
 
 class OsPathTransformer(ast.NodeTransformer):
@@ -587,9 +344,6 @@ class OsPathTransformer(ast.NodeTransformer):
         )
 
 
-_EXECUTOR_NAMES = {"ProcessPoolExecutor", "ThreadPoolExecutor"}
-
-
 class _ExecutorMethodRenamer(ast.NodeTransformer):
     def __init__(self, var: str) -> None:
         super().__init__()
@@ -609,16 +363,8 @@ class _ExecutorMethodRenamer(ast.NodeTransformer):
         return node
 
 
-def _is_executor_ref(node: ast.expr) -> bool:
-    if isinstance(node, ast.Name):
-        return node.id in _EXECUTOR_NAMES
-    if isinstance(node, ast.Attribute):
-        return node.attr in _EXECUTOR_NAMES
-    return False
-
-
 class ExecutorTransformer(ast.NodeTransformer):
-    def visit_With(self, node: ast.With) -> ast.AST:
+    def visit_With(self, node: ast.With) -> Union[ast.AST, list[ast.stmt]]:
         self.generic_visit(node)
         if len(node.items) != 1:
             return node
@@ -639,7 +385,7 @@ class ExecutorTransformer(ast.NodeTransformer):
         )
         renamer = _ExecutorMethodRenamer(var.id)
         new_body = [renamer.visit(stmt) for stmt in node.body]
-        cleanup = [
+        cleanup: list[ast.stmt] = [
             ast.Expr(
                 ast.Call(
                     func=ast.Attribute(
@@ -687,7 +433,7 @@ class LoggingTransformer(ast.NodeTransformer):
             return ast.Constant(value=node.attr)
         return node
 
-    def visit_Expr(self, node: ast.Expr) -> ast.AST:
+    def visit_Expr(self, node: ast.Expr) -> Union[ast.AST, list[ast.stmt]]:
         self.generic_visit(node)
         call = node.value
         if not isinstance(call, ast.Call):
@@ -699,7 +445,7 @@ class LoggingTransformer(ast.NodeTransformer):
             and f.value.id == "logging"
             and f.attr == "basicConfig"
         ):
-            fmt = ast.Constant(value=LOGURU_LOGFORMAT)
+            fmt: ast.expr = ast.Constant(value=LOGURU_LOGFORMAT)
             for kw in call.keywords:
                 if kw.arg == "format":
                     fmt = kw.value
@@ -761,39 +507,133 @@ class LoggingTransformer(ast.NodeTransformer):
         return node
 
 
-_DEF_NODES = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+def fail(msg: str) -> NoReturn:
+    logger.error(msg)
+    raise SystemExit(msg)
 
 
-def strip_docstrings(tree: ast.AST) -> None:
-    for node in ast.walk(tree):
-        if isinstance(node, _DEF_NODES):
-            body = getattr(node, "body", None)
-            if not body:
-                continue
-            first = body[0]
-            if (
-                isinstance(first, ast.Expr)
-                and isinstance(first.value, ast.Constant)
-                and isinstance(first.value.value, str)
-            ):
-                node.body = body[1:] or [ast.Pass()]
+def unique_path(path: Path) -> Path:
+    if not path.exists():
+        return path
+    counter = 1
+    while True:
+        candidate = path.with_name(f"{path.stem}_{counter}{path.suffix}")
+        if not candidate.exists():
+            return candidate
+        counter += 1
 
 
-_STANDARD_HEADER = [
-    "import sys",
-    "import multiprocessing as mp",
-    "from pathlib import Path",
-    "from loguru import logger",
-]
+def parse_source(src: str, filename: str) -> ast.Module:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        try:
+            tree = ast.parse(src, filename=filename)
+        except SyntaxError as exc:
+            fail(f"Syntax error in {filename}: {exc}")
+    for item in caught:
+        logger.warning("{}:{} {}", filename, item.lineno, item.message)
+    return tree
 
 
-def inject_standard_imports(module: ast.Module) -> ast.Module:
-    prefix: list[ast.stmt] = []
-    for line in _STANDARD_HEADER:
-        if not _module_has_import_from_src(module, line):
-            prefix.extend(ast.parse(line).body)
-    module.body = prefix + module.body
-    return module
+def make_info(rel: Path, tree: ast.Module) -> ModuleInfo:
+    parts = tuple(p for p in rel.with_suffix("").parts if p not in (".", "..", "/", "\\"))
+    is_init = bool(parts) and parts[-1] == "__init__"
+    key: ModuleKey = parts[:-1] if is_init else parts
+    package: ModuleKey = key if is_init else key[:-1]
+    return ModuleInfo(key=key, label=rel.as_posix(), package=package, tree=tree)
+
+
+def collect_python_files(root: Path) -> list[Path]:
+    if root.is_file():
+        if root.suffix != ".py":
+            fail(f"{root} is not a .py file")
+        return [root]
+    files = [
+        p
+        for p in root.rglob("*.py")
+        if "__pycache__" not in p.parts and not any(part.startswith(".") for part in p.relative_to(root).parts)
+    ]
+    if not files:
+        fail(f"No .py files found under {root}")
+    return sorted(files)
+
+
+def load_directory(root: Path) -> list[ModuleInfo]:
+    base = root if root.is_dir() else root.parent
+    infos: list[ModuleInfo] = []
+    for path in collect_python_files(root):
+        tree = parse_source(path.read_text(encoding="utf-8"), str(path))
+        infos.append(make_info(path.relative_to(base), tree))
+    return infos
+
+
+def load_merged(path: Path) -> list[ModuleInfo]:
+    text = path.read_text(encoding="utf-8")
+    matches = list(MERGED_FILE_HEADER_RE.finditer(text))
+    if not matches:
+        fail(f"No '# File: <path>' headers found in {path}; use directory mode for loose .py files.")
+    infos: list[ModuleInfo] = []
+    for i, m in enumerate(matches):
+        header = m.group(1)
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        body = text[m.end() : end]
+        if body.startswith("\r\n"):
+            body = body[2:]
+        elif body.startswith("\n"):
+            body = body[1:]
+        infos.append(make_info(Path(header), parse_source(body, f"{path}:{header}")))
+    return infos
+
+
+def is_future_import(node: ast.AST) -> bool:
+    return isinstance(node, ast.ImportFrom) and node.module == "__future__"
+
+
+def is_six_import(node: ast.AST) -> bool:
+    if isinstance(node, ast.Import):
+        return any(a.name == "six" or a.name.startswith("six.") for a in node.names)
+    if isinstance(node, ast.ImportFrom):
+        m = node.module or ""
+        return m == "six" or m.startswith("six.")
+    return False
+
+
+def is_logging_import(node: ast.AST) -> bool:
+    if isinstance(node, ast.Import):
+        return any(a.name == "logging" for a in node.names)
+    if isinstance(node, ast.ImportFrom):
+        m = node.module or ""
+        return m == "logging" or m.startswith("logging.")
+    return False
+
+
+def is_string_expr(node: ast.AST) -> bool:
+    return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
+
+
+def _is_named_assign(node: ast.AST, name: str) -> bool:
+    return (
+        isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id == name
+    )
+
+
+def _make_assign(name: str, value: ast.expr) -> ast.Assign:
+    return ast.Assign(targets=[ast.Name(id=name, ctx=ast.Store())], value=value)
+
+
+def _wrap_path(arg: ast.expr) -> ast.Call:
+    return ast.Call(func=ast.Name(id="Path", ctx=ast.Load()), args=[arg], keywords=[])
+
+
+def _is_executor_ref(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in _EXECUTOR_NAMES
+    if isinstance(node, ast.Attribute):
+        return node.attr in _EXECUTOR_NAMES
+    return False
 
 
 def _module_imports_path_bare(module: ast.Module) -> bool:
@@ -805,68 +645,375 @@ def _module_imports_path_bare(module: ast.Module) -> bool:
     return False
 
 
-def _sum_input_bytes(modules: list[tuple[str, ast.Module]]) -> int:
-    total = 0
-    for name, _tree in modules:
-        p = Path(name)
-        try:
-            if p.is_file():
-                total += p.stat().st_size
-        except OSError:
-            pass
-    return total
+def strip_docstrings(tree: ast.AST) -> None:
+    for node in ast.walk(tree):
+        if isinstance(node, _DEF_NODES):
+            body = getattr(node, "body", None)
+            if not body:
+                continue
+            first = body[0]
+            if is_string_expr(first):
+                node.body = body[1:] or [ast.Pass()]
 
 
-def refactor(
-    modules: list[tuple[str, ast.Module]],
-    output: Path,
-    source_label: str,
-    style: Style,
-    quiet: bool = False,
-    verbose: bool = False,
-    parse_report: Optional[ParseReport] = None,
-) -> None:
-    t0 = time.perf_counter()
-    if not quiet:
-        print(banner(source_label, output, len(modules), style))
-        print()
-        names = [name for name, _ in modules]
-        print(f"{style.dim('merging')} {style.bold(len(names))} {style.dim('module(s)')}:")
-        print()
-        print(format_numbered_list(names, style))
-        print()
-        if parse_report:
-            print(warning_box(parse_report.items, style, verbose))
-            print()
-    in_bytes = _sum_input_bytes(modules)
-    merged = merge_modules(modules)
-    module = ast.Module(body=merged, type_ignores=[])
+def inject_standard_imports(module: ast.Module) -> ast.Module:
+    prefix: list[ast.stmt] = []
+    for line in _STANDARD_HEADER:
+        prefix.extend(ast.parse(line).body)
+    module.body = prefix + module.body
+    return module
+
+
+def fix_empty_bodies(tree: ast.AST) -> None:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Module):
+            continue
+        body = getattr(node, "body", None)
+        if isinstance(body, list) and not body:
+            body.append(ast.Pass())
+
+
+def defined_names(node: ast.stmt) -> list[str]:
+    if isinstance(node, DEFINITION_NODES):
+        return [node.name]
+    names: list[str] = []
+    for child in ast.walk(node):
+        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store):
+            names.append(child.id)
+    return names
+
+
+def top_level_names(tree: ast.Module) -> set[str]:
+    names: set[str] = set()
+    for node in tree.body:
+        names.update(defined_names(node))
+    return names
+
+
+def bound_import_names(tree: ast.Module) -> set[str]:
+    names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.asname or alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                names.add(alias.asname or alias.name)
+    return names
+
+
+def unique_name(base: str, taken: set[str]) -> str:
+    candidate = base
+    counter = 2
+    while candidate in taken:
+        candidate = f"{base}_{counter}"
+        counter += 1
+    taken.add(candidate)
+    return candidate
+
+
+def module_prefix(info: ModuleInfo) -> str:
+    raw = info.key[-1] if info.key else "root"
+    return re.sub(r"\W+", "_", raw).strip("_") or "mod"
+
+
+def plan_renames(modules: list[ModuleInfo]) -> Renames:
+    groups: dict[str, list[tuple[ModuleInfo, ast.stmt]]] = {}
+    taken: set[str] = set()
+    for info in modules:
+        taken |= info.defined | info.external
+        for node in info.tree.body:
+            if isinstance(node, DEFINITION_NODES):
+                groups.setdefault(node.name, []).append((info, node))
+    final: Renames = {}
+    for name, entries in groups.items():
+        first_info, first_node = entries[0]
+        first_dump = ast.dump(first_node)
+        for info, node in entries[1:]:
+            if info is first_info or ast.dump(node) == first_dump or (info.key, name) in final:
+                continue
+            base = f"{module_prefix(info)}_{name.lstrip('_')}"
+            if name.startswith("_"):
+                base = f"_{base}"
+            new_name = unique_name(base, taken)
+            final[(info.key, name)] = new_name
+            logger.info("Renamed {}: {} -> {}", info.label, name, new_name)
+    return final
+
+
+def resolve_name(
+    infos: dict[ModuleKey, ModuleInfo],
+    key: ModuleKey,
+    name: str,
+    final: Renames,
+    seen: Optional[set[tuple[ModuleKey, str]]] = None,
+) -> Optional[str]:
+    info = infos.get(key)
+    if info is None:
+        return None
+    ident = (key, name)
+    if ident in final:
+        return final[ident]
+    if name in info.defined or name in info.external:
+        return name
+    visited = seen if seen is not None else set()
+    if ident in visited:
+        return None
+    visited.add(ident)
+    target = info.names.get(name)
+    if target is None:
+        return None
+    return resolve_name(infos, target[0], target[1], final, visited)
+
+
+def apply_renames(info: ModuleInfo, infos: dict[ModuleKey, ModuleInfo], final: Renames) -> None:
+    rewrite: dict[str, str] = {}
+    for node in info.tree.body:
+        if isinstance(node, DEFINITION_NODES):
+            new = final.get((info.key, node.name))
+            if new is not None:
+                rewrite[node.name] = new
+                node.name = new
+    for alias, (target_key, target_name) in info.names.items():
+        resolved = resolve_name(infos, target_key, target_name, final)
+        if resolved is None:
+            logger.warning("{}: cannot resolve imported name {} ({})", info.label, alias, target_name)
+        elif resolved != alias:
+            rewrite[alias] = resolved
+    if rewrite or info.modules:
+        info.tree = apply_transformer(NameRewriter(info, infos, final, rewrite), info.tree)
+
+
+def apply_transformer(transformer: ast.NodeTransformer, module: ast.Module) -> ast.Module:
+    result = transformer.visit(module)
+    if not isinstance(result, ast.Module):
+        fail(f"{type(transformer).__name__} did not return a module")
+    return result
+
+
+def merge_modules(modules: list[ModuleInfo]) -> list[ast.stmt]:
+    merged: list[ast.stmt] = []
+    for info in modules:
+        for node in info.tree.body:
+            if (
+                is_string_expr(node)
+                or is_future_import(node)
+                or is_six_import(node)
+                or is_logging_import(node)
+                or _is_named_assign(node, "__all__")
+            ):
+                continue
+            merged.append(node)
+    return merged
+
+
+def dependencies(node: ast.stmt) -> set[str]:
+    visitor = LoadNames()
+    visitor.visit(node)
+    return visitor.names
+
+
+def constant_name(node: ast.stmt) -> Optional[str]:
+    if isinstance(node, ast.Assign):
+        if node.targets and all(isinstance(t, ast.Name) and t.id.isupper() for t in node.targets):
+            first = node.targets[0]
+            if isinstance(first, ast.Name):
+                return first.id
+    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
+        return node.target.id
+    return None
+
+
+def is_main_guard(node: ast.stmt) -> bool:
+    return (
+        isinstance(node, ast.If)
+        and isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and node.test.left.id == "__name__"
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.Eq)
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], ast.Constant)
+        and node.test.comparators[0].value == "__main__"
+    )
+
+
+def is_import_block(node: ast.stmt) -> bool:
+    if isinstance(node, ast.Try):
+        return bool(node.body) and all(isinstance(n, (ast.Import, ast.ImportFrom)) for n in node.body)
+    if isinstance(node, ast.If):
+        return (
+            bool(node.body)
+            and not node.orelse
+            and all(isinstance(n, (ast.Import, ast.ImportFrom)) for n in node.body)
+            and "TYPE_CHECKING" in ast.dump(node.test)
+        )
+    return False
+
+
+def is_stdlib(module: str) -> bool:
+    return module.split(".")[0] in STDLIB_MODULES
+
+
+def unique_nodes(body: list[ast.stmt]) -> list[ast.stmt]:
+    seen: set[str] = set()
+    result: list[ast.stmt] = []
+    for node in body:
+        signature = ast.dump(node)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        result.append(node)
+    return result
+
+
+def merge_imports(nodes: list[ast.stmt]) -> list[list[ast.stmt]]:
+    plain: dict[str, set[Optional[str]]] = {}
+    froms: dict[str, set[tuple[str, Optional[str]]]] = {}
+    for node in nodes:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                plain.setdefault(alias.name, set()).add(alias.asname)
+        elif isinstance(node, ast.ImportFrom):
+            froms.setdefault(node.module or "", set()).update((a.name, a.asname) for a in node.names)
+    groups: list[list[ast.stmt]] = []
+    for stdlib in (True, False):
+        group: list[ast.stmt] = []
+        for name in sorted(plain):
+            if is_stdlib(name) is stdlib:
+                for asname in sorted(plain[name], key=lambda value: value or ""):
+                    group.append(ast.Import(names=[ast.alias(name=name, asname=asname)]))
+        for module in sorted(froms):
+            if is_stdlib(module) is stdlib:
+                entries = froms[module]
+                if any(entry_name == "*" for entry_name, _ in entries):
+                    aliases = [ast.alias(name="*")]
+                else:
+                    aliases = [
+                        ast.alias(name=entry_name, asname=entry_as)
+                        for entry_name, entry_as in sorted(entries, key=lambda item: (item[0], item[1] or ""))
+                    ]
+                group.append(ast.ImportFrom(module=module, names=aliases, level=0))
+        if group:
+            groups.append(group)
+    return groups
+
+
+def order_by_dependencies(items: list[ast.stmt]) -> list[ast.stmt]:
+    owners: dict[str, ast.stmt] = {}
+    for item in items:
+        for name in defined_names(item):
+            owners.setdefault(name, item)
+    deps = {id(item): dependencies(item) for item in items}
+    done: set[int] = set()
+    active: set[int] = set()
+    ordered: list[ast.stmt] = []
+
+    def emit(item: ast.stmt) -> None:
+        if id(item) in done or id(item) in active:
+            return
+        active.add(id(item))
+        for name in sorted(deps[id(item)]):
+            owner = owners.get(name)
+            if owner is not None and owner is not item:
+                emit(owner)
+        active.discard(id(item))
+        done.add(id(item))
+        ordered.append(item)
+
+    for item in items:
+        emit(item)
+    return ordered
+
+
+def render_module(body: list[ast.stmt]) -> str:
+    unique = unique_nodes(body)
+    import_nodes = [n for n in unique if isinstance(n, (ast.Import, ast.ImportFrom))]
+    import_blocks = [n for n in unique if is_import_block(n)]
+    guards = [n for n in unique if is_main_guard(n)]
+    skipped = {id(n) for n in (*import_nodes, *import_blocks, *guards)}
+    rest = [n for n in unique if id(n) not in skipped]
+    classes = [n for n in rest if isinstance(n, ast.ClassDef)]
+    funcs = [n for n in rest if isinstance(n, FUNC_NODES)]
+    simple = [n for n in rest if not isinstance(n, DEFINITION_NODES)]
+    callables = {n.name for n in (*classes, *funcs)}
+    late_ids = {id(n) for n in simple if dependencies(n) & callables}
+    late = [n for n in simple if id(n) in late_ids]
+    early = [n for n in simple if id(n) not in late_ids]
+    early_consts = sorted(
+        (n for n in early if constant_name(n) is not None),
+        key=lambda n: constant_name(n) or "",
+    )
+    early_others = [n for n in early if constant_name(n) is None]
+    classes.sort(key=lambda n: n.name)
+    funcs.sort(key=lambda n: n.name)
+    ordered = order_by_dependencies([*early_others, *early_consts, *classes, *funcs, *late])
+    header_parts = ["\n".join(ast.unparse(n) for n in group) for group in merge_imports(import_nodes)]
+    header_parts.extend(ast.unparse(n) for n in import_blocks)
+    chunks: list[tuple[str, str]] = []
+    if header_parts:
+        chunks.append(("header", "\n\n".join(header_parts)))
+    for node in [*ordered, *guards]:
+        kind = "def" if isinstance(node, DEFINITION_NODES) or is_main_guard(node) else "stmt"
+        chunks.append((kind, ast.unparse(node)))
+    out = ""
+    previous: Optional[str] = None
+    for kind, text in chunks:
+        if previous is None:
+            separator = ""
+        elif "def" in (previous, kind):
+            separator = "\n\n\n"
+        elif previous == "header":
+            separator = "\n\n"
+        else:
+            separator = "\n"
+        out += separator + text
+        previous = kind
+    return out + "\n"
+
+
+def refactor(modules: list[ModuleInfo], output: Path, root_name: str) -> None:
+    started = time.perf_counter()
+    logger.info("Merging {} module(s) into {}", len(modules), output)
+    index: dict[ModuleKey, ModuleInfo] = {info.key: info for info in modules}
+    for info in modules:
+        logger.debug("Module {} -> {}", info.label, ".".join(info.key) or "<root>")
+        info.tree = apply_transformer(LocalImportResolver(info, index, root_name), info.tree)
+        fix_empty_bodies(info.tree)
+        info.defined = top_level_names(info.tree)
+        info.external = bound_import_names(info.tree)
+    final = plan_renames(modules)
+    for info in modules:
+        apply_renames(info, index, final)
+    module = ast.Module(body=merge_modules(modules), type_ignores=[])
     bare_path = _module_imports_path_bare(module)
-    for T in (SixImportRewriter, SixTransformer, LoggingTransformer):
-        module = T().visit(module)
-    module = OsPathTransformer(bare_path=bare_path).visit(module)
-    module = ExecutorTransformer().visit(module)
+    for transformer in (SixImportRewriter(), SixTransformer(), LoggingTransformer()):
+        module = apply_transformer(transformer, module)
+    module = apply_transformer(OsPathTransformer(bare_path=bare_path), module)
+    module = apply_transformer(ExecutorTransformer(), module)
     module.body = [n for n in module.body if not _is_named_assign(n, "WORKERS")]
     module.body.insert(0, _make_assign("WORKERS", ast.Constant(value=WORKERS)))
     module = inject_standard_imports(module)
     strip_docstrings(module)
     ast.fix_missing_locations(module)
-    src = ast.unparse(module)
-    src = re.sub(r"\n{3,}", "\n\n\n", src)
+    src = render_module(module.body)
     try:
         ast.parse(src)
     except SyntaxError as exc:
-        check_path = output.with_suffix(".check.py")
-        check_path.write_text(src + "\n", encoding="utf-8")
-        msg = f"Generated code failed to parse: {exc}\nPartial output written to {check_path} for manual fixing."
-        raise SystemExit(msg)
-    output.write_text(src + "\n", encoding="utf-8")
-    out_bytes = output.stat().st_size
-    elapsed = time.perf_counter() - t0
-    if not quiet:
-        print(success_box(output, in_bytes, out_bytes, elapsed, style))
-        print()
-        print(style.dim("note: PEP 484 annotations were preserved but not inferred; add missing ones by hand."))
+        check_path = unique_path(output.with_suffix(".check.py"))
+        check_path.write_text(src, encoding="utf-8")
+        fail(f"Generated code failed to parse: {exc}. Partial output written to {check_path}")
+    try:
+        with output.open("x", encoding="utf-8") as handle:
+            handle.write(src)
+    except FileExistsError:
+        fail(f"Refusing to overwrite existing file {output}")
+    logger.success(
+        "Wrote {} ({} bytes) in {:.2f}s",
+        output,
+        output.stat().st_size,
+        time.perf_counter() - started,
+    )
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -890,74 +1037,42 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--output",
         type=Path,
         default=None,
-        help="output file (default: <source_name>_single.py in cwd)",
+        help="output file (default: <current folder name>.py in cwd; never overwrites, adds _1, _2, ...)",
     )
     parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        default=False,
-        help="suppress all chrome; write the file only",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="show every parser warning (default: cap at 5)",
-    )
-    parser.add_argument(
-        "--no-color",
-        action="store_true",
-        default=False,
-        help="disable ANSI colors (also honors NO_COLOR env var)",
+        "-l",
+        "--log-file",
+        type=Path,
+        default=None,
+        help="loguru log file (default: next to the output file with .log suffix)",
     )
     args = parser.parse_args(argv)
-    if args.no_color:
-        os.environ["NO_COLOR"] = "1"
-    style = Style()
     if args.merged_file is not None and args.input is not None:
-        msg = "Provide either a positional INPUT or -f/--merged-file, not both"
-        raise SystemExit(msg)
-    parse_report = ParseReport()
+        parser.error("Provide either a positional INPUT or -f/--merged-file, not both")
+    cwd = Path.cwd()
+    requested: Path = args.output if args.output is not None else cwd / f"{cwd.name or 'merged'}.py"
+    output = unique_path(requested)
+    log_path: Path = args.log_file if args.log_file is not None else output.with_suffix(".log")
+    logger.remove()
+    logger.add(log_path, format=LOGURU_LOGFORMAT, level="DEBUG", encoding="utf-8")
+    if output != requested:
+        logger.info("{} already exists; using {}", requested, output)
+    root_name = ""
     if args.merged_file is not None:
         merged_path: Path = args.merged_file
         if not merged_path.exists():
-            msg = f"{merged_path} does not exist"
-            raise SystemExit(msg)
+            fail(f"{merged_path} does not exist")
         if not merged_path.is_file():
-            msg = f"{merged_path} is not a file"
-            raise SystemExit(msg)
-        modules = parse_merged_file(merged_path, parse_report)
-        source_label = str(merged_path)
-        source_default = merged_path.stem
+            fail(f"{merged_path} is not a file")
+        modules = load_merged(merged_path)
     else:
         input_path: Path = args.input if args.input is not None else Path()
         if not input_path.exists():
-            msg = f"{input_path} does not exist"
-            raise SystemExit(msg)
-        files = collect_python_files(input_path)
-        modules = [(str(p), parse_file(p, parse_report)) for p in files]
-        source_label = str(input_path)
-        source_default = input_path.stem if input_path.is_file() else input_path.name
-    output: Optional[Path] = args.output
-    if output is None:
-        output = Path.cwd() / f"{source_default}_single.py"
-    if args.merged_file is not None and output.resolve() == args.merged_file.resolve():
-        msg = "Refusing to overwrite the input merged file"
-        raise SystemExit(msg)
-    if args.input is not None and output.resolve() == args.input.resolve():
-        msg = "Refusing to overwrite the input path"
-        raise SystemExit(msg)
-    refactor(
-        modules,
-        output,
-        source_label,
-        style,
-        quiet=args.quiet,
-        verbose=args.verbose,
-        parse_report=parse_report,
-    )
+            fail(f"{input_path} does not exist")
+        modules = load_directory(input_path)
+        if input_path.is_dir():
+            root_name = input_path.resolve().name
+    refactor(modules, output, root_name)
     return 0
 
 

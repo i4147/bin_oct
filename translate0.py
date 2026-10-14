@@ -1,19 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a batch translation tool for text files, translating only Cyrillic (Russian/Ukrainian-style) content into English while preserving the original structure and line order of the input.
+The tool should accept a source file path (and optionally an output path) from the command line, read the file line by line, and identify which lines contain Cyrillic characters. Lines without Cyrillic should pass through unchanged. Lines that need translation should be grouped into size-limited batches so that each request to the translation service stays within a sensible character limit, with oversized single lines handled on their own.
+Translation should run concurrently across batches using a bounded pool of worker threads, with a fixed upper limit on parallelism. Each translation request should be retried a limited number of times with a short, randomized or increasing delay between attempts to handle transient network or service failures. If a batch ultimately cannot be translated, the tool should keep the original text for those lines and log a clear warning rather than crashing.
+The tool should persist completed translations in a local lightweight database so that re-running the script on the same or overlapping input reuses previously translated lines instead of calling the service again. Cache lookups and writes must be safe when accessed from multiple threads.
+Progress and outcomes should be reported through standard logging at an informational level, including counts of total lines, lines translated, cache hits, and failures. The final output should reassemble all lines in their original order and be written to the output file, with the original file left intact unless the user explicitly specifies the same path.
+Provide sensible command-line options for the input file, output file, and any tuning parameters such as worker count or chunk size, and include clear help text. Handle missing files and invalid arguments gracefully with informative error messages and a non-zero exit status.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
+from pathlib import Path
 import random
 import re
 import sqlite3
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Final
-
 from deep_translator import GoogleTranslator
 
 MAX_WORKERS: Final[int] = 16

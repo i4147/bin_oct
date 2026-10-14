@@ -1,28 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes a collection of source code inputs and identifies duplicated or near-duplicate code blocks across them, reporting the results in a structured, human-readable form.
+The tool should accept a path to a directory, a single source file, or a compressed or archived bundle (such as zip, tar variants, or single-file compressed formats like gzip, bz2, xz, zstd, and brotli) and transparently extract and scan any Python files it contains. It should skip common non-source folders such as version control metadata, caches, virtual environments, and build artifacts, and handle unreadable or malformed files gracefully without stopping the run.
+For each Python file, the script should parse the code into its structural units, such as functions, async functions, and classes, and optionally normalize them (for example, ignoring names, comments, whitespace, and literal values) so that structurally identical code is detected even when superficially different. Fingerprint each unit with a stable cryptographic hash so duplicates can be grouped efficiently. Where a syntax-tree parser is unavailable, fall back to a reasonable alternative approach using the standard language parser.
+The script should accept command-line options to control the minimum size of a unit worth reporting, whether to include assignments or only definitions, the number of worker processes for parallel scanning, output format (plain text and machine-readable JSON), and an optional output file. It should report every group of duplicate units with their file locations, line ranges, and a short preview, sorted by impact such as the number of duplicate copies and total duplicated lines, and print a concise summary with overall totals at the end. Logging should be configurable for verbosity, and the script should exit with a meaningful status code indicating whether duplicates were found.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
 import tarfile
 import tempfile
 import zipfile
-from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
-from collections import defaultdict
-from pathlib import Path
-
 from loguru import logger
 
 try:
-    import tree_sitter_python
     from tree_sitter import Language, Parser
+    import tree_sitter_python
 
     TREE_SITTER_AVAILABLE = True
 except Exception:

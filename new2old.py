@@ -1,17 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that reads a Python project's metadata from its packaging configuration files (a modern pyproject.toml file and, as a fallback, a legacy setup.py file) and produces a consolidated, structured summary of the project's information, such as its name, version, description, license, authors and maintainers (with names and emails separated), keywords, classifiers, dependencies, supported Python version requirements, and project URLs. The script should be runnable from the command line in the project's root directory, gracefully handle a missing or malformed configuration file by reporting a clear message rather than crashing, normalize the different ways authors and maintainers can be written (as plain strings like "Name <email>", as dictionaries with name and email keys, or as lists of either), and output the final result in a readable human-friendly format as well as an optional machine-readable format such as JSON that can be written to stdout or to a file. Support both Python 3.11+ (using the built-in TOML parser) and older Python versions by falling back to a compatible third-party TOML library when needed. Design the data model so that all extracted fields have sensible defaults when absent, and make the script easy to extend with additional metadata fields in the future.
+---"""
 
-import sys
+from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Any, Callable
 
 if sys.version_info < (3, 11):
     import tomli as tomllib
 else:
     import tomllib
-
-
 PYPROJECT_PATH = Path("pyproject.toml")
 SETUP_PATH = Path("setup.py")
 
@@ -101,44 +101,32 @@ def load_project_info() -> ProjectInfo:
     if not PYPROJECT_PATH.is_file():
         print("Error: No pyproject.toml found in this directory.")
         sys.exit(1)
-
     with PYPROJECT_PATH.open("rb") as f:
         config: dict[str, Any] = tomllib.load(f)
-
     project: dict[str, Any] = config.get("project", {})
     poetry_tool: dict[str, Any] = config.get("tool", {}).get("poetry", {})
-
     name = project.get("name") or poetry_tool.get("name", "")
     if not name:
         print("Error: Project name is missing from pyproject.toml.")
         sys.exit(1)
-
     authors = project.get("authors") or project.get("maintainers") or poetry_tool.get("authors") or []
     author, author_email = _split_authors(authors)
-
     version_static = project.get("version") or poetry_tool.get("version", "0.1.0")
     description = project.get("description") or poetry_tool.get("description", "")
-
     readme = project.get("readme") or poetry_tool.get("readme", "")
     readme_path = readme.get("file", "") if isinstance(readme, dict) else (readme or "")
-
     license_str = _resolve_license(project, poetry_tool.get("license", ""))
-
     python_requires = project.get("requires-python", "")
     install_requires = list(project.get("dependencies", []))
     extras_require = dict(project.get("optional-dependencies", {}))
-
     poetry_deps = poetry_tool.get("dependencies", {})
     if not install_requires and poetry_deps:
         if "python" in poetry_deps:
             python_requires = poetry_deps["python"]
         install_requires = _clean_poetry_deps(poetry_deps)
-
     if not extras_require and "extras" in poetry_tool:
         extras_require = {g: list(items) for g, items in poetry_tool["extras"].items()}
-
     classifiers = list(project.get("classifiers", []) or poetry_tool.get("classifiers", []))
-
     return ProjectInfo(
         config=config,
         project=project,
@@ -171,34 +159,22 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-
 if sys.version_info < (3, 11):
     import tomli as tomllib
 else:
     import tomllib
-
 from setuptools import setup, find_packages
-
-
 def read_readme(path):
     if path and Path(path).is_file():
         return Path(path).read_text(encoding="utf-8")
     return ""
-
-
 version = {version_init!r}
 description = {info.description!r}
-
-
 def extract_metadata():
     global version, description
 {extraction_body}
-
-
 extract_metadata()
-
 {prelude}
-
 setup(
     name={info.name!r},
     version=version,
@@ -258,7 +234,6 @@ def build_hatch(info: ProjectInfo) -> str:
     py_modules = [p.replace(".py", "") for p in custom_includes if p.endswith(".py")]
     version_path = hatch_cfg.get("version", {}).get("path", "")
     uses_vcs = any("hatch-vcs" in r for r in config.get("build-system", {}).get("requires", []))
-
     module = info.module_name
     search_paths = (
         [version_path]
@@ -270,7 +245,6 @@ def build_hatch(info: ProjectInfo) -> str:
             f"src/{module}/__init__.py",
         ]
     )
-
     vcs_block = ""
     if uses_vcs:
         vcs_block = """    try:
@@ -281,7 +255,6 @@ def build_hatch(info: ProjectInfo) -> str:
     except Exception:
         pass
 """
-
     extraction = f"""    if "version" not in {info.dynamic_fields!r}:
         return
 {vcs_block}    for p in {search_paths!r}:
@@ -294,7 +267,6 @@ def build_hatch(info: ProjectInfo) -> str:
                         return
                     except Exception:
                         pass"""
-
     if custom_packages:
         prelude = f"packages = {custom_packages!r}\npackage_dir = {{}}"
     else:
@@ -302,11 +274,9 @@ def build_hatch(info: ProjectInfo) -> str:
             'packages = find_packages(where="src") if Path("src").is_dir() else find_packages()\n'
             'package_dir = {"": "src"} if Path("src").is_dir() else {}'
         )
-
     setup_kwargs = "    packages=packages,\n    package_dir=package_dir,\n"
     if py_modules:
         setup_kwargs += f"    py_modules={py_modules!r},\n"
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -319,7 +289,6 @@ def build_hatch(info: ProjectInfo) -> str:
 def build_maturin(info: ProjectInfo) -> str:
     maturin_tool = info.config.get("tool", {}).get("maturin", {})
     python_source = maturin_tool.get("python-source", "")
-
     extraction = f"""    if "version" not in {info.dynamic_fields!r}:
         return
     cargo = Path("Cargo.toml")
@@ -332,7 +301,6 @@ def build_maturin(info: ProjectInfo) -> str:
                 return
         except Exception:
             pass"""
-
     if python_source:
         prelude = f'packages = find_packages(where={python_source!r})\npackage_dir = {{"": {python_source!r}}}'
     else:
@@ -340,9 +308,7 @@ def build_maturin(info: ProjectInfo) -> str:
             'packages = find_packages(where="src") if Path("src").is_dir() else find_packages()\n'
             'package_dir = {"": "src"} if Path("src").is_dir() else {}'
         )
-
     setup_kwargs = "    packages=packages,\n    package_dir=package_dir,\n"
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -356,7 +322,6 @@ def build_meson(info: ProjectInfo) -> str:
     meson_meta = info.config.get("tool", {}).get("meson-python", {}).get("metadata", {})
     version_cfg = meson_meta.get("version", {})
     version_provider = version_cfg.get("provider", "") if isinstance(version_cfg, dict) else ""
-
     vcs_block = ""
     if version_provider and "DiscoverVersion" in version_provider:
         vcs_block = """    try:
@@ -367,7 +332,6 @@ def build_meson(info: ProjectInfo) -> str:
     except Exception:
         pass
 """
-
     extraction = f"""    if "version" not in {info.dynamic_fields!r}:
         return
     meson_file = Path("meson.build")
@@ -381,14 +345,11 @@ def build_meson(info: ProjectInfo) -> str:
         except Exception:
             pass
 {vcs_block}"""
-
     prelude = (
         'packages = find_packages(where="src") if Path("src").is_dir() else find_packages()\n'
         'package_dir = {"": "src"} if Path("src").is_dir() else {}'
     )
-
     setup_kwargs = "    packages=packages,\n    package_dir=package_dir,\n"
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -401,20 +362,16 @@ def build_meson(info: ProjectInfo) -> str:
 def build_setuptools(info: ProjectInfo) -> str:
     st_tool = info.config.get("tool", {}).get("setuptools", {})
     st_dynamic = st_tool.get("dynamic", {})
-
     version_attr = ""
     if "version" in info.dynamic_fields and isinstance(st_dynamic.get("version"), dict):
         version_attr = st_dynamic["version"].get("attr", "")
-
     find_cfg = st_tool.get("packages", {}).get("find", {})
     where_list = find_cfg.get("where") or ["." if not Path("src").is_dir() else "src"]
     find_where = where_list[0] if where_list else "."
     find_include = list(find_cfg.get("include", ["*"]))
     find_exclude = list(find_cfg.get("exclude", []))
-
     module = info.module_name
     search_paths = [f"{module}/__init__.py", f"src/{module}/__init__.py"]
-
     attr_block = ""
     if version_attr:
         attr_block = f"""    attr_path = {version_attr!r}
@@ -431,7 +388,6 @@ def build_setuptools(info: ProjectInfo) -> str:
         except Exception:
             pass
 """
-
     extraction = f"""    if "version" not in {info.dynamic_fields!r}:
         return
 {attr_block}    for p in {search_paths!r}:
@@ -444,13 +400,11 @@ def build_setuptools(info: ProjectInfo) -> str:
                         return
                     except Exception:
                         pass"""
-
     setup_kwargs = (
         f"    packages=find_packages(where={find_where!r}, include={find_include!r}, exclude={find_exclude!r}),\n"
     )
     if find_where != ".":
         setup_kwargs += f'    package_dir={{"": {find_where!r}}},\n'
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -464,14 +418,11 @@ def build_pdm(info: ProjectInfo) -> str:
     pdm_tool = info.config.get("tool", {}).get("pdm", {})
     pdm_build = pdm_tool.get("build", {})
     pdm_version_cfg = pdm_tool.get("version", {})
-
     package_dir_src = pdm_build.get("package-dir", "")
     custom_includes = pdm_build.get("includes", [])
     py_modules = [m.replace(".py", "") for m in custom_includes if m.endswith(".py")]
-
     version_source = pdm_version_cfg.get("source", "file" if "version" in info.dynamic_fields else "static")
     version_path = pdm_version_cfg.get("path", "")
-
     module = info.module_name
     search_paths = (
         [version_path]
@@ -481,7 +432,6 @@ def build_pdm(info: ProjectInfo) -> str:
             f"src/{module}/__init__.py",
         ]
     )
-
     scm_block = ""
     if version_source == "scm":
         scm_block = """    try:
@@ -492,7 +442,6 @@ def build_pdm(info: ProjectInfo) -> str:
     except Exception:
         pass
 """
-
     extraction = f"""    if "version" not in {info.dynamic_fields!r}:
         return
 {scm_block}    for p in {search_paths!r}:
@@ -508,7 +457,6 @@ def build_pdm(info: ProjectInfo) -> str:
                         return
                     except Exception:
                         pass"""
-
     if package_dir_src:
         prelude = f'packages = find_packages(where={package_dir_src!r})\npackage_dir = {{"": {package_dir_src!r}}}'
     else:
@@ -516,11 +464,9 @@ def build_pdm(info: ProjectInfo) -> str:
             'packages = find_packages(where="src") if Path("src").is_dir() else find_packages()\n'
             'package_dir = {"": "src"} if Path("src").is_dir() else {}'
         )
-
     setup_kwargs = "    packages=packages,\n    package_dir=package_dir,\n"
     if py_modules:
         setup_kwargs += f"    py_modules={py_modules!r},\n"
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -532,7 +478,6 @@ def build_pdm(info: ProjectInfo) -> str:
 
 def build_poetry(info: ProjectInfo) -> str:
     uses_dynamic = "poetry-dynamic-versioning" in info.config.get("tool", {})
-
     if uses_dynamic or "version" in info.dynamic_fields:
         extraction = """    try:
         git_version = subprocess.check_output(["git", "describe", "--tags", "--always"]).decode("utf-8").strip()
@@ -543,14 +488,11 @@ def build_poetry(info: ProjectInfo) -> str:
         pass"""
     else:
         extraction = "    pass"
-
     prelude = (
         'packages = find_packages(where="src") if Path("src").is_dir() else find_packages()\n'
         'package_dir = {"": "src"} if Path("src").is_dir() else {}'
     )
-
     setup_kwargs = "    packages=packages,\n    package_dir=package_dir,\n"
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -562,11 +504,9 @@ def build_poetry(info: ProjectInfo) -> str:
 
 def build_skbuild(info: ProjectInfo) -> str:
     config = info.config
-
     version_regex_file = ""
     version_regex_pattern = ""
     version_is_scm = False
-
     dynamic_meta = config.get("tool", {}).get("dynamic-metadata", [])
     if isinstance(dynamic_meta, list):
         for table in dynamic_meta:
@@ -577,7 +517,6 @@ def build_skbuild(info: ProjectInfo) -> str:
                     version_regex_pattern = table.get("regex", "")
                 elif "setuptools_scm" in provider:
                     version_is_scm = True
-
     if not version_regex_file and not version_is_scm:
         legacy = config.get("tool", {}).get("scikit-build", {}).get("metadata", {}).get("version", {})
         provider = legacy.get("provider", "")
@@ -586,7 +525,6 @@ def build_skbuild(info: ProjectInfo) -> str:
             version_regex_pattern = legacy.get("regex", "")
         elif "setuptools_scm" in provider:
             version_is_scm = True
-
     scm_block = ""
     if version_is_scm:
         scm_block = """    try:
@@ -597,7 +535,6 @@ def build_skbuild(info: ProjectInfo) -> str:
     except Exception:
         pass
 """
-
     extraction = f"""    if "version" not in {info.dynamic_fields!r}:
         return
 {scm_block}    regex_file = {version_regex_file!r}
@@ -611,14 +548,11 @@ def build_skbuild(info: ProjectInfo) -> str:
                 return
         except Exception:
             pass"""
-
     prelude = (
         'packages = find_packages(where="src") if Path("src").is_dir() else find_packages()\n'
         'package_dir = {"": "src"} if Path("src").is_dir() else {}'
     )
-
     setup_kwargs = "    packages=packages,\n    package_dir=package_dir,\n"
-
     return _render_setup(
         info,
         version_init=info.version_static,
@@ -654,17 +588,14 @@ def _find_builder(backend: str) -> Callable[[ProjectInfo], str] | None:
 def main() -> None:
     info = load_project_info()
     backend = _detect_backend(info.config)
-
     if not backend:
         print("Error: No [build-system].build-backend found in pyproject.toml.")
         sys.exit(1)
-
     builder = _find_builder(backend)
     if builder is None:
         print(f"Error: Unsupported build backend: '{backend}'.")
         print(f"Supported: {', '.join(BACKENDS.keys())}")
         sys.exit(1)
-
     source = builder(info)
     SETUP_PATH.write_text(source, encoding="utf-8")
     print(f"Successfully generated setup.py for project: '{info.name}' (backend: {backend})")

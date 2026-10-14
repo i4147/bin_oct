@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes a single file path from the command line and removes invisible or non-printable control characters from a UTF-8 encoded text file, while preserving normal line breaks and tabs. The script should read the file, strip out any characters belonging to Unicode control or format categories except newline, carriage return, and tab, and then overwrite the original file in place with the cleaned content. It should print a short confirmation message when the cleaning succeeds. If no filename argument is provided, it should display a brief usage message instead of doing anything else. If the specified file does not exist, it should report a clear error message without crashing. Any other unexpected error should be caught and reported with a readable description. The script should be runnable directly from the terminal as a standalone tool.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import sys
 import unicodedata
-from pathlib import Path
 
 
 def clean_file(filename: str) -> None:

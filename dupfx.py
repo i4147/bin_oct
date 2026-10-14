@@ -1,19 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that finds duplicate files across one or more directory trees supplied on the command line, and reports groups of files whose contents are identical.
+The tool should accept one or more root directories (and optionally a minimum file size threshold) through command-line arguments, recursively walk those directories, and skip entries that cannot be accessed. To keep the process efficient, it should first group candidate files by size, then apply a cheap partial fingerprint that samples the beginning, and for larger files the end, of each file before computing a full-content fingerprint only for files that still collide. Hashing should be fast and streamed in chunks so that large files do not exhaust memory. The work should be parallelized across multiple worker processes to speed up hashing of many files.
+Hard links (multiple paths referring to the same underlying file on disk) must be recognized and not reported as duplicates of each other, since they do not consume extra space. Symbolic links should be handled deliberately, for example by not following them, to avoid loops and double counting.
+The output should be a human-readable report listing each group of duplicate files with their size and paths, along with a summary of how many duplicate groups were found and how much disk space could be reclaimed. Optionally, the tool should support a machine-readable output format. Progress and errors should be logged to the console in a non-intrusive way, and unreadable files should be reported as warnings without stopping the scan. The script should exit with a clear status code indicating whether duplicates were found and should handle keyboard interruption gracefully.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from xxhash import xxh64
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
 QUICK_READ: int = 4096
 CHUNK_SIZE: int = 65536
 POOL_WORKERS: int = 8
@@ -156,7 +158,6 @@ def main() -> None:
     )
     args = p.parse_args()
     root = Path.cwd()
-
     size_groups: defaultdict[int, list[Path]] = defaultdict(list)
     total_files = 0
     for f in iter_files(
@@ -175,7 +176,6 @@ def main() -> None:
     if not candidates:
         print(f"Scanned {total_files} files. No potential duplicates found.")
         return
-
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
     with Pool(processes=POOL_WORKERS) as pool:
         futures: list[tuple[Path, object]] = []
@@ -193,7 +193,6 @@ def main() -> None:
     if not need_full:
         print(f"Scanned {total_files} files. No duplicates found.")
         return
-
     full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = defaultdict(list)
     with Pool(processes=POOL_WORKERS) as pool:
         futures2: list[tuple[Path, tuple[int, int] | None, object]] = []
@@ -208,7 +207,6 @@ def main() -> None:
                     full_groups[h].append((fpath, st_key))
             except Exception as e:
                 logger.warning(f"Skipping {fpath}: {e}")
-
     deletion_groups: list[tuple[int, list[tuple[Path, Path]]]] = []
     for entries in full_groups.values():
         if len(entries) < 2:
@@ -229,11 +227,9 @@ def main() -> None:
             group_size = 0
         pairs = [(keep_file, d) for d in deletes]
         deletion_groups.append((group_size, pairs))
-
     if not deletion_groups:
         print(f"Scanned {total_files} files. No duplicates found.")
         return
-
     total_deletes = sum(len(pairs) for _, pairs in deletion_groups)
     for idx, (group_size, pairs) in enumerate(deletion_groups, start=1):
         print()
@@ -249,7 +245,6 @@ def main() -> None:
                 del_rel = del_file
             print(f"  KEEP     {keep_rel}")
             print(f"  REMOVE   {del_rel}")
-
     print()
     if not args.remove:
         print(f"Report-only mode. Re-run with -r/--remove to delete {total_deletes} file(s)")
@@ -257,7 +252,6 @@ def main() -> None:
     if args.dry_run:
         print(f"Dry run complete. Re-run with -a/--apply to delete {total_deletes} file(s)")
         return
-
     removed = 0
     failed = 0
     freed_space = 0
@@ -271,7 +265,6 @@ def main() -> None:
             except OSError as e:
                 failed += 1
                 logger.error(f"Failed: {del_file} - {e}")
-
     print()
     print(f"Deleted {removed} file(s)")
     if failed:

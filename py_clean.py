@@ -1,21 +1,35 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that automatically modernizes Python source files by upgrading their type-annotation style and cleaning up related code constructs, while preserving the original program behavior.
+The tool should accept one or more file or directory paths as input, recursively discover Python source files (supporting standard Python extensions), and respect ignore rules, including default exclusions for cache and version-control directories and user-defined ignore patterns loaded from a configuration file placed in the project tree. It should support a dry-run mode that reports which files would change along with a unified diff of the proposed edits, and an in-place mode that rewrites files safely (for example, by writing to a temporary file and replacing the original only on success). It should also offer an option to print a summary of changes and exit with a non-zero status when changes are needed, suitable for use in continuous integration checks.
+Core behaviors to implement:
+- Rewrite legacy typing constructs (such as Optional, Union, List, Dict, Tuple, Set, and Callable imports from the typing module) into modern built-in generic and union syntax appropriate for a target Python version, and remove imports that become unused as a result.
+- Optionally strip comments that are not functional (keeping shebang lines, type-ignore and formatting directives), controlled by a command-line flag.
+- Preserve formatting, comments, and layout of untouched code as much as possible by operating on the concrete syntax tree rather than re-generating code from a plain syntax tree.
+- Validate that every transformed file still parses correctly; if a transformation would produce invalid code, skip that file and report the error without corrupting it.
+- Support parallel processing across multiple files with a configurable number of workers, and handle per-file timeouts so a single problematic file cannot hang the whole run.
+- Handle keyboard interruption gracefully, cleaning up any temporary files and reporting partial progress.
+- Log progress and errors through a structured logging facility with adjustable verbosity, and print a final summary of files scanned, files changed, files skipped, and errors encountered.
+- Exit with clear status codes: zero when no changes are needed or changes were applied successfully, non-zero when changes are pending in check mode or when errors occurred.
+The tool should be self-contained, provide helpful command-line help text, and be structured so that each transformation can be enabled or disabled independently.
+---"""
+
+from __future__ import annotations
 import argparse
+from collections import deque
+from dataclasses import dataclass, field
 import difflib
 import fnmatch
 import io
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import tokenize
-from collections import deque
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Tuple
-
+from typing import Any, Callable, Iterable, Optional, Sequence
 import libcst as cst
 from libcst.helpers import get_full_name_for_node
 from loguru import logger
@@ -77,7 +91,7 @@ def has_commented_out_code(comment_lines: list[str]) -> bool:
     lines = []
     for line in comment_lines:
         content = line[1:]
-        lines.append(content[1:] if content.startswith(" ") else content)
+        lines.append(content.removeprefix(" "))
     try:
         parsed = cst.parse_module("\n".join(lines))
     except (SyntaxError, ValueError, MemoryError, RecursionError):
@@ -381,7 +395,8 @@ def decode_file(raw_bytes: bytes) -> DecodedFile:
             return DecodedFile(content.decode(enc), enc, has_bom)
         except (UnicodeDecodeError, LookupError):
             continue
-    raise ValueError("could not decode file as utf-8, its declared encoding, or cp1252")
+    msg = "could not decode file as utf-8, its declared encoding, or cp1252"
+    raise ValueError(msg)
 
 
 def is_python_file(path: Path) -> bool:
@@ -448,7 +463,6 @@ def process_file(path_str: str) -> FileResult:
         return FileResult(path_str, "error", message="permission denied")
     except OSError as exc:
         return FileResult(path_str, "error", message=f"cannot read: {exc}")
-
     warnings = []
     try:
         decoded = decode_file(raw_bytes)
@@ -461,15 +475,12 @@ def process_file(path_str: str) -> FileResult:
         return FileResult(path_str, "error", message=f"cannot parse: {exc}")
     except Exception as exc:
         return FileResult(path_str, "error", message=f"transformer failed: {exc!r}")
-
     if cleaned.code == decoded.text:
         return FileResult(path_str, "unchanged", message="; ".join(warnings))
-
     try:
         cst.parse_module(cleaned.code)
     except (SyntaxError, ValueError, RecursionError) as exc:
         return FileResult(path_str, "error", message=f"output is invalid Python, skipped: {exc}")
-
     try:
         new_bytes = decoded.encode(cleaned.code)
         diff_text = ""
@@ -487,7 +498,6 @@ def process_file(path_str: str) -> FileResult:
         return FileResult(path_str, "error", message="permission denied")
     except (OSError, UnicodeEncodeError) as exc:
         return FileResult(path_str, "error", message=f"write failed: {exc}")
-
     bytes_saved = len(raw_bytes) - len(new_bytes)
     return FileResult(
         path=path_str,
@@ -563,12 +573,10 @@ def find_files(paths: Sequence[Path], extra_ignore: Sequence[str], ignore_file_p
         if not base_path.is_dir():
             logger.error(f"{base_path}: no such file or directory")
             continue
-
         rules = [*DEFAULT_IGNORES, *extra_ignore, *read_ignore_file(base_path / IGNORE_FILENAME)]
         if ignore_file_path is not None:
             rules.extend(read_ignore_file(ignore_file_path))
         matcher = IgnoreMatcher(rules)
-
         for root, dirs, files in base_path.walk():
             rel_parts = root.relative_to(base_path).parts
             dirs[:] = sorted(d for d in dirs if not matcher.matches((*rel_parts, d), True))
@@ -739,10 +747,8 @@ def main(args: Optional[Sequence[str]] = None) -> int:
     if sys.version_info < PYTHON_VERSION:
         print("pyclean requires Python 3.12 or newer", file=sys.stderr)
         return 2
-
     parsed_args = parse_args(args)
     setup_logger(parsed_args.verbose)
-
     config = Config.from_flags(
         strip_comments=parsed_args.strip_comments,
         strip_docstrings=parsed_args.strip_docstrings,
@@ -752,18 +758,14 @@ def main(args: Optional[Sequence[str]] = None) -> int:
     run_options = RunOptions(
         backup=parsed_args.backup and not parsed_args.dry_run, dry_run=parsed_args.dry_run, want_diff=parsed_args.diff
     )
-
     if parsed_args.backup and parsed_args.dry_run:
         logger.info("--backup ignored in --dry-run mode")
-
     file_paths = find_files(parsed_args.paths or [Path.cwd()], parsed_args.ignore, parsed_args.ignore_file)
     if not file_paths:
         logger.warning("no Python files found")
         return 0
-
     cpu_count = max(1, min(64, len(file_paths) // 32 or 1))
     logger.info(f"processing {len(file_paths)} file(s) with {cpu_count} workers ({parsed_args.pool_method})")
-
     stats = StatsTracker()
     use_color = supports_color()
     show_diff = parsed_args.diff or parsed_args.dry_run
@@ -787,16 +789,13 @@ def main(args: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         logger.error("interrupted; workers terminated (completed files were already written)")
         return 130
-
     action_word = "would be changed" if run_options.dry_run else "changed"
     logger.info(
         f"{stats.changed} file(s) {action_word}, {stats.unchanged} unchanged, {stats.errors} error(s); "
         f"total space freed: {green(stats.bytes_saved)} bytes"
     )
-
     if parsed_args.stats:
         print_stats(stats, run_options.dry_run)
-
     return 1 if stats.errors else 0
 
 

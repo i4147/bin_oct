@@ -1,18 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that batch-processes HTML files in a directory and renames each file based on the title found inside it. The tool should scan a given folder (and optionally its subfolders) for HTML files, read each page's title, and produce a clean, filesystem-safe filename from that title. It should handle titles containing non-ASCII characters by optionally transliterating them to plain ASCII when that capability is available, and fall back gracefully when optional helpers are not installed. Filenames should be sanitized to remove or replace characters invalid on common operating systems, collapse repeated separators, trim excess length, and avoid collisions by appending a numeric suffix when two files would receive the same name. Files with missing, empty, or very short titles should be skipped or handled with a sensible fallback, and extremely large files should be ignored with a logged warning. The script should support a dry-run mode that previews the planned renames without changing anything, and a mode that actually performs the renames. Processing should be parallelized across multiple workers for speed, with safe handling of errors so that one bad file never stops the whole batch. Provide clear, timestamped progress and summary logging, and finish by reporting how many files were renamed, skipped, or failed. Only HTML and HTM extensions should be considered, and the original file contents must never be modified.
+---"""
 
 from __future__ import annotations
-
-import re
-import sys
-import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any
-
+import unicodedata
 from loguru import logger
 
 try:

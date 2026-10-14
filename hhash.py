@@ -1,13 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that generates a set of human-readable, memorable passphrases or word-based identifiers from a built-in word list, with user-controllable options for how many words to use, separators, capitalization, and optional numeric suffixes. The tool should accept command-line arguments for the number of items to produce, the word count per item, the separator to use, and whether to include a random number or a deterministic seed-based output. It should use a cryptographically secure source of randomness for generating selections, support a default word list while allowing the user to supply a custom word list from a file, and validate inputs with clear error messages. Output should be printed to standard output one item per line, with an option to write results to a file or emit them as JSON. The script should also be able to generate unique random identifiers (such as UUIDs) as an alternative output mode, and should include a hashing utility that can produce a fingerprint of the generated output for verification. Handle edge cases such as empty word lists, insufficient words for the requested length, and invalid arguments gracefully, and provide a helpful command-line interface with a usage description.
+---"""
+
+from __future__ import annotations
 import argparse
+from functools import reduce
 import hashlib
 import json
 import operator
-import secrets
 import sys
+from typing import Any, Optional, Sequence
 import uuid as uuidlib
-from functools import reduce
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 DEFAULT_WORDLIST: tuple[str, ...] = (
     "ack",
@@ -272,9 +275,11 @@ DEFAULT_WORDLIST: tuple[str, ...] = (
 class HumanHasher:
     def __init__(self, wordlist: Sequence[str] = DEFAULT_WORDLIST) -> None:
         if len(wordlist) != 256:
-            raise ValueError("Wordlist must have exactly 256 items")
+            msg = "Wordlist must have exactly 256 items"
+            raise ValueError(msg)
         if len(set(wordlist)) != 256:
-            raise ValueError("Wordlist must contain 256 unique words")
+            msg = "Wordlist must contain 256 unique words"
+            raise ValueError(msg)
         self.wordlist: tuple[str, ...] = tuple(wordlist)
 
     @classmethod
@@ -286,7 +291,8 @@ class HumanHasher:
     def humanize(self, hexdigest: str, words: int = 4, separator: str = "-") -> str:
         hexdigest = hexdigest.replace("-", "").lower()
         if len(hexdigest) % 2 != 0:
-            raise ValueError("Hex digest must have even length")
+            msg = "Hex digest must have even length"
+            raise ValueError(msg)
         byte_values: list[int] = [int(hexdigest[i : i + 2], 16) for i in range(0, len(hexdigest), 2)]
         compressed = self.compress(byte_values, words)
         return separator.join(self.wordlist[b] for b in compressed)
@@ -312,7 +318,8 @@ class HumanHasher:
     def compress(byte_values: Sequence[int], target: int) -> list[int]:
         length = len(byte_values)
         if target > length:
-            raise ValueError("Fewer input bytes than requested output")
+            msg = "Fewer input bytes than requested output"
+            raise ValueError(msg)
         seg_size = length // target
         segments = [list(byte_values[i * seg_size : (i + 1) * seg_size]) for i in range(target)]
         segments[-1].extend(byte_values[target * seg_size :])
@@ -378,7 +385,8 @@ def _resolve_namespace(ns_str: str) -> uuidlib.UUID:
     except ValueError:
         namespace = getattr(uuidlib, ns_str.upper(), None)
         if namespace is None:
-            raise ValueError(f"Invalid namespace: {ns_str}")
+            msg = f"Invalid namespace: {ns_str}"
+            raise ValueError(msg)
         return namespace
 
 
@@ -403,7 +411,6 @@ def main() -> None:
     parser.add_argument("--upper", action="store_true", help="Uppercase output")
     parser.add_argument("--title", action="store_true", help="Title case output")
     args = parser.parse_args()
-
     hasher = HumanHasher.from_file(args.wordlist_file) if args.wordlist_file else DEFAULT_HASHER
 
     def format_phrase(phrase: str) -> str:
@@ -425,10 +432,8 @@ def main() -> None:
         except OSError as e:
             print(f"error: cannot read file {args.file}: {e}", file=sys.stderr)
             sys.exit(1)
-
     if args.file is not None and not args.hash and not args.humanize and not args.humanize_bytes and not args.verify:
         args.hash = file_text if file_text is not None else ""
-
     results: list[dict[str, Any]] = []
     for _ in range(args.count):
         if args.uuid:
@@ -501,7 +506,6 @@ def main() -> None:
         else:
             parser.print_help()
             return
-
     if args.json:
         print(json.dumps(results, indent=2))
     else:

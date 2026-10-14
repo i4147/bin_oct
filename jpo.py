@@ -1,25 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a directory tree for JPEG image files (.jpg and .jpeg, identified by both file extension and file signature), skipping configured excluded directories, and losslessly or near-losslessly optimizes each image in parallel using an external JPEG optimization command-line tool. The script should accept command-line arguments to specify the target directory (defaulting to the current working directory), the number of parallel worker processes, a per-file timeout in seconds, and options that control optimization behavior such as a quality setting or a dry-run mode that reports potential savings without modifying files.
+For each processed file, the script should run the external optimizer on a temporary copy, verify that the optimizer completed successfully, compare the original and optimized sizes using a chunked byte-by-byte comparison where appropriate, and replace the original only when the result is valid and smaller. It must preserve file permissions and handle read-only files safely, clean up temporary files even on failure, and never leave a partially written file behind.
+The script should report progress and a final summary showing the number of files scanned, files optimized, files skipped, files that failed, and total bytes saved, with sizes presented in human-readable units such as B, KiB, MiB, and GiB. Errors on individual files should be logged and must not stop the overall run. The script should exit with a non-zero status code if any fatal configuration error occurs, such as a missing optimizer executable or an invalid target directory, and with zero otherwise.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
-from collections.abc import Iterator, Sequence
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
-from typing import Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
+from dh import SKIP_DIRS, fsz
 
-from dh import SKIP_DIRS  # type: ignore[import-untyped]
-
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 cwd = Path.cwd().resolve()
-JPEG_SUFFIXES: Final[frozenset[str]] = frozenset({".jpeg", ".jpg"})
 JPEG_MAGIC: Final[bytes] = b"\xff\xd8\xff"
 WALK_CHUNK: Final[int] = 512
 DEFAULT_WORKERS: Final[int] = 8
@@ -45,19 +47,10 @@ def walk_files(directory: Path) -> Iterator[Path]:
     for root, dirs, files in directory.walk():
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in files:
-            yield root / name
-
-
-def format_bytes(n: int) -> str:
-    sign = "-" if n < 0 else ""
-    value = float(abs(n))
-    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
-        if value < 1024.0 or unit == "TiB":
-            if unit == "B":
-                return f"{sign}{int(value)} B"
-            return f"{sign}{value:.2f} {unit}"
-        value /= 1024.0
-    return f"{sign}{value:.2f} TiB"
+            p = root / name
+            if p.is_symlink():
+                continue
+            yield p
 
 
 def _dedupe(path: Path, seen: set[Path]) -> bool:
@@ -188,13 +181,12 @@ def process_file(
     tmp_path: Path | None = None
     try:
         try:
-            tmp_dir = os.environ.get("TMPDIR", "/data/data/com.termux/files/usr/tmp")
+            tmp_dir = os.environ.get("TMPDIR")
             fd, tmp_name = tempfile.mkstemp(
                 prefix=target.stem + ".",
                 suffix=target.suffix + ".tmp",
                 dir=tmp_dir,
             )
-
             with contextlib.suppress(OSError):
                 os.close(fd)
             tmp_path = Path(tmp_name)
@@ -443,33 +435,21 @@ def _print_status(result: ProcessResult, tag: str) -> None:
     if tag == "OK":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[OK]      {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(-{format_bytes(saved)}, -{pct:.1f}%)"
-        )
+        print(f"[OK]      {path.name}  (-{fsz(saved)}, -{pct:.1f}%)")
     elif tag == "DRY-RUN":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[DRY-RUN] {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(would save {format_bytes(saved)}, {pct:.1f}%)"
-        )
+        print(f"[DRY-RUN] {path.name}  (would save {fsz(saved)}, {pct:.1f}%)")
     elif tag == "NOCHG":
-        print(f"[NOCHG]   {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (byte-identical)")
+        print(f"[NOCHG]   {path.name}  {fsz(orig)}  (byte-identical)")
     elif tag == "SAME":
-        print(f"[SAME]    {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (same size, different bytes)")
+        print(f"[SAME]    {path.name}  {fsz(orig)}  (same size, different bytes)")
     elif tag == "SKIP":
         growth = new - orig
-        print(
-            f"[SKIP]    {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(larger by {format_bytes(growth)})"
-        )
+        print(f"[SKIP]    {path.name}  {fsz(orig)} -> {fsz(new)}  (larger by {fsz(growth)})")
     else:
         print(
-            f"[ERROR]   {path.resolve().relative_to(cwd)}  {result.error}",
+            f"[ERROR]   {path.name}  {result.error}",
             file=sys.stderr,
         )
 
@@ -495,11 +475,7 @@ def _print_summary(counters: dict[str, int], total_before: int, total_after: int
         saved = total_before - total_after
         pct = (saved / total_before * 100.0) if total_before else 0.0
         print()
-        print(
-            f"  Bytes     : {format_bytes(total_before)} -> "
-            f"{format_bytes(total_after)}  "
-            f"(saved {format_bytes(saved)}, {pct:.1f}%)"
-        )
+        print(f"  Bytes     : {fsz(total_before)} -> {fsz(total_after)}  (saved {fsz(saved)}, {pct:.1f}%)")
     else:
         print()
         print("  Bytes     : no size changes")

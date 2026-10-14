@@ -1,22 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import os
-import time
-from pathlib import Path
-import multiprocessing
+"""Write a Python script that acts as a batch Lua source-code cleaner: it takes a file or directory path (and optional flags such as an output location, in-place modification, dry-run/diff preview, and a worker count) and removes comments from Lua files while leaving the rest of the code intact and valid. The tool should walk a directory tree recursively, skipping common version-control, virtual-environment, dependency, cache, IDE, and build-output folders, and only process files with Lua extensions. Each file should be parsed with a proper Lua grammar so that comment markers inside string literals are never mistakenly stripped, and files that fail to parse cleanly should be left unchanged and reported as skipped rather than corrupted. Empty files should pass through untouched. Processing should run in parallel across available CPU cores for large trees, with a clear progress or summary report at the end showing counts of files processed, modified, skipped, and failed, plus elapsed time. When running in dry-run mode, the script should display a unified diff of the proposed changes for each affected file without writing anything. When writing results, it should preserve the original file encoding and line endings where possible, and it should support creating a backup of the original before overwriting. The tool should exit with a meaningful status code indicating success, partial failure, or invalid arguments, and should provide clear command-line help describing all options.
+---"""
+
+from __future__ import annotations
 import argparse
 import difflib
+import multiprocessing
+import os
+from pathlib import Path
 import shutil
-from typing import List, Tuple, Union, Iterator
-
-from tree_sitter import Language, Parser, Query, QueryCursor  # type: ignore[import-untyped]
-import tree_sitter_lua as ts_lua  # type: ignore[import-untyped]
+import sys
+from typing import Iterator
+from tree_sitter import Language, Parser, Query, QueryCursor
+import tree_sitter_lua as ts_lua
 
 try:
-    import luaparse  # type: ignore[import-untyped]
+    import luaparse
 except ImportError:
     luaparse = None
-
 _WORKERS = os.cpu_count() or 1
 _SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".idea", ".vscode", "dist", "build"}
 
@@ -25,40 +26,32 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
     orig_size = len(raw_bytes)
     if orig_size == 0:
         return raw_bytes, True
-
     language = Language(ts_lua.language())
     parser = Parser(language)
     tree = parser.parse(raw_bytes)
     if tree.root_node.has_error:
         return b"", False
-
     query = Query(language, "(comment) @comment")
     cursor = QueryCursor(query)
     captures = cursor.captures(tree.root_node)
     comment_nodes = captures.get("comment", [])
     if not comment_nodes:
         return raw_bytes, True
-
     comment_ranges = []
     for node in comment_nodes:
         comment_bytes = raw_bytes[node.start_byte : node.end_byte]
-
         if comment_bytes.lstrip().startswith(b"---"):
             continue
         comment_ranges.append((node.start_byte, node.end_byte))
-
     if not comment_ranges:
         return raw_bytes, True
-
     comment_ranges.sort()
-
     merged_ranges = []
     for start, end in comment_ranges:
         if merged_ranges and start <= merged_ranges[-1][1]:
             merged_ranges[-1] = (merged_ranges[-1][0], max(merged_ranges[-1][1], end))
         else:
             merged_ranges.append((start, end))
-
     new_bytes_parts = []
     last_idx = 0
     for start, end in merged_ranges:
@@ -67,12 +60,10 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
         last_idx = end
     if last_idx < orig_size:
         new_bytes_parts.append(raw_bytes[last_idx:])
-
     new_bytes = b"".join(new_bytes_parts)
     new_tree = parser.parse(new_bytes)
     if new_tree.root_node.has_error:
         return b"", False
-
     return new_bytes, True
 
 
@@ -99,33 +90,26 @@ def process_lua_file(
             raw_bytes = path.read_bytes()
         except Exception as e:
             return (file_path_str, 0, 0, 0, f"Read error: {e}", "", "")
-
         orig_size = len(raw_bytes)
         if orig_size == 0:
             rel_path = os.path.relpath(file_path_str, base_dir_str)
             return (rel_path, 0, 0, 0, None, "", "")
-
         try:
             old_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding", "", "")
-
         if backend == "luaparse":
             new_bytes, success = process_file_luaparse(raw_bytes)
         else:
             new_bytes, success = process_file_tree_sitter(raw_bytes)
-
         if not success:
             return (file_path_str, 0, 0, 0, "Invalid Lua or validation failed", "", "")
-
         try:
             new_text = new_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding in result", "", "")
-
         new_size = len(new_bytes)
         saved = orig_size - new_size
-
         if not dry_run and saved > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak")
@@ -134,7 +118,6 @@ def process_lua_file(
                 path.write_bytes(new_bytes)
             except Exception as e:
                 return (file_path_str, 0, 0, 0, f"Write error: {e}", "", "")
-
         rel_path = os.path.relpath(file_path_str, base_dir_str)
         return (rel_path, orig_size, new_size, saved, None, old_text, new_text)
     except Exception as e:
@@ -169,22 +152,16 @@ def main() -> None:
     parser_arg.add_argument("--dry-run", action="store_true")
     parser_arg.add_argument("--backup", action="store_true")
     parsed_args = parser_arg.parse_args()
-
     input_paths = parsed_args.paths
     if not input_paths:
         input_paths = ["."]
-
     base_dir = os.getcwd()
     files_list = list(iter_lua_files(input_paths))
-
     if not files_list:
         sys.exit(0)
-
     total_saved = 0
     error_count = 0
-
     tasks = [(f, base_dir, parsed_args.backend, parsed_args.dry_run, parsed_args.backup) for f in files_list]
-
     if len(files_list) == 1:
         for task in tasks:
             res = process_lua_file(task)
@@ -206,7 +183,7 @@ def main() -> None:
     else:
         with multiprocessing.Pool(_WORKERS) as pool:
             for res in pool.imap_unordered(process_lua_file, tasks):
-                rel_path, orig, new, saved, err, old_text, new_text = res
+                rel_path, _orig, _new, saved, err, old_text, new_text = res
                 if err:
                     error_count += 1
                 else:
@@ -221,7 +198,6 @@ def main() -> None:
                             tofile=f"b/{rel_path}",
                         )
                         sys.stdout.writelines(diff)
-
     print(f"Total space freed: {total_saved} bytes")
 
 

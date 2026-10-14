@@ -1,17 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that scans one or more input paths (individual PDF files or directories searched recursively for PDFs) and reports on and optimizes the PDF files found. The tool should accept command-line arguments that let the user specify the input paths, choose an output location or an in-place mode, and control the optimization behavior, such as the level of compression, whether to rewrite or preserve the original files, and whether to process files in parallel across multiple CPU cores.
+For each PDF, the script should compute and display the original size and the resulting size in human-readable units, along with the savings achieved. It should be able to optionally extract and report on the content of the PDFs, such as embedded links or referenced web URLs, which can be gathered from the document text and annotations, with the option to filter, deduplicate, and write those results to a plain-text or CSV report. Where the document structure or external tools are available, the script may use them to perform the compression, but it should degrade gracefully and clearly inform the user when a capability is unavailable, rather than failing silently.
+The script should also compute the total size of a given directory or file set, print a clear summary at the end covering the number of files processed, total original and final sizes, and any errors encountered, and return a non-zero exit code when processing fails for one or more files. Errors on individual files should not abort the whole run; they should be logged and reported. Provide sensible defaults so the tool runs with only an input path, and include helpful help text describing all options.
+---"""
 
+from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+import contextlib
+from html.parser import HTMLParser
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+from typing import Iterable, Optional
 import urllib.parse
-from concurrent.futures import ProcessPoolExecutor
-from html.parser import HTMLParser
-from pathlib import Path
-from typing import Iterable, List, Optional, Set
-
 import pymupdf
 
 
@@ -49,10 +53,8 @@ def total_size(path: Path) -> int:
     total = 0
     for f in p.rglob("*"):
         if f.is_file():
-            try:
+            with contextlib.suppress(OSError):
                 total += f.stat().st_size
-            except OSError:
-                pass
     return total
 
 
@@ -81,7 +83,7 @@ class TreeNode:
         node: TreeNode = self
         while not node.is_root():
             parts.append(str(node.index + 1))
-            node = node.parent  # type: ignore[assignment]
+            node = node.parent
         return parts[::-1]
 
     def __str__(self) -> str:
@@ -241,22 +243,16 @@ def cmd_outline(args: argparse.Namespace) -> int:
     pdf_path = Path(args.pdf_path)
     summary_path = Path(args.summary_path)
     output_path = Path(args.output_path)
-
     for p in (html_path, pdf_path, summary_path):
         if not p.exists():
             raise FileNotFoundError(str(p))
-
     tree = _parse_summary(summary_path.read_text(encoding="utf-8"))
-
     if args.check_titles:
         _check_titles(Path(args.check_titles), tree, args.sync_titles)
-
     html_ids = _collect_html_ids(html_path.read_text(encoding="utf-8"))
-
     doc = pymupdf.open(str(pdf_path))
     dest_map = _resolve_named_dests(doc)
     toc = _build_toc(html_ids, dest_map, tree)
-
     if toc:
         doc.set_toc(toc)
     doc.save(str(output_path))
@@ -288,16 +284,13 @@ def cmd_merge(args: argparse.Namespace) -> int:
         files = sorted(files, key=lambda p: _merge_sort_key(p.name))
     else:
         files = sorted(cwd.glob("*.pdf"), key=lambda p: _merge_sort_key(p.name))
-
     if not files:
         print("No PDF files found.")
         return 1
-
     out_doc = pymupdf.open()
     for f in files:
         with pymupdf.open(str(f)) as src:
             out_doc.insert_pdf(src)
-
     out_path = cwd / args.output
     out_doc.save(str(out_path))
     out_doc.close()
@@ -343,7 +336,6 @@ def cmd_to_img(args: argparse.Namespace) -> int:
     out_root.mkdir(exist_ok=True)
     print(f"Starting PDF to JPG conversion in directory: {root}")
     print(f"Output will be saved in: {out_root}")
-
     succeeded = 0
     failed = 0
     for pdf in root.rglob("*"):
@@ -364,7 +356,6 @@ def cmd_to_img(args: argparse.Namespace) -> int:
             succeeded += 1
         else:
             failed += 1
-
     print("\n---Conversion Summary---")
     print(f"Successfully converted and removed: {succeeded} PDF files.")
     print(f"Failed to convert: {failed} PDF files.")
@@ -417,7 +408,6 @@ _GS_BASIC: list[str] = [
     "-dNOPAUSE",
     "-dBATCH",
 ]
-
 _GS_SCREEN: list[str] = [
     "-dBATCH",
     "-dColorConversionStrategy=/sRGB",
@@ -439,7 +429,6 @@ _GS_SCREEN: list[str] = [
     "-dSubsetFonts=true",
     "-sDEVICE=pdfwrite",
 ]
-
 _GS_MOBILE: list[str] = [
     "-sDEVICE=pdfwrite",
     "-dCompatibilityLevel=1.4",
@@ -566,9 +555,7 @@ def cmd_shrink(args: argparse.Namespace) -> int:
     if not files:
         print("No PDF files found.")
         return 1
-
     fn = _SHRINK_ENGINES[args.engine]
-
     if len(files) == 1 or args.workers <= 1:
         before = total_size(Path.cwd())
         for f in files:
@@ -578,7 +565,6 @@ def cmd_shrink(args: argparse.Namespace) -> int:
             if freed > 0:
                 print(f"space freed: {human_size(freed)}")
         return 0
-
     before = total_size(Path.cwd())
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
         list(
@@ -600,7 +586,6 @@ def _split_by_size(input_path: Path, output_dir: Path, max_mb: int) -> None:
     stem = input_path.stem
     writer = pymupdf.open()
     part = 1
-
     for pno in range(len(src)):
         writer.insert_pdf(src, from_page=pno, to_page=pno)
         data = writer.tobytes()
@@ -613,7 +598,6 @@ def _split_by_size(input_path: Path, output_dir: Path, max_mb: int) -> None:
             writer = pymupdf.open()
             writer.insert_pdf(src, from_page=pno, to_page=pno)
             part += 1
-
     if len(writer) > 0:
         out = output_dir / f"{stem}_{part}.pdf"
         out.write_bytes(writer.tobytes())
@@ -668,7 +652,6 @@ def cmd_split_page(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="merged.py", description="Unified PDF toolkit.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("outline", help="Add outline to a PDF using a mdBook SUMMARY.md.")
     p.add_argument("--html_path", default="print.html")
     p.add_argument("--pdf_path", default="output.pdf")
@@ -685,12 +668,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Overwrite mismatched titles when --check-titles is used.",
     )
     p.set_defaults(func=cmd_outline)
-
     p = sub.add_parser("merge", help="Merge PDF files.")
     p.add_argument("-o", "--output", default="merged.pdf")
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_merge)
-
     p = sub.add_parser("to-img", help="Convert PDFs to JPG images.")
     p.add_argument("--directory", default=".")
     p.add_argument("--output-subdir", default="output_jpgs")
@@ -701,28 +682,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Keep original PDFs after conversion (original deletes them).",
     )
     p.set_defaults(func=cmd_to_img)
-
     p = sub.add_parser("rename-pages", help="Rename PDFs appending their page count.")
     p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_rename_pages)
-
     p = sub.add_parser("shrink", help="Shrink PDF files with Ghostscript or qpdf.")
     p.add_argument("--engine", choices=sorted(_SHRINK_ENGINES.keys()), required=True)
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_shrink)
-
     p = sub.add_parser("split-size", help="Split PDFs into chunks no larger than --max-mb.")
     p.add_argument("--max-mb", type=int, default=5)
     p.add_argument("--output", default="output")
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_split_size)
-
     p = sub.add_parser("split-page", help="Split PDFs into one file per page.")
     p.add_argument("--output", default="output")
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_split_page)
-
     return parser
 
 

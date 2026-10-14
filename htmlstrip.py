@@ -1,19 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively processes a directory tree of text-based files (such as HTML and plain text) and removes markup from them in place, with configurable behavior controlled from the command line.
+The tool should accept a root directory and optional settings for which file extensions to process, separate extension lists for stripping HTML tags versus removing meta tags, a regular expression pattern for identifying meta tags to remove, and marker strings that protect certain text from being stripped. It should read files robustly, falling back to an alternate common encoding when UTF-8 decoding fails, and write results back to the same files, with clear logging of what was changed. Where an optional HTML parsing library is available, it should be used to extract visible text more intelligently, and the tool should still work without it using simple pattern-based tag removal.
+The script should support a dry-run mode that reports which files would be modified without writing anything, and a verbose mode that increases logging detail. It should handle errors gracefully per file so that one unreadable or problematic file does not stop the overall run, and it should print a summary at the end showing how many files were scanned, modified, and skipped, along with any errors encountered. Provide a clear command-line interface with helpful help text, sensible defaults, and validation of the provided directory path.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import logging
-import re
 from pathlib import Path
+import re
 from typing import Iterable, Optional, Sequence
 
 try:
-    from bs4 import BeautifulSoup  # type: ignore[import-untyped]
+    from bs4 import BeautifulSoup
 
     HAS_BS4 = True
 except ImportError:
-    BeautifulSoup = None  # type: ignore[assignment]
+    BeautifulSoup = None
     HAS_BS4 = False
 LOG = logging.getLogger("htmlstrip")
 DEFAULT_TAG_EXTS: tuple[str, ...] = (".html", ".txt")

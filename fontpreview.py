@@ -1,13 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that generates a standalone HTML fontpreview page from a collection of font files on the user's machine. The script should accept one or more directories or individual font file paths as input (defaulting to the current working directory when none are given), recursively discover font files with common web and desktop extensions (TrueType, OpenType, WOFF, WOFF2, Embedded OpenType, and SVG fonts), and optionally cap the number of fonts processed.
+For each discovered font, the script should embed or reference it via CSS @font-face so that the rendered HTML displays sample text in that typeface, and it should present the font's name, format, and file location alongside the preview. The output should be a single self-contained HTML file with clean, readable styling, where each font is shown as a labeled section with previews at several sizes.
+The script should support two modes:
+1. A preset mode with predefined sample texts and sizes for particular languages, such as a right-to-left Persian sample and an English sample, each writing to its own default output file.
+2. A custom "rich text" mode where the user supplies their own sample text (including multi-line and mixed-script text, with proper right-to-left handling) and an output file name, with sensible defaults provided for both.
+The command-line interface should let the user pick the mode, specify input paths, set the output path, override sample text and sizes, and limit the number of fonts. The script should HTML-escape all user-provided and file-derived text to produce valid, safe markup, handle unreadable or invalid font files gracefully by logging a warning and skipping them, report a summary of how many fonts were processed and where the output was written, and use a timestamp in the generated page header. Include logging controls for verbosity. The script should exit with a clear error message if no usable fonts are found.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import html
-import logging
 from collections import namedtuple
 from datetime import datetime
 from functools import lru_cache
+import html
+import logging
 from pathlib import Path
 from typing import Optional, Sequence
 

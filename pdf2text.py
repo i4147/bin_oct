@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that extracts text from a PDF file and writes it to a plain text output, supporting two selectable extraction backends and a configurable text encoding. The script should be runnable from the command line and accept the path to an input PDF as its primary argument, along with options to choose the extraction engine (a lightweight PyPDF2-style reader or a more layout-aware pdfplumber-style reader) and to specify the encoding used when extracting text. It should process the document page by page, treating each page's extracted text as a unit so that memory use stays low even for large documents, and it should handle pages that yield no text gracefully by treating them as empty rather than failing. Output should be written to a specified file or, if none is given, to standard output, with page content kept in order and clearly separated so the page boundaries remain identifiable. The script should validate its inputs before processing: it must report a clear error and exit with a non-zero status if the input file does not exist, if the requested engine is unsupported, or if the required extraction library is not installed. It should also handle common failures such as corrupted or unreadable PDFs by reporting a helpful message instead of a raw stack trace. Include a help message describing all options, and make sure the output file is only created or overwritten after extraction begins successfully so a failed run does not leave a partial or misleading result behind.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
+import sys
 from typing import Iterator, Optional
 
 

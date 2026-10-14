@@ -1,18 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that cleans up Python source files by removing comments and docstrings while preserving code behavior and any comments or markers that must remain intact. The tool should accept one or more file or directory paths as input, recursively discover Python source files (including stub files), and skip common version-control, virtual environment, cache, build, and dependency directories. For each file, it should remove ordinary comments and docstrings (including those marked by a specific project-defined docstring convention), but keep shebang lines, encoding declarations, formatter/linter/type-checker directives, and similar tool-specific pragmas. It should only rewrite files that actually contain strippable content, and it should first save a backup copy of each original file so changes can be reverted. The tool should validate that every rewritten file still parses as valid Python and should refuse to write output that breaks syntax. It should process files in parallel to handle large codebases efficiently, and it should provide a dry-run mode that reports what would change without modifying anything. Output should include a summary of files processed, files modified, bytes saved (formatted in human-readable units), and any files that failed, with colorized terminal output for readability. Handle errors per file gracefully so one failure does not stop the whole run, and report exit status appropriately.
+---"""
+
+from __future__ import annotations
 import argparse
 import ast
+import contextlib
 import functools
 import io
 import multiprocessing as mp
 import os
-import re
+from pathlib import Path
 import sys
 import tempfile
 import tokenize as _tokenize
-from pathlib import Path
-
-import libcst as cst
 from dh import DOC_TH1, DOC_TH2
+import libcst as cst
 
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4
@@ -111,10 +114,8 @@ def strip_indented_block_docstring(
         next_stmt = rest_of_block[0]
         existing_leading = list(getattr(next_stmt, "leading_lines", ()) or ())
         merged_leading = [*first.leading_lines, *existing_leading]
-        try:
+        with contextlib.suppress(AttributeError):
             rest_of_block[0] = next_stmt.with_changes(leading_lines=merged_leading)
-        except AttributeError:
-            pass
     return block.with_changes(body=rest_of_block), True
 
 
@@ -157,10 +158,8 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
         next_stmt = rest_of_module[0]
         existing_leading = list(getattr(next_stmt, "leading_lines", ()) or ())
         merged_leading = [*first.leading_lines, *existing_leading]
-        try:
+        with contextlib.suppress(AttributeError):
             rest_of_module[0] = next_stmt.with_changes(leading_lines=merged_leading)
-        except AttributeError:
-            pass
     elif first.leading_lines and not rest_of_module:
         header = list(module.header)
         header.extend(first.leading_lines)
@@ -170,8 +169,7 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
 
 def _dehash(comment_text: str) -> str:
     text = comment_text[1:]
-    if text.startswith(" "):
-        text = text[1:]
+    text = text.removeprefix(" ")
     return text
 
 
@@ -191,11 +189,9 @@ def find_commented_out_code_lines(source: str) -> set[int]:
         tokens = list(_tokenize.generate_tokens(io.StringIO(source).readline))
     except (IndentationError, _tokenize.TokenError, SyntaxError):
         return set()
-
     comment_tokens = [tok for tok in tokens if tok.type == _tokenize.COMMENT]
     if not comment_tokens:
         return set()
-
     protected_lines: set[int] = set()
     group_lines: list[int] = []
     group_texts: list[str] = []
@@ -214,7 +210,6 @@ def find_commented_out_code_lines(source: str) -> set[int]:
         group_lines.append(line_no)
         group_texts.append(tok.string)
         prev_line = line_no
-
     flush_group()
     return protected_lines
 
@@ -395,16 +390,12 @@ def atomic_replace(path: Path, data: bytes) -> None:
             fh.flush()
             os.fsync(fh.fileno())
         if mode is not None:
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(tmp_path, mode)
-            except OSError:
-                pass
         os.replace(tmp_path, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             tmp_path.unlink()
-        except OSError:
-            pass
         raise
 
 
@@ -428,10 +419,8 @@ def restore_from_backup(path: Path) -> tuple[Path, bool, str | None]:
         atomic_replace(path, original_bytes)
     except OSError as exc:
         return path, False, f"restore write error: {exc}"
-    try:
+    with contextlib.suppress(OSError):
         backup.unlink()
-    except OSError:
-        pass
     return path, True, None
 
 
@@ -448,25 +437,20 @@ def process_file(
         original_bytes = path.read_bytes()
     except OSError as exc:
         return path, 0, False, f"read error: {exc}"
-
     try:
         encoding, _ = _tokenize.detect_encoding(io.BytesIO(original_bytes).readline)
         source = original_bytes.decode(encoding)
     except (SyntaxError, UnicodeDecodeError) as exc:
         return path, 0, False, f"encoding error: {exc}"
-
     if has_no_strippable_content(source):
         return path, 0, False, None
-
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return path, 0, False, f"LibCST parse error: {exc}"
     except Exception as exc:
         return path, 0, False, f"parse error: {type(exc).__name__}: {exc}"
-
     protected_code_lines = find_commented_out_code_lines(source)
-
     transformer = CommentDocstringStripper(
         remove_all=remove_all,
         remove_all_comments=remove_all_comments,
@@ -480,30 +464,25 @@ def process_file(
             new_module = strip_module_docstring(new_module)
     except Exception as exc:
         return path, 0, False, f"transform error: {type(exc).__name__}: {exc}"
-
     new_source = new_module.code
     new_source = collapse_blank_lines(new_source)
     new_bytes = new_source.encode(encoding)
     changed = new_bytes != original_bytes
     if not changed:
         return path, 0, False, None
-
     try:
         ast.parse(new_source, filename=str(path))
     except SyntaxError as exc:
         return path, 0, False, f"post-transform validation failed: {exc}"
-
     if make_backup:
         try:
             write_backup(path, original_bytes)
         except OSError as exc:
             return path, 0, False, f"backup write error: {exc}"
-
     try:
         atomic_replace(path, new_bytes)
     except (OSError, UnicodeEncodeError) as exc:
         return path, 0, False, f"write error: {exc}"
-
     bytes_reduced = len(original_bytes) - len(new_bytes)
     return path, bytes_reduced, True, None
 
@@ -638,7 +617,6 @@ def build_arg_parser():
             "nothing to restore from."
         ),
     )
-
     parser.add_argument(
         "--reverse",
         action="store_true",
@@ -663,7 +641,6 @@ def run_reverse(paths):
     if not targets:
         print("No backup files found to restore.", file=sys.stderr)
         return 1
-
     restored_count = 0
     error_count = 0
     for path in targets:
@@ -674,7 +651,6 @@ def run_reverse(paths):
         elif restored:
             restored_count += 1
             print(f"{path.name}  restored")
-
     summary = f"\nRestored {restored_count} file(s), {error_count} error(s)."
     print(summary, file=sys.stderr if error_count else sys.stdout)
     return 2 if error_count else 0
@@ -683,10 +659,8 @@ def run_reverse(paths):
 def main(argv=None):
     args = build_arg_parser().parse_args(argv)
     paths = args.paths or [Path.cwd()]
-
     if args.reverse:
         return run_reverse(paths)
-
     remove_all = args.all
     remove_all_comments = args.all or args.remove_all_comments
     remove_docstrings = args.all or args.remove_docstrings
@@ -698,12 +672,10 @@ def main(argv=None):
         remove_type_annotations=args.remove_type_annotations,
         make_backup=args.backup,
     )
-
     total_count = 0
     changed_count = 0
     bytes_reduced_total = 0
     error_count = 0
-
     with mp.Pool(processes=POOL_PROCESSES) as pool:
         results = pool.imap_unordered(process_fn, iter_python_files(paths), chunksize=CHUNK_SIZE)
         for path, bytes_reduced, changed, error in results:
@@ -717,11 +689,9 @@ def main(argv=None):
             changed_count += 1
             bytes_reduced_total += bytes_reduced
             print(f"{path.name}   {GREEN}{format_size(bytes_reduced)}{RESET}")
-
     if total_count == 0:
         print("No Python files found.", file=sys.stderr)
         return 1
-
     summary = (
         f"\nProcessed {total_count} file(s): {changed_count} changed, "
         f"{GREEN}{format_size(bytes_reduced_total)}{RESET} reduced, {error_count} error(s)."

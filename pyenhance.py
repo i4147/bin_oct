@@ -1,27 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans Python source files within a givenree (or a single file) and automatically rewrites common code-quality and correctness issues in place, with a dry-run/preview mode that shows the proposed changes as a diff before anything is written.
+The tool should accept a target path, optional selection of which fix categories to apply (choosing from: fixing regular-expression patterns that are missing raw-string prefixes, correcting invalid escape sequences in string literals, converting bytes-related string-prefix mistakes, and replacing identity comparisons against literal values with equality comparisons where appropriate), and options controlling dry-run behavior, verbosity, and parallelism. It should skip common non-source directories such as version control folders, virtual environments, caches, and dependency folders, and only process files with Python extensions.
+Key behaviors:
+- Analyze each file using the language's own parsing and tokenization facilities so that only actual code tokens are altered, never comments in a way that breaks them or other content unrelated to the fix.
+- Ensure every rewritten file still parses as valid Python; if a transformation would produce invalid syntax, leave that file unchanged and report it.
+- Process multiple files concurrently using a configurable number of worker processes, with a sensible default.
+- Report, per file, which fixes were applied and how many changes were made, plus a summary of totals at the end.
+- In dry-run mode, print unified diffs of proposed changes without modifying any files.
+- Use a logging library for structured output with verbosity levels, and return a nonzero exit status when errors occur or when dry-run detects pending changes, so the tool can be used in continuous-integration checks.
+- Handle encoding detection gracefully, preserving each file's original line endings and encoding where possible, and tolerate unreadable files by logging a warning and continuing.
+- Suppress noisy parser warnings from analyzed code so the console output stays clean.
+Give the implementation complete freedom in structure, naming, libraries, and internal design; the deliverable is a single self-contained, command-line-runnable script with a clear help message.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import Counter
+from dataclasses import dataclass, field
 import difflib
+from functools import partial
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
 import tokenize
+from typing import TYPE_CHECKING, NamedTuple
 import warnings
-from collections import Counter
-from collections.abc import Iterator, Sequence
-from dataclasses import dataclass, field
-from functools import partial
-from pathlib import Path
-from typing import NamedTuple
-
 from loguru import logger
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 WORKERS: int = 8
 PYTHON_SUFFIXES: frozenset[str] = frozenset({".py", ".pyw", ".pyi"})
 SKIP_DIRS: frozenset[str] = frozenset({
@@ -92,8 +104,6 @@ class FileReport:
 
 
 class Positions:
-    """Converts tokenize (character columns) and ast (UTF-8 byte columns) positions to absolute byte offsets."""
-
     def __init__(self, text: str) -> None:
         self.lines = io.StringIO(text).readlines()
         self.starts = [0]
@@ -112,7 +122,8 @@ def splice(src: bytes, edits: Sequence[Edit]) -> bytes:
     cursor = 0
     for edit in sorted(edits):
         if edit.start < cursor:
-            raise ValueError("overlapping edits")
+            msg = "overlapping edits"
+            raise ValueError(msg)
         parts.append(src[cursor : edit.start])
         parts.append(edit.replacement)
         cursor = edit.end
@@ -121,8 +132,6 @@ def splice(src: bytes, edits: Sequence[Edit]) -> bytes:
 
 
 def iter_string_tokens(src: bytes, text: str, pos: Positions) -> Iterator[tuple[int, int, str, str]]:
-    """Yield (byte_start, byte_end, source_text, kind) for string tokens.
-    kind is "string" for normal literals and "fmiddle" for literal parts of f-strings (Python 3.12+)."""
     fmiddle = getattr(tokenize, "FSTRING_MIDDLE", None)
     for tok in tokenize.generate_tokens(io.StringIO(text).readline):
         if tok.type == tokenize.STRING:
@@ -161,8 +170,6 @@ def compile_warnings(text: str) -> list[str]:
 
 
 class _NormalizeIs(ast.NodeTransformer):
-    """Maps `is` / `is not` to `==` / `!=` so the intended is-fix does not count as an AST change."""
-
     def visit_Compare(self, node: ast.Compare) -> ast.AST:
         self.generic_visit(node)
         node.ops = [
@@ -183,7 +190,6 @@ def regex_constant_spans(tree: ast.AST, pos: Positions) -> set[tuple[int, int]]:
             re_modules.update(a.asname or a.name for a in node.names if a.name == "re")
         elif isinstance(node, ast.ImportFrom) and node.module == "re":
             re_funcs.update(a.asname or a.name for a in node.names if a.name in RE_FUNCS)
-
     candidates: list[ast.expr] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
@@ -204,7 +210,6 @@ def regex_constant_spans(tree: ast.AST, pos: Positions) -> set[tuple[int, int]]:
                 isinstance(t, ast.Name) and PATTERN_NAME_RE.search(t.id) for t in targets
             ):
                 candidates.append(node.value)
-
     spans: set[tuple[int, int]] = set()
     for arg in candidates:
         if isinstance(arg, ast.Constant) and isinstance(arg.value, (str, bytes)):
@@ -216,7 +221,6 @@ def regex_constant_spans(tree: ast.AST, pos: Positions) -> set[tuple[int, int]]:
 
 
 def to_raw_literal(tok: str) -> str | None:
-    """Return a raw literal with the same runtime value as `tok`, or None if that is not possible."""
     parts = split_literal(tok)
     if parts is None:
         return None
@@ -267,7 +271,6 @@ def string_edits(src: bytes, text: str, tree: ast.AST, pos: Positions, cfg: Conf
     regex_spans = regex_constant_spans(tree, pos) if cfg.enabled("regex") else set()
     edits: list[Edit] = []
     counts: Counter[str] = Counter()
-
     for start, end, source, kind in iter_string_tokens(src, text, pos):
         if kind == "string":
             parts = split_literal(source)
@@ -275,27 +278,23 @@ def string_edits(src: bytes, text: str, tree: ast.AST, pos: Positions, cfg: Conf
                 continue
             prefix, quote, body = parts
             lowered = prefix.lower()
-
             if (start, end) in regex_spans and "\\" in body:
                 raw = to_raw_literal(source)
                 if raw is not None:
                     edits.append(Edit(start, end, raw.encode("utf-8")))
                     counts["regex"] += 1
                     continue
-
             if cfg.enabled("escape") and "r" not in lowered and "\\" in body:
                 valid = BYTES_ESCAPES if "b" in lowered else STR_ESCAPES
                 fixed = double_invalid_escapes(body, valid)
                 if fixed != body:
                     edits.append(Edit(start, end, (prefix + quote + fixed + quote).encode("utf-8")))
                     counts["escape"] += 1
-
         elif cfg.enabled("escape") and "\\" in source:
             fixed = double_invalid_escapes(source, STR_ESCAPES)
             if fixed != source:
                 edits.append(Edit(start, end, fixed.encode("utf-8")))
                 counts["escape"] += 1
-
     return edits, counts
 
 
@@ -332,7 +331,7 @@ def is_edits(src: bytes, tree: ast.AST, pos: Positions) -> tuple[list[Edit], Cou
         left = node.left
         for op, right in zip(node.ops, node.comparators):
             if isinstance(op, (ast.Is, ast.IsNot)) and (is_literal(left) or is_literal(right)):
-                seg_start = pos.from_ast(left.end_lineno, left.end_col_offset)  # type: ignore[arg-type]
+                seg_start = pos.from_ast(left.end_lineno, left.end_col_offset)
                 seg_end = pos.from_ast(right.lineno, right.col_offset)
                 match = IS_OP_RE.search(src[seg_start:seg_end])
                 if match:
@@ -346,15 +345,12 @@ def is_edits(src: bytes, tree: ast.AST, pos: Positions) -> tuple[list[Edit], Cou
 def fix_source(original: str, cfg: Config) -> FixResult:
     counts: Counter[str] = Counter()
     text = original
-
     if cfg.enabled("bytes"):
         text, n = fix_nonascii_bytes(text)
         counts["bytes"] += n
-
     tree = parse(text)
     pos = Positions(text)
     src = text.encode("utf-8")
-
     edits: list[Edit] = []
     e, c = string_edits(src, text, tree, pos, cfg)
     edits += e
@@ -363,15 +359,13 @@ def fix_source(original: str, cfg: Config) -> FixResult:
         e, c = is_edits(src, tree, pos)
         edits += e
         counts.update(c)
-
     new_text = splice(src, edits).decode("utf-8")
     if new_text == original:
         return FixResult(original, Counter(), [])
-
     compile_check(new_text)
     if text == original and fingerprint(original) != fingerprint(new_text):
-        raise ValueError("AST changed beyond the intended fixes; refusing to write")
-
+        msg = "AST changed beyond the intended fixes; refusing to write"
+        raise ValueError(msg)
     clean = Counter({k: v for k, v in counts.items() if v})
     return FixResult(new_text, clean, compile_warnings(new_text))
 
@@ -400,29 +394,23 @@ def write_atomic(path: Path, data: bytes, backup: bool) -> None:
 
 
 def process_file(path: Path, cfg: Config) -> FileReport:
-    """Worker: runs in a child process and never raises, so one bad file cannot stop the pool."""
     try:
         raw = path.read_bytes()
     except OSError as exc:
         return FileReport(path, error=f"read failed: {exc}")
-
     try:
         encoding = tokenize.detect_encoding(io.BytesIO(raw).readline)[0]
         original = raw.decode(encoding)
     except (SyntaxError, LookupError, UnicodeDecodeError):
         return FileReport(path, skipped=True)
-
     if not path.suffix and not looks_like_python(original):
         return FileReport(path, skipped=True)
-
     try:
         result = fix_source(original, cfg)
     except Exception as exc:
         return FileReport(path, error=f"{type(exc).__name__}: {exc}")
-
     if result.text == original:
         return FileReport(path, warnings=result.warnings)
-
     report = FileReport(path, counts=result.counts, changed=True, warnings=result.warnings)
     if cfg.show_diff:
         report.diff = "".join(
@@ -518,7 +506,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     logger.remove()
     logger.add(sys.stderr, level="INFO", format="<level>{level: <8}</level> | {message}")
-
     args = build_parser().parse_args(argv)
     fixes = frozenset(args.select) if args.select else ALL_FIXES
     if args.no_is:
@@ -529,16 +516,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         show_diff=args.diff,
         backup=args.backup,
     )
-
     files = discover(args.paths, set(args.exclude))
     if not files:
         logger.warning("No Python files found")
         return 0
-
     totals: Counter[str] = Counter()
     changed_files = 0
     errors = 0
-
     for report in iter_results(files, cfg):
         if report.skipped:
             continue
@@ -557,12 +541,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"{name} {summary}", flush=True)
         if report.diff:
             print(report.diff, end="")
-
     mode = "" if cfg.write else " (dry run, nothing written)"
     print(f"{changed_files} file(s) changed, {sum(totals.values())} fix(es){mode}")
     for kind, count in sorted(totals.items()):
         print(f"  {kind}: {count}")
-
     if errors:
         return 2
     if args.check and changed_files:

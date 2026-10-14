@@ -1,17 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a feature-rich command-line directory listing tool, similar to the Unix `ls` utility but with extended display and organization options. The script should accept a target directory (defaulting to the current directory) and list its contents according to user-selected options.
+Core behaviors to implement:
+- Support recursive listing of subdirectories, with clear visual separation between directory sections.
+- Offer multiple sorting strategies (by name, size, modification time, or extension), with options to reverse the order and to group files before or after directories.
+- Allow filtering so that common cache, version-control, and build-artifact folders can be excluded, and hidden entries can be shown or suppressed.
+- Provide a long-format view showing permissions, ownership-style information, size, and timestamps, with a user-configurable time display format.
+- Display symbolic links with their targets, and visually distinguish directories, executables, links, and other entry types using colored terminal output that can be disabled.
+- Support multiple column layouts for compact output, adapting to the terminal width.
+- Optionally annotate entries with simple type-based icons (for images, code, archives, and similar categories) using plain text or Unicode symbols.
+- Optionally show git status information for files within a repository, indicating modified, staged, untracked, or clean states.
+- Provide a machine-readable JSON output mode that represents the full listing, including metadata for each entry, suitable for piping into other tools.
+- Handle errors gracefully: missing paths, permission-denied directories, broken symbolic links, and non-UTF-8 filenames should produce clear messages without crashing the program.
+- Expose all options through a well-structured command-line interface with helpful usage text and sensible defaults, and return appropriate exit codes.
+The output should be readable by humans by default, consistent across platforms where practical, and designed so that new display options can be added without restructuring the core listing logic.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
 import datetime as dt
 import json as jsonlib
 import os
+from pathlib import Path
 import re
 import stat as statlib
 import subprocess
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Sequence
 
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({".mypy_cache", ".ruff_cache", ".git", "__pycache__"})

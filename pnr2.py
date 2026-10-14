@@ -1,15 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a bulk file and directory renaming utility. The tool should take one or more starting paths (defaulting to the current working directory) and recursively traverse them to find files and folders whose names need to be transformed according to user-specified rules.
+The script should be driven by command-line options that let the user control the behavior: whether to process files, directories, or both; whether to descend into subdirectories and how deep; whether hidden items and symbolic links are included; and which directory names to exclude from traversal using glob-style patterns. It should support multiple renaming transformations that can be applied to names, such as replacing text or patterns with a substitution, changing letter case, stripping or normalizing whitespace and special characters, sanitizing names for filesystem safety, removing accents or converting to ASCII, and applying numbering or timestamps with a configurable format and a random or sequential mode. Transformations should be combinable and applied in a predictable order, operating only on the file or folder name itself rather than its full path, and preserving file extensions when requested.
+The tool should operate in a safe-by-default manner: provide a dry-run or preview mode that shows every planned rename without modifying anything, and require an explicit flag to perform actual changes. It should detect and avoid name collisions within the same directory, either by skipping conflicting renames, appending unique suffixes, or reporting them, and it should never overwrite existing items. Renames of directories should be handled so that the traversal remains correct and nested items are still processed reliably.
+Output should include a clear console summary for each planned or completed rename, along with counts of processed, renamed, skipped, and failed items. The script should also support writing a detailed log of all operations to a file in a structured format (such as JSON) so that actions can be reviewed or reversed later. Errors such as permission problems or invalid names should be reported clearly without stopping the entire run, and the script should exit with a meaningful status code reflecting success, partial failure, or invalid arguments.
+---"""
+
+from __future__ import annotations
 import argparse
+from datetime import datetime
 import json
 import os
+from pathlib import Path
 import random
 import re
-import sys
+from typing import Any, Generator
 import unicodedata
 import uuid
-from datetime import datetime
-from pathlib import Path
-from typing import Generator, List, Optional, Tuple, Any
 
 
 class PathRenamer:
@@ -25,40 +31,30 @@ class PathRenamer:
             rel = path.relative_to(root)
         except ValueError:
             rel = path
-
         parts = rel.parts
-        if not self.args.hidden:
-            if any(p.startswith(".") and p != "." and p != ".." for p in parts):
-                return True
-
+        if not self.args.hidden and any(p.startswith(".") and p not in {".", ".."} for p in parts):
+            return True
         if self.args.exclude_dir:
             for part in parts[:-1]:
                 if any(Path(part).match(ed) for ed in self.args.exclude_dir):
                     return True
-
         name = path.name
         if name == Path(__file__).name:
             return True
-
         if self.args.include:
             matched_inc = any(Path(name).match(inc) for inc in self.args.include)
             if not matched_inc and path.is_file():
                 return True
-
-        if self.args.exclude:
-            if any(Path(name).match(exc) for exc in self.args.exclude):
-                return True
-
+        if self.args.exclude and any(Path(name).match(exc) for exc in self.args.exclude):
+            return True
         if self.args.ext and path.is_file():
             exts = [e.lstrip(".").lower() for e in self.args.ext]
             if path.suffix.lstrip(".").lower() not in exts:
                 return True
-
         return False
 
     def walk_files(self) -> Generator[Path, None, None]:
         max_depth = self.args.max_depth if hasattr(self.args, "max_depth") and self.args.max_depth is not None else None
-
         for root_path in self.paths:
             if not root_path.exists():
                 continue
@@ -66,30 +62,24 @@ class PathRenamer:
                 if not self.should_skip(root_path, root_path.parent):
                     yield root_path
                 continue
-
             for base, dirs, files in os.walk(root_path, followlinks=self.args.follow_symlinks):
                 base_p = Path(base)
                 try:
                     rel_depth = len(base_p.relative_to(root_path).parts)
                 except ValueError:
                     rel_depth = 0
-
                 if max_depth is not None and rel_depth > max_depth:
                     dirs.clear()
                     continue
-
                 if self.args.exclude_dir:
                     dirs[:] = [d for d in dirs if not any(Path(d).match(ed) for ed in self.args.exclude_dir)]
-
                 if not self.args.hidden:
                     dirs[:] = [d for d in dirs if not d.startswith(".")]
-
                 if not self.args.dirs_only:
                     for f in files:
                         f_path = base_p / f
                         if not self.should_skip(f_path, root_path):
                             yield f_path
-
                 if self.args.dirs_only or (hasattr(self.args, "template") and self.args.template):
                     for d in dirs:
                         d_path = base_p / d
@@ -105,7 +95,6 @@ class PathRenamer:
         parent = target_path.parent
         suffix = target_path.suffix
         clean_stem = self.clean_unique_stem(target_path.stem)
-
         counter = 1
         while True:
             new_name = f"{clean_stem}_{counter}{suffix}"
@@ -123,48 +112,40 @@ class PathRenamer:
 
     def transform_name(self, name: str, original_path: Path, index: int = 0) -> str:
         stem, ext = Path(name).stem, Path(name).suffix
-
         if self.args.remove:
             if self.args.regex:
                 flags = re.IGNORECASE if self.args.ignore_case else 0
                 stem = re.sub(self.args.remove, "", stem, flags=flags)
+            elif self.args.ignore_case:
+                pattern = re.compile(re.escape(self.args.remove), re.IGNORECASE)
+                stem = pattern.sub("", stem)
             else:
-                if self.args.ignore_case:
-                    pattern = re.compile(re.escape(self.args.remove), re.IGNORECASE)
-                    stem = pattern.sub("", stem)
-                else:
-                    stem = stem.replace(self.args.remove, "")
-
+                stem = stem.replace(self.args.remove, "")
         if self.args.replace:
             s1, s2 = self.args.replace
             if self.args.regex:
                 flags = re.IGNORECASE if self.args.ignore_case else 0
                 stem = re.sub(s1, s2, stem, flags=flags)
+            elif self.args.ignore_case:
+                pattern = re.compile(re.escape(s1), re.IGNORECASE)
+                stem = pattern.sub(s2, stem)
             else:
-                if self.args.ignore_case:
-                    pattern = re.compile(re.escape(s1), re.IGNORECASE)
-                    stem = pattern.sub(s2, stem)
-                else:
-                    stem = stem.replace(s1, s2)
-
+                stem = stem.replace(s1, s2)
         if hasattr(self.args, "template") and self.args.template:
             start = self.args.start if hasattr(self.args, "start") else 1
             step = self.args.step if hasattr(self.args, "step") else 1
             num = start + (index * step)
             padding = self.args.padding if hasattr(self.args, "padding") and self.args.padding else 3
             num_str = str(num).zfill(padding)
-
             if hasattr(self.args, "format") and self.args.format:
                 fmt = self.args.format
                 stem = fmt.format(template=self.args.template, number=num, number_str=num_str, original=stem, ext=ext)
             else:
                 stem = f"{self.args.template}{num_str}"
-
         if hasattr(self.args, "prefix") and self.args.prefix:
             stem = f"{self.args.prefix}{stem}"
         if hasattr(self.args, "suffix") and self.args.suffix:
             stem = f"{stem}{self.args.suffix}"
-
         if hasattr(self.args, "lower") and self.args.lower:
             stem = stem.lower()
         if hasattr(self.args, "upper") and self.args.upper:
@@ -178,14 +159,12 @@ class PathRenamer:
         if hasattr(self.args, "camel") and self.args.camel:
             words = re.split(r"[\s\-_]+", stem)
             stem = words[0].lower() + "".join(w.capitalize() for w in words[1:])
-
         if hasattr(self.args, "trim") and self.args.trim:
             stem = stem.strip()
         if hasattr(self.args, "collapse_spaces") and self.args.collapse_spaces:
             stem = re.sub(r"\s+", " ", stem)
         if hasattr(self.args, "spaces_to_underscores") and self.args.spaces_to_underscores:
             stem = stem.replace(" ", "_")
-
         if hasattr(self.args, "normalize_unicode") and self.args.normalize_unicode:
             stem = unicodedata.normalize("NFC", stem)
         if hasattr(self.args, "remove_diacritics") and self.args.remove_diacritics:
@@ -194,15 +173,12 @@ class PathRenamer:
             stem = self.transliterate_text(stem)
         if hasattr(self.args, "transliterate") and self.args.transliterate:
             stem = self.transliterate_text(stem)
-
         if hasattr(self.args, "sanitize") and self.args.sanitize:
             stem = re.sub(r'[<>:"/\\|?*]', "_", stem)
-
         if hasattr(self.args, "random") and self.args.random:
             stem = "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=8))
         if hasattr(self.args, "uuid") and self.args.uuid:
             stem = str(uuid.uuid4())
-
         if hasattr(self.args, "rename_by_mtime") and self.args.rename_by_mtime and original_path.exists():
             mtime = original_path.stat().st_mtime
             dt = datetime.fromtimestamp(mtime)
@@ -212,25 +188,20 @@ class PathRenamer:
                 else "%Y-%m-%d_%H-%M-%S"
             )
             stem = dt.strftime(fmt)
-
         if hasattr(self.args, "max_length") and self.args.max_length and len(stem) > self.args.max_length:
             stem = stem[: self.args.max_length]
-
         if not stem.strip():
             stem = "file"
-
         return f"{stem}{ext if original_path.is_file() else ''}"
 
     def run(self) -> int:
         if hasattr(self.args, "undo") and self.args.undo:
             return self.perform_undo()
-
         files = list(self.walk_files())
         if not files:
             if not self.args.quiet:
                 print("No files matched criteria.")
             return 0
-
         sort_by = getattr(self.args, "sort", "name")
         reverse = getattr(self.args, "reverse", False)
         if sort_by == "mtime":
@@ -247,17 +218,13 @@ class PathRenamer:
             files.sort(key=natural_key, reverse=reverse)
         else:
             files.sort(key=lambda p: p.name.lower(), reverse=reverse)
-
         renamed_count = 0
         success_ops = []
-
         for idx, path in enumerate(files):
             new_name = self.transform_name(path.name, path, idx)
             if new_name == path.name:
                 continue
-
             new_path = path.parent / new_name
-
             if new_path.exists():
                 if getattr(self.args, "overwrite", False):
                     pass
@@ -273,7 +240,6 @@ class PathRenamer:
                         continue
                 else:
                     new_path = self.get_unique_path(new_path)
-
             if self.args.dry_run:
                 if not self.args.quiet:
                     print(f"[DRY RUN] {path} -> {new_path.name}")
@@ -288,7 +254,6 @@ class PathRenamer:
                 except OSError as e:
                     if not self.args.quiet:
                         print(f"Error renaming {path}: {e}")
-
         if success_ops and hasattr(self.args, "log") and self.args.log:
             try:
                 with open(self.args.log, "w", encoding="utf-8") as f:
@@ -296,7 +261,6 @@ class PathRenamer:
             except Exception as e:
                 if not self.args.quiet:
                     print(f"Failed to write log: {e}")
-
         if not self.args.quiet:
             print(f"\nOperation completed. {renamed_count} items processed.")
         return 0
@@ -312,7 +276,6 @@ class PathRenamer:
         except Exception as e:
             print(f"Failed to read undo log: {e}")
             return 1
-
         restored_count = 0
         for op in reversed(ops):
             old_p = Path(op["old"])
@@ -384,7 +347,6 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("-q", "--quiet", action="store_true", help="Quiet output")
-
     args = parser.parse_args()
     renamer = PathRenamer(args)
     try:

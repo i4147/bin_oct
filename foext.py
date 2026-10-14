@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that organizes the files in the current working directory by their file type. The script should scan only the top-level files in the directory it is run from, ignoring subdirectories. For each file, determine its extension (case-insensitive, without the leading dot) and move the file into a subfolder named after that extension, creating the subfolder if it does not already exist. Files without any extension should be placed into a single designated folder for extensionless files. The script should not descend into existing subfolders, should not alter file contents or names, and should handle the move operation safely so that the original file is relocated rather than copied. The script should run as a standalone command-line tool that performs the reorganization in one pass without requiring user input, and it should exit cleanly with a successful status code when finished.
+---"""
 
 from __future__ import annotations
-
-import shutil
 from pathlib import Path
+import shutil
 
 
 def main() -> None:

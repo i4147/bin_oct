@@ -1,13 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that displays an image file as colored or grayscale text art directly in the terminal. The tool should accept a path to an image file as its main input, with optional command-line arguments to limit the maximum output width and height in characters so the rendered result fits within the user's terminal size. It should automatically detect the terminal dimensions and scale the image while preserving its original aspect ratio, ensuring the output never exceeds the available space.
+The script should support common formats such as PNG, JPEG, GIF, and BMP, and also handle SVG vector filesasterizing them to a bitmap before rendering. When an SVG is supplied, the tool should allow an optional target width to control the rasterization resolution. If SVG support is unavailable or the rasterization fails, the script should report a clear, user-friendly error message rather than crashing.
+Images with transparency should be handled gracefully, for example by compositing them onto a neutral background before conversion. The output should be rendered with a dense set of characters chosen to represent brightness levels, and the script should offer an option to output in color using ANSI escape sequences, as well as a plain monochrome mode suitable for piping to files. The rendered text should be printed to standard output, and the script should validate that the input file exists and is a supported image type, exiting with a non-zero status code and an informative message on invalid input.
+The tool should be runnable from the command line with a simple interface, include a help message describing all options, and handle keyboard interruption cleanly. Aim for a clean, readable, single-file implementation that works across Windows, macOS, and Linux terminals.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import io
 import os
 import sys
 from typing import TYPE_CHECKING
-
 from cairosvg import svg2png
 from PIL import Image
 

@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes a specified substring from the names of files and folders within a chosen directory. The tool should accept the target text to remove as a command-line argument, along with options for a dry-run preview mode that reports planned renames without changything, and a recursive mode that also processes nested subdirectories. By default, it should operate on the current working directory.
+For each matching item, the script should strip every occurrence of the given text from its name. It must skip any item whose removal would leave the name empty or only whitespace, printing a clear warning instead of renaming it. If the resulting name would collide with an existing item, the script should generate a unique alternative name rather than overwriting anything. Certain common system or dependency directories (such as version control or cache folders) should be excluded from processing.
+The script should handle permission errors gracefully by reporting the inaccessible location and continuing with the rest of the work. In normal mode, it should perform the renames and print a summary of each change and a final count of renamed items. In dry-run mode, it should only print what would happen, with no filesystem modifications. The output should be clear and readable, and the tool should exit with a sensible status code and helpful usage messages when arguments are missing or invalid.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
-
+import sys
 from dh import SKIP_DIRS, unique_path
 
 

@@ -1,19 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that compresses a collection of files and directories into 7z archives, with a configurable command-line interface and a focus on maximizing compression efficiency while handling large datasets reliably.
+The tool should accept one or more input paths (files or directories) and an output location, and produce compressed 7z archives. It should support selecting among several compression methods (such as LZMA2, LZMA, and PPMd), allow the user to choose a compression level or a "full" high-compression mode with a large dictionary and solid archiving, and optionally enable header compression and a configurable block size.
+Key behaviors:
+- Skip files that are already compressed or archive-like (for example, existing archives, compressed streams, wheel packages, and log files), with a basic skip mode and a more thorough skip mode that also filters out other archive formats.
+- Support a mode that archives the contents of a directory tree while preserving relative paths, and handle symbolic links and empty directories sensibly.
+- Process work in parallel across multiple CPU cores when handling many files, using a sensible default worker count that the user can override.
+- Use memory-mapped or streamed reading where it helps performance with large files, and avoid loading entire large files into memory.
+- Write to a temporary location first and move the finished archive into place only on success, cleaning up partial output on failure or interruption.
+- Report progress and summary statistics (files processed, files skipped, original and compressed sizes, compression ratio, elapsed time) through a logging system that falls back gracefully if an advanced logging library is not installed.
+- Validate inputs up front, emit clear warnings for unreadable or unsupported files, and return meaningful exit codes for success, partial failure, and fatal errors.
+- Optionally verify the created archive's integrity after writing it.
+- Provide a clear help message and sensible defaults so the script runs with just input and output arguments.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import logging
 import mmap
 import multiprocessing
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Optional
 import py7zr
 
 try:

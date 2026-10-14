@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree and automatically fixes execute permissions on files that should be runnable. The tool should accept a root directory path as input and walk through all files beneath it, using parallel processing to handle large trees efficiently with a configurable number of worker processes.
+For each file, the script should decide whether it ought to be executable based on these heuristics: the file begins with a script interpreter marker (a shebang line); the file resides in a conventional binary directory such as "bin", "sbin", or ".bin"; the file name matches a shared-library pattern (for example, names ending in ".so" optionally followed by version numbers); or the file has no extension and appears to be a binary (contains null bytes in its initial content). Files with common script or text extensions that do not meet these conditions should be left alone, and the script should only consider files that are not already executable.
+When a file qualifies and lacks execute permission, the script should add execute bits for the owner, group, and others while preserving all existing permission bits. Itle unreadable files, missing paths, and permission errors gracefully without crashing, skipping problematic entries and continuing with the rest of the tree.
+The output should be a concise report to the console listing each file whose permissions were changed, along with a summary count of files scanned, files modified, and files that failed. Include a dry-run option that reports what would change without modifying anything, and a command-line interface that accepts the target directory and optional flags for worker count and dry-run mode. The script should be safe to run repeatedly, producing no changes on subsequent runs once permissions are correct.
+---"""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import os
-import re
 from pathlib import Path
+import re
 
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}

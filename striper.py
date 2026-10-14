@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes a single text file path from the command line and remov that file, overwriting the original file with the cleaned result. Each line in the output should be stored on its own line, with a consistent newline ending. The script should read and write the file using UTF-8 encoding. After processing, it should print a short confirmation message that includes the file name. If the specified file does not exist, it should print a clear error message naming the missing file instead of crashing. For any other unexpected problem during reading or writing, it should catch the error and print a readable description of what went wrong. The script should run its main behavior only when executed directly, not when imported as a module.
+---"""
 
 from __future__ import annotations
-
 from pathlib import Path
 from sys import argv
 

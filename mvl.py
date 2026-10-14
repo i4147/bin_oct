@@ -1,7 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that moves a specified range of lines from one text file to another from the command line. The tool should accept four inputs: a source file path, a starting line number, an ending line number (both inclusive and 1-based), and a destination file path. It should extract the requested block of lines from the source file, append those lines to the end of the destination file (creating the destination if it does not exist), and then remove those lines from the source file so that the source retains everything else in its original order.
+Key behaviors to include:
+- Handle line ranges gracefully: a start value below 1 should be treated as the beginning of the file, and an end value beyond the file's length should be clamped to the last line rather than causing an error.
+- Read and write all files using UTF-8 encoding.
+- Provide a clear success message summarizing which lines were moved and between which files.
+- Report a friendly error message if the source file does not exist, and a general readable error message for any other failure, without crashing with an unhandled traceback.
+- If the command-line arguments are missing or incorrect in number, print a short usage message showing the expected argument order and exit without performing any file changes.
+- Run the logic only when the script is executed directly, not when it is imported as a module.
+---"""
 
 from __future__ import annotations
-
 import sys
 
 

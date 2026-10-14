@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a target directory (optionally including all subdirectories) for image files in common formats such as PNG, JPG/JPEG, WEBP, BMP, GIF, TIFF, and SVG, and loads each one as a uniformly formatted RGBA image for further processing. The tool should accept the directory path and a recursion option from the command line, and should handle a diverse set of image types gracefully, including vector SVG files that must be rasterized before they can be used. When an SVG file is encountered, the script should convert it into a bitmap; if the required rendering dependency is not installed, it should fail with a clear, actionable message telling the user how to install it, and any other conversion failure should be reported as a clear, descriptive error. The script should skip non-image files, ignore unsupported extensions, and treat files and directories robustly so that missing paths, unreadable files, or corrupted images produce informative messages rather than crashing the whole run. Design the tool so that the discovered images can be processed one at a time in a memory-efficient way, and so that results (such as file names, dimensions, and load status) can be reported to the user in a readable summary at the end. Use clear command-line help text, provide sensible defaults, and return appropriate exit codes indicating success, partial failure, or invalid input.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import io
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 from typing import Iterator
-
 from PIL import Image
 
 IMAGE_EXTENSIONS = {

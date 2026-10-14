@@ -1,7 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects the packages installed in the current Python environment and reports which of them have newer versions available on the Python Package Index (PyPI). The tool should be a command-line utility that gathers the list of installed distributions with they can be matched consistently (with a user-selectable naming convention), and queries PyPI for the latest published release of each package. It should compare installed and latest versions using proper version semantics, and clearly distinguish between packages that are up to date, outdated, and unknown or unavailable.
+The script should support persisting state between runs (for example, remembering previously seen results or a last-check timestamp) so that repeated executions can avoid redundant network requests or highlight only newly outdated packages. It should handle the case where no state file exists yet, and it should tolerate corrupted or unreadable state data gracefully by falling back to a fresh state rather than crashing.
+Network access should be robust: requests should have sensible timeouts, transient failures should be retried a limited number of times, and an individual package lookup failing should never abort the whole run. Where available, a faster alternative transport may be used, but the script must work with a standard HTTP client as a fallback. Long-running work should be guardable against hangs, and the script should respond cleanly to interruption signals (such as Ctrl+C), saving any progress it has made before exiting.
+Provide command-line options to control the output format (human-readable text and machine-readable JSON), to filter or limit which packages are checked, to set the name normalization mode, to choose the state file location, to adjust concurrency or timeouts, and to enable verbose or quiet logging. The script should exit with a meaningful status code indicating whether outdated packages were found, whether errors occurred, or whether the run completed cleanly.
+Finally, the script should produce a concise summary at the end of each run listing counts of checked, outdated, up-to-date, and failed packages, and optionally write the full report to a specified file.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import importlib.metadata
 import io
@@ -9,16 +14,15 @@ import json
 import logging
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import signal
 import sys
 import sysconfig
 import time
-from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
-
-import requests
+from typing import Any, Optional, Sequence
 from packaging import version
+import requests
 
 try:
     import pycurl

@@ -1,17 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a terminal-based, syntax-highlighted file viewer in the spirit of the `bat` command-line tool. The script should accept one or more file paths (or read from standard input when none are given) and display their contents in the terminal with color-coded syntax highlighting, automatically detecting the language from the file name or content, with an option to override the language manually.
+Key behaviors to include:
+- Support selecting a color theme by name, with a way to list all available themes and languages and exit.
+- Render output with a clean, decorative frame: a header line showing the file name and language, optional line numbers in a gutter, and grid or separator lines between sections, all drawn with box-drawing characters.
+- Allow the user to toggle individual display elements such as the header, grid, line numbers, and frame, either through command-line flags or by defaulting sensibly when output is not a terminal.
+- Support plain output mode that strips all decorations and color, suitable for piping into other tools.
+- Optionally show version-control change markers (added, modified, and removed lines) relative to the file's git state when the file is inside a git repository, using distinct colors for each change type.
+- Optionally highlight a specific range of lines, and allow displaying only a selected line range of a file.
+- Adapt to the terminal width, wrapping or truncating long lines gracefully, and use a pager when the output is long and the user has requested it, falling back to direct printing when no pager is available.
+- Handle multiple input files by displaying each one in sequence with its own header, and report clearly (without crashing) when a file is missing, unreadable, or binary.
+- Use ter capabilities appropriately, choosing between 256-color and true-color output based on user preference and environment.
+- Provide a built-in help message with usage examples, and exit with appropriate status codes for errors.
+The script should be self-contained, robust to edge cases such as empty files, very long lines, and non-UTF-8 content, and focused on producing a polished, readable terminal experience.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass, field
 import io
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from pathlib import Path
-
 from pygments import highlight as pyg_highlight
 from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
 from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer

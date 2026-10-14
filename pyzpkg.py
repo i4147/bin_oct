@@ -1,13 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects a user's local site-packages directory to identify installed packages that are unsafe to keep when multiple top-level modules or folders are installed together, and then safely cleans up and recompiles the remaining installation.
+The tool should:
+- Locate the current user's site-packages directory automatically, without requiring the user to type a path.
+- Scan all installed distribution metadata folders there and examine each package's declared top-level module names and its file manifest to determine whether the package spans multiple top-level folders, which the tool treats as a risky or problematic layout.
+- Report each flagged package clearly to the user, including the reason it was flagged (for example, which top-level names were found), and handle unreadable or malformed metadata gracefully with a warning rather than crashing.
+- Ask the user for confirmation before removing anything, and present a summary of what will be deleted so the user can make an informed choice.
+- When confirmed, remove the flagged packages' installed files and metadata folders in a careful way that only touches paths belonging to that installation, and report any items that could not be removed.
+- After cleanup, precompile the Python files in the site-packages directory so bytecode is regenerated, and report the outcome.
+- Print clear, friendly progress messages and a final summary of how many packages were checked, flagged, removed, and any errors encountered.
+- Work on Windows, macOS, and Linux, and exit with a meaningful status code when the process succeeds, is cancelled by the user, or fails.
+---"""
 
 from __future__ import annotations
-
 import compileall
 import csv
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def get_user_site_packages():

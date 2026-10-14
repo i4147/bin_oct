@@ -1,22 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a batch tool for auditing and normalizing a collection of Python source files within a project directory. The tool should walk a given directory tree (skipping common virtual environment, build, and version-control folders), and for each Python file it finds, perform the following high-level tasks:
+- Detect whether each file appears to be written for Python 2 or Python 3, using a scoring approach that considers syntax and idioms, and report the classification against a configurable confidence threshold.
+- Ensure each script begins with a correct interpreter line (shebang), inserting or replacing a configurable default interpreter path when it is missing or incorrect, while preserving the rest of the file's content and encoding.
+- Analyze third-party and standard-library imports and identify which modules a script depends on, flagging any that are not part of the standard library so the user can review them.
+- Optionally verify that each file is syntactically valid and report any files that fail to parse, including the error location and a brief description.
+The tool should accept command-line arguments that let the user choose the target directory, set the number of parallel workers, adjust the Python 2 detection threshold, supply a custom shebang, run in a dry-run/report-only mode that makes no file changes, and produce a concise summary at the end. Processing should be parallelized across files for speed, and the tool should handle unreadable files, encoding problems, and unexpected errors gracefully by logging them and continuing with the remaining files rather than crashing. The final output should present a clear per-file status list plus aggregate counts (scanned, modified, Python 2 detected, syntax errors, external dependencies found), and it should exit with a non-zero status code if any errors occurred.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
-import importlib.util
-import keyword
-import multiprocessing
+from importlib.machinery import SourceFileLoader
+from importlib.util import find_spec
+from multiprocessing import Pool, cpu_count
 import os
+from pathlib import Path
 import random
 import string
 import sys
 import textwrap
 import traceback
-from importlib.machinery import SourceFileLoader
-from importlib.util import find_spec
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
@@ -435,7 +438,7 @@ STDLIB_MEMBER_MAP: dict[str, set[str]] = {
 
 def _make_logger():
     try:
-        from loguru import logger as _log  # type: ignore
+        from loguru import logger as _log
 
         return _log
     except ImportError:
@@ -681,7 +684,7 @@ class _ParentMapper(ast.NodeVisitor):
     def __init__(self) -> None:
         self.parents: dict[ast.AST, ast.AST] = {}
 
-    def visit(self, node: ast.AST) -> Any:  # type: ignore[override]
+    def visit(self, node: ast.AST) -> Any:
         for child in ast.iter_child_nodes(node):
             self.parents[child] = node
         return super().visit(node)
@@ -767,8 +770,8 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
             offenders = _position_deep(path)
             details = [f"  Line {s}: {t.strip().splitlines()[0]}" for s, _, t in offenders]
         else:
-            offenders = _position_basic(path)  # type: ignore[assignment]
-            details = [f"  {d}" for d in offenders]  # type: ignore[union-attr]
+            offenders = _position_basic(path)
+            details = [f"  {d}" for d in offenders]
         if not offenders:
             continue
         offenders_files += 1
@@ -778,7 +781,7 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
         for d in details:
             print(d)
         report.append(f"File: {relpath}\n" + "\n".join(details))
-        if ns.autofix and ns.deep and _autofix_position(path, offenders):  # type: ignore[arg-type]
+        if ns.autofix and ns.deep and _autofix_position(path, offenders):
             fixed += 1
             print(f"  [FIXED] moved {len(offenders)} import(s)")
     print("\n" + "=" * 40)
@@ -853,9 +856,9 @@ def _should_skip(path: Path) -> bool:
 
 def cmd_find_py2(ns: argparse.Namespace) -> int:
     try:
-        import tree_sitter_python as tsp
         from rapidfuzz import fuzz
         from tree_sitter import Language, Parser
+        import tree_sitter_python as tsp
     except ImportError as exc:
         LOG.error(f"find-py2 needs tree_sitter, tree_sitter_python, rapidfuzz: {exc}")
         return 2
@@ -954,7 +957,7 @@ class _ImportTransformer(ast.NodeTransformer):
             if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id in bare_modules:
                 self.module_to_names.setdefault(node.value.id, set()).add(node.attr)
 
-    def visit_Import(self, node: ast.Import) -> Any:  # type: ignore[override]
+    def visit_Import(self, node: ast.Import) -> Any:
         new_nodes: list[ast.stmt] = []
         for alias in node.names:
             if not alias.asname and alias.name in self.module_to_names:
@@ -973,7 +976,7 @@ class _ImportTransformer(ast.NodeTransformer):
             return None
         return new_nodes if len(new_nodes) > 1 else new_nodes[0]
 
-    def visit_Attribute(self, node: ast.Attribute) -> Any:  # type: ignore[override]
+    def visit_Attribute(self, node: ast.Attribute) -> Any:
         if isinstance(node.value, ast.Name) and node.value.id in self.module_to_names:
             self.modified = True
             return ast.copy_location(ast.Name(id=node.attr, ctx=node.ctx), node)

@@ -1,17 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Python source files and detects duplicated or structurally similar code blocks across them, reporting where the duplicates occur so a developer can review and refactor them.
+The tool should accept a root directory path from the command line, along with options to exclude specific file names and to control the sensitivity of the comparison (for example, minimum block size or whether to ignore identifier names when judging similarity). It should skip files that cannot be read as UTF-8 text without crashing, and it should be able to process a large number of files efficiently, optionally using parallel workers.
+For each file, the script should parse the source into a syntax tree and extract candidate units such as functions, classes, and other meaningful declarations or statement sequences. To detect near-duplicates regardless of cosmetic differences, normalize the extracted units by stripping or standardizing names, ignoring comments and formatting, and producing a stable fingerprint (for example, a cryptographic hash) of each normalized unit. Files that fail to parse should be reported as warnings rather than stopping the whole run.
+The output should be a clear, human-readable report listing each group of duplicate or similar code blocks, the file paths and line ranges where each occurrence appears, and a summary count of duplicates found. Optionally, the tool should support a machine-readable output format such as JSON so the results can be consumed by other tools. The script should exit with a non-zero status code when duplicates are found if a strict mode is enabled, and zero otherwise.
+Keep the implementation self-contained, handle errors gracefully, and provide helpful command-line help text describing every option.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
 import copy
+from dataclasses import dataclass
 import hashlib
 import os
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterator, Sequence
 
 
@@ -50,7 +55,7 @@ class Declaration:
 
 class _NameStripper(ast.NodeTransformer):
     def _rename(self, node: ast.AST) -> ast.AST:
-        node.name = "__NAME__"  # type: ignore[attr-defined]
+        node.name = "__NAME__"
         self.generic_visit(node)
         return node
 
@@ -242,8 +247,8 @@ def cmd_ast(args: argparse.Namespace) -> int:
 
 
 def _ts_make_parser():
-    import tree_sitter_python as tsp  # type: ignore
-    from tree_sitter import Language, Parser  # type: ignore
+    from tree_sitter import Language, Parser
+    import tree_sitter_python as tsp
 
     parser = Parser()
     parser.language = Language(tsp.language())

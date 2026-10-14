@@ -1,16 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a network diagnostics utility for Android-style Linux devices. It should detect the device's active network interfaces and their IP addresses, determine the most relevant public-facing IP and approximate geographic location for that address, and present the results clearly to the user.
+The tool should:
+- Discover all available network interfaces on the system by querying the operating system's networking utilities, and parse the results into structured information covering each interface's name, state (up or down), and assigned IPv4 and/or IPv6 addresses.
+- Ignore loopback interfaces and any other interfaces that are not useful for external connectivity.
+- Rank interfaces by a configurable priority order based on common interface naming conventions (for example Wi-Fi, Ethernet, mobile data, tunnel, and point-to-point links), so that the most relevant active interface is selected first.
+- Determine the device's public IP address as seen from the internet, and look up geolocation details for that address (country, region, city, ISP, and approximate coordinates) using a public IP geolocation web service. Handle lookup failures, timeouts, and unknown or private addresses gracefully.
+- Present a human-readable summary to the terminal that lists the interfaces with their states and addresses, the selected primary interface, and a concise location line such as "Location: City, Region, Country" or "Location: Unknown" when data is unavailable.
+- Accept command-line options to control behavior, such as selecting a specific interface, switching between plain-text and JSON output, adjusting the logging verbosity, and optionally skipping the external geolocation lookup for offline use.
+- Log diagnostic messages at appropriate levels without cluttering normal output, and exit with a meaningful status code indicating success, partial success (for example, local interfaces found but geolocation unavailable), or failure (for example, no usable network interface found or the system networking tool is missing).
+- Be robust and self-contained: it should run with only the Python standard library, validate inputs, never crash on malformed system output, and keep the code organized into clearly separated responsibilities for interface discovery, address parsing, geolocation, ranking, and reporting.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
 import json
 import logging
+from pathlib import Path
 import re
 import subprocess
 import sys
 import urllib.request
-from dataclasses import dataclass
-from pathlib import Path
 
 BLACKLIST_IFACES_PREFIX = "lo"
 INTERFACE_PRIORITY = ["wlan", "eth", "rmnet", "tun", "ppp"]

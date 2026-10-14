@@ -1,17 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a source-code obfuscation and minification tool. It takes a Python sourceces a functionally equivalent but harder-to-read version of that file as output, optionally writing it to a new file or printing it to the console.
+The script should:
+- Accept a path to a Python source file and write the transformed code to a designated output location, with a clear default naming convention so the original file is never overwritten by accident.
+- Parse the source into a structural representation and apply a series of saf including removing docstrings and type annotations, stripping comments and unnecessary whitespace, and renaming user-defined identifiers (functions, classes, variables, arguments) to short, meaningless names.
+- Preserve the names of Python built-ins, standard library module references, dunder names, and any other names that must remain stable for the program to run correctly. Names that are imported from third-party or local modules should also be handled carefully so that external interfaces are not broken.
+- Preserve the semantics of the program exactly: the transformed script must produce the same output and behavior as the original when execut
+- Optionally compress and encode the resulting code (for example, by packing it into a compressed, encoded payload wrapped in a small self-executing stub) so that the output is not directly readable.
+- Validate its own output by confirming that the transformed code still parses correctly before writing it, and report a clear error if the input is not valid Python.
+- Provide a command-line interface with options to control which transformations are applied (such as enabling or disabling renaming, string encoding, or compression), and print a concise summary of what was done.
+- Handle edge cases gracefully, including files with syntax errors, empty files, files using dynamic features like `eval`, `exec`, or `getattr` on user names, and files with `__main__` guards.
+- Use only clean, idiomatic Python with clear error messages, and include brief inline usage documentation in the script's help output.
+---"""
 
 from __future__ import annotations
-
 import ast
 import base64
 import builtins
 import operator
+from pathlib import Path
 import string
 import sys
-import zlib
-from pathlib import Path
 from typing import Callable, Iterator, Sequence
-
+import zlib
 from dh import cprint
 
 PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {

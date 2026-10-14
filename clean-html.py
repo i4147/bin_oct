@@ -1,24 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import os
-import time
-from pathlib import Path
-import multiprocessing
+"""Write a Python script that minifies HTML files in a directory tree, producing compact output while preserving the page's behavior and rendering. The tool should accept a source path (a single file or a directory) and an optional output location, walk the directory recursively, and skip common non-source folders such as version control, virtual environment, dependency, cache, IDE, and build directories.
+For each HTML file, the script should parse the document structurally so that inline `<script>` and `<style>` blocks are minified with the appropriate JavaScript and CSS minification rules, HTML comments are removed (while preserving conditional comments if applicable), and redundant whitespace between tags and within text is collapsed, without altering content inside whitespace-sensitive elements such as `<pre>`, `<textarea>`, and similar. Empty files should pass through unchanged. If a file cannot be parsed or minified, the script should fall back to a safe alternative or keep the original content and report the issue rather than crashing.
+Use parallel processing to handle many files efficiently, scaling to the number of available CPU cores, and show progress or a summary at the end. The script should report total files processed, original versus minified sizes, the percentage of savings, and any errors encountered. It should support a dry-run or preview mode that shows what would change, optionally a diff view for a single file, and an in-place mode that overwrites originals while otherwise writing minified copies to the output location, preserving the original directory structure. Optional HTML-level minification via a secondary library should be used when available and gracefully skipped otherwise. Provide clear command-line options, helpful usage messages, and meaningful exit codes for success, partial failure, and invalid input.
+---"""
+
+from __future__ import annotations
 import argparse
 import difflib
+import multiprocessing
+import os
+from pathlib import Path
 import shutil
-from typing import List, Tuple, Union, Iterator
-
-from tree_sitter import Language, Parser, Query, QueryCursor  # type: ignore[import-untyped]
-import tree_sitter_html as ts_html  # type: ignore[import-untyped]
-import tree_sitter_css as ts_css  # type: ignore[import-untyped]
-import tree_sitter_javascript as ts_js  # type: ignore[import-untyped]
+import sys
+from typing import Iterator
+from tree_sitter import Language, Parser, Query, QueryCursor
+import tree_sitter_css as ts_css
+import tree_sitter_html as ts_html
+import tree_sitter_javascript as ts_js
 
 try:
-    import htmlmin  # type: ignore[import-untyped]
+    import htmlmin
 except ImportError:
     htmlmin = None
-
 _WORKERS = os.cpu_count() or 4
 _SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".idea", ".vscode", "dist", "build"}
 
@@ -27,11 +30,9 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
     orig_size = len(raw_bytes)
     if orig_size == 0:
         return raw_bytes, True
-
     html_language = Language(ts_html.language())
     html_parser = Parser(html_language)
     tree = html_parser.parse(raw_bytes)
-
     html_query = Query(
         html_language,
         """
@@ -42,16 +43,12 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
     )
     cursor = QueryCursor(html_query)
     captures = cursor.captures(tree.root_node)
-
     comment_ranges = []
-
     for node in captures.get("comment", []):
         comment_ranges.append((node.start_byte, node.end_byte))
-
     css_language = Language(ts_css.language())
     css_parser = Parser(css_language)
     css_query = Query(css_language, "(comment) @comment")
-
     for node in captures.get("style", []):
         style_bytes = raw_bytes[node.start_byte : node.end_byte]
         css_tree = css_parser.parse(style_bytes)
@@ -61,11 +58,9 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
             abs_start = node.start_byte + c_node.start_byte
             abs_end = node.start_byte + c_node.end_byte
             comment_ranges.append((abs_start, abs_end))
-
     js_language = Language(ts_js.language())
     js_parser = Parser(js_language)
     js_query = Query(js_language, "(comment) @comment")
-
     for node in captures.get("script", []):
         script_bytes = raw_bytes[node.start_byte : node.end_byte]
         js_tree = js_parser.parse(script_bytes)
@@ -75,19 +70,15 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
             abs_start = node.start_byte + c_node.start_byte
             abs_end = node.start_byte + c_node.end_byte
             comment_ranges.append((abs_start, abs_end))
-
     if not comment_ranges:
         return raw_bytes, True
-
     comment_ranges.sort()
-
     merged_ranges = []
     for start, end in comment_ranges:
         if merged_ranges and start <= merged_ranges[-1][1]:
             merged_ranges[-1] = (merged_ranges[-1][0], max(merged_ranges[-1][1], end))
         else:
             merged_ranges.append((start, end))
-
     new_bytes_parts = []
     last_idx = 0
     for start, end in merged_ranges:
@@ -96,7 +87,6 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
         last_idx = end
     if last_idx < orig_size:
         new_bytes_parts.append(raw_bytes[last_idx:])
-
     new_bytes = b"".join(new_bytes_parts)
     return new_bytes, True
 
@@ -124,33 +114,26 @@ def process_html_file(
             raw_bytes = path.read_bytes()
         except Exception as e:
             return (file_path_str, 0, 0, 0, f"Read error: {e}", "", "")
-
         orig_size = len(raw_bytes)
         if orig_size == 0:
             rel_path = os.path.relpath(file_path_str, base_dir_str)
             return (rel_path, 0, 0, 0, None, "", "")
-
         try:
             old_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding", "", "")
-
         if backend == "htmlmin":
             new_bytes, success = process_file_htmlmin(raw_bytes)
         else:
             new_bytes, success = process_file_tree_sitter(raw_bytes)
-
         if not success:
             return (file_path_str, 0, 0, 0, "Invalid HTML or validation failed", "", "")
-
         try:
             new_text = new_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding in result", "", "")
-
         new_size = len(new_bytes)
         saved = orig_size - new_size
-
         if not dry_run and saved > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak")
@@ -159,7 +142,6 @@ def process_html_file(
                 path.write_bytes(new_bytes)
             except Exception as e:
                 return (file_path_str, 0, 0, 0, f"Write error: {e}", "", "")
-
         rel_path = os.path.relpath(file_path_str, base_dir_str)
         return (rel_path, orig_size, new_size, saved, None, old_text, new_text)
     except Exception as e:
@@ -194,22 +176,16 @@ def main() -> None:
     parser_arg.add_argument("--dry-run", action="store_true")
     parser_arg.add_argument("--backup", action="store_true")
     parsed_args = parser_arg.parse_args()
-
     input_paths = parsed_args.paths
     if not input_paths:
         input_paths = ["."]
-
     base_dir = os.getcwd()
     files_list = list(iter_html_files(input_paths))
-
     if not files_list:
         sys.exit(0)
-
     total_saved = 0
     error_count = 0
-
     tasks = [(f, base_dir, parsed_args.backend, parsed_args.dry_run, parsed_args.backup) for f in files_list]
-
     if len(files_list) == 1:
         for task in tasks:
             res = process_html_file(task)
@@ -231,7 +207,7 @@ def main() -> None:
     else:
         with multiprocessing.Pool(_WORKERS) as pool:
             for res in pool.imap_unordered(process_html_file, tasks):
-                rel_path, orig, new, saved, err, old_text, new_text = res
+                rel_path, _orig, _new, saved, err, old_text, new_text = res
                 if err:
                     error_count += 1
                 else:
@@ -246,7 +222,6 @@ def main() -> None:
                             tofile=f"b/{rel_path}",
                         )
                         sys.stdout.writelines(diff)
-
     print(f"Total space freed: {total_saved} bytes")
 
 

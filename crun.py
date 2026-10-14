@@ -1,9 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively walks a given root directory (or accepts a single file path) and collects every file that is eligible for processing, while skipping directories and files that match a set of exclusion rules. The script should avoid revisiting the same directory twice, including through symbolic links, so that it never loops endlessly or processes duplicate content. If the provided path is a single file rather than a directory, the script should treat that file as the only item to process.
+For each collected file, the script should check that it exists, and then apply type-specific handling based on the file's extension. For C source files, it should compile or analyze the file using an external C compiler toolchain, reporting success or failure for each file. Other file types should be handled gracefully, either by being skipped or by receiving an appropriate default treatment.
+The script should produce clear, human-readable console output summarizing progress and results, including the number of files processed, successes, and failures, along with the path of each file that could not be handled and a brief reason. It should continue processing remaining files when an individual file fails rather than stopping the entire run. Where helpful, it should also report aggregate size information for the processed files, using a readable format for byte counts.
+Design the script to be usable both as a standalone command-line tool that accepts a directory or file path as an argument and as an importable module whose core functions can be called from other Python code. Handle missing paths, permission errors, and unexpected external tool failures without crashing.
+---"""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 from dh import fsz, gsz, mpf, should_skip
 
 

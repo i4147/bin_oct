@@ -1,21 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line compression utility for batch-processing files within a directory tree. The tool should accept a source directory (or file list) and an output location, then compress eligible files using several selectable compression formats, including standard gzip, bzip2, and a tar-based archive option. It should let the user control compression level, worker parallelism, chunk sizes, and a minimum file size below which files are skipped. Files that are already compressed or archived (such as common archive and compressed extensions) should be excluded from re-compression, with the exclusion list depending on the chosen mode.
+The script should walk the directory tree, decide per file whether it qualifies, and process eligible files concurrently using a pool of worker processes so large batches finish quickly. For very small files, it should use an in-memory strategy rather than streaming to disk, and for large files it should stream data in configurable chunks to keep memory usage bounded. Where a single compressed output is desired, it should bundle results into one archive; otherwise it should write individual compressed files alongside or into a mirrored output structure.
+The tool should report progress and final statistics in a human-readable form: total files scanned, files compressed, files skipped and why, original versus compressed sizes, overall space savings as a percentage, and elapsed time. Sizes should be displayed in friendly units (B, KB, MB, GB, TB). Logging should be handled through a structured logger with adjustable verbosity. The script should validate inputs, handle missing paths and permission errors gracefully without crashing the whole batch, and exit with a non-zero status code on fatal errors. It should be runnable from the command line with clearly documented options and sensible defaults for workers, chunk sizes, compression levels, and thresholds.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
+from dataclasses import dataclass
+from datetime import timedelta
 import gzip
 import mmap
+from pathlib import Path
 import shutil
 import tarfile
 import time
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
-from datetime import timedelta
-from pathlib import Path
 from typing import Optional, Self, Sequence
-
 from loguru import logger
 
 DEFAULT_WORKERS: int = 8

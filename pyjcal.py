@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts and displays dates in the Persian (Jalali/Solar Hijri) calendar. The tool should accept Gregorian dates (defaulting to the current date and time when none are supplied) and convert them into Jalali year, month, and day, along with the corresponding Persian weekday name. It should support output in both English and Persian (Farsi) transliterations and script, including month names and weekday names, and allow the user to choose which language to display. The tool should also be able to report the current Jalali date together with the current time, and provide a way to format the result as a readable string. Design it as a reusable component so that other programs can import the date conversion logic, while also offering a simple command-line interface for quick lookups. Handle invalid or out-of-range input gracefully with clear error messages, and ensure the Gregorian-to-Jalali conversion is accurate across the full range of common calendar years. Choose a clean, well-organized structure with clear documentation so the code is easy to maintain and extend.
+---"""
 
 from __future__ import annotations
-
 from datetime import datetime
 
 
@@ -248,10 +249,8 @@ class JalaliCalendar:
                         week_str.append(f"{day:>3}")
                 output.append(" ".join(week_str))
             return "\n".join(output)
-
         output = []
         width = 20
-
         if show_header:
             month_name = JalaliDate.JALALI_MONTHS_EN[self.month - 1]
             header_text = f"{month_name} {self.year}"
@@ -259,7 +258,6 @@ class JalaliCalendar:
             right_pad = width - len(header_text) - left_pad
             header_colored = " " * left_pad + f"\033[37m{header_text}\033[0m" + " " * right_pad
             output.append(header_colored)
-
         weekdays_abbr = ["Sh", "Ye", "Do", "Se", "Ch", "Pa", "Jo"]
         weekday_cells = []
         for i, wd in enumerate(weekdays_abbr):
@@ -269,7 +267,6 @@ class JalaliCalendar:
                 colored = f"\033[37m{wd}\033[0m"
             weekday_cells.append(colored)
         output.append(" ".join(weekday_cells))
-
         today = JalaliDate.today()
         calendar_grid = self.get_month_calendar()
         for week in calendar_grid:

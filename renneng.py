@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a target directory (defaulting to the current directory) and renames files whose base names contain non-ASCII characters, such as Chinese, Japanese, or other non-English text. For each such file, the script should translate the filename's base name into English using an automatic language-detection translation service, while preserving the original file extension. If translation fails for any file, the script should report the error in a clear message and keep the original name without interrupting the rest of the process.
+The script should be safe with respect to existing files: if the translated name would collide with a file already present in the same folder, it must append a numeric suffix (such as _1, _2, and so on) to create a unique name rather than overwriting anything. Filenames that are already pure ASCII should be left untouched. The script should process all subdirectories, handle deeper folders before their parents so that renaming does not disrupt traversal, and print a readable log of every rename performed, along with any errors encountered.
+The output is the renamed files on disk plus console feedback summarizing the actions taken. Prioritize robustness, clear reporting, and non-destructive behavior, and feel free to choose any suitable approach for the implementation.
+---"""
 
 from __future__ import annotations
-
 import os
-import re
 from pathlib import Path
-
+import re
 from deep_translator import GoogleTranslator
 
 DIRECTORY = "."
@@ -39,7 +41,6 @@ def get_unique_path(path: Path) -> Path:
 
 
 def rename_files(directory: str) -> None:
-
     for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
         for name in filenames:
             path = Path(dirpath) / name

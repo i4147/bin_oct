@@ -1,21 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for removing comments from Python source files, safely and at scale across entire directory trees.
+The tool should accept one or more file or directory paths as input. When given a directory, it should recursively discover Python source files (including stub files), while skipping common non-source directories such as version control folders, virtual environments, caches, build outputs, and dependency folders. Files that cannot be parsed or transformed should be reported without aborting the whole run.
+Its core behavior is to strip ordinary comments from code while preserving the program's meaning and structure. It must keep comments that carry functional significance, including shebang lines, encoding declarations, type-checker and linter directives (such as noqa, pylint, ruff, isort, mypy, pyright, pragma, and fmt markers), and type comments. It should also preserve the surrounding formatting as much as possible, so that the code remains readable and unchanged apart from the removed comments, and it should ensure the resulting code is still valid Python.
+Provide options that control the transformation, such as a dry-run mode that reports what would change without writing anything, a check mode that signals whether any file would be modified (suitable for use in continuous integration), and an option to create backup copies before overwriting files. The tool should also support a verbose mode for detailed per-file output, colored terminal output when appropriate, and a summary at the end reporting how many files were scanned, modified, unchanged, or failed.
+For performance, the tool should be able to process many files in parallel using a configurable number of worker processes and chunk sizes, with a sensible default. It should write changes atomically so that a file is never left half-written if the process is interrupted.
+Include a version flag and clear help text describing each option. The exit status should reflect the outcome: success when no errors occur, a distinct non-zero status when check mode finds files that would change, and an error status when failures occur or invalid input is provided.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+import contextlib
+from dataclasses import dataclass
 import functools
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import sys
 import tempfile
 import tokenize
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Iterator, Sequence
-
 import libcst as cst
 
 PROGRAM = "strip_comments"
@@ -26,7 +32,6 @@ PY_SUFFIXES = (".py", ".pyi")
 BACKUP_SUFFIX = ".pystripbak"
 GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
-
 DEFAULT_SKIP_DIR_NAMES = frozenset({
     ".git",
     ".hg",
@@ -45,7 +50,6 @@ DEFAULT_SKIP_DIR_NAMES = frozenset({
     "dist",
     ".eggs",
 })
-
 PROTECTED_COMMENT_RE = re.compile(
     r"^#(?:!|\s*(?:-\*-.*coding|coding[:=]|fmt\b|type\b|noqa\b|pylint\b|"
     r"ruff\b|isort\b|mypy\b|pyright\b|pragma\b))",
@@ -124,7 +128,6 @@ def strip_indented_block_docstring(
     first = block.body[0]
     if not starts_with_docstring(first):
         return block, False
-
     same_line_tail = list(first.body[1:])
     later_statements = list(block.body[1:])
     if same_line_tail:
@@ -132,20 +135,16 @@ def strip_indented_block_docstring(
             block.with_changes(body=[first.with_changes(body=same_line_tail), *later_statements]),
             True,
         )
-
     if not later_statements or has_trailing_comment(first):
         return (
             block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later_statements]),
             True,
         )
-
     if first.leading_lines:
         following = later_statements[0]
         existing = list(getattr(following, "leading_lines", ()) or ())
-        try:
+        with contextlib.suppress(AttributeError):
             later_statements[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-        except AttributeError:
-            pass
     return block.with_changes(body=later_statements), True
 
 
@@ -175,7 +174,6 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
     first = module.body[0]
     if not starts_with_docstring(first):
         return module
-
     same_line_tail = list(first.body[1:])
     rest = list(module.body[1:])
     if same_line_tail:
@@ -183,10 +181,8 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
     if first.leading_lines and rest:
         following = rest[0]
         existing = list(getattr(following, "leading_lines", ()) or ())
-        try:
+        with contextlib.suppress(AttributeError):
             rest[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-        except AttributeError:
-            pass
     elif first.leading_lines:
         return module.with_changes(body=[], header=[*module.header, *first.leading_lines])
     return module.with_changes(body=rest)
@@ -194,7 +190,7 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
 
 def _dehash(comment: str) -> str:
     text = comment[1:]
-    return text[1:] if text.startswith(" ") else text
+    return text.removeprefix(" ")
 
 
 def looks_like_commented_out_code(comment_lines: Sequence[str]) -> bool:
@@ -220,7 +216,6 @@ def find_commented_out_code_lines(source: str) -> frozenset[int]:
         comments = [tok for tok in tokens if tok.type == tokenize.COMMENT]
     except (IndentationError, tokenize.TokenError, SyntaxError):
         return frozenset()
-
     protected: set[int] = set()
     lines: list[int] = []
     texts: list[str] = []
@@ -232,10 +227,8 @@ def find_commented_out_code_lines(source: str) -> frozenset[int]:
 
     for token in comments:
         line_number, column = token.start
-
         prefix = token.line[:column]
         is_full_line = not prefix.strip()
-
         is_directive = PROTECTED_COMMENT_RE.match(token.string) is not None
         if not is_full_line or is_directive:
             flush()
@@ -265,7 +258,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return PROTECTED_COMMENT_RE.match(text) is not None
 
     def _is_on_protected_line(self, node: cst.CSTNode) -> bool:
-
         return False
 
     def _should_remove_comment(self, comment: cst.Comment) -> bool:
@@ -403,16 +395,12 @@ def atomic_replace(path: Path, data: bytes) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         if mode is not None:
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(temporary, mode)
-            except OSError:
-                pass
         os.replace(temporary, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             temporary.unlink()
-        except OSError:
-            pass
         raise
 
 
@@ -423,7 +411,8 @@ def backup_path_for(path: Path) -> Path:
 def write_backup(path: Path, data: bytes, overwrite: bool) -> None:
     backup = backup_path_for(path)
     if backup.exists() and not overwrite:
-        raise FileExistsError(f"backup already exists: {backup} (use --overwrite-backup)")
+        msg = f"backup already exists: {backup} (use --overwrite-backup)"
+        raise FileExistsError(msg)
     atomic_replace(backup, data)
 
 
@@ -447,20 +436,17 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
         original_bytes = path.read_bytes()
     except OSError as exc:
         return FileResult(path, error=f"read error: {exc}")
-
     try:
         encoding, _ = tokenize.detect_encoding(io.BytesIO(original_bytes).readline)
         source = original_bytes.decode(encoding)
     except (SyntaxError, UnicodeDecodeError) as exc:
         return FileResult(path, len(original_bytes), error=f"encoding error: {exc}")
-
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return FileResult(path, len(original_bytes), error=f"LibCST parse error: {exc}")
     except Exception as exc:
         return FileResult(path, len(original_bytes), error=f"parse error: {type(exc).__name__}: {exc}")
-
     protected_lines = frozenset() if options.remove_commented_code else find_commented_out_code_lines(source)
     try:
         transformed = run_transform(module, options, protected_lines)
@@ -476,10 +462,8 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
             len(original_bytes),
             error=f"transform error: {type(exc).__name__}: {exc}",
         )
-
     if new_bytes == original_bytes:
         return FileResult(path, len(original_bytes), len(original_bytes))
-
     try:
         ast.parse(new_source, filename=str(path), type_comments=True)
     except (SyntaxError, ValueError) as exc:
@@ -489,7 +473,6 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
             len(new_bytes),
             error=f"post-transform validation failed: {exc}",
         )
-
     if not options.dry_run:
         if options.make_backup:
             try:
@@ -505,7 +488,6 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
             atomic_replace(path, new_bytes)
         except (OSError, UnicodeEncodeError) as exc:
             return FileResult(path, len(original_bytes), len(new_bytes), error=f"write error: {exc}")
-
     return FileResult(path, len(original_bytes), len(new_bytes), changed=True)
 
 
@@ -730,7 +712,6 @@ def _result_iterator(
     if jobs == 1:
         yield from map(worker, files)
         return
-
     with mp.Pool(processes=jobs, maxtasksperchild=500) as pool:
         yield from pool.imap_unordered(worker, files, chunksize=chunk_size)
 
@@ -742,7 +723,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     paths = args.paths or [Path.cwd()]
     if args.reverse:
         return run_reverse(paths, args)
-
     dry_run = args.dry_run or args.check
     options = TransformOptions(
         remove_all=args.all,
@@ -755,7 +735,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         overwrite_backup=args.overwrite_backup,
         dry_run=dry_run,
     )
-
     total = changed = errors = old_total = new_total = 0
     files = iter_python_files(paths, args.exclude_dir)
     for result in _result_iterator(files, options, args.jobs, args.chunk_size):
@@ -775,7 +754,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             reset = "" if not color else RESET
             action = "would reduce" if dry_run else "reduced"
             print(f"{result.path}  {action} {color}{format_size(delta)}{reset}")
-
     if total == 0:
         print("No Python files found.", file=sys.stderr)
         return 1

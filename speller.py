@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line spell-checking tool for text files. It should accept an input file path and an optional output path, along with a flag that enables automatic correction of misspelled words. The tool reads the input text line by line, identifies alphabetic words (including simple contractions with apostrophes), and checks each against a standard English dictionary. For every misspelled word, it should count the occurrence and, when auto-correction is enabled, replace it with the most likely correction while preserving the original casing style (title case, all uppercase, or lowercase) and any surrounding punctuation or apostrophe formatting. Words that contain digits or other non-alphabetic characters should be left untouched.
+The script should take advantage of multiple CPU cores to process large files efficiently, distributing lines across worker processes and then reassembling the results in their original order. Each worker should be self-contained so that it can perform the checks independently. Once processing completes, the tool should write the corrected text to the output destination (or overwrite the input when no output is given) and print a concise summary to the console reporting the total number of misspelled words found and the number of words actually corrected.
+Include a clear help message describing the available options, handle missing or unreadable files gracefully with informative error messages, and ensure the script runs as a standalone program from the command line.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
 from multiprocessing import Pool, cpu_count
-
+import re
 from spellchecker import SpellChecker
 
 

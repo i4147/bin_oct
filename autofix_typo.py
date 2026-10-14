@@ -1,16 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as an adaptive typo-correction and identifier-repair tool for source code. It should accept a file or directory of Python source files (and optionally a text input) and detect likely misspelled identifiers, keywords, or symbols by comparing them against the language's reserved words and against names already used in the codebase. For each suspected typo, it should propose one or more corrections ranked by likelihood, using a combination of common keyboard-level error patterns (such as adjacent-key mistakes and frequent character substitutions) and edit-distance similarity.
+The tool should learn from user feedback over time: when a correction is accepted or rejected, it should record that outcome in a persistent local database and use the accumulated history to adjust future suggestions, weighting patterns the user has confirmed more heavily and suppressing ones they have rejected. The learned data should survive between runs and be stored in a human-readable format.
+Inputs should be provided via command-line arguments, including the target path, an option to apply fixes automatically or only report them, a flag to run in interactive confirmation mode, a path to the learning database, and a dry-run option that previews changes without writing to disk. When applying changes, the tool should create a backup of each modified file before writing, and it must never corrupt source code: changes should only be made to tokens that are safely identifiable and should preserve formatting, comments, and string literals.
+Outputs should include a clear, human-readable report listing each detected issue, its location (file and line), the suggested correction, and a confidence score, along with a summary of totals and any files that were changed. Optionally, the tool should emit the same report as structured JSON for use by other programs. The script should handle errors gracefully, such as unreadable files, malformed syntax, or a corrupted learning database, by reporting the problem and continuing with the remaining work rather than crashing. It should be runnable as a standalone command-line program with helpful usage messages.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import defaultdict
+from datetime import datetime
 import json
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import defaultdict
-from datetime import datetime
-from pathlib import Path
-
 from dh import PY_KEYWORDS
 
 COMMON_SUBSTITUTIONS = {

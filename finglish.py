@@ -1,9 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts Persian (Farsi) text into Finglish, a romanized, phonetic in Latin letters. The tool should accept a Persian string (or read text from a file) and output a readable Latin-script transliteration that approximates how the words are pronounced.
+Key requirements:
+- Input: Persian text provided directly as a string argument or read from a text file path. Support multi-word sentences, preserving word boundaries and spacing.
+- Output: The transliterated Finglish text, either printed to the console or written to an output file.
+- Character mapping: Map each Persian letter to a sensible Latin equivalent, including digraphs where appropriate (for example, multi-letter sounds such as "sh", "ch", "kh", "zh", "gh"). Handle letters that represent multiple sounds, such as the Persian "و" and "ی", using context: the position of the letter within a word (word-initial, word-medial, word-final) should determine whether it becomes a consonant or vowel sound.
+- Positional rules: Apply contextual logic so that vowels and glides are rendered correctly depending on whin, occur inside, or end a word.
+- Diacritics and short vowels: Handle Persian vowel marks and zero-width characters gracefully, stripping or ignoring them where they are not part of the base text, and normalizing Unicode input before processing.
+- Edge cases: Handle empty strings, extra whitespace, punctuation, numerals, mixed Persian and Latin text, and Arabic-script variants of common letters (such as Arabic yeh and kaf) by normalizing them to their Persian forms.
+- Robustness: Characters not present in the mapping should pass through unchanged rather than causing errors. Report clear messages for missing input files or unreadable encodings.
+- Usability: Provide a simple command-line interface that accepts either inline text or a file path, with an optional output file argument. Default to UTF-8 encoding for all reading and writing.
+- Code quality: The script should be self-contained, well-structured, and include brief documentation explaining the transliteration approach and its known limitations, such as the fact that Finglish is an informal, non-standardized system and that the output is phonetic approximation rather than a precise linguistic standard.
+---"""
 
 from __future__ import annotations
-
-import unicodedata
 from pathlib import Path
+import unicodedata
 
 
 def custom_persian_to_finglish(text: str) -> str:

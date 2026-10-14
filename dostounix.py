@@ -1,11 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts text files from Windows-style line endings (CRLF) to Unix-style line endings (LF), in place. The tool should accept one or more file or directory paths as command-line arguments; if no arguments are given, it should process the current working directory. When a directory is provided, it should recursively find all files within it. The tool should skip binary files and any files or directories that match a standard set of exclusion rules (such as version control folders, build artifacts, or caches), which should be determined by helper logic that the implementer may design as they see fit.
+Key behaviors:
+- Only modify files that actually contain CRLF sequences; leave all other files untouched and do not rewrite their timestamps unnecessarily.
+- Perform the conversion safely, for example by writing to a temporary file and atomically replacing the original, so a failure never leaves a partially written file behind.
+- Process files in parallel using a pool of worker processes with a sensible default concurrency and chunked task distribution to keep throughput high on large trees.
+- Handle errors gracefully per file (such as permission errors or I/O failures) without aborting the entire run; report which files failed and continue with the rest.
+- At the end, print a concise summary including the number of files scanned, the number converted, and any errors encountered.
+- Ensure the script works correctly when launched as a standalone program and guards its multiprocessing entry point appropriately for cross-platform use.
+The implementer is free to choose the structure, libraries, naming, command-line parsing approach, and reporting format, as long as the core purpose and behaviors above are met.
+---"""
 
 from __future__ import annotations
-
-import sys
 from multiprocessing import Pool
 from pathlib import Path
-
+import sys
 from dh import is_binary, should_skip
 
 WORKERS = 8

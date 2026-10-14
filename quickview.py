@@ -1,7 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""s as an interactive terminal (TUI) file previewer for directory. The script should list all reg sorted alphabetically by name in a case-insensitive manner, and let the user browse them one at a time.
+For each selected file, the script should display its name and position within the list (for example, "File 3/12: notes.txt") as a clearly visible header, followed by a preview of the file's first portion of lines (around 20 lines). Reading should be tolerant of text encoding problems, replacing undecodable characters rather than failing, and any read error should be shown gracefully within the preview area instead of crashing the program.
+The interface should use color to distinguish elements such as the header, the body text, status or navigation hints, and error messages. The display should adapt to the terminal size, truncating long lines or content that does not fit the visible area without breaking the layout.
+Users should be able to move forward and backward through the file list with keyboard controls (arrow keys and common alternatives such as vim-style keys), jump to the first or last file, and quit cleanly with a key such as "q" or Escape. The terminal should be restored to its normal state on exit, including when errors occur. Handle window resize events so the display redraws correctly.
+Keep the implementation simple, robust, and dependency-free beyond the Python standard library, and include a brief on-screen key help line at the bottom of the interface.
+---"""
 
 from __future__ import annotations
-
 import curses
 from pathlib import Path
 

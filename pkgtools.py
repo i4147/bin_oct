@@ -1,7 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line package inspection and maintenance tool for Python environments. The tool should discover the Python packages installed across the active interpreter's site-packages locations (including the system site directories, the user site directory, and optionally any directories listed in the PYTHONPATH environment variable), and allow the user to list, search, inspect, and report on those packages.
+Key requirements:
+- Accept command-line arguments that let the user choose the action (for example listing all installed distributions, filtering by name using wildcard patterns, showing details such as version, location, and dependencies for selected packages, or exporting results), and toggle options such as including or excluding user-site packages, including PYTHONPATH entries, verbose logging, and output format.
+- Discover installed distributions robustly: handle missing or nonexistent directories gracefully, skip broken or incomplete package metadata without crashing, and deduplicate packages that appear in more than one location.
+- Support multiple output formats, at minimum a human-readable table or plain text view on the console and a CSV export written to a file or stdout, with clearly structured columns such as name, version, location, and summary.
+- Use concurrency where it meaningfully speeds up reading metadata or scanning directories across many packages, while keeping results deterministically ordered.
+- Provide an optional cleanup or reporting mode that identifies potentially orphaned or duplicated installations and reports them, with a dry-run default so that no files are removed unless the user explicitly confirms a destructive action.
+- Log progress and warnings to standard error through a configurable logging setup, with debug-level detail available when verbose mode is enabled.
+- Return meaningful exit codes: zero on success, non-zero on invalid arguments or unrecoverable errors, and print clear error messages instead of raw tracebacks for expected failure cases.
+- Include a `--help` usage description and keep the script self-contained in a single file that runs on a standard Python 3 installation without third-party dependencies.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import csv
@@ -9,10 +19,10 @@ import fnmatch
 import importlib.metadata
 import logging
 import os
+from pathlib import Path
 import shutil
 import site
 import sys
-from pathlib import Path
 from typing import Any, Sequence
 
 logger = logging.getLogger("pkgtool")
@@ -268,7 +278,7 @@ def generate_wheel_tags(purelib: bool) -> tuple[str, str, str]:
     if purelib:
         return "py3", "none", "any"
     try:
-        from packaging.tags import sys_tags  # type: ignore
+        from packaging.tags import sys_tags
 
         tag = next(sys_tags())
         return tag.interpreter, tag.abi, tag.platform

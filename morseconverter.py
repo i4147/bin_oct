@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts text to Morse code and Morse code back to text, usable from the command line. The tool should accept either a direct text string or a file path as input, and an explicit mode choice to encode plain text into Morse or decode Morse back into plain text. Encoding should be case-insensitive, support letters A–Z, digits 0–9, and spaces, and represent word boundaries clearly in the Morse output; any characters without a Morse equivalent should be passed through unchanged rather than causing an error. Decoding should interpret Morse symbols separated by spaces, treat the word-separator symbol as a space, and gracefully handle unrecognized sequences. The script should print results to standard output by default and optionally write them to an output file specified by the user. Provide clear help text describing usage, and handle common errors such as missing input files, unreadable paths, or invalid arguments with informative messages and non-zero exit codes.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 MORSE_CODE_DICT = {
     "A": ".-",

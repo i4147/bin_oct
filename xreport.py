@@ -1,38 +1,41 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line archive and compression utility, capable of compressing and decompressing files and folders across many common formats, including zip, tar (with optional gzip, bzip2, xz/lzma, and other stream compressions), 7z, and standalone compressed streams such as gz, bz2, xz, zst, lz4, snappy, and brotli. The tool should detect the format from file extensions or an explicit user option, gracefully handle optional thirdecs by reporting clearly when a required package is not installed, and fall back to the standard library wherever possible.
+The script should support at least these operations: creating an archive from one or more files or directories, extracting an archive to a chosen output directory, listing the contents of an archive with sizes, and compressing or decompressing a single file. Users should be able to control the compression level where the format supports it, choose whether to include hidden files, and optionally overwrite existing outputs or prompt before doing so. Paths inside archives must be handled safely, guarding against path traversal and absolute-path extraction attacks.
+Output should be human-friendly: display human-readable file sizes (bytes through petabytes), show per-file progress or a summary of the operation, report the compression ratio and total bytes before and after, and print a clear banner at startup. Errors such as missing files, unsupported formats, corrupted archives, permission problems, and missing optional dependencies should produce concise, actionable messages and meaningful non-zero exit codes. The script should also support a quiet mode for scripting and a verbose mode that lists each processed entry, and it should exit cleanly on keyboard interrupts.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import gzip
 import json
 import lzma
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-import zipfile
-from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
+import zipfile
 
 try:
-    import py7zr  # type: ignore
+    import py7zr
 except ImportError:
     py7zr = None
 try:
-    import zstandard as zstd  # type: ignore
+    import zstandard as zstd
 except ImportError:
     zstd = None
 try:
-    import lz4.frame as lz4_frame  # type: ignore  # noqa: F401
+    import lz4.frame as lz4_frame
 except ImportError:
     lz4_frame = None
 try:
-    import snappy  # type: ignore  # noqa: F401
+    import snappy
 except ImportError:
     snappy = None
 try:
-    import brotli  # type: ignore  # noqa: F401
+    import brotli
 except ImportError:
     brotli = None
 

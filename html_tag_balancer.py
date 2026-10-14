@@ -1,12 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that checks HTML files for structural problems, specifically unbalanced or mismatched tags, and reports where they occur so they can be reviewed or repaired. The tool should accept one or more HTML file paths (or a directory to scan) as command-line input, read each file, and walk through its markup while tracking which elements are opened and closed. It must understand that certain elements (such as line breaks, images, and inputs) never require a closing tag, and it should treat tag names case-insensitively.
+For each file, the script should detect and report problems such as closing tags that have no matching opening tag, opening tags that are never closed, and closing tags that appear out of order relative to what is currently open. Every reported issue should include the file name, the line and column position in the source, the offending tag name, and a short human-readable description of the problem. Where it is safe to do so, the script should be able to produce a corrected version of the HTML by inserting missing closing tags or removing stray ones, and it should write that output to a new file rather than overwriting the original unless the user explicitly asks for in-place modification.
+The tool should provide a clear summary at the end of the run showing how many files were checked, how many had issues, and theems found, and it should return a non-zero exit status when any problems remain unresolved so it can be used in build pipelines. Invalid paths, unreadable files, and encoding errors should be handled gracefully with informative messages rather than crashes. Include a helpful command-line help message describing all options, such as a flag to fix issues, a flag to specify an output location, and a quiet mode that only reports the exit status.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
-import sys
 from html.parser import HTMLParser
 from pathlib import Path
+import sys
 
 VOID_ELEMENTS = frozenset({
     "area",

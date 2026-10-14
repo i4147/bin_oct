@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that loads configuration from a user-level environment file (falling back to system environment variables), optionally authenticates with a GitHub access token, and analyzes GitHub repository sizes to help a user understand and manage their repositories. The tool should use a local size cache stored in a JSON file that expires after a fixed number of days, so that repeated runs avoid unnecessary GitHub API calls and respect rate limits (authenticated and unauthenticated). It should clearly report in the console whether credentials were found, which mode it is operating in, and the progress of its work.
+The script should fetch repository metadata for the user's account or a specified set of repositories, compute or retrieve each repository's size, and present the results in a readable, sorted summary (for example, largest to smallest, with human-readable units and totals). It should handle missing or expired cache data gracefully by refreshing only what is needed, store updated results back to the cache, and recover cleanly from network errors, API rate-limit responses, and malformed or corrupted cache files without crashing.
+Include a simple command-line interface that lets the user control key behaviors such as forcing a cache refresh, limiting or filtering the repositories shown, and choosing the output format or sort order. Provide clear, user-friendly error messages and exit with appropriate status codes on failure. The script should be self-contained, safe to run repeatedly, and avoid modifying any repositories or files other than its own cache file.
+---"""
 
 from __future__ import annotations
-
+from datetime import datetime, timedelta
 import os
+from pathlib import Path
 import subprocess
 import sys
-from datetime import datetime, timedelta
-from pathlib import Path
-
-import requests
 from dotenv import load_dotenv
+import requests
 
 env_path = Path.home() / ".env"
 if env_path.exists():

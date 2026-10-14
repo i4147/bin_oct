@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree and finds duplicate files by comparing their contents. The tool should accept a root directory path from the command line, recursively walk it while skipping version-control metadata folders, symbolic links, and unreadable locations, and limit how deep the traversal can go to avoid runaway recursion. It should compute a fast, non-cryptographic content fingerprint for each regular file, reading large files in fixed-size chunks so memory use stays low, and it should parallelize the hashing work across multiple worker processes to speed up scanning of large trees. Files should first be grouped by size so that only files sharing the same size are actually hashed, avoiding unnecessary work. The final output should list each set of identical files (same content), showing their paths and the reclaimable space that could be freed by removing the redundant copies, and it should report a summary of total files scanned and duplicate groups found. The script should handle errors gracefully, such as permission issues or files that disappear during the scan, without crashing, and it should provide a clear command-line interface with helpful usage information.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import os
-import sys
 from collections import defaultdict
 from multiprocessing import Pool
+import os
 from pathlib import Path
-
+import sys
 import xxhash
 
 NUM_WORKERS = 8

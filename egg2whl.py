@@ -1,11 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts a legacy Python egg distribution (an unpacked EGG-INFO metadata folder) into a modern, installable source project. The tool should read the distribution's package metadata and entry point definitions, then generate a standard packaging configuration file so the project can be built and installed with modern Python packaging tools.
+Requirements:
+- Accept a path to an egg root directory containing an EGG-INFO metadata folder as input, and an output location where the converted project should be written or staged (use a temporary working area where appropriate).
+- Read the core package metadata (such as name, version, and other descriptive fields) from the metadata file, tolerating non-UTF-8 bytes and ignoring malformed lines.
+- Read any declared console or GUI entry points and carry them over into the generated packaging configuration.
+- Produce a packaging configuration that uses automatic package discovery, includes package data, and marks the package as not zip-safe, with the metadata values substituted in. Handle missing or empty fields gracefully with sensible defaults.
+- Build the resulting project by invoking the appropriate build step in an isolated subprocess, capture its output, and report success or a clear error message if the build fails.
+- Clean up temporary files and directories afterward, even when an error occurs.
+- Print concise progress messages and a final summary indicating where the built artifacts were placed.
+- Exit with a non-zero status code on failure and zero on success.
+- Keep the script self-contained, robust against missing files, and easy to run from the command line with a small set of arguments.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import subprocess
 import tempfile
-from pathlib import Path
 
 
 def parse_pkg_info(egg_info_dir):

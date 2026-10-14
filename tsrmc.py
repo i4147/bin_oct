@@ -1,14 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that acts as a multi-language source code formatter and reformatter tool, operating on files and directories from the command line. It should detect each file's language from its extension and support a broad set of languages, including Rust, Bash/shell, C and C++ (including headers), CSS, HTML, JavaScript, JSX, TypeScript, TSX, Lua, and TOML.
+The tool should accept one or more file or directory paths, recursively discover supported source files within directories, and skip unsupported files. It should provide a check mode that reports which files would change without modifying them, a diff mode that shows unified differences between original and reformatted content, and an in-place mode that rewrites files that need changes. The exit status should reflect whether any files needed changes or encountered errors, which is useful for use in continuous integration pipelines.
+Behavior requirements:
+- Parse each source file using an appropriate syntax-aware parser for its language, so formatting respects the code's structure rather than relying on naive text manipulation.
+- Normalize indentation, spacing, and line layout consistently for each language while preserving the program's semantics and comments.
+- Process multiple files in parallel using a configurable number of worker processes, with a sensible default.
+- Handle files that fail to parse or read gracefully: log a clear, descriptive error for the affected file, continue processing the rest, and never corrupt or partially overwrite a file.
+- Leave files unchanged when they are already correctly formatted, and avoid unnecessary writes.
+- Report progress and results through a logging facility, with a summary of how many files were checked, changed, or failed.
+- Support a quiet or verbose output option to control log detail.
+- Keep the design modular so that adding support for another language requires minimal changes.
+---"""
 
+from __future__ import annotations
 import argparse
 import difflib
-import shutil
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import TYPE_CHECKING
-
+from loguru import logger
+from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
 import tree_sitter_c
 import tree_sitter_cpp
@@ -19,15 +32,11 @@ import tree_sitter_lua
 import tree_sitter_rust
 import tree_sitter_toml
 import tree_sitter_typescript
-from loguru import logger
-from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
-
+    from collections.abc import Iterable, Iterator
 WORKERS: int = 8
 _PARSERS: dict[str, Parser] = {}
-
 _SUPPORTED_EXTS: frozenset[str] = frozenset({
     ".rs",
     ".sh",
@@ -85,7 +94,7 @@ def get_lang_key(path: Path) -> str:
     s: str = path.suffix.lower()
     if s == ".rs":
         return "rust"
-    elif s == ".sh" or s == "":
+    elif s in {".sh", ""}:
         return "bash"
     elif s == ".c":
         return "c"
@@ -128,26 +137,21 @@ def is_target_file(path: Path) -> bool:
 def should_preserve_comment(comment_bytes: bytes, lang_key: str) -> bool:
     stripped: bytes = comment_bytes.lstrip()
     if lang_key == "rust":
-        return (
-            stripped.startswith(b"///")
-            or stripped.startswith(b"//!")
-            or stripped.startswith(b"/**")
-            or stripped.startswith(b"/*!")
-        )
+        return stripped.startswith((b"///", b"//!", b"/**", b"/*!"))
     elif lang_key == "bash":
-        return stripped.startswith(b"#!") or stripped.startswith(b"# shellcheck") or stripped.startswith(b"##")
+        return stripped.startswith((b"#!", b"# shellcheck", b"##"))
     elif lang_key in {"c", "cpp"}:
-        return stripped.startswith(b"///") or stripped.startswith(b"/**") or stripped.startswith(b"/*!")
+        return stripped.startswith((b"///", b"/**", b"/*!"))
     elif lang_key in {"javascript", "typescript", "tsx"}:
-        return stripped.startswith(b"/**") or stripped.startswith(b"/*!")
+        return stripped.startswith((b"/**", b"/*!"))
     elif lang_key == "css":
         return stripped.startswith(b"/*!")
     elif lang_key == "html":
-        return stripped.startswith(b"<!--!") or stripped.startswith(b"<!--[")
+        return stripped.startswith((b"<!--!", b"<!--["))
     elif lang_key == "lua":
-        return stripped.startswith(b"---") or stripped.startswith(b"--[[!")
+        return stripped.startswith((b"---", b"--[[!"))
     elif lang_key == "toml":
-        return stripped.startswith(b"#!") or stripped.startswith(b"##")
+        return stripped.startswith((b"#!", b"##"))
     return False
 
 
@@ -199,24 +203,20 @@ def process_file(args_tuple: tuple[Path, Path, bool, bool]) -> tuple[str, int, i
             old_text: str = content.decode("utf-8", errors="replace")
         except Exception:
             old_text = ""
-
         lang_key: str = get_lang_key(path)
         new_content, count = strip_comments(content, lang_key)
         new_content = remove_blank_lines(new_content)
         new_size: int = len(new_content)
         reduced: int = orig_size - new_size
-
         try:
             new_text: str = new_content.decode("utf-8", errors="replace")
         except Exception:
             new_text = ""
-
         if not dry_run and reduced > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak" if path.suffix else ".sh.bak")
                 shutil.copy2(path, backup_path)
             path.write_bytes(new_content)
-
         try:
             rel: str = str(path.relative_to(base))
         except ValueError:
@@ -266,19 +266,15 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--backup", action="store_true")
     args: argparse.Namespace = ap.parse_args()
-
     inputs: list[Path] = list(args.paths) if args.paths else [Path()]
     files: list[Path] = list(iter_target_files(inputs))
     if not files:
         logger.error("No target files to process.")
         return 1
-
     base: Path = Path.cwd()
     total_reduced: int = 0
     errors: int = 0
-
     tasks = [(p, base, args.dry_run, args.backup) for p in files]
-
     if len(files) == 1:
         rel, reduced, count, err, old_text, new_text = process_file(tasks[0])
         if err:
@@ -294,7 +290,7 @@ def main() -> int:
         with Pool(processes=WORKERS) as pool:
             results = [pool.apply_async(process_file, t) for t in tasks]
             for res in results:
-                rel, reduced, count, err, old_text, new_text = res.get()
+                rel, reduced, _count, err, old_text, new_text = res.get()
                 if err:
                     errors += 1
                     logger.error(f"{rel}: ERROR: {err}")
@@ -304,7 +300,6 @@ def main() -> int:
                 print(f"{rel}  {green_reduced}")
                 if args.diff and reduced > 0:
                     print_colorful_diff(old_text, new_text, rel)
-
     print(f"\nTotal space freed: {total_reduced} bytes")
     return 1 if errors else 0
 

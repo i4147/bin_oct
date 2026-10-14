@@ -1,26 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scor a single file) for Python source files, detects duplicate or structurally identical code across them, and reports the results as a clear, actionable summary.
+The tool should:
+- Accept a path to a project directory or a single file as its main input, plus command-line options that control behavior such as output destination, minimum code size to consider, and whether to ignore trivial differences like comments, whitespace, or variable names.
+- Discover Python files recursively, and also look inside common compressed or archived formats (such as zip, tar variants, and single-file compressed streams like gzip, bz2, xz, zstd, and brotli) so that code packed in archives is analyzed as well, extracting into temporary storage that is cleaned up afterward.
+- Read each file safely, skipping and logging files that cannot be decoded or parsed rather than crashing the whole run.
+- Compare code blocks at the level of functions, classes, and reasonably sized statement groups, using a normalized representation so that superficially different but structurally equivalent code is recognized. Where a fast syntax-aware parser is available, use it; otherwise fall back to a sound alternative.
+- Group matches into clusters of duplicates, rank them by size and occurrence count, and report for each cluster the involved files, line ranges, and a short identifying fingerprint.
+- Optionally process files in parallel to handle large codebases efficiently, while keeping output deterministic.
+- Produce output in a human-readable text report by default and optionally in a machine-readable structured format, writing either to standard output or to a file.
+- Log progress and warnings through a logging facility, with a verbosity option, and exit with a meaningful status code reflecting whether duplicates were found.
+- Be robust to malformed input, empty directories, missing paths, and unsupported archive types, providing clear error messages for the user.
+- provide json output too,
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import zipfile
-from collections import defaultdict
-from pathlib import Path
-
 from loguru import logger
 
 try:
-    import tree_sitter_python
     from tree_sitter import Parser
+    import tree_sitter_python
 
     TREE_SITTER_AVAILABLE = True
 except Exception:

@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a list of package names from a text file (one per line), queries the public PyPI JSON API for each package in parallel using a multiprocessing worker pool, and classifies every package as either pure-Python, native-extension (compiled), or not found on PyPI. The script should accept the input file path and an optional worker count via command-line arguments, with sensible defaults and a per-request timeout to avoid hanging.
+For classification, inspect each package's latest published release files: if any distribution filename contains markers indicating compiled binaries (such as shared-library extensions like .so, .pyd, .dll, or platform tags like win_amd64, manylinux, or macosx), the package is native; if release files exist and none indicate compiled code, the package is pure Python; if the lookup returns a not-found response or the package has no usable release data, it is missing. Handle malformed or unexpected API responses gracefully without crashing the run.
+Write the three resulting categories to three separate output text files in the current working directory, one package name per line, with the names sorted alphabetically within each file. Log progress and errors using a logging library, print a concise summary of counts for each category when finished, and ensure network failures for individual packages are reported and recorded without stopping the overall process. Include a brief docstring-style description at the top of the script and a clear help message for the command-line interface.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, TypeAlias
-
-import requests
 from loguru import logger
+import requests
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that scans a directory tree on a Termux (Android) environment and repairs script files whose shebang lines point to paths that do not exist on the device. The tool should accept a target directory (or single file) as input, locate candidate script files (Python, shell, and similar interpreter-based scripts), and normalize their first line so it points to a valid interpreter location inside the Termux prefix. It should recognize the common legacy or mismatched Termux shebang variants and replace them with the correct form, add a proper shebang to scripts that lack one when their content or extension clearly indicates an interpreter, and optionally rename files whose extension does not match their interpreter (for example, a Python script without a .py extension) when the user requests it.
+The tool should support a dry-run mode that reports every intended change without modifying anything, a verbose mode that logs each decision, and a backup or safe-write behavior so that no file is left corrupted if an error occurs mid-process. It should preserve file permissions and the rest of each file's content exactly, handle encoding issues gracefully by skipping unreadable files with a clear warning, and be able to process many files in parallel for speed, with a configurable number of workers. The command line should allow the user to set the worker count, choose whether to apply renames, and specify default shebang templates for Python, shell, and generic scripts. At the end, the tool should print a concise summary listing how many files were scanned, modified, renamed, skipped, and failed, along with a non-zero exit status if any errors occurred.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
 import os
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Optional, Sequence
 
 TERMUX_PREFIX = "/data/data/com.termux/files/usr"

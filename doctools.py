@@ -1,16 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that serves as a command-line utility for organizing and exporting chat-related data and files from a local directory. The tool should accept a source input path pointing to a chat export file (such as a JSON or text transcript) and produce cleaned, structured output files in a user-specified destination folder. It should support multiple subcommands, with one focused on exporting chat content into a normalized format, and additional subcommands for supporting file operations such as scanning a folder for files by extension (optionally recursively), generating unique non-overwriting output filenames when conflicts occur, and computing file checksums for verification.
+The script should validate inputs up front, reporting clear informational, warning, and error messages to the console (errors going to the error stream), and exit with a non-zero status on failure. When exporting, it should parse the source file robustly, skip malformed entries with warnings rather than crashing, preserve timestamps, sender names, and message text, and write results in a readable structured format. Where a batch of files is processed, the tool should be able to use parallel workers to speed up work while keeping output deterministic and ordered. It should also provide a checksum summary that can be written to a manifest file, and handle missing external tools gracefully by falling back to built-in behavior when possible.
+The tool should be designed as a self-contained, well-documented script with a clear help interface, sensible defaults, and safe handling of file paths, encodings, and existing outputs.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 
@@ -289,7 +292,7 @@ _HTML_TEMPLATE = """\
 
 def cmd_md_to_html(args: argparse.Namespace) -> int:
     try:
-        import markdown  # type: ignore
+        import markdown
     except ImportError:
         err("md-to-html requires: pip install markdown beautifulsoup4")
         return 2
@@ -475,7 +478,7 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
 
 def cmd_mobi_to_html(args: argparse.Namespace) -> int:
     try:
-        import mobi  # type: ignore
+        import mobi
     except ImportError:
         err("mobi-to-html requires: pip install mobi")
         return 2
@@ -506,7 +509,7 @@ def cmd_mobi_to_html(args: argparse.Namespace) -> int:
 
 def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
     try:
-        from pptx import Presentation  # type: ignore
+        from pptx import Presentation
     except ImportError:
         err("pptx-to-txt requires: pip install python-pptx")
         return 2

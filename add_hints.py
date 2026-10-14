@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as an automated type-annotation assistant for existing Python source files. It should read one or more target Python files (or a directory of them), analyze each file's functions and their parameters and return values, and add type hints where they can be reliably inferred. Inference should draw on several signals: literal default values in function signatures, common naming conventions for parameters (for example names suggesting strings, integers, booleans, paths, or collections), and simple expressions observable in the function body. The tool must only add annotations where confidence is reasonable, leave existing annotations untouched, and preserve the original formatting, comments, and code behavior as much as possible.
+The script should support a dry-run mode that reports the proposed changes without modifying files, a mode that prints a unified diff of the changes for review, and a mode that writes changes in place. It should automatically add any required typing imports to each modified file, avoid duplicating imports that already exist, and skip files that cannot be parsed, reporting them clearly instead of crashing. Provide a command-line interface with options for the target paths, the mode of operation, and optional verbosity, and print a concise summary at the end listing how many files were scanned, modified, or skipped, and how many annotations were added. Handle errors gracefully, validate that the rewritten code still parses before saving, and create backups or leave originals intact if a write would produce invalid output.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import difflib
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Set
-
+from typing import Optional
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
@@ -88,8 +89,11 @@ def infer_literal_type(node: cst.BaseExpression) -> Optional[str]:
             return "bool"
         if isinstance(node.operand, (cst.Integer, cst.Float)):
             return infer_literal_type(node.operand)
-    if isinstance(node, cst.Call) and isinstance(node.func, cst.Name):
-        if node.func.value in {
+    if (
+        isinstance(node, cst.Call)
+        and isinstance(node.func, cst.Name)
+        and node.func.value
+        in {
             "int",
             "float",
             "str",
@@ -101,8 +105,9 @@ def infer_literal_type(node: cst.BaseExpression) -> Optional[str]:
             "tuple",
             "len",
             "repr",
-        }:
-            return {"len": "int", "repr": "str"}.get(node.func.value, node.func.value)
+        }
+    ):
+        return {"len": "int", "repr": "str"}.get(node.func.value, node.func.value)
     return None
 
 
@@ -140,7 +145,6 @@ class _ReturnCollector(cst.CSTVisitor):
 def infer_return_type(func: cst.FunctionDef) -> Optional[str]:
     collector = _ReturnCollector()
     func.body.visit(collector)
-
     if collector.has_yield:
         return None
     if func.name.value in {"__init__", "__init_subclass__", "__set_name__"}:
@@ -191,7 +195,6 @@ class AnnotateTransformer(cst.CSTTransformer):
         is_static = any(
             isinstance(d.decorator, cst.Name) and d.decorator.value == "staticmethod" for d in updated.decorators
         )
-
         params = updated.params
         new_posonly = self._annotate_params(params.posonly_params, is_method and not is_static, first_group=True)
         new_params = self._annotate_params(
@@ -203,7 +206,6 @@ class AnnotateTransformer(cst.CSTTransformer):
         updated = updated.with_changes(
             params=params.with_changes(posonly_params=new_posonly, params=new_params, kwonly_params=new_kwonly)
         )
-
         if self.add_returns and updated.returns is None:
             ret = infer_return_type(updated)
             if ret is not None:
@@ -251,7 +253,7 @@ class _StripAnnotations(ast.NodeTransformer):
         node.returns = None
         return node
 
-    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]
+    visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Optional[ast.AST]:
         return None if node.module == "typing" else node
@@ -267,11 +269,12 @@ def validate(original: str, new: str, filename: str) -> None:
     try:
         new_tree = ast.parse(new, filename=filename)
     except SyntaxError as exc:
-        raise ValueError(f"generated code does not parse: {exc}") from exc
-
+        msg = f"generated code does not parse: {exc}"
+        raise ValueError(msg) from exc
     old_tree = ast.parse(original, filename=filename)
     if _normalized_dump(old_tree) != _normalized_dump(new_tree):
-        raise ValueError("generated code differs from the original beyond annotations")
+        msg = "generated code differs from the original beyond annotations"
+        raise ValueError(msg)
 
 
 def process_file(
@@ -284,29 +287,24 @@ def process_file(
     name_heuristics: bool,
 ) -> int:
     source = path.read_text(encoding="utf-8")
-
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         print(f"[skip] {path}: cannot parse with libcst: {exc}", file=sys.stderr)
         return 1
-
     context = CodemodContext(filename=str(path))
     transformer = AnnotateTransformer(context, add_returns=add_returns, name_heuristics=name_heuristics)
     new_module = module.visit(transformer)
     new_module = AddImportsVisitor(context).transform_module(new_module)
     new_source = new_module.code
-
     if new_source == source:
         print(f"[ok]   {path}: nothing to do")
         return 0
-
     try:
         validate(source, new_source, str(path))
     except ValueError as exc:
         print(f"[FAIL] {path}: {exc} — file NOT modified", file=sys.stderr)
         return 1
-
     if show_diff:
         sys.stdout.writelines(
             difflib.unified_diff(
@@ -316,12 +314,10 @@ def process_file(
                 tofile=f"b/{path}",
             )
         )
-
     s = transformer.stats
     if dry_run:
         print(f"[dry]  {path}: would add {s['params']} param + {s['returns']} return hints")
         return 0
-
     if backup:
         shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
     path.write_text(new_source, encoding="utf-8")
@@ -342,7 +338,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="also guess types from parameter names (name→str, count→int, ...)",
     )
     args = ap.parse_args(argv)
-
     rc = 0
     for f in args.files:
         if not f.is_file() or f.suffix != ".py":

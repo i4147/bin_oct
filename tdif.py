@@ -1,12 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that provides an interactive terminal-based side-by-side (or unified) file diff viewer for comparing two text files. The tool should accept two file paths as command-line arguments and display their differences in a scrollable, color-coded interface within the terminal.
+Key requirements:
+- Take two file paths as inputs, validate that they exist and are readable, and report clear errors if not.
+- Compute a line-by-line comparison between the two files, identifying unchanged, added, and removed lines.
+- Present the results in a full-screen terminal user interface with a header and footer, showing file names and keyboard shortcuts.
+- Display each line with optional line numbers for each file, using distinct colors and markers for unchanged, added, and removed content so differences are immediately visible.
+- Show the two files side by side, keeping corresponding lines aligned, with each panel independently scrollable or synchronized for comfortable reading.
+- Support keyboard navigation for scrolling through long files, jumping between differences, toggling line numbers, and quitting the application.
+- Handle edge cases gracefully, including empty files, files of unequal length, very long lines (wrapping or truncation), and text containing characters that could interfere with terminal markup.
+- Treat files as UTF-8 text by default, and report decoding problems to the user rather than crashing.
+- Optionally support a plain-text output mode that prints the diff to standard output without launching the interface, suitable for piping or logging.
+- Keep the user interface responsive and the code organized into clear, reusable components so the diff logic and presentation are separated.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import difflib
 from pathlib import Path
 from typing import ClassVar
-
 from textual.app import App, ComposeResult
 from textual.color import Color
 from textual.containers import Horizontal, ScrollableContainer

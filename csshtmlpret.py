@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory of HTML files and extracts CSS property names from them, then reports which CSS properties are used and which are not. The tool should accept a command-line directory path (and optionally a list of files or extensions to include), recursively walk the directory tree, parse each HTML document to find inline styles, style blocks, and style-related attributes, and identify any CSS property names that appear in that content. It should compare the discovered properties against a built-in reference list of known CSS property names, such as those from standard CSS specifications, and produce a summary report indicating matched properties, unmatched or unknown terms, and per-file counts.
+The script should gracefully handle missing optional dependencies by warning the user and continuing with a fallback parsing approach where possible. It should process files in parallel to speed up work on large directories, and it should display progress or timing information when finished. Results should be printable to the console in a readable format and optionally saved to an output file, with an option to choose between plain text and structured formats. The tool should handle unreadable files, encoding issues, and nonexistent paths without crashing, and it should print a clear error message and exit with a nonzero status code when invalid arguments are given.
+---"""
 
 from __future__ import annotations
-
-import itertools
-import os
-import re
-import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
+import itertools
 from multiprocessing import get_context
+import os
 from pathlib import Path
+import re
 from subprocess import getoutput
+import sys
 from time import sleep
 
 try:

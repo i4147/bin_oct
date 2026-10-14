@@ -1,22 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass, field
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
-import zipfile
-from dataclasses import dataclass, field
-from html.parser import HTMLParser
-from pathlib import Path
 from typing import Any, Iterable, Iterator, Self
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
-
+import zipfile
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement

@@ -1,11 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory for Python wheel files (.whl archives), identifies which ones are effectively empty, and moves those empty wheels into a dedicated subfolder so they are separated from usable packages.
+The tool should accept a source directory path as its main input, with an optional name for the destination folder that defaults to a sensible label such as "empty_wheels". It should create the destination folder if it does not already exist and only process wheel files located directly in the source directory.
+A wheel counts as empty when it contains no Python source files and no meaningful package content; metadata-only archives (such as those holding only dist-info or cache entries, or directory markers) should be treated as empty. Archives that contain real code or resources should be left untouched.
+Robustness requirements: if a file is not a valid zip archive or cannot be read, report a clear error message for that file and skip it without stopping the run. Other unexpected errors should be reported similarly and handled gracefully.
+The tool should print a concise summary when it finishes, listing how many wheels were examined, how many were moved, and any files that failed to process. It should be runnable from the command line with the directory and destination options, and it should provide helpful usage text when invoked with --help.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import shutil
 import zipfile
-from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

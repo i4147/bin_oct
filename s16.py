@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a text file and splits its contents into chunks of a fixed maximum size, preferring to break at natural boundaries so that no chunk cuts a line or word in the middle when avoidable. The script should accept one or more file paths (for example from the command line), process each file independently, and report for each file how many chunks it was divided into. It should handle files gracefully: skip empty files, handle missing or unreadable files with a clear error message without stopping the processing of other files, and read and write text using UTF-8 encoding. The chunking logic should first try to break at the last newline within the size limit, then fall back to the last whitespace character, and only as a last resort split at the exact size limit. The script should write each chunk to its own output file, named systematically from the original file name with a zero-padded sequence number whose width adapts to the total number of chunks, so that files sort correctly. Include a clear usage message when run without arguments, and make the maximum chunk size a configurable constant that is easy to change.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
-
+import sys
 from dh import mpf_map
 
 CHUNKSIZE = 15_850

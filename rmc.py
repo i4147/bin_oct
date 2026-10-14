@@ -1,25 +1,35 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that acts as a command-line tool for scanning Python source files and reporting on or safely rewriting their code, operating on a single file, a directory tree, or a zipped archive of Python sources. The tool should walk the target location, skipping common non-source and cache directories (such as version control folders, build caches, and virtual environment or egg-info artifacts), and process each Python file it finds, optionally in parallel across multiple worker processes to keep large codebases fast.
+The core behavior should be a pluggable analysis or transformation engine that can use several parsing backends (for example, a concrete-syntax-tree library, an incremental tree-sitter parser, and the standard library's abstract syntax tree module), trying them in a configurable order and falling back gracefully when an optional backend is not installed, with clear, actionable installation hints for missing dependencies. The tool should read source files robustly, respecting text encodings declared in file headers and tolerating files that are unusually large or unparseable, skipping them with a logged warning rather than crashing.
+Inputs should come from command-line arguments: target paths, the choice of backend(s), the number of workers, and options controlling whether changes are applied in place or only previewed, along with a dry-run or check mode suitable for continuous integration that exits with a non-zero status when issues are found. Outputs should include structured, human-readable progress and results logged through a logging library, a summary of files processed, changed, or flagged, and, when rewriting is enabled, updated source files that preserve original formatting, comments, and line endings wherever possible. Errors in individual files must be isolated so that one failure never aborts the entire run, and the tool should return meaningful exit codes reflecting overall success, detected issues, or fatal errors.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
+import codecs
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextlib import ExitStack, suppress
+from dataclasses import dataclass, replace
+from functools import cache, partial
+import importlib.util
 import io
-import io as _io
+from multiprocessing import Pool
 import os
-import shutil
+from pathlib import Path, PurePath
+import re
 import subprocess
 import sys
 import tempfile
 import tokenize
+from typing import TYPE_CHECKING
+import warnings
 import zipfile
-from dataclasses import dataclass, field
-from multiprocessing import Pool
-from pathlib import Path
-from typing import Callable, Iterable, Iterator
-
 from loguru import logger
 
-
+if TYPE_CHECKING:
+    import libcst as cst
+    from tree_sitter import Node, Parser
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
     "__pycache__",
@@ -29,12 +39,48 @@ SKIP_DIRS: frozenset[str] = frozenset({
     "lazy",
     ".tox",
 })
-SKIP_DIR_GLOBS: tuple[str, ...] = ("*.egg-info",)
-POOL_WORKERS: int = 8
-ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")
-GREEN = "\033[32m"
-GRAY = "\033[90m"
-RESET = "\033[0m"
+SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.egg-info",)
+MAX_WORKERS: int = 8
+MAX_SNIFF_SIZE: int = 2_000_000
+DEFAULT_BACKENDS: tuple[str, ...] = ("libcst", "tree-sitter", "ast")
+INSTALL_HINTS: dict[str, str] = {
+    "libcst": "libcst not installed: pip install libcst",
+    "tree-sitter": "tree-sitter not installed: pip install tree-sitter tree-sitter-python",
+}
+GREEN: str = "\x1b[32m"
+GRAY: str = "\x1b[90m"
+RESET: str = "\x1b[0m"
+NEWLINE_RE: re.Pattern[bytes] = re.compile(rb"\r\n|\r|\n")
+SEMICOLON_RE: re.Pattern[bytes] = re.compile(rb"[ \t]*;[ \t]*")
+CLOSE_PAREN_RE: re.Pattern[bytes] = re.compile(rb"\s*\)")
+STRING_PREFIX_RE: re.Pattern[bytes] = re.compile(rb"[A-Za-z]*")
+KEEP_COMMENT_RE: re.Pattern[str] = re.compile(r"#+\s*(?:type:|fmt\s*:)")
+CODING_RE: re.Pattern[str] = re.compile(r"#.*?coding[:=]\s*[-\w.]+")
+BLOCK_FIELDS: tuple[str, ...] = ("body", "orelse", "finalbody")
+
+
+@dataclass(frozen=True, slots=True)
+class Options:
+    strip_comments: bool = True
+    strip_docstrings: bool = False
+    strip_all: bool = False
+    strip_types: bool = False
+    backends: tuple[str, ...] = ("ast",)
+    dry_run: bool = False
+    remove_module_docstring: bool = False
+    clipboard: bool = False
+
+    @property
+    def drop_comments(self) -> bool:
+        return self.strip_comments or self.strip_all
+
+    @property
+    def drop_docstrings(self) -> bool:
+        return self.strip_docstrings or self.strip_all
+
+    @property
+    def drop_module_docstring(self) -> bool:
+        return self.strip_all or self.remove_module_docstring
 
 
 @dataclass(slots=True)
@@ -49,489 +95,515 @@ class FileResult:
 
 
 @dataclass(frozen=True, slots=True)
-class Options:
-    strip_comments: bool = True
-    strip_docstrings: bool = False
-    strip_all: bool = False
-    strip_types: bool = False
-    backend: str = "ast"
-    dry_run: bool = False
-    remove_module_docstring: bool = False
-    clipboard: bool = False
-
-
-def read_text(path: Path) -> str:
-    raw = path.read_bytes()
-    for enc in ENCODINGS:
-        try:
-            return raw.decode(enc)
-        except UnicodeDecodeError:
-            continue
-    raise UnicodeDecodeError("unknown", raw, 0, 1, "no encoding worked")
-
-
-def is_python_candidate(path: Path) -> bool:
-    if path.suffix == ".py":
-        return True
-    if path.suffix:
-        return False
-    try:
-        with path.open("rb") as fh:
-            head = fh.readline(256)
-        if head.startswith(b"#!") and b"python" in head:
-            return True
-        if head.strip():
-            return False
-        if path.stat().st_size > 2_000_000:
-            return False
-        ast.parse(read_text(path))
-        return True
-    except (OSError, SyntaxError, UnicodeDecodeError, ValueError):
-        return False
-
-
-def iter_targets(inputs: Iterable[Path]) -> Iterator[Path]:
-    for root in inputs:
-        if root.is_file():
-            if root.suffix == ".whl" or is_python_candidate(root):
-                yield root
-            continue
-        if not root.is_dir():
-            logger.error("Path does not exist: {}", root)
-            continue
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [
-                d for d in dirnames if d not in SKIP_DIRS and not any(Path(d).match(g) for g in SKIP_DIR_GLOBS)
-            ]
-            base = Path(dirpath)
-            for name in filenames:
-                p = base / name
-                if p.suffix == ".whl" or is_python_candidate(p):
-                    yield p
-
-
-def relpath(path: Path) -> str:
-    try:
-        return str(path.resolve().relative_to(Path.cwd().resolve()))
-    except ValueError:
-        return str(path)
+class Stripped:
+    code: str
+    comments: int
+    docstrings: int
 
 
 @dataclass(frozen=True, slots=True)
 class Edit:
     start: int
     end: int
-    replacement: str
+    replacement: bytes
     kind: str
 
 
-def _line_offsets(source: str) -> list[int]:
-    offsets = [0]
-    for line in source.splitlines(keepends=True):
-        offsets.append(offsets[-1] + len(line))
-    return offsets
+type Backend = Callable[[str, Options], Stripped]
 
 
-def _pos(offsets: list[int], lineno: int, col: int) -> int:
-    return offsets[lineno - 1] + col
+def configure_logging() -> None:
+    logger.remove()
+    logger.add(sys.stderr, level="INFO", format="<level>{level}</level> {message}")
 
 
-def _is_preserved_comment(text: str, lineno: int) -> bool:
-    body = text.lstrip("#").strip()
+def decode_source(raw: bytes) -> tuple[str, str]:
+    if raw.startswith(codecs.BOM_UTF8):
+        return raw.decode("utf-8-sig"), "utf-8-sig"
+    try:
+        return raw.decode("utf-8"), "utf-8"
+    except UnicodeDecodeError:
+        return raw.decode("latin-1"), "latin-1"
+
+
+def parse_tree(text: str) -> ast.Module:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return ast.parse(text)
+
+
+def parses(text: str) -> bool:
+    try:
+        parse_tree(text)
+    except Exception:
+        return False
+    return True
+
+
+def line_starts(raw: bytes) -> list[int]:
+    return [0, *(match.end() for match in NEWLINE_RE.finditer(raw))]
+
+
+def node_span(starts: Sequence[int], node: ast.expr | ast.stmt | ast.arg) -> tuple[int, int]:
+    end_line = node.end_lineno if node.end_lineno is not None else node.lineno
+    end_col = node.end_col_offset if node.end_col_offset is not None else node.col_offset
+    return starts[node.lineno - 1] + node.col_offset, starts[end_line - 1] + end_col
+
+
+def apply_edits(raw: bytes, edits: Iterable[Edit]) -> tuple[bytes, int, int]:
+    out = bytearray()
+    position = 0
+    comments = 0
+    docstrings = 0
+    for edit in sorted(edits, key=lambda item: (item.start, item.end)):
+        if edit.start < position:
+            continue
+        out += raw[position : edit.start]
+        out += edit.replacement
+        position = edit.end
+        if edit.kind == "comment":
+            comments += 1
+        elif edit.kind == "docstring":
+            docstrings += 1
+    out += raw[position:]
+    return bytes(out), comments, docstrings
+
+
+def keep_comment(text: str, lineno: int) -> bool:
     if lineno == 1 and text.startswith("#!"):
         return True
-    if text.startswith("# type:") or text.startswith("#type:"):
+    if lineno <= 2 and CODING_RE.match(text):
         return True
-    if text.startswith("# fmt:") or text.startswith("# fmt :") or text.startswith("#fmt:"):
-        return True
-    return body.startswith(("type:", "fmt:"))
+    return KEEP_COMMENT_RE.match(text) is not None
 
 
-def _is_string_stmt(node: ast.AST) -> bool:
-    return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
+def comment_edit(raw: bytes, line_start: int, comment_start: int, comment_end: int) -> Edit:
+    prefix = raw[line_start:comment_start]
+    if not prefix.strip():
+        return Edit(line_start, comment_end, b"", "comment")
+    return Edit(comment_start - (len(prefix) - len(prefix.rstrip())), comment_end, b"", "comment")
 
 
-def _docstring_edits(source: str, tree: ast.Module, opts: Options) -> list[Edit]:
-    offsets = _line_offsets(source)
+def statement_edit(raw: bytes, start: int, end: int, replacement: bytes, kind: str) -> Edit:
+    match = SEMICOLON_RE.match(raw, end)
+    if match is not None:
+        end = match.end()
+    return Edit(start, end, replacement, kind)
+
+
+def block_edits(
+    raw: bytes,
+    starts: Sequence[int],
+    block: Sequence[ast.stmt],
+    drop: Sequence[bool],
+    is_module: bool,
+    kind: str,
+) -> list[Edit]:
+    if not any(drop):
+        return []
+    needs_pass = all(drop) and not is_module
+    placed = False
     edits: list[Edit] = []
-    remove_all = opts.strip_all or opts.strip_docstrings
-
-    def handle_body(owner: ast.AST, body: list[ast.stmt], is_module: bool) -> None:
-        if not body or not _is_string_stmt(body[0]):
-            return
-        if is_module and not (opts.strip_all or opts.remove_module_docstring):
-            return
-        if not remove_all and not is_module:
-            return
-        if not remove_all and is_module and not opts.remove_module_docstring:
-            return
-        stmt = body[0]
-        start = _pos(offsets, stmt.lineno, stmt.col_offset)
-        end = _pos(offsets, stmt.end_lineno or stmt.lineno, stmt.end_col_offset or 0)
-        only_stmt = len(body) == 1 and not is_module
-        replacement = "pass" if only_stmt else ""
-        edits.append(Edit(start, end, replacement, "docstring"))
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Module):
-            handle_body(node, node.body, is_module=True)
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            handle_body(node, node.body, is_module=False)
+    for statement, flagged in zip(block, drop):
+        if not flagged:
+            continue
+        start, end = node_span(starts, statement)
+        replacement = b""
+        if needs_pass and not placed:
+            replacement = b"pass"
+            placed = True
+        edits.append(statement_edit(raw, start, end, replacement, kind))
     return edits
 
 
-def _comment_edits(source: str, opts: Options) -> list[Edit]:
+def is_docstring_stmt(statement: ast.stmt) -> bool:
+    return (
+        isinstance(statement, ast.Expr)
+        and isinstance(statement.value, ast.Constant)
+        and isinstance(statement.value.value, str)
+    )
+
+
+def comment_edits(text: str, raw: bytes) -> list[Edit]:
+    starts = line_starts(raw)
+    lines = io.StringIO(text, newline="").readlines()
     edits: list[Edit] = []
-    lines = source.splitlines(keepends=True)
-    offsets = _line_offsets(source)
     try:
-        tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
-    except (tokenize.TokenError, IndentationError) as exc:
-        raise SyntaxError(f"tokenize failed: {exc}") from exc
+        for token in tokenize.generate_tokens(io.StringIO(text, newline="").readline):
+            if token.type != tokenize.COMMENT:
+                continue
+            lineno, column = token.start
+            yield_edit = token.string
+            edits.append(
+                (lineno, column, yield_edit)  # type: ignore[arg-type]
+            )
+    except (tokenize.TokenError, SyntaxError) as exc:
+        msg = f"tokenize failed: {exc}"
+        raise SyntaxError(msg) from exc
+    return [
+        comment_edit(
+            raw,
+            starts[lineno - 1],
+            starts[lineno - 1] + len(lines[lineno - 1][:column].encode()),
+            starts[lineno - 1] + len(lines[lineno - 1][:column].encode()) + len(string.encode()),
+        )
+        for lineno, column, string in edits  # type: ignore[misc]
+    ]
 
-    for tok in tokens:
-        if tok.type != tokenize.COMMENT:
+
+def strip_comments(text: str, opts: Options) -> tuple[str, int]:
+    if not opts.drop_comments:
+        return text, 0
+    raw = text.encode()
+    candidates = comment_edits(text, raw)
+    lines = io.StringIO(text, newline="").readlines()
+    starts = line_starts(raw)
+    kept: list[Edit] = []
+    for edit in candidates:
+        line_index = max(index for index, value in enumerate(starts) if value <= edit.end - 1 or index == 0)
+        del line_index
+        kept.append(edit)
+    del lines
+    filtered: list[Edit] = []
+    for edit in kept:
+        segment = raw[edit.start : edit.end].decode("utf-8", "replace")
+        lineno = raw.count(b"\n", 0, edit.end) + 1
+        hash_at = segment.find("#")
+        comment_text = segment[hash_at:] if hash_at != -1 else segment
+        if not opts.strip_all and keep_comment(comment_text, lineno):
             continue
-        lineno, col = tok.start
-        text = tok.string
-        if _is_preserved_comment(text, lineno) and not opts.strip_all:
-            continue
-        if not opts.strip_comments and not opts.strip_all:
-            continue
-        line = lines[lineno - 1]
-        start = _pos(offsets, lineno, col)
-        end = _pos(offsets, lineno, col + len(text))
-        before = line[:col]
-        if before.strip() == "":
-            edits.append(Edit(_pos(offsets, lineno, 0), _pos(offsets, lineno, len(line.rstrip("\r\n"))), "", "comment"))
+        filtered.append(edit)
+    code, comments, _ = apply_edits(raw, filtered)
+    return code.decode(), comments
+
+
+def strip_docstrings_ast(text: str, opts: Options) -> tuple[str, int]:
+    if not (opts.drop_docstrings or opts.drop_module_docstring):
+        return text, 0
+    raw = text.encode()
+    starts = line_starts(raw)
+    edits: list[Edit] = []
+    for node in ast.walk(parse_tree(text)):
+        if isinstance(node, ast.Module):
+            allowed = opts.drop_module_docstring
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            allowed = opts.drop_docstrings
         else:
-            trimmed_start = _pos(offsets, lineno, len(before.rstrip()))
-            edits.append(Edit(trimmed_start, end, "", "comment"))
+            continue
+        if allowed and node.body and is_docstring_stmt(node.body[0]):
+            drop = [index == 0 for index in range(len(node.body))]
+            edits += block_edits(raw, starts, node.body, drop, isinstance(node, ast.Module), "docstring")
+    code, _, docstrings = apply_edits(raw, edits)
+    return code.decode(), docstrings
+
+
+def closing_end(raw: bytes, left: int, annotation_start: int, annotation_end: int) -> int:
+    pending = raw.count(b"(", left, annotation_start)
+    end = annotation_end
+    while pending > 0:
+        match = CLOSE_PAREN_RE.match(raw, end)
+        if match is None:
+            break
+        end = match.end()
+        pending -= 1
+    return end
+
+
+def function_annotation_edits(
+    raw: bytes,
+    starts: Sequence[int],
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> list[Edit]:
+    edits: list[Edit] = []
+    arguments = node.args
+    params: list[ast.arg] = [*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs]
+    if arguments.vararg is not None:
+        params.append(arguments.vararg)
+    if arguments.kwarg is not None:
+        params.append(arguments.kwarg)
+    for param in params:
+        annotation = param.annotation
+        if annotation is None:
+            continue
+        name_start, _ = node_span(starts, param)
+        name_end = name_start + len(param.arg.encode())
+        annotation_start, annotation_end = node_span(starts, annotation)
+        edits.append(Edit(name_end, closing_end(raw, name_end, annotation_start, annotation_end), b"", "annotation"))
+    if node.returns is not None:
+        returns_start, returns_end = node_span(starts, node.returns)
+        arrow = raw.rfind(b"->", 0, returns_start)
+        if arrow != -1:
+            begin = arrow
+            while begin > 0 and raw[begin - 1 : begin] in (b" ", b"\t"):
+                begin -= 1
+            edits.append(Edit(begin, closing_end(raw, arrow, returns_start, returns_end), b"", "annotation"))
     return edits
 
 
-def _type_annotation_edits(source: str, tree: ast.Module) -> list[Edit]:
-    offsets = _line_offsets(source)
+def annotated_assignment_edit(raw: bytes, starts: Sequence[int], node: ast.AnnAssign) -> Edit | None:
+    _, target_end = node_span(starts, node.target)
+    annotation_start, annotation_end = node_span(starts, node.annotation)
+    closed = closing_end(raw, target_end, annotation_start, annotation_end)
+    equals = raw.find(b"=", closed)
+    if equals == -1:
+        return None
+    return Edit(target_end, equals, b" ", "annotation")
+
+
+def strip_annotations(text: str) -> str:
+    raw = text.encode()
+    starts = line_starts(raw)
     edits: list[Edit] = []
-
-    def drop_ann(node: ast.AST) -> None:
-        if node is None:
-            return
-        s = _pos(offsets, node.lineno, node.col_offset)
-        e = _pos(offsets, node.end_lineno or node.lineno, node.end_col_offset or 0)
-        edits.append(Edit(s, e, "", "annotation"))
-
-    for node in ast.walk(tree):
+    for node in ast.walk(parse_tree(text)):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if node.returns is not None:
-                r_start = _pos(offsets, node.returns.lineno, node.returns.col_offset)
-                arrow = source.rfind("->", 0, r_start)
-                if arrow != -1:
-                    end = _pos(
-                        offsets, node.returns.end_lineno or node.returns.lineno, node.returns.end_col_offset or 0
-                    )
-                    edits.append(Edit(arrow, end, "", "annotation"))
-            all_args = (
-                node.args.posonlyargs
-                + node.args.args
-                + node.args.kwonlyargs
-                + ([node.args.vararg] if node.args.vararg else [])
-                + ([node.args.kwarg] if node.args.kwarg else [])
-            )
-            for arg in all_args:
-                if arg.annotation is not None:
-                    colon = source.rfind(":", 0, _pos(offsets, arg.lineno, arg.col_offset) + len(arg.arg) + 1)
-                    end = _pos(
-                        offsets, arg.annotation.end_lineno or arg.annotation.lineno, arg.annotation.end_col_offset or 0
-                    )
-                    edits.append(Edit(colon, end, "", "annotation"))
-        elif isinstance(node, ast.AnnAssign) and node.simple:
-            t_end = _pos(offsets, node.target.end_lineno or node.target.lineno, node.target.end_col_offset or 0)
-            a_start = _pos(offsets, node.annotation.lineno, node.annotation.col_offset)
-            a_end = _pos(
-                offsets, node.annotation.end_lineno or node.annotation.lineno, node.annotation.end_col_offset or 0
-            )
-            if node.value is not None:
-                eq = source.find("=", a_end)
-                edits.append(Edit(t_end, eq, " ", "annotation"))
-            else:
-                edits.append(Edit(t_end, a_end, "", "annotation"))
-            _ = a_start
-    return edits
+            edits += function_annotation_edits(raw, starts, node)
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            edit = annotated_assignment_edit(raw, starts, node)
+            if edit is not None:
+                edits.append(edit)
+        for field in BLOCK_FIELDS:
+            block = getattr(node, field, None)
+            if isinstance(block, list) and block and isinstance(block[0], ast.stmt):
+                drop = [isinstance(item, ast.AnnAssign) and item.value is None for item in block]
+                edits += block_edits(raw, starts, block, drop, isinstance(node, ast.Module), "annotation")
+    code, _, _ = apply_edits(raw, edits)
+    return code.decode()
 
 
-def _apply_edits(source: str, edits: list[Edit]) -> str:
-    seen: set[tuple[int, int]] = set()
-    unique: list[Edit] = []
-    for e in sorted(edits, key=lambda x: (x.start, x.end)):
-        key = (e.start, e.end)
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(e)
-    out = source
-    last_start = len(source) + 1
-    for e in sorted(unique, key=lambda x: x.start, reverse=True):
-        if e.end > last_start:
-            continue
-        out = out[: e.start] + e.replacement + out[e.end :]
-        last_start = e.start
-    return out
+def strip_ast(text: str, opts: Options) -> Stripped:
+    code, docstrings = strip_docstrings_ast(text, opts)
+    code, comments = strip_comments(code, opts)
+    return Stripped(code, comments, docstrings)
 
 
-@dataclass(frozen=True, slots=True)
-class Stripped:
-    code: str
-    comments_removed: int
-    docstrings_removed: int
-
-
-def _count(edits: list[Edit]) -> tuple[int, int]:
-    c = sum(1 for e in edits if e.kind == "comment")
-    d = sum(1 for e in edits if e.kind == "docstring")
-    return c, d
-
-
-def backend_ast(source: str, opts: Options) -> Stripped:
-    tree = ast.parse(source)
-    edits: list[Edit] = []
-    if opts.strip_comments or opts.strip_all:
-        edits += _comment_edits(source, opts)
-    if opts.strip_docstrings or opts.strip_all or opts.remove_module_docstring:
-        edits += _docstring_edits(source, tree, opts)
-    if opts.strip_types or opts.strip_all and opts.strip_types:
-        edits += _type_annotation_edits(source, tree)
-    code = _apply_edits(source, edits)
-    c, d = _count(edits)
-    return Stripped(code, c, d)
-
-
-def backend_libcst(source: str, opts: Options) -> Stripped:
+@cache
+def libcst_remover() -> type[cst.CSTTransformer]:
     import libcst as cst
 
-    class _Stripper(cst.CSTTransformer):
-        def __init__(self) -> None:
+    def is_docstring(node: cst.BaseSmallStatement) -> bool:
+        if not isinstance(node, cst.Expr):
+            return False
+        value = node.value
+        if isinstance(value, (cst.SimpleString, cst.ConcatenatedString)):
+            return isinstance(value.evaluated_value, str)
+        return False
+
+    class Remover(cst.CSTTransformer):
+        def __init__(self, drop_module: bool, drop_other: bool) -> None:
             super().__init__()
-            self.comments = 0
-            self.docstrings = 0
+            self.drop_module = drop_module
+            self.drop_other = drop_other
+            self.removed = 0
 
-        def _maybe_strip_docstring(self, body: cst.BaseSuite, is_module: bool) -> cst.BaseSuite:
-            if not isinstance(body, cst.IndentedBlock) or not body.body:
-                return body
-            first = body.body[0]
-            if not (
-                isinstance(first, cst.SimpleStatementLine)
-                and first.body
-                and isinstance(first.body[0], cst.Expr)
-                and isinstance(first.body[0].value, (cst.SimpleString, cst.ConcatenatedString))
-            ):
-                return body
-            if is_module and not (opts.strip_all or opts.remove_module_docstring):
-                return body
-            if not is_module and not (opts.strip_all or opts.strip_docstrings):
-                return body
-            self.docstrings += 1
-            rest = list(body.body[1:])
-            if not rest:
-                rest = [cst.SimpleStatementLine(body=[cst.Pass()])]
-            return body.with_changes(body=rest)
+        def strip_lines(self, body: Sequence[cst.BaseStatement], keep_empty: bool) -> list[cst.BaseStatement]:
+            first = body[0] if body else None
+            if not isinstance(first, cst.SimpleStatementLine) or not first.body or not is_docstring(first.body[0]):
+                return list(body)
+            self.removed += 1
+            if len(first.body) > 1:
+                return [first.with_changes(body=list(first.body[1:])), *body[1:]]
+            if len(body) > 1 or keep_empty:
+                return list(body[1:])
+            return [first.with_changes(body=[cst.Pass()])]
 
-        def leave_Module(self, original: cst.Module, updated: cst.Module) -> cst.Module:
-            new_body = self._maybe_strip_docstring(cst.IndentedBlock(body=list(updated.body)), is_module=True)
-            return updated.with_changes(body=list(new_body.body))
+        def strip_suite(self, suite: cst.BaseSuite) -> cst.BaseSuite:
+            if isinstance(suite, cst.IndentedBlock):
+                return suite.with_changes(body=self.strip_lines(suite.body, False))
+            small = suite.body
+            if small and is_docstring(small[0]):
+                self.removed += 1
+                return suite.with_changes(body=list(small[1:]) or [cst.Pass()])
+            return suite
 
-        def leave_FunctionDef(self, original: cst.FunctionDef, updated: cst.FunctionDef) -> cst.FunctionDef:
-            return updated.with_changes(body=self._maybe_strip_docstring(updated.body, is_module=False))
+        def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
+            if not self.drop_module:
+                return updated_node
+            return updated_node.with_changes(body=self.strip_lines(updated_node.body, True))
 
-        def leave_ClassDef(self, original: cst.ClassDef, updated: cst.ClassDef) -> cst.ClassDef:
-            return updated.with_changes(body=self._maybe_strip_docstring(updated.body, is_module=False))
+        def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
+            if not self.drop_other:
+                return updated_node
+            return updated_node.with_changes(body=self.strip_suite(updated_node.body))
 
-    module = cst.parse_module(source)
-    stripper = _Stripper()
-    module = module.visit(stripper)
+        def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
+            if not self.drop_other:
+                return updated_node
+            return updated_node.with_changes(body=self.strip_suite(updated_node.body))
 
-    code = module.code
-    if opts.strip_comments or opts.strip_all:
-        edits = _comment_edits(code, opts)
-        code = _apply_edits(code, edits)
-        stripper.comments = sum(1 for e in edits if e.kind == "comment")
-    return Stripped(code, stripper.comments, stripper.docstrings)
+    return Remover
 
 
-def backend_tree_sitter(source: str, opts: Options) -> Stripped:
-    import tree_sitter_python as tspy
+def strip_libcst(text: str, opts: Options) -> Stripped:
+    import libcst as cst
+
+    remover = libcst_remover()(opts.drop_module_docstring, opts.drop_docstrings)
+    code = cst.parse_module(text).visit(remover).code
+    code, comments = strip_comments(code, opts)
+    return Stripped(code, comments, remover.removed)
+
+
+@cache
+def tree_sitter_parser() -> Parser:
     from tree_sitter import Language, Parser
+    import tree_sitter_python
 
-    parser = Parser(Language(tspy.language()))
-    data = source.encode("utf-8")
-    tree = parser.parse(data)
+    return Parser(Language(tree_sitter_python.language()))
+
+
+def is_plain_string(node: Node, raw: bytes) -> bool:
+    if node.type == "string":
+        head = raw[node.start_byte : node.end_byte]
+        prefix = STRING_PREFIX_RE.match(head)
+        letters = prefix.group(0).lower() if prefix else b""
+        return not any(letter in b"bft" for letter in letters)
+    if node.type == "concatenated_string":
+        parts = node.named_children
+        return bool(parts) and all(part.type == "string" and is_plain_string(part, raw) for part in parts)
+    return False
+
+
+def tree_sitter_docstring(node: Node, raw: bytes, opts: Options) -> Edit | None:
+    parent = node.parent
+    if parent is None:
+        return None
+    if parent.type == "module":
+        is_module = True
+    elif (
+        parent.type == "block"
+        and parent.parent is not None
+        and parent.parent.type in ("function_definition", "class_definition")
+    ):
+        is_module = False
+    else:
+        return None
+    if is_module and not opts.drop_module_docstring:
+        return None
+    if not is_module and not opts.drop_docstrings:
+        return None
+    siblings = [child for child in parent.named_children if child.type != "comment"]
+    if not siblings or siblings[0] != node:
+        return None
+    if len(node.named_children) != 1 or not is_plain_string(node.named_children[0], raw):
+        return None
+    replacement = b"pass" if (not is_module and len(siblings) == 1) else b""
+    return statement_edit(raw, node.start_byte, node.end_byte, replacement, "docstring")
+
+
+def strip_tree_sitter(text: str, opts: Options) -> Stripped:
+    raw = text.encode()
+    tree = tree_sitter_parser().parse(raw)
     edits: list[Edit] = []
-
-    def walk(node) -> Iterator:
-        stack = [node]
-        while stack:
-            n = stack.pop()
-            yield n
-            stack.extend(reversed(n.children))
-
-    for n in walk(tree.root_node):
-        if n.type == "comment" and (opts.strip_comments or opts.strip_all):
-            text = data[n.start_byte : n.end_byte].decode("utf-8", "replace")
-            if _is_preserved_comment(text, n.start_point[0] + 1) and not opts.strip_all:
-                continue
-            line_start = data.rfind(b"\n", 0, n.start_byte) + 1
-            before = data[line_start : n.start_byte]
-            s = line_start if before.strip() == b"" else n.start_byte - len(before) + len(before.rstrip())
-            edits.append(Edit(s, n.end_byte, "", "comment"))
-        if n.type == "expression_statement" and n.children and n.children[0].type == "string":
-            parent = n.parent
-            is_module = parent is not None and parent.type == "module"
-            is_body = (
-                parent is not None
-                and parent.type == "block"
-                and parent.parent is not None
-                and parent.parent.type in ("function_definition", "class_definition")
-            )
-            if is_module and not (opts.strip_all or opts.remove_module_docstring):
-                continue
-            if is_body and not (opts.strip_all or opts.strip_docstrings):
-                continue
-            if not (is_module or is_body):
-                continue
-            only = is_body and parent is not None and parent.named_child_count == 1
-            edits.append(Edit(n.start_byte, n.end_byte, "pass" if only else "", "docstring"))
-
-    byte_edits = edits
-    out_bytes = bytearray(data)
-    for e in sorted(byte_edits, key=lambda x: x.start, reverse=True):
-        out_bytes[e.start : e.end] = e.replacement.encode("utf-8")
-    code = out_bytes.decode("utf-8")
-    c, d = _count(edits)
-    return Stripped(code, c, d)
+    stack: list[Node] = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        if node.type == "comment" and opts.drop_comments:
+            end = node.end_byte
+            while end > node.start_byte and raw[end - 1] in (10, 13):
+                end -= 1
+            comment_text = raw[node.start_byte : end].decode("utf-8", "replace")
+            if opts.strip_all or not keep_comment(comment_text, node.start_point[0] + 1):
+                line_start = raw.rfind(b"\n", 0, node.start_byte) + 1
+                edits.append(comment_edit(raw, line_start, node.start_byte, end))
+        elif node.type == "expression_statement":
+            edit = tree_sitter_docstring(node, raw, opts)
+            if edit is not None:
+                edits.append(edit)
+        stack.extend(node.children)
+    code, comments, docstrings = apply_edits(raw, edits)
+    return Stripped(code.decode(), comments, docstrings)
 
 
-BACKENDS: dict[str, Callable[[str, Options], Stripped]] = {
-    "ast": backend_ast,
-    "libcst": backend_libcst,
-    "tree-sitter": backend_tree_sitter,
+BACKENDS: dict[str, Backend] = {
+    "libcst": strip_libcst,
+    "tree-sitter": strip_tree_sitter,
+    "ast": strip_ast,
 }
 
 
-def resolve_backend(requested: str | None) -> str:
-    if requested:
-        if requested not in BACKENDS:
-            raise SystemExit(f"Unknown backend: {requested}")
-        return requested
-    try:
-        import libcst
-
-        return "libcst"
-    except ImportError:
-        return "ast"
-
-
-def check_backend_available(name: str) -> None:
+def backend_available(name: str) -> bool:
+    if name == "ast":
+        return True
     if name == "libcst":
+        return importlib.util.find_spec("libcst") is not None
+    if name == "tree-sitter":
+        return all(importlib.util.find_spec(module) is not None for module in ("tree_sitter", "tree_sitter_python"))
+    return False
+
+
+def resolve_backends(requested: str | None) -> tuple[str, ...]:
+    if requested is not None and not backend_available(requested):
+        raise SystemExit(INSTALL_HINTS.get(requested, f"Unknown backend: {requested}"))
+    order: list[str] = [requested] if requested else []
+    order += [name for name in DEFAULT_BACKENDS if name not in order and backend_available(name)]
+    return tuple(order)
+
+
+def strip_source(text: str, opts: Options) -> Stripped:
+    source_valid = parses(text)
+    errors: list[Exception] = []
+    for name in opts.backends:
         try:
-            import libcst
-        except ImportError as exc:
-            raise SystemExit("libcst not installed: pip install libcst") from exc
-    elif name == "tree-sitter":
-        try:
-            import tree_sitter
-            import tree_sitter_python
-        except ImportError as exc:
-            raise SystemExit("tree-sitter not installed: pip install tree-sitter tree-sitter-python") from exc
+            result = BACKENDS[name](text, opts)
+            if opts.strip_types:
+                result = replace(result, code=strip_annotations(result.code))
+            if source_valid:
+                parse_tree(result.code)
+            return result
+        except Exception as exc:
+            logger.debug("backend {} failed: {}", name, exc)
+            errors.append(exc)
+    syntax_error = next((error for error in errors if isinstance(error, SyntaxError)), None)
+    if syntax_error is not None:
+        raise syntax_error
+    raise errors[-1] if errors else RuntimeError("no backend available")
 
 
-def process_source(source: str, opts: Options) -> Stripped:
-    backend_fn = BACKENDS[opts.backend]
-    result = backend_fn(source, opts)
-    if opts.strip_types or opts.strip_all:
-        pass
-    ast.parse(result.code)
-    return result
-
-
-def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
-    tmp_name: str | None = None
+def write_atomic(path: Path, data: bytes) -> None:
+    target = path.resolve()
+    descriptor, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
+    temporary = Path(name)
     try:
-        with tempfile.NamedTemporaryFile(
-            "w",
-            encoding=encoding,
-            dir=path.parent,
-            delete=False,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            newline="",
-        ) as tmp:
-            tmp_name = tmp.name
-            tmp.write(text)
-            tmp.flush()
-            os.fsync(tmp.fileno())
-        try:
-            shutil.copymode(path, tmp_name)
-        except OSError:
-            pass
-        shutil.move(tmp_name, path)
-        tmp_name = None
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        with suppress(OSError):
+            temporary.chmod(target.stat().st_mode & 0o7777)
+        temporary.replace(target)
     finally:
-        if tmp_name and os.path.exists(tmp_name):
-            os.unlink(tmp_name)
+        temporary.unlink(missing_ok=True)
 
 
-def process_python_file(path: Path, opts: Options) -> FileResult:
-    result = FileResult(path=path)
+def process_file(path: Path, opts: Options) -> FileResult:
+    result = FileResult(path)
     try:
-        original = read_text(path)
-    except PermissionError as exc:
-        result.error = f"PermissionError: {exc}"
-        logger.error("PermissionError reading {}: {}", path, exc)
-        return result
-    except UnicodeDecodeError as exc:
-        result.error = f"UnicodeDecodeError: {exc}"
-        logger.error("Encoding error in {}: {}", path, exc)
-        return result
+        raw = path.read_bytes()
     except OSError as exc:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.error("I/O error reading {}: {}", path, exc)
         return result
-
+    text, encoding = decode_source(raw)
     try:
-        stripped = process_source(original, opts)
+        stripped = strip_source(text, opts)
     except SyntaxError as exc:
         result.error = f"SyntaxError at line {exc.lineno}: {exc.msg}"
-        logger.error(
-            "SyntaxError in {} line {}: {}\n{}",
-            path,
-            exc.lineno,
-            exc.msg,
-            "".join(__import__("traceback").format_exception(exc)),
-        )
+        logger.error("SyntaxError in {} line {}: {}", path, exc.lineno, exc.msg)
         return result
     except Exception as exc:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.opt(exception=exc).error("Failed processing {}", path)
         return result
-
-    result.comments_removed = stripped.comments_removed
-    result.docstrings_removed = stripped.docstrings_removed
-    new_bytes = len(stripped.code.encode("utf-8"))
-    old_bytes = len(original.encode("utf-8"))
-    result.bytes_removed = max(0, old_bytes - new_bytes)
-    result.changed = stripped.code != original
-
+    updated = stripped.code.encode(encoding)
+    result.comments_removed = stripped.comments
+    result.docstrings_removed = stripped.docstrings
+    result.bytes_removed = max(0, len(raw) - len(updated))
+    result.changed = updated != raw
     if opts.clipboard:
         result.final_code = stripped.code
         return result
-
     if result.changed and not opts.dry_run:
         try:
-            atomic_write(path, stripped.code)
-        except PermissionError as exc:
-            result.error = f"PermissionError writing: {exc}"
-            result.changed = False
-            logger.error("PermissionError writing {}: {}", path, exc)
+            write_atomic(path, updated)
         except OSError as exc:
             result.error = f"{type(exc).__name__} writing: {exc}"
             result.changed = False
@@ -539,85 +611,143 @@ def process_python_file(path: Path, opts: Options) -> FileResult:
     return result
 
 
-def _worker_single(args: tuple[Path, Options]) -> FileResult:
-    path, opts = args
-    return process_python_file(path, opts)
-
-
 def process_wheel(path: Path, opts: Options) -> FileResult:
-    result = FileResult(path=path)
-    tmp_dir = Path(tempfile.mkdtemp(prefix="strip_whl_", dir=path.parent))
-    out_tmp = tmp_dir / path.name
+    result = FileResult(path)
     try:
-        with zipfile.ZipFile(path) as zin:
-            bad = zin.testzip()
-            if bad is not None:
-                result.error = f"Corrupted wheel member: {bad}"
-                return result
-            total_removed = c_total = d_total = 0
-            changed_any = False
-            with zipfile.ZipFile(out_tmp, "w", compression=zipfile.ZIP_DEFLATED) as zout:
-                for info in zin.infolist():
-                    data = zin.read(info.filename)
+        with tempfile.TemporaryDirectory(prefix="strip_whl_", dir=path.parent) as directory:
+            staged = Path(directory) / path.name
+            removed = comments = docstrings = 0
+            modified = False
+            with ExitStack() as stack:
+                source = stack.enter_context(zipfile.ZipFile(path))
+                broken = source.testzip()
+                if broken is not None:
+                    result.error = f"Corrupted wheel member: {broken}"
+                    return result
+                target = (
+                    None
+                    if opts.dry_run
+                    else stack.enter_context(zipfile.ZipFile(staged, "w", compression=zipfile.ZIP_DEFLATED))
+                )
+                for info in source.infolist():
+                    data = source.read(info.filename)
                     if info.filename.endswith(".py"):
+                        text, encoding = decode_source(data)
                         try:
-                            text = data.decode("utf-8")
-                        except UnicodeDecodeError:
-                            text = data.decode("latin-1")
-                        try:
-                            s = process_source(text, opts)
-                            if s.code != text and not opts.dry_run:
-                                changed_any = True
-                                total_removed += len(text.encode()) - len(s.code.encode())
-                                c_total += s.comments_removed
-                                d_total += s.docstrings_removed
-                                data = s.code.encode("utf-8")
-                            elif s.code != text:
-                                total_removed += len(text.encode()) - len(s.code.encode())
-                                c_total += s.comments_removed
-                                d_total += s.docstrings_removed
-                        except SyntaxError as exc:
-                            logger.error("SyntaxError in {}!{} line {}: {}", path, info.filename, exc.lineno, exc.msg)
-                    zout.writestr(info, data)
-            result.bytes_removed = max(0, total_removed)
-            result.comments_removed = c_total
-            result.docstrings_removed = d_total
-            result.changed = total_removed != 0
-            if changed_any and not opts.dry_run:
-                shutil.move(str(out_tmp), path)
-            return result
+                            stripped = strip_source(text, opts)
+                        except Exception as exc:
+                            logger.error("{} in {}!{}: {}", type(exc).__name__, path, info.filename, exc)
+                        else:
+                            updated = stripped.code.encode(encoding)
+                            if updated != data:
+                                removed += len(data) - len(updated)
+                                comments += stripped.comments
+                                docstrings += stripped.docstrings
+                                modified = True
+                                data = updated
+                    if target is not None:
+                        target.writestr(info, data)
+            result.bytes_removed = max(0, removed)
+            result.comments_removed = comments
+            result.docstrings_removed = docstrings
+            result.changed = modified
+            if modified and not opts.dry_run:
+                with suppress(OSError):
+                    staged.chmod(path.stat().st_mode & 0o7777)
+                staged.replace(path)
     except zipfile.BadZipFile as exc:
         result.error = f"Invalid wheel archive: {exc}"
         logger.error("Invalid wheel {}: {}", path, exc)
-        return result
     except OSError as exc:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.opt(exception=exc).error("Wheel I/O failure {}", path)
-        return result
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+    return result
+
+
+def is_python_file(path: Path) -> bool:
+    suffix = path.suffix
+    if suffix == ".py":
+        return True
+    if suffix:
+        return False
+    try:
+        with path.open("rb") as handle:
+            first = handle.readline(256)
+        if first.startswith(b"#!") and b"python" in first:
+            return True
+        if first.strip():
+            return False
+        if path.stat().st_size > MAX_SNIFF_SIZE:
+            return False
+        parse_tree(decode_source(path.read_bytes())[0])
+        return True
+    except (OSError, SyntaxError, ValueError, RecursionError, MemoryError):
+        return False
+
+
+def is_candidate(path: Path) -> bool:
+    return path.suffix == ".whl" or is_python_file(path)
+
+
+def walk_directory(root: Path) -> Iterator[Path]:
+    for current, directories, files in root.walk():
+        directories[:] = [
+            name
+            for name in directories
+            if name not in SKIP_DIRS and not any(PurePath(name).match(pattern) for pattern in SKIP_DIR_PATTERNS)
+        ]
+        for name in files:
+            candidate = current / name
+            if candidate.is_symlink() or not candidate.exists():
+                continue
+            if is_candidate(candidate):
+                yield candidate
+
+
+def discover(roots: Iterable[Path]) -> Iterator[Path]:
+    seen: set[Path] = set()
+    for root in roots:
+        if root.is_file():
+            found: Iterator[Path] = iter((root,)) if is_candidate(root) else iter(())
+        elif root.is_dir():
+            found = walk_directory(root)
+        else:
+            logger.error("Path does not exist: {}", root)
+            continue
+        for path in found:
+            key = path.resolve()
+            if key in seen:
+                continue
+            seen.add(key)
+            yield path
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(Path.cwd().resolve()))
+    except ValueError:
+        return str(path)
 
 
 def report(result: FileResult) -> None:
-    rel = relpath(result.path)
+    name = display_path(result.path)
     if result.error:
-        print(f"{rel}    ERROR: {result.error}")
+        print(f"{name}    ERROR: {result.error}")
     elif result.changed:
-        print(f"{GREEN}{rel}    {result.bytes_removed}{RESET}")
+        print(f"{GREEN}{name}    {result.bytes_removed}{RESET}")
     else:
-        print(f"{GRAY}{rel}    (unchanged){RESET}")
+        print(f"{GRAY}{name}    (unchanged){RESET}")
 
 
-def summarize(results: list[FileResult]) -> None:
-    total = len(results)
-    changed = sum(1 for r in results if r.changed)
-    removed = sum(r.bytes_removed for r in results)
-    comments = sum(r.comments_removed for r in results)
-    docs = sum(r.docstrings_removed for r in results)
-    errors = sum(1 for r in results if r.error)
+def summarize(results: Sequence[FileResult]) -> None:
+    changed = sum(1 for item in results if item.changed)
+    removed = sum(item.bytes_removed for item in results)
+    comments = sum(item.comments_removed for item in results)
+    docstrings = sum(item.docstrings_removed for item in results)
+    errors = sum(1 for item in results if item.error)
     print(
-        f"\nSummary: {total} files | {changed} changed | {removed} bytes removed | "
-        f"{comments} comments | {docs} docstrings | {errors} errors"
+        f"\nSummary: {len(results)} files | {changed} changed | {removed} bytes removed "
+        f"| {comments} comments | {docstrings} docstrings | {errors} errors"
     )
 
 
@@ -630,77 +760,84 @@ def copy_to_clipboard(code: str) -> None:
         logger.error("termux-clipboard-set failed: {}", exc)
 
 
+def run_sources(paths: Sequence[Path], opts: Options) -> Iterator[FileResult]:
+    if not paths:
+        return
+    workers = min(MAX_WORKERS, os.process_cpu_count() or 1, len(paths))
+    worker = partial(process_file, opts=opts)
+    if workers <= 1:
+        yield from map(worker, paths)
+        return
+    with Pool(workers, initializer=configure_logging) as pool:
+        yield from pool.imap_unordered(worker, paths)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Strip comments and docstrings from Python files.")
-    p.add_argument("paths", nargs="*", type=Path, help="Files or directories (default: cwd)")
-    p.add_argument("-c", "--comments", action="store_true", help="Remove all comments")
-    p.add_argument("-d", "--docstring", action="store_true", help="Remove all docstrings except module docstring.")
-    p.add_argument("-a", "--all", action="store_true", help="Remove all comments and docstrings, even preserved ones.")
-    p.add_argument("-t", "--type", action="store_true", help="Remove type annotations.")
-    p.add_argument("-x", action="store_true", help="Equivalent to -a -t; nothing written, output copied to clipboard.")
-    p.add_argument(
+    parser = argparse.ArgumentParser(description="Strip comments and docstrings from Python files.")
+    parser.add_argument("paths", nargs="*", type=Path, help="Files or directories (default: cwd)")
+    parser.add_argument("-c", "--comments", action="store_true", help="Remove all comments")
+    parser.add_argument("-d", "--docstring", action="store_true", help="Remove all docstrings except module docstring.")
+    parser.add_argument(
+        "-a", "--all", action="store_true", help="Remove all comments and docstrings, even preserved ones."
+    )
+    parser.add_argument("-t", "--type", action="store_true", help="Remove type annotations.")
+    parser.add_argument(
+        "-x", action="store_true", help="Equivalent to -a -t; nothing written, output copied to clipboard."
+    )
+    parser.add_argument(
         "-b",
         "--backend",
         choices=sorted(BACKENDS),
         default=None,
-        help="Backend (default: libcst if installed, else ast).",
+        help="Preferred backend; others are used as fallback (default order: libcst, tree-sitter, ast).",
     )
-    p.add_argument("--dry-run", action="store_true", help="Show changes without writing.")
-    p.add_argument("--remove-module-docstring", action="store_true", help="Also strip module-level docstrings.")
-    return p
+    parser.add_argument("--dry-run", action="store_true", help="Show changes without writing.")
+    parser.add_argument("--remove-module-docstring", action="store_true", help="Also strip module-level docstrings.")
+    return parser
 
 
-def build_options(ns: argparse.Namespace) -> Options:
-    strip_all = ns.all or ns.x
-    strip_types = ns.type or ns.x
-    default_mode = not (ns.comments or ns.docstring or strip_all)
+def make_options(args: argparse.Namespace) -> Options:
+    strip_all: bool = args.all or args.x
+    strip_types: bool = args.type or args.x
+    default_comments = not (args.comments or args.docstring or strip_all)
     return Options(
-        strip_comments=ns.comments or default_mode or strip_all,
-        strip_docstrings=ns.docstring,
+        strip_comments=args.comments or default_comments or strip_all,
+        strip_docstrings=args.docstring,
         strip_all=strip_all,
         strip_types=strip_types,
-        backend=resolve_backend(ns.backend),
-        dry_run=ns.dry_run or ns.x,
-        remove_module_docstring=ns.remove_module_docstring,
-        clipboard=ns.x,
+        backends=resolve_backends(args.backend),
+        dry_run=args.dry_run or args.x,
+        remove_module_docstring=args.remove_module_docstring,
+        clipboard=args.x,
     )
 
 
-def main(argv: list[str] | None = None) -> int:
-    logger.remove()
-    logger.add(sys.stderr, level="INFO", format="<level>{level}</level> {message}")
-    ns = build_parser().parse_args(argv)
-    opts = build_options(ns)
-    check_backend_available(opts.backend)
-
-    inputs = ns.paths or [Path.cwd()]
-    targets = list(iter_targets(inputs))
-    wheels = [t for t in targets if t.suffix == ".whl"]
-    pys = [t for t in targets if t.suffix != ".whl"]
-
+def main(argv: Sequence[str] | None = None) -> int:
+    configure_logging()
+    args = build_parser().parse_args(argv)
+    opts = make_options(args)
+    roots: list[Path] = args.paths or [Path.cwd()]
+    candidates = list(discover(roots))
+    wheels = [path for path in candidates if path.suffix == ".whl"]
+    sources = [path for path in candidates if path.suffix != ".whl"]
     results: list[FileResult] = []
-    if pys:
-        with Pool(POOL_WORKERS) as pool:
-            for res in pool.imap_unordered(_worker_single, [(p, opts) for p in pys]):
-                report(res)
-                results.append(res)
-    for whl in wheels:
-        res = process_wheel(whl, opts)
-        report(res)
-        results.append(res)
-
+    for result in run_sources(sources, opts):
+        report(result)
+        results.append(result)
+    for wheel in wheels:
+        result = process_wheel(wheel, opts)
+        report(result)
+        results.append(result)
     summarize(results)
-
     if opts.clipboard:
-        finals = [r.final_code for r in results if r.final_code is not None]
-        if len(finals) == 1:
-            copy_to_clipboard(finals[0])
-        elif finals:
-            copy_to_clipboard("\n".join(finals))
+        outputs = [item.final_code for item in results if item.final_code is not None]
+        if len(outputs) == 1:
+            copy_to_clipboard(outputs[0])
+        elif outputs:
+            copy_to_clipboard("\n".join(outputs))
         else:
             logger.warning("No output produced for clipboard")
-
-    return 1 if any(r.error for r in results) else 0
+    return 1 if any(item.error for item in results) else 0
 
 
 if __name__ == "__main__":

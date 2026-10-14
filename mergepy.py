@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that merges all Python source files in the current working directory into a single consolidated Python file. The merged file should be named after the directory it is run from (for example, a folder named "myproject" produces "myproject.py" in that same folder). The script should discover every ".py" file in the directory, excluding the output file itself if them in a consistent, alphabetical order so that repeated runs produce the same result.
+For each source file, read its contents using UTF-8 encoding and append them sequentially to the output file. Before writing, rewrite any relative package-style imports found in the source text so they reference the directory's name as the package name instead. Specifically, handle three forms: "from . import module", "from .module import name", and "import ." patterns, converting them to absolute imports that use the folder name. All other code should be preserved exactly as written.
+Errors such as unreadable files or permission problems should be handled gracefully, with clear messages to the user rather than unhandled crashes. When finished, the script should print a short summary stating how many files were merged and the name of the output file.
+---"""
 
 from __future__ import annotations
-
 import os
-import re
 from pathlib import Path
+import re
 
 
 def resolve_imports(content: str, cwd: Path) -> str:

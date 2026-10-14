@@ -1,25 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
+"""Write a Python script that acts as an automated multi-layer decoding and cipher-breaking tool for obfuscated or encoded text. The script should accept input either directly as a string argument, from a file, or from a remote URL, and should attempt to recognize and reverse common encoding schemes (such as Base64, hexadecimal, URL encoding, and similar text encodings) as well as common compression formats (such as zlib, gzip, bzip2, and LZMA). Because encodings and compressions can be nested, the tool should repeatedly peel layers until no further valid decoding is detected or a sensible depth limit is reached, recording each step taken.
+For classical substitution ciphers, the tool should attempt brute-force recovery, such as trying all Caesar shifts and ranking candidates by how closely their letter distribution matches typical English letter frequencies, returning the most plausible plaintext alongside a confidence-style score. The script should present results clearly, showing the decoding chain used, the intermediate outputs when requested, and the final best-guess plaintext, with an option to display ranked alternatives. It should handle invalid or non-decodable input gracefully by reporting failure rather than crashing, and should support a verbose logging mode for debugging. Optionally, it should be able to export results to a structured file format such as JSON or CSV. Design the command-line interface so that users can select specific decoders, limit recursion depth, and control output format, whileementation self-contained and robust against malformed input.
+---"""
+
+from __future__ import annotations
 import argparse
-import os
-import json
-import csv
 import base64
 import binascii
-import re
-import zlib
-import gzip
 import bz2
+import gzip
+import json
+import logging
 import lzma
+import os
+import re
+import sys
+from typing import Callable
 import urllib.parse
 import urllib.request
-import logging
-import math
-from typing import List, Dict, Tuple, Any, Optional, Callable, Set
+import zlib
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("decoder")
-
 ENGLISH_FREQS = {
     "E": 12.02,
     "T": 9.10,
@@ -141,7 +143,7 @@ def decode_base58(s: str) -> list[str]:
         n = 0
         for char in s.strip():
             if char not in alphabet:
-                raise ValueError()
+                raise ValueError
             n = n * 58 + alphabet.index(char)
         hx = f"{n:x}"
         if len(hx) % 2 != 0:
@@ -311,15 +313,12 @@ def search_pipeline(initial_string: str, max_depth: int, quiet: bool, no_color: 
     visited: set[str] = {initial_string}
     queue: list[DecodeNode] = [DecodeNode(initial_string, "input", 0, calculate_score(initial_string), [])]
     results: list[DecodeNode] = []
-
     while queue:
         queue.sort(key=lambda x: x.score, reverse=True)
         current = queue.pop(0)
         results.append(current)
-
         if current.depth >= max_depth:
             continue
-
         for name, dec_func in DECODERS:
             try:
                 outputs = dec_func(current.text)
@@ -332,7 +331,6 @@ def search_pipeline(initial_string: str, max_depth: int, quiet: bool, no_color: 
                         queue.append(node)
             except Exception:
                 pass
-
     return results
 
 
@@ -346,9 +344,7 @@ def main():
     parser.add_argument("--no-color", action="store_true", help="Disable color output")
     parser.add_argument("--max-depth", type=int, default=2, help="Maximum recursion depth")
     parser.add_argument("-s", "--sensitive", action="store_true", help="For sensitive data")
-
     args = parser.parse_args()
-
     input_str = ""
     if args.string:
         input_str = args.string
@@ -361,17 +357,13 @@ def main():
     else:
         parser.print_help()
         sys.exit(1)
-
     input_str = input_str.strip()
     if not input_str:
         sys.exit(0)
-
     results = search_pipeline(input_str, args.max_depth, args.quiet, args.no_color)
-
     output_data = []
     for r in results:
         output_data.append({"text": r.text, "method": r.method, "depth": r.depth, "score": r.score, "path": r.path})
-
     if args.json:
         out_json = json.dumps(output_data, indent=2)
         if args.output:

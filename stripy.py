@@ -1,14 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that cleans up source code by stripping documentation and comments from every Python file within a given directory tree, while preserving the program's runtime behavior and syntactic validity.
+The tool should accept a root folder (or a list of files) and recursively discover all Python source files beneath it. For each file, it should parse the source into a concrete syntax tree that preserves formatting, then remove docstrings from modules, classes, and functions, and strip ordinary comments from the code. Whenever removing a docstring or comment would leave a function, class, or block with an empty body, the tool should insert a minimal placeholder statement so the code remains valid.
+Processing should be parallelized across a fixed pool of worker processes so that large codebases are handled efficiently. Each file should be handled independently, and a failure on one file (such as a syntax error or unreadable file) must not stop the rest of the batch; the failure should be logged and the file reported as skipped.
+Provide an option to run in a dry-run or report-only mode that shows what would change without modifying any files. By default, changed files should be rewritten in place only when their content actually differs from the original, and unchanged files should be left untouched.
+At the end of the run, produce a concise summary that reports, for each processed file, how many docstrings were removed, how many comments were removed, how many placeholder statements were inserted, and whether the file was written or skipped, along with overall totals. Use structured, readable logging throughout so the user can follow progress and diagnose problems.
+The script should be runnable from the command line, accept the target path as an argument, and exit with a non-zero status if any file could not be processed.
+---"""
 
 from __future__ import annotations
-
 import ast
-import multiprocessing as mp
-import sys
 from dataclasses import dataclass
+import multiprocessing as mp
 from pathlib import Path
+import sys
 from typing import Sequence
-
 import libcst as cst
 from loguru import logger
 

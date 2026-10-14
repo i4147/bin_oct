@@ -1,15 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree and builds a word-frequency report from the text content of its files, then saves the results as a JSON file in the current working directory.
+The tool should:
+- Recursively walk a starting directory (defaulting to the current working directory, and accepting a user-specified path via command-line arguments), skipping common generated, dependency, cache, IDE, and version-control folders (such as version control metadata, package dependency folders, virtual environments, build outputs, and tool caches).
+- Ignore binary and media files (images, archives, executables, compiled bytecode, audio/video, fonts, databases, and similar formats) and skip any file larger than a reasonable size limit of about 5 MB.
+- Extract alphabetic words of at least two letters from each text file, normalize them to a consistent case, and count their occurrences across the whole tree.
+- Support an optional personal dictionary file in the user's home directory: words listed there should be excluded from the frequency results, so that the user's own known or ignored terms do not clutter the output.
+- Process files efficiently, using parallel workers where it makes sense for large directory trees, and handle unreadable or encoding-problematic files gracefully without stopping the run.
+- Write the final results to a JSON file named for word frequencies in the current working directory, mapping each word to its count, sorted from most to least frequent.
+- Print a concise progress or summary message to the console (for example, the number of files scanned, unique words found, and the output location), and report errors clearly without crashing.
+- Provide a clear command-line interface with helpful usage text, and exit with appropriate status codes on success or failure.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import Counter
 import contextlib
 import json
 import multiprocessing as mp
 import os
-import re
-from collections import Counter
 from pathlib import Path
+import re
 
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"

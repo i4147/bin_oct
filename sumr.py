@@ -1,12 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that summarizes a plain-text document using frequency-based extractive summarization. The tool should read a UTF-8 encoded text file from a path supplied on the command line, produce a condensed summary of its content, and save the result to a text file. If no output path is given, the summary should be written next to the input file using a name derived from the original file name with a "_summary" suffix.
+The script should offer a command-line interface where the user can choose the summarization approach (at least two variants, such as a summarization style that scores sentences by the frequency of meaningful words, and a simpler variant that favors shorter, direct selection) and the target language for stopword filtering, with English as the default. It should allow the user to control the length of the summary, either as a number of sentences or as a proportion of the original text. Input validation should provide clear error messages for unknown variants, unsupported languages, missing files, or empty input, and the program should exit with a non-zero status code on failure.
+Core behavior: normalize and tokenize the text, remove common stopwords for the chosen language, compute word frequencies, score each sentence by the weight of its significant words (optionally normalized by sentence length), and select the highest-scoring sentences while preserving their original order in the output. The script should also print a short preview of the generated summary to standard output so the user can check the result immediately. Design the tool so that the summarizer is a reusable component that can be used independently of the command-line entry point, and make sure it handles edge cases such as very short documents, documents with no meaningful words, and text containing unusual punctuation or whitespace.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
-import sys
 from collections import Counter
 from pathlib import Path
+import re
+import sys
 from typing import Optional, Sequence
 
 
@@ -34,7 +37,7 @@ class NLTKFrequencySummarizer:
         if variant not in self.VARIANTS:
             msg = f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}"
             raise ValueError(msg)
-        from nltk.corpus import stopwords  # type: ignore
+        from nltk.corpus import stopwords
 
         self.language: str = language
         self.variant: str = variant
@@ -83,12 +86,12 @@ class NLTKFrequencySummarizer:
         return re.sub(r"\s+", " ", text).strip()
 
     def _tokenize_sentences(self, text: str) -> list[str]:
-        from nltk.tokenize import sent_tokenize  # type: ignore
+        from nltk.tokenize import sent_tokenize
 
         return [s.strip() for s in sent_tokenize(text) if len(s.split()) > 2]
 
     def _word_frequencies(self, sentences: Sequence[str]) -> dict[str, float]:
-        from nltk.tokenize import word_tokenize  # type: ignore
+        from nltk.tokenize import word_tokenize
 
         counter: Counter = Counter()
         total = 0
@@ -107,7 +110,7 @@ class NLTKFrequencySummarizer:
         sentences: Sequence[str],
         freqs: dict[str, float],
     ) -> dict[int, float]:
-        from nltk.tokenize import word_tokenize  # type: ignore
+        from nltk.tokenize import word_tokenize
 
         scores: dict[int, float] = {}
         for i, sentence in enumerate(sentences):
@@ -134,13 +137,13 @@ def sumy_summarize(
     method: str = "lexrank",
     language: str = "english",
 ) -> str:
-    from sumy.nlp.stemmers import Stemmer  # type: ignore
-    from sumy.nlp.tokenizers import Tokenizer  # type: ignore
-    from sumy.parsers.plaintext import PlaintextParser  # type: ignore
-    from sumy.summarizers.lex_rank import LexRankSummarizer  # type: ignore
-    from sumy.summarizers.lsa import LsaSummarizer  # type: ignore
-    from sumy.summarizers.text_rank import TextRankSummarizer  # type: ignore
-    from sumy.utils import get_stop_words  # type: ignore
+    from sumy.nlp.stemmers import Stemmer
+    from sumy.nlp.tokenizers import Tokenizer
+    from sumy.parsers.plaintext import PlaintextParser
+    from sumy.summarizers.lex_rank import LexRankSummarizer
+    from sumy.summarizers.lsa import LsaSummarizer
+    from sumy.summarizers.text_rank import TextRankSummarizer
+    from sumy.utils import get_stop_words
 
     parser = PlaintextParser.from_string(text, Tokenizer(language))
     stemmer = Stemmer(language)

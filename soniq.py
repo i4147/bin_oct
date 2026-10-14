@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a text file from a given path, cleans and deduplicates its lines, and outputs the sorted unique results. The tool should accept a file path as its main input and optionally a start and end position to restrict processing to a subset of lines. It should strip leading and trailing whitespace from each line, discard empty lines, remove duplicate entries, and return the remaining lines in sorted order, while also reporting how many lines were originally present and how many unique lines remain.
+Handle large files efficiently by choosing a read strategy based on file size, using memory-mapped access for large files and a simple full read for smaller ones. Where useful, use multiple worker processes to speed up cleaning of large line collections. The script should tolerate files that are not valid text: if the file cannot be decoded, it should print a clear warning and return an empty result rather than crashing. It should also detect and reject binary files, informing the user that binary content is not supported.
+The script should be runnable from the command line, taking the file path and optional range arguments, and print the sorted unique lines (or write them to an output destination if the user prefers) along with a concise summary of counts. Validate inputs gracefully: handle missing files, invalid or out-of-range start/end values, and empty files with informative messages and appropriate exit codes. Keep the interface clean, the output deterministic, and the behavior consistent across platforms.
+---"""
 
 from __future__ import annotations
-
 import mmap
-import sys
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
+import sys
 from dh import is_binary
 
 THRESHOLD = 1024 * 1024

@@ -1,21 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a directory tree for Bash shell scripts (files with a `.sh` extension, or extensionless files whose first line is a shebang referencing bash or sh) and reformats or lints them in place using a Bash-aware syntax parser. The tool should accept a target path (file or directory) from the command line, along with options to control behavior such as a check-only mode that reports which files would change without modifying them, and a diff mode that shows the proposed changes as unified diffs. It should skip hidden files, directories, and symbolic links, and it should process multiple files concurrently using a configurable number of worker processes, with a sensible default. Parsing and formatting should preserve the semantic meaning of each script, leave files unchanged when they are already correctly formatted, and report parse errors for individual files without aborting the entire run. The tool should print a clear summary at the end listing how many files were checked, changed, unchanged, and failed, and it should return a non-zero exit status when check mode finds files needing changes or when any file cannot be processed. Use structured, leveled logging for progress and errors, and handle missing paths and invalid arguments gracefully with helpful messages.
+---"""
 
+from __future__ import annotations
 import argparse
 import difflib
-import shutil
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import TYPE_CHECKING
-
-import tree_sitter_bash
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_bash
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
-
+    from collections.abc import Iterable, Iterator
 WORKERS: int = 8
 _PARSER: Parser | None = None
 
@@ -55,7 +55,7 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         if node.type == "comment":
             comment_bytes = content[node.start_byte : node.end_byte]
             stripped = comment_bytes.lstrip()
-            if not (stripped.startswith(b"#!") or stripped.startswith(b"# shellcheck") or stripped.startswith(b"##")):
+            if not (stripped.startswith((b"#!", b"# shellcheck", b"##"))):
                 ranges.append((node.start_byte, node.end_byte))
             continue
         for child in reversed(node.children):
@@ -96,23 +96,19 @@ def process_file(args_tuple: tuple[Path, Path, bool, bool]) -> tuple[str, int, i
             old_text = content.decode("utf-8", errors="replace")
         except Exception:
             old_text = ""
-
         new_content, count = strip_comments(content)
         new_content = remove_blank_lines(new_content)
         new_size = len(new_content)
         reduced = orig_size - new_size
-
         try:
             new_text = new_content.decode("utf-8", errors="replace")
         except Exception:
             new_text = ""
-
         if not dry_run and reduced > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak" if path.suffix else ".sh.bak")
                 shutil.copy2(path, backup_path)
             path.write_bytes(new_content)
-
         try:
             rel: str = str(path.relative_to(base))
         except ValueError:
@@ -162,19 +158,15 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--backup", action="store_true")
     args: argparse.Namespace = ap.parse_args()
-
     inputs: list[Path] = list(args.paths) if args.paths else [Path()]
     files: list[Path] = list(iter_bash_files(inputs))
     if not files:
         logger.error("No bash files to process.")
         return 1
-
     base: Path = Path.cwd()
     total_reduced: int = 0
     errors: int = 0
-
     tasks = [(p, base, args.dry_run, args.backup) for p in files]
-
     if len(files) == 1:
         rel, reduced, count, err, old_text, new_text = process_file(tasks[0])
         if err:
@@ -190,7 +182,7 @@ def main() -> int:
         with Pool(processes=WORKERS) as pool:
             results = [pool.apply_async(process_file, t) for t in tasks]
             for res in results:
-                rel, reduced, count, err, old_text, new_text = res.get()
+                rel, reduced, _count, err, old_text, new_text = res.get()
                 if err:
                     errors += 1
                     logger.error(f"{rel}: ERROR: {err}")
@@ -200,7 +192,6 @@ def main() -> int:
                 print(f"{rel}  {green_reduced}")
                 if args.diff and reduced > 0:
                     print_colorful_diff(old_text, new_text, rel)
-
     print(f"\nTotal space freed: {total_reduced} bytes")
     return 1 if errors else 0
 

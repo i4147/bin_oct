@@ -1,19 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a resumable, parallel batch translation tool for large text files. It should read a source text file (one entry per line) containing mixed-language content, identify the entries that still contain Cyrillic (Russian/Ukrainian/other Cyrillic-script) characters, and translate those entries into English while leaving already-English or non-Cyrillic lines untouched. The script should accept command-line arguments for the input file, an output file, and optional settings such as the number of parallel workers, the chunk size used for batching, and how often progress is saved.
+Key behaviors:
+- Split the workload into size-limited batches so that multiple lines are sent to the translation service together, while ensuring that any single oversized line is handled on its own without breaking the batching logic.
+- Process the batches concurrently using a configurable pool of worker processes, and make the translation service calls robust with a retry mechanism that uses increasing delays between attempts and gives up gracefully after a set number of tries.
+- Preserve the original line order and structure in the output, so that the result is a faithful copy of the input with only the Cyrillic-containing entries replaced by their English translations.
+- Save progress periodically so that an interrupted run can be resumed later without re-translating work already completed; the script should detect existing partial output and skip what is already done.
+- Handle keyboard interrupts (and termination signals) gracefully: stop launching new work, flush the current progress to disk, log a clear warning, and exit cleanly.
+- Use a structured logging approach that reports progress, retries, skipped lines, and errors with clear messages, and print a final summary of how many lines were translated, skipped, or failed.
+- Validate inputs up front (missing input file, invalid numeric options, unwritable output location) and report clear error messages before doing any heavy processing.
+- Keep the script self-contained as a command-line tool with a helpful usage/help message, and ensure it runs reliably on common desktop operating systems.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import multiprocessing as mp
+from pathlib import Path
 import random
 import re
 import signal
 import sys
 import threading
 import time
-from pathlib import Path
 from typing import Any, Final
-
 from deep_translator import GoogleTranslator
 from loguru import logger
 

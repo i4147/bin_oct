@@ -1,7 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line refactoring tool for converting camelCase identifiers to snake_case across a Python codebase. The tool should accept a file or directory path, recursively discover Python source files while skipping common non-source directories (version control folders, virtual environments, caches, build outputs, and editor folders), and analyze each file to find identifiers that follow camelCase naming. It should be able to target specific kinds of identifiers, such as function names, class names, variables, and function parameters, and should leave dunder names and identifiers that are used with reflection-style built-ins (such as getattr, setattr, delattr, and hasattr) untouched to avoid breaking runtime behavior.
+The tool should perform the renaming safely and consistently: a renamed identifier must be updated at its definition and at all of its usages within the same file, while preserving the original code's formatting, comments, and string content as much as possible. It should support a dry-run mode that shows a unified diff of proposed changes without modifying any files, an apply mode that writes the changes, and an undo capability that can restore files to their state before the last run, using a persistent record of the original contents stored alongside the project. Results should be cached so that unchanged files are not reprocessed on subsequent runs, and the tool should be able to process multiple files in parallel for speed. Writes should be atomic so that a failure never leaves a partially written file behind.
+The script should validate that every modified file still parses as valid Python before committing changes, skip and report files that cannot be parsed, and produce a clear summary at the end listing how many files were scanned, changed, skipped, and how many identifiers were renamed. Logging should be configurable for verbosity, and the command-line interface should provide clear help text and sensible defaults.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import contextlib
@@ -10,15 +13,14 @@ import hashlib
 import io
 import json
 import mmap
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import sys
 import tempfile
 import tokenize
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Iterator, NamedTuple
-
 import libcst as cst
 from loguru import logger
 

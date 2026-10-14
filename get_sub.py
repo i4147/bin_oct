@@ -1,34 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-
 import argparse
+from collections import OrderedDict
+from contextlib import closing, suppress
 import copy
+from io import BytesIO
 import json
 import os
+from os import path
+from os.path import abspath, basename, dirname, exists, join, splitext
 import re
+from shutil import get_terminal_size
 import subprocess
 import sys
 import tempfile
-import zipfile
-from collections import OrderedDict
-from contextlib import closing
-from io import BytesIO
-from os import path
-from os.path import abspath, basename, dirname, exists, join, splitext
-from shutil import get_terminal_size
 from traceback import format_exc
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from urllib.parse import urljoin
-
-import rarfile
-import requests
+import zipfile
 from bs4 import BeautifulSoup
 from guessit import guessit
+import rarfile
+import requests
 from requests import exceptions
 from requests.utils import quote
 
 __version__ = "0.0.0"
-
 SUB_FORMATS: list[str] = [".ass", ".srt", ".ssa", ".sub", ".sup"]
 ARCHIVE_TYPES: list[str] = [".zip", ".rar", ".7z"]
 VIDEO_FORMATS: list[str] = [
@@ -98,8 +95,9 @@ class ProgressBar:
 
 
 def num_to_cn(number: str) -> str:
-    assert number.isdigit() and 1 <= int(number) <= 99
-    trans_map: dict[str, str] = {n: c for n, c in zip(("123456789"), ("一二三四五六七八九"))}
+    assert number.isdigit()
+    assert 1 <= int(number) <= 99
+    trans_map: dict[str, str] = dict(zip(("123456789"), ("一二三四五六七八九")))
     if len(number) == 1:
         return trans_map[number]
     part1: str = "十" if number[0] == "1" else trans_map[number[0]] + "十"
@@ -194,10 +192,8 @@ def choose_archive(sub_dict: dict[str, Any], sub_num: int = 5, query: bool = Tru
 def choose_subtitle(subtitles: list[str]) -> str:
     items: list[str] = []
     for subtitle in subtitles:
-        try:
+        with suppress(Exception):
             subtitle = subtitle.encode("cp437").decode("gbk")
-        except Exception:
-            pass
         items.append(subtitle)
     choice: int = _print_and_choose(items)
     return subtitles[choice]
@@ -226,19 +222,18 @@ def compute_subtitle_score(video_detail: dict[str, Any], subname: str, match_epi
             score += 1
         elif sub_title != "":
             return -1
-    else:
-        if video_name == sub_title:
-            if season != sub_season:
-                return -1
-            elif episode != sub_episode and match_episode:
-                return -1
-            else:
-                score += 1
-        elif season == sub_season and episode == sub_episode:
-            if sub_title != "":
-                return -1
-        else:
+    elif video_name == sub_title:
+        if season != sub_season:
             return -1
+        elif episode != sub_episode and match_episode:
+            return -1
+        else:
+            score += 1
+    elif season == sub_season and episode == sub_episode:
+        if sub_title != "":
+            return -1
+    else:
+        return -1
     if "简体" in subname or "chs" in subname or ".gb." in subname:
         score += 2
     if "繁体" in subname or "cht" in subname or ".big5." in subname:
@@ -263,10 +258,8 @@ def guess_subtitle(sublist: list[str], video_detail: dict[str, Any]) -> tuple[bo
             continue
         subs.append(one_sub)
         subname: str = path.split(one_sub)[-1]
-        try:
+        with suppress(Exception):
             subname = subname.encode("cp437").decode("gbk")
-        except Exception:
-            pass
         score: int = compute_subtitle_score(video_detail, subname)
         scores.append(score)
     max_score: int = max(scores)
@@ -348,7 +341,7 @@ class P7ZIP:
                 f.write(self.data)
             cmd_lists: list[str] = ["7z", "e", file_path, "-o" + tmp_dir, name]
             cmd: str = " ".join(cmd_lists)
-            output, err, status = run_command(cmd)
+            _output, err, status = run_command(cmd)
             if status != 0:
                 raise ValueError(err)
             sub_file_path: str = path.join(tmp_dir, path.basename(name))
@@ -361,10 +354,7 @@ class Video:
     @classmethod
     def sub_exists(cls, video_name: str, store_path: str, identifier: str) -> bool:
         sub_types: list[str] = [identifier + sub_type for sub_type in SUB_FORMATS]
-        for sub_type in sub_types:
-            if exists(join(store_path, video_name + sub_type)):
-                return True
-        return False
+        return any(exists(join(store_path, video_name + sub_type)) for sub_type in sub_types)
 
     def __init__(self, video_path: str, sub_store_path: str = "", identifier: str = "") -> None:
         self.name: str
@@ -576,7 +566,8 @@ class ZimukuDownloader(Downloader):
                     sub[list(sub.keys())[0]]["score"] = score
                     sub_dict.update(sub)
             else:
-                raise ValueError("zimuku downloader needs updates")
+                msg = "zimuku downloader needs updates"
+                raise ValueError(msg)
             if len(sub_dict) >= sub_num:
                 del keywords[:]
                 break
@@ -686,7 +677,7 @@ class ZimuzuDownloader(Downloader):
         download_link: str = a.attrs["href"]
         header["Referer"] = download_link
         ajax_url: str = "http://got002.com/api/v1/static/subtitle/detail?"
-        ajax_url += download_link.split("?")[-1]
+        ajax_url += download_link.rsplit("?", maxsplit=1)[-1]
         r = s.get(ajax_url, headers=header)
         json_obj: dict[str, Any] = json.loads(r.text)
         download_link = json_obj["data"]["info"]["file"]
@@ -716,15 +707,14 @@ class ZimuzuDownloader(Downloader):
             datatype = ".zip"
         elif "7z" in download_link:
             datatype = ".7z"
+        elif ".rar" in file_name:
+            datatype = ".rar"
+        elif ".zip" in file_name:
+            datatype = ".zip"
+        elif ".7z" in file_name:
+            datatype = ".7z"
         else:
-            if ".rar" in file_name:
-                datatype = ".rar"
-            elif ".zip" in file_name:
-                datatype = ".zip"
-            elif ".7z" in file_name:
-                datatype = ".7z"
-            else:
-                datatype = "Unknown"
+            datatype = "Unknown"
         return datatype, sub_data_bytes, ""
 
 
@@ -874,7 +864,7 @@ class GetSubtitles:
             sub_name = choose_subtitle(list(sub_lists_dict.keys()))
         sub_title: str
         sub_type: str
-        sub_title, sub_type = path.splitext(sub_name)
+        _sub_title, sub_type = path.splitext(sub_name)
         extract_subs: list[list[str]] = [[sub_name, sub_type]]
         if self.both:
             another_sub_type: str = ".srt" if sub_type == ".ass" else ".ass"
@@ -933,10 +923,8 @@ class GetSubtitles:
             return error, []
         for extract_sub_name, extract_sub_type in extract_subs:
             extract_sub_name = extract_sub_name.split("/")[-1]
-            try:
+            with suppress(Exception):
                 extract_sub_name = extract_sub_name.encode("cp437").decode("gbk")
-            except Exception:
-                pass
             try:
                 print("\nExtracted:", extract_sub_name)
             except UnicodeDecodeError:

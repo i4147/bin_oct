@@ -1,45 +1,43 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import defaultdict
+from dataclasses import dataclass, field
 import io
 import json
 import os
+from pathlib import Path
 import re
 import sqlite3
 import sys
 import tarfile
 import textwrap
-import zipfile
-from collections import defaultdict
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterable, Iterator
+import zipfile
 
 try:
-    import libcst as cst  # type: ignore
+    import libcst as cst
 
     HAS_LIBCST = True
 except ImportError:
-    cst = None  # type: ignore
+    cst = None
     HAS_LIBCST = False
 try:
-    import tree_sitter  # type: ignore
-    import tree_sitter_python as tspython  # type: ignore
+    import tree_sitter
+    import tree_sitter_python as tspython
 
     HAS_TS = True
 except ImportError:
-    tree_sitter = None  # type: ignore
-    tspython = None  # type: ignore
+    tree_sitter = None
+    tspython = None
     HAS_TS = False
 try:
-    import zstd  # type: ignore
+    import zstd
 
     HAS_ZSTD = True
 except ImportError:
-    zstd = None  # type: ignore
+    zstd = None
     HAS_ZSTD = False
 UPPER_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 SKIP_DIRS: set[str] = {
@@ -465,7 +463,7 @@ def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]
     entities: list[Entity] = []
     imports: list[str] = []
 
-    class V(cst.CSTVisitor):  # type: ignore[misc]
+    class V(cst.CSTVisitor):
         def visit_Import(self, node) -> None:
             imports.append(cst.Module([node]).code.strip())
 

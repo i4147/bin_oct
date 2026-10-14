@@ -1,24 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Unified script consolidating multiple Python package and requirements management tools.
+"""Write a Python script that acts as a command-line uting and cleaning Python dependency requirement files and The tool should accept a sub inter where the user selects an operation and provides the relevant file or directory paths as arguments.
+Core behaviors to implement:
+1. **Requirements file cleaning**: Read a requirements file (such as a pip requirements.txt), and produce a normalized version. For each line, strip comments and trailing inline comments, remove environment markers, and reduce each dependency specifier to its bare package name with version operators removed (supporting operators like ==, !=, >=, <=, ~=, >, <, and ===). Skip blank lines, and remove duplicates while preserving a stable order. The cleaned output should be written to a new file or printed to standard output, and missing input files should produce a clear error message on stderr with a non-zero exit status.
+2. **Installed-package awareness**: Be able to enumerate the packages currently installed in the active Python environment, so the tool can compare or filter a requirements list against what is actually installed.
+3. **Standard library detection**: Identify which top-level imported modules belong to the Python standard library (using the interpreter's built-in list where available, with a sensible fallback set for older Python versions), so that stdlib modules can be excluded from third-party dependency lists.
+4. **Dependency scanning of source code**: Given a project directory, recursively scan Python source files to detect third-party imports, excluding standard library modules and local project modules, and output names.
+5. **Archive handling**: Support working with compressed distribution or project archives (zip and tar formats), including extracting them to a temporary location, inspecting their contents, and cleaning up afterwards.
+6. **Parallel processing**: When scanning many files, use concurrent worker processes to speed up analysis, while keeping results deterministic.
+7. **Reporting**: Optionally export results as CSV, with columns describing each package and its source or status.
+Behavioral expectations: the script should be safe with respect to temporary files (always cleaned up), handle malformed input gracefully without crashing, provide helpful `--help` output, and exit with meaningful status codes. Keep the implementation self-contained and runnable directly from the command line on a standard Python 3 installation.
+---"""
 
-Usage Examples:
-    python merged.py clean-req requirements.txt
-    python merged.py clean-freeze freeze.txt
-    python merged.py strip-versions requirements.txt
-    python merged.py keep-pure requirements.txt
-    python merged.py extract-reqs
-    python merged.py remove-req package_name
-    python merged.py strip-installed requirements.txt
-    python merged.py strip-stdlib requirements.txt
-    python merged.py trim-imports [pkg1 pkg2 ...]
-    python merged.py uv-req
-"""
-
+from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import csv
 import importlib.metadata
-import os
+from pathlib import Path
 import re
 import shutil
 import site
@@ -26,8 +24,6 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
 try:
     STDLIB = set(sys.stdlib_module_names)
@@ -47,7 +43,6 @@ def cmd_clean_req(args):
     if not req_path.exists():
         print(f"Error: File '{req_path}' not found.", file=sys.stderr)
         sys.exit(1)
-
     op_re = re.compile(r"\s*(?:===|==|!=|>=|<=|~=|>|<)\s*")
 
     def clean_line(m_str):
@@ -73,7 +68,6 @@ def cmd_clean_req(args):
 
     with req_path.open(encoding="utf-8") as f:
         lines = f.readlines()
-
     cleaned = []
     seen = set()
     for line in lines:
@@ -81,7 +75,6 @@ def cmd_clean_req(args):
         if c and c not in seen:
             cleaned.append(c)
             seen.add(c)
-
     cleaned = sorted(cleaned, key=sort_key)
     req_path.write_text("\n".join(cleaned) + "\n", encoding="utf-8")
     print("\n===Cleaned Requirements===")
@@ -94,7 +87,6 @@ def cmd_clean_freeze(args):
     if not file_path.is_file():
         print(f"Error: File '{file_path}' not found.", file=sys.stderr)
         sys.exit(1)
-
     freeze_re = re.compile(r"^\s*(?:-e\s+)?(?P<name>[A-Za-z0-9_.\-]+)", re.VERBOSE)
 
     def parse_line(k):
@@ -117,7 +109,6 @@ def cmd_clean_freeze(args):
         m = parse_line(k)
         if m:
             names.append(m)
-
     seen = set()
     unique_names = [p for p in names if not (p in seen or seen.add(p))]
     file_path.write_text("\n".join(unique_names) + "\n", encoding="utf-8")
@@ -129,7 +120,6 @@ def cmd_strip_versions(args):
     if not file_path.exists():
         print(f"Error: File '{file_path}' not found.", file=sys.stderr)
         sys.exit(1)
-
     content = file_path.read_text(encoding="utf-8").splitlines()
     pkgs = set()
     for line in content:
@@ -154,7 +144,6 @@ def cmd_strip_versions(args):
         g = g.strip()
         if g:
             pkgs.add(g)
-
     sorted_pkgs = sorted(pkgs)
     file_path.write_text("\n".join(sorted_pkgs) + "\n", encoding="utf-8")
     print(f"Updated {file_path} with {len(sorted_pkgs)} unique packages.")
@@ -206,31 +195,25 @@ def cmd_keep_pure(args):
     if not req_path.exists():
         print(f"Error: {req_file} not found")
         return
-
     binaries = find_binaries()
     binary_output.parent.mkdir(parents=True, exist_ok=True)
     binary_output.write_text("\n".join(sorted(binaries)) + "\n", encoding="utf-8")
     print("binary_pkgs created.")
-
     with req_path.open(encoding="utf-8") as f:
         lines = [A.rstrip() for A in f]
-
     comments = [A for A in lines if A.startswith("#")]
     reqs = [A for A in lines if A and not A.startswith("#")]
     kept = []
     removed = []
-
     for G in reqs:
         o = G.split("==")[0].split(">=")[0].split("<=")[0].split("~=")[0].strip().lower()
         if o in binaries:
             removed.append(G)
         else:
             kept.append(G)
-
     with req_path.open("w", encoding="utf-8") as f:
         f.writelines((f"{r}\n" for r in comments))
         f.writelines((f"{F}\n" for F in sorted(kept)))
-
     if removed:
         print(f"\n🗑️ Removed binary packages ({len(removed)}):")
         for F in sorted(removed):
@@ -327,9 +310,8 @@ def cmd_extract_reqs(args):
             continue
         name = path.name
         low = name.lower()
-        if name in meta_names or low.endswith(".metadata") or low.endswith((".zip", ".whl", ".tar.gz", ".tgz", ".tar")):
+        if name in meta_names or low.endswith((".metadata", ".zip", ".whl", ".tar.gz", ".tgz", ".tar")):
             targets.append(path)
-
     for path in targets:
         name = path.name
         low = name.lower()
@@ -339,10 +321,8 @@ def cmd_extract_reqs(args):
             if is_valid_archive(path):
                 print(f"Processing ... {path}")
                 process_zip_archive(path)
-        elif low.endswith((".tar.gz", ".tgz", ".tar")):
-            if is_valid_archive(path):
-                process_tar_archive(path)
-
+        elif low.endswith((".tar.gz", ".tgz", ".tar")) and is_valid_archive(path):
+            process_tar_archive(path)
     if extracted:
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -403,11 +383,9 @@ def cmd_strip_installed(args):
     installed = get_installed_pkgs()
     installed = [p.lower().replace("-", "_") for p in installed if p]
     requested = get_reqs()
-
     filtered = [l for l in requested if l not in installed]
     filtered = [l for l in filtered if l not in STDLIB]
     filtered = sorted(set(filtered))
-
     req_path.write_text("\n".join(filtered) + "\n", encoding="utf-8")
     removed_count = len(requested) - len(filtered)
     print(f"Removed {removed_count} packages")
@@ -484,7 +462,6 @@ def cmd_uv_req(args):
     if not lock_path.exists():
         print(f"Error: {lock_path} not found", file=sys.stderr)
         sys.exit(1)
-
     content = lock_path.read_text(encoding="utf-8")
     lines = content.splitlines()
     for line in lines:
@@ -498,46 +475,34 @@ def cmd_uv_req(args):
 def main():
     parser = argparse.ArgumentParser(description="Unified Python Package and Requirements Management Tool")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     p_clean_req = subparsers.add_parser("clean-req", help="Clean requirements file (comments, markers, versions, sort)")
     p_clean_req.add_argument("file", nargs="?", default="requirements.txt", help="Path to requirements.txt")
-
     p_clean_freeze = subparsers.add_parser("clean-freeze", help="Clean pip freeze output (keep package names)")
     p_clean_freeze.add_argument("file", help="Path to pip freeze file")
-
     p_strip_versions = subparsers.add_parser("strip-versions", help="Strip version specifiers from requirements file")
     p_strip_versions.add_argument("file", help="Path to requirements file")
-
     p_keep_pure = subparsers.add_parser("keep-pure", help="Identify binary packages and remove from requirements")
     p_keep_pure.add_argument("file", nargs="?", default="requirements.txt", help="Path to requirements.txt")
     p_keep_pure.add_argument(
         "--binary-output", default="/sdcard/data/binary", help="Path to output binary package list"
     )
-
     p_extract_reqs = subparsers.add_parser("extract-reqs", help="Extract Requires-Dist from metadata in archives")
     p_extract_reqs.add_argument("--output", default="/sdcard/reqz.txt", help="Path to output extracted requirements")
-
     p_remove_req = subparsers.add_parser("remove-req", help="Remove specific Requires-Dist from site-packages METADATA")
     p_remove_req.add_argument("requirement", help="Requirement specifier to remove")
-
     p_strip_installed = subparsers.add_parser(
         "strip-installed", help="Remove installed and stdlib packages from requirements"
     )
     p_strip_installed.add_argument("file", nargs="?", default="requirements.txt", help="Path to requirements.txt")
-
     p_strip_stdlib = subparsers.add_parser("strip-stdlib", help="Remove stdlib packages from requirements")
     p_strip_stdlib.add_argument("file", help="Path to requirements file")
-
     p_trim_imports = subparsers.add_parser("trim-imports", help="Test importing packages and log failures")
     p_trim_imports.add_argument("packages", nargs="*", help="Optional list of package names to test")
     p_trim_imports.add_argument("--log-file", default="/sdcard/allimport.log", help="Path to log file")
-
     p_uv_req = subparsers.add_parser("uv-req", help="Parse uv.lock and append package names to requirements")
     p_uv_req.add_argument("--lock-file", default="uv.lock", help="Path to uv.lock")
     p_uv_req.add_argument("--req-file", default="requirements.txt", help="Path to requirements.txt")
-
     args = parser.parse_args()
-
     if args.command == "clean-req":
         cmd_clean_req(args)
     elif args.command == "clean-freeze":

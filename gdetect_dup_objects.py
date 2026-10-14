@@ -1,14 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes Python source files to determine whether they use type annotations, and then produces a clean, annotation-free version of each file. The tool should accept a file or directory path as input, scan the Python source code, and report which files contain type hints (such as annotated function parameters, return types, variable annotations, and variadic or keyword-only arguments). For files that include annotations, it should generate a rewritten version with all hints removed while preserving the original logic, structure, comments-safe formatting, and runnable behavior.
+The script should walk through the provided path (recursively for directories), process each Python file independently, and handle files that fail to parse gracefully by logging the error and continuing with the rest. It should be able to run the processing in parallel across multiple files to improve speed on large codebases, and it should exit cleanly when finished.
+Outputs should include a structured summary (in JSON format) listing each processed file, whether annotations were detected, whether a stripped version was produced, and any errors encountered. Stripped files should be written to a configurable output location, with the original files left untouched. The tool should also support a dry-run mode that only reports findings without writing any files, and it should print a concise human-readable progress and results summary to the console.
+Ensure the resulting code is well-structured, robust against malformed input, and verifies that rewritten files remain syntactically valid Python beforeving them.
+---"""
+
+from __future__ import annotations
 import ast
 import json
 import multiprocessing as mp
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class TypeAnnotationChecker(ast.NodeVisitor):
-    """Checks if an AST node contains type annotations."""
-
     def __init__(self):
         self.has_annotations = False
 
@@ -33,8 +38,6 @@ class TypeAnnotationChecker(ast.NodeVisitor):
 
 
 class AnnotationStripper(ast.NodeTransformer):
-    """Removes type annotations from AST nodes to enable structural matching."""
-
     def visit_FunctionDef(self, node):
         node.returns = None
         for arg in node.args.args + node.args.kwonlyargs:
@@ -50,38 +53,31 @@ class AnnotationStripper(ast.NodeTransformer):
         return self.visit_FunctionDef(node)
 
     def visit_AnnAssign(self, node):
-
         if node.value is not None:
             return ast.Assign(targets=[node.target], value=node.value)
         return None
 
 
 def get_canonical_structure(node: ast.AST) -> str:
-    """Returns a string representation of the AST with type annotations removed."""
     stripped_node = AnnotationStripper().visit(ast.parse(ast.unparse(node)))
     return ast.unparse(stripped_node)
 
 
 def check_annotations(node: ast.AST) -> bool:
-    """Returns True if the AST node contains any type annotations."""
     checker = TypeAnnotationChecker()
     checker.visit(node)
     return checker.has_annotations
 
 
 def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
-    """Parses a single Python file and extracts functions, classes, and constants."""
     results = []
-
     try:
         source = file_path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(file_path))
     except (SyntaxError, UnicodeDecodeError, PermissionError):
         return results
-
     for node in ast.iter_child_nodes(tree):
         obj_type = None
-
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             obj_type = "function"
         elif isinstance(node, ast.ClassDef):
@@ -91,11 +87,9 @@ def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
             is_constant = any(isinstance(t, ast.Name) and t.id.isupper() for t in targets)
             if is_constant:
                 obj_type = "constant"
-
         if obj_type:
             canonical_code = get_canonical_structure(node)
             has_type_hints = check_annotations(node)
-
             results.append({
                 "type": obj_type,
                 "name": getattr(node, "name", ast.unparse(node)),
@@ -104,7 +98,6 @@ def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
                 "canonical_code": canonical_code,
                 "has_annotations": has_type_hints,
             })
-
     return results
 
 
@@ -112,35 +105,26 @@ def main():
     current_dir = Path.cwd()
     output_dir = current_dir / "output"
     output_dir.mkdir(exist_ok=True)
-
     python_files = [p for p in current_dir.rglob("*.py") if output_dir not in p.parents]
-
     print(f"Scanning {len(python_files)} Python file(s) across CPU cores...")
-
     with mp.Pool(mp.cpu_count()) as pool:
         file_results = pool.map(extract_objects_from_file, python_files)
-
     all_objects = [obj for sublist in file_results for obj in sublist]
-
     grouped_objects: dict[str, list[dict[str, Any]]] = {}
     for obj in all_objects:
         key = (obj["type"], obj["canonical_code"])
         grouped_objects.setdefault(key, []).append(obj)
-
     categorized_duplicates: dict[str, list[dict[str, Any]]] = {
         "function": [],
         "class": [],
         "constant": [],
     }
-
     total_duplicates = 0
-
     for (obj_type, canonical_code), instances in grouped_objects.items():
         if len(instances) > 1:
             total_duplicates += 1
             has_ann_set = {inst["has_annotations"] for inst in instances}
             differ_in_annotations = len(has_ann_set) > 1
-
             duplicate_entry = {
                 "canonical_code": canonical_code,
                 "count": len(instances),
@@ -155,14 +139,11 @@ def main():
                 ],
             }
             categorized_duplicates[obj_type].append(duplicate_entry)
-
     for obj_type, duplicates in categorized_duplicates.items():
         duplicates.sort(key=lambda x: x["count"], reverse=True)
-
         output_file = output_dir / f"duplicate_{obj_type}s.json"
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(duplicates, f, indent=2)
-
     print("\nScan completed!")
     print(f"- Total unique duplicated structures found: {total_duplicates}")
     for obj_type, items in categorized_duplicates.items():

@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a wheel-package indexer and cleaner for a local package repository mirror, targeting ARM-based and mobile Linux/Android platforms. The script should scan a directory tree of Python wheel files (.whl), identify binary wheels built for Android (API level 24, ARM-related targets) and Linux ARM architectures, and group them by package name and normalized package version. It should parse wheel filenames to extract the package name, version, Python implementation/version tag, and platform tag, handling variations in naming conventions such as underscores versus hyphens, optional patch versions, and pre-release suffixes.
+The core behavior is to determine, for each package, which versions are the newest and which are older, using a robust version comparison that tolerates non-standard version strings (falling back to a tolerant ordering when strict parsing fails). Based on this, the script should identify superseded or obsolete wheel files that can be safely removed, while always keeping the most recent version for each package and platform combination, and optionally retaining a configurable number of recent versions.
+The script should support a dry-run mode that reports what would be deleted without touching files, a mode that actually removes or moves the obsolete wheels into a designated archive folder, and a summary report listing kept versus removed files per package with total disk space reclaimed. It should accept command-line arguments for the root directory to scan, the set of ARM-related platform keywords to match (with sensible defaults), the number of worker processes for parallel scanning of large directories, a batch size for processing, the number of versions to retain per package, and logging verbosity. It should process files in parallel for performance, handle missing or unreadable paths gracefully with clear log messages, never delete files that do not match the recognized wheel naming patterns, and exit with a meaningful status code indicating success, partial failure, or invalid arguments.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import defaultdict
 import logging
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import Any, Optional, Sequence
 
 logger = logging.getLogger(__name__)

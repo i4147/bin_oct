@@ -1,29 +1,40 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that acts as a multi-tool Python source code formatter and cleanup utility, which can be run from the command line against a single file or an entire directory tree of Python files. The script should discover Python files recursively (with options to include or exclude paths by glob-style patterns), then apply a configurable pipeline of code-quality tools to each file, such as unused-import removal, import sorting, opinionated code formatting, PEP 8 style correction, and linting-based auto-fixes, in a well-defined, canonical order. Users should be able to select which formatters to run, or let the script auto-detect which available formatters are installed on the system and pick a sensible default set, with graceful handling of any that are missing.
+Key behaviors:
+- Accept inputs such as target paths, line length, target Python version, the list of formatters to use, and fl (dry-run) mode, showing diffs, and writing results back to disk.
+- In check-only mode, report which files would change without modifying them; when showing diffs, print unified-diff style output for each changed file.
+- Apply each enabled formatter in sequence, passing the current source text forward, and skip writing a file when no changes result.
+- Validate that code remains syntactically correct after transformation, and refuse to write output that breaks the file.
+- Use a persistent cache file within the project so that unchanged files (identified by content and settings) are skipped on subsequent runs, with an option to bypass or clear the cache.
+- Process multiple files in parallel across multiple CPU cores when there are many files, with an option to control the number of workers, and aggregate results safely.
+- Produce a clear end-of-run summary showing counts of files scanned, changed, unchanged, failed, and skipped, plus elapsed time and total file size processed, with color-coded or otherwise readable console output and a non-zero exit code when check mode finds files needing changes or when errors occur.
+- Provide a version flag and built-in help describing all options.
+- Handle errors per file gracefully so that one failing file does not abort the whole run, reporting each failure clearly.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import contextlib
+from dataclasses import asdict, dataclass
 import difflib
 import fnmatch
+from functools import partial
 import io
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-import tokenize
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
-from functools import partial
-from pathlib import Path
 from time import perf_counter as pff
+import tokenize
 from typing import Any, Protocol, Sequence, runtime_checkable
-
 from dh import cprint, format_time, fsz, get_pyfiles
 
 __version__ = "2.0.0"
-
 DEFAULT_LINE_LENGTH = 88
 DEFAULT_TARGET_VERSION = "py312"
 CACHE_FILENAME = ".pyfmt-cache.json"
@@ -161,12 +172,14 @@ def _make_one(mode: str, line_length: int, target_version: str) -> Any:
         case "ruff":
             return RuffFormatter(line_length=line_length, target_version=target_version)
         case _:
-            raise ValueError(f"unknown formatter: {mode!r}")
+            msg = f"unknown formatter: {mode!r}"
+            raise ValueError(msg)
 
 
 def make_pipeline(modes: Sequence[str], line_length: int, target_version: str) -> Pipeline:
     if not modes:
-        raise ValueError("empty pipeline")
+        msg = "empty pipeline"
+        raise ValueError(msg)
     return Pipeline(tuple(_make_one(m, line_length, target_version) for m in modes))
 
 
@@ -219,10 +232,8 @@ def _atomic_write(path: Path, data: bytes) -> None:
         os.chmod(tmp, st.st_mode)
         os.replace(tmp, path)
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 
@@ -268,20 +279,15 @@ def process_file(
                 mtime=st.st_mtime,
                 size=st.st_size,
             )
-
         stime = pff()
         original, enc, newline = _read_source(path)
         normalized = original.replace("\r\n", "\n")
-
         pipeline = _get_formatter(cfg)
         formatted = pipeline(normalized, path)
-
         if cfg.validate:
             ast.parse(formatted, filename=str(path))
-
         elapsed = pff() - stime
         changed = formatted != normalized
-
         diff_text: str | None = None
         if cfg.diff and changed:
             diff_text = "".join(
@@ -292,7 +298,6 @@ def process_file(
                     tofile=f"b/{path}",
                 )
             )
-
         do_write = not (cfg.check or cfg.diff)
         status = "unchanged"
         if changed:
@@ -306,7 +311,6 @@ def process_file(
                 if cfg.preserve_stat:
                     os.utime(path, (st.st_atime, st.st_mtime))
                 status = "changed"
-
         st2 = path.stat()
         return FileResult(
             path=str(path),
@@ -336,10 +340,7 @@ def process_file(
 def _matches(path: Path, patterns: Sequence[str]) -> bool:
     sp = str(path)
     name = path.name
-    for pat in patterns:
-        if path.match(pat) or fnmatch.fnmatch(sp, pat) or fnmatch.fnmatch(name, pat):
-            return True
-    return False
+    return any(path.match(pat) or fnmatch.fnmatch(sp, pat) or fnmatch.fnmatch(name, pat) for pat in patterns)
 
 
 def discover_files(
@@ -398,10 +399,8 @@ def _save_cache(path: Path, results: Sequence[FileResult]) -> None:
         if r.status == "changed" and r.mtime == 0.0:
             continue
         payload[r.path] = [r.mtime, float(r.size)]
-    try:
+    with contextlib.suppress(Exception):
         path.write_text(json.dumps(payload), encoding="utf-8")
-    except Exception:
-        pass
 
 
 def _installed(mod: str) -> bool:
@@ -491,7 +490,8 @@ def _resolve_modes(args: argparse.Namespace, pycfg: dict[str, Any]) -> tuple[str
         modes = tuple(m.strip() for m in args.pipeline.split(",") if m.strip())
         bad = [m for m in modes if m not in KNOWN_FORMATTERS]
         if bad:
-            raise SystemExit(f"unknown formatter(s): {', '.join(bad)}")
+            msg = f"unknown formatter(s): {', '.join(bad)}"
+            raise SystemExit(msg)
         return modes
     selected = {
         "autoflake": args.raui,
@@ -550,7 +550,6 @@ def _run_pool(
 ) -> list[FileResult]:
     if jobs <= 1 or len(files) == 1:
         return [process_file(f, cfg, cache.get(str(f))) for f in files]
-
     worker = partial(process_file, cfg=cfg)
     tasks = [(f, cache.get(str(f))) for f in files]
     results: list[FileResult] = []
@@ -583,7 +582,6 @@ def _report(results: Sequence[FileResult], cfg: RunConfig) -> int:
     changed = 0
     skipped = 0
     unchanged = 0
-
     if cfg.json_output:
         print(json.dumps([asdict(r) for r in results], indent=2))
     else:
@@ -620,7 +618,6 @@ def _report(results: Sequence[FileResult], cfg: RunConfig) -> int:
                     print(f"{name} (no change)")
             if cfg.diff and r.diff:
                 sys.stdout.write(r.diff)
-
     if cfg.stats and not cfg.json_output and not cfg.quiet:
         total = len(results)
         cprint(
@@ -628,7 +625,6 @@ def _report(results: Sequence[FileResult], cfg: RunConfig) -> int:
             f" | {unchanged} unchanged | {skipped} skipped | {errors} errors",
             "grey",
         )
-
     if errors:
         return 2
     if would_change and (cfg.check or cfg.diff):
@@ -639,7 +635,6 @@ def _report(results: Sequence[FileResult], cfg: RunConfig) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     pycfg = load_pyproject_config(args.config)
-
     modes = _resolve_modes(args, pycfg)
     line_length = args.line_length or pycfg.get("line_length") or pycfg.get("line-length") or DEFAULT_LINE_LENGTH
     target_version = (
@@ -651,7 +646,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     max_size = args.max_size if args.max_size is not None else int(pycfg.get("max_size", pycfg.get("max-size", 0)) or 0)
     validate = (not args.no_validate) and bool(pycfg.get("validate", True))
     preserve_stat = args.preserve_stat or bool(pycfg.get("preserve_stat", False))
-
     cfg = RunConfig(
         modes=modes,
         line_length=int(line_length),
@@ -668,25 +662,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         stats=args.stats,
         cache_path=None if args.no_cache else Path.cwd() / CACHE_FILENAME,
     )
-
     if args.stdin_filename is not None:
         return _run_stdin(cfg, args.stdin_filename)
-
     roots = args.paths or [Path.cwd()]
     files = discover_files(roots, include, exclude)
-
     if not files:
         if not cfg.quiet and not cfg.json_output:
             cprint("no files matched", "grey")
         return 0
-
     cache = _load_cache(cfg.cache_path)
     jobs = args.jobs or (os.cpu_count() or 1)
     results = _run_pool(files, cfg, cache, jobs)
-
     if cfg.cache_path is not None and not cfg.check and not cfg.diff:
         _save_cache(cfg.cache_path, results)
-
     return _report(results, cfg)
 
 

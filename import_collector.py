@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a given Python source file and determines which third-party packages it depends on, then reports which of those packages are missing from the current environment. The tool should accept a file path as input, parse the file's source code without executing it, and collect every top-level module that the file imports, while ignoring relative imports and gracefully handling files that cannot be read, decoded, or parsed due to syntax errors.
+The tool should separate standard library modules from third-party dependencies, so that only external packages are considered. For each third-party module name, it should translate common import names into their installable distribution names where they differ (for example, modules that are commonly installed under a different package name), and then check whether each required distribution is currently installed in the active Python environment and report its version when present.
+The output should be a clear, human-readable summary listing the required packages, their installation status, and any missing packages with a ready-to-run pip install command for them. The script should return a non-zero exit status when dependencies are missing and zero when everything is satisfied, and it should also be usable as an importable utility that returns the set of required packages programmatically. Include a helpful usage message for incorrect or missing arguments, and ensure that invalid, non-Python, or nonexistent file paths produce clear error messages rather than crashes.
+---"""
 
 from __future__ import annotations
-
 import ast
 import importlib.metadata
 import importlib.util
-import sys
 from pathlib import Path
-
+import sys
 from dh import is_python_file
 
 PACKAGE_MAPPING = {

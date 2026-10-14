@@ -1,12 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a set of files and directories for Python source files and normalizes repeated-character separator print statements into a single standardized separator line. The tool should accept one or more file or folder paths from the command line, recursively discover all Python files within any folders given, and process them in parallel to keep runtime low on large codebases.
+For each Python file, the tool should detect print-style (or cprint-style) calls that output a single character repeated a fixed number of times (for example, a dash character multiplied by a count, optionally with additional trailing arguments), and replace each such call with one consistent separator print statement of a fixed width. It should count how many replacements were made per file.
+The tool should support a dry-run mode that reports which files would change and how many replacements each would receive without modifying anything, and an autofix mode that writes the updated content back to disk using UTF-8 encoding. Files that contain no matches should be left untouched. Errors reading or writing an individual file must not stop the overall run; each failure should be captured and reported with the file path and error message.
+At the end, the tool should print a concise summary showing the number of files scanned, files changed, total replacements made, and any files that failed, and should exit with a non-zero status code if any file encountered an error. The script should be runnable from the command line with clear help text describing its arguments and modes.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import NamedTuple
 
 

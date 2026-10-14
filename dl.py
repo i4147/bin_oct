@@ -1,31 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that downloads files from a list of URLs in parallel, saving them to a local output directory with progress reporting. The tool should accept a source of URLs (such as a text file with one URL per line or URLs passed on the command line) and an output directory as inputs. For each URL, it should determine a sensible local filename, skip files that already exist or are already complete when possible, and resume partially downloaded files when the server supports it. It should allow configuring the number of concurrent workers, request timeouts, retry counts with backoff for transient network errors, and a custom User-Agent header. Each download should display progress information, and the overall run should show a summary of successes, failures, and skipped items. Handle interruption signals gracefully so partial downloads are left in a recoverable state and workers shut down cleanly. Verify file integrity where feasible, for example by comparing against expected sizes or checksums supplied by the server or the user. Log errors with the failing URL and reason without stopping the entire batch. Provide a command-line interface with clear help text, sensible defaults, and a non-zero exit status if any downloads failed. Support optional fallback to standard library networking when a preferred HTTP backend is unavailable, and include a human-readable formatting of byte sizes in the output.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import hashlib
 import json
 import multiprocessing as mp
+from pathlib import Path
 import re
 import signal
 import sys
 import time
+from typing import Optional
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
-from typing import Optional
-
 import requests
 from tqdm import tqdm
 
 try:
-    import pycurl  # type: ignore
+    import pycurl
 
     _HAS_PYCURL = True
 except ImportError:
-    pycurl = None  # type: ignore
+    pycurl = None
     _HAS_PYCURL = False
 try:
     from loguru import logger as _logger
@@ -38,7 +38,7 @@ except ImportError:
 
             return _p
 
-    _logger = _LoggerShim()  # type: ignore
+    _logger = _LoggerShim()
 logger = _logger
 _DEFAULT_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

@@ -1,13 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the directories listed in the system's executable search path (the PATH environment variable), identifies executable files, and reports duplicate executables, meaning programs with the same name that appear in more than one location. The tool should work from the command line and be designed for read-only inspection by default.
+Requirements:
+- Read the search path from the environment, ignore empty or invalid entries, and skip directories that do not exist or cannot be read.
+- For each directory, detect regular files that have execute permission for the current user, and group them by their base name.
+- Identify names that occur more than once across the search path, and for each duplicate group show every location where it was found in search-path order, so the user can see which copy would be run first.
+- Compute a content fingerprint (a cryptographic hash) for each candidate file so that identical copies can be distinguished from genuinely different binaries. Handle empty files, unreadable files, and large files gracefully without loading entire files into memory.
+- Distinguish between duplicates that are byte-identical and those whose contents differ, and clearly label each group accordingly.
+- Resolve symbolic links sensibly, avoid double-counting the same physical file reached through different paths, and avoid following symlink loops.
+- Accept command-line options to: set a custom list of directories instead of using PATH, filter results by a name pattern, show only conflicting names (or show all executables), choose between human-readable and machine-readable (e.g., JSON) output, and enable a verbose mode that reports skipped directories and errors.
+- Print a concise summary at the end: total directories scanned, total executables found, number of duplicate names, and number of identical versus differing duplicates.
+- Never modify, move, or delete any files. Return a meaningful exit status: zero when no conflicts are found, non-zero when conflicts exist, and a distinct error code for invalid arguments or fatal failures.
+- Write clear error messages to standard error and keep standard output reserved for the report, so the output can be piped into other tools.
+- Include a help message describing every option and a short usage example.
+- Keep the implementation self-contained, portable across Unix-like systems, and robust against permission errors, broken symlinks, and unexpected file system conditions.
+---"""
+
+from __future__ import annotations
 import argparse
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from hashlib import sha256
 import os
 from pathlib import Path
 import re
 import shutil
 import sys
-from typing import Any, Dict, List, Optional, Set, Tuple
 
 
 def get_path_entries() -> list[str]:
@@ -133,14 +149,11 @@ def main() -> int:
     parser.add_argument("--alias-file", type=str, default="", help="Path to aliases file")
     parser.add_argument("--func-file", type=str, default="", help="Path to functions file")
     args = parser.parse_args()
-
     raw_entries = get_path_entries()
     valid_dirs = [Path(d).expanduser() for d in raw_entries if Path(d).exists()]
-
     print("--- PATH DIAGNOSTIC TOOL ---")
     print(f"Total PATH entries: {len(raw_entries)}")
     print(f"Valid PATH directories: {len(valid_dirs)}")
-
     unique_entries = deduplicate_paths(raw_entries)
     if len(unique_entries) < len(raw_entries):
         print(f"Duplicates detected in PATH: {len(raw_entries) - len(unique_entries)}")
@@ -151,7 +164,6 @@ def main() -> int:
                 print(f"  - Duplicate entry: {entry} (x{raw_entries.count(entry)})")
     else:
         print("No duplicate PATH entries found.")
-
     executables, conflicts = scan_executables(valid_dirs)
     print(f"Unique commands found: {len(executables)}")
     if conflicts:
@@ -163,28 +175,22 @@ def main() -> int:
                 print(f"    - {loc} ({status})")
     else:
         print("No shadowed or duplicate binaries found.")
-
     home = Path.home()
     rc_path = Path(args.rc_file) if args.rc_file else home / ".zshrc"
     alias_path = Path(args.alias_file) if args.alias_file else home / ".config/zsh.d/aliases.zsh"
     func_path = Path(args.func_file) if args.func_file else home / ".config/zsh.d/functions.zsh"
-
     aliases = extract_aliases(alias_path)
     functions = extract_functions(func_path)
-
     alias_conflicts = {cmd: executables[cmd] for cmd in aliases if cmd in executables}
     func_conflicts = {cmd: executables[cmd] for cmd in functions if cmd in executables}
-
     if alias_conflicts:
         print(f"Alias conflicts found: {len(alias_conflicts)}")
         for alias in sorted(alias_conflicts.keys()):
             print(f"  - Alias '{alias}' conflicts with binary in PATH")
-
     if func_conflicts:
         print(f"Function conflicts found: {len(func_conflicts)}")
         for func in sorted(func_conflicts.keys()):
             print(f"  - Function '{func}' conflicts with binary in PATH")
-
     if args.fix_dedup:
         new_path_str = ":".join(unique_entries)
         success = update_rc_file(rc_path, new_path_str)
@@ -192,7 +198,6 @@ def main() -> int:
             print(f"Successfully updated {rc_path} with deduplicated PATH.")
         else:
             print(f"Failed to update {rc_path}.")
-
     if conflicts or alias_conflicts or func_conflicts:
         return 1
     return 0

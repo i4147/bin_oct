@@ -1,15 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes comments from source code files in many programming languages, using language-aware parsing so that comments are stripped accurately without corrupting string literals or other code. The tool should accept one or more file paths (or a directory to scan recursively), automatically detect each file's language from its extension, and support common languages including JavaScript, TypeScript, Ruby, PHP, Java, C, C++, C#, Go, Rust, Swift, Kotlin, Scala, Lua, R, and Julia.
+Key behaviors to include:
+- Determine the language of each file from its extension and gracefully skip or report files with unsupported extensions.
+- Parse each file into a syntax tree so that only true comment nodes are removed; comment-like text inside strings must be preserved, and the remaining code must stay syntactically valid.
+- Remove comments while preserving the rest of the file's formatting as much as possible, including blank lines and indentation of non-comment code. Optionally remove lines that become empty after comment removal.
+- Keep important directives or license headers configurable (for example, a flag to preserve them).
+- Write the cleaned output either in place, to a new output file or directory, or to standard output, controlled by command-line options. Provide a dry-run mode that reports what would change without modifying files.
+- Process multiple files in parallel to speed up large batches, and handle errors per file so one failure does not stop the whole run.
+- For each file, track and report the number of comments removed, the file size, the file type, the processing time, and any error message.
+- Print a clear summary at the end showing totals for files processed, files skipped, comments removed, errors encountered, and total time elapsed.
+- Load language grammars dynamically and report a helpful message if a required grammar package is not installed, without crashing the entire program.
+- Provide a command-line interface with help text, sensible defaults, and a non-zero exit code when any file fails.
+---"""
 
 from __future__ import annotations
-
+from dataclasses import dataclass
 import importlib
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass
-from pathlib import Path
-
 from tree_sitter import Language, Node, Parser
 
 PathLike = str | Path

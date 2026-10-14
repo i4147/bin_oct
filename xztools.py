@@ -1,36 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import contextlib
+from dataclasses import dataclass
+from datetime import datetime
 import io
 import lzma
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import time
-from dataclasses import dataclass
-from datetime import datetime
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Any, Optional, Sequence
 
 try:
-    import lzma_mt  # type: ignore
+    import lzma_mt
 
     _HAS_LZMA_MT: bool = True
 except ImportError:
     _HAS_LZMA_MT = False
 try:
-    import pylzma  # type: ignore
+    import pylzma
 
     _HAS_PYLZMA: bool = True
 except ImportError:
     _HAS_PYLZMA = False
 try:
-    from loguru import logger  # type: ignore
+    from loguru import logger
 
     _HAS_LOGURU = True
 except ImportError:
@@ -58,7 +56,7 @@ except ImportError:
         def add(self, *a: Any, **k: Any) -> None:
             pass
 
-    logger = _FallbackLogger()  # type: ignore[assignment]
+    logger = _FallbackLogger()
 DEFAULT_SKIP_DIRS: set[str] = {
     ".git",
     ".svn",
@@ -131,7 +129,6 @@ DEFAULT_SKIP_EXTS: set[str] = {
     ".bin",
     ".iso",
     ".img",
-    # bytecode / objects
     ".pyc",
     ".pyo",
     ".class",

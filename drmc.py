@@ -1,26 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that acts as a command-line tool for stripping comments and docstrings from Python source code across a project. The tool should accept one or more file or directory paths as input, recursively discover Python files while skipping common tooling, cache, version-control, and build-artifact directories, and process each file so that comments and docstrings are removed while the remaining code stays valid and functionally identical.
+The tool should support a dry-run mode that reports, per file, how many bytes, comments, and docstrings would be removed and shows a readable unified diff of the proposed changes, without modifying anything on disk. It should also an in-place mode that rewrites files only when a change is actually made, and an option to write results into a zip archive instead of altering the originals, preserving the original relative directory structure inside the archive.
+Files should be read with a fallback sequence of text encodings, and any file that fails to parse or process should be reported as an error without stopping the overall run. The tool must verify that its output still compiles before writing anything back. Processing of many files should be parallelizable through a configurable worker count, with a choice of execution strategies (including a no-parallelism option) and a clear progress or summary report at the end showing the number of files scanned, changed, skipped, and failed, along with total bytes saved and elapsed time. Output should use colored, human-readable terminal messages, with a flag to disable colors. The tool should be robust, well-structured, and documented with helpful `--help` text.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
+import contextlib
+from dataclasses import dataclass
 import difflib
 import io
+from itertools import chain
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import tokenize
-import zipfile
-from dataclasses import dataclass
-from itertools import chain
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Callable, Iterable, Iterator
-
+import zipfile
 from loguru import logger
-
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -88,7 +91,8 @@ def read_text(path: Path) -> str:
             return raw.decode(enc)
         except UnicodeDecodeError:
             continue
-    raise UnicodeDecodeError("unknown", raw, 0, 1, "no encoding worked")
+    msg = "unknown"
+    raise UnicodeDecodeError(msg, raw, 0, 1, "no encoding worked")
 
 
 def is_python_candidate(path: Path) -> bool:
@@ -125,8 +129,10 @@ def iter_targets(inputs: Iterable[Path]) -> Iterator[Path]:
                 d for d in dirnames if d not in SKIP_DIRS and not any(Path(d).match(g) for g in SKIP_DIR_GLOBS)
             ]
             base = Path(dirpath)
-            for name in filenames:
+            for name in fil88enames:
                 p = base / name
+                if p.is_symlink() or not p.exists():
+                    continue
                 if p.suffix == ".whl" or is_python_candidate(p):
                     yield p
 
@@ -153,9 +159,9 @@ def _is_preserved_comment(text: str, lineno: int) -> bool:
     body = text.lstrip("#").strip()
     if lineno == 1 and text.startswith("#!"):
         return True
-    if text.startswith("# type:") or text.startswith("#type:"):
+    if text.startswith(("# type:", "#type:")):
         return True
-    if text.startswith("# fmt:") or text.startswith("# fmt :") or text.startswith("#fmt:"):
+    if text.startswith(("# fmt:", "# fmt :", "#fmt:")):
         return True
     return body.startswith(("type:", "fmt:"))
 
@@ -200,8 +206,8 @@ def _comment_edits(source: str, opts: Options) -> list[Edit]:
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
     except (tokenize.TokenError, IndentationError) as exc:
-        raise SyntaxError(f"tokenize failed: {exc}") from exc
-
+        msg = f"tokenize failed: {exc}"
+        raise SyntaxError(msg) from exc
     for tok in tokens:
         if tok.type != tokenize.COMMENT:
             continue
@@ -232,7 +238,6 @@ def _comment_edits(source: str, opts: Options) -> list[Edit]:
 def _type_annotation_edits(source: str, tree: ast.Module) -> list[Edit]:
     offsets = _line_offsets(source)
     edits: list[Edit] = []
-
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if node.returns is not None:
@@ -362,7 +367,6 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
     module = cst.parse_module(source)
     stripper = _Stripper()
     module = module.visit(stripper)
-
     code = module.code
     if opts.strip_comments or opts.strip_all:
         edits = _comment_edits(code, opts)
@@ -372,8 +376,8 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
 
 
 def backend_tree_sitter(source: str, opts: Options) -> Stripped:
-    import tree_sitter_python as tspy
     from tree_sitter import Language, Parser
+    import tree_sitter_python as tspy
 
     lang = Language(tspy.language())
     try:
@@ -381,16 +385,13 @@ def backend_tree_sitter(source: str, opts: Options) -> Stripped:
     except TypeError:
         parser = Parser()
         parser.set_language(lang)
-
     data = source.encode("utf-8")
     tree = parser.parse(data)
     edits: list[Edit] = []
-
     stack = [tree.root_node]
     while stack:
         n = stack.pop()
         stack.extend(reversed(n.children))
-
         if n.type == "comment" and (opts.strip_comments or opts.strip_all):
             text = data[n.start_byte : n.end_byte].decode("utf-8", "replace")
             if _is_preserved_comment(text, n.start_point[0] + 1) and not opts.strip_all:
@@ -416,7 +417,6 @@ def backend_tree_sitter(source: str, opts: Options) -> Stripped:
                 continue
             only = is_body and parent is not None and parent.named_child_count == 1
             edits.append(Edit(n.start_byte, n.end_byte, "pass" if only else "", "docstring"))
-
     out_bytes = bytearray(data)
     for e in sorted(edits, key=lambda x: x.start, reverse=True):
         out_bytes[e.start : e.end] = e.replacement.encode("utf-8")
@@ -435,10 +435,11 @@ BACKENDS: dict[str, Callable[[str, Options], Stripped]] = {
 def resolve_backend(requested: str | None) -> str:
     if requested:
         if requested not in BACKENDS:
-            raise SystemExit(f"Unknown backend: {requested}")
+            msg = f"Unknown backend: {requested}"
+            raise SystemExit(msg)
         return requested
     try:
-        import libcst  # noqa: F401
+        import libcst
 
         return "libcst"
     except ImportError:
@@ -448,15 +449,17 @@ def resolve_backend(requested: str | None) -> str:
 def check_backend_available(name: str) -> None:
     if name == "libcst":
         try:
-            import libcst  # noqa: F401
+            import libcst
         except ImportError as exc:
-            raise SystemExit("libcst not installed: pip install libcst") from exc
+            msg = "libcst not installed: pip install libcst"
+            raise SystemExit(msg) from exc
     elif name == "tree-sitter":
         try:
-            import tree_sitter  # noqa: F401
-            import tree_sitter_python  # noqa: F401
+            import tree_sitter
+            import tree_sitter_python
         except ImportError as exc:
-            raise SystemExit("tree-sitter not installed: pip install tree-sitter tree-sitter-python") from exc
+            msg = "tree-sitter not installed: pip install tree-sitter tree-sitter-python"
+            raise SystemExit(msg) from exc
 
 
 def process_source(source: str, opts: Options) -> Stripped:
@@ -481,10 +484,8 @@ def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
             tmp.write(text)
             tmp.flush()
             os.fsync(tmp.fileno())
-        try:
+        with contextlib.suppress(OSError):
             shutil.copymode(path, tmp_name)
-        except OSError:
-            pass
         shutil.move(tmp_name, path)
         tmp_name = None
     finally:
@@ -532,9 +533,7 @@ def process_python_file(path: Path, opts: Options) -> FileResult:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.error("I/O error reading {}: {}", path, exc)
         return result
-
     result.original_code = original
-
     try:
         stripped = process_source(original, opts)
     except SyntaxError as exc:
@@ -545,21 +544,17 @@ def process_python_file(path: Path, opts: Options) -> FileResult:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.opt(exception=exc).error("Failed processing {}", path)
         return result
-
     result.comments_removed = stripped.comments_removed
     result.docstrings_removed = stripped.docstrings_removed
     new_bytes = len(stripped.code.encode("utf-8"))
     old_bytes = len(original.encode("utf-8"))
     result.bytes_removed = max(0, old_bytes - new_bytes)
     result.changed = stripped.code != original
-
     if opts.diff and result.changed:
         _print_diff(path, original, stripped.code)
-
     if opts.clipboard:
         result.final_code = stripped.code
         return result
-
     if result.changed and not opts.dry_run:
         try:
             if opts.backup:
@@ -678,7 +673,8 @@ def _iter_joblib(args_iter: Iterable[tuple[Path, Options]]) -> Iterator[FileResu
     try:
         from joblib import Parallel, delayed
     except ImportError as exc:
-        raise SystemExit("joblib not installed: pip install joblib") from exc
+        msg = "joblib not installed: pip install joblib"
+        raise SystemExit(msg) from exc
     for r in Parallel(n_jobs=POOL_WORKERS)(delayed(_worker_dispatch)(a) for a in args_iter):
         yield r
 
@@ -720,7 +716,8 @@ def run_parallel(
             for a in asyncs:
                 yield a.get()
         return
-    raise SystemExit(f"Unknown mp method: {method}")
+    msg = f"Unknown mp method: {method}"
+    raise SystemExit(msg)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -783,7 +780,8 @@ def build_options(ns: argparse.Namespace) -> Options:
         if ns.backend is None:
             backend = "ast"
         else:
-            raise SystemExit(f"Backend '{backend}' does not support type stripping; use --backend ast")
+            msg = f"Backend '{backend}' does not support type stripping; use --backend ast"
+            raise SystemExit(msg)
     return Options(
         strip_comments=ns.comments or default_mode or strip_all,
         strip_docstrings=ns.docstring,
@@ -805,21 +803,17 @@ def main(argv: list[str] | None = None) -> int:
     ns = build_parser().parse_args(argv)
     opts = build_options(ns)
     check_backend_available(opts.backend)
-
     mp_method = "none" if ns.no_mp else ns.mp_method
     if opts.diff:
         mp_method = "none"
-
     inputs = ns.paths or [Path.cwd()]
     target_iter = iter_targets(inputs)
     first = next(target_iter, None)
-
     results: list[FileResult] = []
     if first is None:
         summarize(results)
         print(f"Total runtime: {time.perf_counter() - t_start:.3f}s")
         return 0
-
     second = next(target_iter, None)
     if second is None:
         r = _worker_dispatch((first, opts))
@@ -830,9 +824,7 @@ def main(argv: list[str] | None = None) -> int:
         for r in run_parallel(args_iter, mp_method):
             report(r)
             results.append(r)
-
     summarize(results)
-
     if opts.clipboard:
         finals = [r.final_code for r in results if r.final_code is not None]
         if len(finals) == 1:
@@ -841,7 +833,6 @@ def main(argv: list[str] | None = None) -> int:
             copy_to_clipboard("\n".join(finals))
         else:
             logger.warning("No output produced for clipboard")
-
     print(f"Total runtime: {time.perf_counter() - t_start:.3f}s")
     return 1 if any(r.error for r in results) else 0
 

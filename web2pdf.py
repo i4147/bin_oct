@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for converting a web page or local HTML file into a PDF document. The tool should accept a single target as input, which may be a full URL (http, https, file, or data scheme), a path to a local HTML file, or a bare hostname or domain that should be treated as an HTTPS address. When given a local file path, the tool should resolve it to an absolute location before rendering; when given a bare domain, it should default to HTTPS.
+The script should fetch the target page while presenting a realistic desktop browser identity and requesting HTML content with English language preference, applying a configurable network timeout. Once the page content is retrieved, the tool should render it into a PDF file.
+Users should be able to control the output through command-line options, including: the destination file path (with a sensible default derived from the page or input name), the paper size chosen from a set of standard formats (A3, A4, A5, Letter, Legal, and Tabloid), page orientation (portrait or landscape), margins, and the network timeout. Optionally, the tool should accept custom CSS stylesheets to apply during rendering and allow toggling of background graphics printing.
+The tool should report progress and errors to the user through a clean, readable terminal interface written to standard error, keeping standard output free for any essential results. It should handle failures gracefully, such as unreachable URLs, missing local files, invalid arguments, or rendering problems, by displaying clear messages and exiting with a non-zero status code. On success, it should confirm the saved file location and exit cleanly.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
+import sys
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
-
 from rich.console import Console
 from weasyprint import CSS, HTML
 
 console = Console(stderr=True)
-
 PAPER: dict[str, tuple[float, float]] = {
     "A3": (297, 420),
     "A4": (210, 297),

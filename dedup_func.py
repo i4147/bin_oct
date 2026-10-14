@@ -1,21 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree (or a single file) for Python source files and identifies duplicated or near-duplicate code blocks across them, then reports the findings. The tool should accept a root path to analyze and an optional list of paths to exclude from the scan, skipping non-Python files and any excluded locations. It should be able to run its analysis efficiently across many files, using parallel processing where helpful, and should parse source code in a way that lets it compare structure rather than relying only on exact text, so that renamed variables or changed comments do not hide duplication. The output should be a clear report listing each group of duplicate code, the files and line ranges involved, and a summary of totals, provided in a human-readable form and optionally as machine-readable JSON. The script should include a command-line interface with options for the target path, exclusion paths, a minimum block size threshold, and output format. It should degrade gracefully if an optional logging library is unavailable, log progress and warnings without crashing on files that fail to parse, and handle large codebases without excessive memory use. Produce the tool as a single self-contained script that runs under standard Python 3 with sensible defaults and useful error messages for invalid input.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import defaultdict
 import concurrent.futures
 import hashlib
 import json
 import multiprocessing
 import os
-import re
-from collections import defaultdict
 from pathlib import Path
+import re
 from typing import Any, Iterable, Optional
 
 try:
-    from loguru import logger  # type: ignore
+    from loguru import logger
 except ImportError:
     import logging
 
@@ -355,8 +356,8 @@ def find_fuzzy_duplicates(
     similarity_threshold: float,
 ) -> None:
     try:
-        import ssdeep  # type: ignore
-        from rapidfuzz import fuzz  # type: ignore
+        from rapidfuzz import fuzz
+        import ssdeep
     except ImportError:
         logger.error("Please install dependencies for --fuzzy: pip install ssdeep rapidfuzz")
         return

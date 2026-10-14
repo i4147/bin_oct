@@ -1,37 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for bulk image searching and downloading from a web-based image search engine. The tool should accept a search keyword (or a list of keywords) along with optional filters such as the number of images to fetch, image type or category, color preference, image size (including a custom "WIDTH*HEIGHT" format that must be validated with a clear error for invalid input), and an output directory where downloaded images are saved (creating it if it does not exist). It should support selecting a browser-driven approach for pages that require JavaScript rendering, handle multiple concurrent downloads to speed up retrieval, and use a fallback mechanism across several HTTP client options when one is unavailable. The tool should gracefully handle network failures, skip or retry broken links, avoid saving duplicate images, and report progress and a final summary of successes and failures to the user. Provide clear help text describing every option, validate all user-supplied arguments before starting work, and ensure the output filenames are safe for the local filesystem. The script should be runnable from the terminal and exit with meaningful status codes on success, partial success, or fatal errors.
+---"""
+
+from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
 import os
 import re
 import sys
 import urllib.parse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 
 try:
     import requests
 except ImportError:
     requests = None
-
 try:
     import httpx
 except ImportError:
     httpx = None
-
 try:
     import pycurl
 except ImportError:
     pycurl = None
-
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
 
 def validDir(userDir):
-    """
-    Argparse validator to ensure specified output directory exists or can be created.
-    """
     if userDir and os.path.exists(userDir):
         return userDir
     elif not userDir:
@@ -40,22 +37,16 @@ def validDir(userDir):
 
 
 def validSize(size):
-    """
-    Argparse validator for custom image dimensions (e.g. '1920*1080').
-    """
     valid = re.search(r"^[0-9]+\*[0-9]+$", size)
     if valid:
         dimensions = re.findall(r"[0-9]+", size)
         return dimensions
-    raise argparse.ArgumentTypeError("Custom size must be in 'WIDTH*HEIGHT' format (e.g. 1920*1080).")
+    msg = "Custom size must be in 'WIDTH*HEIGHT' format (e.g. 1920*1080)."
+    raise argparse.ArgumentTypeError(msg)
 
 
 def getParams(sysArgs):
-    """
-    Configures and parses CLI options.
-    """
     parser = argparse.ArgumentParser(description="Get arguments for searching and downloading Google images")
-
     parser.add_argument("-q", "--query", help="Query to search for", type=str, required=True, nargs="+")
     parser.add_argument("-l", "--limit", help="Max images to download (default: 3)", type=int, default=3)
     parser.add_argument(
@@ -72,7 +63,6 @@ def getParams(sysArgs):
         type=str,
         required=False,
     )
-
     parser.add_argument(
         "-b",
         "--backend",
@@ -81,7 +71,6 @@ def getParams(sysArgs):
         choices=["requests", "pycurl", "httpx"],
         default="requests",
     )
-
     parser.add_argument(
         "-t",
         "--threads",
@@ -89,7 +78,6 @@ def getParams(sysArgs):
         type=int,
         default=4,
     )
-
     parser.add_argument("-epq", "--exactQuery", help="Words that must be included", type=str, default="")
     parser.add_argument("-oq", "--optionalQuery", help="Words that are optional", type=str, default="")
     parser.add_argument(
@@ -99,7 +87,6 @@ def getParams(sysArgs):
         type=str,
         default="",
     )
-
     sizeGroup = parser.add_mutually_exclusive_group(required=False)
     sizeGroup.add_argument(
         "-cs",
@@ -133,7 +120,6 @@ def getParams(sysArgs):
             ">1024*768",
         ],
     )
-
     parser.add_argument(
         "-ar",
         "--aspectRatio",
@@ -141,7 +127,6 @@ def getParams(sysArgs):
         type=str,
         choices=["s", "t", "w", "p"],
     )
-
     colourGroup = parser.add_mutually_exclusive_group(required=False)
     colourGroup.add_argument(
         "-co",
@@ -170,7 +155,6 @@ def getParams(sysArgs):
         type=str,
         choices=["full-colour", "black-and-white", "transparent"],
     )
-
     parser.add_argument(
         "-it",
         "--imageType",
@@ -186,7 +170,6 @@ def getParams(sysArgs):
         choices=["jpg", "gif", "png", "bmp", "svg", "webp", "ico", "raw"],
     )
     parser.add_argument("-s", "--site", help="Specific site or domain to search", type=str, default="")
-
     parser.add_argument(
         "-ss",
         "--SafeSearch",
@@ -194,7 +177,6 @@ def getParams(sysArgs):
         action="store_true",
         default=False,
     )
-
     parser.add_argument(
         "-ur",
         "--usageRights",
@@ -202,18 +184,13 @@ def getParams(sysArgs):
         type=str,
         choices=["CC", "Commercial", "Other"],
     )
-
     args = parser.parse_args(sysArgs)
     params = vars(args)
-
     params["query"] = " ".join(params["query"]).strip()
     return params
 
 
 def compileParams(params):
-    """
-    Compiles input options into formatted Google Search URL parameters.
-    """
     imgQuery = params["query"]
     compiled = {}
     for key, value in params.items():
@@ -222,9 +199,6 @@ def compileParams(params):
 
 
 def getParamValue(k, v, imgQuery):
-    """
-    Maps option keys to URL query strings.
-    """
     if v:
         if k == "size":
             sizeSwitcher = {
@@ -271,22 +245,18 @@ def getParamValue(k, v, imgQuery):
             return typeSwitcher.get(v, "")
         else:
             return v
+    elif k == "limit":
+        return 3
+    elif k == "outputDir":
+        safe_folder = re.sub(r"[^\w\s-]", "_", imgQuery).strip()
+        return os.path.join(os.getcwd(), safe_folder)
+    elif k == "SafeSearch":
+        return "images"
     else:
-        if k == "limit":
-            return 3
-        elif k == "outputDir":
-            safe_folder = re.sub(r"[^\w\s-]", "_", imgQuery).strip()
-            return os.path.join(os.getcwd(), safe_folder)
-        elif k == "SafeSearch":
-            return "images"
-        else:
-            return ""
+        return ""
 
 
 def getSearchUrl(params):
-    """
-    Builds Google Images Search URL.
-    """
     searchUrl = (
         f"https://www.google.com/search?as_st=y&tbm=isch"
         f"&as_q={urllib.parse.quote(params['query'] or '')}{params.get('customSize', '')}"
@@ -306,13 +276,9 @@ def getSearchUrl(params):
 
 
 def getImageUrls(params, url):
-    """
-    Launches headless Chrome using Selenium to extract image target URLs.
-    """
     resultsIndex = 0
     imageUrls = []
     maxImages = params["limit"]
-
     chromeOptions = webdriver.ChromeOptions()
     chromeOptions.add_argument("--no-sandbox")
     chromeOptions.add_argument("--headless=new")
@@ -322,7 +288,6 @@ def getImageUrls(params, url):
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
-
     try:
         if params.get("chromedriver"):
             service = Service(executable_path=params["chromedriver"])
@@ -332,7 +297,6 @@ def getImageUrls(params, url):
     except Exception as e:
         print(f"Could not initialize Chrome driver: {e}")
         sys.exit(3)
-
     driver.set_window_size(1024, 768)
     driver.get(url)
 
@@ -342,10 +306,8 @@ def getImageUrls(params, url):
     try:
         while len(imageUrls) < maxImages:
             scroll(driver)
-
             thumbnails = driver.find_elements(By.CSS_SELECTOR, "img.Q4LuWd")
             resultsNo = len(thumbnails)
-
             if resultsIndex >= resultsNo:
                 try:
                     loadButton = driver.find_element(By.CSS_SELECTOR, ".mye4qd")
@@ -354,7 +316,6 @@ def getImageUrls(params, url):
                 except Exception:
                     print("No more images found on Google.")
                     break
-
             for thumbnail in thumbnails[resultsIndex:resultsNo]:
                 try:
                     thumbnail.click()
@@ -370,20 +331,17 @@ def getImageUrls(params, url):
                         break
                 except Exception:
                     continue
-
             resultsIndex = resultsNo
-
     finally:
         driver.quit()
-
     print(f"Done getting URLs. Total retrieved: {len(imageUrls)}")
     return imageUrls
 
 
 def download_with_requests(url, timeout=10, headers=None):
-    """Download implementation using the 'requests' package."""
     if requests is None:
-        raise ImportError("The 'requests' library is not installed (`pip install requests`).")
+        msg = "The 'requests' library is not installed (`pip install requests`)."
+        raise ImportError(msg)
     resp = requests.get(url, headers=headers, timeout=timeout)
     resp.raise_for_status()
     content_type = resp.headers.get("content-type", "")
@@ -391,9 +349,9 @@ def download_with_requests(url, timeout=10, headers=None):
 
 
 def download_with_httpx(url, timeout=10, headers=None):
-    """Download implementation using the 'httpx' package."""
     if httpx is None:
-        raise ImportError("The 'httpx' library is not installed (`pip install httpx`).")
+        msg = "The 'httpx' library is not installed (`pip install httpx`)."
+        raise ImportError(msg)
     with httpx.Client(follow_redirects=True, timeout=timeout) as client:
         resp = client.get(url, headers=headers)
         resp.raise_for_status()
@@ -402,10 +360,9 @@ def download_with_httpx(url, timeout=10, headers=None):
 
 
 def download_with_pycurl(url, timeout=10, headers=None):
-    """Download implementation using the 'pycurl' libcurl bindings."""
     if pycurl is None:
-        raise ImportError("The 'pycurl' library is not installed (`pip install pycurl`).")
-
+        msg = "The 'pycurl' library is not installed (`pip install pycurl`)."
+        raise ImportError(msg)
     buffer = io.BytesIO()
     header_buffer = io.BytesIO()
     c = pycurl.Curl()
@@ -414,30 +371,23 @@ def download_with_pycurl(url, timeout=10, headers=None):
     c.setopt(c.HEADERFUNCTION, header_buffer.write)
     c.setopt(c.FOLLOWLOCATION, True)
     c.setopt(c.TIMEOUT, timeout)
-
     user_agent = headers.get("User-Agent", "Mozilla/5.0") if headers else "Mozilla/5.0"
     c.setopt(c.USERAGENT, user_agent)
-
     c.perform()
     status_code = c.getinfo(c.RESPONSE_CODE)
     c.close()
-
     if status_code != 200:
-        raise Exception(f"HTTP Status Code {status_code}")
-
+        msg = f"HTTP Status Code {status_code}"
+        raise Exception(msg)
     header_text = header_buffer.getvalue().decode("iso-8859-1", errors="ignore")
     content_type = ""
     for line in header_text.splitlines():
         if line.lower().startswith("content-type:"):
             content_type = line.split(":", 1)[1].strip()
-
     return buffer.getvalue(), content_type
 
 
 def get_extension_from_content_type(content_type, default=".jpg"):
-    """
-    Helper to detect file extension from response Content-Type header.
-    """
     if "image/png" in content_type:
         return ".png"
     elif "image/gif" in content_type:
@@ -456,9 +406,6 @@ def get_extension_from_content_type(content_type, default=".jpg"):
 
 
 def single_download_worker(index, url, backend, output_dir, headers):
-    """
-    Thread pool worker function to execute downloading an image.
-    """
     backend = backend.lower()
     try:
         if backend == "requests":
@@ -468,64 +415,49 @@ def single_download_worker(index, url, backend, output_dir, headers):
         elif backend == "pycurl":
             file_content, content_type = download_with_pycurl(url, headers=headers)
         else:
-            raise ValueError(f"Unknown backend requested: {backend}")
-
+            msg = f"Unknown backend requested: {backend}"
+            raise ValueError(msg)
         ext = get_extension_from_content_type(content_type)
         filename = f"image_{index:03d}{ext}"
         filepath = os.path.join(output_dir, filename)
-
         with open(filepath, "wb") as f:
             f.write(file_content)
-
         print(f"[+] [{backend.upper()}] Downloaded: {filename}")
         return True
-
     except Exception as err:
         print(f"[-] [{backend.upper()}] Failed image {index} ({url[:40]}...): {err}")
         return False
 
 
 def downloadImages(params, imageUrls):
-    """
-    Coordinates downloading images into outputDir using selected backend & multi-threading.
-    """
     backend = params.get("backend", "requests")
     picDir = params["outputDir"]
     thread_count = params.get("threads", 4)
-
     os.makedirs(picDir, exist_ok=True)
     print(f"\nDownloading {len(imageUrls)} images using backend '{backend}' into '{picDir}'...")
-
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
     }
-
     success_count = 0
     with ThreadPoolExecutor(max_workers=thread_count) as executor:
         futures = [
             executor.submit(single_download_worker, idx + 1, url, backend, picDir, headers)
             for idx, url in enumerate(imageUrls)
         ]
-
         for future in as_completed(futures):
             if future.result():
                 success_count += 1
-
     print(f"\nFinished: {success_count}/{len(imageUrls)} images successfully saved.")
 
 
 def main(args):
-    """
-    Main script workflow.
-    """
     params = getParams(args)
     params = compileParams(params)
     url = getSearchUrl(params)
     imageUrls = getImageUrls(params, url)
-
     if imageUrls:
         downloadImages(params, imageUrls)
     else:

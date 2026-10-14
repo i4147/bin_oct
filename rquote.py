@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a collection of quotes from a JSON file at a fixed storage location, selects one quote at random, and displays it in the terminal as a visually framed, styled message. Each quote record contains a quote text and an author name; if either field is missing, fall back to sensible placeholder text such as "No quote content." and "Unknown Author." The script should fail silently without raising errors when the file does not exist, contains malformed JSON, or holds an empty list. The output should be framed by horizontal divider lines that span the full width of the current terminal window, with the quote text and attribution rendered in distinct, animated or blinking colored text using ANSI escape sequences, and the attribution indented beneath the quote with an em dash prefix. The script should run its display logic only when executed directly as a standalone program.
+---"""
 
 from __future__ import annotations
-
 import json
 import os
 import random

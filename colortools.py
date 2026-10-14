@@ -1,14 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""opt in text-based source files such as stylesheets, HTML, and configuration files. The tool should accept a root path as input, along with options to control recursion, file extension filtering, and skipping of ignored or binary files. It should detect color literals in several common notations, including hexadecimal colors in 3-, 6-, and 8-digit forms, and functional RGB/RGBA color expressions, and it should be able to convert between these formats where appropriate.
+The script should produce a readable, colorized terminal report that, theary of the colors discovered, ideally grouped or sorted by frequency or similarity. It-only mode as well as an option to rewrite files in place (for example, normalizing colors to a single canonical format, or replacing colors with a chosen palette entry). When rewriting, the script must preserve the rest of each file's content exactly, create a backup or require explicit confirmation before modifying files, and report every change it makes.
+Additional expected behaviors include: a helper mode that generates a random or harmonious color palette using color-theory relationships (complementary, analogous, triadic) and displays it with swatches in the terminal; a way to compute and display the relative luminance and contrast ratio between two colors, flagging pairs that fail common accessibility thresholds; graceful handling of unreadable files, encoding issues, and permission errors without aborting the whole run; and clear command-line help with sensible defaults. The output should be deterministic when a seed is supplied, and the script should exit with a meaningful status code indicating success, invalid arguments, or problems encountered during processing.
+---"""
 
+from __future__ import annotations
 import argparse
 import colorsys
+import contextlib
+from dataclasses import dataclass
 import os
+from pathlib import Path
 import random
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
+from typing import Iterator, Optional, Sequence
 
 try:
     from dh import cprint, is_binary, should_skip
@@ -110,7 +116,8 @@ def _hex_to_color(hex_str: str) -> Color:
         b = int(hex_str[4:6], 16)
         a = int(hex_str[6:8], 16) / 255.0
     else:
-        raise ValueError(f"Unexpected hex length: {len(hex_str)}")
+        msg = f"Unexpected hex length: {len(hex_str)}"
+        raise ValueError(msg)
     return Color(r=r, g=g, b=b, a=a)
 
 
@@ -133,10 +140,8 @@ def _match_rgba(m: "re.Match[str]") -> Optional[Color]:
 def _extract_colors(text: str) -> list[Color]:
     out: list[Color] = []
     for hm in BARE_HEX_RE.finditer(text):
-        try:
+        with contextlib.suppress(Exception):
             out.append(_hex_to_color(hm.group(0)))
-        except Exception:
-            pass
     for rm in RGB_RE.finditer(text):
         c = _match_rgba(rm)
         if c is not None:
@@ -223,8 +228,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     expanded: list[str] = []
     for c in found:
         expanded.append(c * 2 if len(c) == 3 else c)
-
-    result = sorted(set(c for c in expanded if len(c) != 3))
+    result = sorted({c for c in expanded if len(c) != 3})
     Path(args.output).write_text("\n".join(result), encoding="utf-8")
     cprint(f"{count} colors found", "green")
     return 0
@@ -305,17 +309,14 @@ def cmd_sorthue(args: argparse.Namespace) -> int:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Merged color utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("html", help="Write an HTML color display page.")
     p.add_argument("input", nargs="?", default="/sdcard/colors")
     p.add_argument("output", nargs="?", default="/sdcard/colors.html")
     p.set_defaults(func=cmd_html)
-
     p = sub.add_parser("extract", help="Scan for hex colors and write them out.")
     p.add_argument("path", nargs="?", default=".")
     p.add_argument("--output", default="colors")
     p.set_defaults(func=cmd_extract)
-
     p = sub.add_parser("extract-show", help="Scan and print ANSI color swatches.")
     p.add_argument("path", nargs="?", default=".")
     p.add_argument("--max-colors", type=int, default=200)
@@ -327,13 +328,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="File extension to include (repeatable).",
     )
     p.set_defaults(func=cmd_extract_show)
-
     p = sub.add_parser("hex2rgb", help="Convert a hex color to RGB.")
     p.add_argument("hex")
     p.add_argument("--format", choices=["tuple", "dict"], default="dict")
     p.add_argument("--allow-short", action="store_true", help="Allow 3-digit #abc form.")
     p.set_defaults(func=cmd_hex2rgb)
-
     p = sub.add_parser("showcolor", help="Print random ANSI color blocks.")
     p.add_argument(
         "--count",
@@ -342,11 +341,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="Number of blocks (default: random 1-999).",
     )
     p.set_defaults(func=cmd_showcolor)
-
     p = sub.add_parser("sorthue", help="Sort #rrggbb lines by HSV hue.")
     p.add_argument("file")
     p.set_defaults(func=cmd_sorthue)
-
     args = parser.parse_args(argv)
     return args.func(args)
 

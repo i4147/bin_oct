@@ -1,15 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a batch shell-script formatter. The tool should accept a target directory (or a list of paths) on the command line, recursively discover shell scripts within it, and format each one in place using an external shell formatter. A file qualifies as a shell script if it has a shell-related extension or, when it has no extension, begins with a shell interpreter shebang line; binary files must be skipped. The script should process files concurrently using a fixed-size worker pool, ignore files that are not formattable, and report per-file results with clear logging of successes, failures, and skipped files. Failed files should be collected into a separate error directory so the user can inspect them, without losing the original content. The tool should exit with a meaningful status code reflecting whether any formatting errors occurred, and print a concise summary at the end including counts of formatted, unchanged, skipped, and failed files. Keep the command-line interface simple, support a dry-run or check mode that reports which files would change without modifying them, and handle missing external tools gracefully with a clear error message.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
-import shutil
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import shutil
 from typing import TYPE_CHECKING, Final, TypeAlias
-
-from dh import get_files, is_binary, runcmd  # type: ignore[import-untyped]
+from dh import get_files, is_binary, runcmd
 from loguru import logger
 
 if TYPE_CHECKING:

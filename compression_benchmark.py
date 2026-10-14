@@ -1,18 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a universal file compression and decompression tool. It should accept a source file or directory path and a target format, then produce a compressed archive (or extract an existing archive) at a user-specified output location. The tool should support a broad range of common compression formats, including general-purpose stream compressors (such as gzip, bzip2, xz/LZMA, Brotli, Zstandard, and LZ4) and archive containers (such as ZIP, TAR and its compressed variants, and 7z), with optional support for less common or specialized codecs when their dependencies are available. Each format should be handled through a consistent, pluggable interface so new codecs can be added easily.
+The script should allow the user to specify a compression level where the format supports one, validate inputs and report clear errors for missing files, unsupported formats, or missing optional dependencies, and gracefully degrade when optional packages are not installed by skipping those formats and informing the user. It should preserve file names and directory structure when archiving, handle large files efficiently without loading them fully into memory, and offer a way to list the contents of an existing archive and to auto-detect the format of an input archive from its content or extension during decompression.
+Provide a command-line interface with clear options for the input path, output path, format, compression level, and mode (compress, decompress, or list), along with helpful usage messages. Report progress or a final summary including original size, compressed size, compression ratio, and elapsed time. Use temporary files safely so that a failed operation does not leave corrupted or partial output behind, and ensure the script exits with meaningful status codes on success and failure.
+---"""
 
 from __future__ import annotations
-
 import bz2
 import gzip
 import lzma
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
 import time
-import zipfile
-from pathlib import Path
 from typing import Callable, Optional
+import zipfile
 
 try:
     import brotli

@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory of Python source files and produces a summary of the public API each module exposes. The script should take a directory path as input, locate all top-level Python modules in that directory (skipping package initializer files and any files whose names begin with an underscore), and analyze each one without executing or importing its code. For each module, it should identify all publicly visible functions, asynchronous functions, and classes (names not starting with an underscore), including those nested within other definitions, and report them in a deterministic, alphabetically sorted order. If a file cannot be parsed due to syntax errors, the script should emit a clear warning to the error stream and continue processing the remaining files rather than failing.
+The script should process modules efficiently, ideally leveraging parallel execution across multiple CPU cores when there are many files, while keeping results consistently ordered regardless of completion order. It should aggregate the per-module results into a readable report written to standard output, listing each module with its public names beneath it, and optionally write the same information to an output file or a structured format if requested. The tool should also handle the case where the directory does not exist or contains no eligible modules by reporting this gracefully with an appropriate message and a non-zero exit status when appropriate. Include a command-line interface that accepts the target directory and optional output options, along with helpful usage information. Ensure the script is robust against encoding issues, reads files safely, and cleans up any temporary resources it creates, such as any staging or copy directories used during processing.
+---"""
 
 from __future__ import annotations
-
 import ast
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def get_public_names(path: Path) -> list[str]:

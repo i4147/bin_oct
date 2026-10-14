@@ -1,12 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that checks a set of Python source files for runtime import and execution health, running each file in an isolated subprocess in parallel and producing a categorized summary report.
+The tool should accept one or more file paths or a directory to scan (recursively discovering Python files), along with optional settings for the number of concurrent workers and a per-file timeout in seconds. For each file, it should execute the script in a separate process, capture its exit status and error output, and measure how long it took to run. It must handle files that exceed the timeout by reporting them as timed out, and treat user interruption gracefully so that partial results are still reported.
+Classify each file's outcome into a fixed set of categories based on the error type found in the captured stderr: success, module not found, import error, syntax error, attribute error, type error, value error, keyboard interrupt, timeout, or other error. Truncate long error messages to a sensible maximum length for display.
+After all files have been processed, produce a summary that reports the total number of files checked, how many succeeded, how many failed, and a breakdown of failures by category, along with the duration of each file's run. Output the report to the console in a readable, aligned format, and optionally write it to a file in a structured format such as JSON or CSV. Use a proper exit code: zero when all files pass, and a non-zero code when any file fails.
+Use structured logging for progress and diagnostics, keep the output clean for end users, and make the tool robust to unreadable files, missing paths, and invalid arguments with clear error messages.
+---"""
+
+from __future__ import annotations
 import argparse
 from dataclasses import dataclass, field
 from enum import Enum
 from multiprocessing import Pool
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
 from loguru import logger
 
 WORKER_COUNT = 8
@@ -115,7 +123,6 @@ def run_file(path: Path, timeout: float) -> FileResult:
             stderr=str(exc),
             duration=time.monotonic() - start,
         )
-
     duration = time.monotonic() - start
     if completed.returncode == 0:
         return FileResult(
@@ -124,7 +131,6 @@ def run_file(path: Path, timeout: float) -> FileResult:
             returncode=0,
             duration=duration,
         )
-
     err_output = (completed.stderr or completed.stdout or "").strip()
     outcome = _classify_failure(err_output, completed.returncode)
     return FileResult(
@@ -169,7 +175,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "directory",
         type=Path,
         nargs="?",
-        default=Path("."),
+        default=Path(),
         help="Directory to search for Python files.",
     )
     parser.add_argument(
@@ -199,21 +205,17 @@ def main(argv: list[str] | None = None) -> int:
     recursive = not args.no_recursive
     timeout = args.timeout
     verbose = args.verbose
-
     if not directory.exists() or not directory.is_dir():
         logger.error(f"Not a valid directory: {directory}")
         return 2
-
     files = discover_python_files(directory, recursive)
     if not files:
         logger.warning(f"No Python files found in {directory}")
         return 0
-
     mode = "recursively" if recursive else "non-recursively"
     print(f"Scanning {mode} in: {directory}")
     print(f"Found {len(files)} Python file(s) | Using {WORKER_COUNT} workers with {timeout}s timeout")
     print("-" * 60)
-
     summary = Summary()
     start_time = time.monotonic()
     try:
@@ -233,7 +235,6 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         logger.warning("Interrupted by user; shutting down workers.")
         return 130
-
     elapsed_time = time.monotonic() - start_time
     report_summary(summary, elapsed_time)
     return 0 if summary.failed == 0 else 1

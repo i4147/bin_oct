@@ -1,17 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that builds and manages a local cache of Python wheel files, keyed by source URL and the current Python interpreter's identity (implementation name and version), so that wheels built or downloaded for one interpreter are not reused by another. The script should accept a cache root directory and a source URL (or local path converted to a file URL), derive a stable, deterministic storage location within the cache from a hash of that identity, and organize cached entries into a nested, sharded directory structure to avoid overly large single directories.
+The script should also be able to inspect a given wheel archive (a ZIP-format .whl file) and extract its core package metadata, specifically locating the METADATA file inside the wheel's dist-info directory, parsing it as an email-style header block, and returning the relevant fields (such as package name, version, and requirements) as structured data. If a wheel contains no metadata file or is malformed, the script should report a clear, descriptive error rather than failing silently.
+Key expectations:
+- Produce identical cache locations for identical URL and interpreter combinations across runs,inct locations when either differs.
+- Handle filesystem paths and file URLs correctly across operating systems.
+- Provide clear error messages for missing or invalid wheel files missing metadata.
+- Allow the cached results and extracted metadata to be presented as machine-readable output (e.g., JSON) for use by other tools.
+- Be safe to run repeatedly: creating cache directories should be idempotent, and existing cache entries should not be corrupted.
+- Include a simple command-line interface that accepts the cache directory, a URL or wheel path, and an option to print metadata.
+---"""
 
 from __future__ import annotations
-
+from email import policy
+from email.parser import Parser
 import hashlib
 import json
+from pathlib import Path
 import shutil
 import subprocess
 import zipfile
-from email import policy
-from email.parser import Parser
-from pathlib import Path
-
-
 from pip._internal.utils.compatibility_tags import (
     interpreter_name,
     interpreter_version,
@@ -20,23 +27,6 @@ from pip._internal.utils.urls import path_to_url
 
 
 def wheel_cache_hash(link_url: str) -> str:
-    """
-    Reproduce pip._internal.cache.WheelCache._get_cache_path_parts() for a
-    link that has no hash fragment and no subdirectory fragment.
-
-    Pip does::
-
-        key_parts = {"url": link.url_without_fragment}
-        if link.hash_name is not None and link.hash is not None:
-            key_parts[link.hash_name] = link.hash
-        if link.subdirectory_fragment:
-            key_parts["subdirectory"] = link.subdirectory_fragment
-        key_parts.update({
-            "interpreter_name": interpreter_name(),
-            "interpreter_version": interpreter_version(),
-        })
-        encoded = hashlib.sha224(json.dumps(key_parts, sort_keys=True).encode("utf-8")).hexdigest()
-    """
     key_parts = {
         "url": link_url,
         "interpreter_name": interpreter_name(),
@@ -47,7 +37,6 @@ def wheel_cache_hash(link_url: str) -> str:
 
 def wheel_cache_dir(cache_dir: Path, link_url: str) -> Path:
     h = wheel_cache_hash(link_url)
-
     return Path(cache_dir) / "wheels" / h[0:2] / h[2:4] / h[4:6] / h
 
 
@@ -59,7 +48,6 @@ def extract_wheel_metadata(wheel_path: Path) -> dict:
             raise ValueError(msg)
         metadata_content = wheel_zip.read(metadata_files[0]).decode("utf-8")
         metadata = Parser(policy=policy.compat32).parsestr(metadata_content)
-
     link_url = path_to_url(str(wheel_path.absolute()))
     wheel_metadata = {
         "url": link_url,
@@ -86,18 +74,13 @@ def extract_wheel_metadata(wheel_path: Path) -> dict:
 
 def add_wheel_to_pip_cache(wheel_path: Path) -> None:
     cache_dir = Path(subprocess.check_output(["pip", "cache", "dir"]).decode().strip())
-
     link_url = path_to_url(str(wheel_path.absolute()))
-
     target_dir = wheel_cache_dir(cache_dir, link_url)
     target_dir.mkdir(parents=True, exist_ok=True)
-
     target_file = target_dir / wheel_path.name
     shutil.copy2(wheel_path, target_file)
-
     metadata = extract_wheel_metadata(wheel_path)
     (target_dir / f"{wheel_path.name}.json").write_text(json.dumps(metadata, indent=2))
-
     print(f"Cache key (sha224): {wheel_cache_hash(link_url)}")
     print(f"Wheel cached at:    {target_file}")
     print(f"Metadata cached at: {target_dir / (wheel_path.name + '.json')}")

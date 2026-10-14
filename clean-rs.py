@@ -1,21 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that acts as a command-line tool for Rust source code: it recursively scans one or more given paths for Rust (.rs) files, parses each file with a Rust-aware syntax parser, and identifies comments in the source. Its main purpose is to reformat or clean up comments in Rust code, rewriting them so that they are normalized (for example, consistent spacing or style after comment markers), while leaving the actual code, string literals, and doc content untouched.
+The tool should accept command-line arguments that let the user choose the target directory or files, optionally run in a check-only mode that reports which files would changeified diff of pro changes are applied, it should write the updated content back to the original files and report a summary of how many files were examined, how many were modified, and any files that failed to parse or process.
+Processing should be parallelized across multiple worker processes to handle large codebases efficiently, with a configurable number of workers that defaults to a reasonable value. Each file should be handled independently so that an error in one file does not stop the others. The tool should skip hidden files and directories, and should ignore symbolic links and directories themselves, handling only regular Rust source files.
+Logging should provide clear progress and error messages, and the tool should exit with a non-zero status code when check-only mode finds files needing changes or when errors occur, and zero otherwise.
+---"""
 
+from __future__ import annotations
 import argparse
 import difflib
-import shutil
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import TYPE_CHECKING
-
-import tree_sitter_rust
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_rust
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
-
+    from collections.abc import Iterable, Iterator
 WORKERS: int = 8
 _PARSER: Parser | None = None
 
@@ -32,7 +35,7 @@ def get_parser() -> Parser:
 
 def is_rust_file(path: Path) -> bool:
     if path.is_dir() or path.is_symlink() or path.name.startswith("."):
-        return False
+        return False8
     return path.suffix.lower() == ".rs"
 
 
@@ -44,12 +47,7 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         if node.type == "comment":
             comment_bytes = content[node.start_byte : node.end_byte]
             stripped = comment_bytes.lstrip()
-            if not (
-                stripped.startswith(b"///")
-                or stripped.startswith(b"//!")
-                or stripped.startswith(b"/**")
-                or stripped.startswith(b"/*!")
-            ):
+            if not (stripped.startswith((b"///", b"//!", b"/**", b"/*!"))):
                 ranges.append((node.start_byte, node.end_byte))
             continue
         for child in reversed(node.children):
@@ -90,23 +88,19 @@ def process_file(args_tuple: tuple[Path, Path, bool, bool]) -> tuple[str, int, i
             old_text = content.decode("utf-8", errors="replace")
         except Exception:
             old_text = ""
-
         new_content, count = strip_comments(content)
         new_content = remove_blank_lines(new_content)
         new_size = len(new_content)
         reduced = orig_size - new_size
-
         try:
             new_text = new_content.decode("utf-8", errors="replace")
         except Exception:
             new_text = ""
-
         if not dry_run and reduced > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak")
                 shutil.copy2(path, backup_path)
             path.write_bytes(new_content)
-
         try:
             rel: str = str(path.relative_to(base))
         except ValueError:
@@ -156,19 +150,15 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--backup", action="store_true")
     args: argparse.Namespace = ap.parse_args()
-
     inputs: list[Path] = list(args.paths) if args.paths else [Path()]
     files: list[Path] = list(iter_rust_files(inputs))
     if not files:
         logger.error("No Rust files to process.")
         return 1
-
     base: Path = Path.cwd()
     total_reduced: int = 0
     errors: int = 0
-
     tasks = [(p, base, args.dry_run, args.backup) for p in files]
-
     if len(files) == 1:
         rel, reduced, count, err, old_text, new_text = process_file(tasks[0])
         if err:
@@ -184,7 +174,7 @@ def main() -> int:
         with Pool(processes=WORKERS) as pool:
             results = [pool.apply_async(process_file, t) for t in tasks]
             for res in results:
-                rel, reduced, count, err, old_text, new_text = res.get()
+                rel, reduced, _count, err, old_text, new_text = res.get()
                 if err:
                     errors += 1
                     logger.error(f"{rel}: ERROR: {err}")
@@ -194,7 +184,6 @@ def main() -> int:
                 print(f"{rel}  {green_reduced}")
                 if args.diff and reduced > 0:
                     print_colorful_diff(old_text, new_text, rel)
-
     print(f"\nTotal space freed: {total_reduced} bytes")
     return 1 if errors else 0
 

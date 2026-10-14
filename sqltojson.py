@@ -1,25 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line database query runner with date-aware parameter substitution. The tool should accept a SQL query (or a file containing one), a database connection string, and optional named parameters, then execute the query against the target database and return the results in a user-chosen output format.
+Key requirements:
+- **Date placeholders:** Support special date tokens in the SQL text or parameters, such as the current date, first and last day of the current month, and first and last day of the current year. Resolve these tokens at runtime against a configurable time zone, with sensible defaults when none is provided.
+- **Relative date arithmetic:** Allow users to request date offsets (e.g., shifting by a number of days, months, or years) relative to a base date, so that reports can be parameterized without editing the query.
+- **Parameter handling:** Accept user-supplied parameters from the command line, automatically converting values to the appropriate types (integers, decimals, dates, booleans, or strings). Use safe, parameterized query execution to prevent SQL injection rather than naive string interpolation.
+- **Database connectivity:** Connect to any SQLAlchemy-compatible database via a connection URL. Handle connection and query errors gracefully with clear, user-friendly messages.
+- **Output formats:** Support exporting results to standard output as readable tabular text, JSON, and CSV, with an option to write the output to a file. Serialize non-standard types such as decimals and dates correctly in JSON and CSV output.
+- **Command-line interface:** Expose all functionality through a clean, self-documenting CLI with help text, a version flag, and clear argument validation.
+- **Robustness:** Validate inputs early, report unresolved or malformed placeholders and parameters clearly, and exit with appropriate non-zero status codes on failure.
+- **Reporting utility:** Optionally print the resolved query and final parameter values for debugging without executing the query.
+---"""
 
-from __future__ import absolute_import
-
+from __future__ import absolute_import, annotations
 import calendar
+import contextlib
 import csv
-import datetime
+import datetime as dt
+from decimal import Decimal
 import json
 import os
-import re
 import sys
-from decimal import Decimal
-from typing import Optional, Union
+from typing import Optional
 from zoneinfo import ZoneInfo
-
-import fire
 from dateutil.relativedelta import relativedelta
+import fire
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 
 __version__ = "0.0.0"
-
 DATE_FIELDS = [
     "CURRENT_DATE",
     "START_CURRENT_MONTH",
@@ -55,15 +63,15 @@ def _last_day_month(current_date):
 
 
 def _parse_field(field, to_add, current_date, date_format="%Y-%m-%d"):
-    if "CURRENT_DATE" == field:
-        return (current_date + datetime.timedelta(days=to_add)).strftime(date_format)
-    elif "START_CURRENT_MONTH" == field:
+    if field == "CURRENT_DATE":
+        return (current_date + dt.timedelta(days=to_add)).strftime(date_format)
+    elif field == "START_CURRENT_MONTH":
         return (_first_day_month(current_date) + relativedelta(months=to_add)).strftime(date_format)
-    elif "END_CURRENT_MONTH" == field:
+    elif field == "END_CURRENT_MONTH":
         return (_last_day_month(current_date) + relativedelta(months=to_add)).strftime(date_format)
-    elif "START_CURRENT_YEAR" == field:
+    elif field == "START_CURRENT_YEAR":
         return (_first_day_year(current_date) + relativedelta(years=to_add)).strftime(date_format)
-    elif "END_CURRENT_YEAR" == field:
+    elif field == "END_CURRENT_YEAR":
         return (_last_day_year(current_date) + relativedelta(years=to_add)).strftime(date_format)
     else:
         return field
@@ -77,7 +85,6 @@ def _parse_formula(formula, current_date, date_format="%Y-%m-%d"):
         elif "-" in formula:
             parts = formula.split("-")
             return _parse_field(parts[0].strip(), -int(parts[1]), current_date, date_format)
-
     return _parse_field(formula.strip(), 0, current_date, date_format)
 
 
@@ -93,10 +100,10 @@ def parse_parameter(param_value, current_date, format_separator="|"):
         return _parse_formula(param_value, current_date)
 
 
-def _current_date(timezone: Optional[str] = None) -> datetime.date:
+def _current_date(timezone: Optional[str] = None) -> dt.date:
     if timezone:
-        return datetime.datetime.now(ZoneInfo(timezone)).date()
-    return datetime.date.today()
+        return dt.datetime.now(ZoneInfo(timezone)).date()
+    return dt.date.today()
 
 
 def map_result_proxy2list_dict(result_proxy) -> list:
@@ -152,12 +159,10 @@ def handle_run_query2json(
             if output is None:
                 output = os.path.splitext(name)[0] + ".json"
             name = "default"
-
         if list_connections:
             config_path = kwargs.get("config")
             print(json.dumps(_list_connections(config_path)))
             return
-
         if list_queries:
             config_path = kwargs.get("config")
             if isinstance(list_queries, str) and list_queries.lower() in {
@@ -169,7 +174,6 @@ def handle_run_query2json(
             else:
                 print(json.dumps(_list_queries(config_path, scoped=True)))
             return
-
         result = run_query2json(
             name,
             query,
@@ -182,9 +186,7 @@ def handle_run_query2json(
             read_only=read_only,
             **kwargs,
         )
-
         emit_result(result, format, output, key, value, first, timezone)
-
     except Exception as e:
         print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)
         sys.exit(1)
@@ -200,14 +202,11 @@ def run_query(
     read_only = _coerce_bool(read_only)
     current_date = _current_date(timezone)
     parameters = {k: parse_parameter(v, current_date) for k, v in kwargs.items()}
-
     with engine.connect() as con:
         if read_only:
             _begin_read_only(con)
-
         try:
             result_proxy = con.execute(text(raw_query), parameters)
-
             if result_proxy.returns_rows:
                 records: list | dict = map_result_proxy2list_dict(result_proxy)
             else:
@@ -219,16 +218,12 @@ def run_query(
             raise
         finally:
             if read_only and con.engine.dialect.name == "sqlite":
-                try:
+                with contextlib.suppress(Exception):
                     con.exec_driver_sql("PRAGMA query_only = OFF")
-                except Exception:
-                    pass
-
         if read_only:
             con.rollback()
         else:
             con.commit()
-
     return records
 
 
@@ -238,7 +233,6 @@ def load_config_file(config_path: str) -> dict:
             return json.load(json_file)
     except Exception:
         pass
-
     return {
         "conections": {"default": "sqlite:///:memory:"},
         "queries": {"default": "SELECT 1 AS a, 2 AS b"},
@@ -259,10 +253,8 @@ def _find_config() -> str:
 
 def load_query_from_file(sql_file_path: str) -> str:
     file_name = sql_file_path
-
     if sql_file_path.startswith("@"):
         file_name = sql_file_path[1:]
-
     with open(file_name, "r") as file:
         return file.read()
 
@@ -270,10 +262,8 @@ def load_query_from_file(sql_file_path: str) -> str:
 def get_for_key_or_first_map_value(my_dict: dict, key: Optional[str] = None):
     if key in my_dict:
         return my_dict.get(key)
-
-    for _, v in my_dict.items():
+    for v in my_dict.values():
         return v
-
     return ""
 
 
@@ -289,24 +279,22 @@ def list_connections(config_path: Optional[str] = None) -> list:
 
 def _get_connection_queries_dict(config: dict, connections: dict) -> dict:
     connection_queries = config.get("connection_queries", {})
-
     if connection_queries is None:
         return {}
-
     if not isinstance(connection_queries, dict):
-        raise ValueError("connection_queries must be an object")
-
+        msg = "connection_queries must be an object"
+        raise ValueError(msg)
     for connection_name, queries in connection_queries.items():
         if connection_name not in connections:
-            raise ValueError(f"connection_queries references unknown connection '{connection_name}'")
-
+            msg = f"connection_queries references unknown connection '{connection_name}'"
+            raise ValueError(msg)
         if not isinstance(queries, dict):
-            raise ValueError(f"connection_queries.{connection_name} must be an object")
-
+            msg = f"connection_queries.{connection_name} must be an object"
+            raise ValueError(msg)
         for query_name, raw_query in queries.items():
             if not isinstance(raw_query, str):
-                raise ValueError(f"connection_queries.{connection_name}.{query_name} must be a string")
-
+                msg = f"connection_queries.{connection_name}.{query_name} must be a string"
+                raise ValueError(msg)
     return connection_queries
 
 
@@ -318,13 +306,10 @@ def list_queries(
     path = config_path or _find_config()
     config = load_config_file(path)
     global_query_names = list(config.get("queries", {}).keys())
-
     if not scoped and connection is None:
         return global_query_names
-
     connections = _get_connections_dict(config)
     connection_queries = _get_connection_queries_dict(config, connections)
-
     if scoped:
         return {
             "global": global_query_names,
@@ -332,24 +317,20 @@ def list_queries(
                 connection_name: list(queries.keys()) for connection_name, queries in connection_queries.items()
             },
         }
-
     if connection is not None:
         effective_query_names = list(global_query_names)
-        for query_name in connection_queries.get(connection, {}).keys():
+        for query_name in connection_queries.get(connection, {}):
             if query_name not in effective_query_names:
                 effective_query_names.append(query_name)
         return effective_query_names
-
     return global_query_names
 
 
 def _resolve_query_string(connection_name: str, query_name: str, connections: dict, config: dict) -> str:
     connection_queries = _get_connection_queries_dict(config, connections)
     scoped_queries = connection_queries.get(connection_name, {})
-
     if connection_name in connections and query_name in scoped_queries:
         return scoped_queries[query_name]
-
     config_queries = config.get("queries", {})
     return config_queries.get(query_name, query_name)
 
@@ -358,42 +339,30 @@ def run_query_by_name(conection_name: str = "default", query_name: str = "defaul
     config_path = kwargs.pop("config", None) or _find_config()
     timezone = kwargs.pop("timezone", None)
     read_only = kwargs.pop("read_only", False)
-
     config = load_config_file(config_path)
-
     config_dbs = _get_connections_dict(config)
-
     conection_string = config_dbs.get(conection_name, conection_name)
-
     raw_query_string = _resolve_query_string(conection_name, query_name, config_dbs, config)
-
     if raw_query_string.startswith("@"):
         raw_query_string = load_query_from_file(raw_query_string[1:])
-
     engine = create_engine(conection_string)
-
     return run_query(engine, raw_query_string, timezone=timezone, read_only=read_only, **kwargs)
 
 
 def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
     jsonkeys_list = []
-
     if type(jsonkeys) is tuple:
         jsonkeys_list = [key.strip() for key in jsonkeys]
     elif type(jsonkeys) is str:
         jsonkeys_list = [key.strip() for key in jsonkeys.split(",")]
-
     if not jsonkeys_list:
         return result
-
     response = {}
-
     for key in result:
         if key in jsonkeys_list:
             response[key] = json.loads(result[key])
         else:
             response[key] = result[key]
-
     return response
 
 
@@ -414,28 +383,22 @@ def apply_output_transforms(
     jsonkeys: str = "",
 ) -> str | dict | list:
     results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
-
     result: str | dict | list | None = None
-
     if first:
         if results and len(results) > 0:
             item = results[0]
-
             if key and value:
                 result = {item.get(key): item.get(value)}
             else:
                 result = get_for_key_or_first_map_value(item, key) if key else item
         else:
             result = "" if key and not value else {}
+    elif key and value:
+        result = [
+            ({item.get(key): item.get(value)} if key and key in item and value in item else item) for item in results
+        ]
     else:
-        if key and value:
-            result = [
-                ({item.get(key): item.get(value)} if key and key in item and value in item else item)
-                for item in results
-            ]
-        else:
-            result = [item.get(key) if key and key in item else item for item in results]
-
+        result = [item.get(key) if key and key in item else item for item in results]
     return apply_wrapper(result, wrapper)
 
 
@@ -460,12 +423,10 @@ def run_query2json(
 ) -> str | dict | list:
     read_only = _coerce_bool(read_only)
     result = run_query_by_name(name, query, timezone=timezone, read_only=read_only, **kwargs)
-
     if isinstance(result, dict):
         if read_only:
             _warn_read_only_write(result)
         return apply_wrapper(result, wrapper)
-
     return apply_output_transforms(result, wrapper, first, key, value, jsonkeys)
 
 
@@ -485,7 +446,8 @@ def parse_filename(file_name, current_date):
 def json_default(value):
     if isinstance(value, Decimal):
         return float(value)
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+    msg = f"Object of type {type(value).__name__} is not JSON serializable"
+    raise TypeError(msg)
 
 
 def json_dumps(value):
@@ -495,9 +457,7 @@ def json_dumps(value):
 def save_json(rows, file_name, timezone=None):
     current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
-
     final_file_name = parsed_filename if ".json" in parsed_filename else parsed_filename + ".json"
-
     with open(final_file_name, "w") as outfile:
         outfile.write(json_dumps(rows))
 
@@ -505,18 +465,14 @@ def save_json(rows, file_name, timezone=None):
 def save_csv(rows, file_name, dialect, key, timezone=None):
     current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
-
     ext = ".xls" if dialect == "excel" else ".csv"
-
     final_file_name = parsed_filename if ext in parsed_filename else parsed_filename + ext
-
     first_row = None
     final_rows = None
-
     try:
         if isinstance(rows, str):
             first_row = {}
-            final_key = key if key else "key"
+            final_key = key or "key"
             first_row[final_key] = rows
             final_rows = [first_row]
         elif isinstance(rows, dict):
@@ -527,9 +483,7 @@ def save_csv(rows, file_name, dialect, key, timezone=None):
             final_rows = rows
     except Exception:
         pass
-
     csv_columns = list(first_row.keys())
-
     with open(final_file_name, "w") as csvfile:
         writer = csv.DictWriter(
             csvfile,
@@ -537,26 +491,24 @@ def save_csv(rows, file_name, dialect, key, timezone=None):
             dialect=dialect if dialect == "excel" else None,
         )
         writer.writeheader()
-
         for data in final_rows:
             writer.writerow(data)
 
 
 def emit_result(result, format, output, key, value, first, timezone):
     if output:
-        if "csv" == format:
+        if format == "csv":
             save_csv(result, output, "csv", key, timezone=timezone)
-        elif "excel" == format:
+        elif format == "excel":
             save_csv(result, output, "excel", key, timezone=timezone)
         else:
             save_json(result, output, timezone=timezone)
+    elif key and value and first:
+        print(json_dumps(result))
+    elif key and first:
+        print(result)
     else:
-        if key and value and first:
-            print(json_dumps(result))
-        elif key and first:
-            print(result)
-        else:
-            print(json_dumps(result))
+        print(json_dumps(result))
 
 
 def handle_run_query2json(
@@ -580,7 +532,6 @@ def handle_run_query2json(
             config_path = kwargs.get("config")
             print(json.dumps(_list_connections(config_path)))
             return
-
         if list_queries:
             config_path = kwargs.get("config")
             if isinstance(list_queries, str) and list_queries.lower() in {
@@ -592,7 +543,6 @@ def handle_run_query2json(
             else:
                 print(json.dumps(_list_queries(config_path, scoped=True)))
             return
-
         result = run_query2json(
             name,
             query,
@@ -605,9 +555,7 @@ def handle_run_query2json(
             read_only=read_only,
             **kwargs,
         )
-
         emit_result(result, format, output, key, value, first, timezone)
-
     except Exception as e:
         print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)
         sys.exit(1)

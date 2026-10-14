@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes comments from C and C++ source files while preserving the code's behavior and overall layout. The tool should accept one or more file or directory paths as input, recursively discover C and C++ source and header files (common extensions such as .c, .h, .cc, .cpp, .cxx, .hpp, .hh, .hxx, .inl), and process them in parallel using a configurable number of worker processes (default 8) to speed up large codebases.
+For each file, the script should use an accurate syntax-aware parser for the appropriate language (C or C++, selected by file extension) so that only true comments are identified, and comment-like text inside string literals, character literals, or raw strings is left untouched. Comments of both styles (line comments and block comments) should be removed. Where a removed comment leaves a line empty, the blank line should be dropped, and any trailing whitespace left behind should be cleaned up. Preserve preprocessor directives, include statements, and all non-comment tokens exactly as written.
+The script should support a dry-run or preview mode that reports which files would change without modifying them, an option to write output to a separate destination directory instead of overwriting originals, and a summary at the end listing how many files were processed, modified, skipped (unsupported or unreadable), and how many comments were removed. Errors on individual files should be logged clearly with the file path and reason, and must not stop processing of the remaining files. Use structured logging with appropriate verbosity levels, and return a non-zero exit code if any file failed to process.
+The output should be the cleaned source files with identical encoding and line endings as the originals where feasible, and the tool should be runnable from the command line with clear help text describing all options.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-
-import tree_sitter_c
-import tree_sitter_cpp
 from loguru import logger
 from tree_sitter import Language, Node, Parser
-from dh import remove_blank_lines
+import tree_sitter_c
+import tree_sitter_cpp
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -132,10 +134,10 @@ def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
         print(f"Found {len(comment_info)} comment(s)")
         print("=" * 40)
         for i, info in enumerate(comment_info, 1):
-            start = int(info["start"])  # type: ignore[arg-type]
-            end = int(info["end"])  # type: ignore[arg-type]
-            start_line = int(info["start_line"])  # type: ignore[arg-type]
-            end_line = int(info["end_line"])  # type: ignore[arg-type]
+            start = int(info["start"])
+            end = int(info["end"])
+            start_line = int(info["start_line"])
+            end_line = int(info["end_line"])
             context = str(info["context"])
             print(f"\nComment {i}/{len(comment_info)}")
             print(f"Lines: {start_line}-{end_line}")

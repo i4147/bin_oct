@@ -1,17 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that packages the installed packages of a Python virtual environment into standalone wheel files, so they can be reused or redistributed elsewhere. The tool should take a virtual environment's site-packages directory and an output directory as inputs, then produce one wheel (.whl) archive per installed distribution, with valid wheel metadata (dist-info records, file hashes, and a correct WHEEL descriptor) so each archive can be installed with standard tooling.
+Key behaviors to cover:
+- Accept the site-packages location and output location from the command line, with options to force rebuilding all packages, to enable or disable parallel processing, and to limit the number of worker processes.
+- Automatically detect the surrounding virtual environment (by looking for its configuration file in parent directories) so that any associated data or executable directories can be handled correctly.
+- Discover installed distributions and skip ones that are already processed or that do not need rebuilding unless forced.
+- Repackage each distribution's files faithfully, regenerating the RECORD manifest with correct SHA-256 hashes and sizes, and preserving file permissions where relevant.
+- Handle compiled extension files, data files, and scripts placed in the environment's bin directory appropriately so they are not lost or corrupted.
+- Use temporary staging areas that are cleaned up reliably, even when errors occur.
+- Run builds concurrently when parallel mode is enabled, while remaining deterministic in output naming and content.
+- Report progress and a final summary to the user (number of wheels built, skipped, and failed), and exit with a non-zero status if any build fails.
+- Validate inputs up front, with clear error messages for missing directories or an invalid site-packages path.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import csv
 import hashlib
+from multiprocessing import cpu_count
+from pathlib import Path
 import shutil
 import sys
 import tempfile
 import zipfile
-from multiprocessing import cpu_count
-from pathlib import Path
 
 
 class WheelBuilder:

@@ -1,18 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import ast
 import io
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tokenize
 import traceback
-from pathlib import Path
 from typing import Callable, Iterable, NamedTuple, Sequence
 
 try:
@@ -21,18 +19,18 @@ try:
 
     _HAS_LIBCST = True
 except ImportError:
-    cst = None  # type: ignore
-    _m = None  # type: ignore
+    cst = None
+    _m = None
     _HAS_LIBCST = False
 try:
-    import astor  # type: ignore
+    import astor
 
     _HAS_ASTOR = True
 except ImportError:
-    astor = None  # type: ignore
+    astor = None
     _HAS_ASTOR = False
 try:
-    from loguru import logger as _loguru  # type: ignore
+    from loguru import logger as _loguru
 
     def log_error(msg: str) -> None:
         _loguru.error(msg)
@@ -257,7 +255,7 @@ if _HAS_LIBCST:
             return updated
 
     def _wrap_suite(stmt: "cst.BaseSmallStatement") -> "cst.SimpleStatementLine":
-        return cst.SimpleStatementLine(body=[stmt])  # type: ignore[arg-type]
+        return cst.SimpleStatementLine(body=[stmt])
 
     class _LibCSTResult(NamedTuple):
         path: Path
@@ -499,7 +497,7 @@ def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTRes
         if unparser == "astor":
             if not _HAS_ASTOR:
                 return _ASTResult(path, False, "astor not installed", 0, 0)
-            new_code = astor.to_source(tree)  # type: ignore[union-attr]
+            new_code = astor.to_source(tree)
         else:
             new_code = ast.unparse(tree)
     except Exception as exc:
@@ -721,7 +719,7 @@ class _UnusedCollector(ast.NodeVisitor):
 def _attach_parents(tree: ast.AST) -> None:
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
-            child.parent = node  # type: ignore[attr-defined]
+            child.parent = node
 
 
 def _collect_unused(src: str) -> tuple[dict[str, object], list[str]]:
@@ -744,10 +742,10 @@ def _collect_unused(src: str) -> tuple[dict[str, object], list[str]]:
 def _rewrite_without_unused(src: str, info: dict[str, object]) -> str:
     tree = ast.parse(src)
     _attach_parents(tree)
-    unused_funcs = set(info["functions"])  # type: ignore[arg-type]
-    unused_classes = set(info["classes"])  # type: ignore[arg-type]
-    unused_vars = set(info["variables"])  # type: ignore[arg-type]
-    unused_imports: dict = info["imports"]  # type: ignore[assignment]
+    unused_funcs = set(info["functions"])
+    unused_classes = set(info["classes"])
+    unused_vars = set(info["variables"])
+    unused_imports: dict = info["imports"]
     kept: list[ast.stmt] = []
     for stmt in tree.body:
         if isinstance(stmt, ast.FunctionDef) and stmt.name in unused_funcs:

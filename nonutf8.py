@@ -1,7 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree recursively and reports the text encoding of each regular file, flagging any file that is not UTF-8. The tool should accept a root directory path from the command line (defaulting to the current directory) and an option to apply a conversion that rewrites non-UTF-8 files into UTF-8 in place.
+Key behaviors:
+- Walk all files under the given root directory, skipping symbolic links and anything inside version-control metadata folders (such as ".git").
+- For each file, determine its encoding by first checking for common byte order marks (UTF-8, UTF-16, and UTF-32 in both endianness). If none is found, treat files containing null bytes early in their content as binary and skip them.
+- Otherwise, attempt to decode the content in a prioritized order of likely encodings (UTF-8, then Windows-1252, then Latin-1) and report the first one that succeeds. Files that cannot be classified should be reported as unknown.
+- Produce a human-readable report listing every file whose encoding is not UTF-8, along with its detected encoding, and a summary count of files scanned and files flagged.
+- When the apply option is enabled, decode each flagged text file using its detected encoding and re-save it as UTF-8, preserving the original line content. Skip binary and unknown files, and report every conversion performed or skipped.
+- Handle errors gracefully: unreadable files, permission issues, and invalid paths should produce clear warnings without stopping the scan.
+- Exit with a status code indicating whether any non-UTF-8 files were found (useful for CI pipelines), and print usage help when invoked with incorrect arguments.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import codecs
 from pathlib import Path

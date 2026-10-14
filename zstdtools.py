@@ -1,26 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python tool that acts as a Zstandard (zstd) compression toolkit for files and directories, offering both single-file compression/decompression and whole-folder archiving into tar-based zstd archives. The tool should be runnable from the command line with clear subcommands and options, and it should be usable as a reusable program.
+Core requirements:
+1. **Single-file compression**: Given one or more input files, produce compressed `.zst` output files alongside the originals (or in a user-specified output location). Allow the user to choose the compression level, with a sensible high-compression default, and to control the number of threads used by the compressor. Support an option to overwrite existing outputs and an option to keep or remove the source file after successful compression.
+2. **Single-file decompression**: Given `.zst` files, restore the original files, derive the output name by stripping the extension, and support writing to a chosen destination directory. Handle the case where the output already exists by either skipping, overwriting, or failing, controlled by the user.
+3. **Directory archiving**: Given a directory, bundle its contents into a single `.tar.zst` archive with a configurable compression level (with a faster default suited to archives). Support extracting such archives back into a target directory, guarding against unsafe paths inside archives (such as absolute paths or path traversal).
+4. **Batch and parallel processing**: When many files are given (for example a whole directory tree), process them in parallel across a configurable number of worker processes, with a sensible default based on available CPU cores. Report per-file progress and a final summary of successes, failures, and total bytes before and after compression, including the overall compression ratio.
+5. **Smart skipping**: Automatically skip files that are already compressed or are media/binary formats unlikely to benefit from compression (for example archives, images, video, audio, and common document formats), unless the user forces inclusion. Also skip files that are already `.zst`. Skipped files should be reported as such.
+6. **Safety and robustness**: Validate that input paths exist and have the expected types before doing work. Write to temporary files and rename on success so partial outputs are never left behind on failure. Handle errors per file without aborting the whole batch, and return a non-zero exit status if any item failed. Preserve file modification times and permissions where practical.
+7. **Logging and output**: Provide a verbosity option and a quiet mode. Use structured, readable log messages. If a richer logging library is unavailable, fall back gracefully to standard logging. Optionally show a live progress indicator for long operations.
+8. **Command-line interface**: Provide subcommands for compress, decompress, archive (directory to tar.zst), extract, and an info/test mode that reports the compressed and uncompressed sizes and verifies archive integrity without writing output. Include helpful `--help` text, sensible defaults, and clear error messages for invalid arguments.
+9. **Dependencies**: Rely on the standard library plus a Zstandard binding for compression. Keep the program self-contained in a single script file that can be executed directly.
+The output should be a complete, well-organized, production-quality script that a user can run immediately to compress, decompress, archive, and inspect zstd-compressed data safely and efficiently.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
+from functools import partial
 import io
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import threading
 import time
-from dataclasses import dataclass
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
-
+from typing import Iterable, Optional, Sequence
 import zstandard as zstd
 
 try:
-    from loguru import logger  # type: ignore
-except ImportError:  # pragma: no cover
+    from loguru import logger
+except ImportError:
     import logging
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")

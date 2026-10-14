@@ -1,11 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a user-specified directory (or a single file) and converts text files from Windows-style line endings (CRLF) to Unix-style line endings (LF) in place. The tool should be a command-line utility that accepts a target path as input, plus optional arguments for controlling behavior such as the number of parallel workers and whether to process subdirectories.
+Key requirements:
+- **Input:** A file or directory path provided on the command line. When a directory is given, traverse it recursively, skipping common generated or tooling directories such as version control folders, Python cache folders, test and type-checker caches, coverage data, egg-info metadata, and IDE configuration folders.
+- **File filtering:** Only process regular files. Detect and skip binary files so that their contents are never modified. Text files should be checked and converted only when they actually contain line-ending differences.
+- **Conversion behavior:** Convert line endings to LF in place, leaving files that are already in Unix format untouched (do not rewrite them). Preserve all other content byte-for-byte.
+- **Parallel processing:** Process files concurrently using a pool of worker processes with a configurable, sensible upper limit on the number of workers. Read and write files in a memory-efficient manner suitable for large files.
+- **Output/reporting:** For each file, report one of the outcomes: converted, already in Unix format, skipped as binary, skipped because it is not a file, or failed with a read/write error including the error message. Log progress and errors using a structured logging approach, and print a concise summary at the end with total counts for each outcome.
+- **Error handling:** Failures on individual files must not stop processing of the remaining files. Handle permission and I/O errors gracefully and report them.
+- **Command-line interface:** Provide clear help text, validate that the provided path exists, and exit with a non-zero status code if fatal errors occur or if any file failed to process.
+- **Safety:** Avoid following symbolic links into unintended locations where practical, and never modify files outside the specified target path.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
-
 from dh import is_binary
 from dos2unix import dos2unix
 from loguru import logger

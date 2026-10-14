@@ -1,24 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts the contents of a SQLite database into JSON output, with flexible handling of table data, binary values, and large datasets.
+The tool should accept a path to a SQLite database file and an output destination, and export its tables (all tables by default, or a user-selected subset) into a structured JSON representation. Each table's rows should be serialized with their column names preserved, and the output should be usable by other programs for data inspection, migration, or archiving.
+Key requirements:
+- Provide a command-line interface where the user can specify the input database, the output file or directory, which tables to include or exclude, and an optional row limit or batch size for processing large tables.
+- Handle all common SQLite value types correctly: integers, floating-point numbers (including special values such as infinity and NaN, which must be represented in a JSON-safe way), text, NULLs, and binary BLOB data.
+- For binary data, support several user-selectable encodings (for example base64 or hexadecimal), either wrapped in a labeled object that identifies the encoding or emitted as plain strings, so that the original bytes can be recovered later.
+- Read large tables in batches so that memory usage stays bounded regardless of table size, and stream results to the output rather than holding everything in memory when practical.
+- Optionally process multiple tables in parallel using a pool of worker processes, while keeping the resulting output deterministic and correctly ordered.
+- Write output atomically: create the result in a temporary location and move success, so a failed run never leaves a partially written file behind.
+- Validate inputs clearly: report a helpful error if the database file does not exist, is not a valid SQLite database, or if an unsupported option is supplied, and exit with a non-zero status code on failure.
+- Safely quote table and column names so that unusual identifiers (containing spaces, quotes, or reserved words) work correctly.
+- Optionally support a read-only mode for opening the database so the source file is never modified.
+- Print concise progress or summary information (such as the number of tables and rows exported) to standard error, keeping standard output clean for piping.
+The script should be self-contained, robust, and well-structured, with sensible defaults so that running it with only an input database path produces a complete JSON export.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import base64
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import closing
 import json
 import math
 import os
+from pathlib import Path
 import shutil
 import sqlite3
 import sys
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from contextlib import closing
-from pathlib import Path
 from typing import Any, Callable
 
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"
-
 BATCH_SIZE = 5000
 
 
@@ -27,7 +40,6 @@ def quote_identifier(name: str) -> str:
 
 
 def make_blob_encoder(blob_encoding: str) -> Callable[[bytes], Any]:
-
     encoders: dict[str, Callable[[bytes], Any]] = {
         "base64": lambda d: {BLOB_BASE64: base64.b64encode(d).decode("ascii")},
         "hex": lambda d: {BLOB_HEX: d.hex()},
@@ -37,7 +49,8 @@ def make_blob_encoder(blob_encoding: str) -> Callable[[bytes], Any]:
     try:
         return encoders[blob_encoding]
     except KeyError:
-        raise ValueError(f"Unsupported blob encoding: {blob_encoding}") from None
+        msg = f"Unsupported blob encoding: {blob_encoding}"
+        raise ValueError(msg) from None
 
 
 def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:
@@ -51,10 +64,8 @@ def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:
 
 
 def open_readonly(db_path: str, text_errors: str) -> sqlite3.Connection:
-
     uri = Path(db_path).resolve().as_uri() + "?mode=ro"
     conn = sqlite3.connect(uri, uri=True)
-
     conn.text_factory = lambda b: b.decode("utf-8", errors=text_errors)
     return conn
 
@@ -75,16 +86,12 @@ def write_table_array(
     indent: int,
     ensure_ascii: bool,
 ) -> None:
-
     nl = "\n" if indent else ""
     pad1 = " " * indent
     pad2 = pad1 * 2
     separators = None if indent else (",", ":")
-
     cur = conn.execute(f"SELECT * FROM {quote_identifier(table)}")
-
     cols = [d[0] for d in cur.description]
-
     first = True
     while True:
         batch = cur.fetchmany(BATCH_SIZE)
@@ -102,12 +109,10 @@ def write_table_array(
                 text = text.replace("\n", "\n" + pad2)
             fp.write(("[" if first else ",") + nl + pad2 + text)
             first = False
-
     fp.write("[]" if first else nl + pad1 + "]")
 
 
 def export_table(args: tuple) -> tuple[str, str | None]:
-
     db_path, table, frag_path, blob_encoding, text_errors, indent, ensure_ascii = args
     try:
         blob_fn = make_blob_encoder(blob_encoding)
@@ -138,13 +143,10 @@ def convert_sqlite_to_json(
     make_blob_encoder(blob_encoding)
     indent = max(0, indent)
     warnings: dict[str, str] = {}
-
     with closing(open_readonly(str(db_path), text_errors)) as conn:
         tables = get_tables(conn, include_internal)
-
     output_path = output_path.resolve()
     out_dir = output_path.parent
-
     with tempfile.TemporaryDirectory(dir=out_dir, prefix=".sqlite2json_") as tmp:
         tmp_dir = Path(tmp)
         frags = {t: tmp_dir / f"{i}.part" for i, t in enumerate(tables)}
@@ -160,7 +162,6 @@ def convert_sqlite_to_json(
             )
             for t in tables
         ]
-
         workers = min(jobs, len(tasks))
         if workers > 1:
             pool = ProcessPoolExecutor(max_workers=workers)
@@ -184,7 +185,6 @@ def convert_sqlite_to_json(
                     warnings[table] = warning
                     if fail_fast:
                         raise RuntimeError(warning)
-
         nl = "\n" if indent else ""
         pad1 = " " * indent
         colon = ": " if indent else ":"
@@ -202,9 +202,7 @@ def convert_sqlite_to_json(
                         shutil.copyfileobj(frag, out, 1 << 20)
                 out.write(nl + "}")
             out.write("\n")
-
         os.replace(final_tmp, output_path)
-
     return [warnings[t] for t in tables if t in warnings]
 
 
@@ -257,17 +255,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Stop at first table error",
     )
     args = parser.parse_args(argv)
-
     if not args.database.is_file():
         print(f"Error: database file not found: {args.database}", file=sys.stderr)
         return 1
-
     output_path = args.output or args.database.with_name(args.database.name + ".json")
-
     if output_path.resolve() == args.database.resolve():
         print("Error: output path must differ from the database path", file=sys.stderr)
         return 1
-
     try:
         warnings = convert_sqlite_to_json(
             args.database,
@@ -286,7 +280,6 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-
     print(f"Converted {args.database} to {output_path}")
     if warnings:
         print("Warnings:", file=sys.stderr)

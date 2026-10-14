@@ -1,12 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line package downloader for the Python Package Index. It should accept a package requirement specification (a package name with an optional version constraint, such as a name followed by a version specifier) and an output directory as inputs. The script should query the public PyPI simple index to discover all available distribution files for that package, then select the single best-matching release file that is compatible with the current machine's Python interpreter and platform. Selection must respect the requested version constraints, prefer compatible binary wheels over source distributions, skip releases that have been yanked or that declare an incompatible Python version requirement, and favor the highest available version.
+Once a file is chosen, the script should download it efficiently in chunks into the output directory, verify its integrity against the SHA-256 checksum published in the index metadata, and report clearly whether the download succeeded. It should handle common failure cases gracefully, including invalid requirement strings, packages that do not exist, no compatible release being found, network errors, and checksum mismatches, with informative log messages and non-zero exit codes on failure. The script should also support resolving relative file links from the index correctly, cleaning up partially downloaded or corrupted files, and logging progress and key decisions so the user can understand what was selected and why.
+---"""
 
+from __future__ import annotations
 import argparse
-import hashlib
-import sys
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
+import sys
 from urllib.parse import unquote, urljoin, urlparse
-
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
@@ -74,16 +77,13 @@ def py_ok(spec: str | None) -> bool:
 
 
 def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
-    """Return the best (link, version) or None. Prefers: newer > wheel > better tag."""
     tag_index = {t: i for i, t in enumerate(current_tags())}
     best_key: tuple[Version, int] | None = None
     best: tuple[Link, Version] | None = None
-
     for link in links:
         if link.yanked or not py_ok(link.requires_python):
             continue
         fn = link.filename
-
         if fn.endswith(".whl"):
             try:
                 name, version, _, tags = parse_wheel_filename(fn)
@@ -109,12 +109,10 @@ def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
             combined = NO_TAG
         else:
             continue
-
         key = (version, -combined)
         if best_key is None or key > best_key:
             best_key = key
             best = (link, version)
-
     return best
 
 
@@ -124,11 +122,9 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
     if dest.exists():
         logger.info("cached: {}", dest)
         return dest
-
     tmp = dest.with_name(dest.name + ".part")
     tmp.unlink(missing_ok=True)
     logger.info("downloading {}", link.url)
-
     sha = hashlib.sha256()
     try:
         with client.stream("GET", link.url) as r:
@@ -138,12 +134,12 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
                     f.write(chunk)
                     sha.update(chunk)
         if link.sha256 and sha.hexdigest() != link.sha256:
-            raise ValueError(f"sha256 mismatch for {link.filename}")
+            msg = f"sha256 mismatch for {link.filename}"
+            raise ValueError(msg)
         tmp.replace(dest)
     except Exception:
         tmp.unlink(missing_ok=True)
         raise
-
     logger.success("saved {}", dest)
     return dest
 
@@ -155,21 +151,18 @@ def main(argv=None) -> int:
         "-d",
         "--dest",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="destination directory (default: .)",
     )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
-
     logger.remove()
     logger.add(
         sys.stderr,
         level="DEBUG" if args.verbose else "INFO",
         format="<level>{level: <8}</level> {message}",
     )
-
     req = Requirement(args.requirement)
-
     with httpx.Client(follow_redirects=True, timeout=30.0) as client:
         links = fetch_links(client, req.name)
         result = select(links, req)

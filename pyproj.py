@@ -1,17 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line project tool for creating a new Python package repository. It should accept a project name (and optionally a description, author details, and a target directory) from the command line, then generate a complete, versioned project skeleton onesystem and initialize it as a Git repository with an initial commit on a default branch.
+The tool should load a personal access token for GitHub from a user-level environment file, and use it to create a matching remote repository on GitHub via its REST API, configure the local repository to track that remote, and push the initial commit. It should handle the case where the token is missing or the remote name is already taken, re actionable error messages rather than crashing.
+The generated project skeleton should include standard packaging and metadata files (such as a modern project configuration file, a legacy setup shim, a README, a license placeholder, and a sensible ignore file covering build artifacts, virtual environments, caches, and secret files). Package-level source files should be created with a package initializer and a main module, and a version string should be consistently stamped across all generated files using a single version value defined in the script. Optionally support a Cython-based variant that also generates a `.pyx` module and corresponding build configuration.
+The script should be idempotent-safe where practical: refuse to overwrite an existing non-empty directory unless an explicit force flag is provided, and print a concise summary of the created files and the resulting remote URL on success. Include a `--version` flag and a `--help` message describing all options. Prefer cross-platform behavior, and invoke external Git commands with clear error propagation when they fail.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
+from typing import Any, Final
 import urllib.error
 import urllib.request
-from pathlib import Path
-from typing import Any, Final
-
 from dotenv import load_dotenv
 
 ENV_PATH: Final[Path] = Path.home() / ".env"

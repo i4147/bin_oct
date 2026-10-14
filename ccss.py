@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line batch optimizer for CSS files. It should accept one or more file paths as arguments; if no arguments are given, it should automatically discover all CSS files (including minified CSS files) in the current working directory. For each file, the script should skip any file that does not exist or that consists of only a single line, and otherwise run an external CSS minification/optimization tool at a high optimization level, configured to remove duplicate rules and disable unnecessary transformations. The script should print the file name as it processes each file, then report the outcome for that file: indicate "no change" when the optimized size equals the original, or report the number of bytes saved, a human-readable size reduction, and the resulting size as a percentage of the original when it shrank. If the optimizer fails, the script should report an error for that file and continue processing the remaining files. Use color-coded terminal output to distinguish success, no-change, and error states. Track the total size of the working directory before processing so the script can report overall space savings at the end. The script should be robust to missing files and tool failures, and should produce concise, readable console output suitable for batch use in build pipelines.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
-
+import sys
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
 
 

@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a block of plain text from a file (or standformats it so that no exceeds a fixed maximum length of 120 characters, while preserving the original sentences and their order. The script should split the text into sentences ending in a period or exclamation mark, then process each sentence: if a sentence is longer than the lim it into shorter segments at the most natural nearby points, preferring the last comma, semicolon, colon, or question mark that fits within the limit, and falling back to a hard break at the limit only when no such punctuation isulting segment should be stripped of surrounding whitespace and placed on its own line in the output. Empty fragments should be discarded. The reformatted text should be written to standard output or to an output file specified by the user, and the script should accept the input and output paths as command-line arguments, with sensible error messages if the input file is missing or unreadable. Design the script so that the line-length limit and the set of preferred break characters are easy to configure, and make sure the tool handles multi-paragraph input gracefully, treating each paragraph independently so that paragraph boundaries are kept intact.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 MAX_LEN = 120
 BREAK_PUNCTS = [",", ";", ":", "?"]

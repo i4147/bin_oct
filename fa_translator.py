@@ -1,31 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line batch translation and text-processing tool for source code and documentation files. It should accept a target directory or file list and a target language, then locate translatable content (such as comments, docstrings, and string literals) within supported source files, translate that content using one or more available translation backends with graceful fallback when a backend is missing or fails, and write the results back to the files or to a separate output location.
+Key requirements:
+- Provide a command-line interface with options for the input path, the target language, the source language (auto-detect by default), an output directory or in-place mode, a dry-run mode that reports what would change without modifying anything, and a verbosity or logging-level control.
+- Support processing many files efficiently, using concurrency where it is beneficial, and display progress feedback to the user when a progress library is available, with a sensible fallback when it is not.
+- Use a persistent cache so repeated translations of identical text are not re-requested, and allow the cache location to be configured or disabled.
+- Handle rate limits and transient network failures with retries and backoff, and keep the run going when individual files or segments fail, collecting and reporting those errors at the end.
+- Preserve code validity: never alter identifiers, keywords, operators, or code structure, and keep placeholders, variables, format specifiers, and escape sequences intact inside translated strings. Only the natural-language portions should change.
+- Make a backup of each original file before modification when in-place mode is used, and allow the user to skip or enable backups.
+- Validate that each modified file still parses correctly for its language (for Python, confirm it compiles) and roll back any file that fails validation.
+- Optionally use an external command-line tool to run post-processing checks on modified files, with a clear way to enable or disable this step.
+- Produce a concise summary at the end listing files processed, segments translated, cache hits, skipped items, failures, and elapsed time, and optionally write this summary as a structured JSON report.
+- Exit with a meaningful status code: zero on full success, a non-zero code when any file failed, and a distinct code for invalid arguments.
+- Ensure the tool runs on standard Python 3 installations, degrades gracefully when optional dependencies are absent, and never crashes with an unhandled exception on bad input files, encoding problems, or unreadable paths.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from difflib import get_close_matches
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from difflib import get_close_matches
-from pathlib import Path
 from typing import Any, Iterable, Optional, Self, Sequence
 
 try:
     from deep_translator import GoogleTranslator
 except ImportError:
-    GoogleTranslator = None  # type: ignore[assignment]
+    GoogleTranslator = None
 try:
-    from translate import Translator as PyTranslator  # type: ignore
+    from translate import Translator as PyTranslator
 except ImportError:
-    PyTranslator = None  # type: ignore[assignment]
+    PyTranslator = None
 try:
-    from tqdm import tqdm  # type: ignore
+    from tqdm import tqdm
 except ImportError:
 
     class _DummyTqdm:
@@ -44,7 +57,7 @@ except ImportError:
         def __exit__(self, *_: object) -> None:
             return None
 
-    def tqdm(iterable: Any = None, *_: Any, **__: Any) -> Any:  # type: ignore
+    def tqdm(iterable: Any = None, *_: Any, **__: Any) -> Any:
         if iterable is not None and hasattr(iterable, "__iter__"):
             return iterable
         return _DummyTqdm()

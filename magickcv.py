@@ -1,14 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line image processing tool. It should accept one or more input image files (and an optional output location), apply a configurable pipeline of image transformations, and save the results to disk in a user-selected format.
+Key requirements:
+- **Input and output**: Read common raster image formats from file paths provided on the command line. Write processed images to an output path or directory, supporting format conversion when the user specifies a target format. Handle multi-frame or animated images gracefully.
+- **Resizing with flexible sizing syntax**: Accept a compact geometry string that specifies target width and/or height, with optional modifiers controlling aspect ratio handling, enlargement or shrinking only, percentage scaling, and area-based limits. Let the user choose among several resampling filters for quality/speed tradeoffs.
+- **Color handling**: Accept colors in common notations (named colors, hex, and RGB/RGBA forms) with clear error messages for invalid values. Use them for backgrounds, borders, or fill operations.
+- **Transformations**: Support rotation, cropping, flipping, borders or padding, and basic adjustments such as brightness, contrast, color saturation, sharpness, and blur, each controllable from the command line.
+- **Annotation and overlays**: Allow text to be drawn onto images with configurable content, position, font size, and color, and allow watermarking or compositing with another image.
+- **Computer vision features**: Optionally apply operations based on OpenCV, such as edge detection, grayscale conversion, or face or object detection with bounding boxes drawn on results.
+- **Batch processing**: Process multiple files in one invocation, with sensible naming for outputs (for example, a suffix or a prefix) and an option to preserve directory structure.
+- **Validation and robustness**: Validate all arguments before processing, report clear errors for missing files, unsupported formats, or invalid parameters, and continue with remaining files when one fails, summarizing failures at the end.
+- **Quality and metadata**: Provide options for output compression or quality level, and optionally preserve or strip embedded metadata.
+- **Usability**: Provide a self-documenting help interface, a verbose mode that reports each step, and a dry-run option that shows planned operations without writing files.
+- **Exit behavior**: Return a zero exit code on full success and a non-zero code if any operation fails.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
 from pathlib import Path
-
+import re
 import cv2
 import numpy as np
-from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFont, ImageOps
 
 RESAMPLING = {
     "nearest": Image.Resampling.NEAREST,

@@ -1,20 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for downloading Python packages from a PyPI-compatible package index, with support for selectable mirror sources (such as the official PyPI, a Tsinghua mirror, and a Runflare mirror) and a default mirror when none is specified. The tool should accept a package name (optionally with a version specifier) and an optional target platform or architecture filter, query the chosen index for the package's available release files, and select the appropriate distributions to fetch. It should prefer wheel files compatible with the requested platform and Python version when available, and fall back to source distributions (archives such as tar.gz, zip, tar.bz2, tar.xz, and tgz) when needed.
+The tool should download the selected files concurrently with a configurable concurrency limit, showing progress or status feedback for each download. It should enforce reasonable timeouts for both page fetches and file downloads, retry transient network failures a small number of times with a short delay between attempts, and skip or reject files that exceed a maximum size limit (around 20 MB). Downloaded files should be saved into a target directory, defaulting to the current working directory, with the option to override it from the command line.
+For source distributions, the tool should be able to inspect the archive contents and extract relevant information where applicable, such as identifying the packaged files or metadata. Platform-tag handling should recognize common wheel naming patterns (CPython, PyPy, generic Python tags, and manylinux/musllinux/win/macosx/linux/darwin platform tags) and common architecture keywords (such as win32, win_amd64, win_arm64, and manylinux variants) to filter or rank candidates.
+The command-line interface should provide options for selting the download directory, controlling concurrency, specifying the target platform, and optionally listing available files without downloading them. The tool should print clear, colorized or well-structured status messages, report successes and failures per file, and exit with a nonzero status code if any required download fails. It should handle keyboard interruption gracefully and clean up partially downloaded files.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import contextlib
+from pathlib import Path
 import re
 import sys
 import tarfile
 import time
 import zipfile
-from pathlib import Path
-
-import httpx
 from bs4 import BeautifulSoup
 from dh import cprint
+import httpx
 
 MIRRORS = {
     "runflare": "https://mirror-pypi.runflare.com",

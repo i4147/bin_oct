@@ -1,10 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for migrating Python 2 style source code and Python 2–tagged distribution artifacts toward Python 3 compatibility. The tool should accept one or more file or directory paths as input, scan them recursively for Python source files (with configurable file extensions), and apply automated source transformations to make the code compatible with Python 3. It should support running the transformations as a dry run that reports proposed changes (ideally as concise diffs, with a configurable limit on the amount of output shown) without modifying files, and as a write mode that applies changes in place. The tool should allow the user to select or exclude specific transformation rules, and should be able to run the work in parallel across multiple worker processes with a configurable worker count.
+In addition to source files, the tool should be able to inspect archive files (such as zip, wheel, tar, and gzipped tar archives), locate metadata files that declare a Python 2-only wheel tag (for example, a WHEEL file containing a "py2-none-any" tag), and report or rewrite those tags to Python 3 equivalents, repacking the archive when changes are applied while preserving the original structure and file contents otherwise. Temporary working directories should be used safely and cleaned up afterward.
+For source transformations, the tool should also perform lightweight contextual analysis to flag or skip risky constructs (for example, code inside string literals or comments should not be altered), and should emit a summary report at the end showing how many files were scanned, changed, skipped, or failed, along with which rules were applied. Errors on individual files must not stop the overall run; they should be logged and counted. The tool should support configurable logging verbosity, a clear exit status reflecting whether any failures occurred, and optional validation that each rewritten file still parses as valid Python 3 syntax before it is saved. Provide sensible defaults for all options, and include a help message describing every option.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 import logging
+from pathlib import Path
 import pkgutil
 import re
 import shutil
@@ -12,11 +18,8 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
-from pathlib import Path
 from typing import Iterable, Sequence
+import zipfile
 
 log = logging.getLogger("py3migrate")
 DEFAULT_EXT: tuple[str, ...] = (".py",)
@@ -146,7 +149,7 @@ def resolve_fixers(spec: str, fixer_module: str) -> list[str]:
 
 def _import_refactoring_tool():
     try:
-        from lib2to3.refactor import RefactoringTool  # type: ignore
+        from lib2to3.refactor import RefactoringTool
     except ImportError as e:
         msg = (
             "lib2to3 is not available in this Python (removed in 3.13). "
@@ -161,16 +164,16 @@ class _CapturingTool:
     def build(fixers: list[str], options: dict) -> tuple[object, list[str], list[str]]:
         base = _import_refactoring_tool()
 
-        class _Tool(base):  # type: ignore[misc, valid-type]
+        class _Tool(base):
             def __init__(self, *a, **kw):
                 self.captured_errors: list[str] = []
                 self.captured_output: list[str] = []
                 super().__init__(*a, **kw)
 
-            def log_error(self, msg, *args, **kwargs):  # type: ignore[override]
+            def log_error(self, msg, *args, **kwargs):
                 self.captured_errors.append(msg % args if args else msg)
 
-            def log_message(self, msg, *args, **kwargs):  # type: ignore[override]
+            def log_message(self, msg, *args, **kwargs):
                 if args:
                     msg = msg % args
                 self.captured_output.append(msg)
@@ -239,7 +242,7 @@ def _refactor_file(
     except RuntimeError as e:
         return (path, False, f"✗ {path.name}: {e}")
     try:
-        new_tree = tool.refactor_string(original, str(path))  # type: ignore[attr-defined]
+        new_tree = tool.refactor_string(original, str(path))
     except SyntaxError as e:
         return (path, False, f"✗ {path.name}: syntax error: {e}")
     except Exception as e:

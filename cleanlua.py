@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes ordinary comments from Lua source files while preserving documentation comments, designed to run efficiently over large codebases.
+The tool should accept one or more file or directory paths as input and recursively locate Lua source files (with the `.lua` extension). For each Lua file, it should parse the source using a robust syntax-aware approach so that only true comments are identified, never text inside string literals or other code. Ordinary comments, both single-line and multi-line block comments, should be removed from the code, while documentation-style comments that begin with triple dashes (`---`) must be kept intact, since they carry API documentation meaning.
+The script should preserve everything else byte-for-byte, including code formatting, indentation, and line structure as much as possible, so that the resulting code remains functionally identical. It should support a dry-run or preview mode that reports what would change without modifying files, a option to write changes in place or to a specified output location, and a summary report showing how many files were processed, modified, and skipped, along with any parse errors encountered.
+Use multiprocessing or another parallelization strategy so that large numbers of files can be processed quickly, and make sure a failure in one file does not stop the processing of others. Provide clear logging of progress and errors, handle encoding issues gracefully, and offer command-line options with helpful help text. The script should exit with a meaningful status code indicating success, partial failure, or total failure.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-import tree_sitter_lua
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_lua
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

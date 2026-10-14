@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that looks up the size of a GitHub repository and prints it in a human-readable form. The tool should accept either a full GitHub repository URL (for example, a link in the form https://github.com/owner/repo) or a short "owner/repo" identifier from the command line or standard input. It should validate the input format and print a clear message if the input is malformed. It should then query GitHub's public repository metadata to retrieve the reported size, which is provided in kilobytes, convert it to megabytes, and display the repository's owner and name alongside the size rounded to two decimal places. If the repository does not exist, the tool should report that clearly rather than crashing. For other network or API errors, such as connectivity problems, rate limiting, or unexpected server responses, it should fail gracefully with a concise, user-friendly error message. The script should be self-contained, runnable as a standalone command-line program, and written with clear, readable output suitable for both interactive use and scripting.
+---"""
 
 from __future__ import annotations
-
 import re
 import sys
-
 import requests
 
 

@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for scanning a directory tree and cleaning up files by removing unwanted lines, with parallel processing for speed. The tool should accept a target directory (or file path) as its main input, along with options to control behavior such as a dry-run mode that only reports what would change, a verbose or quiet output setting, and the ability to exclude certain paths or file types. It should automatically detect and skip binary files and any files or directories that match standard exclusion rules, so that only text-based source content is processed.
+For each eligible file, the tool should count the total number of lines and determine how many lines would be or were removed according to the cleaning rules. Processing should happen concurrently across a configurable pool of worker processes, with results gathered and summarized at the end. Errors encountered while reading or writing an individual file should be recorded against that file without stopping the overall run.
+The final output should be a clear, color-coded terminal report that shows per-file statistics for files that changed, a preview of a limited number of affected files, and overall totals including the number of files scanned, files modified, lines removed, files skipped, errors encountered, and the total elapsed time. Colored output should be automatically disabled when the terminal does not support it or when the user requests plain output. Logging of progress and problems should be handled through a structured logging facility, with the verbosity adjustable from the command line.
+The tool should exit with a non-zero status code when fatal errors occur or when the run is invoked in a mode that expects no changes but changes are detected, and zero otherwise. Design the solution so it is safe by default (dry-run unless explicitly told to write), robust against unusual file encodings, and easy to extend with additional cleaning rules.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
-import time
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import time
 from typing import TYPE_CHECKING, Final
-
 from dh import is_binary, should_skip
 from loguru import logger
 

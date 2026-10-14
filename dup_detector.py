@@ -1,19 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Python source files and detects near-duplicate top-level code objects (functions, classes, and similar definitions) across those files, then reports the groups of similar code.
+The tool should accept a directory path and a similarity threshold from the command line, with sensible defaults. It should recursively discover all Python files in the directory, skipping any file named "utils.py". For each file, it should parse the source safely, silently skipping files that cannot be read or parsed due to encoding or syntax problems. From each file, it should extract the top-level function, async function, and class definitions along with their names and source text.
+The core behavior is to compare the extracted code objects against each other and identify pairs or groups whose content is highly similar, using fuzzy and hash-based similarity measures appropriate for code text. Objects with identical or near-identical content should be grouped together, and the tool should only report matches that meet or exceed the user-specified threshold. Comparisons should be efficient enough to handle large codebases, for example by avoiding redundant work or by using parallel processing where helpful.
+The output should clearly list each group of similar objects, showing the file path, object type, object name, and the similarity score for each member. The results should also be available in a machine-readable JSON format when requested, and optionally written to an output file. The script should exit with a clear error message and a non-zero status if its required dependencies are not installed or if the input directory does not exist, and should print a helpful summary such as the number of files scanned, objects analyzed, and duplicate groups found.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import defaultdict
 import hashlib
 import json
 import multiprocessing
 import os
 import sys
-from collections import defaultdict
 
 try:
-    import ssdeep
     from rapidfuzz import fuzz
+    import ssdeep
 except ImportError:
     print("Please install dependencies: pip install ssdeep rapidfuzz")
     sys.exit(1)

@@ -1,35 +1,32 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import configparser
-import importlib
+from dataclasses import dataclass, field
+from email.parser import Parser
 import json
+from pathlib import Path
 import pprint
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import zipfile
-from dataclasses import dataclass, field
-from email.parser import Parser
-from pathlib import Path
 from typing import Any, Iterable, Sequence
+import zipfile
 
 try:
-    import tomllib  # type: ignore[import]
+    import tomllib
 except ModuleNotFoundError:
     try:
-        import tomli as tomllib  # type: ignore[no-redef]
+        import tomli as tomllib
     except ModuleNotFoundError:
-        tomllib = None  # type: ignore[assignment]
+        tomllib = None
 README_SUFFIXES = {".md", ".markdown", ".mdown", ".mkdn"}
 BINARY_SUFFIXES = (".so", ".pyd", ".dll")
 
 
-def die(msg: str, code: int = 1) -> "NoReturn":  # type: ignore[valid-type]
+def die(msg: str, code: int = 1) -> "NoReturn":
     print(f"error: {msg}", file=sys.stderr)
     raise SystemExit(code)
 
@@ -86,7 +83,6 @@ def load_user_info() -> dict[str, str]:
             return {str(k): str(v) for k, v in data.items()}
     except json.JSONDecodeError:
         pass
-
     out: dict[str, str] = {}
     for line in text.splitlines():
         line = line.strip()
@@ -1335,7 +1331,6 @@ def cmd_dev(args: argparse.Namespace) -> int:
     if not gitignore.exists():
         gitignore.write_text(GITIGNORE_DEV, encoding="utf-8")
         info("  Created: .gitignore")
-
     if args.install_hooks:
         try:
             (project / ".pre-commit-config.yaml").write_text(PRE_COMMIT_CONFIG, encoding="utf-8")
@@ -1426,7 +1421,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--simple-cli", action="store_true")
     p_init.add_argument("--force", action="store_true")
     p_init.set_defaults(func=cmd_init)
-
     p_ms = sub.add_parser("make-setup", help="Generate setup.py from various sources.")
     p_ms.add_argument(
         "--from",
@@ -1446,7 +1440,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_ms.add_argument("--force", action="store_true")
     p_ms.add_argument("--preview", action="store_true")
     p_ms.set_defaults(func=cmd_make_setup)
-
     p_ct = sub.add_parser("cargo-toml", help="Generate Cargo.toml from Cargo.lock.")
     p_ct.add_argument("-i", "--input", default="Cargo.lock")
     p_ct.add_argument("-o", "--output", default="Cargo.toml")
@@ -1462,7 +1455,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Install pre-commit hooks (requires pre-commit).",
     )
     p_dev.set_defaults(func=cmd_dev)
-
     p_ns = sub.add_parser("new-script", help="Emit a Python script template.")
     p_ns.add_argument("path")
     p_ns.add_argument("--force", action="store_true")

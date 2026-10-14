@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree of Python source files and automatically migrates deprecated `pkg_resources` API usages to their modern standard-library equivalents, based on a set of regex-driven replacement rules. The tool should accept a target path (a single file or a directory) as its main input, walk through all Python files beneath it while skipping common non-source or virtual-environment folders (such as version control, cache, virtual environment, build, and distribution directories), and process files in parallel to speed up large codebases. For each file, it should detect the relevant legacy calls, rewrite them into the corresponding modern forms, and ensure the necessary standard-library imports are added to the file when they are needed and not already present. The script should support a dry-run or preview mode that reports which files would change and what the changes would be without modifying anything, and a normal mode that writes the updated files in place. It should print a clear summary at the end covering how many files were scanned, how many were modified, and how many replacements were made, and it should handle encoding errors, unreadable files, and invalid paths gracefully with informative messages rather than crashing. Provide a command-line interface with sensible flags and help text so users can choose the target path and toggle preview mode, and make the tool safe by preserving the original file content whenever a rewrite cannot be performed confidently.
+---"""
+
+from __future__ import annotations
 import argparse
-import re
-import sys
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+import re
+from typing import Any
 
 SKIPPED_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -17,7 +20,6 @@ SKIPPED_DIRS: frozenset[str] = frozenset({
     "dist",
     ".eggs",
 })
-
 REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (
         re.compile(r"pkg_resources\.get_distribution\(\s*([^)]+?)\s*\)\.version"),
@@ -80,12 +82,10 @@ REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
         False,
     ),
 ]
-
 IMPORT_RE = re.compile(
     r"^(?P<indent>\s*)(?P<stmt>(?:import|from)\s+pkg_resources(?:\s+import\s+(?P<names>[^\n#]+))?)\s*(?P<comment>#.*)?$",
     re.MULTILINE,
 )
-
 GENERIC_USAGE_RE = re.compile(r"pkg_resources\.([A-Za-z_][A-Za-z0-9_]*)")
 
 
@@ -107,10 +107,8 @@ def scan_file(path: Path) -> dict[str, Any]:
         content = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as e:
         return {"file": path, "error": str(e), "found": False}
-
     has_import = bool(IMPORT_RE.search(content))
     usages: list[dict[str, Any]] = []
-
     lines = content.splitlines()
     for i, line in enumerate(lines, start=1):
         if IMPORT_RE.search(line):
@@ -122,7 +120,6 @@ def scan_file(path: Path) -> dict[str, Any]:
             matched_str = m.group(0)
             if not any(u["pattern"] == matched_str and u["line"] == i for u in usages):
                 usages.append({"pattern": matched_str, "line": i, "kind": "generic"})
-
     imports_needed: set[str] = set()
     if has_import or usages:
         for line in lines:
@@ -134,7 +131,6 @@ def scan_file(path: Path) -> dict[str, Any]:
                 imports_needed.add("packaging.version")
             if "require" in line:
                 imports_needed.add("packaging.requirements")
-
     return {
         "file": path,
         "found": bool(usages) or has_import,
@@ -148,10 +144,8 @@ def autofix_file(path: Path) -> dict[str, Any]:
         content = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as e:
         return {"file": path, "error": str(e), "fixed": False}
-
     original_content = content
     content = IMPORT_RE.sub("", content)
-
     imports_needed: set[str] = set()
     for pat, repl, needs_meta, needs_res in REPLACEMENTS:
         if pat.search(content):
@@ -164,7 +158,6 @@ def autofix_file(path: Path) -> dict[str, Any]:
                 imports_needed.add("packaging.version")
             if "packaging.requirements" in repl:
                 imports_needed.add("packaging.requirements")
-
     if imports_needed:
         import_lines = "\n".join(f"import {imp}" for imp in sorted(imports_needed))
         match = re.search(r"^(#!.*\n)?(\"\"\".*?\"\"\")?", content, re.MULTILINE | re.DOTALL)
@@ -173,7 +166,6 @@ def autofix_file(path: Path) -> dict[str, Any]:
             content = content[:insert_pos] + import_lines + "\n" + content[insert_pos:]
         else:
             content = import_lines + "\n" + content
-
     if content != original_content:
         try:
             path.write_text(content, encoding="utf-8")
@@ -208,15 +200,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Number of parallel processes",
     )
     args = parser.parse_args(argv)
-
-    paths = args.paths if args.paths else ["."]
+    paths = args.paths or ["."]
     py_files = collect_python_files(paths)
     if not py_files:
         print("No .py files found.")
         return 0
-
     print(f"Found {len(py_files)} file(s) | Mode: {'AUTOFIX' if args.autofix else 'REPORT'}\n")
-
     try:
         if args.autofix:
             with Pool(processes=args.jobs) as pool:

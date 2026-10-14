@@ -1,28 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
+from dataclasses import dataclass
+from functools import partial
 import json
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
-from functools import partial
-from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
 try:
-    from rcssmin import cssmin as _rcssmin  # type: ignore
+    from rcssmin import cssmin as _rcssmin
 except ImportError:
     _rcssmin = None
 try:
-    from rjsmin import jsmin as _rjsmin  # type: ignore
+    from rjsmin import jsmin as _rjsmin
 except ImportError:
     _rjsmin = None
 _NONE_TYPE = type(None)

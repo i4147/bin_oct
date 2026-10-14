@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree (or a set of individual files) for Python source files and reports lines that contain trailing whitespace or other style issues within comments and string literals, while ignoring docstrings. The tool should accept a root path and optional flags from the command line, walk all matching `.py` files, and analyze each one independently so that large projects are processed quickly, for example by distributing work across multiple worker processes. For every problem found, it should record the file path, line number, and a short description of the issue, then print a clear, human-readable summary grouped by file, followed by a total count. The script should exit with a non-zero status code when any issues are found and zero otherwise, so it can be used in continuous integration pipelines. Handle unreadable files, files with syntax errors, and encoding problems gracefully by reporting them as warnings without crashing the whole run. Include helpful command-line help text describing each option, and make the behavior of skipping docstrings and the choice of which checks to enable configurable through clearly named options.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp

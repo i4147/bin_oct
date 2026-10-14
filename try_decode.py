@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a robust text-file encoding detector and previewer. It should accept a file path from the command line, read the file's raw bytes, and attempt to decode them by trying a broad, ordered list of common text encodings (Unicode, Western, Cyrillic, Arabic, Greek, Hebrew, Turkish, East Asian, and DOS/Mac legacy encodings), returning the first encoding that successfully decodes the content. It should report which encoding was detected and display a preview of the decoded text, limited to a reasonable initial portion (for example, the first few hundred characters) with a clear indication when the content has been truncated. The script should handle common error cases gracefully, such as a missing file, an unreadable file, or content that cannot be decoded by any tried encoding, providing clear, user-friendly messages instead of crashing. It should also offer a way to see the full decoded text if the user requests it, and ideally make the encoding search order configurable or extensible. The output should be a readable console report showing the file name, detected encoding, and the decoded preview, and the script should run as a standalone command-line tool with usage help when arguments are missing.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
+import sys
 
 COMMON_ENCODINGS = [
     "utf-8",

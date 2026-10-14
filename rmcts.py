@@ -1,17 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for stripping comments and docstrings from Python source files while keeping the code valid and runnable. The tool should accept one or more file or directory paths as input, recursively discover Python source files within directories, and process them in parallel using a bounded pool of worker processes to speed up large codebases.
+For each file, the script should parse the source into a syntax-aware representation so that only true comments and docstrings are removed, leaving string literals, code, and significant formatting intact. It should preserve special comments that carry meaning, such as encoding declarations, shebang lines, type-checking directives, linter or pragma annotations, and license headers, based on configurable or sensible default rules. Whitespace and blank lines that become orphaned after removal should be cleaned up so the output stays readable, and the original line structure should be disturbed as little as possible.
+The script should support a dry-run or preview mode that reports what would change without writing files, and an in-place mode that overwrites originals. Optionally, it should allow writing results to a separate output directory that mirrors the input structure. After processing, it should verify that each rewritten file still parses correctly, and if verification fails, it should leave the original file untouched and log a clear error. Progress and results should be logged with clear summaries, including counts of files processed, files changed, files skipped, and errors encountered. Handle encoding issues, unreadable files, and malformed Python gracefully without crashing the entire batch.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-import tree_sitter_python as tsp
 from dh import gsz, rrs
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_python as tsp
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

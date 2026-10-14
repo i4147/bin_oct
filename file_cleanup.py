@@ -1,18 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line utility for processing large text or data files efficiently. The tool should accept one or more input file paths and an output destination, along with options to control encoding, chunk size, parallel worker count, and whether empty lines are skipped. It should read files in a memory-conscious way: small files are loaded directly, while large files are streamed or memory-mapped so that the tool handles multi-gigabyte inputs without exhausting memory. Processing should be divided into chunks that can be handled concurrently to speed up work on multi-core machines, with results merged deterministically in the original order.
+The script should compute and report summary statistics about the input, such as total line count, word or token frequencies (returning the most common entries, with a configurable top-N), character and byte counts, and the time taken. Results should be written to a specified output file in a structured format (for example JSON) or printed to the console in a readable form, with informational messages sent to standard output and warnings or errors sent to standard error. Missing files, unreadable paths, and encoding problems should be reported with clear messages and a non-zero exit status rather than an unhandled crash.
+Include a clear command-line interface with help text, sensible defaults for all options, and input validation. Where a temporary working area is needed (for example, to store intermediate chunk results), it should be created safely and cleaned up afterward, even if processing fails. Timestamps in any output metadata should be recorded in UTC. The overall design should favor robustness, clear logging, and predictable behavior, with the implementation details left entirely to the developer.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import Counter
+from datetime import datetime, timezone
 import heapq
 import json
 import mmap
 import os
+from pathlib import Path
 import shutil
 import sys
 import tempfile
-from collections import Counter
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Sequence
 
 MMAP_THRESHOLD = 1_048_576

@@ -1,17 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes comments from JavaScript and TypeScript source files (.js, .jsx, .ts, .tsx) while preserving the code exactly as written otherwise. The tool should accept one or more file or directory paths as input, recursively discover supported source files within directories, and process them in parallel using a bounded pool of worker processes to keep throughput high on large codebases.
+For each file, the script should parse the source with a language-aware syntax parser that matches the file's dialect (plain JavaScript, TypeScript, or TSX/JSX), so that comment-like text inside string literals, template literals, and regular expressions is never mistakenly altered. Only genuine comments (single-line and multi-line) should be removed. Before writing any changes, the tool must verify that the file parsed cleanly; if the parser reports syntax errors, the file should be left untouched and a warning should be logged instead of risking corruption of the code.
+Output behavior: modify files in place by default, with an option to write results to a separate output directory or to perform a dry run that only reports which files would change. The script should preserve original line endings and file encoding where possible, avoid rewriting files whose content would not change, and produce a concise summary at the end listing how many files were scanned, modified, skipped, and failed.
+Provide a clear command-line interface with help text, sensible defaults, and proper exit codes (non-zero if any file failed to process). Use structured logging for progress and errors, handle missing paths and unreadable files gracefully, and make the core comment-stripping logic reusable as a function that takes source text and a file extension and returns the cleaned text.
+---"""
 
 from __future__ import annotations
-
-import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
+import sys
 from typing import Final
-
+from loguru import logger
 import tree_sitter
+from tree_sitter import Language, Parser
 import tree_sitter_javascript
 import tree_sitter_typescript
-from loguru import logger
-from tree_sitter import Language, Parser
 
 MAX_WORKERS: Final[int] = 8
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")

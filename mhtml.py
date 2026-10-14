@@ -1,36 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that converts MHTML (MIME HTML web archive) files into standalone HTML documents. The tool should accept one or more input paths, which may be individual .mht/.mhtml files, directories to scan, or glob patterns, and produce HTML output either alongside each source file or in a user-specified output location. It should parse the multipart archive, identify the main HTML document and its embedded resources such as images, stylesheets, scripts, and fonts, and rewrite references within the HTML so that resources are either inlined as data URIs or saved as external files next to the output, with the user choosing between these modes via command-line options. Relative URLs should be resolved against the original page address recorded in the archive, and encoded or quoted-printable content must be decoded correctly, including proper handling of character encodings declared in the archive or the HTML itself. The tool should optionally be able to fetch missing resources from the network when a referenced asset is not present in the archive, with a configurable timeout and a clear opt-in flag, and it should sanitize or skip unwanted elements such as scripts or tracking content when a removal option is requested. Support parallel processing of multiple files with a configurable number of workers, and make the tool robust by logging progress and warnings through a structured logger, continuing past individual file failures while reporting a summary of successes and errors, and returning a non-zero exit code if any conversion failed. Provide a `--version` flag, a verbose/quiet logging control, and a dry-run mode that reports what would be converted without writing files. The tool should also expose its core conversion as an importable function so other Python programs can convert a single file or an in-memory byte string to an HTML string without using the command line.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import codecs
 import contextlib
-import glob
-import mimetypes
-import multiprocessing as mp
-import os
-import re
-import sys
 from email.parser import BytesParser
 from email.policy import compat32
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as _pkg_version
+import glob
+from importlib.metadata import (
+    PackageNotFoundError,
+    version as _pkg_version,
+)
+import mimetypes
+import multiprocessing as mp
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, Sequence
+import re
+import sys
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Sequence
 from urllib.parse import unquote, urljoin
 from urllib.request import Request, urlopen
-
 from loguru import logger
 from lxml import html as lh
 
+if TYPE_CHECKING:
+    import os
 __all__ = ["convert", "convert_file", "main"]
-
 try:
     __version__ = _pkg_version("mhtml-to-html")
 except PackageNotFoundError:
     __version__ = "0+unknown"
-
 MHTML_SUFFIXES: frozenset[str] = frozenset({".mht", ".mhtml"})
 POOL_METHODS: tuple[str, ...] = (
     "map",
@@ -40,7 +41,6 @@ POOL_METHODS: tuple[str, ...] = (
     "apply",
     "apply_async",
 )
-
 _UA = "Mozilla/5.0 (compatible; mhtml-to-html)"
 _HTML_MIMES = frozenset({"text/html", "application/xhtml+xml"})
 _SKIP_PREFIXES = ("data:", "about:", "blob:", "javascript:", "mailto:", "tel:")
@@ -66,14 +66,13 @@ _URL_ATTRS: dict[str, tuple[str, ...]] = {
     "image": ("href", "xlink:href"),
 }
 _SRCSET_TAGS = frozenset({"img", "source"})
-
-_CSS_URL = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)""", re.I)
+_CSS_URL = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)""", re.IGNORECASE)
 _CSS_IMPORT = re.compile(
     r"""@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;'"]+))\s*\)?\s*([^;]*);""",
-    re.I,
+    re.IGNORECASE,
 )
-_CSS_CHARSET = re.compile(rb"""^@charset\s+["']([^"']+)["']""", re.I)
-_CLOSING_TAG = re.compile(r"</(style|script)", re.I)
+_CSS_CHARSET = re.compile(rb"""^@charset\s+["']([^"']+)["']""", re.IGNORECASE)
+_CLOSING_TAG = re.compile(r"</(style|script)", re.IGNORECASE)
 _SRCSET_SPLIT = re.compile(r"\s*,\s+")
 _XPATH_EVENT_ATTRS = "//*[@*[starts-with(name(), 'on')]]"
 
@@ -129,12 +128,13 @@ def parse_mhtml(raw: bytes) -> tuple[Resource, str, dict[str, Optional[Resource]
             root = res
             root_url = url or "".join(str(msg.get("Snapshot-Content-Location", "")).split())
     if root is None:
-        raise ValueError("no HTML part found in MHTML archive")
+        msg_0 = "no HTML part found in MHTML archive"
+        raise ValueError(msg_0)
     return root, root_url, resources
 
 
 class _Converter:
-    __slots__ = ("res", "scripts", "fetch", "timeout", "uris", "stack")
+    __slots__ = ("fetch", "res", "scripts", "stack", "timeout", "uris")
 
     def __init__(
         self,
@@ -224,18 +224,15 @@ class _Converter:
             enc = "utf-8"
         parser = lh.HTMLParser(encoding=enc, huge_tree=True)
         doc = lh.document_fromstring(res.data, parser=parser)
-
         for b in doc.xpath("//base"):
             href = b.attrib.pop("href", None)
             if href:
                 base = urljoin(base, href)
             if not b.attrib:
                 b.drop_tree()
-
         drops: list[Any] = []
         has_charset = False
         scripts = self.scripts
-
         for el in doc.iter():
             tag = el.tag
             if not isinstance(tag, str):
@@ -244,8 +241,7 @@ class _Converter:
             style = attrs.get("style")
             if style and "url(" in style.lower():
                 attrs["style"] = self.css(style, base)
-
-            if tag == "a" or tag == "area":
+            if tag in {"a", "area"}:
                 href = attrs.get("href")
                 if href:
                     low = href.lstrip().lower()
@@ -300,7 +296,7 @@ class _Converter:
                         el.text = _safe(_decode(found))
                 for k in ("integrity", "crossorigin", "nonce"):
                     attrs.pop(k, None)
-            elif tag == "iframe" or tag == "frame":
+            elif tag in {"iframe", "frame"}:
                 src = attrs.get("src")
                 if not src or "srcdoc" in attrs:
                     continue
@@ -345,22 +341,18 @@ class _Converter:
                     value = attrs.get("srcset")
                     if value:
                         attrs["srcset"] = self.srcset(value, base)
-
         for el in drops:
             el.drop_tree()
-
         if not scripts:
             for el in doc.xpath(_XPATH_EVENT_ATTRS):
                 for k in [k for k in el.attrib if k.startswith("on")]:
                     del el.attrib[k]
-
         if not has_charset:
             head = doc.find("head")
             if head is None:
                 head = doc.makeelement("head")
                 doc.insert(0, head)
             head.insert(0, doc.makeelement("meta", charset="utf-8"))
-
         doctype = doc.getroottree().docinfo.doctype
         return lh.tostring(doc, encoding="utf-8", method="html", doctype=doctype or "<!DOCTYPE html>")
 
@@ -397,7 +389,8 @@ def convert_file(
     tmp = dst.with_name(dst.name + ".tmp")
     try:
         if dst.absolute() == src.absolute():
-            raise ValueError("input and output are the same file")
+            msg = "input and output are the same file"
+            raise ValueError(msg)
         if skip_existing and dst.exists():
             logger.info("skipped (exists) {}", dst)
             return True
@@ -550,7 +543,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     jobs = [
         (
             f,
-            args.output if args.output else None,
+            args.output or None,
             args.enable_scripts,
             args.fetch_missing_resources,
             args.timeout,

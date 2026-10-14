@@ -1,7 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
-import shutil
-from pathlib import Path
+"""Write a Python script that converts every PDF file in a given input folder into high-resolution JPG images, saving each PDF's pages into its own subfolder within an output directory. The script should process each PDF as a separate job, rendering every page of the document at print-quality resolution (around 300 DPI) and saving it as a high-quality JPEG (about 95% quality) named after the source PDF and the page number. Each PDF's output subfolder should be created automatically if it does not exist, named after the PDF's base filename.
+Behavior requirements:
+- Accept an input folder containing PDFs and an output folder as inputs, and handle both paths robustly, including creating the output location if needed.
+- Print clear progress messages when starting each PDF conversion and a success message reporting how many page images were produced and where they were saved.
+- Handle errors gracefully on a per-file basis: if one PDF fails, report the error with the file name, clean up any partially created output folder for that PDF, and continue processing the remaining PDFs without crashing the whole run.
+- Return a success or failure status for each conversion so the overall results can be summarized.
+- Finish by reporting a summary of how many PDFs converted successfully and how many failed.
+- Include a command-line entry point so the script can be run directly from a terminal with the input and output folder paths supplied as arguments, with sensible help text and validation (e.g., error if the input folder does not exist).
+---"""
 
+from __future__ import annotations
+from pathlib import Path
+import shutil
 import pymupdf
 
 

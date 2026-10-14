@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory recursively and lists files and folders whose creation time falls before a configurable age threshold, sorted from oldest to newest. The script should accept an optional numeric argument specifying the threshold in minutes, defaulting to 60 minutes when no argument is given. If the argument is not a valid number, it should print a brief usage message to the console and exit with an error status. The script should skip any paths inside version-control metadata folders and ignore symbolic links. For each matching item, it should record the creation timestamp, formatted as year/month/day-hour:minute:second, and display the item's path relative to the starting directory alongside that timestamp. The output should be a clean, readable, chronologically ordered list that helps the user identify older items within their project tree. Use colored or highlighted console output where it improves readability.
+---"""
 
 from __future__ import annotations
-
+from datetime import datetime
 import operator
+from pathlib import Path
 import sys
 import time
-from datetime import datetime
-from pathlib import Path
-
 from dh import cprint
 
 

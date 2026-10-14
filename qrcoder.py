@@ -1,47 +1,49 @@
-#!/data/data/com.termux/files/usr/bin/python
-
-from __future__ import annotations
-
-import os
+from pathlib import Path
 import sys
-
 from PIL import Image
 from pyzbar import pyzbar
 
 
-def extract_qr_data_zbar(image_path):
+def process_qrcode(path):
     try:
-        with Image.open(image_path) as img:
+        with Image.open(path) as img:
             if img.mode != "RGB":
                 img = img.convert("RGB")
             decoded = pyzbar.decode(img)
             results = []
-            for obj in decoded:
-                if obj.type == "QRCODE":
-                    results.append(obj.data.decode("utf-8"))
+
+            for i, obj in enumerate(decoded_objects, 1):
+                data = obj.data.decode("utf-8")
+                rect = obj.rect
+                print(f"QR Code {i}:")
+                print(f"  Data: {data}")
+                print(f"  Type: {obj.type}")
+                print(f"  Position: (left={rect.left}, top={rect.top}, width={rect.width}, height={rect.height})")
+                print()
+                results.append(data)
             return results
+    except FileNotFoundError:
+        sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        return []
+        sys.exit(1)
 
 
 def main():
     if len(sys.argv) != 2:
         print("Usage: python qr_extractor.py <path_to_qrcode_image>")
         sys.exit(1)
-    image_path = sys.argv[1]
-    if not os.path.exists(image_path):
-        print(f"Error: File '{image_path}' not found.")
+    path = Path(sys.argv[1])
+    if not path.exists():
+        print(f"Error: File '{path}' not found.")
         sys.exit(1)
-    results = extract_qr_data_zbar(image_path)
+
+    results = process_qrcode(path)
     if results:
-        print(f"\nFound {len(results)} QR code(s):")
-        print("-" * 40)
         for i, data in enumerate(results, 1):
             print(f"QR #{i}: {data}")
         print("-" * 40)
     else:
-        print("No QR codes found in the image.")
+        print("No QR codes found.")
 
 
 if __name__ == "__main__":

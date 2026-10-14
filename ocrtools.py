@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a bat-preprocessing and OCR-evaluation tool. It should take a folder of scanned or photographed document images and, for each image, apply a configurable set of enhancement techniques (such as grayscale conversion, contrast and sharpness adjustment, denoising, adaptive or global thresholding, deskewing, and resizing). The tool should run many combinations of these preprocessing settings in parallel across available CPU cores, using whichever imaging libraries are installed and gracefully degrading when optional dependencies are missing.
+For each image and each preprocessing combination, the script should run optical character recognition, measure the quality of the extracted text (for example by comparing against a reference transcript when one is provided, or by using confidence scores and text statistics otherwise), and recording information. The inputs should be a source directory of images, optional reference text files, and command-line options to choose which techniques to test, how many workers to use, and where to write results. The outputs should be a machine-readable results file (such as CSV or JSON) summarizing every trial with its settings, scores, and runtime, plus a concise summary identifying the best-performing preprocessing combination overall and per image. The script should validate its inputs, report progress while running, handle errors per file without stopping the whole batch, and produce a clear console report at the end.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import csv
-import json
-import sys
-import time
 from datetime import datetime
 from itertools import product
+import json
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import sys
+import time
 from typing import Any, Callable, Iterable, Sequence
 
 try:
@@ -18,26 +20,28 @@ try:
 
     HAS_CV2 = True
 except ImportError:
-    cv2 = None  # type: ignore[assignment]
+    cv2 = None
     HAS_CV2 = False
 try:
     import numpy as np
 
     HAS_NUMPY = True
 except ImportError:
-    np = None  # type: ignore[assignment]
+    np = None
     HAS_NUMPY = False
 try:
     from PIL import Image, ImageEnhance, ImageFilter
 
     HAS_PIL = True
 except ImportError:
-    Image = None  # type: ignore[assignment]
+    Image = None
     HAS_PIL = False
 try:
-    from skimage import color as skcolor
-    from skimage import filters as skfilters
-    from skimage import io as skiio
+    from skimage import (
+        color as skcolor,
+        filters as skfilters,
+        io as skiio,
+    )
     from skimage.filters import threshold_local
     from skimage.util import img_as_ubyte
 
@@ -49,7 +53,7 @@ try:
 
     HAS_TESS = True
 except ImportError:
-    pytesseract = None  # type: ignore[assignment]
+    pytesseract = None
     HAS_TESS = False
 try:
     from loguru import logger
@@ -77,7 +81,7 @@ except ImportError:
         def add(self, *a: Any, **k: Any) -> None:
             pass
 
-    logger = _FallbackLogger()  # type: ignore[assignment]
+    logger = _FallbackLogger()
 IMAGE_EXTENSIONS: set[str] = {
     ".png",
     ".jpg",

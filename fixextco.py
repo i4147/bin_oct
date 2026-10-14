@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a batch file-processing utility for terminal output: it accepts one or more file or directory paths from the command line, scans them for files, and processes each file in parallel across multiple worker processes. For each file, it determines whether the content is binary or text and handles it accordingly, running an external command or transformation where applicable, and collecting the results. The tool should write its output to a uniquely named destination so existing files are never overwritten. It should support enabling or disabling colored terminal output via a command-line option, using a small reusable color/style helper that falls back to plain text when colors are disabled. Errors on individual files should be logged clearly without stopping the entire batch, and a summary of successes and failures should be printed at the end. Include sensible command-line help, configurable worker count, and a clean exit status reflecting whether any file failed.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import Any, Final
-
 from dh import is_binary, runcmd, unique_path
 from loguru import logger
 

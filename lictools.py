@@ -1,12 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a project directory tree and collects its text-based license and documentation content into a single consolidated output file. The tool should accept a target directory, a destination file path, and an optional list of directory names to skip during traversal. It should walk the directory recursively, skipping symbolic links, non-regular files, and any binary files (detected by the presence of null bytes in an initial sample of the file), while also ignoring the excluded directories. From the remaining files, it should identify files whose names indicate licensing or notice content (such as LICENSE, COPYING, NOTICE, or similar variants) and gather them into one aggregated report.
+The output file should be organized so that each collected file is clearly delimited with its relative path and a header, making it easy for a human reader to know where each license or notice originated. The script should create any missing parent directories for the output location and handle unreadable files gracefully without stopping the entire run.
+Include a helper capability for presenting human-readable file sizes (bytes, KB, MB, GB, with a fallback to larger units) so that the tool can report the total size of collected material and summarize how many files were gathered. The script should provide a clean command-line interface with a sub-command for the collection operation, use sensible defaults for the excluded directories, print a concise completion summary to the console, and exit with a non-zero status on invalid input such as a missing or non-directory source path.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
-from typing import Generator, List, Set
+from typing import Generator
 
 
 def format_size(size_bytes: int) -> str:
@@ -48,7 +51,6 @@ def cmd_collect(directory: Path, output_file: Path, exclude_dirs: set[str]) -> N
 
     license_files = list(find_licenses(directory))
     print(f"Found {len(license_files)} files")
-
     with output_file.open("w", encoding="utf-8") as out:
         for i, file_path in enumerate(license_files, 1):
             try:
@@ -56,12 +58,10 @@ def cmd_collect(directory: Path, output_file: Path, exclude_dirs: set[str]) -> N
             except Exception:
                 print(f"Skipping unreadable file: {file_path}")
                 continue
-
             out.write(content)
             if i != len(license_files):
                 out.write("\n\n\n")
             print(f"Added: {file_path}")
-
     print(f"\nFinished: {output_file} created.")
 
 
@@ -70,11 +70,9 @@ def cmd_clear(directory: Path, valid_exts: list[str]) -> None:
     for p in directory.rglob("*"):
         if p.is_symlink() or not p.is_file():
             continue
-
         if p.name.lower().startswith("license") and (p.suffix.lower() in valid_exts or not p.suffix):
             print(p.name, p.suffix)
             found.append(p)
-
     print(f"Found {len(found)} license files")
     for p in found:
         p.write_text("", encoding="utf-8")
@@ -84,37 +82,29 @@ def cmd_strip(directory: Path, patterns_file: Path, gap: int) -> None:
     if not patterns_file.exists():
         print(f"Error: License file not found: {patterns_file}")
         return
-
     try:
         content = patterns_file.read_text(encoding="utf-8", errors="ignore")
-        # Split regex targets sequences of multiline linebreaks based on the `gap` threshold
         split_regex = r"\n(?:\s*\n){" + str(gap) + r",}"
         raw_patterns = re.split(split_regex, content)
         patterns = [p.strip() for p in raw_patterns if p.strip()]
     except Exception as e:
         print(f"Error loading patterns from {patterns_file}: {e}")
         return
-
     if not patterns:
         print("No patterns found. Exiting.")
         return
-
     print()
     files = get_nobinary(directory)
     if not files:
         print("No files to process.")
         return
-
     for file_path in files:
         old_size = file_path.stat().st_size
         text = file_path.read_text(encoding="utf-8", errors="ignore")
         new_text = text
-
         for pat in patterns:
-            # Replaces exact newlines in the pattern with flexible whitespace to match varying indentations
             escaped_pat = re.escape(pat).replace("\n", r"\s*\n\s*")
             new_text = re.sub(escaped_pat, "", new_text, flags=re.IGNORECASE | re.MULTILINE)
-
         if len(new_text) != len(text):
             file_path.write_text(new_text, encoding="utf-8")
             diff = old_size - file_path.stat().st_size
@@ -124,25 +114,20 @@ def cmd_strip(directory: Path, patterns_file: Path, gap: int) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Unified License Manager CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     p_collect = subparsers.add_parser("collect", help="Concatenate license files into one file")
     p_collect.add_argument("-d", "--dir", type=Path, default=Path(), help="Target directory (default: current)")
     p_collect.add_argument("-o", "--output", type=Path, default=Path("/sdcard/all2.txt"), help="Output file path")
     p_collect.add_argument("-e", "--exclude", nargs="+", default=[".git"], help="Directories to exclude")
-
     p_clear = subparsers.add_parser("clear", help="Empty the contents of discovered license files")
     p_clear.add_argument("-d", "--dir", type=Path, default=Path(), help="Target directory (default: current)")
     p_clear.add_argument("--exts", nargs="+", default=[".md", ".txt", ".rst"], help="Extensions to target")
-
     p_strip = subparsers.add_parser("strip", help="Strip text patterns from non-binary files")
     p_strip.add_argument("-d", "--dir", type=Path, default=Path(), help="Target directory (default: current)")
     p_strip.add_argument(
         "-p", "--patterns", type=Path, default=Path("/sdcard/lic"), help="File containing license patterns"
     )
     p_strip.add_argument("-g", "--gap", type=int, default=3, help="Number of newlines separating patterns")
-
     args = parser.parse_args()
-
     if args.command == "collect":
         cmd_collect(args.dir, args.output, set(args.exclude))
     elif args.command == "clear":

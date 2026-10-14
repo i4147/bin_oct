@@ -1,43 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a project directory for PNG image files and losslessly-or-near-losslessly compresses them in place using an external PNG optimization tool, reporting how much disk space was saved.
+The script should:
+- Accept a target directory (defaulting to the current working directory) and an optional number of parallel workers, plus an optional timeout per file, via command-line arguments.
+- Walk the directory tree while skipping common non-source folders such as version control metadata, virtual environments, dependency caches, build output, and tool caches (for example .git, node_modules, venv, __pycache__, build, dist).
+- Identify PNG files by their file extension and confirm them by checking the PNG file signature, ignoring anything that is not a valid PNG.
+- Process files concurrently across multiple worker processes to speed up large projects, with sensible chunking of work.
+- For each file, run an external PNG optimizer command as a subprocess with a timeout, treating the optimizer's exit codes appropriately: success means the file was rewritten, and an "already optimal" result means the file was left untouched.
+- Write the optimized output safely, using a temporary file and an atomic replace so that a failure never corrupts the original image, and preserve the original file permissions.
+- Compare file sizes before and after, and only keep the optimized version if it is actually smaller.
+- Handle errors gracefully per file (missing tool, timeouts, permission problems, corrupt images) without stopping the whole run, and report them clearly.
+- Print a human-readable summary showing the number of files processed, files reduced, files unchanged, errors encountered, total bytes saved, and the percentage reduction, with sizes formatted in readable units (B, KiB, MiB, GiB, TiB).
+- Exit with a non-zero status code if the external optimizer is not installed or if fatal errors occurred, and zero otherwise.
+Keep the implementation self-contained, use only the Python standard library, and produce clear, well-documented code with a command-line help message.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import stat
 import subprocess
 import sys
 import tempfile
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
+from dh import SKIP_DIRS, fsz
 
 cwd = Path.cwd().resolve()
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    "lazy",
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    "__pycache__",
-    "node_modules",
-    ".cache",
-    ".idea",
-    ".vscode",
-    "build",
-    "dist",
-    "target",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
-PNG_SUFFIXES: Final[frozenset[str]] = frozenset({".png"})
 PNG_MAGIC: Final[bytes] = b"\x89PNG\r\n\x1a\n"
 DEFAULT_WORKERS: Final[int] = 8
 IMAP_CHUNKSIZE: Final[int] = 4
@@ -58,18 +49,6 @@ class ProcessResult(NamedTuple):
     error: str | None
 
 
-def format_bytes(n: int) -> str:
-    sign = "-" if n < 0 else ""
-    value = float(abs(n))
-    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
-        if value < 1024.0 or unit == "TiB":
-            if unit == "B":
-                return f"{sign}{int(value)} B"
-            return f"{sign}{value:.2f} {unit}"
-        value /= 1024.0
-    return f"{sign}{value:.2f} TiB"
-
-
 def _dedupe(path: Path, seen: set[Path]) -> bool:
     try:
         key = path.resolve()
@@ -82,7 +61,6 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 
 
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
-    """Recursively walk `root` yielding PNG files, pruning SKIP_DIRS."""
     stack: list[str] = [str(root)]
     while stack:
         current = stack.pop()
@@ -106,7 +84,7 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
                 continue
             if is_symlink:
                 continue
-            if Path(name).suffix.lower() not in PNG_SUFFIXES:
+            if not name.endswith((".PNG", ".png")):
                 continue
             path = Path(entry.path)
             if not _dedupe(path, seen):
@@ -205,10 +183,11 @@ def process_file(
     tmp_path: Path | None = None
     try:
         try:
+            tmp_dir = os.environ.get("TMPDIR")
             fd, tmp_name = tempfile.mkstemp(
                 prefix=target.stem + ".",
                 suffix=target.suffix + ".tmp",
-                dir=str(target.parent),
+                dir=str(tmp_dir),
             )
             with contextlib.suppress(OSError):
                 os.close(fd)
@@ -455,30 +434,22 @@ def _print_status(result: ProcessResult, tag: str) -> None:
     if tag == "OK":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[OK]      {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(-{format_bytes(saved)}, -{pct:.1f}%)"
-        )
+        print(f"[OK]      {path.resolve().relative_to(cwd)}  {fsz(orig)} -> {fsz(new)}  (-{fsz(saved)}, -{pct:.1f}%)")
     elif tag == "DRY-RUN":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
         print(
             f"[DRY-RUN] {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(would save {format_bytes(saved)}, {pct:.1f}%)"
+            f"{fsz(orig)} -> {fsz(new)}  "
+            f"(would save {fsz(saved)}, {pct:.1f}%)"
         )
     elif tag == "NOCHG":
-        print(f"[NOCHG]   {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (byte-identical)")
+        print(f"[NOCHG]   {path.resolve().relative_to(cwd)}  {fsz(orig)}  (byte-identical)")
     elif tag == "SAME":
-        print(f"[SAME]    {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (same size, different bytes)")
+        print(f"[SAME]    {path.resolve().relative_to(cwd)}  {fsz(orig)}  (same size, different bytes)")
     elif tag == "SKIP":
         growth = new - orig
-        print(
-            f"[SKIP]    {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(larger by {format_bytes(growth)})"
-        )
+        print(f"[SKIP]    {path.resolve().relative_to(cwd)}  {fsz(orig)} -> {fsz(new)}  (larger by {fsz(growth)})")
     else:
         print(
             f"[ERROR]   {path.resolve().relative_to(cwd)}  {result.error}",
@@ -507,11 +478,7 @@ def _print_summary(counters: dict[str, int], total_before: int, total_after: int
         saved = total_before - total_after
         pct = (saved / total_before * 100.0) if total_before else 0.0
         print()
-        print(
-            f"  Bytes     : {format_bytes(total_before)} -> "
-            f"{format_bytes(total_after)}  "
-            f"(saved {format_bytes(saved)}, {pct:.1f}%)"
-        )
+        print(f"  Bytes     : {fsz(total_before)} -> {fsz(total_after)}  (saved {fsz(saved)}, {pct:.1f}%)")
     else:
         print()
         print("  Bytes     : no size changes")

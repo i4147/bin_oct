@@ -1,11 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes a collection of Python source files and removes all type annotations from them, producing annotation-free versions of the code while preserving its runtime behavior.
+The tool should:
+- Accept a directory or set of Python files as input, discover all Python files within it, and process them.
+- Parse each file into its syntax structure, strip every form of type annotation (function return types, parameter annotations, and variable annotations), and regenerate valid Python source code from the result.
+- Handle annotated variable declarations that have an initial value by converting them into plain assignments, and handle declarations without a value by replacing them with a no-op statement so the code remains valid.
+- Support both regular and asynchronous function definitions.
+- Process files in parallel to speed up work on large codebases, with an option to control the number of workers.
+- Skip or report files that fail to parse, without halting the entire run.
+- Write the stripped output to a destination (in-place or to a mirrored output directory), and provide a summary of how many files were processed, updated, and skipped.
+- Use a content-based fingerprint so unchanged files are not reprocessed on subsequent runs, if they have not changed since the last run.
+- Print clear, colorized progress and status messages to the console.
+- Ensure the resulting code is syntactically valid and importable, with no behavioral changes beyond removing annotations.
+---"""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 from dh import cprint, get_pyfiles
 from joblib import Parallel, delayed
 from xxhash import xxh64_hexdigest

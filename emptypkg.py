@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes installed Python packages and wheel files to determine whether they are "empty" packages, meaning packages that contain only their own metadata (dist-info) and no actual code or data payload.
+The script should accept a path to an installed package's metadata directory or a path to a wheel (.whl) archive, and report whether that distribution is empty. For installed distributions, it should read the package's record manifest, which lists every file the package installed, and determine whether any listed file falls outside the package's own metadata directory. If a file is found outside that metadata directory, the package is not empty; if every listed entry belongs only to the metadata directory, the package is empty. If the manifest is missing, the tool should treat the distribution as not empty.
+For wheel archives, the script should open the archive without extracting it, locate the metadata directory inside it, and apply the same logic to the entries listed in the archive's manifest. It should handle invalid or unreadable archives gracefully, returning a clear result rather than crashing.
+The script should also be able to scan a directory of installed distributions, or of wheel files, and produce a summary listing which ones are empty and which contain real content. Output should be a clear, human-readable report on the console, with an option to emit machine-readable output such as JSON. Include accepts one robust against malformed manifest rows, missing files, and non-UTF-8 content. Use only the Python standard library, and keep the design mod detection logic can be reused by other tools.
+---"""
 
 from __future__ import annotations
-
 import csv
+from pathlib import Path
 import sysconfig
 import zipfile
-from pathlib import Path
 
 
 def is_empty_package(dist_info_path) -> bool:

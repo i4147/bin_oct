@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a convenient git clone wrapper command. It takes a repository URL as its required input, with an optional target directory name. When invoked without arguments, it should print a short usage message and exit with an error status.
+The tool should automatically detect the remote repository's default branch (rather than assuming "main" or "master") by querying the remote before cloning, and it should report a clear error to the user if the default branch cannot be determined. It should derive a sensible local folder name from the repository URL when no target directory is given, and clone the repository's default branch into that location.
+After cloning, the script should check whether the repository uses git submodules and, if so, initialize and update them recursively so the working copy is complete. It should report progress and success or failure messages to the user in a concise, readable way, using clear status indicators, and return an appropriate exit code (zero on success, non-zero on failure), so it can be used directly from the command line.
+The script should handle common failure cases gracefully, such as unreachable URLs, a target directory that already exists, or git operations that fail midway, without leaving the user with unclear or confusing output. It should be a single, self-contained, dependency-free command-line tool that relies only on the standard environment where git is installed.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import re
 import subprocess
 import sys
-from pathlib import Path
 
 
 def _default_branch(url: str) -> str | None:

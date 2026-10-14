@@ -1,24 +1,35 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line client for a public PyPI download statistics service, letting a user query how often a given Python package has been downloaded over time and view the results in several output formats.
+The tool should:
+- Accept a package name (and optionally a specific version) as input, along with options for the kind of statistic requested (such as overall downloads, downloads broken down by installer or system, or downloads for the most popular packages).
+- Support filtering by a date range and by time granularity, including daily, monthly, and all-time totals, and validate that the chosen granularity is one of the supported options with a clear error otherwise.
+- Retrieve data over HTTP from the statistics service, handling request failures and malformed responses gracefully with informative error messages.
+- Present results in multiple output formats, including a human-readable pretty table, a Markdown table, and a machine-readable JSON form, with an option to toggle colored terminal output on or off.
+- Optionally sort results chronologically or by download count, and aggregate or total the data according to the selected granularity.
+- Allow users to configure defaults (such as preferred output format, color settings, or verbosity) through a user configuration file, with command-line options taking precedence.
+- Provide a verbose mode that logs diagnostic information to standard error without polluting standard output, so results can be piped safely.
+- Expose a version flag and a built-in help message describing all commands and options.
+- Optionally clean up any temporary resources or caches at program exit.
+- Suppress unnecessary library warnings so the output stays clean, and exit with appropriate non-zero status codes on errors.
+The script should be usable both as a standalone command-line program and as an importable module exposing a function that performs the same queries programmatically and returns the results.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import atexit
 import calendar
+from configparser import ConfigParser
 import datetime as dt
 import json
+from pathlib import Path
 import re
 import sys
 import warnings
-from configparser import ConfigParser
-from pathlib import Path
 
 __version__ = version = "1.14.0"
 __version_tuple__ = version_tuple = (1, 14, 0)
-
 BASE_URL = "https://pypistats.org/api/"
 USER_AGENT = f"pypistats/{__version__}"
-
 _verbose = False
 
 
@@ -285,7 +296,7 @@ def _prettytable(headers, data, format_, color="yes"):
         return header
 
     for header in headers:
-        col_data = [row[header] if header in row else "" for row in data]
+        col_data = [row.get(header, "") for row in data]
         table.add_column(h(header), col_data)
     table.align[h("last_day")] = "r"
     table.align[h("last_month")] = "r"
@@ -310,12 +321,12 @@ def _dataframe(headers, data, format_):
         data = [data]
     rows = [[row.get(header, "") for header in headers] for row in data]
     if format_ == "numpy":
-        import numpy
+        import numpy as np
 
-        return numpy.array(rows, dtype=object)
-    import pandas
+        return np.array(rows, dtype=object)
+    import pandas as pd
 
-    return pandas.DataFrame(rows, columns=headers)
+    return pd.DataFrame(rows, columns=headers)
 
 
 def _paramify(param_name, param_value):
@@ -356,6 +367,7 @@ def system(package, os=None, **kwargs):
     return pypi_stats_api(endpoint, params, **kwargs)
 
 
+import contextlib
 from platformdirs import user_cache_dir
 from slugify import slugify
 
@@ -398,7 +410,6 @@ def _cache_clear():
 
 
 atexit.register(_cache_clear)
-
 cli = argparse.ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
 
@@ -480,14 +491,10 @@ def _valid_yyyy_mm_dd(date_string):
 
 
 def _valid_yyyy_mm(date_string):
-    try:
+    with contextlib.suppress(ValueError):
         date_string = _month_name_to_yyyy_mm(date_string, "%b")
-    except ValueError:
-        pass
-    try:
+    with contextlib.suppress(ValueError):
         date_string = _month_name_to_yyyy_mm(date_string, "%B")
-    except ValueError:
-        pass
     return _valid_date(date_string, "%Y-%m")
 
 
@@ -521,7 +528,6 @@ def _python_minor_version(value):
 
 
 FORMATS = ("html", "json", "pretty", "md", "markdown", "rst", "tsv")
-
 arg_start_date = argument(
     "-sd",
     "--start-date",
@@ -729,15 +735,11 @@ def main():
         cli.print_help()
     else:
         if hasattr(args, "start_date") and args.start_date:
-            try:
+            with contextlib.suppress(ValueError):
                 args.start_date, _ = _month(args.start_date)
-            except ValueError:
-                pass
         if hasattr(args, "end_date") and args.end_date:
-            try:
+            with contextlib.suppress(ValueError):
                 _, args.end_date = _month(args.end_date)
-            except ValueError:
-                pass
         if hasattr(args, "month") and args.month:
             args.start_date, args.end_date = _month(args.month)
         elif hasattr(args, "last_month") and args.last_month:

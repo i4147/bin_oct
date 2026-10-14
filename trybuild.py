@@ -1,19 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a parallel project test runner: given a root directory, it recursively discovers Python project folders (identified by common project marker files such as setup or pyproject configuration files), skips common non-source and tooling directories like version control folders, virtual environments, caches, and build outputs, and then executes each discovered project's test suite concurrently using a fixed pool of worker processes. Each project should be tested in an isolated, temporary environment so that its dependencies and any side effects do not interfere with other projects or the host system. The script should accept command-line options for the root path to scan, the number of parallel workers, a per-project timeout after which a test run is forcibly terminated, and an optional filter to limit which projects are tested. For each project, it should record the outcome (passed, failed, skipped, timed out, or errored), the elapsed time, a short reason when it does not pass, and the last several dozen lines of combined test output for diagnostics. Handle interruption signals gracefully by stopping outstanding work and cleaning up child processes and temporary resources. Use structured, leveled logging to report progress as each project finishes, and print a final summary table with totals per outcome, overall duration, and a clear non-zero exit code if any project failed or errored. The script should degrade gracefully when optional TOML parsing support is unavailable, and must be robust against permission errors or unreadable directories encountered during discovery.
+---"""
 
+from __future__ import annotations
 import argparse
 import contextlib
+from dataclasses import dataclass
 import functools
 import importlib.util
 import multiprocessing as mp
 import os
+from pathlib import Path
 import signal
 import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import dataclass
-from pathlib import Path
-
 from loguru import logger
 
 try:
@@ -54,12 +56,10 @@ class Result:
 
 
 def relpath(path: Path, base: Path) -> str:
-
     return os.path.relpath(path, base)
 
 
 def find_projects(root: Path) -> list[Path]:
-
     found: list[Path] = []
     stack = [root]
     while stack:
@@ -101,7 +101,6 @@ def is_buildable(directory: Path) -> bool:
 
 
 def kill_tree(process: subprocess.Popen) -> None:
-
     with contextlib.suppress(OSError, ProcessLookupError):
         if os.name == "posix":
             os.killpg(process.pid, signal.SIGKILL)
@@ -115,7 +114,6 @@ def kill_tree(process: subprocess.Popen) -> None:
 
 
 def build_one(task: tuple[str, str], *, out_root: str | None, no_isolation: bool, timeout: int) -> Result:
-
     path_str, rel = task
     directory = Path(path_str)
     started = time.perf_counter()

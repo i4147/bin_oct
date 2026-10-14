@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts text into the NATO phonetic alphabet. The tool should accept input either as a direct command-line text argument or read from a specified file (exactly one of these input methods must be provided). For each al, the script should output its corresponding NATO phonetic alphabet word (for example, A becomes Alpha, B becomes Bravo, and so on through Z as Zulu), ignoring digits, spaces, punctuation, and other non-letter characters. Letters should be matched case-insensitively. The converted words should be presented as a single space-separated line printed to standard output. If a file is given and cannot be read (for example, because it does not exist or cannot be opened), the script should report a clear error message and exit with a non-zero status code rather than crashing with a raw traceback. The script should include a helpful command-line interface with a short description and usage guidance for the user.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 NATO = {
     "A": "Alpha",

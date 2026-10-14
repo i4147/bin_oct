@@ -1,10 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a user-specified directory (defaulting to the current working directory) and moves every regular file created within the last 320 seconds (about 5 minutes) into a dedicated subfolder named "5min" inside that directory. The script should validate that the target directory exists and raise a clear error if it does not, then create the "5min" subfolder if it is missing.
+Key behaviors:
+- Only consider files directly inside the specified directory (not recursing into subfolders), and ignore directories and the "5min" folder itself.
+- Determine a file's age from its creation time, and move only those files whose age is less than the threshold.
+- If a file with the same name already exists in the "5min" folder, do not overwrite it; instead generate a unique name by appending an incrementing numeric suffix before the file extension (e.g., "report_1.txt", "report_2.txt").
+- Track and report summary statistics at the end: number of files moved, number skipped (too old or otherwise ineligible), and number that failed due to errors. Handle per-file errors gracefully so one failure does not stop the entire process.
+- Print clear, human-readable progress or result messages to the console.
+- The script should be runnable from the command line, optionally accepting a directory path as an argument, and should otherwise require no user interaction.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import time
-from pathlib import Path
 
 TIME_THRESHOLD = 8 * 40
 

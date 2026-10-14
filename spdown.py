@@ -1,12 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for downloading Python package distributions from a Python package index (such as PyPI) that are compatible with the current interpreter and platform. The user supplies one or more package requirement specifications (for example, a package name with an optional version constraint) and optionally a target directory and an alternative index URL. The tool should resolve each requirement against the index's simple repository listing, select the newest release that satisfies the version specifier and is not yanked, and then choose the most suitable distribution file for the running environment, preferring wheels whose compatibility tags match the local Python implementation, version, and operating system, and falling back to source distributions when no compatible wheel exists.
+Key behaviors to include:
+- Accept requirements in standard dependency-specifier syntax, handle invalid input gracefully, and report clearly which packages or versions could not be found or satisfied.
+- Respect each file's declared Python version requirement, skipping releases whose requirement excludes the current interpreter.
+- Verify the integrity of each downloaded file against the SHA-256 hash published by the index, and discard or flag any mismatched download.
+- Stream downloads to disk in chunks, showing a live progress indicator with transfer speed and estimated remaining time, and avoid re-downloading files that already exist and pass verification.
+- Follow redirects and resolve relative file links correctly, with sensible timeouts and clear handling of network or HTTP errors.
+- Provide a dry-run or summary mode that lists what would be downloaded without fetching the files.
+- Log progress and warnings through a clean logging setup, with a verbosity option.
+- Exit with a non-zero status code if any requested package fails to download, and zero otherwise.
+- Produce a concise final report listing each downloaded file, its destination path, and its size.
+The script should be self-contained, robust to malformed index entries, and designed as a practical command-line utility that a developer could run from a terminal.
+---"""
 
+from __future__ import annotations
 import argparse
-import hashlib
-import sys
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
+import sys
 from urllib.parse import unquote, urljoin, urlparse
-
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
@@ -75,16 +88,13 @@ def py_ok(spec: str | None) -> bool:
 
 
 def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
-    """Return the best (link, version) or None. Prefers: newer > wheel > better tag."""
     tag_index = {t: i for i, t in enumerate(current_tags())}
     best_key: tuple[Version, int] | None = None
     best: tuple[Link, Version] | None = None
-
     for link in links:
         if link.yanked or not py_ok(link.requires_python):
             continue
         fn = link.filename
-
         if fn.endswith(".whl"):
             try:
                 name, version, _, tags = parse_wheel_filename(fn)
@@ -110,12 +120,10 @@ def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
             combined = NO_TAG
         else:
             continue
-
         key = (version, -combined)
         if best_key is None or key > best_key:
             best_key = key
             best = (link, version)
-
     return best
 
 
@@ -125,10 +133,8 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
     if dest.exists():
         logger.info("cached: {}", dest)
         return dest
-
     tmp = dest.with_name(dest.name + ".part")
     tmp.unlink(missing_ok=True)
-
     sha = hashlib.sha256()
     try:
         with Progress(
@@ -154,14 +160,13 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
                         f.write(chunk)
                         sha.update(chunk)
                         progress.update(task, advance=len(chunk))
-
         if link.sha256 and sha.hexdigest() != link.sha256:
-            raise ValueError(f"sha256 mismatch for {link.filename}")
+            msg = f"sha256 mismatch for {link.filename}"
+            raise ValueError(msg)
         tmp.replace(dest)
     except Exception:
         tmp.unlink(missing_ok=True)
         raise
-
     logger.success("saved {}", dest)
     return dest
 
@@ -173,21 +178,18 @@ def main(argv=None) -> int:
         "-d",
         "--dest",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="destination directory (default: .)",
     )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
-
     logger.remove()
     logger.add(
         sys.stderr,
         level="DEBUG" if args.verbose else "INFO",
         format="<level>{level: <8}</level> {message}",
     )
-
     req = Requirement(args.requirement)
-
     with httpx.Client(follow_redirects=True, timeout=30.0) as client:
         links = fetch_links(client, req.name)
         result = select(links, req)

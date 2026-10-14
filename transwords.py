@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a large UTF-8 text file of words or short lines (one entry per line), splits its contents into size-limited chunks at line boundaries, and translates those chunks from Persian (Farsi) to English in parallel using a pool of worker processes. Each chunk should be processed independently so that a failure in one chunk does not stop the others, and results should be gathered and tracked with their original line ranges so the final output preserves the order of the source file. The script should handle rate limits or transient network errors with retries and short delays, log progress and errors clearly, and respect a configurable maximum number of concurrent workers and chunk size. Translated results should be combined into a single structured JSON output file that maps each original Persian entry to its English translation, with entries that failed to translate clearly flagged rather than silently dropped. The tool should be runnable from the command line with the input and output file paths defined as sensible defaults, and it should print a summary at the end reporting total entries processed, successes, and failures.
+---"""
 
 from __future__ import annotations
-
 import json
-import time
 from multiprocessing import Pool
 from pathlib import Path
+import time
 from typing import TYPE_CHECKING, Final, TypedDict
-
-from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
+from deep_translator import GoogleTranslator
 from loguru import logger
 
 if TYPE_CHECKING:

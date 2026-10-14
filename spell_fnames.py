@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a source code file or a directory of source files and reports likely spelling mistakes in identifiers, comments, and string content. The tool should accept a file or directory path from the command line, along with optional flags such as recursion into subdirectories, a list of file extensions to include, and custom words to ignore.
+The script should break identifiers into their component words, handling snake_case, camelCase, PascalCase, and common separators, and ignore tokens that are too short, contain digits, or appear to be acronyms. It should check each word against a system spell-checking dictionary (for example, a Hunspell English dictionary), and it should attempt to locate a suitable dictionary across several common install locations, printing a clear, helpful error message and exiting with a non-zero status if none is found.
+Results should be reported in a readable format showing the file path, line number, the misspelled word, and optionally suggested corrections. The script should also support a summary mode that counts misspellings per file and overall, and it should return an exit code indicating whether any issues were found, making it suitable for use in continuous integration pipelines. Handle unreadable files, encoding errors, and missing paths gracefully without crashing, and keep the output concise and useful for developers.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
-
 import hunspell
 
 DICT_PATHS = [

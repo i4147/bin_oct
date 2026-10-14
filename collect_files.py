@@ -1,10 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans the current working directory and all of its subdirectories for files with a user-specified extension (for example, "txt", "pdf", or "jpg"), and gathers copies of every matching file into a single new folder named after that extension, created inside the current working directory if it does not already exist.
+The script should accept the target file extension as a command-line argument and handle missing or malformed input gracefully with a clear usage message. It should skip any files that already reside inside the destination folder so they are not copied into themselves, and it should preserve file metadata such as timestamps when copying.
+Where two source files share the same name, the script must not overwrite existing files in the destination; instead, it should generate a unique name by appending an incrementing numeric suffix before the extension. Each successful copy should be reported to the user with a message showing the original path and the new destination path. If an individual file fails to copy (for example, due to permission errors), the script should report the problem for that file and continue processing the remaining files rather than stopping entirely.
+At completion, the script should print a summary indicating how many files were successfully copied. The tool should be safe, non-destructive to original files, and suitable for use in any directory tree on a standard desktop operating system.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def unique_destination_path(dest_dir: Path, filename: str) -> Path:

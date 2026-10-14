@@ -1,12 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that encrypts and decrypts files in place using AES symmetric encryption in CBC mode with PKCS7 padding. The tool should accept a file path, a mode (encrypt or decrypt), and a key as inputs, and should be operated from the terminal with clearly named arguments.
+Key behaviors:
+- **Encryption:** Read the target file, generate a fresh random initialization vector for each run, pad the data to the AES block size, encrypt it, and overwrite the original file with the initialization vector prepended to the ciphertext so that the file is self-contained.
+- **Decryption:** Read the encrypted file, separate the leading initialization vector from the ciphertext, decrypt, remove the padding, and overwrite the file with the original plaintext. Handle malformed or truncated input gracefully with a clear error message rather than a crash.
+- **Key handling:** Support supplying a key directly on the command line or generating a random alphanumeric key of a sensible default length (32 characters) when none is provided, and print the generated key to the user so it can be saved. Make clear that the key must be of a valid AES length and report an error if it is not.
+- **Safety:** Validate that the target file exists before processing and inform the user if the file cannot be read or written. Consider warning the user that the operation overwrites the original file.
+- **Output:** Provide concise success and error messages to standard output or standard error, and return a non-zero exit status on failure.
+- **Usability:** Include a help message describing each option, and keep the script runnable as a standalone program with a main entry point.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import random
 import string
-from pathlib import Path
-
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes

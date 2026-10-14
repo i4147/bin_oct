@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that retrieves extended file metadata for a given file path on Linux, including the file's creation (birth) time, and reports it alongside the standard modification, access, and change timestamps. The tool should accept a file or directory path as input, query the operating system's low-level file status facility to obtain detailed attributes such as size, permissions, ownership, inode number, and link count, and display the results in a clear, human-readable format with timestamps converted to UTC datetime strings. It should handle cases where the birth time is unavailable on the underlying filesystem by reporting that gracefully rather than failing, and should report clear error messages for missing paths, permission problems, or unsupported platforms. Optionally, the script may support a machine-readable output mode (such as JSON) for use in other tools or scripts. Use only the standard library, and design the command-line interface so that it is simple to run and easy to understand.
+---"""
 
 from __future__ import annotations
-
 import ctypes
 import ctypes.util
 from datetime import UTC, datetime

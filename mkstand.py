@@ -1,21 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for creating a fully self-contained, offline-viewable copy of a web page. The tool takes a web page URL (or a local HTML file) as input and produces a single output HTML file in which every external resource the page depends on has been fetched and embedded inline.
+Core behavior to implement:
+- Accept a page URL or local HTML file path as the primary input, plus an optional output file path with a sensible default derived from the input name.
+- Parse the HTML and locate all external references that affect how the page looks or behaves: linked stylesheets, scripts, images (including lazy-loaded and srcset variants), icons, and CSS `url(...)` references, including those inside inline `<style>` blocks and linked CSS files, with nested CSS imports and relative paths resolved correctly against the page's base URL.
+- Download remote resources concurrently using a worker pool with a bounded size, applying per-request timeouts and tolerating individual failures without aborting the whole job. Failed resources should be left as their original references and reported as warnings.
+- Convert fetched binary assets (images, fonts, and similar) into base64 data URIs with correct MIME types, and inline CSS and JavaScript as text, rewriting references in the document so the output works without network access.
+- Handle protocol-relative URLs, relative paths, data URIs (left untouched), and duplicate URLs (fetch each resource only once).
+- Provide command-line options for things such as the timeout, the number of concurrent workers, whether to skip images or scripts, and verbosity of logging.
+- Log progress and problems to the console, showing warnings for failed fetches and a final summary of how many resources were embedded and how many failed.
+- Produce clean, well-formed HTML output and exit with a non-zero status code on fatal errors such as an unreachable input page or an unwritable output location.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import mimetypes
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
-
-import requests
 from bs4 import BeautifulSoup
 from loguru import logger
+import requests
 
 logger.remove()
 logger.add(sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>")

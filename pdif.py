@@ -1,9 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that compares two text files given as command-line arguments and reports how their contents differ at the line level. The script should accept two file paths, read both files as UTF-8 text, and handle the case where either file does not exist by printing a clear error message and exiting gracefully.
+For each file, the script should report the total number of lines. It should then determine which lines in the first file do not appear anywhere in the second file, and which lines in the second file do not appear anywhere in the first, identifying each differing line by its 1-based line number. It should also count how many lines are common to both files, meaning lines whose content appears in both, regardless of position.
+Trailing newline characters should be ignored when comparing lines, so that line content is judged on its visible text only. The script should print a concise summary showing each file's line count, the number of common lines, the count of distinct-to-file-1 and distinct-to-file-2 lines, and then list the specific line numbers that differ in each file. The output should be human-readable and easy to scan in a terminal.
+The script should be a self-contained command-line tool that runs when executed directly, with a clear usage message if the expected arguments are missing.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
+import sys
 
 
 def compare_files(file1: str, file2: str) -> None:

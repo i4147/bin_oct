@@ -1,16 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line toolkit for scanning a codebase of Python scripts, analyzing how a specific library or module (referred to as "dh") is used across those scripts, and producing a usage report plus optional generated wrapper or launcher files.
+The tool should accept one or more source paths (individual Python files or directories to search recursively) and an optional location to write the report, with sensible defaults in the user's home directory. It should skip a configurable set of filenames (such as a known reverse-engineering helper), and it should process files in parallel using a configurable number of workers to keep scanning fast on large trees.
+For each Python file, the script should safely read the source as UTF-8, parse it into an abstract syntax representation, and gracefully handle files with syntax errors, encoding problems, or I/O failures by logging a warning and continuing rather than aborting the whole run. Use the parsed structure to identify the ways the target library is referenced: imports and aliases, function and method calls, attribute accesses, and keyword arguments passed to those calls. Count how often each usage appears and record which files use it.
+The primary output is a human-readable usage report written to a text file, including a timestamp, a summary of total files scanned and files skipped or failed, and a ranked breakdown of the most-used functions and parameters with example locations. Where useful, also compute a short content fingerprint (such as a hash) of each scanned file so that unchanged files can be recognized on later runs.
+As an optional mode, the script should be able to generate small executable wrapper scripts into a designated bin directory, one per discovered command-like entry point, marking them as executable and making sure they reference the correct target path. Provide command-line flags to choose the mode, override paths, set worker count, enable verbose or debug logging, and perform a dry run that reports intended actions without writing any files.
+Structure the tool so that it reports clear exit codes: success, partial success with some files failing, and fatal configuration errors such as a missing source path. Output a concise status message to the console summarizing what was done.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
-import hashlib
-import logging
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+import hashlib
+import logging
 from pathlib import Path
+import re
+import sys
 from typing import Iterable
 
 log = logging.getLogger("dh_tools")

@@ -1,52 +1,48 @@
 #!/data/data/com.termux/files/usr/bin/python
-import os
-import sys
-import shutil
-import hashlib
+"""Write a Python script that acts as a lightweight build-and-package tool for a Rust project that exposes a Python extension module. The script should read the project's manifest file in the current directory to determine the package name and version, normalizing the name so it is valid as a Python module identifier, and fail with a clear error message and non-zero exit status if the name cannot be determined.
+The script should compile the Rust project into a native shared library for the current Python interpreter and platform, then package the result as a standards-compliant Python wheel file. It should determine the appropriate wheel compatibility tags automatically from the running interpreter, including the Python version, the free-threaded build variant when applicable, the ABI, and the operating system and CPU architecture, with sensible handling for less common platforms such as ARM variants on Linux.
+The packaging step should copy the compiled library into a package directory, generate the required metadata files (package metadata, wheel metadata, and a record file listing every included file with its SHA-256 hash and size encoded in the standard format), and assemble everything into a single zip archive with a `.whl` extension placed in an output directory. The output filename should follow the standard wheel naming convention derived from the package name, version, and computed tags.
+The script should provide clear console progress messages prefixed with status markers, clean up temporary build artifacts, and report the final path of the generated wheel on success. It should handle errors from the compilation subprocess by surfacing the failure and exiting with a non-zero status. Optionally, it should accept command-line arguments to control behaviors such as build mode (debug or release), the output directory, and whether to install the resulting wheel into the current environment afterward.
+---"""
+
+from __future__ import annotations
 import base64
-import zipfile
-import tomllib
-import subprocess
+import hashlib
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tomllib
+import zipfile
 
 
 def get_cargo_metadata():
-    """Parses Cargo.toml to get the package name and version."""
     with open("Cargo.toml", "rb") as f:
         cargo_data = tomllib.load(f)
-
     package = cargo_data.get("package", {})
     name = package.get("name", "").replace("-", "_")
     version = package.get("version", "0.1.0")
-
     if not name:
         print("[-] Error: Could not parse package name from Cargo.toml", file=sys.stderr)
         sys.exit(1)
-
     return name, version
 
 
 def get_wheel_tags():
-    """Generates proper Python wheel compatibility tags based on current runtime."""
     import sysconfig
 
     py_version = f"{sys.version_info.major}{sys.version_info.minor}"
-
     is_freethreaded = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
     py_tag = f"cp{py_version}{'t' if is_freethreaded else ''}"
-
     abi_tag = py_tag
-
     platform = sysconfig.get_platform().replace("-", "_").replace(".", "_")
-
     if "linux" in platform and ("armv8l" in platform or "armv7l" in platform):
         platform = "linux_armv7l"
-
     return py_tag, abi_tag, platform
 
 
 def build_cargo():
-    """Runs the release compilation pipeline."""
     print("[+] Compiling Rust crate via Cargo...")
     result = subprocess.run(["cargo", "build", "--release"], check=True)
     if result.returncode != 0:
@@ -57,30 +53,22 @@ def build_cargo():
 def create_wheel():
     pkg_name, version = get_cargo_metadata()
     py_tag, abi_tag, plat_tag = get_wheel_tags()
-
     wheel_stem = f"{pkg_name}-{version}-{py_tag}-{abi_tag}-{plat_tag}"
     dist_info_dir = f"{pkg_name}-{version}.dist-info"
-
     so_source = Path("target") / "release" / f"lib{pkg_name}.so"
     if not so_source.exists():
         so_source = Path("target") / "release" / f"{pkg_name}.so"
-
     if not so_source.exists():
         print(f"[-] Shared library not found at: {so_source}. Ensure crate-type is ['cdylib'].", file=sys.stderr)
         sys.exit(1)
-
     so_target_name = f"{pkg_name}.{py_tag}-{plat_tag}.so"
-
     build_dir = Path("target") / "wheel_scratch"
     if build_dir.exists():
         shutil.rmtree(build_dir)
     build_dir.mkdir(parents=True, exist_ok=True)
-
     shutil.copy(so_source, build_dir / so_target_name)
-
     dist_info_path = build_dir / dist_info_dir
     dist_info_path.mkdir(exist_ok=True)
-
     wheel_metadata = (
         f"Wheel-Version: 1.0\n"
         f"Generator: custom_cargo_wrapper (1.0.0)\n"
@@ -88,7 +76,6 @@ def create_wheel():
         f"Tag: {py_tag}-{abi_tag}-{plat_tag}\n"
     )
     (dist_info_path / "WHEEL").write_text(wheel_metadata)
-
     metadata_content = (
         f"Metadata-Version: 2.1\n"
         f"Name: {pkg_name.replace('_', '-')}\n"
@@ -96,7 +83,6 @@ def create_wheel():
         f"Summary: Manually compiled rust extension module.\n"
     )
     (dist_info_path / "METADATA").write_text(metadata_content)
-
     record_entries = []
 
     def add_to_record(file_path: Path):
@@ -108,29 +94,23 @@ def create_wheel():
     add_to_record(build_dir / so_target_name)
     add_to_record(dist_info_path / "WHEEL")
     add_to_record(dist_info_path / "METADATA")
-
     record_entries.append(f"{dist_info_dir}/RECORD,,")
     (dist_info_path / "RECORD").write_text("\n".join(record_entries) + "\n")
-
     dist_out = Path("target") / "wheels"
     dist_out.mkdir(exist_ok=True)
     wheel_file_path = dist_out / f"{wheel_stem}.whl"
-
     print(f"[+] Packing files into wheel archive: {wheel_file_path}")
     with zipfile.ZipFile(wheel_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
         for root, _, files in os.walk(build_dir):
             for file in files:
                 full_path = Path(root) / file
                 archive_name = full_path.relative_to(build_dir)
-
                 zinfo = zipfile.ZipInfo(str(archive_name))
                 if full_path.suffix == ".so":
                     zinfo.external_attr = 0o755 << 16
                 else:
                     zinfo.external_attr = 0o644 << 16
-
                 zipf.writestr(zinfo, full_path.read_bytes())
-
     print(f"[+] Wheel successfully generated!")
 
 

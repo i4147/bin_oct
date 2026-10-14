@@ -1,41 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line source-code cleaner for Python files, removing or stripping selected elements (such as comments, docstrings, and type annotations) while preserving the program's runtime behavior and valid syntax. The tool should accept one or more target files or directories as input, optionally process them recursively, and let the user choose which categories of content to strip, including a convenient "remove everything" mode. It should support configurable options for keeping the module-level docstring, removing only inline comments versus all comments, and selecting the parsing/transformation backend, falling back gracefully to an alternative approach when a preferred library is unavailable. Output should either overwrite the original files in place, write results to a separate output location, or perform a dry run that reports what would change without modifying anything. The script should handle multiple files efficiently (for example, by processing them in parallel), skip or report files that fail to parse without aborting the whole run, preserve file encodings and line endings where feasible, and emit clear progress and summary logging, including counts of files processed, changed, and failed. It should validate that its output is still syntactically valid Python, exit with a meaningful status code reflecting success or errors, and provide a clear help message describing all options.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import dataclasses
+from dataclasses import dataclass
 import multiprocessing
 import os
+from pathlib import Path
 import sys
 import tempfile
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Callable
-
+from typing import Any
 from loguru import logger
-
 
 try:
     import libcst as cst
 
     HAS_LIBCST = True
 except ImportError:
-    cst = None  # type: ignore[assignment]
+    cst = None
     HAS_LIBCST = False
-
 try:
-    import tree_sitter_python as tspython
     from tree_sitter import Language, Parser
+    import tree_sitter_python as tspython
 
     HAS_TREESITTER = True
 except ImportError:
-    Parser = None  # type: ignore[assignment]
-    Language = None  # type: ignore[assignment]
-    tspython = None  # type: ignore[assignment]
+    Parser = None
+    Language = None
+    tspython = None
     HAS_TREESITTER = False
-
-
 logger.remove()
 logger.add(
     sys.stderr,
@@ -46,8 +42,6 @@ logger.add(
 
 @dataclass(slots=True, frozen=True)
 class StripOptions:
-    """Immutable runtime configuration options for the stripping engine."""
-
     backend: str = "libcst"
     remove_comments: bool = False
     inline_comments_only: bool = True
@@ -58,15 +52,11 @@ class StripOptions:
 
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> StripOptions:
-        """Construct StripOptions from parsed CLI arguments."""
         remove_all = getattr(args, "all", False)
         remove_comments = getattr(args, "comments", False) or remove_all
         remove_docstrings = getattr(args, "docstring", False) or remove_all
-
         preserve_module_docstring = not (getattr(args, "docstring", False) or remove_all)
-
         inline_comments_only = not remove_comments and not remove_all
-
         return cls(
             backend=getattr(args, "backend", "libcst"),
             remove_comments=remove_comments,
@@ -78,31 +68,20 @@ class StripOptions:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert configuration to a dictionary for process boundary IPC."""
         return dataclasses.asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> StripOptions:
-        """Reconstruct configuration from dictionary."""
         return cls(**data)
 
 
 class ASTStripper(ast.NodeTransformer):
-    """
-    AST-based transformation engine.
-
-    AST unparsing naturally removes all comments. We explicitly manage docstring
-    pruning, pass statement injection for docstring-only bodies, and type
-    annotation removal.
-    """
-
     def __init__(self, options: StripOptions) -> None:
         super().__init__()
         self.options = options
 
     @staticmethod
     def _is_docstring_node(node: ast.AST) -> bool:
-        """Determine if an AST statement node is a standalone string literal."""
         return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
@@ -119,12 +98,10 @@ class ASTStripper(ast.NodeTransformer):
                 visited = self.visit(stmt)
                 if visited is not None:
                     new_body.append(visited)
-
         node.body = new_body
         return node
 
     def _clean_body(self, body: list[ast.stmt]) -> list[ast.stmt]:
-        """Clean statements within function or class body blocks."""
         new_body: list[ast.stmt] = []
         for idx, stmt in enumerate(body):
             if (
@@ -133,7 +110,6 @@ class ASTStripper(ast.NodeTransformer):
                 and self._is_docstring_node(stmt)
             ):
                 continue
-
             if (self.options.remove_types or self.options.remove_all) and isinstance(stmt, ast.AnnAssign):
                 if stmt.value is not None:
                     visited_target = self.visit(stmt.target)
@@ -145,7 +121,6 @@ class ASTStripper(ast.NodeTransformer):
                 visited = self.visit(stmt)
                 if visited is not None:
                     new_body.append(visited)
-
         if not new_body:
             new_body = [ast.Pass()]
         return new_body
@@ -159,7 +134,6 @@ class ASTStripper(ast.NodeTransformer):
                 node.args.vararg.annotation = None
             if node.args.kwarg:
                 node.args.kwarg.annotation = None
-
         node.body = self._clean_body(node.body)
         return node
 
@@ -172,7 +146,6 @@ class ASTStripper(ast.NodeTransformer):
                 node.args.vararg.annotation = None
             if node.args.kwarg:
                 node.args.kwarg.annotation = None
-
         node.body = self._clean_body(node.body)
         return node
 
@@ -182,17 +155,14 @@ class ASTStripper(ast.NodeTransformer):
 
 
 def transform_ast(source: str, options: StripOptions) -> str:
-    """Transform Python source using standard library AST module."""
     lines = source.splitlines()
     shebang: str | None = None
     if lines and lines[0].startswith("#!") and not options.remove_all:
         shebang = lines[0]
-
     tree = ast.parse(source)
     stripper = ASTStripper(options)
     transformed_tree = stripper.visit(tree)
     ast.fix_missing_locations(transformed_tree)
-
     result = ast.unparse(transformed_tree)
     if shebang:
         result = shebang + "\n" + result
@@ -202,21 +172,17 @@ def transform_ast(source: str, options: StripOptions) -> str:
 if HAS_LIBCST:
 
     class LibCSTStripper(cst.CSTTransformer):
-        """LibCST concrete syntax tree transformer preserving exact formatting."""
-
         def __init__(self, options: StripOptions) -> None:
             super().__init__()
             self.options = options
 
         @staticmethod
         def _is_special_comment(comment_text: str) -> bool:
-            """Identify `# type:` and `# fmt:` comment pragmas."""
             clean = comment_text.strip()
-            return clean.startswith("# type:") or clean.startswith("# fmt:") or clean.startswith("# type :")
+            return clean.startswith(("# type:", "# fmt:", "# type :"))
 
         @staticmethod
         def _is_docstring_stmt(node: cst.CSTNode) -> bool:
-            """Check if statement is a standalone string expression."""
             if isinstance(node, cst.SimpleStatementLine) and len(node.body) == 1:
                 expr = node.body[0]
                 if isinstance(expr, cst.Expr):
@@ -238,7 +204,6 @@ if HAS_LIBCST:
                     return updated_node.with_changes(comment=None)
                 if self._is_special_comment(c_text):
                     return updated_node
-
                 return updated_node.with_changes(comment=None)
             return updated_node
 
@@ -261,7 +226,6 @@ if HAS_LIBCST:
             return updated_node
 
         def _clean_statements(self, stmts: list[cst.CSTNode], is_module: bool = False) -> list[cst.CSTNode]:
-            """Process statement lists for docstrings and variable type annotations."""
             new_stmts: list[cst.CSTNode] = []
             for idx, stmt in enumerate(stmts):
                 if idx == 0 and is_module:
@@ -271,18 +235,15 @@ if HAS_LIBCST:
                             continue
                         else:
                             continue
-
                 elif idx == 0 and not is_module:
                     if self._is_docstring_stmt(stmt) and (self.options.remove_docstrings or self.options.remove_all):
                         continue
-
                 if (
                     idx > 0
                     and self._is_docstring_stmt(stmt)
                     and (self.options.remove_docstrings or self.options.remove_all)
                 ):
                     continue
-
                 if (
                     (self.options.remove_types or self.options.remove_all)
                     and isinstance(stmt, cst.SimpleStatementLine)
@@ -299,12 +260,9 @@ if HAS_LIBCST:
                             continue
                         else:
                             continue
-
                 new_stmts.append(stmt)
-
             if not new_stmts and not is_module:
                 new_stmts = [cst.SimpleStatementLine(body=[cst.Pass()])]
-
             return new_stmts
 
         def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
@@ -315,11 +273,9 @@ if HAS_LIBCST:
             changes: dict[str, Any] = {}
             if self.options.remove_types or self.options.remove_all:
                 changes["returns"] = None
-
             if isinstance(updated_node.body, cst.IndentedBlock):
                 new_body = self._clean_statements(list(updated_node.body.body), is_module=False)
                 changes["body"] = updated_node.body.with_changes(body=new_body)
-
             return updated_node.with_changes(**changes)
 
         def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
@@ -330,9 +286,9 @@ if HAS_LIBCST:
 
 
 def transform_libcst(source: str, options: StripOptions) -> str:
-    """Transform Python source using LibCST."""
     if not HAS_LIBCST:
-        raise RuntimeError("libcst library is not installed.")
+        msg = "libcst library is not installed."
+        raise RuntimeError(msg)
     cst_tree = cst.parse_module(source)
     stripper = LibCSTStripper(options)
     transformed_tree = cst_tree.visit(stripper)
@@ -340,24 +296,17 @@ def transform_libcst(source: str, options: StripOptions) -> str:
 
 
 def transform_tree_sitter(source: str, options: StripOptions) -> str:
-    """
-    Transform Python source using Tree-sitter.
-
-    Uses reverse-offset byte range substitution for maximum memory efficiency
-    and parsing speed.
-    """
     if not HAS_TREESITTER:
-        raise RuntimeError("tree-sitter or tree-sitter-python library is not installed.")
-
+        msg = "tree-sitter or tree-sitter-python library is not installed."
+        raise RuntimeError(msg)
     parser = Parser(Language(tspython.language()))
     source_bytes = source.encode("utf-8")
     tree = parser.parse(source_bytes)
-
     edits: list[tuple[int, int, bytes]] = []
 
     def is_special_comment(text: str) -> bool:
         s = text.strip()
-        return s.startswith("# type:") or s.startswith("# fmt:") or s.startswith("# type :")
+        return s.startswith(("# type:", "# fmt:", "# type :"))
 
     def walk(node: Any, parent: Any = None, is_first: bool = False) -> None:
         if node.type == "comment":
@@ -376,7 +325,6 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
                 before_comment = source_bytes[line_start : node.start_byte].strip()
                 if before_comment:
                     edits.append((node.start_byte, node.end_byte, b""))
-
         elif node.type == "expression_statement":
             if len(node.children) == 1 and node.children[0].type in (
                 "string",
@@ -391,7 +339,6 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
                         edits.append((node.start_byte, node.end_byte, b"pass"))
                     else:
                         edits.append((node.start_byte, node.end_byte, b""))
-
         elif options.remove_types or options.remove_all:
             if node.type == "typed_parameter":
                 name_node = node.child_by_field_name("name")
@@ -402,12 +349,10 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
                     arrow = next((child for child in parent.children if child.type == "->"), None)
                     start = arrow.start_byte if arrow else node.start_byte
                     edits.append((start, node.end_byte, b""))
-
         for idx, child in enumerate(node.children):
             walk(child, parent=node, is_first=(idx == 0))
 
     walk(tree.root_node)
-
     res = bytearray(source_bytes)
     edits.sort(key=lambda x: x[0], reverse=True)
     last_start = len(res) + 1
@@ -415,15 +360,10 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
         if end <= last_start:
             res[start:end] = repl
             last_start = start
-
     return res.decode("utf-8", errors="replace")
 
 
 def validate_transformed_code(code: str) -> bool:
-    """
-    Requirement 5: Parse transformed source code using stdlib AST before writing.
-    Returns True only if the output is valid Python syntax.
-    """
     try:
         ast.parse(code)
         return True
@@ -432,7 +372,6 @@ def validate_transformed_code(code: str) -> bool:
 
 
 def read_file_safely(path: Path) -> str | None:
-    """Read source file with adaptive encoding fallbacks."""
     for encoding in ("utf-8", "utf-8-sig", "latin-1"):
         try:
             return path.read_text(encoding=encoding)
@@ -442,7 +381,6 @@ def read_file_safely(path: Path) -> str | None:
 
 
 def atomic_write_file(path: Path, content: str) -> None:
-    """Safely write content via a temporary file before replacing destination."""
     temp_fd, temp_path = tempfile.mkstemp(dir=path.parent, prefix=".strip_tmp_")
     try:
         with open(temp_fd, "w", encoding="utf-8") as f:
@@ -455,13 +393,8 @@ def atomic_write_file(path: Path, content: str) -> None:
 
 
 def is_python_file(path: Path) -> bool:
-    """
-    Determine whether a path is a Python file.
-    Supports standard extensions and non-extension scripts via shebang or parsing.
-    """
     if not path.is_file():
         return False
-
     if path.name.startswith(".") or path.suffix in (
         ".pyc",
         ".pyo",
@@ -470,10 +403,8 @@ def is_python_file(path: Path) -> bool:
         ".exe",
     ):
         return False
-
     if path.suffix in (".py", ".pyw", ".pyi"):
         return True
-
     if path.suffix == "":
         try:
             with path.open("rb") as f:
@@ -486,17 +417,13 @@ def is_python_file(path: Path) -> bool:
                 return True
         except Exception:
             return False
-
     return False
 
 
 def discover_files(targets: list[Path]) -> list[Path]:
-    """Recursively discover target Python files."""
     found: list[Path] = []
-
     if not targets:
-        targets = [Path(".")]
-
+        targets = [Path()]
     for target in targets:
         if target.is_file():
             if is_python_file(target):
@@ -510,25 +437,17 @@ def discover_files(targets: list[Path]) -> list[Path]:
                     file_path = Path(root) / file_name
                     if is_python_file(file_path):
                         found.append(file_path)
-
     return sorted(set(found))
 
 
 def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, str, str]:
-    """
-    Process worker executed within multiprocessing pool.
-    Returns (file_path_str, status, message).
-    """
     file_path_str, options_dict = args_tuple
     path = Path(file_path_str)
     options = StripOptions.from_dict(options_dict)
-
     source = read_file_safely(path)
     if source is None:
         return (file_path_str, "ERROR", "Failed to read file or incompatible encoding")
-
     backend = options.backend.lower()
-
     try:
         if backend == "libcst":
             if HAS_LIBCST:
@@ -544,28 +463,22 @@ def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, st
             transformed = transform_ast(source, options)
     except Exception as exc:
         return (file_path_str, "ERROR", f"Transformation error: {exc}")
-
     if not validate_transformed_code(transformed):
         return (
             file_path_str,
             "ERROR",
             "Validation failed: transformed source is invalid Python syntax",
         )
-
     if transformed == source:
         return (file_path_str, "SKIPPED", "No changes required")
-
     try:
         atomic_write_file(path, transformed)
     except Exception as exc:
         return (file_path_str, "ERROR", f"Failed to write transformed file: {exc}")
-
     return (file_path_str, "SUCCESS", "Successfully stripped")
 
 
 def run_pipeline(paths: list[Path], options: StripOptions) -> None:
-    """Orchestrate file discovery and worker task distribution using 8 workers."""
-
     actual_backend = options.backend
     if options.backend == "libcst" and not HAS_LIBCST:
         logger.warning("LibCST requested but not installed. Falling back to 'ast' backend.")
@@ -573,34 +486,26 @@ def run_pipeline(paths: list[Path], options: StripOptions) -> None:
     elif options.backend == "tree-sitter" and not HAS_TREESITTER:
         logger.warning("Tree-sitter requested but not installed. Falling back to 'ast' backend.")
         actual_backend = "ast"
-
     files = discover_files(paths)
     if not files:
         logger.warning("No Python files found for processing.")
         return
-
     logger.info(
         f"Discovered {len(files)} Python file(s). Processing with 8 workers using backend '{actual_backend}'..."
     )
-
     options_dict = options.to_dict()
     tasks = [(str(p), options_dict) for p in files]
-
     num_workers = 8
     async_results = []
-
     with multiprocessing.Pool(processes=num_workers) as pool:
         for task in tasks:
             res = pool.apply_async(process_file_worker, (task,))
             async_results.append(res)
-
         pool.close()
         pool.join()
-
     success_count = 0
     skipped_count = 0
     error_count = 0
-
     for async_res in async_results:
         file_path, status, message = async_res.get()
         if status == "SUCCESS":
@@ -611,12 +516,10 @@ def run_pipeline(paths: list[Path], options: StripOptions) -> None:
         else:
             error_count += 1
             logger.error(f"FAILURE: {file_path} - {message}")
-
     logger.info(f"Summary: {success_count} processed, {skipped_count} skipped, {error_count} failed.")
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """Construct CLI argument parser matching specification."""
     parser = argparse.ArgumentParser(
         description="Strip comments, docstrings, and type annotations from Python source files."
     )
@@ -661,7 +564,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """CLI entry point."""
     parser = build_arg_parser()
     args = parser.parse_args()
     options = StripOptions.from_args(args)

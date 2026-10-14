@@ -1,17 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
-
+from __future__ import annotations
 import argparse
+from concurrent.futures import Future, ProcessPoolExecutor, as_completed
+from dataclasses import dataclass
 import hashlib
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import time
-from concurrent.futures import Future, ProcessPoolExecutor, as_completed
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
-
+from typing import Iterator, Optional, Sequence
 import brotli
 
 try:
@@ -226,7 +225,8 @@ def stream_decompress(
         if f_out is not None:
             f_out.close()
     if not decompressor.is_finished() and not allow_truncated:
-        raise ValueError("Incomplete Brotli stream (missing end-of-stream marker)")
+        msg = "Incomplete Brotli stream (missing end-of-stream marker)"
+        raise ValueError(msg)
     return written, hasher.hexdigest() if hasher is not None else None
 
 
@@ -278,7 +278,8 @@ def compress_file_streaming(
         if verify:
             check_size, check_digest = stream_decompress(output_path, None, chunk_size, False, True)
             if check_size != original_size or check_digest != source_digest:
-                raise ValueError("Verification failed: round-trip does not match source")
+                msg = "Verification failed: round-trip does not match source"
+                raise ValueError(msg)
         original_deleted: bool = False
         if not keep_original and output_path.exists():
             input_path.unlink()
@@ -1093,7 +1094,7 @@ Examples:
         "--quality",
         type=int,
         default=11,
-        choices=range(0, 12),
+        choices=range(12),
         help="Brotli compression quality (0-11, default: 11). Only valid with -c/--compress.",
     )
     parser.add_argument(

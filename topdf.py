@@ -1,13 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import base64
-import re
-import sys
 from html.parser import HTMLParser
 from pathlib import Path
+import re
+import sys
 from typing import Any, Iterable, Optional, Sequence
 
 
@@ -49,7 +47,7 @@ def render_pdf_from_html(
     css_strings: Sequence[str] = (),
     base_url: Optional[str] = None,
 ) -> None:
-    from weasyprint import CSS, HTML  # type: ignore
+    from weasyprint import CSS, HTML
 
     sheets: list[Any] = []
     for f in css_files:
@@ -164,7 +162,7 @@ def cmd_svg(args: argparse.Namespace) -> int:
     inp = require_input(args.input, check_suffix=".svg")
     out = resolve_output(inp, args.output)
     try:
-        import cairosvg  # type: ignore
+        import cairosvg
     except ImportError:
         die("cairosvg is not installed (pip install cairosvg)")
     try:
@@ -245,7 +243,7 @@ def _clean_topic_html(raw: str) -> str:
 
 def _chm_weasyprint_extract(chm_path: Path) -> str:
     try:
-        import chm.chm as pychm  # type: ignore
+        import chm.chm as pychm
     except ImportError:
         die("pychm is required (pip install pychm); provides chm.chm")
     cf = pychm.CHMFile()
@@ -353,17 +351,15 @@ def _strip_html_to_text(raw_html: str) -> str:
 
 def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     try:
-        import chm  # type: ignore
+        import chm
     except ImportError:
         die("the 'chm' package is required for --backend reportlab")
     try:
-        from reportlab.lib.enums import TA_CENTER  # type: ignore
-        from reportlab.lib.pagesizes import letter  # type: ignore
-        from reportlab.lib.styles import ParagraphStyle  # type: ignore
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.lib.units import inch  # type: ignore
-        from reportlab.platypus import Paragraph  # type: ignore
-        from reportlab.platypus import PageBreak, SimpleDocTemplate, Spacer
+        from reportlab.lib.enums import TA_CENTER
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import inch
+        from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
     except ImportError:
         die("reportlab is required for --backend reportlab")
     chm_obj = chm.CHMFile(str(chm_path))
@@ -540,16 +536,15 @@ def _convert_markdown2(
     pygments: bool,
     toc: bool,
 ) -> str:
-    from markdown2 import markdown  # type: ignore
+    from markdown2 import markdown
 
     extras = _MARKDOWN2_FULL_EXTRAS if full_extras else _MARKDOWN2_SIMPLE_EXTRAS
     html_text = markdown(text, extras=extras)
     if pygments:
         try:
-            from pygments import highlight  # type: ignore
-            from pygments.formatters import HtmlFormatter  # type: ignore
-            from pygments.lexers import TextLexer  # type: ignore
-            from pygments.lexers import get_lexer_by_name
+            from pygments import highlight
+            from pygments.formatters import HtmlFormatter
+            from pygments.lexers import TextLexer, get_lexer_by_name
         except ImportError:
             warn("pygments not installed — skipping code highlighting")
             pygments = False
@@ -573,7 +568,7 @@ def _convert_markdown2(
 
 def _convert_markdown(text: str) -> str:
     try:
-        import markdown  # type: ignore
+        import markdown
     except ImportError:
         die("the 'markdown' package is required for --converter markdown")
     return markdown.markdown(text, extensions=["extra", "codehilite"])

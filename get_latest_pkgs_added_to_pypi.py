@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that fetches the latest package release updates from the PyPI (Python Package Index) public RSS feed, parses the feed, and exports the results to a structured file. The script should retrieve the feed over the network with a reasonable timeout and robust error handling for connection failures, HTTP errors, and malformed XML. For each release entry, it should capture the package title, its link, the description, the publication date, and a unique identifier, skipping entries that lack a title. The script should normalize and present the collected records in a consistent order, and optionally allow the user to choose an output format such as CSV or JSON, writing the data to a file or printing it to the console when no file is specified. It should also accept a limit on the number of entries to export and report a clear summary (number of entries retrieved and where they were saved) upon completion. Include meaningful status and error messages for the user, and ensure the script exits with a non-zero status code on fatal failures and zero on success. Keep the design clean, modular, and easy to extend, with a command-line interface that provides helpful usage information.
+---"""
 
 from __future__ import annotations
-
 import csv
+from datetime import datetime
 import json
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime
-
 import requests
 
 

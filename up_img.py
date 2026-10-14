@@ -1,21 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for capturing or selecting images and uploading them to a cloud image hosting service, then returning a shareable Markdown-style or plain URL for the uploaded image.
+The tool should support the following behaviors:
+- Accept an image from the system clipboard (screenshot or copied image) as well as from a local file path passed on the command line; when nothing is provided, it should grab the current clipboard image.
+- Upload the image to a remote file storage/CDN service using credentials and a target upload directory, and generate a unique, time-based filename for each upload.
+- Build a public URL for the uploaded file from a configurable base URL and the upload path, and copy the resulting link to the system clipboard so the user can paste it immediately.
+- Persist user settings (service type, username, password, upload path, and base URL) in a configuration file in the user's home directory, with sensible defaults on first run and an interactive or command-line way to set and view these values.
+- Optionally convert or compress images before upload (for example, to a standard format and reduced size) when requested, while keeping the original where appropriate.
+- Provide cross-platform behavior for Windows, macOS, and Linux, including native desktop notifications on success or failure where the platform supports them, falling back gracefully when they are unavailable.
+- Report errors clearly to the user (missing clipboard image, invalid credentials, network failures, unsupported file types) without crashing, and offer a verbose or debug mode that prints the full error trace.
+- Print the final URL to standard output so the tool can be used in shell scripts and pipelines, with a quiet option to suppress extra messages.
+---"""
 
-
+from __future__ import annotations
 import argparse
+from collections import namedtuple
+from datetime import datetime
+from io import BytesIO
 import os
 import pickle
 import platform
 import subprocess
 import sys
-from collections import namedtuple
-from datetime import datetime
-from io import BytesIO
 from traceback import print_exc
 from urllib.parse import urljoin
-
-import upyun
 from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
+import upyun
 
 SYSTEM = platform.system()
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".upimg_config.pkl")
@@ -54,14 +64,12 @@ def get_clipboard_file_paths():
                     paths.append(path)
         except Exception:
             pass
-
     elif SYSTEM == "Windows":
-        from ctypes import c_uint, c_void_p, c_wchar_p, create_unicode_buffer, windll
+        from ctypes import create_unicode_buffer, windll
 
         user32 = windll.user32
         kernel32 = windll.kernel32
         cf_hdrop = 15
-
         if user32.OpenClipboard(None):
             h_global = user32.GetClipboardData(cf_hdrop)
             if h_global:
@@ -82,7 +90,6 @@ class ClipboardFile:
     @property
     def file_objects(self):
         file_paths = get_clipboard_file_paths()
-
         if file_paths:
             for path in file_paths:
                 if os.path.isfile(path):
@@ -90,7 +97,6 @@ class ClipboardFile:
                     ext = os.path.splitext(path)[1].lower()
                     yield fp, ext
             return
-
         image = ImageGrab.grabclipboard()
         if isinstance(image, Image.Image):
             image_bytes_io = BytesIO()
@@ -105,15 +111,12 @@ def set_config():
     for field, default in zip(CONFIG_FIELDS, CONFIG_DEFAULTS):
         display_default = f" [{default}]" if default else ""
         value = input(f"{field.replace('_', ' ')}{display_default}: ").strip()
-        args[field] = value if value else default
-
+        args[field] = value or default
     with open(CONFIG_PATH, "wb") as fp:
         pickle.dump(ConfigTuple(**args), fp)
-
     if SYSTEM == "Windows":
         try:
             import winreg
-
             import pythoncom
             from win32com.shell import shell
 
@@ -122,10 +125,8 @@ def set_config():
                 r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
             )
             desktop_path = winreg.QueryValueEx(reg_key, "Desktop")[0]
-
             exe_path = os.path.abspath(sys.argv[0])
             lnk_path = os.path.join(desktop_path, "UpImg.lnk")
-
             shortcut = pythoncom.CoCreateInstance(
                 shell.CLSID_ShellLink,
                 None,
@@ -186,15 +187,12 @@ def main():
             )
             print(message)
             return
-
         config = get_config()
         try:
             send_notify(title="UpImg", message="Uploading file payload...")
             up = UpImage(config)
-
             markdown_links = [f"![]({urljoin(config.url_base, path)})" for path in up.upload()]
             files_count = len(markdown_links)
-
             if files_count > 0:
                 joined_markdown = "\n".join(markdown_links)
                 copy2clipboard(joined_markdown)
@@ -208,7 +206,6 @@ def main():
                     title="Upload Cancelled",
                     message="No valid file object image data parsed from clipboard.",
                 )
-
         except Exception:
             error_log = os.path.abspath("./upimg-error.log")
             with open(error_log, "w") as fp:

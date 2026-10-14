@@ -1,14 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for detecting and automatically repairing invalid escape sequences in Python source files. The tool should accept one or more file or directory paths as input, recursively scan directories for Python files while skipping common non-source folders (such as version control, virtual environment, cache, and build directories), and analyze the string literals in each file using Python's tokenizer so that only string and f-string contents are examined, never comments or code outside of literals.
+For every string literal that contains an unrecognized backslash escape (for example, a regex pattern like "\\d" written without a raw prefix), the script should convert the invalid sequence into a properly escaped form that preserves the original intended text, while leaving valid escape sequences, raw strings, byte strings where appropriate, and already-correct content untouched. The repair must handle both regular and f-string literals, including tokenizer differences across Python versions, and must avoid corrupting multi-line strings, line continuations, or Unicode escapes.
+The tool should support a dry-run or check mode that reports each problematic location (file, line, column, and the offending sequence) without modifying anything, and an apply mode that rewrites affected files in place. Its output should be a clear, human-readable summary listing every fix or issue found, along with a final count of files scanned, files changed, and total fixes made. The script should exit with a nonzero status code when issues are found in check mode, and zero otherwise. Processing should be robust: files that cannot be decoded, parsed, or read should be reported as warnings and skipped without stopping the overall run. Where practical, the script should use parallel processing to speed up scanning of large codebases, suppress or handle Python syntax warnings emitted during analysis, and never attempt to modify its own source file.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import io
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tokenize
 import warnings
-from pathlib import Path
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")

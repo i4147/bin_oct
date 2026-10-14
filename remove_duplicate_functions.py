@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree of Python source files, finds every function definition across those files, and detects duplicate or near-identical functions by comparing a fingerprint of each function's body. The tool should accept a root path (and optionally a file pattern or exclusion filters) from the command line, process files in parallel to keep scanning fast on large codebases, and ignore differences that do not affect behavior such as indentation, blank lines, comments, or whitespace within the function. It should handle files that cannot be read or parsed gracefully by logging a warning and continuing. The final output should be a clear report listing each group of duplicate functions with their file paths and line ranges, plus a summary count of duplicates found and files scanned. Use structured logging for progress and warnings, and allow the user to choose an output format such as plain text or JSON. The script should exit with a non-zero status code when duplicates are found, so it can be used in continuous integration pipelines.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import hashlib
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
 
 if TYPE_CHECKING:

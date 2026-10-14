@@ -1,10 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that loads a set of license-header text blocks from a fixed license file on an Android-style device, splits them into separate patterns wherever several consecutive blank lines appear, and then scans a batch of source files to strip every occurrence of those license blocks from their contents. The tool should be designed for bulk cleanup of copied license or boilerplate headers across a directory tree of source files.
+Key requirements:
+- **Input:** A license/boilerplate file containing one or more text blocks, where individual blocks are separated by a minimum run of blank lines. The tool should ignore empty blocks and tolerate encoding issues in the input file. A target directory or list of files containing the source code to be cleaned.
+- **Pattern handling:** Each block must be matched literally, while being tolerant of varying whitespace and line-ending differences (blank lines or extra spaces between lines should not prevent a match). Matching must be safe against regex special characters in the license text.
+- **Processing:** Remove every matched license block from each target file's content, applying all patterns in sequence. Process files in parallel using a moderate number of worker threads or processes to speed up large batches.
+- **Output:** Write the cleaned content back to each file only when a change was actually made. Report to the console which files were modified, along with a concise summary of the total number of files scanned and modified. Print clear error messages if the license file cannot be read, and continue gracefully if an individual file fails.
+- **Behavior:** The tool must be idempotent, so running it twice produces no further changes. It should skip binary files, avoid touching files it cannot read or write, and never delete content that does not match a license block.
+- **Robustness:** Handle missing files, permission errors, and empty license files without crashing. Keep the script self-contained and readable, with a short configuration section at the top for the license file location, the blank-line threshold, and the worker count.
+---"""
 
 from __future__ import annotations
-
-import re
 from pathlib import Path
-
+import re
 from dh import cprint, fsz, get_nobinary, gsz
 
 LIC_FILE = Path("/sdcard/lic")

@@ -1,12 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects the packages installed in the current Python environment and reports on their health and currency. The tool should discover every installed distribution, normalize package names so that variants like hyphens, underscores, and dots are treated as equivalent, and record each package's name and installed version. For each package, it should check whether the package can actually be imported at runtime, and if not, capture a clear, human-readable reason for the failure, distinguishing ordinary import errors from unexpected ones.
+The script should also determine the latest version available for each package by querying the package index through the standard Python packaging tooling, without installing anything. It should compare the installed version against the latest available version and flag packages that are outdated, up to date, or whose latest version could not be determined. Handle network failures, timeouts, missing packages on the index, and malformed output gracefully so that a single failing package never stops the overall run.
+Inputs: the script runs non-interactively from the command line and may accept optional arguments such as a list of specific packages to check, a timeout value, or an output format choice.
+Outputs: produce a structured, readable report summarizing each package's name, installed version, latest version, import status, and update status, along with a summary count of healthy, broken, and outdated packages. The report should be printable to the console and optionally exportable to a machine-readable file format. The script should exit with a meaningful status code reflecting whether problems were found.
+Prioritize robustness, clear error reporting, and efficient handling of large numbers of installed packages, and keep the output concise and easy to scan.
+---"""
 
 from __future__ import annotations
-
 import importlib
 import re
 import subprocess
 import sys
-
 import importlib_metadata
 
 

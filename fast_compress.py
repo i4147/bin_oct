@@ -1,27 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that batch-compresses and decompresses files in a directory tree using modern compression formats, with parallel processing for speed. The tool should accept a source path (a single file or a directory), a choice of operation (compress or decompress), and a target compression format, with zstandard and xz/LZMA as the supported codecs. It should allow the user to set compression level and number of worker processes or threads through command-line options, and optionally include or exclude files using glob-style name patterns. When compressing, it should skip files that are already compressed (such as archives, images, or other compressed media) unless the user explicitly overrides this, and it should avoid re-compressing files that already carry the target extension. When decompressing, it should restore the original files by stripping the compression extension and report any failures without stopping the whole batch. Optionally, the tool should be able to delete the original file after a successful operation, and it should offer a dry-run mode that only reports what would be done.
+The tool should log progress and errors clearly, print a final summary showing how many files were processed, skipped, or failed, and report the total size before and after compression in human-readable units, including the overall compression ratio. It should handle missing dependencies gracefully, falling back to alternative behavior or a clear error message when an optional library is unavailable, and it should return a non-zero exit code if any file operation fails. Design the tool so that it runs safely on large directory trees, processes files concurrently, and never corrupts or silently overwrites existing output files without a clear rule or flag controlling that behavior.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
+from dataclasses import dataclass
 import fnmatch
 import json
-import os
-import sys
-from dataclasses import dataclass
 from multiprocessing import Pool
+import os
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-
-import zstandard as zstd
 from loguru import logger
+import zstandard as zstd
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 try:
     import lzma_mt
 except ImportError:
-    lzma_mt = None  # type: ignore[assignment]
+    lzma_mt = None
 try:
     from dh import fsz
 except ImportError:

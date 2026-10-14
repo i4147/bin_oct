@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import json
+from pathlib import Path
 import quopri
 import sys
-from pathlib import Path
 
 
 def decode_value(value, params):

@@ -1,16 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree and produces a text-analysis report summarizing the contents of the text-based files it finds. The tool should accept a root folder path and optional settings from the command line, including options for choosing how many worker processes to use, limiting which file types are considered, controlling the number of top terms reported, and selecting an output destination and format (human-readable text or machine-readable JSON).
+The script should walk the directory recursively, skip files that are clearly binary or unreadable, and recognize common source code, configuration, markup, and documentation formats as text. For each eligible text file, it should gather basic statistics such as size, line count, word count, and character count, and identify the most frequent meaningful words while filtering out common English stopwords and very short or purely numeric tokens. Where natural language tooling is available, it may be used to improve tokenization and stopword removal, but the script must still work without it.
+Processing of many files should be parallelized so that large trees are handled efficiently, and the results from all workers should be aggregated into overall totals: file counts by extension, total lines and words, the most common terms across the whole corpus, and a per-file breakdown. The script should handle encoding problems gracefully, ignore files that cannot be read without crashing, and report any skipped or failed files in a concise summary.
+The final output should include a timestamp, the root path analyzed, and a clear summary followed by detailed per-file results. Provide sensible error messages for invalid paths or arguments, and exit with an appropriate status code. The script should be self-contained, runnable from the command line, and well documented with a usage description.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import json
-import mimetypes
-import re
-import sys
 from collections import Counter
 from datetime import datetime
+import json
+import mimetypes
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any, Sequence
 
 try:
@@ -206,7 +210,6 @@ def load_stopwords(source: str, path: Path | None) -> set[str]:
         except LookupError:
             nltk.download("stopwords", quiet=True)
         return set(_nltk_stopwords.words("english"))
-
     if path is None or not path.exists():
         print(
             f"Warning: stopwords file {path!r} not found; none loaded.",

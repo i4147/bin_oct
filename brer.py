@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 """
 Unified Brotli compression / decompression tool.
-
 Merged from: br.py, br2.py, brer.py
-
 Subcommands
 -----------
   compress      Compress files (-> .br) and directories (-> .tar.br)
   decompress    Decompress .br files and .tar.br archives
-
 Examples
 --------
   python merged.py compress
@@ -21,19 +18,17 @@ Examples
 """
 
 from __future__ import annotations
-
 import argparse
-import mmap
-import shutil
-import tarfile
 from concurrent.futures import (
     ProcessPoolExecutor,
     ThreadPoolExecutor,
     as_completed,
 )
+import mmap
 from pathlib import Path
+import shutil
+import tarfile
 from typing import Sequence
-
 import brotli
 
 try:
@@ -93,7 +88,6 @@ def _stream_decompress(src: Path, dst: Path, buffer_size: int) -> bool:
 
 
 def _chunked_compress(src: Path, dst: Path, size: int, chunk_size: int, quality: int, lgwin: int, workers: int) -> bool:
-    # Nested thread pool is safe when this runs inside a process-pool worker.
     try:
         n = (size + chunk_size - 1) // chunk_size
         with (
@@ -322,7 +316,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command")
     sub.required = True
-
     c = sub.add_parser("compress", help="Compress files (.br) and dirs (.tar.br)")
     c.add_argument("-q", "--quality", type=int, default=11, help="Brotli quality 0-11. Default 11.")
     c.add_argument("--lgwin", type=int, default=24, help="Brotli window bits 10-24. Default 24.")
@@ -351,7 +344,6 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument(
         "--skip-ext", default=".br,.xz,.gz,.bz2,.7z,.zip,.tar", help="Comma-separated list of extensions to skip."
     )
-
     d = sub.add_parser("decompress", help="Decompress .br files and .tar.br archives")
     d.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers. Default 8.")
     d.add_argument("--buffer-size", type=int, default=65536, help="Stream buffer size (bytes). Default 65536.")

@@ -1,15 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that prints today's date in the Persian (Jalali/Solar Hijri) calendar, formatted for display in Persian text. The script should take the current Gregorian date, convert it accurately to the Jalali calendar, and output a readable Persian-language date line that includes the Persian month name, the day and year rendered with Persian (Eastern Arabic) digits, and the Persian weekday name for the current day.
+Key behaviors:
+- Determine today's date automatically from the system clock; no user input is required.
+- Perform an accurate Gregorian-to-Jalali conversion using a standard algorithm, handling leap years correctly.
+- Map the weekday to its Persian name, respecting that the Persian week starts on Saturday.
+- Render all numeric parts using Persian digits, and use Persian month and weekday names with correct Persian typography (including zero-width non-joiners where appropriate in compound weekday names).
+- Print the result to standard output as a single, cleanly formatted line, such as the weekday, day, month name, and year in a natural Persian ordering.
+- Optionally support a short abbreviated weekday form for compact display, selectable via a simple command-line flag.
+- Use a small set of helper utilities for conversion and formatting so the logic is clear and testable.
+- Handle any dependency on a Persian text-rendering or formatting helper gracefully, so that the output displays correctly in a terminal that supports right-to-left Persian text.
+- The script should run with no external setup beyond the standard Python environment and any text-rendering helper it relies on, and should exit cleanly with status 0 on success.
+---"""
 
 from __future__ import annotations
-
-import sys
 from datetime import date
-
+import sys
 from faprint import faprint
 
-
 _PERSIAN_DIGITS: dict[int, str] = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
-
 _JALALI_MONTHS_FA: list[str] = [
     "فروردین",
     "اردیبهشت",
@@ -24,7 +32,6 @@ _JALALI_MONTHS_FA: list[str] = [
     "بهمن",
     "اسفند",
 ]
-
 _WEEKDAYS_FA_BY_PY_WEEKDAY: list[str] = [
     "دوشنبه",
     "سه‌شنبه",
@@ -34,7 +41,6 @@ _WEEKDAYS_FA_BY_PY_WEEKDAY: list[str] = [
     "شنبه",
     "یکشنبه",
 ]
-
 _WEEKDAY_ABBR_FA: list[str] = ["شن", "یک", "دو", "سه", "چه", "پن", "جم"]
 
 
@@ -126,7 +132,6 @@ def format_full_date(jy: int, jm: int, jd: int) -> str:
 def format_calendar(jy: int, jm: int) -> list[str]:
     first_weekday: int = jalali_weekday_index(jy, jm, 1)
     dim: int = jalali_days_in_month(jy, jm)
-
     lines: list[str] = [" ".join(_WEEKDAY_ABBR_FA)]
     cells: list[str] = [""] * first_weekday
     for d in range(1, dim + 1):
@@ -143,13 +148,11 @@ def format_calendar(jy: int, jm: int) -> list[str]:
 def main() -> None:
     args: list[str] = sys.argv[1:]
     show_only_date: bool = any(a in ("-d", "--date") for a in args)
-
     today: date = date.today()
     jy: int
     jm: int
     jd: int
     jy, jm, jd = gregorian_to_jalali(today.year, today.month, today.day)
-
     faprint(format_full_date(jy, jm, jd))
     if not show_only_date:
         for line in format_calendar(jy, jm):

@@ -1,10 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree (defaulting to the current working directory) for executable script files and rewrites their shebang lines so they point to a specific Python 3.14 interpreter located under a configurable installation prefix (defaulting to a Termux-style Android environment path, overridable via an environment variable). The script should:
+- Recursively walk the target directory, considering only regular files that are plain-text scripts with a shebang on the first line.
+- Parse each shebang, handling both direct interpreter paths and `env`-style invocations (where the actual interpreter name is the argument following `env`).
+- Identify shebangs that reference a Python interpreter (any executable whose name contains "python") and skip those already pointing to the target Python 3.14 path.
+- Rewrite qualifying shebang lines to the new interpreter path while preserving the rest of the exactly, including line endings and any encoding considerations.
+- Preserve the original file permissions and ensure the rewritten files remain executable.
+- Optionally support a dry-run mode that reports which files would change without modifying them, and a verbose mode that logs each file processed, skipped, or rewritten.
+- Handle errors gracefully (unreadable files, binary files, permission issues, empty files, malformed shebangs) by skipping them and reporting a summary at the end.
+- Print a final summary of how many files were scanned, rewritten, skipped, and failed.
+- Be runnable from the command line, accepting an optional target directory argument.
+---"""
 
 from __future__ import annotations
-
 import os
-import stat
 from pathlib import Path
+import stat
 
 HOME = Path.home()
 cwd = Path.cwd()
@@ -29,9 +39,7 @@ def looks_like_python_interpreter(interp: str) -> bool:
 def should_rewrite(interp: str) -> bool:
     if not looks_like_python_interpreter(interp):
         return False
-    if interp.strip() == str(PREFIX / "bin/python3.14"):
-        return False
-    return True
+    return interp.strip() != str(PREFIX / "bin/python3.14")
 
 
 def parse_shebang(first_line: str):

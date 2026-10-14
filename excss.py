@@ -1,11 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a set of local HTML files, extracts the inline CSS embedded in each page's style blocks, and saves each extracted stylesheet as a separate standalone CSS file in a designated output folder.
+The script should accept one or more HTML file paths (or a directory to scan for HTML files) as input from the command line. For each HTML file, it should read the content using UTF-8 encoding, locate every embedded style block, and report how many were found. Each non-empty style block should be written to its own uniquely named CSS file inside the output folder, creating that folder if it does not exist. Empty or near-empty style blocks should be skipped. The script must never overwrite an existing file; if a generated filename collides with an existing one, it should produce a new unique name instead. Use UTF-8 encoding for all written files.
+Provide clear, color-coded or otherwise visually distinct console messages to indicate progress, the number of styles found per file, successful file creation, and any collisions or errors. The script should handle missing files, unreadable files, and malformed HTML gracefully, continuing to process remaining files rather than crashing. At the end, print a summary of how many HTML files were processed, how many style blocks were extracted, and how many CSS files were created.
+Include a main entry point that parses command-line arguments, validates inputs, and orchestrates the processing. Ensure the script is well-structured, readable, and includes brief docstrings explaining its purpose and usage.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-
 from bs4 import BeautifulSoup
 from dh import cprint, get_files, get_random_filename, mpf
 

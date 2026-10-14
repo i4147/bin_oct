@@ -1,25 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a user-specified directory tree (recursively) and identifies text-based files whose content is primarily written in Chinese, then organizes or reports on them. The tool should accept command-line arguments for the root directory to scan, an optional destination folder where matching files can be moved or copied, and options to control behavior such as performing a dry run, choosing move versus copy, and limiting which file extensions are considered. It should only consider plain-text formats (such as documents, source code, configuration, and data files like TXT, Markdown, CSV, JSON, XML, HTML, and common programming languages) and skip binary files.
+For each candidate file, the script should attempt to read the content using several common text encodings (including UTF-8 with and without BOM, GB18030, GBK, and Windows-1252), falling back gracefully when decoding fails. It should detect Chinese characters across the standard CJK Unified Ideographs and related Unicode blocks, and determine whether a file is predominantly Chinese by comparing the proportion of Chinese characters against other content. Where optional language-detection libraries are installed, the script should use them to strengthen the classification, but it must still function correctly when they are absent.
+Files classified as non-English (or non-Chinese, as appropriate) should be recorded in a report. Produce a CSV summary that lists each file's path, detected encoding, Chinese character ratio, and classification, and write a plain-text list of paths for files that are not English. Display a progress indicator in the console during scanning, and print a final summary showing counts of files scanned, files classified as Chinese, files skipped, and files that failed to read, along with a breakdown of counts by extension.
+When moving or copying files into the destination folder, preserve relative directory structure where practical, avoid overwriting existing files by generating unique names, handle name collisions safely, and never operate on the destination folder itself while scanning. The script should handle permission errors, unreadable files, symbolic links, and very large files gracefully, logging problems without crashing. Include clear help text describing every option, and ensure the tool runs as a standalone command-line program with sensible defaults.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import Counter, defaultdict
 import csv
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import Counter, defaultdict
-from pathlib import Path
 from typing import Iterator, Optional
 
 try:
-    import pycld2  # type: ignore
+    import pycld2
 except ImportError:
-    pycld2 = None  # type: ignore
+    pycld2 = None
 try:
-    import gcld3  # type: ignore
+    import gcld3
 except ImportError:
-    gcld3 = None  # type: ignore
+    gcld3 = None
 CHINESE_RANGES = (
     (0x3400, 0x4DBF),
     (0x4E00, 0x9FFF),

@@ -1,16 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for preparing and fetching GitHub repositories. The tool should accept a repository specified either as a short "owner/name" slug or as a full GitHub HTTP(S) URL, validate and normalize that input, and reject malformed specifications with a clear error message.
+The tool should be able to use an optional GitHub access token, looked up first from the environment and then from a `.env` file in the user's home directory, so that private repositories can be accessed when a token is available. It should be able to run without a token for public repositories.
+Core behaviors to include:
+- Accept command-line arguments for the repository, an optional target directory (defaulting to the current working directory), and an optional backend selection (defaulting to a subprocess-based approach that invokes the system git tooling).
+- Normalize repository inputs by trimming whitespace, stripping trailing slashes and any ".git" suffix, and extracting the owner and repository name from URLs.
+- Check that required external tools are available before attempting operations, and report a helpful error if they are not.
+- Clone or update the repository into the target location, avoiding overwriting unrelated existing content and handling the case where the destination already exists.
+- Be aware of repository size: if a repository is estimated to exceed a size threshold of roughly 5 MB, warn the user and ask for confirmation before proceeding, with an option to skip the confirmation prompt via a flag.
+- Print concise, human-readable progress and status messages, and exit with a non-zero status code on failure.
+- Never print or log the access token; mask it in any output.
+- Handle network errors, authentication failures, and invalid repositories gracefully with informative messages.
+The output should be a local copy of the requested repository at the target path, along with a short summary printed to the console indicating success, the destination path, and any skipped or failed steps.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import functools
 import json
 import operator
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 

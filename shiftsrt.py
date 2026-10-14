@@ -1,13 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line subtitle timestamp corrector for SubRip (.srt) files. It should accept one or more subtitle file paths (and optionally a directory or glob-style selection) along with a time-shift or correction mode argument, then rewrite each subtitle file with corrected timestamps while preserving the original subtitle text, numbering, and line structure.
+Key requirements:
+- **Input handling:** Read each subtitle file robustly, trying multiple common text encodings (UTF-8 first, then Windows-1252 and Latin-1 as fallbacks) so that legacy or mixed-encoding files still load without crashing.
+- **Timestamp parsing:** Recognize SRT timing lines in the form "HH:MM:SS,mmm --> HH:MM:SS,mmm" and leave all other content untouched. Support two timestamp interpretations: a correct conversion based on standard time units, and a legacy/faulty conversion mode that the user can select to repair files that were previously mis-converted (for example, files where minutes or seconds were scaled incorrectly).
+- **Correction behavior:** Convert every matched start and end timestamp using the chosen mode, clamp negative results to zero, and reformat them back into the exact SRT timestamp format with zero-padded fields. Ensure the end time is not left inconsistent with the start time where practical.
+- **Output:** Write corrected files either in place or to a user-specified output location or suffix, and report a concise summary of how many files and timestamp lines were processed or changed. Preserve the original file's line endings and text content as much as possible.
+- **Performance:** When multiple files are given, process them in parallel using a pool of worker processes to speed up batch correction, with graceful handling of individual file errors that does not abort the whole batch.
+- **Command-line interface:** Provide clear help text, validate arguments (such as file existence and mode choice), and exit with meaningful status codes on success, partial failure, or invalid input.
+- **Robustness:** Handle empty files, files with no timing lines, malformed timing lines, and permission or I/O errors gracefully with informative messages to the user.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+import re
 from re import Match
+import sys
 from typing import Optional, Sequence
 
 SHIFT_RE = re.compile(r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})")

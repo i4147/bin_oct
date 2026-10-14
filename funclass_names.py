@@ -1,15 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a codebase or archive of Python source files and reports functions and methods that appear to be unused, i.e., candidates for dead code removal. The tool should accept a path to a project directory, a single Python file, or a compressed archive (such as a zip or tar file) and locate all Python source files within it, reading archive contents directly without requiring full extraction to disk.
+The script should parse each Python file into its syntactic structure to collect every function and method definition, along with its location (file and line number). It should then determine which of those definitions are referenced anywhere else in the analyzed code, treating names used in calls, attribute access, and other references as usages. The tool must maintain a built-in exclusion list of conventional entry-point and dunder/magic method names (such as common main/run/start names and Python protocol methods) so that these are never flagged as unused.
+Processing should be efficient for large projects: the work of parsing files should be distributed across multiple worker processes when there are many files, with a visible progress indicator showing completed files, elapsed time, and estimated remaining time in the terminal. Files that fail to parse (syntax errors, encoding issues) should be skipped gracefully with a warning rather than halting the run.
+The output should present a clear, human-readable report listing each potentially unused function or method with its file path and line number, grouped by file and sorted sensibly, along with a summary count of definitions analyzed and flagged. The tool should also support a machine-readable output option (such as JSON) for integration with other tools, and an option to include or exclude specific file patterns or names from analysis. Exit with a status code indicating whether any unused definitions were found, so the tool can be used in continuous integration pipelines.
+---"""
 
+from __future__ import annotations
 import ast
+from collections import defaultdict
 import json
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tarfile
+from typing import Iterator
 import zipfile
-from collections import defaultdict
-from pathlib import Path
-from typing import Dict, Iterator, List, Set, Tuple
-
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
@@ -152,7 +157,6 @@ SKIP_NAMES: set[str] = {
     "hook",
     "lambda_func",
 }
-
 EXCLUDED_DIRS: set[str] = {
     ".git",
     ".hg",
@@ -173,11 +177,8 @@ EXCLUDED_DIRS: set[str] = {
     ".idea",
     ".vscode",
 }
-
 ARCHIVE_SUFFIXES: tuple[str, ...] = (".whl", ".tar.gz", ".tar.xz", ".tar.zst")
-
 HAS_NATIVE_ZSTD: bool = sys.version_info >= (3, 14)
-
 WorkerResult = tuple[
     dict[str, int],
     dict[str, int],
@@ -253,18 +254,17 @@ def _iter_tar_zst_zstandard(path: Path, messages: list[str]) -> Iterator[tuple[s
         messages.append(f"[skip] {path}: zstandard module not installed")
         return
     try:
-        with zstandard.open(path, "rb") as f:
-            with tarfile.open(fileobj=f, mode="r:") as tf:
-                for member in tf.getmembers():
-                    if member.isfile() and member.name.endswith(".py"):
-                        try:
-                            fobj = tf.extractfile(member)
-                            if fobj is None:
-                                continue
-                            source = fobj.read().decode("utf-8")
-                            yield f"{path}::{member.name}", source
-                        except (UnicodeDecodeError, KeyError) as e:
-                            messages.append(f"[skip] {path}::{member.name}: {e}")
+        with zstandard.open(path, "rb") as f, tarfile.open(fileobj=f, mode="r:") as tf:
+            for member in tf.getmembers():
+                if member.isfile() and member.name.endswith(".py"):
+                    try:
+                        fobj = tf.extractfile(member)
+                        if fobj is None:
+                            continue
+                        source = fobj.read().decode("utf-8")
+                        yield f"{path}::{member.name}", source
+                    except (UnicodeDecodeError, KeyError) as e:
+                        messages.append(f"[skip] {path}::{member.name}: {e}")
     except (tarfile.TarError, OSError, zstandard.ZstdError) as e:
         messages.append(f"[skip] {path}: {e}")
 
@@ -319,14 +319,12 @@ def process_path(path: Path) -> WorkerResult:
     name_uses: dict[str, int] = defaultdict(int)
     attr_uses: dict[str, int] = defaultdict(int)
     messages: list[str] = []
-
     for name, source in _iter_sources_from_path(path, messages):
         try:
             tree = ast.parse(source, filename=name)
         except SyntaxError as e:
             messages.append(f"[skip] {name}: {e}")
             continue
-
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if node.name not in SKIP_NAMES:
@@ -338,7 +336,6 @@ def process_path(path: Path) -> WorkerResult:
                 name_uses[node.id] += 1
             elif isinstance(node, ast.Attribute):
                 attr_uses[node.attr] += 1
-
     return (
         dict(func_defs),
         dict(class_defs),
@@ -353,14 +350,12 @@ def write_json(path: Path, data: list[dict[str, int]]) -> None:
 
 
 def main() -> None:
-    directory = Path(".")
+    directory = Path()
     console = Console()
-
     func_defs: dict[str, int] = defaultdict(int)
     class_defs: dict[str, int] = defaultdict(int)
     name_uses: dict[str, int] = defaultdict(int)
     attr_uses: dict[str, int] = defaultdict(int)
-
     with Progress(
         TextColumn("[bold blue]Scanning"),
         BarColumn(),
@@ -373,10 +368,8 @@ def main() -> None:
         transient=False,
     ) as progress:
         task = progress.add_task("scan", total=None)
-
         paths = _collect_paths(directory, [])
         progress.update(task, total=len(paths))
-
         with mp.Pool() as pool:
             for fd, cd, nu, au, msgs in pool.imap_unordered(process_path, paths, chunksize=8):
                 progress.update(task, advance=1)
@@ -396,13 +389,10 @@ def main() -> None:
 
     func_json = [{name: usage(name)} for name in func_defs]
     class_json = [{name: usage(name)} for name in class_defs]
-
     func_json.sort(key=lambda d: next(iter(d.values())), reverse=True)
     class_json.sort(key=lambda d: next(iter(d.values())), reverse=True)
-
     write_json(Path("func.json"), func_json)
     write_json(Path("class.json"), class_json)
-
     console.print(f"Wrote func.json ({len(func_json)} entries)")
     console.print(f"Wrote class.json ({len(class_json)} entries)")
 

@@ -1,14 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for shell-style script files and extracts every named function defined in them into separate, standalone output files. The tool should accept a source directory and an output directory from the command line, and it should use parallel processing to handle many files efficiently.
+Key requirements:
+- **Input discovery:** Recursively walk the given directory and identify candidate files that are likely shell scripts. Detect them either by a shell shebang line on the first line (recognizing common shells such as bash, sh, dash, ksh, zsh, and ash) or by file extension, while explicitly skipping files with source-code and compiled-binary extensions (for example Python, C/C++, JavaScript/TypeScript, Lua, Perl, and similar formats) so they are never treated as shell scripts.
+- **Size and safety limits:** Ignore files larger than a configurable maximum size (with a sensible default of about one megabyte). Handle unreadable files, encoding problems, and missing paths gracefully without crashing the whole run.
+- **Function extraction:** Parse each qualifying file line by line and recognize shell function definitions in both common styles (with or without the `function` keyword, and with or without empty parentheses before the opening brace). Capture each function's complete body by tracking brace nesting, so nested blocks and braces inside strings or comments do not break extraction where reasonably possible.
+- **Output:** For each extracted function, write a separate file into the output directory, named after the function. Sanitize function names so that only safe filename characters remain, and avoid overwriting by handling name collisions (for example by appending a counter or source-derived suffix). Each output file should contain the function text and enough header information to trace it back to its original file and line range. Create the output directory if it does not exist.
+- **Parallelism:** Process files concurrently using a configurable number of worker processes (default around eight), and allow the user to set this from the command line. Ensure the script works safely on platforms with restricted multiprocessing support, falling back to sequential processing when needed.
+- **Command-line interface:** Provide options for the source directory, output directory, maximum file size, worker count, and verbosity/logging level. Include a summary at the end reporting how many files were scanned, how many functions were extracted, and how many files were skipped or failed.
+- **Logging:** Use a configurable logger with debug, info, and warning levels so users can follow progress and diagnose problems.
+- **Robustness and portability:** Work on Linux, macOS, and Windows, and include special handling for constrained environments such as Termux where appropriate. The script should exit with a clear error message for invalid arguments and a non-zero status code on fatal failures.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import sys
-from multiprocessing import Pool
-from pathlib import Path
 from typing import TYPE_CHECKING, Final, Protocol
 
 if TYPE_CHECKING:
@@ -81,7 +91,7 @@ class _PrintLogger:
 def make_logger(use_loguru: bool, verbose: bool) -> _LoggerProtocol:
     if use_loguru:
         try:
-            from loguru import logger  # type: ignore
+            from loguru import logger
         except ImportError:
             print(
                 "loguru is not installed; falling back to stdlib logger",

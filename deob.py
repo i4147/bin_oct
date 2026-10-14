@@ -1,11 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a shell-style configuration or build-definition file, resolves simple variable assignments and their references, and then extracts and evaluates a single embedded command expression to produce a final, fully expanded result.
+The tool should accept a file path as its main input (via command-line arguments) and print or return the resolved output to the user. Its key behaviors are:
+- Parse plain variable assignments from the file, supporting both single-quoted values (taken literally) and double-quoted values (where common escape sequences are honored).
+- Locate the first occurrence of an `eval` directive whose argument is a double-quoted string, and extract that expression.
+- Substitute references of the form `${NAME}` (and any equivalent simple forms) in the extracted expression using the parsed variables, leaving unknown references unchanged rather than failing.
+- Produce the fully substituted expression as the result, and report clearly when no `eval` directive is found or when the input file cannot be read.
+- Handle errors gracefully with informative messages and non-zero exit codes for invalid usage or missing files.
+- Keep the implementation self-contained, readable, and dependency-free beyond the Python standard library, with a clear command-line interface that includes help text.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 _ASSIGN_RE = re.compile(
     r"""

@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively encrypts every file within a user-specified directory tree using symmetric block-cipher encryption. The t directory path from the command line and generate or accept an encryption key, with the key length defaulting to a secure 32-character value built from letters and digits. For each discovered file, the script should read its contents, apply standard padding so the data fits a fixed block size, encrypt it with a randomly generated initialization vector that is stored alongside the ciphertext, and write the result back so the original content is protected. The output should be the encrypted files in place, with the IV prepended or otherwise recoverable for each file. The script should handle nested subdirectories, skip or report files it cannot process without crashing, and print a clear summary of how many files were processed and any errors encountered. It should also provide a way to display or save the key used so the data can later be decrypted, and be structured so that a companion decryption workflow could reverse the process using the same key and stored IVs. Include helpful command-line help text describing each argument.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import os
+from pathlib import Path
 import random
 import string
-from collections.abc import Callable, Iterator
-from pathlib import Path
-
+from typing import TYPE_CHECKING
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 AES_BLOCK_SIZE = 128
 
 
@@ -73,7 +75,7 @@ def main() -> None:
         action = decrypt_file
     else:
         raise SystemExit(msg)
-    for path in walk_files(Path(".")):
+    for path in walk_files(Path()):
         if path.is_file() and path.name != "key":
             action(path, key)
 

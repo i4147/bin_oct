@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that generates type stub files (.pyi) for Python source files, using an external stub generator tool. The script should accept one or more Python file paths as command-line arguments; if no arguments are given, it should discover all Python files in the current working directory automatically. For each source file, it should create a corresponding stub file in the same location, but skip any file whose stub already exists, reporting that skip clearly. When generating stubs, it should report success or failure for each file, and on failure it should show the error output produced by the generator. When multiple files are provided, the script should process them concurrently or in parallel to speed up the work. After processing, it should identify which of the given files still lack a stub file and report that list to the user. The script should print concise, human-readable progress messages throughout, and exit with a success status code when handled normally, returning control cleanly after a single-file run.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
-
 from dh import get_files, mpf
 
 

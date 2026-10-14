@@ -1,16 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that translates in a plain-text input file into English, using a translation service, and produces both a translated output file and a record of the translations.
+The tool should accept command-line arguments specifying the input file path, an output file path, and optionally a file for saving the translation mapping and options controlling batching behavior and parallelism. It should read the input file as UTF-8 and process only non-empty lines, ignoring blank lines. Only lines that actually contain Persian/Arabic-script characters should be sent for translation; all other lines should pass through unchanged.
+To keep requests efficient and within service limits, group the lines needing translation into batches whose combined length stays under a configurable character limit, so that each batch is translated in a single request. Batches should be translated concurrently using a pool of worker processes to speed up large files, with the number of workers configurable. Include a small delay or retry handling so that transient network or rate-limit failures are retried a limited number of times before the tool logs the error and continues with the original text for the affected lines.
+The script should write the final output so that each original line is replaced by its English translation (or kept as-is if untranslated), preserving the original line order. It should also save a JSON file mapping each original Persian line to its translation, written with UTF-8 encoding and human-readable formatting. Progress and errors should be reported through a logging facility, showing how many batches were processed, how many translations succeeded or failed, and the total elapsed time at completion.
+The tool should exit with a clear error message if the input file does not exist or cannot be read, and should handle keyboard interruption gracefully by reporting partial progress.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import json
+from multiprocessing.pool import Pool
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing.pool import Pool
-from pathlib import Path
 from typing import Final, Sequence
-
 from deep_translator import GoogleTranslator
 from loguru import logger
 

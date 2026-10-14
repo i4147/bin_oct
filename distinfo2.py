@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that cleans up installed Python package metadata directories (the ".dist-info" folders inside a site-packages location) to reduce disk usage by removing non-essential files. The script should accept a target directory (such as a Python environment's site-packages folder), locate every installed package metadata folder within it, and selectively delete files that are not needed at runtime. Keep only core metadata files such as the package description, file manifest, wheel information, and top-level module listing. Remove other extras such as installer markers, requested-install flags, direct URL records, and a wide range of license, copyright, author, and notice files, including common variants with different extensions and capitalizations. In addition, detect any licenses subdirectory inside a metadata folder and remove it entirely, but only when it sits within a folder whose name identifies it as distribution metadata. Report each removal to the user with a clear message, handle missing or already-cleaned directories gracefully, and avoid touching anything outside package metadata folders. The script should be safe to run repeatedly, provide a summary of how many files and directories were removed, and display the Python version it is running under at startup. Use the standard console output and rely on the project's existing helper utilities for colored or formatted printing where appropriate.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
-
 from dh import cprint
 
 major, minor, _, _, _ = sys.version_info

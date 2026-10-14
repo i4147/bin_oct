@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes a source file or a directory of Python files as input, strips out all comments and docstrings from the Python code, and writes the cleaned code back out as a minified or compacted version. The script should process every Python file it finds in the given location, handle nested folders when appropriate, and preserve the original code's functional behavior while removing human-readable documentation. It should also include a utility for renaming identifiers to shorter names, so that the resulting code is more compact, while keeping names that must not change (such as dunder names, keywords, and built-ins) intact. The script should accept command-line arguments to specify the target path and where the output should be saved, and it should report clearly which files were processed and any errors encountered without stopping the entire run on a single failure. Output should be written to a separate location so the original files are never overwritten unless explicitly requested.
+---"""
 
 from __future__ import annotations
-
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
-
 from dh import get_pyfiles, mpf
 
 

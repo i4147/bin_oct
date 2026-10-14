@@ -1,30 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Unified LZ4 compression tool.
-
-Consolidates lz5.py, lzer.py and lzr.py into a single CLI.
-
-Usage:
-    python merged.py compress   [options] [paths ...]
-    python merged.py decompress [options] [paths ...]
-
-Examples:
-    python merged.py compress                              # auto: files -> .lz4, folders -> .tar.lz4
-    python merged.py compress --mode folders               # lz5 behaviour (subfolders -> .tar.lz4)
-    python merged.py compress --mode files --recursive     # lzer behaviour (walk tree, file -> .lz4)
-    python merged.py compress --level 9 --keep             # lzr high-compression, keep originals
-    python merged.py decompress                            # decompress every .lz4 / .tar.lz4 in CWD
-"""
+"""Write a Python script that acts as a command-line tool for compressing and decompressing files and directory trees using LZ4 frame compression, with a focus on speed and parallel processing for large inputs.
+The tool should accept a source path (single file or directory) and an output destination, and it should support both compressing and decompressing operations selectable through command-line arguments. When compressing a directory, it should walk the tree, preserve the relative folder structure, and bundle the contents into a single archive or write individual compressed files, depending on a clearly documented option. When decompressing, it should restore the original files and directory layout faithfully and report any errors without leaving partially written output.
+Key behaviors to include:
+- Skip files that are already compressed (based on a configurable or built-in list of common compressed extensions) and files below a configurable minimum size, copying them through unchanged instead.
+- For large files, split the data into chunks and compress them in parallel across multiple worker processes, then reassemble the compressed segments in order so that the output remains a valid, self-describing stream.
+- Allow the user to configure the compression level, worker count, chunk size, chunk threshold, and block size, with sensible defaults and validation that rejects out-of-range values with clear error messages.
+- Optionally enable content checksums to verify data integrity, and verify them during decompression.
+- Show progress or a summary at the end, including original size, compressed size, compression ratio, and elapsed time, formatted in human-readable units.
+- Provide a dry-run mode that reports what would be compressed or skipped without writing any output.
+- Handle errors gracefully: missing paths, permission problems, corrupted input, and interrupted operations should produce clear messages and a non-zero exit status, and temporary artifacts should be cleaned up.
+- Preserve file metadata such as modification times and permissions where the platform allows.
+- Use a clear command-line interface with help text describing every option, and return appropriate exit codes for success, partial failure, and fatal errors.
+The script should be self-contained, safe to run on large datasets, and designed so that the parallel and single-threaded paths produce identical results for the same input.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+import contextlib
 import io
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
-
 import lz4.frame
 
 DEFAULT_SKIP_EXT = {".gz", ".br", ".xz", ".zst", ".bz2", ".zip", ".whl", ".lz4", ".7z", ".rar"}
@@ -82,7 +80,6 @@ def compress_file(
         if size < chunk_threshold or workers <= 1:
             dst.write_bytes(_compress_bytes(src.read_bytes(), level, block_size, checksum))
             return True
-
         n = (size + chunk_size - 1) // chunk_size
         with src.open("rb") as f:
             chunks = [f.read(chunk_size) for _ in range(n)]
@@ -95,10 +92,8 @@ def compress_file(
     except Exception as e:
         print(f"  ! Failed to compress {src}: {e}", file=sys.stderr)
         if dst.exists():
-            try:
+            with contextlib.suppress(OSError):
                 dst.unlink()
-            except OSError:
-                pass
         return False
 
 
@@ -118,10 +113,8 @@ def tar_compress_folder(folder: Path, *, level: int, checksum: bool, block_size:
         return True, f"{folder.name}: {human_size(len(raw))} -> {human_size(len(comp))}"
     except Exception as e:
         if dst.exists():
-            try:
+            with contextlib.suppress(OSError):
                 dst.unlink()
-            except OSError:
-                pass
         return False, f"Error compressing {folder.name}: {e}"
 
 
@@ -165,7 +158,6 @@ def _should_skip_file(p: Path, skip_ext: set, min_size: int) -> bool:
         return True
     if p.suffix.lower() in skip_ext:
         return True
-
     if ".tar." in p.name:
         return True
     try:
@@ -238,7 +230,6 @@ def cmd_compress(args) -> int:
             continue
         if not root.is_dir():
             continue
-
         if args.mode == "folders":
             for d in sorted(root.iterdir()):
                 if d.is_dir() and not d.is_symlink():
@@ -255,7 +246,6 @@ def cmd_compress(args) -> int:
                     _do_folder(p)
                 elif p.is_file():
                     _do_file(p)
-
     print(f"\n{'=' * 40}")
     print(f"Compressed: {stats['ok']}  skipped: {stats['skip']}  errors: {stats['err']}")
     if stats["before"]:
@@ -279,7 +269,6 @@ def cmd_decompress(args) -> int:
         else:
             it = root.rglob("*.lz4") if args.recursive else root.glob("*.lz4")
             candidates = sorted(p for p in it if p.is_file() and not p.is_symlink())
-
         for a in candidates:
             if not a.name.endswith(".lz4"):
                 continue
@@ -293,7 +282,6 @@ def cmd_decompress(args) -> int:
             else:
                 print(f"  - {msg}")
                 stats["err"] += 1
-
     print(f"\n{'=' * 40}")
     print(f"Decompressed: {stats['ok']}  errors: {stats['err']}")
     return 0 if stats["err"] == 0 else 1
@@ -306,7 +294,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     c = sub.add_parser("compress", help="Compress files and/or folders")
     c.add_argument("paths", nargs="*", default=["."], help="Paths to process (default: current directory)")
     c.add_argument(
@@ -348,12 +335,10 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--skip-ext", nargs="*", default=None, help="File extensions to skip (default: archive formats)")
     c.add_argument("--no-checksum", action="store_true", help="Disable LZ4 content checksum")
     c.set_defaults(func=cmd_compress)
-
     d = sub.add_parser("decompress", help="Decompress .lz4 and .tar.lz4 files")
     d.add_argument("paths", nargs="*", default=["."], help="Paths to process (default: current directory)")
     d.add_argument("--recursive", action="store_true", help="Walk directories recursively")
     d.set_defaults(func=cmd_decompress)
-
     return p
 
 

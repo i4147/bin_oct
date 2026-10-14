@@ -1,18 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as an interactive bilingual (Persian/English) command-line dictionary lookup tool. The tool should load a word-pair dictionary from a JSON file in the user's home directory, where each entry maps a Persian term to its English equivalent. If the dictionary file is missing or cannot be parsed, the tool should log a clear error message and exit with a non-zero status.
+The script should support two modes of use:
+1 mode**: The user passes a word or phrase as a command-line argument. The tool looks it up in either direction (Persian-to-English or English-to-Persian), prints the translation if found, and exits. If no exact match exists, it should suggest close matches using fuzzy string matching.
+2. **Interactive mode**: When no argument is given, the tool starts a continuous prompt loop where the user can type words repeatedly. The prompt should offer tab-completion over all known words in both languages, retain command history across inputs, and exit cleanly on an exit command or end-of-input (Ctrl+D) or interrupt (Ctrl+C), printing a friendly farewell.
+Additional behaviors to include:
+- Automatically detect whether the entered text is Persian or English so the correct direction is used, while still allowing lookups to succeed when the text matches either side.
+- Handle right-to-left Persian text correctly in terminal output.
+- Provide a helpful usage/help message describing both modes and any flags.
+- Use a consistent, readable output format for results, including the "not found" case with suggestions.
+- Keep the code robust against empty input, whitespace, and unexpected characters.
+- Log informational and error messages through a standard logging setup rather than bare prints where appropriate.
+The script should rely on a small external formatting helper for displaying styled or RTL-aligned text, and should be organized so that loading, lookup, completion setup, and the interactive loop are clearly separated concerns.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from difflib import get_close_matches
 import json
 import logging
+from pathlib import Path
 import readline
 import shutil
 import subprocess
 import sys
-from difflib import get_close_matches
-from pathlib import Path
 from typing import Final
-
 from faprint import faprint
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")

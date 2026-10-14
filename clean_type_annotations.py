@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a given directory (or a single Python file) for Python source files and removes all type annotations from them, producing type-free code while keeping the rest of each file's logic, formatting, comments, and structure intact.
+The tool should accept a target path from the command line and process every eligible `.py` file found under it, skipping cache and hidden build directories such as `__pycache__`. Annotation removal should cover function parameter annotations, function return annotations, class-level and variable annotations, and generic type parameter declarations, while leaving default values and executable code unchanged. Files should be rewritten in place only after the transformation succeeds, and any file that fails to parse or transform should be reported to the user without aborting the whole run.
+For performance, the script should process files concurrently using a configurable number of worker processes (defaulting to eight), and it should print a concise summary at the end listing how many files were processed, modified, skipped, and failed. The output should be clean and suitable for use in continuous integration or pre-commit workflows, with a non-zero exit status when any file fails. Include a dry-run option that reports which files would change without writing anything, and a verbose option that shows per-file details. The solution should be robust against encoding issues by detecting each file's declared encoding, and it should preserve the original file's line endings and trailing newline behavior.
+---"""
 
 from __future__ import annotations
-
 import contextlib
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import tokenize
-from pathlib import Path
 from typing import TYPE_CHECKING
-
 import libcst as cst
 
 if TYPE_CHECKING:

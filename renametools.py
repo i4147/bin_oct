@@ -1,16 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python command-line tool that batch-renames files and folders in a file system, based on a set of rename rules supplied by the user. The tool should accept one or more file or directory paths as input, optionally traverse directories recursively, and filter the targets by file extension (case-insensitive) and optionally include directories as rename candidates. It should skip symbolic links and avoid processing the same path twice.
+The core behavior is to compute new names from the original names using pattern-based transformations such as text replacement, regular-expression substitution, prefixing, suffixing, numbering with configurable start and padding, and case conversion. Users should be able to combine these operations and preview the results before anything changes. Include a dry-run mode that prints a clear before-and-after report without modifying the file system, and an apply mode that performs the renames. The tool must detect and refuse conflicts such as two sources mapping to the same target, a target that already exists, or invalid characters for the operating system, and it should report these clearly rather than overwriting data.
+Support an optional undo or rollback log that records each rename so the operation can be reversed. Process large batches efficiently, optionally using parallel workers for computing new names. Report progress and summary statistics (counts of renamed, skipped, and failed items) through logging, and return a non-zero exit status when errors occur. Provide a clear help message describing all options, with sensible defaults and validation of user-supplied arguments.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
-import logging
-import os
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+import logging
+import os
+from os.path import commonpath
 from pathlib import Path
+import re
+import sys
 from typing import Iterator, Optional, Sequence
 
 log = logging.getLogger("renametools")
@@ -84,7 +88,7 @@ def safe_rename(src: Path, dst: Path, *, dry_run: bool, verbose: bool = True) ->
 def _common_prefix(strings: Sequence[str]) -> str:
     if not strings:
         return ""
-    return os.path.commonprefix(list(strings))
+    return commonpath(list(strings))
 
 
 def _common_suffix(strings: Sequence[str]) -> str:
@@ -177,7 +181,7 @@ DIM_IN_NAME = re.compile(r"\d+[xX]\d+")
 
 def _image_dimensions(path: Path) -> Optional[tuple[int, int]]:
     try:
-        import cv2  # type: ignore
+        import cv2
     except ImportError:
         msg = "opencv-python (cv2) is required for the 'images' subcommand."
         raise RuntimeError(msg)

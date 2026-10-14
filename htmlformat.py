@@ -1,19 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that formats HTML files in place, using a concurrent, parse-tree-based approach to reindent and normalize markup while preserving the document's content and semantics.
+The tool should accept one or more file or directory paths on the command line, recursively discover HTML files (common HTML extensions such as .html, .htm, and .xhtml), and skip files that exceed a reasonable size limit (around 50 MB) with a clear warning. It should process files in parallel using a modest pool of worker processes so large batches complete quickly.
+For each file, parse the HTML into a structural tree, then rewrite it with consistent indentation, one block-level element per line, and sensible line breaks for inline and block content. Block-level tags (such as html, head, body, div, sections, lists, tables, and forms) should be placed on their own lines and nested with indentation, while inline elements should stay on the same line as surrounding text where that preserves rendering. Attributes should be normalized in spacing and quoting, void elements (such as br, img, input, meta, link) should be handled correctly, and the contents of script, style, pre, and textarea elements must be left untouched so that whitespace-sensitive or code content is not altered. Comments and doctype declarations should be preserved.
+The tool must be safe: it should only overwrite a file when formatting actually changes its content, it should never lose or alter visible text or meaningful attributes, and it should report errors for malformed or unreadable files without stopping the rest of the batch. Provide an option to run in a dry-run or check mode that reports which files would change without writing anything, and a summary at the end showing how many files were processed, modified, skipped, or failed, along with total bytes handled and tags formatted.
+Logging should use a clear timestamped format at the info level, with warnings and errors reported to standard error. If required parsing dependencies are missing, the script should print a helpful installation message and exit with a non-zero status code. The output should be a single, self-contained, well-organized script with a command-line interface that includes a help message describing its usage.
+---"""
 
 from __future__ import annotations
-
+from dataclasses import dataclass
 import logging
 import multiprocessing as mp
-import sys
-from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 try:
-    import tree_sitter_html as ts_html
     from tree_sitter import Language, Node, Parser
+    import tree_sitter_html as ts_html
 except ImportError:
     print("Error: Required packages not installed.", file=sys.stderr)
     print("Install with: pip install tree-sitter tree-sitter-html", file=sys.stderr)

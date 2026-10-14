@@ -1,7 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans one or more user-supplied files or directories for Python source files and extracts their structural definitions into organized output. The tool should accept a list of file paths and/or folder paths as input, recursively walk directories while skipping common non-source folders such as test, example, and output directories, and identify Python scripts either by a ".py" extension or by a Python shebang line in the first line of an extensionless file.
+For every discovered script, the tool should parse the source code to locate top-level class definitions, top-level function definitions, and module-level constant assignments. Each category should be written to its own dedicated output subdirectory (classes, functions, and constants), with one output file per extracted item named clearly after the item and its source script so results remain traceable. Each output file should contain the complete source text of the extracted definition or assignment, preceded by a short header noting the originating file and line range.
+The processing of many files should run in parallel using a fixed pool of worker processes to keep throughput high on large codebases. The tool must handle unreadable files, encoding problems, and syntax errors gracefully by logging a warning and continuing with the remaining files rather than aborting the whole run. At completion, it should print a concise summary reporting the number of files scanned, the number of classes, functions, and constants extracted, and any files that were skipped or failed. The script should be runnable from the command line, accept its inputs as arguments, and create the output directories automatically if they do not exist.
+---"""
 
 from __future__ import annotations
-
 import ast
 import multiprocessing as mp
 import os

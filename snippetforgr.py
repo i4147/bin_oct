@@ -1,14 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for extracting fenced code blocks from text or Markdown documents and saving them as individual source files. The tool should accept one or more input files (or read from standard input) containing Markdown-style fenced code blocks, identify each block along with its declared language tag, and write each block to an appropriately named file in a userosing sensible file extensions based on the language tag (with a sensible fallback for unknown or missing tags).
+Key requirements:
+- **Inputs:** One or more input document paths or standard input; an output directory (created if it does not exist); optional flags to control behavior such as overwrite handling, filtering by language, restricting output to source-code file types, and choosing whether to process files in parallel for speed.
+- **Parsing:** Recognize fenced code blocks delimited by triple backticks or tildes, including optional language identifiers and attributes after the opening fence. Handle nested or malformed fences gracefully and report them rather than crashing.
+- **Naming and placement:** Generate unique, predictable filenames that include the source document name, block index, and the correct extension derived from a built-in mapping of common languages (e.g., Python, JavaScript, C/C++, Java, Go, Rust, shell, SQL, YAML, JSON, HTML, CSS, Markdown, plain text). Avoid overwriting existing files unless explicitly allowed; otherwise, add a numeric suffix or skip with a clear message.
+- **Filtering:** Support a mode that keeps only blocks whose language maps to recognized source-code extensions, and an option to restrict extraction to specific languages supplied by the user.
+- **Parallelism:** Optionally process multiple input documents concurrently, while keeping output deterministic and error handling per file isolated.
+- **Output and reporting:** Print a concise summary listing each extracted file and its origin, plus counts of extracted, skipped, and failed blocks. Optionally emit a machine-readable JSON manifest describing all extracted artifacts.
+- **Error handling:** Validate arguments, report unreadable files or unwritable directories with clear messages, return meaningful non-zero exit codes on failure, and never leave partially written files behind when an error occurs.
+- **Behavior:** Be safe with file paths (no writing outside the output directory), cross-platform, and provide a `--help` description of all options.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import json
-import re
-import sys
 from dataclasses import dataclass
+import json
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Iterable, Iterator, Sequence
 
 SOURCE_CODE_EXTS: frozenset[str] = frozenset({

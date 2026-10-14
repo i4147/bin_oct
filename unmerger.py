@@ -1,10 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes a single merged text file as its command-line input, where the file contains multiple source files concatenated together, each introduced by a header line in the form "# File: <relative path>". The script should read the merged file, split it back into its individual files based on these headers, and recreate each file at its original relative path. Trim any leading blank lines and trailing whitespace from each extracted file's content so the output is clean.
+Key behaviors:
+- If no input file argument is provided, print a brief usage message and exit with a non-zero status.
+- Handle the input file gracefully: if it cannot be read, report a clear error and exit with a non-zero status.
+- Create any missing parent directories needed for each recovered file.
+- Never silently overwrite existing files. If a target path already exists, generate a unique alternative name by appending an incrementing numeric suffix before the file extension (e.g., "name_1.ext", "name_2.ext") and write to that instead.
+- Preserve the original relative directory structure and file names as much as possible.
+- Write files using UTF-8 encoding and report to the user, for each file, the path it was written to.
+- Handle edge cases such as empty input, headers with no following content, and duplicate headers within the same merged file.
+- Provide a concise summary at the end indicating how many files were recovered.
+The script should be a standalone, runnable tool with a clear entry point, suitable for use from the command line.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def parse_merged_file(path):

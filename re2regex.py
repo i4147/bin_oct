@@ -1,13 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a directory tree for Python source files and toggles the way the `re` regular-expression module is imported in each file. In its default mode, the script should replace the standard-library `re` import line with an equivalent import of the third-party `regex` package aliased as `re`, so that the rest of each file continues to work unchanged. In reverse mode, it should undo that change, restoring the standard `import re` form.
+The script should accept a root directory path (defaulting to the current directory) and a flag that selects the reverse direction. It should locate every `.py` file under the root, process them in parallel using a pool of about eight worker processes to keep throughput high on large trees, and rewrite only the first matching import statement found at the start of a line in each file, leaving all other content, line endings, and encoding intact (UTF-8).
+Each file should be handled independently: if a file cannot be read due to an operating-system error, the script should record a clear error message naming the file and the reason, and continue processing the remaining files without crashing. Files without a matching import should be left untouched and not rewritten.
+Logging should be handled through a structured logging facility, reporting which files were modified, which were skipped, and any errors encountered, with a final summary of counts for updated, unchanged, and failed files. The script should exit with a non-zero status code if any file failed to process, and zero otherwise. Provide a clear command-line interface with help text describing the directory argument and the reverse option.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Final, TypeAlias
-
 from loguru import logger
 
 if TYPE_CHECKING:

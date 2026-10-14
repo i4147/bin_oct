@@ -1,9 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a project directory tree and identifies which text files are written in a natural (human) language, then reports the detected language of each. The tool should run from the current working directory and recursively walk its contents while ignoring version-control folders, dependency and build directories, hidden directories, and common binary or media file types. It should only consider files that contain readable text, skipping any binary content.
+Key behaviors:
+- Read each candidate file and extract a meaningful text sample, ignoring very short fragments that would yield unreliable results.
+- Detect the natural language of the text using a lightweight offline language identification model, and report only detections whose confidence meets a reasonable threshold.
+- Handle unreadable files, encoding problems, and I/O errors gracefully without stopping the scan.
+- Produce a clear, human-readable report listing each file with its detected language and confidence, plus a summary of how many files were found per language and how many were skipped or inconclusive.
+- Use colored, visually distinct terminal output for headings, language labels, and warnings, with a sensible fallback when the output is not a terminal.
+- Allow the user to optionally filter results by language or confidence and to limit the scan to a given path, while defaulting to the current directory.
+- Exit with a meaningful status code and display concise usage information when invoked incorrectly.
+The result should be a robust, self-contained command-line utility that can be run safely on arbitrary project folders.
+---"""
 
+from __future__ import annotations
 import math
-import sys
 from pathlib import Path
-
+import sys
 import py3langid as langid
 
 ROOT = Path.cwd()
@@ -46,7 +57,6 @@ SKIP_EXTS = {
 }
 MIN_LEN = 12
 MIN_CONF = 0.65
-
 RESET = "\033[0m"
 BOLD = "\033[1m"
 YELLOW = "\033[33m"

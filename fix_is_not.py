@@ -1,12 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree (or a set of individual files) for Python source files and detects a specific anti-pattern: the use of the "is not" operator where a comparison is intended. The script should work on the token level so that it only flags genuine code occurrences and ignores matches inside strings, comments, or other non-code text.
+The tool should accept a path to a file or directory as input, with an option to recurse into subdirectories and an option to automatically rewrite the detected occurrences into the appropriate alternative form, while leaving the rest of the source untouched. It should process multiple files concurrently to handle large codebases efficiently.
+For every file, report the file path, the number of occurrences found, and the line numbers where they appear. When auto-fix is enabled, write the corrected content back to the file only if changes were made, and clearly indicate which files were modified. Files that cannot be read or parsed should be reported with a clear error message without stopping the overall run.
+Finish with a summary showing the total number of files scanned, files with findings, total occurrences found, files fixed, and any errors encountered. The command-line interface should be simple and self-explanatory, providing help text describing the arguments and options. The output should be human-readable, and the script should exit with a non-zero status when issues are found in check-only mode so it can be used in continuous integration pipelines.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import os
-import tokenize
 from pathlib import Path
+import tokenize
 
 
 def process_file(path: Path, auto_fix: bool = False) -> dict:

@@ -1,14 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory for text (non-binary) files, counts how often each lowercase alphabetic word appears across all of them, and saves the aggregated word frequencies to a JSON file.
+The tool should:
+- Default to the current working directory when no directory is specified, and accept a directory as input.
+- Discover only plain-text files, skipping binary files automatically.
+- Process files concurrently using a bounded pool of worker processes so that large sets of files are handled efficiently.
+- Treat words as sequences of lowercase English letters bounded by word boundaries, ignoring case, digits, and punctuation. Read files leniently so that encoding errors never stop processing.
+- Merge the per-file counts into a single combined tally of all words found across every file.
+- Write the final combined counts to a JSON output file named "counter.json" in the working directory, with words mapped to their total occurrence counts.
+- Log progress and summary information: report how many text files were found, log debug-level details for each processed file, and log warnings for any file that fails to process without aborting the rest of the run.
+- Handle failures gracefully, continuing with the remaining files and reporting any problems clearly.
+- Run as a command-line tool that executes the full workflow when invoked directly.
+---"""
 
 from __future__ import annotations
-
-import json
-import re
 from collections import Counter
+import json
 from multiprocessing import Pool
 from pathlib import Path
+import re
 from typing import Any
-
 from dh import get_nobinary
 from loguru import logger
 

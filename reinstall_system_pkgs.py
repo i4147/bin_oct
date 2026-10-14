@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a text file containing a list of system package names (one per line, ignoring blank lines) passed as a command-line argument, and reinstalls each package in sequence using the system's package manager in forced-reinstall, non-interactive mode. The script should accept a path that may use a home-directory shorthand, and it must exit with a usage message if no argument is given and with a clear error if the file does not exist.
+Before processing, the script should report how many packages will be handled. While processing, it should show live progress in the form of a running counter (current index out of total) and the package name being reinstalled, flushing output so progress appears immediately. After each package, it should report success or failure along with the exit status of the operation.
+Failures must not stop the run: every package should be attempted. Any package that fails should be recorded in a report file written to the user's home directory, which is cleared at the start of each run so it reflects only the current execution. At the end, the script should print a concise summary showing how many packages were processed and how many failed, and point the user to the failure report location.
+Include a short, deliberate pause between consecutive package operations to avoid overwhelming the system or the package manager. The script should be robust, readable, and suitable for running from a terminal with appropriate exit codes (non-zero when the input is invalid, and a meaningful status reflecting whether any reinstallation failed).
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 
 def main():

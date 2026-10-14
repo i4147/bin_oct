@@ -1,15 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Python source files and detects duplicated code definitions across the project, then reports them in a structured JSON file.
+The tool should:
+- Recursively discover all Python files under a given root directory, skipping version-control metadata folders.
+- Parse each file and identify top-level and nested definitions (functions, async functions, classes, and similar named code blocks), recording each one by its identity (such as its name, kind, and enclosing scope) along with the file it came from.
+- Normalize each definition's source text (ignoring trailing whitespace and insignificant blank-line differences) so that formatting variations do not hide true duplicates.
+- Group definitions that share identical normalized bodies, and keep only those that appear at least a configurable threshold number of times (default: 2).
+- Process files in parallel across multiple worker processes (up to a fixed maximum of 8) to keep scanning fast on large projects, while tolerating and logging files that fail to parse without stopping the whole run.
+- Log progress and any errors using a clear, leveled logging approach.
+- Write the final results to a JSON file named "repeated.json" in the current working directory. For each repeated definition, the output should list its identifying information, the number of occurrences, and the locations (file paths) where it appears, with a summary of how many duplicate groups were found.
+- Accept the target root directory as an input (defaulting to the current directory) and exit cleanly with a meaningful status when the path is invalid or no Python files are found.
+- Be runnable as a standalone command-line script with a clear entry point.
+---"""
 
 from __future__ import annotations
-
 import ast
 import collections
 import json
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, cast
-
-import astor  # type: ignore[import-untyped]
+import astor
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -116,33 +126,25 @@ class ASTStripper(ast.NodeTransformer):
         self.target_names: set[str] = set(target_names)
         self.removed_something: bool = False
 
-    def visit_FunctionDef(  # type: ignore[override]
-        self, node: ast.FunctionDef
-    ) -> ast.FunctionDef | None:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef | None:
         if node.name in self.target_names:
             self.removed_something = True
             return None
         return cast("ast.FunctionDef", self.generic_visit(node))
 
-    def visit_AsyncFunctionDef(  # type: ignore[override]
-        self, node: ast.AsyncFunctionDef
-    ) -> ast.AsyncFunctionDef | None:
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef | None:
         if node.name in self.target_names:
             self.removed_something = True
             return None
         return cast("ast.AsyncFunctionDef", self.generic_visit(node))
 
-    def visit_ClassDef(  # type: ignore[override]
-        self, node: ast.ClassDef
-    ) -> ast.ClassDef | None:
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef | None:
         if node.name in self.target_names:
             self.removed_something = True
             return None
         return cast("ast.ClassDef", self.generic_visit(node))
 
-    def visit_Assign(  # type: ignore[override]
-        self, node: ast.Assign
-    ) -> ast.Assign | None:
+    def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
         for target in node.targets:
             if isinstance(target, ast.Name) and target.id in self.target_names:
                 self.removed_something = True

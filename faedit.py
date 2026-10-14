@@ -1,21 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that provides an interactive, terminal-based text editor for Persian (right-to-left) content. The tool should accept a text file path as input (or start with empty content), display the editable text in a full-screen terminal interface, and continuously show a live preview panel below or beside the editor. The preview should display only the lines surrounding the user's current cursor position (a small context window of a few lines above and below), with the text reformatted for correct Persian display (proper shaping and right-to-left ordering) so the user can see how the text will appear as they type.
+Key behaviors:
+- Allow full multiline editing with normal navigation keys, tab support, and text entry.
+- Update the contextual preview in real time as the cursor moves or the content changes.
+- Provide a keyboard shortcut to exit the editor cleanly, returning control to the shell.
+- Save edits back to the original file or to a path supplied on the command line when the user chooses to save.
+- Gracefully fall back to a simpler mode or a clear error message if the required terminal UI or Persian text-formatting dependencies are unavailable, reusing a bundled or locally available formatter where possible.
+- Accept command-line arguments for the input file and optionally an output file, and print helpful usage information when invoked incorrectly.
+- Handle missing files, encoding issues (use UTF-8), and unexpected interruptions without corrupting the user's data.
+---"""
 
+from __future__ import annotations
 import argparse
 import os
-import sys
 from pathlib import Path
+import sys
 
 try:
     from faprint import format_persian
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from core import format_persian
-
 CTX = 2
 
 
 def around(s, pos, n=CTX):
-    """Format only the lines near `pos` (keeps work/memory small)."""
     a = s.rfind("\n", 0, pos) + 1
     for _ in range(n):
         if a == 0:
@@ -39,7 +48,7 @@ def run_urwid(text):
     class Ed(urwid.Edit):
         def keypress(self, size, key):
             if key == "ctrl q":
-                raise urwid.ExitMainLoop()
+                raise urwid.ExitMainLoop
             key = super().keypress(size, key)
             pv.set_text(around(self.edit_text, self.edit_pos))
             return key
@@ -217,7 +226,6 @@ def main():
     ap.add_argument("file")
     ap.add_argument("-b", "--backend", choices=BACKENDS, default="urwid")
     args = ap.parse_args()
-
     path = Path(args.file)
     old = path.read_text(encoding="utf-8") if path.exists() else None
     new = BACKENDS[args.backend](old or "")

@@ -1,19 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a universal archive and compression inspector/extractor: given a file path to a compressed or archived file, it automatically detects the format (from file extension and/or magic bytes), and either lists its contents or extracts them to a target directory.
+The script should:
+- Accept a single input file path plus optional arguments for an output directory and a mode (list contents, extract, or detect format only), and print clear, human-readable results to the console.
+- Automatically identify the container or compression format by inspecting file signatures rather than relying solely on the extension, and fall back to extension-based detection when signatures are ambiguous.
+- Support the common formats in the standard library, including gzip, bzip2, LZMA/XZ, zlib-wrapped data, ZIP, and TAR (including compressed TAR variants), as well as raw single-stream compressed files that should be decompressed to a file with the appropriate name.
+- Optionally support additional third-party formats (such as Brotli, Zstandard, 7z, RAR, ISO, CAB, and LZMA-alone streams) only when their libraries are installed, degrading gracefully with a clear message when a required optional dependency is missing.
+- Include safety protections during extraction: prevent path traversal ("zip slip"/"tar slip") outside the target directory, refuse absolute or otherwise escaping member paths, and avoid overwriting existing files unless explicitly allowed.
+- Report errors (corrupt archives, unsupported formats, missing files, permission problems) with meaningful messages and a non-zero exit status, without crashing with an unhandled traceback.
+- Optionally display progress or summary statistics such as the number of entries, total uncompressed size, and compression ratio when listing.
+- Be organized so new format handlers can be added easily through a registry-style design, and keep the core logic independent of the command-line interface so it can also be imported and used programmatically.
+- Use only the Python standard library for the required functionality, treating every optional third-party package as an enhancement that is safely skipped when absent.
+---"""
 
 from __future__ import annotations
-
 import bz2
 import contextlib
+from dataclasses import dataclass
 import gzip
 import lzma
+from pathlib import Path
 import pickle
 import sys
 import tarfile
+from typing import Callable
 import zipfile
 import zlib
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable
 
 try:
     import brotli as _brotli_mod
@@ -218,12 +229,12 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
     }
     brotli = _brotli_mod
     if brotli is not None:
-        methods["brotli"] = brotli.decompress  # type: ignore[misc]
+        methods["brotli"] = brotli.decompress
     zstd = _zstd_mod
     if zstd is not None:
 
         def _zstd_dec(data: bytes) -> bytes:
-            return zstd.ZstdDecompressor().decompress(data)  # type: ignore[union-attr]
+            return zstd.ZstdDecompressor().decompress(data)
 
         methods["zstandard"] = _zstd_dec
     cramjam = _cramjam_mod
@@ -244,7 +255,7 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
     if pylzma is not None:
 
         def _pylzma_dec(data: bytes) -> bytes:
-            out = pylzma.decompress(data)  # type: ignore[union-attr]
+            out = pylzma.decompress(data)
             return out if isinstance(out, (bytes, bytearray)) else bytes(out)
 
         methods["pylzma (raw lzma/lzma2)"] = _pylzma_dec
@@ -254,7 +265,7 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         def _ppmd_dec(data: bytes) -> bytes:
             for order, mem in ((6, 16 << 20), (8, 32 << 20), (16, 64 << 20)):
                 try:
-                    return pyppmd.Ppmd7Decoder(order, mem).decode(data, 64 << 20)  # type: ignore[union-attr]
+                    return pyppmd.Ppmd7Decoder(order, mem).decode(data, 64 << 20)
                 except Exception:
                     continue
             msg = "no PPMd7 variant matched"
@@ -263,10 +274,10 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         methods["ppmd7 (raw)"] = _ppmd_dec
     bz3 = _bz3_mod
     if bz3 is not None:
-        methods["bzip3"] = bz3.decompress  # type: ignore[misc]
+        methods["bzip3"] = bz3.decompress
     lzo = _lzo_mod
     if lzo is not None:
-        methods["lzo"] = lambda d: lzo.decompress(d, False, len(d) * 20)  # type: ignore[misc]
+        methods["lzo"] = lambda d: lzo.decompress(d, False, len(d) * 20)
     return methods
 
 

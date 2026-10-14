@@ -1,14 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for finding visually duplicate or near-duplicate images within a folder (and optionally its subfolders). The tool should accept a directory path as its main input, along with options to choose the perceptual hashing method, set a similarity threshold appropriate to that method, control how many worker threads are used for processing, and optionally restrict the scan to a set of supported image file extensions. It should recursively discover image files, compute a perceptual fingerprint for each one, and compare fingerprints to group images that look alike even when they differ in size, format, compression, minor edits, or color adjustments.
+The tool should support several hashing strategies, including classic average, difference, and perceptual hashes, wavelet-based hashes, a color-aware hash, a crop-resistant hash, and a combined multi-hash that weighs several methods together. Each method should have a sensible default threshold, and the user should be able to override it. The script should handle formats that may require optional third-party support (such as HEIC, RAW, or SVG), and when a required package for the chosen method is missing, it should report a clear error message explaining what to install rather than crashing unexpectedly.
+Processing should be fast and robust: images that cannot be opened or hashed should be skipped with a warning, progress or timing information should be reported to the user, and the workload should be parallelized across threads. The output should clearly list each group of duplicate or near-duplicate images, along with their paths and useful details such as file sizes or resolutions. The tool should also offer an option to act on duplicates safely, such as moving redundant copies into a separate quarantine folder rather than deleting them outright, and should include a dry-run mode that reports what would happen without modifying any files. Provide sensible command-line help text, validate user inputs, and exit with appropriate status codes for success, invalid arguments, and errors.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import re
 import shutil
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
 SUPPORTED_EXTS = {
@@ -74,8 +77,8 @@ def _require(modname: str, method: str) -> bool:
 def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
     if not _require("cv2", "dct-phash"):
         return None
-    import cv2  # type: ignore
-    import numpy as np  # type: ignore
+    import cv2
+    import numpy as np
 
     try:
         img = cv2.imread(str(path))
@@ -97,7 +100,7 @@ def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
 def hash_dhash_custom(path: Path, hash_size: int = 8) -> Optional[int]:
     if not _require("cv2", "dhash-custom"):
         return None
-    import cv2  # type: ignore
+    import cv2
 
     try:
         img = cv2.imread(str(path))
@@ -115,8 +118,8 @@ def hash_dhash_custom(path: Path, hash_size: int = 8) -> Optional[int]:
 def hash_imagehash(path: Path, method: str, hash_size: int = 8):
     if not (_require("PIL", method) and _require("imagehash", method)):
         return None
-    import imagehash  # type: ignore
-    from PIL import Image  # type: ignore
+    import imagehash
+    from PIL import Image
 
     try:
         with Image.open(path) as im:
@@ -143,8 +146,8 @@ def hash_imagehash(path: Path, method: str, hash_size: int = 8):
 def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
     if not (_require("PIL", "multihash") and _require("imagehash", "multihash")):
         return None
-    import imagehash  # type: ignore
-    from PIL import Image  # type: ignore
+    import imagehash
+    from PIL import Image
 
     try:
         with Image.open(path) as im:
@@ -162,8 +165,8 @@ def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
 def feature_hist(path: Path, size: tuple[int, int] = (64, 64)) -> Optional[Any]:
     if not (_require("cv2", "hist") and _require("numpy", "hist")):
         return None
-    import cv2  # type: ignore
-    import numpy as np  # type: ignore
+    import cv2
+    import numpy as np
 
     try:
         img = cv2.imread(str(path))
@@ -528,7 +531,7 @@ def cmd_cluster(args: argparse.Namespace) -> int:
         return 1
     if not (_require("cv2", "cluster") and _require("numpy", "cluster")):
         return 2
-    import numpy as np  # type: ignore
+    import numpy as np
 
     paths = collect_images(root, recursive=True, exclude_parts={"organized_by_similarity"})
     print(f"Scanning directory: {root}")

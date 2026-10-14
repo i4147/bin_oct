@@ -1,10 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes a path to a plain text file, creates a backup copy of that file with a ".bak" suffix before making any changes, and then reformats the file's contents so that each sentence is placed on its own line while paragraph boundaries are preserved. The script should handle abbreviations and common edge cases (such as initials or titles containing periods) so they are not incorrectly split, and it should keep blank lines between paragraphs intact.
+Key requirements:
+- Accept a single file path as input, and gracefully report an error and exit if the file does not exist or cannot be read.
+- Read and write the file using UTF-8 encoding.
+- Before modifying the original, save a backup copy alongside it; if the backup cannot be created, report the error and leave the original untouched.
+- Split each paragraph into sentences using reasonable punctuation rules (periods, question marks, exclamation marks), avoiding false splits on abbreviations and decimal numbers.
+- Write the restructured text back to the original file, with one sentence per line and paragraph separation preserved.
+- Print clear, user-friendly status messages for success, backup creation, and any errors encountered.
+- Support being run from the command line with the file path as an argument.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def restructure_text_file(path: Path) -> None:

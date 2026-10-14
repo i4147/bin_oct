@@ -1,15 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that extracts inline CSS and JavaScript from HTML files and externalizes them into separate asset files. The tool should accept a target path that is either a single HTML file or a directory containing HTML files, and process all matching HTML documents within it (including subdirectories if appropriate). For each HTML file, it should locate embedded style blocks and inline script blocks, save their contents into dedicated CSS and JS files within a shared assets folder organized into css and js subfolders, and replace the original inline content with references that link to these external files using correct relative paths from each HTML document's location.
+Key behaviors to include:
+- Support a configurable number of parallel workers so multiple HTML files can be processed concurrently for speed.
+- Skip script blocks that already reference an external source, and leave them unchanged.
+- Allow a minimum size threshold so very small inline blocks can optionally remain inline rather than being extracted.
+- Generate unique, deterministic file names for extracted assets (for example, based on a content hash) so repeated runs do not create duplicates and identical content is reused.
+- Preserve the rest of each HTML document's structure, attributes, and formatting as faithfully as possible, including the original document encoding.
+- Handle malformed or unusual HTML gracefully, reporting per-file errors without stopping the entire batch.
+- Produce a summary at the end showing how many files were processed, how many CSS and JS blocks were extracted, and any files that failed.
+- Provide a command-line interface with options for the input path, the output or assets location, the worker count, the minimum inline size, and an optional dry-run mode that reports what would change without writing files.
+- Write output files without overwriting the originals unless the user explicitly chooses in-place modification.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
 import hashlib
 import html.parser
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

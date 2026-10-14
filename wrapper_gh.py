@@ -1,13 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a transparent wrapper around the GitHub CLI (`gh`). When invoked, it should locate the real `gh` executable installed on the system, skipping any copy of itself so it never calls itself recursively, and then forward all command-line arguments to that real executable, relaying its standard output, standard error, and exit status back to the caller unchanged.
+Before and while forwarding, the script should record each invocation to a uniquely named log file stored in a dedicated log directory within the user's home folder. Each log file should capture a timestamp of the run, the full command and arguments being executed, the working directory, and the resulting output and exit code. File names must be unique even when several invocations happen within the same second, so the script should handle name collisions gracefully. The log directory should be created automatically if it does not already exist, and logging failures must never prevent the wrapped command from running.
+If the real GitHub CLI cannot be found, the script should print a clear, concise error message to the standard error stream explaining that the tool is unavailable and exit with a non-zero status code. Handle interruptions (such as Ctrl+C) cleanly, forwarding them appropriately and recording the outcome in the log.
+The script should be a single self-contained executable file intended for use on a Unix-like system, including mobile terminal environments, and should behave identically to the original `gh` command from the user's perspective apart from the added logging.
+---"""
 
 from __future__ import annotations
-
-import datetime
+import datetime as dt
 import os
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 REAL_GH = "/data/data/com.termux/files/usr/bin/gh"
@@ -31,7 +35,7 @@ def find_real_gh():
 
 def create_log_file():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     milliseconds = int(time.time() * 400) % 1000
     log_file = LOG_DIR / f"gh_{timestamp}_{milliseconds:03d}.log"
     counter = 1
@@ -42,7 +46,7 @@ def create_log_file():
 
 
 def write_log_header(log_file, command_args):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+    timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     cwd = os.getcwd()
     with open(log_file, "a") as f:
         f.write("=== GH Command Log ===\n")
@@ -52,7 +56,7 @@ def write_log_header(log_file, command_args):
 
 
 def write_log_footer(log_file, exit_code):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+    timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a") as f:
         f.write("\n================================\n")
         f.write(f"Exit Code: {exit_code}\n")

@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory recursively, finds all files, and reports the largest ones in a neatly formatted table. The script should accept an optional command-line argument specifying how many files to list (defaulting to 11 if omitted or invalid). For each file, it should record its path relative to the working directory and its size in bytes. Files should be ranked from largest to smallest, and the top N entries displayed as a numbered table with columns for rank, file path, and human-readable size (such as KB, MB, or GB). Long file paths should be truncated sensibly so the table stays aligned and readable, with the path width capped at a reasonable maximum. If no files are found or the directory cannot be accessed, the script should print a clear message and exit gracefully without a traceback.
+---"""
 
 from __future__ import annotations
-
 import operator
-import sys
 from pathlib import Path
-
+import sys
 from dh import fsz, get_files
 
 cwd = Path.cwd()

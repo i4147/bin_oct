@@ -1,20 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes a large line-oriented text or log file and produces a structured summary report of its contents. The tool should be designed to handle very large files efficiently, reading them without loading everything into memory at once, and it should support an optional verbose mode that prints progress and informational messages while it works.
+The script should accept a file path (and optionally an output location) from the command line, with sensible options for controlling behavior such as encoding, whether empty lines are skipped, and the output format. It should read the input file line by line, gathering statistics such as total line count, number of non-empty lines, file size in a human-readable form, and frequency counts of the most common tokens, words, or line patterns. It should also be able to detect and summarize repeated or notable entries, and report any lines that fail to decode without crashing the run.
+The results should be written as a machine-readable JSON document containing the collected statistics, timestamps for when the analysis started and finished, the elapsed processing time, and the source file's metadata. A brief human-readable summary should also be printed to the console at the end of the run. If the output destination is not specified, results should go to standard output.
+The tool should handle common error conditions gracefully: missing or unreadable input files, invalid command-line arguments, and interrupted runs should produce clear error messages and appropriate exit codes rather than raw tracebacks. Temporary files, if used, should be cleaned up reliably. The design should be modular, with reusable components for reading, counting, and reporting, and it should be safe and efficient for files many gigabytes in size.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import Counter
+from datetime import UTC, datetime
 import json
 import mmap
 import os
+from pathlib import Path
 import shutil
 import sys
 import tempfile
 import time
-from collections import Counter
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING
-
 from dh import fsz
 
 if TYPE_CHECKING:

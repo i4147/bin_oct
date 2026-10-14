@@ -1,23 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans text-based files (such as HTML, CSS, Markdown, JSON, or JavaScript) for inline base64-encoded data URIs, extracts each embedded binary or text resource, saves it as a standalone file in an output directory, and rewrites the original source so that each inline data URI is replaced by a reference to the extracted file.
+The tool should accept one or more input file paths (or a directory to process recursively) along with an optional output directory and options controlling behavior such as dry-run mode, overwriting existing files, and minimum payload size to extract. It should validate and decode the base64 payloads, handle URL-safe base64 variants and padding issues gracefully, and skip malformed or suspiciously small entries without crashing.
+For each extracted resource, determine a sensible file extension by combining the declared MIME type with content sniffing of the decoded bytes (recognizing common formats such as PNG, JPEG, GIF, WebP, SVG, PDF, and common web font formats), falling back to a generic extension when the type is unknown. Name output files deterministically, for example by using a content hash, so that identical resources are deduplicated and reps produce the same names produce a machine-readable summary (JSON) describing each extraction: original MIME type,te size, output path checksum, plus a human-readable console report. Rewritten source files should pre other content byte-for-byte, and the original files should be backed up or left untouched when a dry run is requested. The script must that one failch, and it should exit with a non-zero status code if any errors occurred. Include a clface with help text, and keross-platform.
+---"""
+
+from __future__ import annotations
 import argparse
 import base64
 import binascii
+from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import mimetypes
+from pathlib import Path
 import re
 import sys
-from collections.abc import Iterator, Sequence
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 PATTERN: re.Pattern[str] = re.compile(
     r"(?<![A-Za-z0-9_-])data:(?P<mime>[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+)?"
     r"(?P<params>(?:;[A-Za-z0-9.+=_-]+)*?);base64,"
     r"(?P<data>[A-Za-z0-9+/_-]+={0,2})"
 )
-
 MIME_EXT: dict[str, str] = {
     "image/jpeg": ".jpg",
     "image/svg+xml": ".svg",
@@ -35,7 +42,6 @@ MIME_EXT: dict[str, str] = {
     "application/vnd.ms-fontobject": ".eot",
     "application/octet-stream": "",
 }
-
 SIGNATURES: tuple[tuple[bytes, str], ...] = (
     (b"\x89PNG\r\n\x1a\n", ".png"),
     (b"\xff\xd8\xff", ".jpg"),
@@ -48,7 +54,6 @@ SIGNATURES: tuple[tuple[bytes, str], ...] = (
     (b"\x00\x01\x00\x00", ".ttf"),
     (b"\x00\x00\x01\x00", ".ico"),
 )
-
 DEFAULT_EXCLUDES: tuple[str, ...] = (".git", "node_modules", "__pycache__", ".venv", "venv")
 
 
@@ -218,7 +223,7 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         action="store_true",
         help="replace base64 strings in source files with links to extracted assets",
     )
-    parser.add_argument("--root", type=Path, default=Path("."), help="directory to scan recursively")
+    parser.add_argument("--root", type=Path, default=Path(), help="directory to scan recursively")
     parser.add_argument(
         "--assets", type=Path, default=Path("assets"), help="output folder (relative paths are resolved against --root)"
     )

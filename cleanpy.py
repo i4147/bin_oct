@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for cleaning up Python source files in place. It should accept one or more file or directory paths, expand user home references, and recursively discover all Python source files beneath any directories provided, while skipping version control and bytecode cache folders and ignoring symbolic links to avoid duplicate or cyclic processing. Each discovered file should be deduplicated by its resolved location.
+The core behavior is to parse each Python file into a syntax tree that preserves formatting, then remove standalone comments and docstrings, while keeping any comments that carry special formatter or type-checker directives (such as formatter-skip or type-annotation markers). Removing a docstring should not break the surrounding code; if a block would otherwise be left empty, it should be replaced with a valid placeholder statement. Original formatting, whitespace, and non-removed code must be preserved as closely as possible.
+Processing should be parallelized across a configurable worker pool (with a sensible default size) so that many files can be handled quickly. Each file's result should be tracked, including how many comments and docstrings were removed, whether the file was modified, and any error encountered. Errors on individual files (such as syntax problems or unreadable files) must not stop the overall run; they should be logged and reported.
+The tool should support a dry-run or check mode that reports which files would change without writing anything, and a normal mode that writes the cleaned code back to disk only when changes occur. Use a logging facility to report progress, per-file actions, and a final summary showing totals for files scanned, files changed, comments removed, docstrings removed, and errors. The script should exit with a nonzero status code when errors occur or, in check mode, when any file would be changed, and zero otherwise.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-
 import libcst as cst
 from libcst import RemovalSentinel
 from libcst.metadata import MetadataWrapper, PositionProvider

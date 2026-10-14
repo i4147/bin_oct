@@ -1,7 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a terminal-based PDF viewer, running full-screen in the terminal and letting the user read a PDF file page by page with keyboard controls. The tool takes a PDF file path as a command-line argument, validates that the file exists, and reports a clear error if a required PDF rendering library is not installed.
+The viewer should take over the terminal in a full-screen alternate display mode, hide the cursor while active, and restore the original terminal state (cursor visibility, screen contents, and input settings) on exit, including when interrupted or when an error occurs. It should render each PDF page as an image scaled to fit the current terminal dimensions, using colored text-cell graphics so that pages are visible directly in a standard terminal emulator without any graphical window. The rendering should adapt when the terminal is resized and should preserve the page's aspect ratio.
+Core behaviors:
+- Display the current page, with a status line or footer showing the file name, current page number, total pages, and a short list of available key commands.
+- Support keyboard navigation: move to the next and previous page, jump to the first and last page, go to a specific page number entered by the user, and quit the viewer.
+- Support zooming in and out and panning the view when a page is larger than the screen, with reasonable limits on zoom levels.
+- Optionally support a search function that finds text within the PDF, highlights or lists matching pages, and lets the user step through matches.
+- Cache rendered pages so that navigating back and forth remains responsive, and bound the cache size to avoid excessive memory use.
+- Handle malformed or unreadable PDFs, out-of-range page requests, and very small terminal sizes gracefully with informative messages rather than crashes.
+- Read keyboard input in a non-blocking, raw-like mode so single keypresses (including arrow keys and other escape sequences) are recognized immediately without requiring Enter.
+Provide a command-line interface with the PDF path as a required argument and optional flags for starting page, initial zoom level, and any other sensible display options. The script should be self-contained, robust, and suitable for use on Unix-like terminals.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import math
 import os

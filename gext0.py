@@ -1,16 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes a collection of Python source files and archive files (such as wheel, zip, tar, tar.gz, tgz, tar.xz, tar.zst, and zst packages) and extracts structured information about the code entities they contain. The script should accept a directory or set of paths as input, locate and unpack any archives it finds (processing them safely and cleaning up temporary extraction data afterward), and then examine every Python source file it encounters, ignoring files with unsupported extensions.
+For each Python file, the script should parse the source code and identify the significant top-level and nested definitions, such as classes, functions, and methods, along with their names, the scope or nesting context in which they appear, their line ranges, and the original file path they came from. The extracted code for each entity should be preserved so it can be saved independently.
+The results should be written into an organized output directory, with each extracted entity saved as its own file in a logical folder structure that mirrors the source package layout and records where each piece of code originated. Include a concise summary report at the end describing how many archives, files, and entities were processed, along with any files that could not be parsed due to syntax errors or unreadable content, which should be logged rather than halting execution.
+Because the input may be large, the script should take advantage of parallel processing where it helps throughput, while remaining robust against individual failures so that one bad file or archive never stops the overall run. The output should be deterministic, handle duplicate names gracefully (for example, by disambiguating filenames), sanitize names so they are safe on common file systems, and clearly report progress and errors to the user through a readable command-line interface. Provide clear handling for edge cases such as empty files, files with only comments, nested archives, and paths containing unusual characters.
+---"""
 
 from __future__ import annotations
-
 import ast
+from multiprocessing import Pool, cpu_count
 import os
+from pathlib import Path
 import re
 import shutil
 import tarfile
-import zipfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any
+import zipfile
 
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (

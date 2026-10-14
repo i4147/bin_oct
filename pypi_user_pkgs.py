@@ -1,17 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that discovers and downloads the packages a given PyPI user maintains, working from the user's public profile on the Python Package Index. The tool should accept a PyPI username as its main input and produce a local collection of package artifacts for that user, with the following behaviors:
+- Fetch the user's public profile page from the Python Package Index and extract the list of projects they maintain, handling pagination so that every page of results is collected, not just the first.
+- For each discovered project, retrieve its metadata and identify the downloadable distribution files (such as source archives and wheels), selecting the appropriate artifacts for download.
+- Apply a configurable size limit per file (defaulting to roughly 10 MiB) so that oversized artifacts are skipped and reported rather than downloaded.
+- Download the selected files concurrently with a configurable number of parallel jobs (defaulting to around 8), organizing them into a per-user output directory that is created if it does not exist.
+- Support selectable download backends: a built-in HTTP method as the default, and an optional external high-speed downloader if it is installed on the system, with a graceful fallback when it is not available.
+- Send a clear, identifiable User-Agent header with all requests and handle HTTP errors (such as missing users or projects) gracefully without crashing the whole run.
+- Provide a command-line interface that exposes the username, output location, size limit, concurrency level, and backend choice as options, with sensible defaults and helpful usage text.
+- Print a concise end-of-run summary covering how many projects were found, how many files were downloaded, how many were skipped (and why), and any failures encountered.
+- Use asynchronous execution where it improves throughput, while keeping the overall script readable and robust to network interruptions and partial failures.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
+from html.parser import HTMLParser
 import io
 import json
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from html.parser import HTMLParser
-from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 

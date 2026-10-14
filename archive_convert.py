@@ -1,7 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line archive and compression tool for batch processing. It should accept one or more input paths (files or directories) and recursively discover existing archive and compressed files, or generate new compressed or archived outputs, depending on the operation requested by the user. Support a wide range of formats, including common tar-based archives with gzip, xz, bzip2, zstd, lz4, and 7z compression, plain tar and zip archives, and standalone Brotli-compressed files. Let the user choose between compressing, decompressing, or recompressing content, and allow selection of the target format and compression level.
+The tool should be designed for speed on large collections. It should process multiple items in parallel using a configurable number of worker jobs, with a sensible default. Use a quality or compression-effort strategy that adapts to file size, favoring faster settings for very large archives and stronger compression for smaller ones, while letting the user override this behavior.
+Key behaviors to include:
+- Skip version control metadata directories (such as `.git`) when packing directories.
+- Write outputs safely, using temporary files and atomic replacement so that a failed run never corrupts or deletes originals unless explicitly requested.
+- Provide an option to keep or remove the originals after successful processing, with a dry-run mode that reports what would happen without modifying anything.
+- Report progress and results per item, including original and resulting sizes, the byte savings or increase, and any errors, with a final summary of totals and failures.
+- Format sizes in human-readable units (bytes through TiB) and display signed differences clearly.
+- Handle errors gracefully per item so that one failing file does not stop the entire batch, and returnaningful exit code reflecting overall success or failure.
+- Use structured, leveled logging with configurable verbosity, and allow the user to control whether output goes to the console or a log file.
+- Gracefully support external command-line tools for formats that require them (such as 7z or zstd), detecting their absence and reporting clearly when a required tool is unavailable.
+- Accept command-line arguments for input paths, operation mode, output directory or naming, format selection, job count, compression level overrides, dry-run, verbosity, and whether to delete sources.
+The result should be a single, self-contained, well-structured script with a clear command-line interface, robust error handling, and informative terminal output suitable for both interactive use and scripted automation.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
@@ -9,15 +22,14 @@ import gzip
 import lzma
 import multiprocessing as mp
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
-import zipfile
-from pathlib import Path
 from typing import TYPE_CHECKING
-
+import zipfile
 import brotli
 from loguru import logger
 

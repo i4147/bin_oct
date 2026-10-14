@@ -1,29 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Unified subtitle downloader for local video files and title-based searches.
-
-Usage examples:
-  python merged.py file movie.mkv
-  python merged.py file movie.mkv ./subtitles
-  python merged.py file movie.mkv --filename-suffix .en --scan-output processing --no-warn-non-mkv
-  python merged.py search "The Witcher season 2"
-  python merged.py search breaking_bad_s01e01 --output ./subs/breaking_bad.srt
-
-Mapping from the supplied scripts:
-  get_subtitle.py -> file mode defaults
-  getsubtitle.py  -> file mode with .en suffix, processing-only output, and no MKV warning
-  getsub.py       -> search mode (OpenSubtitles, then YTS by default)
-
-The two local-file scripts share one implementation; their output naming and
-console behavior are selectable with file-mode options. Install the original
-third-party dependencies as needed: python -m pip install babelfish subliminal requests.
-"""
+"""Write a Python script that acts as a command-line subtitle downloader for video files. It should accept a video file path (or a directory of videos) and a target language, then search several subtitle provider sites for matching subtitles and save them alongside the video or to a specified output location. The tool should clean up video titles and filenames so that search queries are effective, and it should generate safe, consistent output filenames with a configurable subtitle file extension (defaulting to a standard subtitle format, and normalizing the extension so the user can supply it with or without a leading dot). It should also support a second, title-based mode where the user provides a movie or show name directly instead of a file, and the script should search for and save the best-matching subtitle under a sanitized name.
+Key behaviors:
+- Provide a command-line interface with clear options for the input (file, folder, or title), target language, output directory, preferred subtitle provider list (with sensible defaults such as OpenSubtitles, Podnapisi, Addic7ed, and TVSubtitles), extension, and verbosity/logging level.
+- Reject invalid input early with helpful error messages, such as an empty extension.
+- Skip videos that already have a matching subtitle unless the user forces an overwrite.
+- Use a browser-like user agent when contacting providers, and handle network or provider failures gracefully by logging the problem and moving on to the next provider or file.
+- Report a clear summary at the end showing which files were matched, downloaded, skipped, or failed.
+- Depend on third-party subtitle and language libraries where needed, and fail with a clear install message if those are missing.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import logging
-import re
 from pathlib import Path
+import re
 from typing import Any, Sequence
 
 LOGGER = logging.getLogger(__name__)
@@ -33,7 +23,8 @@ DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.
 
 def normalize_extension(value: str) -> str:
     if not value:
-        raise argparse.ArgumentTypeError("extension must not be empty")
+        msg = "extension must not be empty"
+        raise argparse.ArgumentTypeError(msg)
     return value if value.startswith(".") else f".{value}"
 
 
@@ -65,21 +56,18 @@ def run_file_mode(args: argparse.Namespace) -> int:
             exc,
         )
         return 1
-
     video_path: Path = args.video
     if not video_path.exists():
         LOGGER.error("File not found: %s", video_path)
         return 1
     if args.warn_non_mkv and video_path.suffix.lower() != ".mkv":
         LOGGER.warning("File is not an MKV: %s", video_path)
-
     output_dir: Path = args.output_dir if args.output_dir is not None else video_path.parent
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
         LOGGER.error("Could not create output directory %s: %s", output_dir, exc)
         return 1
-
     if args.scan_output == "details":
         print(f"Scanning video: {video_path}")
     try:
@@ -94,7 +82,6 @@ def run_file_mode(args: argparse.Namespace) -> int:
     except Exception as exc:
         LOGGER.error("Error scanning video: %s", exc)
         return 1
-
     try:
         language = babelfish.Language(args.language)
         print(f"Searching for {args.language} subtitles...")
@@ -103,7 +90,6 @@ def run_file_mode(args: argparse.Namespace) -> int:
         if not subtitles:
             LOGGER.warning("No subtitles found for %s", video_path.name)
             return 1
-
         output_path = output_dir / f"{video_path.stem}{args.filename_suffix}{args.extension}"
         save_subtitles(video, subtitles, single=True, path=output_path)
         print(f"Subtitles saved to: {output_path}")
@@ -122,10 +108,8 @@ class TitleSubtitleClient:
         try:
             import requests
         except ImportError as exc:
-            raise RuntimeError(
-                "Search mode requires requests. Install it with 'python -m pip install requests'."
-            ) from exc
-
+            msg = "Search mode requires requests. Install it with 'python -m pip install requests'."
+            raise RuntimeError(msg) from exc
         self.session: Any = requests.Session()
         self.session.headers.update({"User-Agent": args.user_agent})
         self.timeout: float | None = args.timeout
@@ -185,7 +169,6 @@ class TitleSubtitleClient:
                 return None
             content_type = response.headers.get("Content-Type", "").lower()
             content = response.content
-            # Preserve the original behavior: zipped subtitle packages are treated as a miss, not unpacked.
             if "application/zip" in content_type or content.startswith(b"PK\x03\x04"):
                 LOGGER.info("ZIP file detected; trying another subtitle source")
                 return None
@@ -291,7 +274,6 @@ def run_search_mode(args: argparse.Namespace) -> int:
     except RuntimeError as exc:
         LOGGER.error("%s", exc)
         return 1
-
     content, source = client.download_subtitles(title)
     if not content:
         print("❌ No subtitles found for the given query")
@@ -301,7 +283,6 @@ def run_search_mode(args: argparse.Namespace) -> int:
         print("- Example: breaking_bad_s01e01")
         print("- Try removing special characters")
         return 1
-
     output_path: Path = args.output or Path(search_output_name(title, args.extension))
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -319,7 +300,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Download English subtitles for a local video or search by movie/series title."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     file_parser = subparsers.add_parser("file", help="scan a local video with subliminal")
     file_parser.add_argument("video", type=Path, help="path to the video file")
     file_parser.add_argument(
@@ -348,7 +328,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=True,
         help="warn when the input does not have an .mkv extension (default: enabled)",
     )
-
     search_parser = subparsers.add_parser("search", help="search subtitle services by title")
     search_parser.add_argument("query", nargs="+", help="movie or series title")
     search_parser.add_argument("--output", type=Path, help="output filename (defaults to a sanitized title)")

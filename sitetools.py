@@ -1,45 +1,36 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Unified Package and Metadata Management Tool (merged.py)
+"""Write a Python script that acts as a command-line file utility for archiving, compressing, inspecting, and organizing files and directories. The tool should accept a source path (a single file or a directory tree) and an operation selected via command-line arguments, then produce an output artifact or report while giving clear, colorized console feedback and logging.
+Core behaviors to implement:
+- **Archive and compression operations**: Bundle a file or directory into a compressed archive in a common format (such as tar with optional gzip or bzip2 compression), and extract such archives back into a target folder safely, guarding against path traversal in archive entries.
+- **Encoding utilities**: Provide optional encoding and decoding of files using a simple, reversible text representation (such as base64), writing results to a new file rather than overwriting the original.
+- **Inspection and reporting**: Report the total size of a file or directory tree in human-readable units, count files, and optionally export a manifest of entries (name, relative path, size, and a checksum such as SHA-256) to CSV or JSON.
+- **Duplicate detection**: Scan a directory for files with identical content using hashing, and list duplicate groups with their paths and sizes, optionally with parallel processing for speed.
+- **Safe output handling**: Never overwrite existing files silently. When a target name already exists, generate a unique alternative name (for example by appending a numeric suffix before the extension). Allow an explicit overwrite flag when the user requests it.
+- **Cleanup**: Offer an option to remove the source after a successful operation, with a confirmation prompt unless a non-interactive flag is supplied.
+Interface and robustness requirements:
+- Use a clear command-line interface with subcommands or flags, built-in help text, and sensible defaults.
+- Validate inputs up front and report missing paths, permission problems, and unsupported formats with clear error messages and nonzero exit codes.
+- Log progress and warnings to standard error, and print user-facing results to standard output with optional colored terminal output that degrades gracefully when color is unsupported.
+- Display human-readable file sizes throughout.
+- Handle keyboard interruption gracefully, cleaning up any partially written output files.
+- Keep the code modular, well structured, and easy to extend with new operations.
+---"""
 
-Consolidates package cleaning, RECORD updating, metadata renaming, and archive fixing utilities.
-
-Usage Examples:
-    python merged.py clean-meta [paths...]
-    python merged.py clean-record
-    python merged.py clean-distinfo [--site-dir PATH]
-    python merged.py fix-targz [DIRECTORY]
-    python merged.py rename-json
-    python merged.py rename-meta [--target-dir PATH]
-    python merged.py clean-pyc-record
-    python merged.py update-record [--processes N]
-    python merged.py clean-urecord [--site-dir PATH] [--verbose]
-
-Mapping:
-    clean_meta.py -> python merged.py clean-meta
-    clean_record.py -> python merged.py clean-record
-    distinfo3.py -> python merged.py clean-distinfo
-    fix_targz_pkg_fname.py -> python merged.py fix-targz
-    rename_json.py -> python merged.py rename-json
-    rename_meta.py -> python merged.py rename-meta
-    rmpyc_entries.py -> python merged.py clean-pyc-record
-    update_record.py -> python merged.py update-record
-    urecord.py -> python merged.py clean-urecord
-"""
-
+from __future__ import annotations
 import argparse
 import base64
+import contextlib
 import csv
 import hashlib
 import json
 import logging
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
 import tarfile
-from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s", stream=sys.stderr)
 logger = logging.getLogger(__name__)
@@ -83,20 +74,18 @@ def get_files(path: Path, ext=None):
         yield path
         return
     for p in path.rglob("*"):
-        if p.is_file():
-            if ext is None or p.suffix in ext:
-                yield p
+        if p.is_file() and (ext is None or p.suffix in ext):
+            yield p
 
 
 def cmd_clean_meta(args):
     img_regex = re.compile(r"^\s*(\.\.\s+image::|:target:|:alt:)", re.IGNORECASE)
     paths = [Path(p) for p in args.paths] if args.paths else []
     target_dir = Path.cwd()
-    m_files = paths if paths else list(get_files(target_dir, ext=[".metadata", ".md"]))
+    m_files = paths or list(get_files(target_dir, ext=[".metadata", ".md"]))
     h_files = list(target_dir.rglob("METADATA"))
     if h_files and not paths:
         m_files.extend(h_files)
-
     initial_sz = gsz(target_dir)
     for s in m_files:
         if not s.exists():
@@ -152,7 +141,7 @@ def cmd_clean_meta(args):
 
 def cmd_clean_record(args):
     allowed = {"METADATA", "RECORD", "WHEEL", "entry_points.txt", "top_level.txt"}
-    for e in Path(".").glob("*.dist-info"):
+    for e in Path().glob("*.dist-info"):
         d_file = e / "RECORD"
         if d_file.exists():
             h = d_file.read_text().splitlines()
@@ -180,12 +169,11 @@ def cmd_clean_distinfo(args):
         print(f"Site-packages directory {sp} does not exist.")
         return
     for h in sp.iterdir():
-        if h.is_dir() and len(list(h.iterdir())) == 1:
-            if "dist-info" in h.name:
-                for k in h.iterdir():
-                    if k.name in {"top_level.txt", "entry_points.txt"}:
-                        cprint(f"{h} removed", "cyan")
-                        shutil.rmtree(h)
+        if h.is_dir() and len(list(h.iterdir())) == 1 and "dist-info" in h.name:
+            for k in h.iterdir():
+                if k.name in {"top_level.txt", "entry_points.txt"}:
+                    cprint(f"{h} removed", "cyan")
+                    shutil.rmtree(h)
 
 
 def cmd_fix_targz(args):
@@ -306,10 +294,8 @@ def _process_meta_file(o, c):
         cprint(f"{l_name} created.", "yellow")
     elif not h_val and not b_val:
         cprint(f"no data{o}", "cyan")
-        try:
+        with contextlib.suppress(EOFError):
             input("what u wanna do?")
-        except EOFError:
-            pass
 
 
 def cmd_clean_pyc_record(args):
@@ -398,14 +384,13 @@ def _update_single_record(i_dir: Path) -> bool:
     except Exception:
         logger.exception("Failed to read %s", p_file)
         return False
-
     v_list = []
     missing = []
     for line in lines:
         stripped = line.strip()
         if not stripped:
             continue
-        l_path, s_hash, t_size = _parse_record_line(stripped)
+        l_path, _s_hash, _t_size = _parse_record_line(stripped)
         if l_path == "RECORD":
             continue
         u_file = i_dir.parent / l_path
@@ -423,7 +408,6 @@ def _update_single_record(i_dir: Path) -> bool:
             continue
         new_size = _get_size(u_file)
         v_list.append(f"{l_path},{new_hash},{new_size}")
-
     rel_p = str(p_file.relative_to(i_dir.parent))
     v_list.append(f"{rel_p},,")
     if missing:
@@ -451,7 +435,7 @@ def _update_single_record(i_dir: Path) -> bool:
 
 
 def cmd_clean_urecord(args):
-    site_dirs = args.site_dir if args.site_dir else _get_default_site_packages()
+    site_dirs = args.site_dir or _get_default_site_packages()
     if not site_dirs:
         print("Error: Could not find site-packages directory", file=sys.stderr)
         sys.exit(1)
@@ -524,34 +508,24 @@ def _scan_and_clean_urecord(site_dirs, verbose):
 def main():
     parser = argparse.ArgumentParser(description="Unified Python Package and Metadata Manager")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     subparsers.add_parser("clean-meta", help="Clean metadata and markdown files")
     subparsers.add_parser("clean-record", help="Clean dist-info RECORD files of invalid entries")
-
     p_cd = subparsers.add_parser("clean-distinfo", help="Remove empty or single-item dist-info dirs in site-packages")
     p_cd.add_argument("--site-dir", "-s", help="Specific site-packages directory")
-
     p_ft = subparsers.add_parser("fix-targz", help="Fix and standardize .tar.gz package filenames")
     p_ft.add_argument("directory", nargs="?", default=".", help="Directory containing .tar.gz files")
-
     subparsers.add_parser("rename-json", help="Rename JSON files based on internal package name")
-
     p_rm = subparsers.add_parser("rename-meta", help="Rename and move METADATA/.metadata files")
     p_rm.add_argument("--target-dir", default="/data/data/com.termux/files/home/tmp/metadata", help="Target directory")
-
     subparsers.add_parser("clean-pyc-record", help="Remove .pyc and license entries from purelib RECORD files")
-
     p_ur = subparsers.add_parser("update-record", help="Update SHA256 hashes and sizes in dist-info RECORD files")
     p_ur.add_argument("--processes", type=int, default=8, help="Number of multiprocessing processes")
-
     p_cu = subparsers.add_parser(
         "clean-urecord", help="Remove .pyc, direct_url.json, INSTALLER, LICENSE from RECORD files"
     )
     p_cu.add_argument("--site-dir", "-s", action="append", help="Specific site-packages directory")
     p_cu.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-
     args = parser.parse_args()
-
     if args.command == "clean-meta":
         cmd_clean_meta(args)
     elif args.command == "clean-record":

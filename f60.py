@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory and reports on its non-hidden entries based on their creation and modification times, relative to a time window the user specifies in minutes (defaulting to 60 if no accept a single optional numeric argument for the time window, and if the argument is not a valid number it should print a brief usage message (e.g., "Usage: script.py [minutes]") and exit with a non-zero status.
+The script should examine only the top-level items in the current directory, skip any version-control metadata folders and symbolic links, and select entries whose creation time falls at or before the cutoff or whose modification time falls at or after the cutoff. Selected entries should be ordered chronologically by their creation time, and the script should then produce a clear, aligned, human-readable listing of the results, showing each entry's name along with its creation and modification timestamps in a readable date-time format. The output column widths should adapt to the longest entry name, with a sensible minimum width so the table stays neatly formatted. The script should handle the case where no entries match gracefully and print an appropriate message. Keep the design simple, reliable, and cross-platform, and make sure the script runs as a standalone command-line tool with no external dependencies beyond the Python standard library.
+---"""
 
 from __future__ import annotations
-
+from datetime import datetime
 import operator
+from pathlib import Path
 import sys
 import time
-from datetime import datetime
-from pathlib import Path
 
 
 def parse_minutes() -> float:

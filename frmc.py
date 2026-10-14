@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a directory tree and identifies files that should be excluded from some downstream processing (such as code analysis, linting, or indexing), using a configurable set of rules. The script should walk the directory structure starting from a root path provided by the user, skipping well-known tooling, dependency, cache, and version-control directories (for example, git metadata, virtual environments, build outputs, editor settings, and package caches). Within the remaining files, it should classify each file by its extension and filename: certain extensions and specific filenames (such as configuration files, markup and documentation formats, data files, and many language sources that are not the target of processing) must be filtered out, while files whose names or extensions are on an explicit processing list (for example, build files like Makefiles) must be kept or flagged for processing.
+The script should take a root directory and optional settings from the command line, and produce a clear result: a list of the files selected for processing, with an option to output them to the console or to a file, and a summary of how many files were scanned, selected, and skipped. It should handle large directory trees efficiently by taking advantage of parallel processing where it helps, gracefully handle unreadable paths, permission errors, and symbolic links without crashing, and report errors in a concise way. Extension and name matching should be case-insensitive where appropriate, and the set of skipped directories, skipped extensions, skipped filenames, and processed filenames should be easy to extend or override without modifying the core logic. The script should exit with a meaningful status code: zero on success, a non-zero code on invalid input or fatal errors.
+---"""
 
-import multiprocessing as mp
+from __future__ import annotations
 import os
-import sys
 from pathlib import Path
+import sys
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -29,7 +31,6 @@ SKIP_DIRS: frozenset[str] = frozenset({
     ".gradle",
     ".egg-info",
 })
-
 SKIP_EXTS: frozenset[str] = frozenset({
     ".yaml",
     ".yml",
@@ -96,11 +97,9 @@ SKIP_EXTS: frozenset[str] = frozenset({
     ".sql",
     ".mysql",
 })
-
 SKIP_NAMES: frozenset[str] = frozenset({
     "requirements.in",
 })
-
 PROCESS_NAMES: frozenset[str] = frozenset({
     "Makefile",
     "makefile",
@@ -119,7 +118,6 @@ PROCESS_NAMES: frozenset[str] = frozenset({
     "nginx.conf",
     "httpd.conf",
 })
-
 PROCESS_EXTS: frozenset[str] = frozenset({
     ".zsh",
     ".ksh",
@@ -143,7 +141,6 @@ PROCESS_EXTS: frozenset[str] = frozenset({
     ".pp",
     ".desktop",
 })
-
 PROCESS_PREFIXES: tuple[str, ...] = ("Makefile", "Dockerfile", ".env")
 
 
@@ -158,10 +155,7 @@ def is_processable(p: Path) -> bool:
         return True
     if suffix in PROCESS_EXTS:
         return True
-    for prefix in PROCESS_PREFIXES:
-        if name.startswith(prefix):
-            return True
-    return False
+    return any(name.startswith(prefix) for prefix in PROCESS_PREFIXES)
 
 
 def is_allowed(p: Path, explicit: bool) -> bool:
@@ -198,7 +192,7 @@ def strip_comment(body: str) -> str:
             out.append(body[i + 1])
             i += 2
             continue
-        if c == "'" or c == '"':
+        if c in {"'", '"'}:
             quote = c
             out.append(c)
             i += 1
@@ -228,7 +222,6 @@ def process_file(path_str: str) -> tuple[str, int] | None:
             text = data.decode("latin-1")
         except Exception:
             return None
-
     lines = text.splitlines(keepends=True)
     out: list[str] = []
     changed = False
@@ -249,10 +242,8 @@ def process_file(path_str: str) -> tuple[str, int] | None:
         if new_body == "" and body.strip() != "":
             continue
         out.append(new_body + nl)
-
     if not changed:
         return (path_str, 0)
-
     new_text = "".join(out)
     try:
         new_data = new_text.encode(encoding)
@@ -265,7 +256,7 @@ def process_file(path_str: str) -> tuple[str, int] | None:
     except OSError:
         return None
     saved = original_size - len(new_data)
-    return (path_str, saved if saved > 0 else 0)
+    return (path_str, max(0, saved))
 
 
 def collect_files(roots: list[Path]) -> tuple[list[Path], set[str]]:
@@ -325,20 +316,16 @@ def main(argv: list[str]) -> int:
         roots = [Path(a) for a in args]
     else:
         roots = [Path.cwd()]
-
     all_files, explicit = collect_files(roots)
     targets: list[Path] = []
     for f in all_files:
         key = os.path.realpath(f)
         if is_allowed(f, key in explicit):
             targets.append(f)
-
     use_color = sys.stdout.isatty()
     green = "\033[32m" if use_color else ""
     reset = "\033[0m" if use_color else ""
-
     cwd = Path.cwd()
     results: list[tuple[str, int]] = []
-
     if len(targets) == 1:
         r = process_file(str(targets[0]))

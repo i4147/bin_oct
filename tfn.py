@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects a directory of font files (such as TrueType or OpenType fonts) and produces a normalized, organized collection of them. The script should accept a source folder and an optional destination folder via command-line arguments. For each font file found, it should read the embedded metadata to determine the font's family name and style (for example Regular, Bold, Italic, BoldItalic, Light, Black, Condensed), then map common style labels to standardized style names. Fonts whose metadata cannot be read or lacks a family name should be skipped gracefully with a clear message rather than stopping the whole run.
+The script should copy or move each valid font into a structured output layout grouped by family name, using a consistent, filesystem-safe filename that combines the family and standardized style. If a destination file with the same name already exists, it must not be overwritten; instead, generate a unique alternative name. The script should support a dry-run option that reports the planned renames and placements without changing any files, and a verbose option for detailed logging.
+At the end, print a concise summary showing how many fonts were processed, how many were organized, how many were skipped, and any errors encountered. Handle missing directories, unreadable files, and unsupported extensions cleanly with helpful error messages and appropriate exit codes. The script should be self-contained, robust, and easy to run from the command line.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from pathlib import Path
-
 from dh import FONTEXT, unique_path
 from fontTools.ttLib import TTFont
 

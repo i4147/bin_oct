@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that processes HTML files in bulk to minify them whileating their structure. The tool should accept one or more input paths, which may be individual HTML files or directories that are searched recursively for HTML documents. For each HTML file, it should first run a lightweight structural check that detects unbalanced or unexpected closing tags, while correctly treating HTML void elements (such as line breaks, images, and inputs) as not requiring closing tags. Files that fail validation should be reported with clear, human-readable error messages identifying the problem, and should not be silently altered.
+Files that pass validation should be minified to reduce their size while preserving rendering behavior. The tool should write the minified output either alongside the original with a distinguishable suffix or to a user-specified output directory, and should never overwrite source files unless explicitly instructed to do so. The script should provide a command-line interface supporting options for the output location, an option to only validate without writing output, and an option to control the number of parallel workers used to process large batches of files efficiently.
+The tool should print a concise summary at the end reporting how many files were processed, how many passed validation, how many failed, and the total size reduction achieved in bytes and percentage. It should exit with a non-zero status code if any file fails validation or an unrecoverable error occurs, and zero otherwise. Handle missing paths, unreadable files, and encoding issues gracefully without crashing the entire batch.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import multiprocessing as mp
-import sys
 from functools import partial
 from html.parser import HTMLParser
+import multiprocessing as mp
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-
 import minify_html as mh
 
 if TYPE_CHECKING:

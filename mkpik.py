@@ -1,20 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a given file or directory for Python source files, checks each one for syntax validity, and reports the results along with the overall size of the scanned content in a human-readable form.
+The tool should accept a target path from the command line. If the target is a single Python file, it should analyze only that file; if it is a directory, it should recursively discover all Python files beneath it. It must skip anything that is missing, is a symbolic link, or lies inside a version-control metadata folder, so that results reflect only genuine source files.
+For each discovered Python file, the tool should determine whether it compiles cleanly and report any syntax errors clearly, including the file path and the reason for failure. Because the number of files may be large, the checking work should be able to run in parallel across multiple worker processes to keep the scan fast, while still producing a single consolidated summary.
+The tool should also measure the total disk size of the target directory (or file), ignoring symbolic links, and present sizes in a readable unit such as bytes, KB, MB, GB, or TB, scaling automatically to the most appropriate unit with a sensible number of decimal places.
+Final output should be a concise, well-organized console report that includes: the number of Python files found, how many passed and failed validation, a list of failing files with their error messages, and the total size of the scanned content. The tool should exit with a nonzero status code if any file fails validation, and zero otherwise. Handle invalid or nonexistent paths gracefully with a helpful message rather than a crash.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import os
-import py_compile
-import sys
 from concurrent.futures import ProcessPoolExecutor
+import os
 from pathlib import Path
-from typing import List
+import py_compile
 
 
 def get_py_files(target: Path) -> list[Path]:
     if not target.exists() or target.is_symlink():
         return []
-
     if ".git" in target.parts:
         return []
     if target.is_file() and target.suffix == ".py":
@@ -64,20 +66,16 @@ def compile_single_file(file_path: Path, optimize: int = 0, legacy: bool = False
 
 def cmd_compile(args: argparse.Namespace) -> None:
     os.environ["PYTHONPYCACHEPREFIX"] = args.pycache_prefix
-
     targets = [Path(p) for p in args.targets]
     py_files: list[Path] = []
     for target in targets:
         py_files.extend(get_py_files(target))
-
     if not py_files:
         print("No Python files found to process")
         return
-
     if len(py_files) == 1:
         compile_single_file(py_files[0], optimize=args.optimize, legacy=args.legacy, delete_source=args.delete_source)
         return
-
     with ProcessPoolExecutor() as executor:
         futures = [
             executor.submit(compile_single_file, f, args.optimize, args.legacy, args.delete_source) for f in py_files
@@ -89,36 +87,30 @@ def cmd_compile(args: argparse.Namespace) -> None:
 def cmd_measure(args: argparse.Namespace) -> None:
     cwd = Path.cwd()
     initial_size = get_dir_size(cwd)
-
     if args.targets:
         py_files = []
         for t in args.targets:
             py_files.extend(get_py_files(Path(t)))
     else:
         py_files = get_py_files(cwd)
-
     with ProcessPoolExecutor(max_workers=args.pool_size) as executor:
         futures = [executor.submit(compile_single_file, f, 0, False, False) for f in py_files]
         for future in futures:
             future.result()
-
     final_size = get_dir_size(cwd)
     size_diff = initial_size - final_size
-
     if final_size > initial_size:
         sign = "+"
     elif initial_size > final_size:
         sign = "-"
     else:
         sign = ""
-
     print(f"space changed :{sign} {format_size(size_diff)}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Unified Python Bytecode Compiler and Disk Space Tracker")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     compile_parser = subparsers.add_parser(
         "compile", help="Compile Python files with custom optimization and output options"
     )
@@ -134,14 +126,12 @@ def main() -> None:
     )
     compile_parser.add_argument("--pycache-prefix", default="__pycache__", help="Directory prefix for pycache files")
     compile_parser.set_defaults(func=cmd_compile)
-
     measure_parser = subparsers.add_parser(
         "measure", help="Compile Python files and report space change in current directory"
     )
     measure_parser.add_argument("targets", nargs="*", default=[], help="Specific files or directories to process")
     measure_parser.add_argument("--pool-size", type=int, default=8, help="Number of worker processes")
     measure_parser.set_defaults(func=cmd_measure)
-
     args = parser.parse_args()
     args.func(args)
 

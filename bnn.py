@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a parallel, batch text-replacement tool for files in a directory tree. The tool should accept a root directory (defaulting to the current working directory) along with a search pattern and a replacement string from the command line, and optionally a file-matching filter such as an extension list. It should recursively discover candidate files, skip binary files by inspecting a sample of each file's contents, and perform the replacement across all matching text files concurrently to take advantage of multiple CPU cores.
+For safety, the script should write each modified file through a temporary location and then atomically swap it into place, so a failure partway through never leaves a file half-written. It should preserve the original file's permissions and offer a dry-run mode that reports what would change without modifying anything. Optionally, it should keep a backup copy of each original file before modification.
+For every processed file, the script should track the number of replacements made, the original and new file sizes, and any error encountered. After processing, it should print a per-file summary line using a clear success or failure marker and a path shown relative to the current working directory, including the size change in bytes (or noting when there is no change). It should conclude with aggregate totals: files scanned, files modified, total replacements, and total errors, and exit with a non-zero status code if any file failed.
+Logging should use Python's standard logging module at an informational level by default, with a verbosity option to increase or decrease detail. The script should handle invalid input gracefully with helpful messages, never crash on unreadable or permission-restricted files, and be runnable directly from the command line with clearly documented arguments and a built-in help message.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
 import logging
+from pathlib import Path
 import shutil
 import tempfile
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
-
 from joblib import Parallel, delayed
 
 if TYPE_CHECKING:

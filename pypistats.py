@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that takes the name of a PyPI package as a command-line argument and reports its recent download statistics from the public PyPI statistics service. The script should fetch monthly download data for the package, including breakdowns by category (such as system, Python version, and similar dimensions), and compute an average daily download count for each category by aggregating the daily records it receives. It should present the results in a clear, human-readable form, sorting Python version breakdowns in ascending numeric order so that the newest versions appear last, while placing any non-numeric or unrecognized version labels at the end. The script should handle network and data errors gracefully, reporting a helpful message rather than crashing, and should accept the package name as its only required input. Output should be a concise textual summary suitable for printing to a terminal, with category names and their average daily downloads listed in a readable order.
+---"""
 
 from __future__ import annotations
-
+from collections import defaultdict
 import json
 import ssl
 import sys
-from collections import defaultdict
 from urllib.request import urlopen
 
 PACKAGE = sys.argv[1]

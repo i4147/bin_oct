@@ -1,27 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import os
-import time
-from pathlib import Path
-import multiprocessing
+"""Write a Python script that acts as a command-line CSS minifier for entire project trees. It should accept a root directory (and optionally a target output location), recursively discover all CSS files while skipping common non-source directories such as version control folders, virtual environments, dependency folders, IDE settings, and build output folders. For each CSS file, it should strip comments and unnecessary whitespace to produce a compact, functionally equivalent stylesheet, using a robust syntax-aware parsing approach so that comments inside strings or malformed input are handled safely. Files that fail to parse cleanly should be left unmodified or reported rather than corrupted, and empty files should pass through unchanged.
+The tool should process files in parallel across available CPU cores to handle large projects efficiently, and should report progress and a summary of results, including the number of files processed, skipped, and failed, along with total bytes saved and elapsed time. It should support a dry-run mode that shows a unified diff of the proposed changes without writing anything, and an option to write the minified output in place or to a separate mirrored directory tree. Where optional advanced compression libraries are available, the script may use them as an enhancement, but it must still function correctly without them. Handle errors gracefully, provide clear command-line help, and exit with a non-zero status code if any file fails.
+---"""
+
+from __future__ import annotations
 import argparse
 import difflib
+import multiprocessing
+import os
+from pathlib import Path
 import shutil
-from typing import List, Tuple, Union, Iterator
-
-from tree_sitter import Language, Parser, Query, QueryCursor  # type: ignore[import-untyped]
-import tree_sitter_css as ts_css  # type: ignore[import-untyped]
+import sys
+from typing import Iterator
+from tree_sitter import Language, Parser, Query, QueryCursor
+import tree_sitter_css as ts_css
 
 try:
-    import tinycss2  # type: ignore[import-untyped]
+    import tinycss2
 except ImportError:
     tinycss2 = None
-
 try:
-    import csscompressor  # type: ignore[import-untyped]
+    import csscompressor
 except ImportError:
     csscompressor = None
-
 _WORKERS = os.cpu_count() or 1
 _SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".idea", ".vscode", "dist", "build"}
 
@@ -105,35 +106,28 @@ def process_css_file(
             raw_bytes = path.read_bytes()
         except Exception as e:
             return (file_path_str, 0, 0, 0, f"Read error: {e}", "", "")
-
         orig_size = len(raw_bytes)
         if orig_size == 0:
             rel_path = os.path.relpath(file_path_str, base_dir_str)
             return (rel_path, 0, 0, 0, None, "", "")
-
         try:
             old_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding", "", "")
-
         if backend == "tinycss2":
             new_bytes, success = process_file_tinycss2(raw_bytes)
         elif backend == "csscompressor":
             new_bytes, success = process_file_csscompressor(raw_bytes)
         else:
             new_bytes, success = process_file_tree_sitter(raw_bytes)
-
         if not success:
             return (file_path_str, 0, 0, 0, "Invalid CSS or validation failed", "", "")
-
         try:
             new_text = new_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding in result", "", "")
-
         new_size = len(new_bytes)
         saved = orig_size - new_size
-
         if not dry_run and saved > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak")
@@ -142,7 +136,6 @@ def process_css_file(
                 path.write_bytes(new_bytes)
             except Exception as e:
                 return (file_path_str, 0, 0, 0, f"Write error: {e}", "", "")
-
         rel_path = os.path.relpath(file_path_str, base_dir_str)
         return (rel_path, orig_size, new_size, saved, None, old_text, new_text)
     except Exception as e:
@@ -179,22 +172,16 @@ def main() -> None:
     parser_arg.add_argument("--dry-run", action="store_true")
     parser_arg.add_argument("--backup", action="store_true")
     parsed_args = parser_arg.parse_args()
-
     input_paths = parsed_args.paths
     if not input_paths:
         input_paths = ["."]
-
     base_dir = os.getcwd()
     files_list = list(iter_css_files(input_paths))
-
     if not files_list:
         sys.exit(0)
-
     total_saved = 0
     error_count = 0
-
     tasks = [(f, base_dir, parsed_args.backend, parsed_args.dry_run, parsed_args.backup) for f in files_list]
-
     if len(files_list) == 1:
         for task in tasks:
             res = process_css_file(task)
@@ -216,7 +203,7 @@ def main() -> None:
     else:
         with multiprocessing.Pool(_WORKERS) as pool:
             for res in pool.imap_unordered(process_css_file, tasks):
-                rel_path, orig, new, saved, err, old_text, new_text = res
+                rel_path, _orig, _new, saved, err, old_text, new_text = res
                 if err:
                     error_count += 1
                 else:
@@ -231,7 +218,6 @@ def main() -> None:
                             tofile=f"b/{rel_path}",
                         )
                         sys.stdout.writelines(diff)
-
     print(f"Total space freed: {total_saved} bytes")
 
 

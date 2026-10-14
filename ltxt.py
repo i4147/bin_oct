@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans the current working directory tree, gathers all text-based files while skipping hidden files and binary file types, and computes how often each non-empty, whitespace-trimmed line appears across the entire set of files. The script should process files concurrently using a pool of worker processes to speed up reading large projects, and it should tolerate unreadable or badly encoded files by logging an error and continuing rather than aborting. Each file should be read leniently as UTF-8, ignoring undecodable characters. The final output should be a summary report that lists the most frequently repeated lines (with their counts) to help identify duplicated code, boilerplate, or repeated content across a codebase, and it should also report overall statistics such as the number of files processed and the total number of lines analyzed. The script should be runnable from the command line with options that let the user control things like the number of results shown, the minimum occurrence threshold, and the level of logging detail, and it should print a clear, readable result to the console.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from collections import Counter
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
-
-from dh import BIN_EXT  # type: ignore[import-untyped]
+from dh import BIN_EXT
 from loguru import logger
 
 if TYPE_CHECKING:

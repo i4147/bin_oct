@@ -1,15 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for text-based files, detects which ones contain Chinese text, and translates that Chinese content into English while leaving the rest of each file's structure intact. The tool should be a command-line utility that accepts a root folder (or a single file) as input, along with options controlling which file types to process, the minimum proportion of Chinese characters required before a file is translated, the source and target languages, and how many parallel workers to use.
+Key behaviors:
+- Recursively walk the given path and consider only files with common text and source-code extensions (such as plain text, Markdown, Python, JavaScript, HTML, CSS, JSON, XML, and CSV), with the ability to override that list from the command line.
+- Measure how much of each file's non-whitespace content consists of Chinese characters, including the full range of CJK ideographs and their extension blocks, and only translate files that meet a configurable threshold.
+- Verify the detected source language before translating when it is ambiguous, and skip files that cannot be confidently identified as Chinese.
+- Translate content through an online translation service, processing text in manageable chunks so that long files are handled reliably and the output preserves line breaks, indentation, and the overall layout of the original file.
+- Retry failed translation requests a configurable number of times with a delay between attempts, and add an optional pause between successful requests to respect rate limits.
+- Process multiple files in parallel using a configurable number of worker processes, defaulting to the number of available CPU cores.
+- Support a dry-run mode that reports which files would be translated and their Chinese-character ratios without modifying anything, and an option to write results to new files or overwrite the originals, optionally keeping a backup copy.
+- Log progress, skipped files, successes, and errors clearly to the console and to a log file, and continue processing the remaining files when an individual file fails.
+- Print a final summary showing how many files were scanned, translated, skipped, and failed, along with the elapsed time.
+- Handle file encoding robustly (detecting or falling back gracefully when a file is not valid UTF-8) and never leave a partially written file if an error occurs mid-translation.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Iterable, Optional, Sequence
-
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger
 

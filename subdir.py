@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a given input directory for compressed archive files and extracts each one into its own separate output folder, handling multiple common archive formats including ZIP, several tar variants (plain, gzip, bzip2, and xz compressed), and 7-Zip. For each archive, the script should create a uniquely named destination folder derived from the archive's name, so that existing folders are never overwritten (appending a numeric suffix when a name is already taken). Archives should be identified by their file extensions in a case-insensitive manner, and extraction should be performed safely, guarding against path traversal and malicious entries within the archives. The script should handle errors gracefully: if an archive is corrupted, unsupported, or fails to extract, it should log a clear message and continue processing the remaining archives rather than stopping. Upon completion, it should report a summary of how many archives were successfully extracted, how many failed, and where the output was placed. The tool should accept the input directory and optional output location as arguments from the command line, provide helpful usage information, and produce no output beyond progress messages and the final summary unless an error occurs.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import tarfile
 import zipfile
-from pathlib import Path
-
 import py7zr
 
 

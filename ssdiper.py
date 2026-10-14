@@ -1,15 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 
-from __future__ import annotations
-
 import argparse
+from collections import defaultdict
 import json
 import operator
-from collections import defaultdict
 from pathlib import Path
-
-import ssdeep
 from dh import get_files
+import ssdeep
 
 
 def calculate_ssdeep_hash(path: Path, min_file_size: int = 1):
@@ -148,7 +145,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     cwd = Path.cwd()
-    MIN_SIMILARITY_THRESHOLD = 50
+    MIN_SIMILARITY_THRESHOLD = 0
     OUTPUT_JSON_FILE = "simz.json"
     files = get_files(cwd)
     if not files:

@@ -1,78 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a source-code maintenance and cleanup utility for Python projects. The tool should accept a file or directory path from the command line (with options to recurse into subdirectories and to restrict processing to Python files), discover the relevant source files while skipping binary files, and report progress and timing information as it works.
+For each Python file, the tool should be able to analyze and improve the code's readability and structure without changing its behavior. Its capabilities should include: normalizing and cleaning up documentation strings and comments, reformatting code layout by optionally delegating to well-known external formatters (such as black, isort, autoflake, autopep8, or yapf) selected by the user, and performing targeted structural fixes such as ensuring top-level definitions and main-guard blocks are properly separated by blank lines and that control-flow statements are correctly spaced.
+The tool should support a dry-run or preview mode that shows what would change (for example as a diff or summary) without modifying files, and an in-place mode that writes changes back safely. Before writing any change, it must verify that the transformed source still parses as valid Python, and it should skip or report any file that cannot be processed rather than crashing the whole run.
+Output should be a clear console report listing each processed file, the number of changes or the status for each, total counts, and elapsed time, with optional color-coded or formatted terminal output. Errors such as unreadable files, missing paths, or failing external formatters should be reported with helpful messages and a non-zero exit code when appropriate.
+Design the command-line interface so that users can specify the target path, choose the formatting style(s), toggle recursion, select dry-run versus write mode, and request verbose output. Keep the implementation modular and readable, and make sure the tool is robust, safe by default, and easy to extend with additional cleanup rules.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from functools import partial
 import io
+from pathlib import Path
 import re
 import subprocess
 import sys
+from textwrap import fill as _fill
 import time
 import tokenize
+from typing import Optional
 import unicodedata
-from functools import partial
-from pathlib import Path
-from textwrap import fill as _fill
-from typing import Any, Dict, List, Optional, Tuple
+from dh import cprint, format_time, fsz, get_files, get_pyfiles, is_binary, mpf
 
-_ANSI = {
-    "red": "\x1b[31m",
-    "green": "\x1b[32m",
-    "yellow": "\x1b[33m",
-    "blue": "\x1b[34m",
-    "magenta": "\x1b[35m",
-    "cyan": "\x1b[36m",
-    "white": "\x1b[37m",
-    "grey": "\x1b[90m",
-}
 _DOC_TOKENS = ('"""', "'''")
 _FORMAT_STYLES = ("black", "isort", "autoflake", "autopep", "yapf")
-
-
-def _cprint(text: str, color: Optional[str] = None, end: str = "\n") -> None:
-    code = _ANSI.get(color, "")
-    reset = "\x1b[0m" if code else ""
-    print(f"{code}{text}{reset}", end=end)
-
-
-def _format_time(seconds: float) -> str:
-    return f"{seconds:.2f}s"
-
-
-def _fsz(size: float) -> str:
-    size = float(size)
-    for unit in ("B", "KB", "MB", "GB"):
-        if size < 1024:
-            return f"{size:.2f}{unit}"
-        size /= 1024
-    return f"{size:.2f}TB"
-
-
-def _is_binary(path: Path) -> bool:
-    try:
-        return b"\x00" in path.read_bytes()[:1024]
-    except Exception:
-        return True
-
-
-def _get_pyfiles(root: Path) -> list[Path]:
-    return [p for p in Path(root).rglob("*.py") if p.is_file()]
-
-
-def _get_files(root: Path) -> list[Path]:
-    return [p for p in Path(root).iterdir() if p.is_file()]
-
-
-def _mpf_async(func, items: list[Any]) -> list[Any]:
-    import multiprocessing
-
-    if not items:
-        return []
-    with multiprocessing.Pool() as pool:
-        return pool.map(func, items)
-
-
 _FIXCODE_HEAD = re.compile(r"^\s*(def|class)\s+")
 _FIXCODE_MAIN = re.compile(r"^\s*if\s+__name__\s*==\s*['\"]__main__['\"]\s*:")
 _FIXCODE_CTRL = re.compile(
@@ -423,7 +374,7 @@ def cmd_reflow(args: argparse.Namespace) -> int:
 
 
 def _astor_apply(path: Path, backup: bool) -> None:
-    if _is_binary(path):
+    if is_binary(path):
         return
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
@@ -449,7 +400,7 @@ def _astor_apply(path: Path, backup: bool) -> None:
 
 
 def cmd_astor(args: argparse.Namespace) -> int:
-    targets = [Path(f) for f in args.files] if args.files else _get_files(Path.cwd())
+    targets = [Path(f) for f in args.files] if args.files else get_files(Path.cwd())
     for path in targets:
         _astor_apply(path, args.backup)
     return 0
@@ -677,21 +628,21 @@ def _format_one(path_str: str, style: str) -> bool:
         if diff:
             path.write_text(new_text, encoding="utf-8")
             pct = diff / size * 40 if size else 0
-            _cprint(f"({_format_time(elapsed)})|{_fsz(diff)}|{pct:.1f}%", "cyan")
+            cprint(f"({format_time(elapsed)})|{fsz(diff)}|{pct:.1f}%", "cyan")
             return True
         print(f"{path.name} ", end=" ")
-        _cprint(f"({_format_time(elapsed)})|(no change)", "grey")
+        cprint(f"({format_time(elapsed)})|(no change)", "grey")
         return True
     except Exception as exc:
-        _cprint("[ERROR]", "red", end=" ")
+        cprint("[ERROR]", "red", end=" ")
         print(f"{path.name}: {exc}")
         return False
 
 
 def cmd_format(args: argparse.Namespace) -> int:
-    files = [str(p) for p in _get_pyfiles(Path.cwd())]
+    files = [str(p) for p in get_pyfiles(Path.cwd())]
     worker = partial(_format_one, style=args.style)
-    _mpf_async(worker, files)
+    mpf(worker, files)
     return 0
 
 

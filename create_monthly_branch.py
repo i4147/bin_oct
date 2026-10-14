@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that automates creating a monthly git branch in a local repository. The script should target a fixed repository location in the user's home directory and a main branch named "main". It should derive the branch name from the current date in the form of the lowercase full month name followed by an underscore and the four-digit year (for example, "october_2026").
+When run, the script should first check whether a branch with that name already exists, either locally or on the remote named "origin". If it already exists, the script should report this clearly to the user and exit successfully without making changes. If it does not exist, the script should ensure the repository is up to date with the main branch, then create the new monthly branch from main and push it to the remote, setting up upstream tracking. Each step should print concise, human-readable progress messages with clear success and failure indicators. If any git operation fails, the script should stop, report the error in a helpful way, and return a non-zero exit status. The script should handle unexpected exceptions gracefully rather than crashing with a raw traceback, and it should exit with status zero on success and non-zero on failure.
+---"""
 
 from __future__ import annotations
-
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
+import subprocess
+import sys
 
 REPO_PATH = Path.home() / "bin"
 MAIN_BRANCH = "main"

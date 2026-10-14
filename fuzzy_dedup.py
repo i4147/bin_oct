@@ -1,16 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree to find duplicate and near-duplicate files, using both exact content hashing and fuzzy similarity hashing so that files which differ only slightly (such as edited copies or re-saved documents) are also detected. The tool should accept a root directory path from the command line, recursively walk its contents while skipping common non-essential folders (such as version control metadata, cache directories, and package folders) by default, and allow the user to configure which folders to ignore and how deep to traverse.
+For each file, compute a fast cryptographic-style or non-cryptographic content hash for exact duplicate detection, and a fuzzy similarity hash for near-duplicate detection. Group files that share identical content together, and separately group files whose fuzzy similarity scores meet a user-configurable threshold. Handle files that cannot be read (permissions, broken links, very large files, or binary files where fuzzy hashing is not applicable) gracefully by logging a warning and continuing rather than crashing.
+The script should present results in a readable console summary showing each duplicate group, the file paths, sizes, and similarity scores, along with totals such as the number of files scanned, duplicate groups found, and potential space savings. Optionally, it should allow exporting the results to a structured file format (such as CSV or JSON) for further processing. Provide a command-line option to perform a dry run that only reports findings, and an option to interactively or automatically delete or move redundant copies while always keeping one representative file per group. Include progress feedback during long scans when appropriate, and ensure the tool exits with a clear error message if required dependencies are missing.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import defaultdict
 import csv
+from dataclasses import dataclass
 import json
 import os
+from pathlib import Path
 import shutil
 import sys
-from collections import defaultdict
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Iterator, Mapping, Sequence
 
 try:
@@ -24,8 +27,11 @@ except ImportError as exc:
     msg = "Missing dependency: xxhash. Install it with: pip install xxhash"
     raise SystemExit(msg) from exc
 try:
-    from colorama import Fore, Style
-    from colorama import init as colorama_init
+    from colorama import (
+        Fore,
+        Style,
+        init as colorama_init,
+    )
 except ImportError:
     Fore = None
     Style = None

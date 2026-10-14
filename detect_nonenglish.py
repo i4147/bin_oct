@@ -1,15 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a local project or directory tree and produces a structured summary report of its text-based source and configuration files. The tool should be a command-line utility that accepts a root directory path as its primary input, along with optional filters for file types, directories to skip, and a maximum file size, all with sensible defaults built in.
+When run, the script should walk the directory tree recursively, skipping common non-source folders such as version control metadata, dependency caches, virtual environments, and build output by default. It should only consider files whose extensions match a curated set of text- code in many languages, markup, data, configuration, and documentation files), and it should ignore files that exceed a configurable size limit or appear to be binary.
+For each qualifying file, the tool should gather useful metrics such as line count, character or byte count, and the detected file type or language. Processing of large numbers of files should be efficient, and the work may be parallelized across multiple CPU cores when beneficial, with results gathered reliably regardless of processing order.
+The script should produce an aggregated report that includes overall totals, a breakdown of file counts and sizes by extension or language, the largest files in the project, and any files skipped along with the reason. The output should be available in a human-readable console format by default and optionally as machine-readable JSON written to a file or standard output. It should handle missing paths, permission errors, and encoding problems gracefully, reporting them without crashing, and it should exit with a clear status code that reflects success, invalid input, or partial failures.
+Include a clear help message describing all options, and make the tool safe to run on large or unfamiliar directories without modifying any files.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import json
-import sys
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+import json
 from pathlib import Path
+import sys
 from typing import Optional, Sequence
 
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
@@ -117,7 +122,7 @@ class Gcld3Backend(Backend):
     name = "gcld3"
 
     def __init__(self) -> None:
-        import gcld3  # type: ignore
+        import gcld3
 
         self._det = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=10_000)
 
@@ -139,7 +144,7 @@ class Pycld2Backend(Backend):
     name = "pycld2"
 
     def __init__(self) -> None:
-        import pycld2 as cld2  # type: ignore
+        import pycld2 as cld2
 
         self._cld2 = cld2
 
@@ -160,7 +165,7 @@ class LangdetectBackend(Backend):
     name = "langdetect"
 
     def __init__(self) -> None:
-        from langdetect import DetectorFactory, detect_langs  # type: ignore
+        from langdetect import DetectorFactory, detect_langs
 
         DetectorFactory.seed = 0
         self._detect_langs = detect_langs
@@ -182,7 +187,7 @@ class LinguaBackend(Backend):
     name = "lingua"
 
     def __init__(self) -> None:
-        from lingua import LanguageDetectorBuilder  # type: ignore
+        from lingua import LanguageDetectorBuilder
 
         self._det = LanguageDetectorBuilder.from_all_languages().build()
 
@@ -205,7 +210,7 @@ class FastLangdetectBackend(Backend):
     name = "fast_langdetect"
 
     def __init__(self) -> None:
-        from fast_langdetect import detect  # type: ignore
+        from fast_langdetect import detect
 
         self._detect = detect
 

@@ -1,16 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a target directory (defaulting to the current directory) for files whose names contain non-English characters, translates each non-English file name (stem only, preserving the file extension) into English using an online translation service, and renames the files to their English equivalents. The tool should be parallelized across multiple worker processes to handle large numbers of files efficiently, and should offer a command-line interface allowing the user to specify the target directory, the number of workers, and the parallel execution strategy to use (such as map-based, starmap-based, unordered iterative, or asynchronous per-task execution).
+Key behaviors:
+- Leave files whose stems are already pure ASCII/English unchanged.
+- Skip renaming when translation fails or produces an empty result, logging a warning instead of crashing.
+- Ensure no filename collisions occur: if the translated name already exists, generate a unique alternative path rather than overwriting existing files.
+- Sanitize translated names so they are valid file names on the operating system.
+- Show progress feedback to the user while processing, and log each rename or skipped item with a clear, structured message.
+- Return a summary of how many files were scanned, translated, renamed, and skipped or failed.
+- Handle errors gracefully so that a single failing file does not stop the overall run.
+- Include a dry-run option that reports the planned renames without modifying any files.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import os
-import re
 from multiprocessing.pool import AsyncResult, Pool
+import os
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Final, TypeAlias
-
-from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
-from dh import unique_path  # type: ignore[import-untyped]
+from deep_translator import GoogleTranslator
+from dh import unique_path
 from loguru import logger
 from tqdm import tqdm
 

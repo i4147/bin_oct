@@ -1,26 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a versatile command-line compression and archiving tool, letting users compress, decompress, and inspect files and directories across many compression formats. The tool should accept a mode (compress or decompress), one or more input paths (files or directories), an output destination, and a choice of codec such as gzip, bzip2, xz/LZMA, zlib, zip, tar-based archives, and optional modern codecs like zstandard, brotli, LZ4, 7z, Blosc2, or cramjam when their libraries are available. Each codec should expose a configurable compression level within its valid range, with a sensible default. The tool should gracefully detect and skip unavailable optional codecs, reporting clearly which formats are supported in the current environment.
+Key behaviors to include:
+- Automatically infer the codec from file extensions when the user does not specify one, and validate that a requested codec is supported.
+- Support recursive processing of directories, preserving relative structure, and allow excluding files by pattern.
+- Offer an option to process multiple files in parallel using multiple worker processes, with a configurable worker count, and handle worker failures without crashing the whole run.
+- Generate checksums (such as SHA-256) for inputs and outputs, optionally verifying integrity after compression or decompression.
+- Write to temporary files and atomically move them into place so that partial outputs never remain on failure, and refuse to overwrite existing outputs unless a force flag is given.
+- Report progress and summary statistics (original size, compressed size, compression ratio, elapsed time) and use a logging system with adjustable verbosity.
+- Provide a dry-run mode that shows what would be done without writing anything, and a list/inspect mode that displays the contents and metadata of existing archives.
+- Handle errors robustly with clear messages and meaningful exit codes, and never follow unsafe paths (such as path traversal) when extracting archives.
+- Keep the design modular so new codecs can be added easily through a common interface that defines the codec's name, extensions, level range, and compress/decompress operations.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
+from dataclasses import dataclass
 import gzip
 import hashlib
 import logging
 import lzma
 import multiprocessing as mp
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
 import time
+from typing import TYPE_CHECKING, Optional
 import zipfile
 import zlib
-from dataclasses import dataclass
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -208,7 +219,7 @@ def human(n: int) -> str:
     for u in ("B", "KiB", "MiB", "GiB", "TiB"):
         if n < 1024 or u == "TiB":
             return f"{n:.1f} {u}" if u != "B" else f"{n} B"
-        n /= 1024  # type: ignore[assignment]
+        n /= 1024
     return f"{n} B"
 
 

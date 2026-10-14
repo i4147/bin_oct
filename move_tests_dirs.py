@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a Python site-packages directory tree for folders named "tests" (test directories bundled inside installed packages) and relocates them into a separate destination directory while preserving each folder's original relative location within the package tree. The script should support a dry-run mode, enabled via a command-line flag, that reports every planned move without modifying the file system. Certain packages, such as numerical and data-science libraries (numpy, pandas, scipy, numba), must be skipped entirely, and any path that falls under them should be reported as excluded rather than moved. The source and destination locations should be sensible defaults but easily configurable. Processing should run concurrently with a bounded number of worker processes to speed up work across many directories. Each file-system operation should be handled defensively: failures for an individual folder (such as permission errors, missing destinations, or name collisions) must be captured and reported without aborting the whole run. Results for every candidate folder should be collected and summarized at the end, showing how many were moved, skipped as excluded, dry-run previews, and errors, with clear logging of progress and outcomes throughout.
+---"""
 
 from __future__ import annotations
-
-import shutil
-import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import Final, NamedTuple
-
 from loguru import logger
 
 MAX_WORKERS: Final[int] = 8

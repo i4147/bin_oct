@@ -1,18 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a local directory for Python source distribution archives (.tar.gz) and builds each one into a wheel file, storing the results in a target wheels directory, so that a device or environment can later install these packages offline.
+The script should:
+- Accept command-line arguments that specify the source archive directory and the output wheels directory, with sensible defaults for an Android/Termux-style setup where packages are kept under a shared storage folder.
+- Skip any source package whose wheel already exists in the output directory, matching packages by their normalized name regardless of version string formatting, so repeated runs are fast and idempotent.
+- Safely extract each source archive into a temporary working area, locate the package root, and clean up temporary files afterward even when a build fails.
+- Detect whether a package requires a Rust toolchain (for example, by checking for a Cargo manifest in the extracted project) and handle those packages differently, such as warning the user, skipping them, or applying environment adjustments needed for compilation.
+- Build wheels using the current Python interpreter in an isolated, non-interactive way, capturing build output and reporting failures without stopping the entire batch.
+- Process multiple packages in parallel using a sensible number of worker processes based on available CPU cores, while keeping logging coherent across workers.
+- Log progress clearly at info level, including which packages were built, skipped, or failed, and print a final summary with counts for each outcome.
+- Return a non-zero exit status if any build failed, and zero otherwise.
+- Validate that input paths exist and give helpful error messages when they do not.
+---"""
+
+from __future__ import annotations
 import argparse
 import logging
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
-
 LOCAL_WHEELS = Path("/sdcard/whl")
 
 
@@ -22,8 +35,7 @@ def normalize(name: str) -> str:
 
 def source_pkg_name(source_name: str) -> str:
     stem = source_name
-    if stem.endswith(".tar.gz"):
-        stem = stem[:-7]
+    stem = stem.removesuffix(".tar.gz")
     if "-" in stem:
         return stem.rsplit("-", 1)[0]
     return stem
@@ -33,10 +45,7 @@ def is_already_built(wheels_dir: Path, source_name: str) -> bool:
     if not wheels_dir.exists():
         return False
     target = normalize(source_pkg_name(source_name))
-    for whl in wheels_dir.glob("*.whl"):
-        if normalize(whl.name.split("-")[0]) == target:
-            return True
-    return False
+    return any(normalize(whl.name.split("-")[0]) == target for whl in wheels_dir.glob("*.whl"))
 
 
 def has_rust_backend(pkg_dir: Path) -> bool:
@@ -64,13 +73,12 @@ def cleanup_build_artifacts(pkg_dir: Path) -> None:
                         logger.debug(f"  -> Removed {item.name}")
                 except Exception as e:
                     logger.warning(f"  ! Failed to remove {item.name}: {e}")
-        else:
-            if pattern.exists():
-                try:
-                    shutil.rmtree(pattern)
-                    logger.debug(f"  -> Removed {pattern.name}")
-                except Exception as e:
-                    logger.warning(f"  ! Failed to remove {pattern.name}: {e}")
+        elif pattern.exists():
+            try:
+                shutil.rmtree(pattern)
+                logger.debug(f"  -> Removed {pattern.name}")
+            except Exception as e:
+                logger.warning(f"  ! Failed to remove {pattern.name}: {e}")
 
 
 def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
@@ -94,27 +102,21 @@ def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
 def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {pkg_dir.name}")
     wheels_dir = Path.cwd() / "wheels"
-
     try:
         if is_already_built(wheels_dir, pkg_dir.name):
             logger.info(f"  ~ Skipping {pkg_dir.name} (already built)")
             return pkg_dir, "Skipped (already built)"
-
         has_setup = any([
             (pkg_dir / "setup.py").exists(),
             (pkg_dir / "setup.cfg").exists(),
             (pkg_dir / "pyproject.toml").exists(),
         ])
-
         if not has_setup:
             return pkg_dir, "No setup.py/setup.cfg/pyproject.toml found"
-
         if has_rust_backend(pkg_dir):
             return pkg_dir, "Skipped (Rust backend detected)"
-
         logger.info(f"  -> Cleaning previous build artifacts...")
         cleanup_build_artifacts(pkg_dir)
-
         logger.info(f"  -> Building wheel for {pkg_dir.name}...")
         result = subprocess.run(
             pip_wheel_cmd(pkg_dir, wheels_dir),
@@ -123,7 +125,6 @@ def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
             timeout=300,
             cwd=str(pkg_dir),
         )
-
         if result.returncode == 0:
             logger.info(f"  OK Successfully built wheel for {pkg_dir.name}")
             cleanup_build_artifacts(pkg_dir)
@@ -131,40 +132,32 @@ def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
         else:
             error_msg = result.stderr or result.stdout
             return pkg_dir, f"Build failed: {error_msg[:150]}"
-
     except subprocess.TimeoutExpired:
         return pkg_dir, "Build timeout (>300s)"
     except Exception as e:
-        return pkg_dir, f"Error: {str(e)}"
+        return pkg_dir, f"Error: {e!s}"
 
 
 def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {tar_gz_file.name}")
     wheels_dir = Path.cwd() / "wheels"
-
     if is_already_built(wheels_dir, tar_gz_file.name):
         logger.info(f"  ~ Skipping {tar_gz_file.name} (already built)")
         return tar_gz_file, "Skipped (already built)"
-
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-
         try:
             logger.info(f"  -> Extracting {tar_gz_file.name}...")
             with tarfile.open(tar_gz_file, "r:gz") as tar:
                 tar.extractall(path=temp_path)
-
             extracted_items = list(temp_path.iterdir())
             if not extracted_items:
                 return tar_gz_file, f"No files extracted from {tar_gz_file.name}"
-
             pkg_dir = extracted_items[0]
             if pkg_dir.is_file():
                 pkg_dir = temp_path
-
             if has_rust_backend(pkg_dir):
                 return tar_gz_file, "Skipped (Rust backend detected)"
-
             logger.info(f"  -> Building wheel for {tar_gz_file.name}...")
             result = subprocess.run(
                 pip_wheel_cmd(pkg_dir, wheels_dir),
@@ -172,20 +165,18 @@ def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
                 text=True,
                 timeout=300,
             )
-
             if result.returncode == 0:
                 logger.info(f"  OK Successfully built wheel for {tar_gz_file.name}")
                 return tar_gz_file, None
             else:
                 error_msg = result.stderr or result.stdout
                 return tar_gz_file, f"Build failed: {error_msg[:150]}"
-
         except tarfile.TarError as e:
-            return tar_gz_file, f"Extraction failed: {str(e)}"
+            return tar_gz_file, f"Extraction failed: {e!s}"
         except subprocess.TimeoutExpired:
             return tar_gz_file, "Build timeout (>300s)"
         except Exception as e:
-            return tar_gz_file, f"Error: {str(e)}"
+            return tar_gz_file, f"Error: {e!s}"
 
 
 def is_valid_package_dir(path: Path) -> bool:
@@ -203,36 +194,28 @@ def is_valid_package_dir(path: Path) -> bool:
 def build_from_directories() -> None:
     current_dir = Path.cwd()
     pkg_dirs = sorted([d for d in current_dir.iterdir() if is_valid_package_dir(d)])
-
     if not pkg_dirs:
         logger.warning("No valid Python package directories found in current directory")
         logger.info("Looking for directories with setup.py, setup.cfg, or pyproject.toml")
         return
-
     logger.info(f"Found {len(pkg_dirs)} package directory/directories to process")
     for pkg_dir in pkg_dirs:
         logger.info(f"  - {pkg_dir.name}")
-
     wheels_dir = current_dir / "wheels"
     wheels_dir.mkdir(exist_ok=True)
     logger.info(f"\nWheels will be saved to: {wheels_dir}\n")
     logger.info(f"Using local wheel cache: {LOCAL_WHEELS}\n")
-
     num_workers = min(cpu_count() - 1, len(pkg_dirs)) or 1
     logger.info(f"Using {num_workers} worker(s) for parallel builds\n")
-
     try:
         with Pool(processes=num_workers) as pool:
             results = pool.map(build_wheel_from_dir, pkg_dirs)
-
         logger.info("\n" + "=" * 70)
         logger.info("BUILD SUMMARY")
         logger.info("=" * 70)
-
         successful = 0
         skipped = 0
         failed = 0
-
         for pkg_dir, error in results:
             if error is None:
                 successful += 1
@@ -243,15 +226,12 @@ def build_from_directories() -> None:
             else:
                 failed += 1
                 logger.error(f"XX {pkg_dir.name}: {error}")
-
         logger.info("=" * 70)
         logger.info(f"Results: {successful} successful, {skipped} skipped, {failed} failed")
         logger.info("=" * 70)
-
     except Exception as e:
         logger.error(f"Multiprocessing failed: {e}")
         return
-
     wheels = list(wheels_dir.glob("*.whl"))
     if wheels:
         logger.info(f"\nBuilt wheels ({len(wheels)}):")
@@ -265,35 +245,27 @@ def build_from_directories() -> None:
 def build_from_tar_gz() -> None:
     current_dir = Path.cwd()
     tar_gz_files = sorted(current_dir.glob("*.tar.gz"))
-
     if not tar_gz_files:
         logger.warning("No .tar.gz files found in current directory")
         return
-
     logger.info(f"Found {len(tar_gz_files)} package(s) to process")
     for tar_file in tar_gz_files:
         logger.info(f"  - {tar_file.name}")
-
     wheels_dir = current_dir / "wheels"
     wheels_dir.mkdir(exist_ok=True)
     logger.info(f"\nWheels will be saved to: {wheels_dir}\n")
     logger.info(f"Using local wheel cache: {LOCAL_WHEELS}\n")
-
     num_workers = min(cpu_count() - 1, len(tar_gz_files)) or 1
     logger.info(f"Using {num_workers} worker(s) for parallel builds\n")
-
     try:
         with Pool(processes=num_workers) as pool:
             results = pool.map(build_wheel_from_tar_gz, tar_gz_files)
-
         logger.info("\n" + "=" * 70)
         logger.info("BUILD SUMMARY")
         logger.info("=" * 70)
-
         successful = 0
         skipped = 0
         failed = 0
-
         for tar_file, error in results:
             if error is None:
                 successful += 1
@@ -304,15 +276,12 @@ def build_from_tar_gz() -> None:
             else:
                 failed += 1
                 logger.error(f"XX {tar_file.name}: {error}")
-
         logger.info("=" * 70)
         logger.info(f"Results: {successful} successful, {skipped} skipped, {failed} failed")
         logger.info("=" * 70)
-
     except Exception as e:
         logger.error(f"Multiprocessing failed: {e}")
         return
-
     wheels = list(wheels_dir.glob("*.whl"))
     if wheels:
         logger.info(f"\nBuilt wheels ({len(wheels)}):")
@@ -333,16 +302,13 @@ Examples:
   python build_wheels.py -g       # Build from .tar.gz files
         """,
     )
-
     parser.add_argument(
         "-g",
         "--gzip",
         action="store_true",
         help="Build from .tar.gz files instead of extracted subdirectories",
     )
-
     args = parser.parse_args()
-
     logger.info("=" * 70)
     if args.gzip:
         logger.info("Mode: Building from .tar.gz files")

@@ -1,11 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line license generator tool. The tool should accept a license type chosen from the set of license templates available in a bundled "files" directory relative to the script's location, along with the holder's name and the license's effective year or date, and produce a complete license text for that type.
+Key behaviors:
+- Discover the available license types automatically from the templates shipped with the tool, so new templates are recognized without changing the code.
+- Let the user specify the license type, the copyright holder, and the year (defaulting to the current year) via command-line options, and provide clear help text for each.
+- Validate inputs: reject unknown license types with a clear, colored error message listing the valid options, and reject malformed or implausible years or dates.
+- Fill placeholders in the selected template with the supplied name and date, and output the result either to standard output or to a file path given by the user.
+- Maintain a small per-user cache file in the user's home directory that remembers recently generated or requested license values, so repeated requests can be answered quickly; report to the user whether each lookup was a cache hit or miss, with colored status messages.
+- Handle missing files, unreadable or unwritable paths, and corrupted cache contents gracefully, with informative errors instead of crashes, and exit with appropriate non-zero status codes on failure.
+- Use colored terminal output for success, warning, and error messages to improve readability.
+- Keep the interface simple and self-documenting, and structure the code so that the license-generation logic, cache handling, and command-line interface are clearly separated.
+---"""
 
+from __future__ import annotations
+from datetime import date
 import os
 import re
 import sys
-from datetime import date
 from typing import Final
-
 import click
 import ecstasy
 
@@ -40,7 +51,8 @@ def read_cache() -> str:
         with open(CACHE_PATH, "rt") as source:
             return source.read()
     except OSError:
-        raise LicenseError("Could not read from cache.")
+        msg = "Could not read from cache."
+        raise LicenseError(msg)
 
 
 def read_author(cache: str) -> str:
@@ -63,7 +75,8 @@ def read_kind(cache: str) -> str:
 
 def read(author: str | None, kind: str | None) -> tuple[str, str]:
     if not os.path.exists(CACHE_PATH):
-        raise LicenseError("No cache found. You must supply at least -a and -k.")
+        msg = "No cache found. You must supply at least -a and -k."
+        raise LicenseError(msg)
     cache_data = read_cache()
     if author is None:
         author = read_author(cache_data)
@@ -95,9 +108,11 @@ def validate(author: str, year: str, kind: str) -> None:
     author_pattern = r"^[a-zA-Z -]+$"
     year_pattern = r"^\d{4}$"
     if not re.match(author_pattern, author):
-        raise LicenseError(f"Invalid author: {author}. Must match '{author_pattern}'.")
+        msg = f"Invalid author: {author}. Must match '{author_pattern}'."
+        raise LicenseError(msg)
     if not re.match(year_pattern, year):
-        raise LicenseError(f"Invalid year: {year}. Must match '{year_pattern}'.")
+        msg = f"Invalid year: {year}. Must match '{year_pattern}'."
+        raise LicenseError(msg)
     if kind not in LICENSE_KINDS:
         raise LicenseError(f"Invalid license kind: {kind}. Must be one of: " + ", ".join(LICENSE_KINDS))
 

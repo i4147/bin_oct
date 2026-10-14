@@ -1,18 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that refactors a Python project by reorganizing top-level definitions into dedicated module files. The tool should scan a given project root directory for Python source files and extract module-level constants, classes, and functions into separate target modules (such as a constants file, a classes file, and a functions file), rewriting the original files so that the moved definitions are replaced with appropriate imports, while preserving the program's behavior.
+Requirements:
+- Accept command-line options to select the project root, whether to search recursively, which kinds of definitions to extract (constants, classes, functions), custom names for the target output files, and whether to run an optional code formatter on the results.
+- Support a single-file mode and a whole-project mode, where the whole-project mode processes all discovered Python files in parallel using a small pool of worker processes.
+- Use the Python AST to reliably identify top-level definitions and their source spans, including decorators and docstrings, and avoid moving nested or non-definition statements.
+- Generate or update the target modules, adding the necessary import statements to the original files and to the new modules so that names resolve correctly, and avoid duplicate definitions or circular-import mistakes where feasible.
+- Create backup copies of every file before modifying it, using a consistent backup suffix, and provide an undo option that restores the original files from those backups.
+- Print progress and a summary of changes when verbose output is enabled, and stay quiet otherwise.
+- Handle errors gracefully: skip files with syntax errors or unreadable content, report them, and continue processing the rest.
+- Optionally invoke an external formatter on modified files when requested, and degrade gracefully if the formatter is unavailable.
+- Exit with a clear status code indicating success, partial failure, or invalid arguments.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import defaultdict
 import contextlib
+from dataclasses import dataclass
+from functools import lru_cache
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import subprocess
-from collections import defaultdict
-from dataclasses import dataclass
-from functools import lru_cache
-from pathlib import Path
 from typing import Iterable
 
 WORKERS: int = 6

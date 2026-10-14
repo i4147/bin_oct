@@ -1,18 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a multi-backend text translation tool, reading source text from files or standard input and writing translated output to files or standard output. The tool should support several translation services (such as commercial APIs and free web-based translators), selectable from the command line, and it
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import Future, ThreadPoolExecutor
 import json
 import os
+from pathlib import Path
 import signal
 import sys
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
-from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -68,7 +68,7 @@ def _lang_for_pygoogletranslation(code: str, *, is_target: bool) -> str:
 
 
 def _make_deepl(source: str, target: str) -> Callable[[str], str]:
-    import deepl  # type: ignore[import-untyped]
+    import deepl
 
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
@@ -86,7 +86,7 @@ def _make_deepl(source: str, target: str) -> Callable[[str], str]:
 
 
 def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
-    from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
+    from deep_translator import GoogleTranslator
 
     src = _lang_for_deep_translator(source, is_target=False)
     tgt = _lang_for_deep_translator(target, is_target=True)
@@ -103,7 +103,7 @@ def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
 
 
 def _make_translate(source: str, target: str) -> Callable[[str], str]:
-    from translate import Translator as TranslatePkgTranslator  # type: ignore[import-untyped]
+    from translate import Translator as TranslatePkgTranslator
 
     src = _lang_for_translate_pkg(source, is_target=False)
     tgt = _lang_for_translate_pkg(target, is_target=True)
@@ -120,7 +120,7 @@ def _make_translate(source: str, target: str) -> Callable[[str], str]:
 
 
 def _make_translators_bing(source: str, target: str) -> Callable[[str], str]:
-    import translators as ts  # type: ignore[import-untyped]
+    import translators as ts
 
     src = _lang_for_translators_bing(source, is_target=False)
     tgt = _lang_for_translators_bing(target, is_target=True)
@@ -139,7 +139,7 @@ _googletrans_lock = threading.Lock()
 
 
 def _make_googletrans(source: str, target: str) -> Callable[[str], str]:
-    from googletrans import Translator as GoogleTransTranslator  # type: ignore[import-untyped]
+    from googletrans import Translator as GoogleTransTranslator
 
     src = _lang_for_googletrans(source, is_target=False)
     tgt = _lang_for_googletrans(target, is_target=True)
@@ -160,7 +160,7 @@ _pygoogletranslation_lock = threading.Lock()
 
 
 def _make_pygoogletranslation(source: str, target: str) -> Callable[[str], str]:
-    from pygoogletranslation import Translator as PyGoogleTranslator  # type: ignore[import-untyped]
+    from pygoogletranslation import Translator as PyGoogleTranslator
 
     src = _lang_for_pygoogletranslation(source, is_target=False)
     tgt = _lang_for_pygoogletranslation(target, is_target=True)

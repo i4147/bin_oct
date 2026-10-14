@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans a given directory (or accepts a single file path) and reports on the files it finds, skipping any directories or files that match a set of exclusion rules. The script should walk the directory tree efficiently, avoid revisiting the same directory twice (including through symbolic links), and prune excluded directories so their contents are never traversed. For each discovered file, it should check its size against a configurable threshold (default 1 MB) and handle files above that limit differently from smaller ones, such as flagging them, summarizing them, or reporting them separately. The script should use the current working directory as the default starting point when no path is provided, accept the target path and size threshold from the command line, and print a clear, human-readable summary of the results, including file paths, sizes, and totals for files processed and skipped. Handle missing paths, permission errors, and unreadable files gracefully without crashing, and make the output easy to read in a terminal.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
-
+import sys
 from dh import fsz
 
 

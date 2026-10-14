@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory for all pickle files (with a .pkl extension), loads each one, and validates that it contains a tabular dataset. The script should discover the files in a consistent, s the user which files were found before processing them. For each file, it should attempt to deserialize the contents and confirm the result is a structured table; if a file holds some other kind of object, it should print a clear warning naming the file and the actual type encountered, then skip it. If loading fails for any reason ( file, unreadable data, etc.), it should print an error message identifying the file and theing the remaining files rather than crashing. For every successfully loaded table, it should report the number of rows and columns. The script should collect all valid tables and then combine them into a single consolidated table for further use, handling the case where no valid files exist or noables could be loaded by informing the user and exiting gracefully. The script should be runnable as a standalone command-line tool with arguments, and its output should be clear, concy to follow.
+---"""
 
 from __future__ import annotations
-
 import glob
 import json
 import pickle
-
 import pandas as pd
 
 

@@ -1,19 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a multi-format archive compression tool for files and directories, running from the command line. The tool should accept one or more input paths (files or folders), let the user choose a compression algorithm from a set of options (such as zstd, xz, 7z, gzip, bzip2, brotli, and lz4), and optionally control the compression level or quality. For each input, it should produce a compressed output file placed alongside the source or in a user-specified output location, using a sensible naming convention with the algorithm's standard extension. When a folder is given, the tool should either archive its contents into a single compressed bundle (tar-style) or compress each contained file individually, depending on a clearly exposed option.
+Key behaviors:
+- Process multiple files concurrently with a bounded number of workers so large batches finish faster without overwhelming the system.
+- Read and write data in fixed-size chunks so very large files can be compressed without loading them fully into memory.
+- Gracefully report which compressors are available in the current environment, and fail with a clear message if a requested algorithm's dependency is missing.
+- Provide a summary at the end showing each processed item, its original size, compressed size, compression ratio, and elapsed time, along with a total.
+- Support a dry-run or listing mode that shows what would be produced without writing any files.
+- Skip or clearly warn about files that cannot be read, and never silently overwrite existing outputs unless an explicit overwrite flag is given.
+- Validate arguments and print helpful usage errors, including a help message describing all options.
+- Return a non-zero exit status if any item fails, and zero when everything succeeds.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import bz2
 import gzip
-import sys
 from pathlib import Path
-
+import sys
 import brotlicffi as brotli
+from dh import fsz, get_dirs, get_files
 import lz4.frame
 import py7zr
 import zstandard as zstd
-from dh import fsz, get_dirs, get_files
 
 MAX_WORKERS = 4
 CHUNK_SIZE = 1024 * 1024

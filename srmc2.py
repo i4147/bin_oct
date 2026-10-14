@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line code formatting and modernization tool for Python source files. It should accept one or more file or directory paths (optionally with glob-style include/exclude patterns), recursively discover Python source files (such as .py, .pyi, and .pyw), and skip common non-source directories like version control folders, virtual environments, and caches.
+The tool should rewrite source code in place to target a recent Python language version by applying safe, behavior-preserving transformations that modernize syntax and idioms, while leaving all other formatting intact as much as possible. It must preserve comments, encoding cookies, and special directive comments (such as type or fmt directives), and must never alter code semantics.
+Key behaviors:
+- Support a dry-run mode that reports which files would change without writing anything, and a check mode that exits with a non-zero status if any file would be modified, suitable for CI pipelines.
+- Show a unified diff of proposed changes when requested, and produce a clear summary of how many files were scanned, modified, unchanged, or failed.
+- Process files in parallel with a configurable number of worker processes, with an option to run sequentially for debugging.
+- Accept a configurable target language version and a line-length setting, and allow users to enable or disable specific transformation rules.
+- Write changes atomically and safely, preserving file permissions and line endings, and skip files that cannot be parsed, reporting the error without aborting the whole run.
+- Respect interrupt signals gracefully, shutting down worker processes cleanly.
+- Log progress and errors using a structured logging approach with adjustable verbosity, and optionally emit a machine-readable JSON report of results.
+- Provide a version flag and clear help documentation for all options, with sensible defaults so it runs with just a path argument.
+- Exit with distinct status codes for success, unchanged-in-check-mode, internal errors, and invalid usage.
+---"""
+
+from __future__ import annotations
 import argparse
 import ast
 import codecs
@@ -9,6 +24,7 @@ import fnmatch
 import json
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
@@ -16,18 +32,16 @@ import stat
 import sys
 import tempfile
 import textwrap
-from collections.abc import Iterator, Sequence
-from pathlib import Path
-from typing import Any, Final, Literal, cast
-
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 import libcst as cst
 from loguru import logger
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 VERSION: Final = "1.0.0"
 FEATURE_VERSION: Final = (3, 12)
 DEFAULT_WORKERS: Final = 4
 PoolMethod = Literal["imap_unordered", "imap", "map"]
-
 _COOKIE_RE: Final = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*[-\w.]+")
 _DIRECTIVE_RE: Final = re.compile(r"^#\s*(?:type|fmt)\s*:")
 _SUFFIXES: Final = frozenset({".py", ".pyi", ".pyw"})
@@ -145,7 +159,7 @@ def _looks_like_code(values: Sequence[str]) -> bool:
     lines: list[str] = []
     for value in values:
         body = value[1:]
-        lines.append(body[1:] if body.startswith(" ") else body)
+        lines.append(body.removeprefix(" "))
     source = textwrap.dedent("\n".join(lines)).strip("\n")
     if not source.strip():
         return False
@@ -172,7 +186,7 @@ class Stripper(cst.CSTTransformer):
             return result
         header_owner = isinstance(result, cst.Module)
         changes: dict[str, tuple[cst.EmptyLine, ...]] = {}
-        for field in dataclasses.fields(cast(Any, result)):
+        for field in dataclasses.fields(cast("Any", result)):
             value = getattr(result, field.name)
             if not isinstance(value, tuple | list) or not value:
                 continue
@@ -694,9 +708,11 @@ def _positive_int(value: str) -> int:
     try:
         number = int(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(f"invalid integer: {value!r}") from exc
+        msg = f"invalid integer: {value!r}"
+        raise argparse.ArgumentTypeError(msg) from exc
     if number < 1:
-        raise argparse.ArgumentTypeError("must be >= 1")
+        msg = "must be >= 1"
+        raise argparse.ArgumentTypeError(msg)
     return number
 
 

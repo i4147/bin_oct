@@ -1,14 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that compares two directory trees (or two files) and reports how they differ, with an optional mode that makes the destination match the source. The tool should be a command-line utility that accepts a source path and a target path, expands environment variables and user home shortcuts in the given paths, and resolves them to absolute locations before use.
+Core behavior:
+- Walk both directory trees recursively and identify files that exist only in the source, only in the target, or in both.
+- For files present in both locations, determine whether their contents are identical using a content-based comparison that is efficient for large files (for example, by streaming and hashing), rather than relying only on file names or sizes.
+- For text files that differ, produce a unified-diff style report showing the changed lines, so the user can see exactly what changed. Handle encoding gracefully, allowing the user to optionally specify a text encoding, and fall back sensibly when decoding fails, treating undecodable files as binary and reporting that they differ without attempting a line diff.
+- Produce a clear summary at the end: counts of identical, changed, added, and removed files, plus a list of the an option to limit or filter the comparison, such as ignoring specific file, and an option to control the verbosity of the diff output.
+- Support an optional s when explicitly requested, copies new and changed files from source to target and removes files that exist only in the target. Include a dry-run option that previews all planned changes without modifying anything,icit confirmation orag before any destructive deletion.
+- Handle errors robable files, and m types (for example, a file compared against a directory) should produce informative messages rather than crashes the script should return meaningful exit code ( differences, 1 for differences found, and 2 for errors).
+- Use colored or highlighted console output when available, falling back to plain text when a richer output library is not installed.
+- Include helpful command-line help text describing every option and a short usage example.
+The result should be a self-contained, well-structured tool that a user can run from the terminal to audit or synchronize two locations safely.
+---"""
 
+from __future__ import annotations
 import argparse
 import difflib
 import filecmp
 import hashlib
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional
 
 try:
     from dh import cprint
@@ -185,7 +198,7 @@ def cmd_compare_dirz(args: argparse.Namespace) -> int:
     for l, B in w.items():
         if l not in x:
             c.append(l)
-        elif B == x[l]:
+        elif x[l] == B:
             o.append(l)
         else:
             m.append(l)
@@ -285,20 +298,17 @@ def cmd_udiffer(args: argparse.Namespace) -> int:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Merged file utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("a-b")
     p.add_argument("first")
     p.add_argument("second")
     p.add_argument("--encoding", default="utf-8")
     p.set_defaults(func=cmd_a_b)
-
     p = sub.add_parser("compare-move")
     p.add_argument("source")
     p.add_argument("target")
     p.add_argument("--common-dir", default="common")
     p.add_argument("--yes", action="store_true")
     p.set_defaults(func=cmd_compare_move)
-
     p = sub.add_parser("compare-dirs")
     p.add_argument("source")
     p.add_argument("target")
@@ -306,7 +316,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--yes", action="store_true")
     p.add_argument("--hash-chunk-size", type=int, default=32768)
     p.set_defaults(func=cmd_compare_dirs)
-
     p = sub.add_parser("compare-dirz")
     p.add_argument("dir1")
     p.add_argument("dir2")
@@ -315,35 +324,29 @@ def main(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--only-in-dir1-output", default="only_in_dir1.txt")
     p.add_argument("--hash-chunk-size", type=int, default=65536)
     p.set_defaults(func=cmd_compare_dirz)
-
     p = sub.add_parser("fcmp")
     p.add_argument("directory")
     p.add_argument("--base", default=None)
     p.set_defaults(func=cmd_fcmp)
-
     p = sub.add_parser("pdif")
     p.add_argument("file1")
     p.add_argument("file2")
     p.add_argument("--encoding", default="utf-8")
     p.set_defaults(func=cmd_pdif)
-
     p = sub.add_parser("pycommon")
     p.add_argument("file1")
     p.add_argument("file2")
     p.add_argument("--encoding", default="utf-8")
     p.set_defaults(func=cmd_pycommon)
-
     p = sub.add_parser("same-file")
     p.add_argument("file1")
     p.add_argument("file2")
     p.set_defaults(func=cmd_same_file)
-
     p = sub.add_parser("udiffer")
     p.add_argument("first")
     p.add_argument("second")
     p.add_argument("--encoding", default=None)
     p.set_defaults(func=cmd_udiffer)
-
     args = parser.parse_args(argv)
     return args.func(args)
 

@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that backs up the installed packages of a Debian-style (apt/dpkg-based) system into reusable package archives. The tool should run in a Termux-like environment, enumerate every installed package, and for each one gather its metadata (name, version, architecture, description, and dependencies) along with the list of files it installed that still exist on disk. It should then bundle that metadata and those files into a distributable package archive stored in a dedicated directory under the user's home folder, creating that directory if it does not exist. The script should handle missing packages, missing or unreadable package file lists, and permission errors gracefully, skipping problematic items with clear warnings rather than crashing. It should report progress as it works and print a final summary of how many packages were processed, backed up, and skipped. Design the internal structure and implementation approach freely, but ensure the output archives can later be inspected or restored, and that the tool can be safely re-run without corrupting existing backups.
+---"""
 
 from __future__ import annotations
-
 import contextlib
 import os
+from pathlib import Path
 import shutil
 import tarfile
-from pathlib import Path
-
 import apt
 import apt_pkg
 import unix_ar

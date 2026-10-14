@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that computes a content-based fingerprint for every folder in a set of user-specified directory trees and reports which folders have duplicate contents. The script should accept one or more root directories as input, walk through them to identify candidate folders, and produce a fingerprint for each folder based on the relative paths and full byte contents of the regular files it contains, ignoring symbolic links and skipping any folder that has no files. Read file data in fixed-size chunks so that very large files can be processed efficiently, and handle unreadable files gracefully without aborting the whole run.
+The script should avoid comparing a folder against itself or against folders that are nested inside one another, since such comparisons would produce misleading results. Folders whose fingerprints match should be grouped together as duplicates, and the output should list each group of identical folders with their paths, clearly separated from one another. Where practical, persist the computed fingerprints to a cache file keyed by folder path and a modification signature so that repeated runs skip unchanged folders, and provide a way to ignore or refresh that cache.
+The tool should print a concise, human-readable summary to the console and optionally write a machine-readable JSON report containing the duplicate groups, the fingerprint values, and basic statistics such as the number of folders scanned, files hashed, and total bytes processed. Include clear error messages for invalid or missing input paths, and make the behavior deterministic so that identical inputs always produce identical reports.
+---"""
 
 from __future__ import annotations
-
-import json
 from collections import defaultdict
+import json
 from pathlib import Path
-
 from dh import get_dirs
 from xxhash import xxh64
 

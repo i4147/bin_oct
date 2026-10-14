@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that inspects a Python wheel (.whl) file and reports on its contents and metadata. The tool should accept a path to a wheel file and, optionally, a verbose flag that enables step-by-step progress messages during inspection. It should first verify the file exists and return a clear error if it does not.
+Once the file is confirmed, the script should open the wheel as a compressed archive and gather general information about it: the file name, its size in megabytes, the total number of entries it contains, the full list of file paths inside the archive, and a breakdown of how many files exist per file extension or type.
+The script should also locate the package metadata file inside the wheel (the one that describes the package, typically ending in a METADATA path), read it as text, and parse its key-value header lines into a structured dictionary, such as name, version, summary, author, and dependency requirements. Multi-valued fields should be handled gracefully, and malformed or missing metadata should not crash the tool.
+Errors such as corrupted archives, unreadable files, or encoding problems should be caught and returned as informative error results rather than unhandled exceptions. Results should be returned in a structured form that can be easily printed as a readable report or consumed by other code. The output should be clear, well-organized, and suitable for both human reading and programmatic use, and the verbose mode should only affect progress logging, not the final results.
+---"""
 
 from __future__ import annotations
-
-import zipfile
 from pathlib import Path
-
+import zipfile
 from loguru import logger
 
 

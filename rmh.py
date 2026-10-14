@@ -1,13 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes comments from source code files in a given directory tree, processing many files in parallel and reporting how much disk space was saved. The tool should accept a target folder (or a single file) as input, walk through the supported source files, and strip single-line and multi-line comments while leaving string literals untouched so that the program's behavior is preserved. Before modifying any file, it should create a backup copy so the original content can be recovered, and it should clean up or retain backups according to a configurable option.
+Key behaviors:
+- Accept command-line input for the target path, the file extensions or languages to process, whether to create backups, and whether to run in a dry-run mode that only reports what would change.
+- Process files concurrently across multiple CPU cores, with a progress indicator displayed during processing.
+- For each file, record the original size, the final size after comment removal, and the size of any backup, then compute the net space freed and total space used.
+- Skip files that cannot be read or decoded, and capture per-file errors without stopping the overall run.
+- Make sure comment-like sequences inside string literals (including escaped quotes) are never removed.
+- Write the processed output back safely, avoiding partial writes that could corrupt files.
+- Log significant events and errors using a structured logging approach, with a configurable verbosity level.
+- At the end, print a summary table showing the number of files processed, files changed, files skipped or failed, total space freed, and total space consumed by backups.
+- Exit with a non-zero status code if any file failed to process, and zero otherwise.
+---"""
 
 from __future__ import annotations
-
-import re
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
+import re
+import sys
 from loguru import logger
 from tqdm import tqdm
 

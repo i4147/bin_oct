@@ -1,16 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a given directory (or a set of Python files) for Python source files, parses each file's syntax tree, and collects every top-level import statement (both plain imports and "from ... import" statements). The script should process files in parallel using a small worker pool to keep things fast on large codebases.
+For each file, the script should extract the raw text of each top-level import statement and then normalize the collected module names into a deduplicated, sorted list. It should distinguish between standard library modules and third-party packages, using the interpreter's knowledge of standard library module names where available, and should attempt to identify which third-party packages are installed in the current environment so that they can be reported accordingly.
+The main output should be a plain-text report written to a file (named "importz.txt" by default), listing the discovered imports grouped into sections such as standard library, installed third-party packages, and unknown or uninstalled packages. The script should also log its progress and any errors (such as unreadable or unparseable files) using a logging library, without crashing on individual file failures.
+The script should accept a command-line path argument for the target directory or file, should skip non-Python files, and should produce a clear summary at the end indicating how many files were scanned and how many unique imports were found. Use only well-structured, idiomatic Python with a `main` entry point and make sure the program runs correctly when executed directly from the command line.
+---"""
 
 from __future__ import annotations
-
-import sys
 from importlib.metadata import distributions
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
-
-import tree_sitter_python as tsp
 from loguru import logger
 from tree_sitter import Language, Parser
+import tree_sitter_python as tsp
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

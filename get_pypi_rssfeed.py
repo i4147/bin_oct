@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that fetches the latest package updates from the PyPI RSS feed, parses the, and presents the newly published or updated Python packages to the user in a clear, readable form. The script should retrieve the feed from the public PyPI packages RSS endpoint, handle network failures and malformed or unexpected feed structures gracefully by reporting errors to the standard error stream without crashing, and extract key details for each package entry, including its title, link, description, and publication date. It should present the results in an organized way, such as a concise list ordered from most to least recent, and should handle entries with missing fields by falling back to sensible placeholder values. Allow the user to optionally limit how many packages are displayed and to filter results by a keyword matched against package names or descriptions. Ensure the output is human-friendly, with timestamps formatted consistently, and that the script exits with an appropriate status code indicating success or failure.
+---"""
 
 from __future__ import annotations
-
+from datetime import datetime
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime
-
 import requests
 
 PYPI_RSS_URL = "https://pypi.org/rss/packages.xml"

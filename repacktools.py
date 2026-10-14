@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import asyncio
 import base64
 import contextlib
 import csv
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 import email
 import hashlib
 import json
 import logging
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import platform
 import shutil
 import site
@@ -18,28 +20,24 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-import zipfile
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any, Optional, Sequence
+import zipfile
 
 try:
-    from wheel.wheelfile import WheelFile  # type: ignore
+    from wheel.wheelfile import WheelFile
 
     _HAS_WHEEL = True
 except ImportError:
-    WheelFile = None  # type: ignore
+    WheelFile = None
     _HAS_WHEEL = False
 try:
-    from tqdm import tqdm as _tqdm  # type: ignore
+    from tqdm import tqdm as _tqdm
 
     _HAS_TQDM = True
 except ImportError:
     _HAS_TQDM = False
 
-    def _tqdm(it, **_kw):  # type: ignore
+    def _tqdm(it, **_kw):
         return it
 
 
@@ -92,7 +90,7 @@ def platform_tag() -> str:
 
 def current_sys_tag() -> tuple[str, str, str]:
     try:
-        from packaging.tags import sys_tags  # type: ignore
+        from packaging.tags import sys_tags
 
         tag = next(sys_tags())
         return tag.interpreter, tag.abi, tag.platform
@@ -640,7 +638,7 @@ def pack_unpacked_dir_library(src: Path, output_dir: Path, verbose: bool) -> tup
     wheel_path = output_dir / f"{name}-{version}-{tag}.whl"
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
-        with WheelFile(str(wheel_path), "w", compression=zipfile.ZIP_DEFLATED) as wf:  # type: ignore
+        with WheelFile(str(wheel_path), "w", compression=zipfile.ZIP_DEFLATED) as wf:
             for f in src.rglob("*"):
                 if f.is_file():
                     wf.write_to(str(f), f.relative_to(src).as_posix())
@@ -751,7 +749,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     sub = p.add_subparsers(dest="command", required=True)
-
     rp = sub.add_parser(
         "repack",
         help="Repack installed packages from a site-packages dir into wheels",
@@ -824,7 +821,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="list every .whl in the output directory at the end",
     )
     rp.add_argument("--no-progress", action="store_true", help="disable tqdm progress")
-
     pd = sub.add_parser(
         "pack-dirs",
         help="Pack pre-unpacked wheel directories into .whl files",

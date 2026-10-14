@@ -1,38 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""merged.py — Unified subtitle toolkit.
-
-Consolidates six standalone scripts into one CLI:
-
-    rename      Rename .srt files to E## based on S##E## / NxNN patterns.
-    folderize   Detect language of each .srt and move into per-language folders.
-    srt2txt     Convert a .srt file into plain text.
-    vtt2srt     Convert a .vtt file to .srt.
-    translate   Translate a .srt file using GoogleTranslator.
-
-Examples:
-    python merged.py rename -r -w .
-    python merged.py folderize --engine lingua .
-    python merged.py folderize --engine cld2 .
-    python merged.py srt2txt movie.srt movie.txt
-    python merged.py vtt2srt captions.vtt
-    python merged.py translate -i movie.srt -s en -t es
-"""
+"""Write a Python script that scans a directory of subtitle files (SRT format) and produces a summary of the dialogue they contain. The script should accept a target directory path from the command line, with an option to search subdirectories recursively. It should locate all subtitle files, read each one, and strip out the non-spoken material such as sequence numbers, timestamp lines, and inline formatting or markup tags, leaving only the dialogue text.
+From the cleaned dialogue, the script should compute word-level statistics across all files: the total number of subtitle entries and words processed, and the most frequently used words, excluding common stop words and very short tokens. Results should be presented as a readable, color-highlighted report in the terminal, listing per-file figures alongside overall totals and the top frequent terms.
+The script should handle large collections efficiently by processing files in parallel across multiple worker processes, while remaining robust against malformed or unreadable files: problematic files should be skipped with a clear warning rather than stopping the whole run. It should also report total elapsed time at the end. Optionally, the user should be able to export the results to a structured file (such as CSV or JSON) and to limit how many top terms are displayed. Provide sensible defaults, helpful command-line help text, and clear error messages when the input path is invalid or contains no subtitle files.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from collections import Counter
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import time
-from collections import Counter
-from pathlib import Path
 from typing import Iterable, Optional
-
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 _ANSI = {
     "red": "\033[31m",
@@ -68,7 +48,6 @@ def iter_srt(directory: Path, recursive: bool = False) -> list[Path]:
 
 
 def read_srt_dialogue(path: Path) -> tuple[list[str], int]:
-    """Return (dialogue lines, number of structural lines skipped)."""
     with open(path, "r", encoding="utf-8") as f:
         raw = f.readlines()
     lines: list[str] = []
@@ -81,10 +60,6 @@ def read_srt_dialogue(path: Path) -> tuple[list[str], int]:
         lines.append(s)
     return lines, skipped
 
-
-# ---------------------------------------------------------------------------
-# rename  (was clean_subs.py)
-# ---------------------------------------------------------------------------
 
 _EPISODE_PATTERNS = [
     re.compile(r"S\d{2}E(\d{2})", re.IGNORECASE),
@@ -115,7 +90,6 @@ def cmd_rename(args: argparse.Namespace) -> int:
     if not files:
         print("No subtitle files found")
         return 0
-
     print(colored("\nPreview:", "cyan", attrs=["bold"]))
     for f in files:
         new_stem = _new_subtitle_name(f.name)
@@ -134,10 +108,6 @@ def cmd_rename(args: argparse.Namespace) -> int:
         print(colored("\nDry-run only. Use -w to apply.", "yellow"))
     return 0
 
-
-# ---------------------------------------------------------------------------
-# folderize  (was folderize_srt.py  +  folderize_srt_files_by_lang.py)
-# ---------------------------------------------------------------------------
 
 _LINGUA_DETECTOR = None
 
@@ -170,7 +140,6 @@ def _folderize_lingua(path: Path, pool, batch_size: int) -> Optional[tuple[str, 
             return None
         batches = [lines[i : i + batch_size] for i in range(0, len(lines), batch_size)]
         results = pool.map(_lingua_detect_batch, batches)
-
         total = 0
         votes: Counter = Counter()
         iso_map: dict[str, str] = {}
@@ -182,7 +151,6 @@ def _folderize_lingua(path: Path, pool, batch_size: int) -> Optional[tuple[str, 
                     iso_map[name] = iso
                     preview = text[:50] + ("..." if len(text) > 50 else "")
                     print(f'      Line {total}: {name} - "{preview}"')
-
         if votes:
             top, _ = votes.most_common(1)[0]
             iso = iso_map[top]
@@ -229,9 +197,7 @@ def cmd_folderize(args: argparse.Namespace) -> int:
         print("❌ No .srt files found in the directory.")
         return 0
     print(f"📊 Found {len(files)} SRT file(s)")
-
     buckets: dict[str, list[Path]] = {}
-
     if args.engine == "lingua":
         workers = args.workers or os.cpu_count() or 1
         print(f"⚙️  Using {workers} worker processes (batch size={args.batch_size})\n")
@@ -260,7 +226,6 @@ def cmd_folderize(args: argparse.Namespace) -> int:
             else:
                 print("   ⚠ Could not detect language")
         print("\n" + "=" * 70)
-
     print("\n📁 Creating folders and moving files...\n")
     moved = 0
     for key, paths in sorted(buckets.items()):
@@ -274,11 +239,6 @@ def cmd_folderize(args: argparse.Namespace) -> int:
             moved += 1
     print(f"\n✅ Complete! Moved {moved} file(s) into {len(buckets)} language folder(s).")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# srt2txt  (was srt2txt.py)
-# ---------------------------------------------------------------------------
 
 
 def _srt_to_text(path: Path) -> str:
@@ -303,11 +263,6 @@ def cmd_srt2txt(args: argparse.Namespace) -> int:
     dst.write_text(_srt_to_text(src), encoding="utf-8")
     print(f"✔ Converted: {src} → {dst}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# vtt2srt  (was vtt2srt.py)
-# ---------------------------------------------------------------------------
 
 
 def _vtt_to_srt(content: str) -> str:
@@ -344,18 +299,12 @@ def cmd_vtt2srt(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# translate  (was transrt.py)
-# ---------------------------------------------------------------------------
-
-
 def _translate_srt(input_path: Path, source: str, target: str, max_batch_chars: int, delay: float) -> None:
-    import pysrt
     from deep_translator import GoogleTranslator
+    import pysrt
 
     subs = pysrt.open(str(input_path), encoding="utf-8")
     translator = GoogleTranslator(source=source, target=target)
-
     batches: list[list] = []
     current: list = []
     size = 0
@@ -368,7 +317,6 @@ def _translate_srt(input_path: Path, source: str, target: str, max_batch_chars: 
         size += len(sub.text)
     if current:
         batches.append(current)
-
     print(f"Translating {len(batches)} batches...")
     for i, batch in enumerate(batches):
         try:
@@ -381,7 +329,6 @@ def _translate_srt(input_path: Path, source: str, target: str, max_batch_chars: 
             time.sleep(delay)
         except Exception as e:
             print(f"Error in batch {i}: {e}")
-
     out = f"translated_{input_path.name}"
     subs.save(out, encoding="utf-8")
     print(f"Translation complete! Saved to {out}")
@@ -392,24 +339,17 @@ def cmd_translate(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
         description="Unified subtitle toolkit (rename / folderize / convert / translate).",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_rename = sub.add_parser("rename", help="Rename SRT files to E##.")
     p_rename.add_argument("directory", nargs="?", default=".")
     p_rename.add_argument("-r", "--recursive", action="store_true")
     p_rename.add_argument("-w", "--write", action="store_true")
     p_rename.set_defaults(func=cmd_rename)
-
     p_folder = sub.add_parser("folderize", help="Group SRT files by detected language.")
     p_folder.add_argument("directory", nargs="?", default=".")
     p_folder.add_argument("--engine", choices=["lingua", "cld2"], default="lingua")
@@ -420,17 +360,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--workers", type=int, default=None, help="(lingua only) worker process count (default: CPU count)"
     )
     p_folder.set_defaults(func=cmd_folderize)
-
     p_s2t = sub.add_parser("srt2txt", help="Convert .srt to plain text.")
     p_s2t.add_argument("input")
     p_s2t.add_argument("output", nargs="?")
     p_s2t.set_defaults(func=cmd_srt2txt)
-
     p_v2s = sub.add_parser("vtt2srt", help="Convert .vtt to .srt.")
     p_v2s.add_argument("input")
     p_v2s.add_argument("output", nargs="?")
     p_v2s.set_defaults(func=cmd_vtt2srt)
-
     p_tr = sub.add_parser("translate", help="Translate an SRT file.")
     p_tr.add_argument("-i", "--input", required=True)
     p_tr.add_argument("-s", "--source", required=True)
@@ -440,7 +377,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_tr.add_argument("--delay", type=float, default=1.0, help="seconds to sleep between batches (default: 1.0)")
     p_tr.set_defaults(func=cmd_translate)
-
     return parser
 
 

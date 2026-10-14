@@ -1,16 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for automatically adding type annotations to an existing Python source file. The tool should take a path to a target Python file as input, along with an optional path to a type stub file or type information source, and produce an annotated version of the file as output.
+The script should preserve the original formatting, comments, and structure of the source code as much as possible, so that only type hints are added or updated. It should infer and insert annotations for function parameters and return values using information from the provided type source, and it should handle cases where the type source references modules or names that are not valid in the target code by replacing or sanitizing them with safe, standard equivalents (for example, mapping special stub-only modules to a general fallback type such as Any).
+The tool should support a dry-run or preview mode that displays a unified diff of the proposed changes without modifying the file, and an in-place mode that overwrites the original file or writes the result to a specified output path. It should validate the resulting code to ensure it still parses correctly, report clear errors if annotation or validation fails, and optionally run an external type checker on the annotated output to confirm consistency. Temporary files should be handled safely and cleaned up after processing.
+The script should be robust to missing or malformed input, provide helpful command-line help text, and exit with meaningful status codes that indicate success, validation failure, or usage errors.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import difflib
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor

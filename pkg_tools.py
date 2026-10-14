@@ -1,37 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import io
-import json
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import time
+from typing import Any, Callable, Optional, Sequence
 import urllib.error
 import urllib.request
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
-from typing import Any, Callable, Optional, Sequence
 
 try:
-    from rapidfuzz import fuzz as _rapidfuzz  # type: ignore
+    from rapidfuzz import fuzz as _rapidfuzz
 except ImportError:
     _rapidfuzz = None
 try:
-    import importlib.metadata as _im  # type: ignore
+    import importlib.metadata as _im
 except ImportError:
-    import importlib_metadata as _im  # type: ignore  # noqa: F401
+    import importlib_metadata as _im
 try:
-    from packaging.utils import parse_wheel_filename  # type: ignore
-    from packaging.version import Version  # type: ignore
+    from packaging.utils import parse_wheel_filename
+    from packaging.version import Version
 except ImportError:
-    parse_wheel_filename = None  # type: ignore
-    Version = None  # type: ignore
+    parse_wheel_filename = None
+    Version = None
 _ANSI = {
     "red": "\033[31m",
     "green": "\033[32m",
@@ -163,7 +160,7 @@ def pip_run_subprocess(args: Sequence[str], timeout: Optional[int] = None) -> tu
 
 def pip_run_api(args: Sequence[str]) -> tuple[int, str, str]:
     try:
-        from pip._internal.cli.main import main as pip_main  # type: ignore
+        from pip._internal.cli.main import main as pip_main
     except ImportError as exc:
         return 1, "", f"pip._internal not available: {exc}"
     old_out, old_err = sys.stdout, sys.stderr

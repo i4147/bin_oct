@@ -1,14 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for text-based source and document files, detects the natural language(s) used in each file, and reports a per-file and aggregate breakdown of languages found across the project.
+The tool should accept a root directory path (defaulting to the current directory) and optional command-line options to control which kinds of files are included or excluded, such as skipping common dependency, build, cache, and version-control folders and ignoring files above a configurable size limit. It should only analyze files that appear to be human-readable text, safely skipping binary files, and it should handle unreadable or oddly encoded files gracefully without stopping the whole run.
+For language detection, the script should rely on character-set heuristics to distinguish scripts such as Latin, Chinese (CJK ideographs), Japanese (kana), Korean (Hangul), and Arabic, and report the dominant script or language mix for each file, along with confidence or proportion information where useful.
+The output should present a clear summary: the number of files scanned and skipped, a table or list of detected languages with file counts and percentages, and optionally a detailed per-file listing. The tool should support a machine-readable output format (such as JSON) as well as a human-friendly terminal display.
+Processing of many files should be parallelized to keep runtime reasonable on large repositories, and a live progress indicator should show completion status while the scan runs. The script should exit with a meaningful status code, provide helpful error messages for invalid paths or arguments, and include a `--help` option describing all options.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
-import shutil
-import sys
 from concurrent.futures import as_completed
 from pathlib import Path
-
+import re
+import shutil
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -24,13 +27,10 @@ try:
     from concurrent.futures import InterpreterPoolExecutor
 except ImportError:
     from concurrent.futures import ProcessPoolExecutor as InterpreterPoolExecutor
-
-
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 KANA_RE = re.compile(r"[\u3040-\u309f\u30a0-\u30ff]")
 HANGUL_RE = re.compile(r"[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]")
 ARABIC_RE = re.compile(r"[\u0600-\u06ff\u0750-\u077f\ufb50-\ufdff\ufe70-\ufeff]")
-
 MAX_BYTES: int = 10 * 1024 * 1024
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -79,15 +79,11 @@ def detect(path_str: str) -> tuple[str, list[str]] | None:
         data = path.read_bytes()
     except OSError:
         return None
-
     if not _looks_like_text(data):
         return None
-
     text = data.decode("utf-8", errors="ignore")
-
     has_kana = KANA_RE.search(text) is not None
     has_cjk = CJK_RE.search(text) is not None
-
     langs: list[str] = []
     if has_kana:
         langs.append("japanese")
@@ -97,7 +93,6 @@ def detect(path_str: str) -> tuple[str, list[str]] | None:
         langs.append("korean")
     if ARABIC_RE.search(text):
         langs.append("persian")
-
     return (path_str, langs) if langs else None
 
 
@@ -155,19 +150,15 @@ def main() -> int:
         help="root directory to scan (default: current dir)",
     )
     args = parser.parse_args()
-
     console = Console()
     root = Path(args.directory).expanduser().resolve()
     if not root.is_dir():
         console.print(f"[red]error:[/] not a directory: {root}", stderr=True)
         return 2
-
     with console.status(f"[bold cyan]Walking[/] {root} …") as status:
         files = _walk(root)
         status.update(f"[bold cyan]Walking done[/] — {len(files)} file(s)")
-
     hits: list[tuple[str, list[str]]] = []
-
     progress = Progress(
         SpinnerColumn(),
         TextColumn("[bold blue]{task.description}"),
@@ -180,7 +171,6 @@ def main() -> int:
         console=console,
         transient=False,
     )
-
     with progress:
         task = progress.add_task("Scanning", total=len(files), found=0)
         with InterpreterPoolExecutor() as ex:
@@ -197,9 +187,7 @@ def main() -> int:
                     advance=1,
                     found=len(hits),
                 )
-
     dest_root = Path.home() / "tmp" / "langs"
-
     if hits:
         console.rule("[bold green]Matches")
         for path_str, langs in sorted(hits):
@@ -209,7 +197,6 @@ def main() -> int:
             except ValueError:
                 rel = src
             console.print(f"{rel} [bold magenta]→[/] {', '.join(langs)}")
-
         if args.copy:
             with console.status("[bold cyan]Copying …"):
                 for path_str, langs in hits:
@@ -219,7 +206,6 @@ def main() -> int:
                         dest_dir.mkdir(parents=True, exist_ok=True)
                         dest = _unique_dest(dest_dir, src.name)
                         shutil.copy2(src, dest)
-
     verb = "copied" if args.copy else "would copy (dry run)"
     console.print(
         f"\n[bold]Scanned[/] {len(files)} file(s); "

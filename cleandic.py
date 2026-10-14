@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a JSON translation dictionary file given as a single command-line argument and filters out entries where the translation failed to change the original text. The script should validate that exactly one argument is provided and that the file exists, printing a usage message or an error message and exiting with a non-zero status when these checks fail. It should accept the JSON in two supported layouts: either a flat object mapping original strings to translated strings, or a list of records each containing an original text field and a translated text field. Any other top-level structure should produce a clear error and terminate.
+Once loaded, the script should separate the entries into two groups: successful translations, where the translated text differs from the original, and failed translations, where the two are identical. The output should preserve the same overall structure as the input (an object for object input, a list of records with the same field names for list input) and contain only the successful entries. The script should also report the failed entries, such as listing the untranslated originals and how many there were, so the user can review them. Handle file encoding as UTF-8 so that non-ASCII text, including CJK characters, is read and written correctly, and write the cleaned result to a new output file while leaving the original input untouched.
+---"""
 
 from __future__ import annotations
-
 import json
-import sys
 from pathlib import Path
+import sys
 
 
 def main():

@@ -1,11 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a Termux clipboard-to-script installer and archiver. The tool should read text from the Android clipboard (via the Termux clipboard facility), treat that text as the source of a script, and install it as an executable command in the user's personal bin directories while keeping a permanent archived copy.
+Core behavior:
+- Retrieve the current clipboard contents. If the clipboard cannot be read or the helper utility is missing, report a clear error to stderr and exit with a non-zero status.
+- Accept an output filename (or derive one) from the user, either as a command-line argument or through an interactive prompt. Validate that the name is safe and that it carries a supported script extension (Python, Bash/shell, or Rust-script). Infer the script language from the extension.
+- If the clipboard text lacks a proper interpreter line at the top, prepend an appropriate shebang for the Termux environment (Termux-specific interpreter paths for Python, Bash, sh, and rust-script). Avoid duplicating an existing shebang.
+- Save the finalized script into a designated archive directory under the user's home folder, creating directories as needed, and make the file executable.
+- Copy the same script into the relevant command directory (such as a personal bin folder, a bashbin folder, or the cargo bin folder, depending on language) so it can be run directly from the shell, and ensure it is executable there too.
+- Handle name collisions gracefully by asking the user whether to overwrite, rename, or cancel, rather than silently destroying existing files.
+- Provide concise, friendly status messages on success (where the script was archived and installed) and clear error messages on failure, including invalid extensions, empty clipboard content, permission problems, and file-system errors.
+- Use only standard, portable Python facilities suitable for a mobile Linux terminal environment, and keep the tool self-contained in a single file that runs as a command-line utility.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 TERMUX_SHEBANGS = {
     "python": "#!/data/data/com.termux/files/usr/bin/python",

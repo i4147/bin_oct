@@ -1,15 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that processes one or more PDF files supplied via the command line and produces a combined plain-text extraction of their contents. The tool should accept a set of input PDF paths and an output location, validate that each input is a readable, unencrypted PDF with at least one page, and skip or report any files that cannot be used without stopping the entire run. For each valid PDF, it should extract the text of every page, strip trailing form-feed or page-break artifacts, and preserve page order within each document. Extraction work should be parallelized across CPU cores for large documents, dividing pages into balanced batches so that throughput scales with the number of available processors, while the final output remains deterministic and correctly ordered.
+The script should also support merging the results into a single consolidated output file, with clear separation between documents and pages (for example, labeled headers indicating source file and page number). Output file names derived from input names must be sanitized to contain only safe characters, falling back to a sensible default when the sanitized name is empty. The tool should print concise progress and summary information to the console, including counts of processed, skipped, and failed files and total pages extracted, and should return a meaningful exit status indicating success, partial success, or failure. Provide a clear command-line interface with helpful help text, sensible defaults for output directory and worker count, and graceful handling of missing files, permission errors, encrypted documents, and interruptions from the user.
+---"""
 
+from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import os
+from pathlib import Path
 import re
 import sys
-from collections.abc import Sequence
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
-
+from typing import TYPE_CHECKING
 import pymupdf
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 MERGED_NAME: str = "merged.pdf"
 UNSAFE: re.Pattern[str] = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -21,7 +26,6 @@ def count_pages(pdf_path: Path) -> int:
 
 def extract_one_page(job: tuple[str, int]) -> str:
     pdf_name, page_number = job
-
     with pymupdf.open(pdf_name) as document:
         page = document.load_page(page_number)
         return page.get_text("text").rstrip("\f")
@@ -47,7 +51,6 @@ def chunked(items: Sequence[int], parts: int) -> list[list[int]]:
 
 def split_one_page(job: tuple[str, int, str]) -> str:
     pdf_name, page_number, target = job
-
     with pymupdf.open(pdf_name) as source, pymupdf.open() as output:
         output.insert_pdf(source, from_page=page_number, to_page=page_number)
         output.save(target, garbage=3, deflate=True)
@@ -58,7 +61,6 @@ def scan_resources(job: tuple[str, int, int]) -> tuple[list[int], list[int]]:
     pdf_name, start, end = job
     images: set[int] = set()
     fonts: set[int] = set()
-
     with pymupdf.open(pdf_name) as document:
         for number in range(start, end):
             images.update(item[0] for item in document.get_page_images(number, full=True))
@@ -72,7 +74,6 @@ def extract_images(job: tuple[str, list[int], str]) -> int:
     pdf_name, xrefs, target = job
     folder = Path(target)
     saved = 0
-
     with pymupdf.open(pdf_name) as document:
         for xref in xrefs:
             try:
@@ -91,7 +92,6 @@ def extract_fonts(job: tuple[str, list[int], str]) -> int:
     pdf_name, xrefs, target = job
     folder = Path(target)
     saved = 0
-
     with pymupdf.open(pdf_name) as document:
         for xref in xrefs:
             try:
@@ -109,7 +109,6 @@ def extract_annotation_files(job: tuple[str, int, int, str]) -> int:
     pdf_name, start, end, target = job
     folder = Path(target)
     saved = 0
-
     with pymupdf.open(pdf_name) as document:
         for number in range(start, end):
             page = document.load_page(number)
@@ -127,7 +126,6 @@ def extract_annotation_files(job: tuple[str, int, int, str]) -> int:
 
 def extract_embedded_files(pdf: Path, target: Path) -> int:
     saved = 0
-
     with pymupdf.open(pdf) as document:
         for index, name in enumerate(document.embfile_names()):
             info = document.embfile_info(name)
@@ -143,7 +141,6 @@ def run_per_page(pdf: Path, out_root: Path, pool: ProcessPoolExecutor, jobs: int
     width = len(str(total))
     folder = out_root / pdf.stem
     folder.mkdir(parents=True, exist_ok=True)
-
     tasks = [(str(pdf), number) for number in range(total)]
     chunksize = max(1, total // (jobs * 4))
     results = pool.map(extract_one_page, tasks, chunksize=chunksize)
@@ -157,7 +154,6 @@ def run_split(pdf: Path, out_root: Path, pool: ProcessPoolExecutor, jobs: int) -
     width = len(str(total))
     folder = out_root / pdf.stem
     folder.mkdir(parents=True, exist_ok=True)
-
     tasks = [(str(pdf), number, str(folder / f"{pdf.stem}_page_{number + 1:0{width}d}.pdf")) for number in range(total)]
     chunksize = max(1, total // (jobs * 4))
     for _ in pool.map(split_one_page, tasks, chunksize=chunksize):
@@ -171,26 +167,21 @@ def run_extract(pdf: Path, out_root: Path, pool: ProcessPoolExecutor, jobs: int)
     folders: dict[str, Path] = {name: base / name for name in ("images", "fonts", "attachments")}
     for folder in folders.values():
         folder.mkdir(parents=True, exist_ok=True)
-
     ranges = [(part[0], part[-1] + 1) for part in chunked(range(total), jobs * 2)]
-
     image_xrefs: set[int] = set()
     font_xrefs: set[int] = set()
     for images, fonts in pool.map(scan_resources, [(str(pdf), start, end) for start, end in ranges]):
         image_xrefs.update(images)
         font_xrefs.update(fonts)
-
     image_jobs = [(str(pdf), part, str(folders["images"])) for part in chunked(sorted(image_xrefs), jobs)]
     font_jobs = [(str(pdf), part, str(folders["fonts"])) for part in chunked(sorted(font_xrefs), jobs)]
     annot_jobs = [(str(pdf), start, end, str(folders["attachments"])) for start, end in ranges]
-
     counts: dict[str, int] = {
         "images": sum(pool.map(extract_images, image_jobs)),
         "fonts": sum(pool.map(extract_fonts, font_jobs)),
         "attachments": extract_embedded_files(pdf, folders["attachments"])
         + sum(pool.map(extract_annotation_files, annot_jobs)),
     }
-
     for folder in folders.values():
         if not any(folder.iterdir()):
             folder.rmdir()
@@ -201,7 +192,6 @@ def run_extract(pdf: Path, out_root: Path, pool: ProcessPoolExecutor, jobs: int)
 
 def merge_pdfs(pdfs: Sequence[Path], target: Path) -> int:
     target.parent.mkdir(parents=True, exist_ok=True)
-
     with pymupdf.open() as merged:
         for pdf in pdfs:
             with pymupdf.open(pdf) as source:
@@ -240,7 +230,7 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         action="store_true",
         help="extract embedded images, fonts and attached files into <stem>/images, fonts and attachments",
     )
-    parser.add_argument("-o", "--output-dir", type=Path, default=Path("."), help="base output directory")
+    parser.add_argument("-o", "--output-dir", type=Path, default=Path(), help="base output directory")
     parser.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 1, help="number of worker processes")
     args = parser.parse_args(argv)
     if not (args.per_page or args.split or args.merge or args.extract):
@@ -253,7 +243,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     failed = False
-
     pdfs: list[Path] = []
     for path in args.inputs:
         if path.is_file() and is_readable(path):
@@ -263,11 +252,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             failed = True
     if not pdfs:
         return 1
-
     out_root: Path = args.output_dir
     out_root.mkdir(parents=True, exist_ok=True)
     jobs: int = args.jobs
-
     with ProcessPoolExecutor(max_workers=jobs) as pool:
         for pdf in pdfs:
             try:
@@ -284,7 +271,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             except Exception as error:
                 print(f"{pdf.name}: failed: {error}", file=sys.stderr)
                 failed = True
-
     if args.merge:
         try:
             target = out_root / MERGED_NAME
@@ -293,7 +279,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         except Exception as error:
             print(f"merge failed: {error}", file=sys.stderr)
             failed = True
-
     return 1 if failed else 0
 
 

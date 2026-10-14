@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts an audio file from M4A format to MP3 format, using a command-line interface. The script should accept an input M4A file path and an optional audio bitrate (defaulting to 64 kbps), and produce an MP3 file with the same base name in the same directory as the input. Before converting, it should ver the input file exists and warn the user if the file does not carry an .m4a extension, while still proceeding. During conversion, it should display progress information including the source file, the destination file, and the chosen bitrate, and stream the external encoder's output to the console. The conversion should discard any video stream and retain only the audio. If the conversion succeeds, the script should report success along with the output location, and then report the file sizes of both the original and the converted file in megabytes so the user can see the size difference. If the input file is missing or the conversion fails, the script should print a clear error message and exit with a non-zero status code. Overwriting an existing output file without prompting is acceptable. Ensure the script is robust, user-friendly, and runs on common desktop operating systems where the required external audio encoding tool is installed.
+---"""
 
 from __future__ import annotations
-
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
-
 from dh import runcmd
 
 

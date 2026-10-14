@@ -1,14 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for scanning a directory tree of Python source files and ensuring each script has a proper entry-point guard and a `main` function. The tool should walk a given root directory (recursively, with configurable exclusion of common non-source folders such as version control, virtual environments, caches, and build outputs), locate every `.py` file, and analyze each one to determine whether it already contains an `if __name__ == "__main__":` guard that properly invokes a `main` function.
+For files that lack such a guard, the tool should append a standard template consisting of a documented `main` function stub (with a placeholder message and a TODO for the user's logic) and a guard block that exits with the return value of `main`. The tool should be safe and conservative: it must not modify files that already have a valid guard, must preserve the existing content and encoding of each file, must skip files that cannot be parsed as valid Python, and should avoid duplicating an existing `main` function when one is already present.
+The tool should accept command-line arguments for the target path, a dry-run mode that reports which files would be changed without writing anything, options to customize the excluded directory names, the number of parallel workers used to process files concurrently, and the indentation width used when generating code. It should support a verbose/quiet logging level and print a clear summary at the end listing how many files were scanned, modified, skipped, and failed, along with the paths of any problematic files. The exit status should reflect whether any errors occurred.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
 import logging
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Sequence
 
 logger = logging.getLogger("add_main_guard")

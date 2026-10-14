@@ -1,9 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the Git repository in the current working directory and reports every file that has ever been deleted across the repository's full commit history. The script should first verify that it is being run from inside a Git repository (ideally from the repository root) and exit with a clear error message if it is not. It should then query the repository's history for deletion events, collect the commit identifiers and the paths of the files removed in each, and organize them so that each deleted file path is associated with the commit(s) in which it was removed.
+The output should be a human-readable report printed to the console that clearly lists each deleted file along with the commit hash (and ideally the commit date or message) where it was deleted. Use friendly status indicators and messages to show progress (for example, announcing when analysis begins), and handle Git command failures gracefully by printing the error details without crashing. If no deleted files are found anywhere in the history, the script should say so with a concise, positive message and exit cleanly.
+The script should be self-contained, runnable with a standard Python 3 installation on Windows, macOS, or Linux, and should not modify the repository in any way; it is strictly read-only. Prioritize correctness, clear and organized output, and robustness against repositories with many commits or unusual file names.
+---"""
 
 from __future__ import annotations
-
-import subprocess
 from pathlib import Path
+import subprocess
 
 
 def run_git_command(args: list[str]) -> str:

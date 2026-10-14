@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that fetches all public GitHub repositories belonging to a given user and reports on those written in Python. The tool should accept a GitHub username as input (from the command line or an interactive prompt) and retrieve the user's repositories page by page from the GitHub REST API, continuing until every page has been read. For each repository whose primary language is Python, it should collect key metadata: the repository name and full name, its description (empty if none is provided), its web URL, star count, fork count, language, creation and last-updated timestamps, and whether it is private. The script should sort or organize results sensibly (for example, most recently updated first), handle network errors and API failures gracefully with clear error messages, and respect rate-limit or non-existent-user responses without crashing. The final output should be a structured summary delivered to the user, such as a readable console table or a JSON file, including the total count of Python repositories found. Optionally, it may support additional filters such as minimum stars or a date range, using the timestamps it collected. Keep the design clean, modular, and easy to extend, and include brief usage instructions for running the script from the command line.
+---"""
 
 from __future__ import annotations
-
+from datetime import datetime, timedelta
 import json
 import sys
-from datetime import datetime, timedelta
-
 import requests
 
 

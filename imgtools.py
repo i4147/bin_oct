@@ -1,17 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import base64
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import contextlib
 import io
 import os
+from pathlib import Path
 import re
 import subprocess
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 try:

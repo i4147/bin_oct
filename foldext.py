@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that organizes the files in a given directory by their file extension. The script should recursively scan the specified root folder and all of its subfolders, skipping version-control metadata (any `.git` directory) and `.gitignore` files. For every regular file it encounters, it should determine the file's extension (case-insensitively), treating files without an extension as belonging to a special "no extension" group. It should gather statistics for each extension group, including the number of files and the combined size in bytes, along with the list of files that belong to it.
+Based on this analysis, the script should create a top-level subfolder in the root directory for each extension group (reusing it if it already exists) and move the matching files into their corresponding folder, avoiding overwriting existing files and handling name collisions sensibly. Files already located directly inside their correct extension folder should be left in place. The script should be safe to run in the working directory it is given, should not disturb the version-control metadata, and should tolerate errors on individual files (such as permission issues or files that disappear mid-run) without aborting the entire operation.
+Upon completion, the script should print or return a concise summary report listing each extension group, its file count, and its total size in a human-readable format, sorted in a sensible order, along with a total for all processed files. The tool should accept the target directory as input (defaulting to the current working directory) and be written with clear, maintainable structure and helpful messages for the user.
+---"""
 
 from __future__ import annotations
-
 import contextlib
-import shutil
 from pathlib import Path
-
+import shutil
 from dh import gsz
 
 

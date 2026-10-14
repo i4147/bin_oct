@@ -1,10 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a developer-machine identity migration tool: it switches a user's local Git and SSH identity from an old username and email to a new one, and then rewrites references to the old identity across the user's project files.
+The tool should operate on the current user's home directory and must treat the old and new identity values as configurable constants defined at the top of the script. Its high-level behavior should cover the following:
+1. Update the global Git configuration so the user name and email point to the new identity.
+2. Manage the user's SSH setup: detect the existing key location in the standard SSH directory for a named ed25519 key, remove or retire the old key material associated with the previous identity, and generate a fresh ed25519 key pair for the new email address, with appropriate handling if a key already exists (for example, prompting or backing up before overwriting). Ensure the SSH directory and key files get the correct permissions.
+3. Scan the user's home directory recursively for common configuration and metadata files (such as package manifests, Python packaging configs, INI/TOML/YAML files, Markdown and plain-text files) while skipping dependency, virtual environment, cache, and version-control directories. Replace every occurrence of the old username and old email in those files with the new values, and report which files were changed and how many replacements were made in each.
+4. Be robust and safe: handle missing files, permission errors, and failed subprocess commands gracefully; log each step clearly to the console; avoid modifying files it should not touch; and make the destructive steps (deleting keys, rewriting files) clearly announced so the user understands what happened.
+5. Run as a single command-line script with no required interactive setup beyond any confirmations needed for destructive actions, and finish with a concise summary of all changes made and any steps that failed or need manual follow-up (such as adding the new public key to a Git hosting service).
+---"""
 
+from __future__ import annotations
+import contextlib
 import os
-import re
-import shutil
-import subprocess
 from pathlib import Path
+import re
+import subprocess
 
 OLD_USERNAME = "iho147"
 OLD_EMAIL = "isaacaunegh@gmail.com"
@@ -62,10 +71,8 @@ def remove_old_ssh_keys():
     if SSH_DIR.exists():
         for f in SSH_DIR.iterdir():
             if f.name.startswith("id_") or f.name == "known_hosts":
-                try:
+                with contextlib.suppress(Exception):
                     f.unlink()
-                except Exception:
-                    pass
 
 
 def generate_new_ssh_key():
@@ -163,7 +170,7 @@ def update_git_remotes_in_repos():
                     check=False,
                 ).stdout
                 if OLD_USERNAME in remotes:
-                    remote_names = set(line.split()[0] for line in remotes.splitlines() if line)
+                    remote_names = {line.split()[0] for line in remotes.splitlines() if line}
                     for remote in remote_names:
                         url_result = run(
                             ["git", "-C", repo_path, "remote", "get-url", remote],
@@ -219,22 +226,16 @@ def clear_git_credential():
                 p.unlink()
         except Exception:
             pass
-    try:
+    with contextlib.suppress(Exception):
         run(
             ["git", "config", "--global", "--unset-all", "credential.helper"],
             check=False,
         )
-    except Exception:
-        pass
-    try:
+    with contextlib.suppress(Exception):
         run(["git", "config", "--global", "--remove-section", "credential"], check=False)
-    except Exception:
-        pass
     for helper in ("store", "cache"):
-        try:
+        with contextlib.suppress(Exception):
             run(["git", "credential-" + helper, "erase"], check=False, input_text="\n")
-        except Exception:
-            pass
 
 
 def purge_gitconfig_old_identity():
@@ -280,10 +281,8 @@ def main():
     print(f"  new email    : {NEW_EMAIL}")
     print(f"  public key   : {SSH_KEY_PATH}.pub")
     print("\nAdd the following public key to GitHub:")
-    try:
+    with contextlib.suppress(Exception):
         print((SSH_KEY_PATH.parent / (SSH_KEY_NAME + ".pub")).read_text())
-    except Exception:
-        pass
 
 
 if __name__ == "__main__":

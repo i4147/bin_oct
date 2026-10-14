@@ -1,21 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
+from datetime import datetime
 import hashlib
 import json
+from multiprocessing import Pool, freeze_support
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from datetime import datetime
-from multiprocessing import Pool, freeze_support
-from pathlib import Path
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence
 
 DEFAULT_CHUNK_SIZE = 8192
 DEFAULT_DEB_EXCLUDES = frozenset({
@@ -533,7 +531,7 @@ def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
 
 def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
     try:
-        import apt  # type: ignore
+        import apt
 
         out_dir = Path(out_dir_str)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -570,8 +568,8 @@ def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
 
 def cmd_make_deb(args: argparse.Namespace) -> int:
     try:
-        import apt  # type: ignore
-        from loguru import logger  # type: ignore
+        import apt
+        from loguru import logger
     except ImportError:
         msg = (
             "make-deb requires python-apt and loguru. Install with `apt install python3-apt` and `pip install loguru`."

@@ -1,11 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a given directory tree for Python source files and automatically repairs invalid escape sequences inside string literals, so that the files can be parsed and compiled without syntax warnings or errors. The tool should accept a root folder path as input, recursively locate all Python files beneath it, and examine each file's string literals while respecting their prefixes and quoting styles. Raw strings and any valid escape sequences must be left untouched, while invalid backslash sequences should be corrected in a way that preserves the intended meaning of the text (for example, by doubling the backslash). Byte-level handling should be robust so that files with unusual encodings or incomplete tokens are skipped safely rather than crashing the run. Only files that actually change should be rewritten, and the script should report which files were modified, how many fixes were applied, and any files it could not process. Validate the result by confirming that each modified file still parses correctly as Python. The output should be a concise, human-readable summary printed to the console, and the script should exit with a clear status code indicating success, partial failure, or invalid input.
+---"""
 
+from __future__ import annotations
 import ast
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
 
 
 def get_python_files(root_dir: Path):
@@ -19,41 +22,31 @@ def fix_source_code(source_bytes: bytes) -> tuple[bytes, bool]:
         tokens = list(tokenize.tokenize(io.BytesIO(source_bytes).readline))
     except tokenize.TokenError:
         return source_bytes, False
-
     out_tokens = []
     changed = False
-
     string_pattern = re.compile(r'^([rRuUbBfF]*)([\'"]{1,3})(.*)(\2)$', re.DOTALL)
-
     valid_escape_chars = set("nrtbfva\\'\"xuUN01234567\n\r")
-
     for tok in tokens:
         if tok.type == tokenize.STRING:
             m = string_pattern.match(tok.string)
             if m:
                 prefix, quote, content, end_quote = m.groups()
-
                 if "r" in prefix.lower():
                     out_tokens.append(tok)
                     continue
-
                 has_valid_escape = False
                 has_invalid_escape = False
-
                 for escape_match in re.finditer(r"\\.", content):
                     char = escape_match.group()[1]
                     if char in valid_escape_chars:
                         has_valid_escape = True
                     else:
                         has_invalid_escape = True
-
                 if has_invalid_escape:
                     changed = True
-
                     if not has_valid_escape and "f" not in prefix.lower():
                         new_prefix = prefix + ("R" if prefix.isupper() else "r")
                         new_string = new_prefix + quote + content + end_quote
-
                     else:
 
                         def replacer(match):
@@ -64,31 +57,24 @@ def fix_source_code(source_bytes: bytes) -> tuple[bytes, bool]:
 
                         new_content = re.sub(r"\\(.)", replacer, content)
                         new_string = prefix + quote + new_content + end_quote
-
                     out_tokens.append(tokenize.TokenInfo(tok.type, new_string, tok.start, tok.end, tok.line))
                     continue
-
         out_tokens.append(tok)
-
     if changed:
         new_source = tokenize.untokenize(out_tokens)
         return new_source, True
-
     return source_bytes, False
 
 
 def main():
     root = Path.cwd()
     print(f"Scanning for Python files in: {root}")
-
     changed_files = []
     error_files = []
-
     for py_file in get_python_files(root):
         try:
             original_bytes = py_file.read_bytes()
             new_bytes, changed = fix_source_code(original_bytes)
-
             if changed:
                 try:
                     ast.parse(new_bytes)
@@ -97,18 +83,14 @@ def main():
                     print(f"⚠️  Skipping {rel_path} - Syntax error introduced during fix: {e}")
                     error_files.append(rel_path)
                     continue
-
                 py_file.write_bytes(new_bytes)
-
                 rel_path = py_file.relative_to(root)
                 print(f"✅ Fixed: {rel_path}")
                 changed_files.append(rel_path)
-
         except Exception as e:
             rel_path = py_file.relative_to(root)
             print(f"❌ Error processing {rel_path}: {e}")
             error_files.append(rel_path)
-
     print("\n" + "=" * 40)
     print("Execution Summary")
     print("=" * 40)

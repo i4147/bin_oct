@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a bidirectional dictionary lookup tool between Persian and English, backed by a JSON file stored on the local device. On startup, the tool should load a dictionary file containing Persian-to-English word pairs, and it should report clearly if the file is missing or contains invalid JSON, exiting gracefully with a helpful message rather than crashing. Once loaded, the tool should report how many entries were successfully read. It should allow the user to look up a word in either direction: entering a Persian word returns its English equivalent, and entering an English word (case-insensitive) returns its Persian equivalent. The script should handle words not found in the dictionary with a friendly message. Design the program so the data file location can be customized, with a sensible default path, and so the dictionary can be reloaded if the file changes. Provide an interactive command-line interface that loops until the user chooses to quit, with clear prompts and readable output. Ensure the script handles UTF-8 text correctly so Persian characters display and process properly, and make the lookup behavior robust against stray whitespace and inconsistent letter casing in English input.
+---"""
 
 from __future__ import annotations
-
 import json
 import os
-import sys
 from pathlib import Path
+import sys
 
 
 class Bidirectionaldictionary:

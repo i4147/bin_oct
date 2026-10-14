@@ -1,7 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that sets up an encrypted dotfiles repository for a user's home directory, so that sensitive files are transparently encrypted before being committed to version control while everything else is Verify that the required command-line encryption and version control tools are installed on the system, and report clearly which ones are missing if any are absent. It should also handle the case where the tools are installed in a non-standard location common on mobile Linux environments.
+- Generate a new encryption keypair for the user if one does not already exist, storing the private key securely in the user's configuration directory and making the public key available for reuse. Never overwrite an existing key without explicit confirmation.
+- Install a git clean/smudge filter that encrypts files on staging and decrypts them on checkout, so that encryption happens automatically and transparently during normal version control use.
+- Configure the user's home-level git attributes so that files matching defined secret patterns (such as secrets directories, `.env` files, `*.secret`, and `*.token` files) are routed through the encryption filter.
+- Configure a that irrelevant orbut-unencrypted paths (such as the key directory itself, the b, cache directories, and stor from tracking.
+- Initialize a bare git repository for the home directory that uses the home directory as its working tree, and is configured to respect the attributes and ignore rulesear, user-friendly console each step, including progress messages, success confirmations, and actionable error messages that explain what went wrong and how to fix it.
+- Handle failures gracefully: abort cleanly on unrecoverable errors, avoid leaving the system in a half-configured state where possible, and never print or log private key material.
+- Be safe to re-run: detect existing setup pieces and skip or verify them rather than duplicating or destroying them.
+- Print a short summary at the end describing what was configured and the basic next steps the user should take (such as adding files and committing).
+---"""
 
 from __future__ import annotations
-
 import os
 import shutil
 import subprocess

@@ -1,21 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
+from collections import defaultdict
 import configparser
 import contextlib
 import csv
+from datetime import datetime
+from importlib import metadata
 import json
 import os
+from pathlib import Path
 import re
 import site
 import subprocess
 import sys
-from collections import defaultdict
-from datetime import datetime
-from importlib import metadata
-from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
 BINARY_EXTS: tuple[str, ...] = (".so", ".pyd", ".dll", ".dylib")
@@ -802,10 +800,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Detection strategy (default: dist-info).",
     )
     sp.set_defaults(func=cmd_duplicates)
-
     sp = sub.add_parser("multi-version", help="Packages with more than one installed version.")
     sp.set_defaults(func=cmd_multi_version)
-
     sp = sub.add_parser("missing-scripts", help="Check that console-script shims exist in bin/.")
     sp.add_argument("--report", metavar="FILE", help="Optional path to write a report.")
     sp.set_defaults(func=cmd_missing_scripts)
@@ -877,15 +873,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write package names (one per line) to FILE.",
     )
     sp.set_defaults(func=cmd_small)
-
     sp = sub.add_parser("zpkg-list", help="List pure single-top-level user-site packages.")
     sp.add_argument("-o", "--output", help="Output file (default: ~/list.txt).")
     sp.set_defaults(func=cmd_zpkg_list)
-
     sp = sub.add_parser("git-urls", help="Extract git repository URLs for installed packages.")
     sp.add_argument("-o", "--output", help="Output JSON file (default: ~/pkg_git_urls.json).")
     sp.set_defaults(func=cmd_git_urls)
-
     sp = sub.add_parser("save-deb", help="Dump installed dpkg binary packages.")
     sp.add_argument(
         "-o",
@@ -894,12 +887,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output file (default: installed_packages_deb.txt).",
     )
     sp.set_defaults(func=cmd_save_deb)
-
     sp = sub.add_parser("save-keys", help="Extract 'pkgname' values from a JSON file.")
     sp.add_argument("input", help="Path to the input JSON file.")
     sp.add_argument("-o", "--output", default="keys.txt", help="Output file (default: keys.txt).")
     sp.set_defaults(func=cmd_save_keys)
-
     sp = sub.add_parser("rename-node", help="Rename node_modules .../package dirs safely.")
     sp.add_argument("--root", help="Root directory to scan (default: cwd).")
     sp.add_argument(

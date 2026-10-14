@@ -1,32 +1,38 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a network diagnostics and public-IP reporting utility. The tool should determine the machine's public IP address by querying several independent external IP-lookup services in sequence, falling back to the next service whenever one is unreachable, times out, or returns an unexpected response, and should stop as soon as a valid address is obtained. It should accept command-line options that control behavior such as the output format (plain text or JSON), request timeouts, and whether to include additional network information like the local/private IP addresses, hostname, and connectivity checks to well-known hosts or ports.
+The script should also be capable of running several checks concurrently to keep total runtime low, and should report the latency of each lookup attempt. Where a required external package is not installed, it should still function using only standard-library capabilities, degrading gracefully rather than crashing. Colored terminal output should be used for clear success and failure indication when color support is available, with a plain-text fallback otherwise.
+Inputs are command-line arguments and an optional configuration of endpoints and timeouts. Outputs are a human-readable summary printed to the console, or a structured JSON document when requested, and an optional file export of results with timestamps. The script should return a meaningful exit code reflecting whether the public IP was determined successfully, and it should handle keyboard interrupts and network errors cleanly with clear, user-friendly messages.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 import io
 import json
 import os
+from pathlib import Path
 import random
 import re
 import socket
 import string
 import subprocess
 import time
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 from urllib import request as urlrequest
 
 try:
-    import requests  # type: ignore
-    from colorama import Fore, Style
-    from colorama import init as colorama_init  # type: ignore
+    from colorama import (
+        Fore,
+        Style,
+        init as colorama_init,
+    )
+    import requests
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True
 except ImportError:
-    requests = None  # type: ignore
+    requests = None
     _HAS_COLORAMA = False
 
     class _DummyColors:
@@ -35,8 +41,8 @@ except ImportError:
     class _DummyStyle:
         RESET_ALL = ""
 
-    Fore = _DummyColors()  # type: ignore
-    Style = _DummyStyle()  # type: ignore
+    Fore = _DummyColors()
+    Style = _DummyStyle()
 
 
 def get_public_ip() -> Optional[str]:
@@ -291,11 +297,11 @@ def run_ping(
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
         collected = ""
         if live:
-            for line in proc.stdout:  # type: ignore[union-attr]
+            for line in proc.stdout:
                 print(line.rstrip())
                 collected += line
         else:
-            collected, _ = proc.communicate()  # type: ignore[misc]
+            collected, _ = proc.communicate()
         proc.wait()
         return parse_ping_output(collected)
     except FileNotFoundError:
@@ -366,7 +372,7 @@ def _public_ip_urllib() -> str:
 
 def _public_ip_pycurl() -> str:
     try:
-        import pycurl  # type: ignore
+        import pycurl
     except ImportError:
         return "Error: 'pycurl' not installed. Try --engine urllib."
     buf = io.BytesIO()
@@ -470,9 +476,9 @@ class SignalMeter:
 
 def cmd_signal(args: argparse.Namespace) -> int:
     try:
-        from rich.align import Align  # type: ignore
-        from rich.console import Console  # type: ignore
-        from rich.panel import Panel  # type: ignore
+        from rich.align import Align
+        from rich.console import Console
+        from rich.panel import Panel
     except ImportError:
         print("Error: 'rich' is required for the signal command. `pip install rich`")
         return 2

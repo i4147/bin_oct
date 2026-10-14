@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that automates committing all changes in the current Git repository with a timestamped message. The tool should locate the enclosing Git repository from the current working directory (including parent directories), and exit with a clear error message and non-zero status if the directory is not inside a valid Git repository or the repository cannot be accessed. Before committing, it should ensure a local ignore file exists in the working directory by seeding it with the contents of the user's global ignore file in the home directory, but only when no local ignore file is already present; failures in this step should be handled silently so they never block the commit. The script should then stage all modifications, including new, modified, and deleted files, and create a single commit whose message follows the pattern "Auto-commit at YYYY-MM-DD HH:MM:SS" using the current local time. Handle Git command errors gracefully by reporting them to the user on the error stream and exiting with a non-zero status. On success, the script should complete quietly or print a brief confirmation. Keep the implementation simple, dependable, and suitable for running manually or from automation such as scheduled jobs or Git hooks.
+---"""
 
 from __future__ import annotations
-
-import sys
 from datetime import datetime
 from pathlib import Path
-
+import sys
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 
 

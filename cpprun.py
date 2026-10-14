@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for compiling and immediately running a single C or C++ source file. The tool should accept a source file path as its first argument, along with any additional arguments that should be forwarded to the compiled program. It should display a usage message when invoked without arguments.
+Before compiling, the tool should validate the input: confirm the file exists, expand user paths and resolve relative paths, and reject files whose extension is not a supported C or C++ type (such as .c, .cpp, .cc, or .cxx). For each supported extension, prefer a modern compiler (clang-based for C and C++) but automatically fall back to an alternative compiler (such as gcc or g++) if the preferred one is not installed. If no suitable compiler is available, report a clear error message to the user and exit with a non-zero status.
+Compile the source file into a temporary or cached executable, using sensible default flags for a standard, readable build. If compilation fails, display the compiler's error output and stop without running anything. If compilation succeeds, make the resulting binary executable if needed, run it with the forwarded arguments, stream its standard input, output, and error to the terminal, and return the program's exit code as the tool's own exit code. Errors and diagnostic messages should go to standard error, while normal program output should appear on standard output. The tool should handle missing files, unsupported types, missing compilers, and compilation failures gracefully with informative messages rather than unhandled exceptions.
+---"""
 
 from __future__ import annotations
-
 import os
+from pathlib import Path
 import stat
 import sys
-from pathlib import Path
-
 import sh
 
 COMPILERS = {

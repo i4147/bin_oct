@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for cleaning Jupyter notebooks by removing their stored outputs and execution metadata so they can be committed to version control cleanly. The tool should accept one or more file or directory paths as input. When given a directory, it should recursively discover all Jupyter notebook files within it, ignoring any auto-generated checkpoint folders. When given an individual file, it should process it only if it is a valid notebook file, and skip with a clear warning otherwise. Paths that do not exist should be reported with a warning and skipped rather than causing a crash. Duplicate references to the same notebook should be processed only once.
+The tool should process the discovered notebooks in parallel using a bounded pool of worker processes to speed up work on large collections. For each notebook, it should remove all cell outputs and reset execution counts, while preserving the cell source code, markdown content, and the notebook's overall structure and valid formatting. It should report, per file, whether the notebook was modified or already clean, and capture any errors (such as malformed JSON) without stopping the processing of the remaining files.
+Provide a summary at the end that lists how many notebooks were processed, how many were changed, and how many failed, with failures clearly identified. The tool should exit with a non-zero status code if any file failed, and zero otherwise. Logging should be informative but concise, using a structured logging approach so users can follow progress. Include a helpful command-line interface with a description, usage examples, and a short help message. Optionally support a dry-run mode that reports which notebooks would be changed without writing any files.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import json
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
-
 from loguru import logger
 
 if TYPE_CHECKING:

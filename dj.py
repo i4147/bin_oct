@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans the current working directory and cleans up files based on their names and extensions, with behavior controlled by command-line flags. By default it should target junk files (such as temporary, backup, log, and compiled bytecode files) and delete them, while skipping version-control and designated data directories entirely. It should also support an "empty" mode that, instead of deleting matching text or markdown files, truncates them to zero bytes, and a "remove" mode that deletes matching text and markdown files outright. Matching should be case-insensitive on file names. Files with multiple suffixes (such as archives or backup-style names) should be handled as a distinct category that the user can see in the output. The script should print a clear summary of every action taken, count how many items were removed or emptied, and report any permission or I/O errors to standard error without stopping the entire run. Design the tool so that it is safe by default, with a dry-run or confirmation option strongly considered, and so that directories themselves are only removed when the removal mode explicitly applies to them.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 EMPTY_MODE = "-e" in sys.argv
 REMOVE_MODE = "-r" in sys.argv

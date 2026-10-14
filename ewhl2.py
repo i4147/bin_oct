@@ -1,13 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory of Python wheel files (.whl) and identifies which ones are effectively empty, meaning they contain no actual Python source code or code-bearing content, and then optionally removes them or reports them. The script should be a command-line tool that accepts a target directory (or a list of wheel paths) as input and prints a clear summary of the results.
+Key behaviors to implement:
+- Read each wheel as a zip archive without installing it, and inspect its file listing to decide whether it contains any Python modules or other code directories. Ignore metadata-only entries such as dist-info folders, cache directories, and directory placeholders when making this determination.
+- Handle corrupted or unreadable wheel files gracefully: report the error for that file, treat it as not empty so it is never deleted by mistake, and continue processing the remaining files.
+- Parse the package name and version from each wheel's filename using the standard wheel naming convention, normalizing underscores in the name to hyphens for display.
+- Gather the set of packages currently installed in the active Python environment (by querying the package manager in a subprocess) so the tool can cross-reference which empspond to installed packages, and handle the case where that query fails without crashing.
+- Provide a dry-run mode that only reports empty wheels, and an option to actually delete them, with the deletion requiring explicit user confirmation or a force flag.
+- Print a concise final report listing the number of wheels scanned, the empty wheels found (with name and version), any errors encountered, and the number of files removed if deletion was requested.
+- Exit with a non-zero status code on fatal argument or path errors, and zero otherwise.
+- Use only the Python standard library so the script runs on a stock Python installation without extra dependencies.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import zipfile
-from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

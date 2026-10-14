@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that extracts text from PDF files in parallel, supporting selectable extraction backends, page-range selection, and configurable output. The tool should accept one or more PDF file paths (or a directory of PDFs) and a set of options from the command line, including the choice of extraction engine, an optional page range (for example, specific pages or a start-to-end range), whether to preserve reading order, and the desired output destination. It should process multiple PDFs concurrently, choosing an appropriate concurrency model so that CPU-heavy parsing can run across multiple cores while I/O-bound work stays efficient. Each page should be extracted independently so that a failure on one page or in one file is reported to standard error without halting the rest of the job; the program should continue and still produce output for all successfully processed content.
+The output should be plain text with clear per-page markers (page numbers, and file names when multiple PDFs are processed), written either to standard output or to a specified file, with an option to write one output file per input PDF. Pages with no extractable text should yield empty content rather than errors. The script should validate inputs up front, give helpful messages for missing files, invalid page ranges, or unavailable extraction engines, and return a meaningful exit status indicating success, partial failure, or fatal error. Include a concise help message describing all options, and design the command-line interface so that it is easy to extend with additional extraction backends in the future.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
+import sys
 from typing import Sequence
 
 
@@ -28,7 +30,7 @@ def _extract_plumber(pdf_path: str, page_indices: Sequence[int], opts: dict) -> 
 
 
 def _extract_fitz(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
-    import fitz  # type: ignore
+    import fitz
 
     sort = bool(opts.get("sort", False))
     out: list[tuple[int, str]] = []
@@ -51,7 +53,7 @@ def _extract_fitz(pdf_path: str, page_indices: Sequence[int], opts: dict) -> lis
 
 
 def _extract_pypdf(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
-    from pypdf import PdfReader  # type: ignore
+    from pypdf import PdfReader
 
     out: list[tuple[int, str]] = []
     with open(pdf_path, "rb") as fh:
@@ -70,7 +72,7 @@ def _extract_pypdf(pdf_path: str, page_indices: Sequence[int], opts: dict) -> li
 
 
 def _extract_pypdf2(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
-    import PyPDF2  # type: ignore
+    import PyPDF2
 
     out: list[tuple[int, str]] = []
     with open(pdf_path, "rb") as fh:
@@ -89,8 +91,8 @@ def _extract_pypdf2(pdf_path: str, page_indices: Sequence[int], opts: dict) -> l
 
 
 def _extract_pdfminer(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
-    from pdfminer.high_level import extract_text  # type: ignore
-    from pdfminer.layout import LAParams  # type: ignore
+    from pdfminer.high_level import extract_text
+    from pdfminer.layout import LAParams
 
     laparams = None
     if not opts.get("no_laparams", False):
@@ -145,7 +147,7 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
         with pdfplumber.open(pdf_path) as pdf:
             return len(pdf.pages)
     if backend == "fitz":
-        import fitz  # type: ignore
+        import fitz
 
         doc = fitz.open(pdf_path)
         try:
@@ -153,17 +155,17 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
         finally:
             doc.close()
     if backend == "pypdf":
-        from pypdf import PdfReader  # type: ignore
+        from pypdf import PdfReader
 
         with open(pdf_path, "rb") as fh:
             return len(PdfReader(fh).pages)
     if backend == "pypdf2":
-        import PyPDF2  # type: ignore
+        import PyPDF2
 
         with open(pdf_path, "rb") as fh:
             return len(PyPDF2.PdfReader(fh).pages)
     if backend == "pdfminer":
-        from pdfminer.pdfpage import PDFPage  # type: ignore
+        from pdfminer.pdfpage import PDFPage
 
         with open(pdf_path, "rb") as fh:
             return sum(1 for _ in PDFPage.get_pages(fh, password=password or ""))

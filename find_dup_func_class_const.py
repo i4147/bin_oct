@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory t, classes, and module-level variable assignments) that appear across multiple files. The tool should accept a root directory path as input, optionally recurse into subdirectories, and skip files that cannot be read or parsed without stopping the overall run. For each definition, it should compare the actual source content, not just names, so that the report distinguishes between exact duplicates (identical code under the same name) and conflicting definitions (same name but different implementations). The output should be a clear, human-readable report listing each duplicated name, the files and line ranges where it appears, and its duplication status, with a summary count at the end. The script should process files efficiently, handling large projects by working on multiple files concurrently, and it should provide a command-line interface with options for the target path, an output format choice (plain text or machine-readable JSON), and an optional flag to write the report to a file instead of standard output. Include helpful error messages for invalid paths and exit with a non-zero status code when conflicting definitions are found, so the tool can be used in continuous integration pipelines.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import defaultdict
 import concurrent.futures
 import os
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 
 
 def parse_file_definitions(path: Path) -> dict:

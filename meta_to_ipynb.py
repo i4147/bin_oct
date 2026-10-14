@@ -1,11 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that parses the metadata header of a Python package distribution file (such as the METADATA or PKG-INFO text found inside a wheel or source distribution), extracting the structured fields it contains and converting them into a cline-readable output. The script should accept a path to a metadata file (or a directory containing one) as its main input, and produce a structured representation of the package information, such as a JSON document or a formatted summary written to standard output or a specified output file.
+Key behaviors to cover:
+- Read the metadata file and separate the header section from the free-form long description that follows it, stopping at the first blank line or the first line that does not follow the "Key: Value" pattern.
+- Recognize single-valued fields (such as name, version, summary, home page, license, author, and author email) and store each as a single string.
+- Recognize multi-valued fields (such as requirements, extras, classifiers, keywords, dynamic fields, and project URLs) and collect every occurrence into a list, preserving their original order.
+- Handle continuation lines that begin with whitespace by appending their content to the previous field's value, so that multi-line values are reconstructed correctly.
+- Normalize values by trimming surrounding whitespace and ignoring empty entries.
+- Gracefully handle missing fields, malformed lines, unknown keys, and files with unexpected encodings, reporting problems clearly instead of crashing where reasonable.
+- Provide a command-line interface that accepts the input path, an optional output path, and an option to choose the output format, with helpful usage messages and meaningful exit codes on error.
+- Include the long description text as a separate field in the output when present.
+- Keep the code modular, readable, and well documented with docstrings and comments, and include basic error handling for missing files and invalid input.
+---"""
 
 from __future__ import annotations
-
 import json
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def parse_metadata_section(lines):

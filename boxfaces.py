@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a video file from a given path, detects human faces in every frame using a pre-trained frontal-face detection model, draws bounding boxes around each detected face, and saves the annotated result as a new video file. The script should accept the input video path as a required argument and an optional output video path that defaults to a file named "out.mp4" in the current directory. Before processing, it should verify that the input file exists and that the face detection model is available, printing a clear error message and exiting with a non-zero status if either check fails. It should also verify that the video can be opened and exit with a clear error if it cannot. The output video should preserve the original frame dimensions and frame rate of the input, and the script should process frames sequentially until the end of the video. Provide informative console output for failures, and ensure that all opened resources are properly released when processing completes. The overall goal is a robust, command-line-friendly tool for batch face detection and visualization in video content.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
-
+import sys
 import cv2
 
 

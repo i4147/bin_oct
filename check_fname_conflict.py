@@ -1,7 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory for Python source files and reports which imported modules they depend on, classifying each dependency as either a standard library module or a third-party package. The script should read a plain-text list of installed pip packages from a fixed location on the device (a file such as a pip freeze export); if that file is missing, it should warn the user on stderr and continue without the third-party check. Package names from the list should be normalized so that differences in hyphens, underscores, and letter case do not cause false mismatches, and version specifiers should be stripped while parsing it. Comments and blank lines in the list should be ignored.
+The script should print a clear, human-readable report to standard output that begins with the directory being scanned and the number of standard library modules recognized, then lists the findings per file or as an aggregated summary. It should identify imports that are neither standard library modules nor listed packages (likely missing dependencies), and clearly separate them from the known third-party and standard library imports. Local modules that correspond to files within the scanned directory should be recognized and not flagged as external. Where Python's standard library module list is unavailable on older interpreters, the script should degrade gracefully with a warning rather than crashing.
+Use emoji-style status markers sparingly for readability, handle unreadable or non-UTF-8 files without stopping the scan, and exit with a zero status on success and a non-zero status if the scan itself cannot run. Keep the output concise, deterministic in ordering, and suitable for both interactive terminal use and piping into other tools.
+---"""
 
-import sys
+from __future__ import annotations
 from pathlib import Path
+import sys
 
 PIP_LIST = Path("/sdcard/data/pip.txt")
 TARGET_DIR = Path.cwd()

@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts a plain Python source file into a Jupyter notebook file. The tool should accept the path of an input Python file as a required command-line argument and an optional path for the output notebook. If no output path is given, the notebook should be named after the input file's base name with a notebook extension and saved in the current working directory. The entire contents of the Python file should be placed into a single code cell of a valid, standard-format notebook, so that opening it in Jupyter shows the original code unchanged. The output should be written with UTF-8 encoding and a readable, indented layout. After a successful conversion, the script should print a short confirmation message naming both the source and destination files. If the user runs the script without providing an input file, it should print a brief usage message explaining the expected arguments and exit with a non-zero status code.
+---"""
 
 from __future__ import annotations
-
 import json
-import sys
 from pathlib import Path
-
+import sys
 import nbformat as nbf
 
 

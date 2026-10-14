@@ -1,36 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import base64
 import codecs
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import contextlib
+from dataclasses import dataclass
+from datetime import date, datetime, time
+from decimal import Decimal
 import io
 import json
 import logging
+from multiprocessing import Pool, freeze_support
 import os
+from pathlib import Path
 import re
 import sqlite3
 import sys
 import tempfile
 import traceback
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass
-from datetime import date, datetime, time
-from decimal import Decimal
-from multiprocessing import Pool, freeze_support
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 try:
-    import py7zr  # type: ignore
+    import py7zr
 except ImportError:
     py7zr = None
 try:
-    import pyodbc  # type: ignore
+    import pyodbc
 except ImportError:
     pyodbc = None
 log = logging.getLogger("merged")

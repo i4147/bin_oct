@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts compiled gettext translation files (.mo) back into editable source translation files (.po). The tool should accept one or more paths to .mo files, or a directory to scan recursively for .mo files, and produce a .po file alongside each input with the same base name. It should validate its inputs before processing: it must report clearly when a file does not exist, skip files without the .mo extension with a warning, and check that the external conversion utility from the GNU gettext toolset is available on the system before attempting any work, exiting with a helpful message if it is missing. Each conversion should capture errors from the underlying tool, verify that the produced output is not empty, and treat a failed or empty result as a failure for that file without aborting the remaining files. Provide an option to delete the original .mo file after a successful conversion, and a verbose option that reports progress details such as each file being processed and its result. At the end, print a concise summary showing how many files were converted, skipped, or failed, and set a non-zero exit status if any failures occurred. The script should be runnable from the command line with clear usage help, use UTF-8 encoding for all generated text output, and handle unexpected errors gracefully with informative messages rather than raw stack traces.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def check_msgunfmt() -> bool:

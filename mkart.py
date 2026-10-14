@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that renders a user-supplied word as large ASCII-art letters in the terminal. The script should accept a single word (letters only, case-insensitive) from the user, look up a built-in five-line-tall block-character font for each letter of the alphabet, and print the word as stacked banner text where each letter occupies a consistent width and the lines of all letters are aligned side by side. The output should be readable, use block characters for the strokes, and handle lowercase input by converting it to the corresponding uppercase glyphs. Any character without a defined glyph (such as digits, punctuation, or spaces) should be handled gracefully, for example by skipping it or substituting a placeholder, without crashing. The script should prompt for the word interactively and print the resulting banner, then exit. Include a clear, self-contained font definition covering the full A–Z alphabet, and keep the overall design simple enough to run in any standard terminal.
+---"""
 
 from __future__ import annotations
-
 import os
 
 

@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes Python source files and reports on their type-annotation coverage and type-comment usage, using a concrete syntax-tree parser so that analysis is accurate rather than regex-based. The tool should accept one or more file paths or directories as input, recursively discover Python files (skipping symlinks and non-regular files), and process them in parallel across multiple worker processes to handle large codebases efficiently. For each file, it should parse the source, identify function and method definitions along with their parameters and return annotations, detect legacy `# type:` comments attached to function signatures or assignments, and tally counts of annotated versus unannotated items. The script should aggregate per-file results into a summary report printed to standard output, with an option to emit machine-readable JSON, and it should exit with a non-zero status code when a configurable threshold of unannotated items is exceeded so it can be used as a CI gate. It should handle unreadable files, encoding problems, and syntax errors gracefully by recording them in the report rather than crashing, and it should fail with a clear message if its required parsing dependencies are not installed. Provide command-line options for the input paths, the output format, the coverage threshold, the number of worker processes, and an option to restrict analysis to public (non-underscore-prefixed) names.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import stat
 import sys
 import tempfile
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

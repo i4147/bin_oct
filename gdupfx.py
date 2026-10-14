@@ -1,17 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans one or more directory trees supplied by the user and finds groups of du files with identical content while avoiding unnecessary full reads of every file.
+The tool should be a command-line utility that accepts one or more root directories to search, with options to control behavior such as the minimum file size to consider, which directory names to skip (with a sensible default list of common version-control, cache, virtual-environment, and IDE folders), whether to follow symbolic links, and an option to include hidden files. It should report progress or status briefly and gracefully handle unreadable files, permission errors, and missing paths by warning the user and continuing.
+To keep it efficient, the approach should work in stages: first group candidate files by size, discarding any size with only one file, then compare a small sample from the beginning of each remaining file to eliminate obvious non-matches, and only then compute a fast non-cryptographic hash of the full contents for the files that still look identical. Reading should be done in fixed-size chunks so large files do not exhaust memory, and independent file operations should be parallelized across a thread pool with a worker count that scales to the machine's CPU count. The tool must rely on the third-party hashing library and exit with a clear error message and nonzero status if it is not installed.
+The output should list each set of duplicate files together with its file size, the total count of duplicate groups, and the total wasted space that could be reclaimed by keeping only one copy per group, with sizes shown in human-readable units (B, KB, MB, GB, TB, PB, formatted to two decimal places, with zero bytes shown as "0 B"). Optionally the user should be able to export results in a structured machine-readable format and see elapsed scan time. The tool should return a successful exit status when the scan completes, and should never delete or modify any files on its own.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import hashlib
-import os
-import sys
-import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+import hashlib
+import os
 from pathlib import Path
-from typing import List, Optional
+import sys
+import time
+from typing import Optional
 
 try:
     import xxhash

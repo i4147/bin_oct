@@ -1,11 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a project directory and produces a clear, colorized terminal report summarizing the files it contains. The tool should accept a target directory (defaulting to the current working directory) and an optional flag to control display options, such as whether to show a per-file listing or only aggregate statistics.
+The script should walk the directory tree recursively while automatically ignoring common non-source or generated folders (for example version control metadata, dependency caches, virtual environments, build outputs, and tool caches) as well as symbolic links. It should group the discovered files by their file extension and, for each group, report the number of files and their combined size in a human-readable format (such as bytes, KB, MB, GB, or TB). Files without an extension should be handled gracefully and reported under a clearly labeled category.
+The output should be well-organized and easy to scan, with a header, a summary of totals (overall file count and total size), and a breakdown sorted in a sensible order (for example, by count or size, descending). Use terminal colors to visually distinguish headers, extensions, counts, and data values, but ensure the output remains readable when colors are not supported. The tool should handle permission errors and unreadable files without crashing, skipping them and continuing the scan.
+The script should be runnable from the command line, provide a help message describing its options, and exit with a non-zero status code on invalid input such as a nonexistent or non-directory path. Output should go to standard output, and the script should be self-contained with no external dependencies beyond the Python standard library.
+---"""
 
+from __future__ import annotations
 import argparse
-import shutil
-import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+import shutil
+import sys
 
 
 class Colors:
@@ -59,10 +64,7 @@ def format_size(bytes_val: int) -> str:
 def should_skip(path: Path) -> bool:
     if path.is_symlink():
         return True
-    for part in path.parts:
-        if part in SKIP_DIRS:
-            return True
-    return False
+    return any(part in SKIP_DIRS for part in path.parts)
 
 
 def scan_extensions(show_size: bool = False) -> dict[str, tuple[list[Path], int]]:

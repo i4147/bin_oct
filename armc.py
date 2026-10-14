@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that removes comments from Python source files while preserving the code's structure and validity. The tool should accept one or more file or directory paths from the command line (with recursive traversal of directories to find `.py` files), and process files in parallel to speed up work on large codebases. For each file, it should read the source as raw bytes, identify all comment regions using a syntax-aware parser so that `#` characters inside string literals are never mistakenly removed, and delete those comments cleanly. The tool must preserve a shebang line on the first line of a file, and it should avoid leaving behind blank or malformed lines where comments were removed.
+After removing comments, the script should verify that the resulting code is still valid Python (for example, by checking that it parses successfully), and only write the changes back to disk if the output is valid. If a file cannot be processed or would become invalid, the tool should skip it, report the error, and continue with the remaining files without crashing. Provide clear, timestamped progress and error logging to the console, including a summary of how many files were processed, modified, skipped, or failed. Include an option to run in a dry-run mode that reports which files would change without modifying them, and an option to control the number of parallel workers. The tool should handle encoding issues gracefully and should be safe to run on large projects, producing a clean, human-readable result that keeps all executable code and string content intact.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import NamedTuple
-
-import tree_sitter_python as tspython
 from loguru import logger
 from tree_sitter import Language, Parser
+import tree_sitter_python as tspython
 
 logger.remove()
 logger.add(

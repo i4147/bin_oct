@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for recursively scanning a directory tree and counting or reporting comment lines across many source code files. The tool should accept a root path (file or directory) and optional settings such as file extension filters, ignore patterns, and a worker count for parallel processing. It should determine the correct single-line comment marker for each file based on its extension, falling back to a sensible default for unknown types, and handle languages with different comment syntaxes. The script must process large numbers of files efficiently, using parallelism for bulk work while handling very large files in a memory-conscious way (for example, streaming lines in chunks rather than loading whole files). It should skip binary files, unreadable files, and common non-source directories such as version control folders, and it should tolerate errors per file without aborting the whole run.
+The output should be a clear summary report showing total files scanned, total lines, comment lines, and a per-language or per-extension breakdown, with an optional detailed per-file listing. Support a machine-readable output format (such as JSON) in addition to a human-readable text table, and allow the user to write the report to a file or standard output. Include logging of warnings and errors via a configurable verbosity level, and use a clean exit status that reflects success or failure. Provide helpful command-line help text and validate user inputs with informative error messages.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import shutil
-import sys
 from contextlib import ExitStack, suppress
 from dataclasses import dataclass
 from itertools import islice
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
-
 from loguru import logger
 
 if TYPE_CHECKING:

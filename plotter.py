@@ -1,18 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that plots mathematical functions from a user-supplied expression, using a command-line interface and parallel computation where helpful. The script should accept a single mathematical expression in the variable x (supporting common functions such as sine, cosine, tangent, inverse trigonometric functions, square root, exponential, natural logarithm, and the constants pi and e), along with an optional plotting range and resolution. It should evaluate the expression across the requested range, distributing the computation across multiple worker processes to speed up work on large sample counts, and handle invalid or undefined points (such as division by zero, negative square roots, or logarithms of non-positive values) gracefully by skipping or masking them rather than crashing. The result should be rendered as a clear, labeled 2D line plot with axes, a title reflecting the expression, and a grid, and saved to an image file on disk without requiring a graphical display. The script should restrict evaluation to the permitted mathematical vocabulary for safety, reject or reportressions that cannot be parsed or evaluated, and print a concise summary to the console on completion, including the output file location. Provide sensible defaults for range and resolution, validate user input with helpful error messages, and ensure the script runs correctly as a standalone program from the command line.
+---"""
 
 from __future__ import annotations
-
-import sys
 from multiprocessing import Pool
-from pathlib import Path
+import sys
 from typing import Any
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
 mpl.use("Agg")
-
 _FUNCTION_EXPR: str = ""
 
 

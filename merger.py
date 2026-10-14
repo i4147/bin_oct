@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for gathering the text contents of many source files in a directory tree and combining them into a single merged document for easy sharing with an AI assistant. The tool should accept a target directory (defaulting to the current working directory) and optional filters to include or exclude files by extension and to skip binary or otherwise unwanted files. It should walk the directory recursively, read each eligible file as text while gracefully ignoring files that cannot be read or decoded, and skip common non-essential paths such as hidden folders, version control metadata, build outputs, and dependency directories.
+For each included file, the merged output should begin with a header line showing the file's path relative to the working directory, followed by the file's full contents, with a trailing newline ensured between entries so the result remains cleanly separated and readable. Files should be processed in a deterministic order.
+The tool should then deliver the merged result: it should copy the combined text to the device clipboard when the content is within a reasonable size limit (about 1 MB), and print a clear confirmation message on success. If the content exceeds that limit, it should instead report to the user that the merged content is too large for the clipboard and suggest narrowing the selection, without silently failing. If no eligible files are found or the merged content is empty, the tool should inform the user and exit without attempting to copy anything.
+The script should also support a dry-run or summary mode that lists which files would be included and the total size, without producing the merged output. Provide helpful command-line help text, handle missing or invalid directories with clear error messages, and exit with appropriate status codes. Prioritize robustness, readable console output using simple emoji status indicators, and a design that is easy to extend with additional filters or output destinations.
+---"""
 
 from __future__ import annotations
-
 import argparse
 from pathlib import Path
-
 from dh import get_nobinary, get_random_filename, runcmd, should_skip
 
 

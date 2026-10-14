@@ -1,14 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a project directory tree for test files and relocates them into a single centralized test folder in the user's home directory, while keeping a persistent record of every move.
+The tool should:
+- Accept a source directory path from the command line (with a sensible default of the current directory) and recursively search it for Python files whose names indicate they are tests, such as names containing "test_" or "_test" as part of the filename.
+- Skip files that are already located inside the central test destination so they are not moved onto themselves.
+- Move each identified test file into the central test folder, preserving its relative location within the source tree so that files from different subdirectories do not collide or overwrite one another. Create any missing destination directories automatically.
+- Perform the file moves concurrently using a small pool of worker processes to speed up work on large trees, and collect the outcome of each move.
+- For each attempted move, record whether it succeeded, the original path, and a human-readable message describing the destination or the error encountered, without letting one failed move stop the others.
+- Append or write the results to a JSON log file in the user's home directory so the user can later review or audit which files were moved, and where.
+- Log progress and summary information (number of files found, moved, and failed) using a clear logging approach, and print a concise final report to the console.
+- Support a dry-run option that lists which files would be moved without actually moving anything.
+- Handle common errors gracefully, including missing source directories, permission problems, and name conflicts at the destination, and return a meaningful exit status indicating overall success or failure.
+- Be runnable as a standalone command-line program with clear help text describing its options.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import json
-import shutil
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
 from typing import Any
-
 from loguru import logger
 
 TESTS_DIR: Path = Path.home() / "tmp" / "tests"

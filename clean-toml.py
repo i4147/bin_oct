@@ -1,28 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import os
-import time
-from pathlib import Path
-import multiprocessing
+"""Write a Python tool that cleans up TOML configuration files by removing all comments while preserving the valid structure and values of each file. The tool should accept a target path (a single file or a directory tree) and recate all T it, skipping common non-source directories such as version control folders, virtual environments, dependency caches, IDE settings folders, and build output directories.
+Processing should be parallelized across available CPU cores so that large repositories with many TOML files are handled efficiently. Each file should be parsed using a syntax-aware parser so that comments are identified precisely, without relying on fragile text matching that could damage string values containing comment-like characters.
+Behavior requirements:
+- Empty files should be left unchanged.
+- If a file cannot be parsed as valid TOML, it should be left untouched and reported as skipped or failed rather than corrupted.
+- Only files whose content actually changes should be rewritten; the tool should report which files were modified.
+- Before overwriting any file, the tool should be able to show a unified diff of the proposed changes, and support a dry-run mode that reports what would change without writing anything.
+- Provide a command-line interface that accepts the target path and flags for dry-run and diff display, with clear help text.
+- Report a summary at the end, including counts of files processed, modified, skipped, and failed, along with the elapsed time.
+- Handle errors gracefully, including missing paths, permission issues, and unreadable files, without crashing the entire run.
+- Optionally, if a TOML parsing library is available, validate the cleaned output to confirm it still parses and matches the original data before writing.
+---"""
+
+from __future__ import annotations
 import argparse
 import difflib
+import multiprocessing
+import os
+from pathlib import Path
 import shutil
-from typing import List, Tuple, Union, Iterator
-
-from tree_sitter import Language, Parser, Query, QueryCursor  # type: ignore[import-untyped]
-import tree_sitter_toml as ts_toml  # type: ignore[import-untyped]
+import sys
+from typing import Iterator
+from tree_sitter import Language, Parser, Query, QueryCursor
+import tree_sitter_toml as ts_toml
 
 try:
-    import tomllib  # type: ignore[import-untyped]
+    import tomllib
 except ImportError:
     try:
-        import tomli as tomllib  # type: ignore[import-untyped]
+        import tomli as tomllib
     except ImportError:
         try:
-            import toml as tomllib  # type: ignore[import-untyped]
+            import toml as tomllib
         except ImportError:
             tomllib = None
-
 _WORKERS = os.cpu_count() or 1
 _SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".idea", ".vscode", "dist", "build"}
 
@@ -31,30 +42,25 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
     orig_size = len(raw_bytes)
     if orig_size == 0:
         return raw_bytes, True
-
     language = Language(ts_toml.language())
     parser = Parser(language)
     tree = parser.parse(raw_bytes)
     if tree.root_node.has_error:
         return b"", False
-
     query = Query(language, "(comment) @comment")
     cursor = QueryCursor(query)
     captures = cursor.captures(tree.root_node)
     comment_nodes = captures.get("comment", [])
     if not comment_nodes:
         return raw_bytes, True
-
     comment_ranges = [(node.start_byte, node.end_byte) for node in comment_nodes]
     comment_ranges.sort()
-
     merged_ranges = []
     for start, end in comment_ranges:
         if merged_ranges and start <= merged_ranges[-1][1]:
             merged_ranges[-1] = (merged_ranges[-1][0], max(merged_ranges[-1][1], end))
         else:
             merged_ranges.append((start, end))
-
     new_bytes_parts = []
     last_idx = 0
     for start, end in merged_ranges:
@@ -63,9 +69,7 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
         last_idx = end
     if last_idx < orig_size:
         new_bytes_parts.append(raw_bytes[last_idx:])
-
     new_bytes = b"".join(new_bytes_parts)
-
     if tomllib is not None:
         try:
             tomllib.loads(new_bytes.decode("utf-8"))
@@ -75,14 +79,13 @@ def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
         new_tree = parser.parse(new_bytes)
         if new_tree.root_node.has_error:
             return b"", False
-
     return new_bytes, True
 
 
 def process_toml_file(
     args_tuple: tuple[str, str, str, bool, bool],
 ) -> tuple[str, int, int, int, str | None, str, str]:
-    file_path_str, base_dir_str, backend, dry_run, backup = args_tuple
+    file_path_str, base_dir_str, _backend, dry_run, backup = args_tuple
     path = Path(file_path_str)
     try:
         if not path.is_file():
@@ -91,30 +94,23 @@ def process_toml_file(
             raw_bytes = path.read_bytes()
         except Exception as e:
             return (file_path_str, 0, 0, 0, f"Read error: {e}", "", "")
-
         orig_size = len(raw_bytes)
         if orig_size == 0:
             rel_path = os.path.relpath(file_path_str, base_dir_str)
             return (rel_path, 0, 0, 0, None, "", "")
-
         try:
             old_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding", "", "")
-
         new_bytes, success = process_file_tree_sitter(raw_bytes)
-
         if not success:
             return (file_path_str, 0, 0, 0, "Invalid TOML or validation failed", "", "")
-
         try:
             new_text = new_bytes.decode("utf-8")
         except UnicodeDecodeError:
             return (file_path_str, 0, 0, 0, "Invalid UTF-8 encoding in result", "", "")
-
         new_size = len(new_bytes)
         saved = orig_size - new_size
-
         if not dry_run and saved > 0:
             if backup:
                 backup_path = path.with_suffix(path.suffix + ".bak")
@@ -123,7 +119,6 @@ def process_toml_file(
                 path.write_bytes(new_bytes)
             except Exception as e:
                 return (file_path_str, 0, 0, 0, f"Write error: {e}", "", "")
-
         rel_path = os.path.relpath(file_path_str, base_dir_str)
         return (rel_path, orig_size, new_size, saved, None, old_text, new_text)
     except Exception as e:
@@ -158,22 +153,16 @@ def main() -> None:
     parser_arg.add_argument("--dry-run", action="store_true")
     parser_arg.add_argument("--backup", action="store_true")
     parsed_args = parser_arg.parse_args()
-
     input_paths = parsed_args.paths
     if not input_paths:
         input_paths = ["."]
-
     base_dir = os.getcwd()
     files_list = list(iter_toml_files(input_paths))
-
     if not files_list:
         sys.exit(0)
-
     total_saved = 0
     error_count = 0
-
     tasks = [(f, base_dir, parsed_args.backend, parsed_args.dry_run, parsed_args.backup) for f in files_list]
-
     if len(files_list) == 1:
         for task in tasks:
             res = process_toml_file(task)
@@ -195,7 +184,7 @@ def main() -> None:
     else:
         with multiprocessing.Pool(_WORKERS) as pool:
             for res in pool.imap_unordered(process_toml_file, tasks):
-                rel_path, orig, new, saved, err, old_text, new_text = res
+                rel_path, _orig, _new, saved, err, old_text, new_text = res
                 if err:
                     error_count += 1
                 else:
@@ -210,7 +199,6 @@ def main() -> None:
                             tofile=f"b/{rel_path}",
                         )
                         sys.stdout.writelines(diff)
-
     print(f"Total space freed: {total_saved} bytes")
 
 

@@ -1,63 +1,75 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a batch image-processing and conversion utility. The tool should accept a source directory (or a list of individual files) and a destination directory from the command line, recursively discover supported media files, and convert or normalize them into a consistent output format and size, preserving the original folder structure in the output location.
+It should support a broad range of input types, including common raster formats, modern high-efficiency formats, vector graphics, HTML-style documents, and multi-page PDFs, gracefully handling whichever optional capabilities are installed and clearly reporting which formats are unavailable when a required capability is missing. Where a source contains multiple pages or frames, the tool should be able to export each page as its own image.
+Key behaviors to include:
+- Accept options for target format, maximum dimensions or scaling, quality level, background fill for transparency, and whether to overwrite existing outputs or skip them.
+- Process files in parallel across multiple CPU cores to speed up large batches, with a configurable worker count.
+- Correctly handle EXIF orientation, color modes, and transparency when converting between formats.
+- Validate each file before processing, skip corrupt or unsupported inputs with a logged warning rather than halting the entire batch, and never corrupt existing output on failure (write to a temporary file and move it into place).
+- Provide a summary at the end reporting counts of converted, skipped, and failed files, plus total elapsed time.
+- Support a dry-run mode that lists what would be processed without writing anything.
+- Use structured logging with a verbosity flag, and return a non-zero exit code if any file failed.
+- Include clear command-line help text describing every option and the supported format list.
+Deliver a single, self-contained, well-documented script with a main entry point that can be run directly from the terminal.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import logging
-import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import logging
 from pathlib import Path
+import sys
 from typing import Iterable, Optional, Sequence
 
 try:
-    from PIL import Image, UnidentifiedImageError  # type: ignore
+    from PIL import Image, UnidentifiedImageError
 
     _HAS_PIL = True
 except ImportError:
-    Image = None  # type: ignore
-    UnidentifiedImageError = Exception  # type: ignore
+    Image = None
+    UnidentifiedImageError = Exception
     _HAS_PIL = False
 try:
-    import numpy as np  # type: ignore
+    import numpy as np
 
     _HAS_NUMPY = True
 except ImportError:
-    np = None  # type: ignore
+    np = None
     _HAS_NUMPY = False
 try:
-    import cv2  # type: ignore
+    import cv2
 
     _HAS_CV2 = True
 except ImportError:
-    cv2 = None  # type: ignore
+    cv2 = None
     _HAS_CV2 = False
 try:
-    import pillow_heif  # type: ignore
+    import pillow_heif
 
     pillow_heif.register_heif_opener()
     _HAS_HEIF = True
 except ImportError:
     _HAS_HEIF = False
 try:
-    import cairosvg  # type: ignore
+    import cairosvg
 
     _HAS_CAIROSVG = True
 except ImportError:
-    cairosvg = None  # type: ignore
+    cairosvg = None
     _HAS_CAIROSVG = False
 try:
-    from weasyprint import HTML  # type: ignore
+    from weasyprint import HTML
 
     _HAS_WEASYPRINT = True
 except ImportError:
-    HTML = None  # type: ignore
+    HTML = None
     _HAS_WEASYPRINT = False
 try:
-    from pdf2image import convert_from_bytes  # type: ignore
+    from pdf2image import convert_from_bytes
 
     _HAS_PDF2IMAGE = True
 except ImportError:
-    convert_from_bytes = None  # type: ignore
+    convert_from_bytes = None
     _HAS_PDF2IMAGE = False
 LOG = logging.getLogger("imgtool")
 

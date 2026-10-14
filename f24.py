@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans the current working directory recursively for files changed recently, skipping any version-control metadata folders (such as `.git`) and never following symbolic links. For every file found, the script should check its status-change timestamp and determine whether it falls within the last 24 hours relative to the moment the script starts. The file checks should be performed in parallel across a small pool of worker processes to speed up scanning of large directory trees, and the script should display a progress indicator while the checks run.
+When finished, the script should output the list of recently changed files sorted from most recent to least recent, showing each file's timestamp and its path relative to the starting directory. Files that cannot be accessed due to missing paths, permission problems, or other operating system errors should be silently skipped without stopping the scan. If the directory contains no files at all, the script should exit cleanly without printing results. The output should be easy to read in a terminal, and the script should be designed so that it runs as a standalone command-line tool with no required arguments.
+---"""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import operator
-import time
 from pathlib import Path
+import time
 from typing import Final
-
 from tqdm import tqdm
 
 SECONDS_24H: Final[int] = 24 * 40 * 40

@@ -1,16 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree (or a single file) for Python source files and archived Python packages, then extracts every top-level and nested code entity it can find, such as functions, classes, and their docstrings or signatures, and saves each entity as a separate source file into an organized output folder. The script should accept a path to a project or archive as input, handle common archive formats (wheels, zip files, and various tarballs) by unpacking them into a temporary location and cleaning up afterward, and only process files with Python extensions or extensionless files that contain Python code. It should use a syntax-aware parser so that each extracted entity preserves its exact original source text, including its position in the original file, and record the origin file path with each entity. Extraction should run in parallel across files to take advantage of multiple CPU cores, and the script should gracefully skip files that cannot be parsed, reporting them without stopping the overall run. The output should be a directory structure that mirrors the original file layout, with a summary of how many entities were extracted from each file and any errors encountered. Include clear command-line usage with options for the input path and output location, and make sure the script is robust against malformed archives, path traversal attempts inside archives, and unexpected file encodings.
+---"""
 
 from __future__ import annotations
-
+from multiprocessing import Pool, cpu_count
 import os
+from pathlib import Path
 import re
 import shutil
 import tarfile
-import zipfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any
-
+import zipfile
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 

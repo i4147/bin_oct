@@ -1,29 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import io
 import json
+from pathlib import Path
 import re
 import subprocess
 import sys
 import time
+from typing import Any, Iterable, Optional, Sequence
 import urllib.error
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
 
 try:
     import requests
 except ImportError:
-    requests = None  # type: ignore[assignment]
+    requests = None
 try:
     import pycurl
 except ImportError:
-    pycurl = None  # type: ignore[assignment]
+    pycurl = None
 try:
     from rich.console import Console
     from rich.progress import (
@@ -42,7 +40,7 @@ except ImportError:
 try:
     from bs4 import BeautifulSoup
 except ImportError:
-    BeautifulSoup = None  # type: ignore[assignment]
+    BeautifulSoup = None
 JSON_MIRRORS: tuple[str, ...] = (
     "https://pypi.org/pypi",
     "https://pypi.tuna.tsinghua.edu.cn/pypi",

@@ -1,21 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line tool for discovering and processing SVG image files within a project directory tree, running work in parallel and reporting the results.
+The tool should recursively scan a starting directory (defaulting to the current working directory, with an option to specify another path) and collect all SVG files, while automatically skipping common non-source or generated directories such as version control folders, virtual environments, dependency caches, build outputs, and tooling caches. Traversal should be efficient for large trees.
+For each discovered SVG file, the tool should run an external processing step (for example, an SVG optimization or validation command supplied or configured by the user) and use a configurable number of worker processes to handle files concurrently. Each external run should respect a configurable timeout so that hung processes do not stall the whole job.
+The tool should support a check or verification mode in which it determines whether each file's content would change if processed, without modifying files on disk; it should compare outputs in a memory-efficient, chunked manner and report which files are out of date. A write mode should apply the processed output back to the original files safely, using a temporary file and an atomic replace so that no file is left partially written, and it should preserve the original file permissions.
+The tool should also validate that each SVG is well-formed XML before and/or after processing, reporting parse errors clearly.
+Inputs are command-line arguments: the target directory, mode selection (check or write), worker count, timeout, and the external command to use. Outputs are human-readable progress and summary messages on standard output, per-file error messages on standard error, and a meaningful exit status: zero when all files are clean or successfully processed, and a non-zero status when any file is out of date (in check mode), failed processing, or is malformed. The script should handle keyboard interruption gracefully and clean up any temporary files it created.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import stat
 import subprocess
 import sys
 import tempfile
+from typing import TYPE_CHECKING, Final, NamedTuple
 import xml.etree.ElementTree as ET
-from collections.abc import Iterator, Sequence
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
-from typing import Final, NamedTuple
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 cwd = Path.cwd().resolve()
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     "lazy",
@@ -192,10 +199,11 @@ def process_file(
     tmp_path: Path | None = None
     try:
         try:
+            tmp_dir = os.environ.get("TMPDIR")
             fd, tmp_name = tempfile.mkstemp(
                 prefix=target.stem + ".",
                 suffix=target.suffix + ".tmp",
-                dir=str(target.parent),
+                dir=str(tmp_dir),
             )
             with contextlib.suppress(OSError):
                 os.close(fd)

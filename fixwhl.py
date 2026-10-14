@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory of Python wheel files (.whl archives), reads the package metadata embedded inside each wheel, and organizes the wheels into a structured layout based on their package name and version. For each wheel, the script should extract the distribution name and version from the wheel's metadata file, normalize the package name into a consistent canonical form so that differently-spelled names map to the same package, and then place the wheel into an output directory grouped by that normalized package name. If a file with the same target name already exists, the script must not overwrite it; instead it should generate a unique alternative filename by appending an incrementing counter. The script should accept an input directory and an output directory as inputs, create any needed output folders, and handle malformed or incomplete wheels gracefully by reporting the problem and skipping them without stopping the overall run. At completion, it should print or return a clear summary including how many wheels were processed successfully, how many were skipped due to errors, and how many were renamed to avoid collisions. The tool should support a dry-run mode that reports the planned moves without modifying the filesystem. Ensure the script is robust, readable, and includes helpful command-line usage and error messages.
+---"""
 
 from __future__ import annotations
-
 from collections import defaultdict
 from email.parser import Parser
 from pathlib import Path
 from zipfile import ZipFile
-
 from packaging.utils import canonicalize_name
 
 

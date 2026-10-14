@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that verifies whether a given set of shared library files (.so files, as used on Linux/Android-style systems) can actually be loaded at runtime. The script should accept a file or directory path as input, recursively or non-recursively locate candidate shared library files, and for each one determine whether it is a valid, loadable binary by attempting to load it through a native dynamic-loading mechanism. For every file it checks, it should report a clear status (valid or invalid) along with a human-readable reason for any failure, such as the file not existing, not being a regular file, or the loader raising an error that describes why the library could not be loaded.
+The script should be structured as a reusable verifier component that can be run standalone from the command line or imported into other tools. It should support a verbose mode that emits detailed diagnostic messages, including any non-fatal warnings the loader reports, while keeping normal output concise. Results should be summarized at the end with counts of total files checked, files that passed, and files that failed, and the script should exit with a meaningful status code reflecting whether all checks succeeded.
+Logging should be written to a log file rather than cluttering the console, and console output for the user should use readable, color-friendly formatting where appropriate. The script should handle unexpected errors gracefully, never crash on a single bad file, and continue verifying the remaining files. Optionally, it should allow the user to output the results as a structured report (such as JSON) for use in automated pipelines.
+---"""
 
 from __future__ import annotations
-
 import ctypes
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
-
 from dh import cprint, get_files
 from loguru import logger
 

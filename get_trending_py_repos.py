@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scrapes the trending Python repositories page on GitHub for a user-selected timeframe (daily, weekly, or monthly) and exports the results to files. The script should fetch the trending listing for the chosen period, parse each repository entry to extract its name, URL, description, primary programming language, and star-related metrics (such as total stars and stars gained in the period), and store each entry in a structured record. It should handle network errors and unexpected page layouts gracefully, skipping malformed entries without crashing. Results for each timeframe should be saved into an output directory, with one file per timeframe in both CSV and JSON formats, using clear, consistent column or field names. The script should create the output directory if it does not exist, print a concise summary to the console indicating how many repositories were collected and where the files were saved, and allow the user to run it for all timeframes in a single execution or for a specific one selected at runtime. Include a polite request timeout and a descriptive User-Agent so the tool behaves responsibly toward the website.
+---"""
 
 from __future__ import annotations
-
 import csv
-import json
 from dataclasses import asdict, dataclass
+import json
 from pathlib import Path
-
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 BASE_URL = "https://github.com/trending/python"
 TIMEFRAMES = ["daily", "weekly", "monthly"]

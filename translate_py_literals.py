@@ -1,19 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans Python source files in a given directory (or a single file), finds human-readable text in the code that is not written in English, such as comments, docstrings, and string literals, and translates that text into English while leaving the program's logic and behavior intact.
+The tool should accept a path to a file or folder via command-line arguments, with options to choose the target language (defaulting to English), preview changes without modifying files, and optionally write results to a new output location or overwrite the originals after creating a backup. It should detect non-English content by checking for characters outside the basic ASCII range, skip blank or whitespace-only text, and avoid translating content that would break the code, such as identifiers, keywords, format placeholders, escape sequences, or code that is not human-readable text.
+Translation should use available online translation services with graceful fallbacks: if one translation backend is unavailable or returns an error or warning message, try another, and if none succeed, keep the original text and report the failure without crashing. Repeated translations of the same phrase should be cached to reduce requests and speed up processing.
+The tool must verify that the modified code is still valid Python (for example, by parsing it) before saving, and should refuse to write a file whose result would be syntactically broken, reporting the problem instead. It should preserve indentation, line structure, and the original formatting of untranslated code as much as possible.
+The output should be a clear console report listing each file processed, the text segments found and their translations, counts of changes made, and any errors or skipped items. Handle missing files, unreadable files, encoding issues, and missing translation libraries gracefully with informative messages and a non-zero exit status when errors occur.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
-import re
-import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Tuple
-
+import re
+import sys
 
 try:
     from translate import Translator
 except ImportError:
     Translator = None
-
 try:
     from deep_translator import GoogleTranslator
 except ImportError:
@@ -21,45 +25,21 @@ except ImportError:
 
 
 def contains_non_english(text: str) -> bool:
-    """
-    Checks if a string contains non-English / non-ASCII characters.
-
-    Args:
-        text (str): String to inspect.
-
-    Returns:
-        bool: True if non-ASCII characters are present, False otherwise.
-    """
     if not text or not text.strip():
         return False
-
     return any(ord(char) > 127 for char in text)
 
 
 @lru_cache(maxsize=1024)
 def translate_text(text: str, target_lang: str = "en") -> str:
-    """
-    Translates text to the target language with fallback mechanism.
-    First attempts using 'translate', then falls back to 'deep-translator'.
-
-    Args:
-        text (str): String to translate.
-        target_lang (str): Target language code (default: 'en').
-
-    Returns:
-        str: Translated string, or original text if all backends fail.
-    """
-
     if Translator is not None:
         try:
             translator = Translator(to_lang=target_lang)
             result = translator.translate(text)
-
             if result and not result.startswith("MYMEMORY WARNING"):
                 return result
         except Exception:
             pass
-
     if GoogleTranslator is not None:
         try:
             result = GoogleTranslator(source="auto", target=target_lang).translate(text)
@@ -67,42 +47,25 @@ def translate_text(text: str, target_lang: str = "en") -> str:
                 return result
         except Exception as e:
             print(f"    [Warning] Fallback translation failed for '{text[:20]}...': {e}")
-
     return text
 
 
 def get_node_char_offsets(source_code: str, node: ast.AST) -> tuple[int, int]:
-    """
-    Converts AST node line/column offsets (which use UTF-8 byte offsets)
-    into 0-based character indices in the full source code string.
-
-    Args:
-        source_code (str): Entire file content.
-        node (ast.AST): AST node with location information.
-
-    Returns:
-        Tuple[int, int]: (start_char_index, end_char_index)
-    """
     source_bytes = source_code.encode("utf-8")
     lines_bytes = source_bytes.splitlines(keepends=True)
-
     start_byte = sum(len(lines_bytes[i]) for i in range(node.lineno - 1)) + node.col_offset
     end_byte = sum(len(lines_bytes[i]) for i in range(node.end_lineno - 1)) + node.end_col_offset
-
     start_char = len(source_bytes[:start_byte].decode("utf-8", errors="ignore"))
     end_char = len(source_bytes[:end_byte].decode("utf-8", errors="ignore"))
-
     return start_char, end_char
 
 
 def reformat_literal(orig_slice: str, translated_text: str) -> str:
     if not orig_slice:
         return f'"{translated_text}"'
-
     prefix_match = re.match(r"^([fFrRbBuU]{1,2})", orig_slice)
     prefix = prefix_match.group(1) if prefix_match else ""
     rest = orig_slice[len(prefix) :]
-
     if rest.startswith('"""') and rest.endswith('"""'):
         quote = '"""'
     elif rest.startswith("'''") and rest.endswith("'''"):
@@ -113,7 +76,6 @@ def reformat_literal(orig_slice: str, translated_text: str) -> str:
         quote = "'"
     else:
         return f'"{translated_text}"'
-
     if quote in ('"""', "'''"):
         escaped = translated_text.replace(quote, "\\" + quote[0] * 3)
     else:
@@ -122,62 +84,41 @@ def reformat_literal(orig_slice: str, translated_text: str) -> str:
             escaped = escaped.replace('"', '\\"')
         else:
             escaped = escaped.replace("'", "\\'")
-
     return f"{prefix}{quote}{escaped}{quote}"
 
 
 def process_python_file(file_path: Path) -> bool:
-    """
-    Parses a single Python file, finds non-English string literals,
-    translates them, and updates the file in-place.
-
-    Args:
-        file_path (Path): Path object pointing to the target .py file.
-
-    Returns:
-        bool: True if the file was modified, False otherwise.
-    """
     try:
         source_code = file_path.read_text(encoding="utf-8")
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
         return False
-
     try:
         tree = ast.parse(source_code, filename=str(file_path))
     except SyntaxError as e:
         print(f"Skipping {file_path} (Syntax Error: {e})")
         return False
-
     targets: list[tuple[int, int, str, str]] = []
-
     for node in ast.walk(tree):
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            if contains_non_english(node.value):
-                if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
-                    start_idx, end_idx = get_node_char_offsets(source_code, node)
-                    orig_slice = source_code[start_idx:end_idx]
-                    targets.append((start_idx, end_idx, node.value, orig_slice))
-
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and contains_non_english(node.value):
+            if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
+                start_idx, end_idx = get_node_char_offsets(source_code, node)
+                orig_slice = source_code[start_idx:end_idx]
+                targets.append((start_idx, end_idx, node.value, orig_slice))
     if not targets:
         print(f"No non-English string literals found in: {file_path}")
         return False
-
     targets.sort(key=lambda x: x[0], reverse=True)
-
     modified_code = source_code
     changes_count = 0
-
     print(f"\nProcessing {file_path} ({len(targets)} candidate string(s) found)...")
-
     for start_idx, end_idx, orig_text, orig_slice in targets:
         translated_text = translate_text(orig_text)
         if translated_text and translated_text != orig_text:
             new_literal = reformat_literal(orig_slice, translated_text)
             modified_code = modified_code[:start_idx] + new_literal + modified_code[end_idx:]
             changes_count += 1
-            print(f"  - Translated: {repr(orig_text.strip())} -> {repr(translated_text.strip())}")
-
+            print(f"  - Translated: {orig_text.strip()!r} -> {translated_text.strip()!r}")
     if changes_count > 0:
         file_path.write_text(modified_code, encoding="utf-8")
         print(f"Updated in-place: {file_path} ({changes_count} literal(s) updated)")
@@ -188,22 +129,11 @@ def process_python_file(file_path: Path) -> bool:
 
 
 def resolve_input_paths(inputs: list[str]) -> list[Path]:
-    """
-    Resolves input file/directory arguments into a list of Path objects.
-    If inputs list is empty, recursively scans current folder for all .py files.
-
-    Args:
-        inputs (List[str]): Paths provided via command line.
-
-    Returns:
-        List[Path]: Filtered list of .py file Path objects.
-    """
     current_script = Path(__file__).resolve()
     target_files: list[Path] = []
-
     if not inputs:
         print("No input files specified. Recursively scanning current directory for .py files...")
-        target_files = [p for p in Path(".").rglob("*.py") if p.is_file()]
+        target_files = [p for p in Path().rglob("*.py") if p.is_file()]
     else:
         for item in inputs:
             p = Path(item)
@@ -213,8 +143,7 @@ def resolve_input_paths(inputs: list[str]) -> list[Path]:
                 target_files.append(p)
             else:
                 print(f"Warning: Ignored '{item}' (not a valid .py file or directory)")
-
-    unique_files = sorted(list({f.resolve() for f in target_files if f.resolve() != current_script}))
+    unique_files = sorted({f.resolve() for f in target_files if f.resolve() != current_script})
     return unique_files
 
 
@@ -226,26 +155,20 @@ def main():
         help="One or more .py files or directories to process. If omitted, recursively processes current working folder.",
     )
     args = parser.parse_args()
-
     if Translator is None and GoogleTranslator is None:
         print("Error: Neither 'translate' nor 'deep-translator' is installed.")
         print("Please install at least one using:")
         print("  pip install translate deep-translator")
         sys.exit(1)
-
     files_to_process = resolve_input_paths(args.files)
-
     if not files_to_process:
         print("No Python files found to process.")
         return
-
     print(f"Found {len(files_to_process)} Python file(s) to inspect.")
-
     updated_count = 0
     for file_path in files_to_process:
         if process_python_file(file_path):
             updated_count += 1
-
     print(f"\nDone! Updated {updated_count}/{len(files_to_process)} file(s).")
 
 

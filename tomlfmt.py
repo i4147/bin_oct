@@ -1,16 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line formatter for TOML files. It should accept one or more file or directory paths (defaulting to the current directory when none are given), recursively discover all TOML files while skipping common virtual environment, version control, cache, and dependency directories, and reformat each file's contents to a consistent, canonical style. The formatter should normalize spacing around keys, equals signs, and values; standardize indentation for nested tables and arrays; wrap long arrays and inline tables across multiple lines within a configurable column width; limit consecutive blank lines to a configurable maximum; and preserve all comments and the semantic meaning of the data exactly. It should correctly handle the full range of TOML value types, including basic, literal, and multi-line strings, integers, floats, booleans, dates, times, and datetimes (including datetimes with a space instead of a "T" separator), as well as arrays and inline tables.
+The tool should support a check mode that reports which files would change without writing anything and exits with a nonzero status if any file needs reformatting, and a diff mode that prints a unified diff of proposed changes. By default, it should rewrite files in place, writing through a temporary file and replacing the original atomically so that a failure never corrupts the source must validate that the reformatted output parses to the same data as the original before writing, and refuse to modify any file that fails to parse, reporting a clear error with the file path and line information.
+To improve speed on large projects, process files in parallel using a configurable number of worker processes, with chunked work distribution. At the end, print a summary showing how many files were scanned, reformatted, unchanged, and failed, along with a brief per-file status for changes and errors. Expose all tunable settings (worker count, column width, indent string, allowed blank lines, and mode selection) as command-line options with sensible defaults, and return appropriate exit codes for success, formatting differences in check mode, and errors.
+---"""
 
+from __future__ import annotations
 import argparse
+from collections import Counter
 import contextlib
+from dataclasses import dataclass
 import functools
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import sys
 import tempfile
-from collections import Counter
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterator, Sequence
 
 try:
@@ -22,7 +27,6 @@ COLUMN_WIDTH = 80
 INDENT = "  "
 ALLOWED_BLANK_LINES = 2
 CHUNK_MAX = 32
-
 SKIP_DIRS = frozenset({
     ".git",
     ".hg",
@@ -40,16 +44,13 @@ SKIP_DIRS = frozenset({
     ".eggs",
     "site-packages",
 })
-
 WS_RE = re.compile(r"[ \t]*")
 BARE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
 BASIC_STRING_RE = re.compile(r'"(?:[^"\\\n]|\\.)*"')
 LITERAL_STRING_RE = re.compile(r"'[^'\n]*'")
 ML_BASIC_STOP_RE = re.compile(r'[\\"]')
 ML_LITERAL_STOP_RE = re.compile(r"'")
-
 DATETIME_SPACE_RE = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:[Zz]|[+-]\d{2}:\d{2})?")
-
 ATOM_RE = re.compile(r"[^\s,\]\[{}#\"']+")
 
 
@@ -116,7 +117,8 @@ class Parser:
 
     def error(self, message: str):
         line = self.s.count("\n", 0, self.i) + 1
-        raise ParseError(f"line {line}: {message}")
+        msg = f"line {line}: {message}"
+        raise ParseError(msg)
 
     def peek(self) -> str:
         return self.s[self.i] if self.i < self.n else ""
@@ -134,7 +136,6 @@ class Parser:
         return text
 
     def finish_line(self) -> str | None:
-
         self.skip_ws()
         comment = None
         if self.peek() == "#":
@@ -183,12 +184,11 @@ class Parser:
         return Entry(key, value, self.finish_line())
 
     def parse_key(self) -> str:
-
         parts: list[str] = []
         while True:
             self.skip_ws()
             c = self.peek()
-            if c == '"' or c == "'":
+            if c in {'"', "'"}:
                 parts.append(self.scan_string())
             else:
                 match = BARE_KEY_RE.match(self.s, self.i)
@@ -216,7 +216,6 @@ class Parser:
         return s[start:end]
 
     def scan_multiline(self, start: int, quote: str) -> int:
-
         s, n = self.s, self.n
         stop = ML_BASIC_STOP_RE if quote == '"' else ML_LITERAL_STOP_RE
         j = start + 3
@@ -241,7 +240,7 @@ class Parser:
         c = self.peek()
         if c == "":
             self.error("expected a value")
-        if c == '"' or c == "'":
+        if c in {'"', "'"}:
             return Scalar(self.scan_string())
         if c == "[":
             return self.parse_array()
@@ -265,7 +264,7 @@ class Parser:
             if self.i >= self.n:
                 self.error("unterminated array")
             c = s[self.i]
-            if c == " " or c == "\t":
+            if c in {" ", "\t"}:
                 self.i += 1
             elif c == "\n":
                 self.i += 1
@@ -329,7 +328,6 @@ class Line:
 
 
 def flat_text(value: Value) -> str | None:
-
     if isinstance(value, Scalar):
         return None if "\n" in value.raw else value.raw
     if isinstance(value, Array):
@@ -363,7 +361,6 @@ class Printer:
 
     @staticmethod
     def trivia_lines(items: list, pad: str, keep_trailing_blank: bool) -> list[Line]:
-
         out: list[Line] = []
         blanks = 0
         for item in items:
@@ -378,7 +375,6 @@ class Printer:
         return out
 
     def value(self, value: Value, depth: int, col: int, tail: int, expand: bool) -> list[Line]:
-
         if isinstance(value, Scalar):
             return [Line(value.raw)]
         if isinstance(value, Array):
@@ -415,7 +411,6 @@ class Printer:
         last = len(table.entries) - 1
         for index, (key, inner) in enumerate(table.entries):
             sub = self.value(inner, depth, 0, 0, False)
-
             acc[-1].text += f"{key} = " + sub[0].text
             if sub[0].comment is not None:
                 acc[-1].comment = sub[0].comment
@@ -443,7 +438,6 @@ def last_physical_width(text: str) -> int:
 
 
 def align_comments(lines: list[Line]) -> list[str]:
-
     out: list[str] = []
     i, n = 0, len(lines)
     while i < n:
@@ -483,7 +477,6 @@ def render(items: list) -> str:
 
 
 def same_data(a, b) -> bool:
-
     if type(a) is not type(b):
         return False
     if isinstance(a, dict):
@@ -496,31 +489,35 @@ def same_data(a, b) -> bool:
 
 
 def format_text(text: str) -> str:
-
     try:
         original = tomllib.loads(text)
     except tomllib.TOMLDecodeError as exc:
-        raise FormatError(f"invalid TOML: {exc}") from None
+        msg = f"invalid TOML: {exc}"
+        raise FormatError(msg) from None
     parser = Parser(text)
     try:
         items = parser.parse()
     except ParseError as exc:
-        raise FormatError(f"unsupported syntax: {exc}") from None
+        msg = f"unsupported syntax: {exc}"
+        raise FormatError(msg) from None
     output = render(items)
     try:
         reparsed = tomllib.loads(output)
     except tomllib.TOMLDecodeError as exc:
-        raise FormatError(f"formatter produced invalid TOML, file left untouched: {exc}") from None
+        msg = f"formatter produced invalid TOML, file left untouched: {exc}"
+        raise FormatError(msg) from None
     if not same_data(original, reparsed):
-        raise FormatError("formatter would change the data, file left untouched")
-
+        msg = "formatter would change the data, file left untouched"
+        raise FormatError(msg)
     checker = Parser(output)
     try:
         checker.parse()
     except ParseError as exc:
-        raise FormatError(f"formatter output is not re-parseable: {exc}") from None
+        msg = f"formatter output is not re-parseable: {exc}"
+        raise FormatError(msg) from None
     if Counter(parser.comments) != Counter(checker.comments):
-        raise FormatError("formatter would lose or alter comments, file left untouched")
+        msg = "formatter would lose or alter comments, file left untouched"
+        raise FormatError(msg)
     return output
 
 
@@ -590,7 +587,6 @@ def _process_file(path_str: str, check: bool) -> Result:
 
 
 def process_file(path_str: str, check: bool) -> Result:
-
     try:
         return _process_file(path_str, check)
     except Exception as exc:
@@ -598,7 +594,6 @@ def process_file(path_str: str, check: bool) -> Result:
 
 
 def walk_toml(root: str) -> Iterator[str]:
-
     stack = [root]
     while stack:
         directory = stack.pop()
@@ -653,7 +648,6 @@ def iter_results(files: list[str], check: bool) -> Iterator[Result]:
         yield worker(files[0])
         return
     chunk = max(1, min(CHUNK_MAX, len(files) // (WORKERS * 4)))
-
     with mp.Pool(processes=WORKERS) as pool:
         yield from pool.imap_unordered(worker, files, chunksize=chunk)
 

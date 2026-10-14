@@ -1,15 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that batch-translates words from a text or CSV-style word list into a target language, using multiple translation backends with automatic fallback when one fails or is unavailable.
+The tool should accept command-line options for the input file of words, the output file location, the source and target language codes, and the number of parallel workers. It should read the words, translate each one concurrently with a bounded thread pool, and write the results to an output file in a clear, structured format (for example, one original word and its translation per line, or a JSON document). Preserve the input order in the output and skip or flag blank lines and duplicates sensibly.
+Key behaviors:
+- Try a prioritized list of translation backends in order; if one is missing, misconfigured, or fails, fall back to the next one automatically.
+- Detect and report the case where a locally installed module shadows the script's own name, and tell the user how to resolve it.
+- Retry transient failures a limited number of times before giving up on a word, and record unresolved words without stopping the whole run.
+- Show progress to the user during long runs, and print a summary of successes, failures, and skipped entries at the end.
+- Log detailed diagnostic information to a rotating log file with timestamps and thread names, while surfacing only serious errors on the console.
+- Exit with a clear, non-zero status code on fatal problems such as a missing input file or no usable backend, and zero on success.
+- Handle keyboard interruption gracefully by saving any completed translations before exiting.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from loguru import logger
 
 logger.remove()

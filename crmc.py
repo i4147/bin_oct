@@ -1,45 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a parallel, in-place source-code modernizer and formatter for Python projects. The tool should accept one or more file or directory paths on the command line, recursively discover Python source files (such as .py, .pyw, and .pyi), and skip common version-control, cache, and virtual-environment directories by default, with the option to add custom exclusion patterns.
+For each discovered file, the script should parse the source into a concrete syntax tree that preserves comments and formatting, apply a set of automated rewrites that upgrade code to a target modern Python version (around Python 3.12), such as adopting newer syntax and idioms where they are safe to do so, and then write the result back only when the content has actually changed. It should support a dry-run mode that prints a unified diff of the proposed changes without modifying files, a check mode that exits with a non-zero status if any file would be changed, and a summary report listing how many files were scanned, changed, skipped, or failed.
+Processing should run across a fixed-size pool of worker processes, with bounded in-flight work to keep memory use under control, and it should handle files with unusual encodings, byte-order marks, or syntax errors gracefully by reporting them without aborting the whole run. Writes should be atomic so that a crash or interruption never leaves a partially written file, and the script should stop cleanly and report progress when interrupted by the user. Logging should be configurable in verbosity, and the tool should return meaningful exit codes for success, changes-detected-in-check-mode, and errors.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
 import codecs
+from collections import deque
+from dataclasses import dataclass
 import difflib
 import enum
 import functools
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import tokenize
-from collections import deque
-from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import dataclass
-from multiprocessing.pool import AsyncResult, Pool
-from pathlib import Path
-from typing import Final, Literal, get_args
-
+from typing import TYPE_CHECKING, Final, Literal, get_args
 import libcst as cst
 from loguru import logger
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Sequence
+    from multiprocessing.pool import AsyncResult, Pool
 NUM_WORKERS: Final[int] = 8
 """Exact number of worker processes in the pool (a hard requirement)."""
-
 CHUNKSIZE: Final[int] = 16
 """Chunk size for map-like pool methods; amortises IPC overhead on big trees."""
-
 MAX_IN_FLIGHT: Final[int] = NUM_WORKERS * 8
 """Upper bound of outstanding tasks for ``apply_async`` (bounds memory use)."""
-
 TARGET_PYTHON: Final[str] = "3.12"
 TARGET_VERSION: Final[tuple[int, int]] = (3, 12)
-
 PY_SUFFIXES: Final[frozenset[str]] = frozenset({".py", ".pyw", ".pyi"})
 """Extensions picked up while walking directories."""
-
 DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset({
     ".git",
     ".hg",
@@ -56,10 +56,8 @@ DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset({
     "node_modules",
 })
 """Directory names that are never descended into while walking a directory."""
-
 PoolMethod = Literal["map", "imap", "imap_unordered", "apply", "apply_async", "starmap"]
 POOL_METHODS: Final[tuple[str, ...]] = get_args(PoolMethod)
-
 _PRESERVED_COMMENT: Final[re.Pattern[str]] = re.compile(r"#\s*(?:type|fmt):")
 _UTF8_COMPATIBLE: Final[frozenset[str]] = frozenset({"utf-8", "utf-8-sig", "ascii", "us-ascii"})
 
@@ -190,8 +188,7 @@ class StripCommentsAndDocstrings(cst.CSTTransformer):
                 return body
             self.docstrings_removed += 1
             rest = small[1:]
-            return body.with_changes(body=rest if rest else [cst.Pass()])
-
+            return body.with_changes(body=rest or [cst.Pass()])
         if not isinstance(body, cst.IndentedBlock) or not body.body:
             return body
         first = body.body[0]
@@ -201,7 +198,6 @@ class StripCommentsAndDocstrings(cst.CSTTransformer):
             or not _is_docstring_statement(first.body[0])
         ):
             return body
-
         self.docstrings_removed += 1
         rest_of_line = first.body[1:]
         rest_of_block = body.body[1:]
@@ -219,14 +215,15 @@ def _check_declared_encoding(raw: bytes) -> None:
     except (SyntaxError, LookupError):
         return
     if declared.lower() not in _UTF8_COMPATIBLE:
-        raise SkipFile(f"declares non-UTF-8 source encoding {declared!r}")
+        msg = f"declares non-UTF-8 source encoding {declared!r}"
+        raise SkipFile(msg)
 
 
 def _decode_source(raw: bytes, fallback: str | None) -> tuple[str, str, bytes]:
     if b"\x00" in raw:
-        raise SkipFile("binary or non-text content (NUL bytes)")
+        msg = "binary or non-text content (NUL bytes)"
+        raise SkipFile(msg)
     _check_declared_encoding(raw)
-
     bom = b""
     if raw.startswith(codecs.BOM_UTF8):
         bom, raw = codecs.BOM_UTF8, raw[len(codecs.BOM_UTF8) :]
@@ -234,15 +231,14 @@ def _decode_source(raw: bytes, fallback: str | None) -> tuple[str, str, bytes]:
         return raw.decode("utf-8"), "utf-8", bom
     except UnicodeDecodeError as exc:
         utf8_error = exc
-
     if fallback is None or bom:
-        raise SkipFile(
-            f"not valid UTF-8 ({utf8_error.reason} at byte {utf8_error.start}); use --fallback-encoding to process it"
-        ) from utf8_error
+        msg = f"not valid UTF-8 ({utf8_error.reason} at byte {utf8_error.start}); use --fallback-encoding to process it"
+        raise SkipFile(msg) from utf8_error
     try:
         return raw.decode(fallback), fallback, b""
     except UnicodeDecodeError as exc:
-        raise SkipFile(f"cannot decode as UTF-8 or {fallback}: {exc.reason}") from exc
+        msg = f"cannot decode as UTF-8 or {fallback}: {exc.reason}"
+        raise SkipFile(msg) from exc
 
 
 def strip_source(source: str) -> tuple[str, int, int]:
@@ -267,7 +263,8 @@ def _make_diff(path: Path, old: str, new: str) -> str:
 def _make_backup(path: Path) -> None:
     backup = path.with_name(path.name + ".bak")
     if backup.exists():
-        raise FileExistsError(f"backup already exists: {backup}")
+        msg = f"backup already exists: {backup}"
+        raise FileExistsError(msg)
     shutil.copy2(path, backup)
 
 
@@ -292,20 +289,16 @@ def _process_file(path: Path, options: Options) -> FileResult:
         raw = path.read_bytes()
     except OSError as exc:
         return FileResult(path, Status.FAILED, message=f"cannot read file: {exc}")
-
     try:
         source, encoding, bom = _decode_source(raw, options.fallback_encoding)
     except SkipFile as exc:
         return FileResult(path, Status.SKIPPED, message=str(exc))
-
     try:
         new_source, n_comments, n_docstrings = strip_source(source)
     except cst.ParserSyntaxError:
         return FileResult(path, Status.SKIPPED, message=f"not valid Python {TARGET_PYTHON} source")
-
     if new_source == source:
         return FileResult(path, Status.UNCHANGED, bytes_before=len(raw), bytes_after=len(raw))
-
     try:
         ast.parse(new_source, filename=str(path), feature_version=TARGET_VERSION)
     except (SyntaxError, ValueError, RecursionError) as exc:
@@ -314,7 +307,6 @@ def _process_file(path: Path, options: Options) -> FileResult:
             Status.FAILED,
             message=f"transformed code failed validation, file untouched: {exc}",
         )
-
     new_raw = bom + new_source.encode(encoding)
     diff = _make_diff(path, source, new_source) if options.want_diff else ""
     changed = FileResult(
@@ -328,7 +320,6 @@ def _process_file(path: Path, options: Options) -> FileResult:
     )
     if options.dry_run:
         return changed
-
     if not os.access(path, os.W_OK):
         return FileResult(path, Status.FAILED, message="file is not writable (permission denied)")
     try:
@@ -447,7 +438,8 @@ def _codec_name(value: str) -> str:
     try:
         codecs.lookup(value)
     except LookupError as exc:
-        raise argparse.ArgumentTypeError(f"unknown encoding: {value!r}") from exc
+        msg = f"unknown encoding: {value!r}"
+        raise argparse.ArgumentTypeError(msg) from exc
     return value
 
 
@@ -516,7 +508,6 @@ def configure_logging(*, verbose: bool, quiet: bool) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     configure_logging(verbose=args.verbose, quiet=args.quiet)
-
     options = Options(
         dry_run=args.dry_run,
         backup=args.backup,
@@ -524,7 +515,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         fallback_encoding=args.fallback_encoding,
     )
     summary = Summary()
-
     targets: list[Path] = []
     for raw_target in args.paths or [Path.cwd()]:
         if raw_target.exists():
@@ -532,7 +522,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             logger.error("Path does not exist: {}", raw_target)
             summary.missing += 1
-
     excludes = DEFAULT_EXCLUDES | frozenset(args.exclude)
     logger.info(
         "Processing {} target(s) with {} workers (method={}{})",
@@ -541,7 +530,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.pool_method,
         ", dry-run" if options.dry_run else "",
     )
-
     interrupted = False
     try:
         with mp.Pool(processes=NUM_WORKERS, initializer=_init_worker) as pool:
@@ -554,11 +542,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         interrupted = True
         logger.warning("Interrupted; files are written atomically so none are corrupted")
-
     if summary.scanned == 0 and not interrupted:
         logger.warning("No Python files found")
     print_summary(summary, options=options, interrupted=interrupted)
-
     if interrupted:
         return 130
     return 1 if (summary.failed or summary.missing) else 0

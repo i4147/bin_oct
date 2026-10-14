@@ -1,9 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively scans the current working directory and all of its subdirectories for text files, identifies every emoji (including multi-codepoint sequences such as skin-tone modifiers, variation selectors, zjoiner sequences, and flag pairs) appearing in their contents, and writes a consolidated JSON report to an output file in the working directory. The report should map each distinct emoji to a key describing its Unicode code points, so that each unique emoji is recorded exactly once.
+Key behaviors and requirements:
+- Process the directory tree concurrently using multiple worker processes to speed up scanning of large projects.
+- Skip the it is scanned or included in its own results.
+- Ignore files that are unonably large (anned independently; the results from all files are merged into a single collection of unique emojis.
+- Write the final output as a well-formatted, human-readable JSON file, with keys sffs.
+- Handle the where no emojis are found by still producing a valid (empty) JSON output.
+- Run the scanning logic only when the script is executed directly, with a clean entry point.
+- Avoid printing noisy output; the only expected user-facing result is the generated JSON file, optionally with a brief summary of how many unique emojis were found.
+---"""
 
+from __future__ import annotations
 import json
-import re
 from multiprocessing import Pool
 from pathlib import Path
+import re
 
 _BASE = (
     "\U0001f300-\U0001f5ff"

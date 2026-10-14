@@ -1,10 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that moves every top-level subdirectory from a user-specified source directory into a user-specified destination directory. The script should accept the source and destination paths as input (for example, via command-line arguments), and it should validate them before doing anything: both must exist and be directories, and they must not be the same location. If either check fails, the script should report a clear, emoji-friendly error message and exit without changing any files.
+Once validation passes, the script should display the resolved source and destination paths for the user's reference, then list the immediate subdirectories of the source in a consistent, sorted order. If the source contains no subdirectories, it should inform the user with a warning and stop gracefully.
+Before moving anything, the script should check whether the destination already contains a subdirectory with the same name as one in the source. Such conflicts must be handled safely: the script should skip the conflicting folder and report it rather than overwriting or merging existing data. All non-conflicting subdirectories should be moved to the destination, and the script should report each successful move as well as each skipped item, so the user always knows what happened.
+Only immediate child directories are in scope; regular files and nested subfolders within those directories should be carried along intact, and files directly inside the source directory should be left untouched. The script should handle errors on individual moves (such as permission problems) gracefully, continuing with the remaining items and reporting the failure instead of crashing.
+At the end, the script should print a concise summary showing how many subdirectories were moved, how many were skipped due to conflicts, and how many failed. The overall output should be clear, readable, and user-friendly, with status indicators for each action, and the script should exit with an appropriate status code reflecting success or failure.
+---"""
 
 from __future__ import annotations
-
-import sys
 from pathlib import Path
 from shutil import move
+import sys
 
 
 def validate_dirs(source: Path, dest: Path) -> bool:

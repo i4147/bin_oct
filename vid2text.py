@@ -1,18 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that performs optical character recognition (OCR) on the frames of a video file and produces a text transcript of any on-screen text. The tool should be a command-line utility that accepts a path to a local video file, along with optional settings for the OCR language, page segmentation mode, OCR engine mode, image scaling factor, color inversion, a minimum character threshold for keeping recognized text, and an output file path. It should sample frames from the video at a configurable interval, preprocess each frame to improve text legibility (for example by enlarging it, converting it to grayscale, and optionally inverting colors), run OCR on it, and skip frames whose extracted text is empty or too short to be meaningful. Recognized text should be printed to the console in a color-coded, frame-labeled format as it is discovered, and simultaneously appended to the output file, labeled with the corresponding frame number. The tool should use a background worker mechanism so that frame reading and OCR processing can proceed efficiently without blocking each other, and it should shut down cleanly once the video is exhausted or the user interrupts it. Include clear help text for all command-line options, validate that the input file exists before processing, and handle errors such as unreadable video files or a missing OCR engine gracefully with informative messages.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import os
-import sys
-import threading
 from pathlib import Path
 from queue import Queue
+import sys
+import threading
 from typing import Optional
-
 import cv2
-import pytesseract
 from PIL import Image
+import pytesseract
 
 _ANSI = {"cyan": "\033[36m", "blue": "\033[34m", "reset": "\033[0m"}
 

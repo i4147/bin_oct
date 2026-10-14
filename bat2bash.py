@@ -1,10 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that converts Windows batch (.bat) files into equivalent Unix shell (.sh) scripts. The tool should read a batch file from a user-supplied path, translate it line by line into a bash-compatible script, and write the result to an output file, with the output filename derived from the input by default and optionally specified by the user.
+The converter should recognize common batch-file constructs and map them to their closest shell equivalents, including:
+- Comment and echo-suppression directives, converted to shell comments or no-ops
+- Basic file and directory commands such as listing, changing directories, copying, moving, renaming, deleting, and displaying file contents
+- Pausing for user input and clearing the screen
+- Exiting with a status code
+- Simple conditional file-existence checks, including their negated forms
+- Text searching commands mapped to their grep equivalents
+- Batch-style environment variable references converted to shell variable syntax, and variable assignment statements converted to shell assignments
+Lines with no direct equivalent should be preserved as comments or flagged clearly in the output so the user can review them, rather than silently dropped. The converter should count successfully converted lines and errors, and report these statistics to the user at the end of the run. It should also handle missing input files, unreadable files, and write failures gracefully with clear error messages and a non-zero exit status.
+The script should be runnable from the command line, accept the input path as a required argument, accept an optional output path, and emit a shell script that begins with an appropriate shebang line and is marked as executable where the platform permits. Handle line endings robustly, including Windows-, and preserve the original order and structure of the script as closely as possible.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 class BatToShConverter:

@@ -1,14 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Python distribution archives (source tarballs, wheels, and zip files), processes them in parallel, and reports which archives contain real, importable Python source code versus those that are only metadata, documentation, tests, or examples.
+The script should accept a root directory path from the command line and recursively locate all matching archive files, skipping any that are suspiciously small to be meaningful. For each archive, it should inspect the contents without fully extracting them to disk where possible, ignoring non-code material such as licenses, changelogs, READMEs, packaging metadata files, and files residing under documentation, example, test, or benchmark folders. It should determine whether each archive contains actual Python modules, and where it does, verify that the module source is syntactically valid Python by parsing it rather than executing it.
+Key behaviors:
+- Use a configurable number of parallel workers to speed up processing of large collections of archives.
+- Handle both tar-based and zip-based archive formats uniformly, and tolerate corrupted or unreadable archives by recording them as failures rather than crashing.
+- Guard against unsafe archive contents, such as path traversal entries or oversized members, and never write archive contents outside a controlled location.
+- Produce a clear summary at the end listing counts of valid, invalid, empty, and unreadable archives, along with the specific file paths and reasons for each failure.
+- Optionally allow the user to export the results to a machine-readable report file and to move or copy flagged archives into a separate quarantine directory.
+- Print progress information while processing, and exit with a non-zero status code if any archive fails validation.
+The script should be self-contained, robust, well-structured, and include helpful command-line help text describing its options.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import tarfile
 import zipfile
-from pathlib import Path
 
 WORKERS = 4
 MIN_ARCHIVE_BYTES = 300

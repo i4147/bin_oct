@@ -1,10 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that recursively walks a directory tree and transliterates non-ASCII file and folder names into safe, ASCII-friendly equivalents, so the tree can be used on systems or tools that do not handle Unicode filenames well.
+The script should accept a root directory path as its main input, along with command-line options that control behavior such as whether to perform a dry run that only reports planned renames, whether to recurse into subdirectories, and whether to include or skip hidden and version-control directories. By default, it should skip common version-control metadata folders and avoid touching them.
+Core behavior:
+- Detect the script family of each character in a name (for example Chinese Han characters, Japanese kana, Cyrillic, Arabic, Hebrew, Greek, Korean, Thai, or Latin letters with diacritics) and convert it to a readable Latin romanization using the best available transliteration method, falling back gracefully when optional language-specific helpers are not installed.
+- Normalize Unicode text (decomposing accented letters and removing combining marks where appropriate) so that accented Latin characters map to their base letters.
+- Replace characters that are invalid or problematic in filenames on common operating systems with safe separators, collapse repeated separators, trim leading and trailing separators or dots, and avoid reserved device names on Windows.
+- Preserve file extensions and the overall structure of the name where possible.
+- Enforce a maximum filename length, truncating while keeping the extension intact and ensuring uniqueness.
+- Resolve name collisions within the same directory by appending a numeric suffix so that no existing file is overwritten.
+- Process deeper directories before their parents when renaming so that paths remain valid during the operation.
+- Leave names that are already pure ASCII and clean unchanged.
+Output and reporting:
+- Print a clear, human-readable log of every planned or completed rename, showing the original path and the new name.
+- Show a summary at the end with counts of files and directories processed, renamed, skipped, and any errors encountered.
+- Handle errors gracefully (permission issues, missing paths, invalid arguments) with informative messages and a non-zero exit status when the run fails.
+- Support a confirmation prompt or an explicit flag to apply changes without prompting, and never perform destructive operations without the user's intent being clear.
+Deliver a single self-contained, well-structured script with a command-line interface, clear documentation in its help text, and sensible defaults.
+---"""
 
+from __future__ import annotations
 import argparse
+from pathlib import Path
 import re
 import sys
 import unicodedata
-from pathlib import Path
 
 try:
     from pypinyin import lazy_pinyin
@@ -20,10 +39,8 @@ try:
     from unidecode import unidecode
 except ImportError:
     unidecode = None
-
 SKIP_DIRS = frozenset({".git", ".hg", ".svn"})
 MAX_NAME = 255
-
 KANA = re.compile(r"[\u3040-\u30ff\u31f0-\u31ff]")
 HAN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002ebef]+")
 FA_MARKS = re.compile(r"[\u064b-\u065f\u0670\u06d6-\u06ed]")
@@ -67,7 +84,6 @@ _RU = {
     "ґ": "g",
     "ў": "u",
 }
-
 RU_TABLE = {}
 for _k, _v in _RU.items():
     RU_TABLE[ord(_k)] = _v
@@ -126,9 +142,7 @@ for _i in range(10):
     _FA[chr(0x06F0 + _i)] = str(_i)
     _FA[chr(0x0660 + _i)] = str(_i)
 FA_TABLE = {ord(k): v for k, v in _FA.items()}
-
 BAD_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
 RESERVED = {
     "CON",
     "PRN",
@@ -140,7 +154,6 @@ RESERVED = {
 
 
 def _japanese(text: str) -> str:
-
     parts = []
     for item in _KAKASI.convert(text):
         orig = item["orig"]
@@ -149,7 +162,6 @@ def _japanese(text: str) -> str:
 
 
 def _chinese(text: str) -> str:
-
     return HAN.sub(lambda m: "_" + "_".join(lazy_pinyin(m.group())) + "_", text)
 
 
@@ -165,7 +177,6 @@ def _clean(name: str, original: str) -> str:
     name = re.sub(r"_{2,}", "_", name)
     name = re.sub(r"\s{2,}", " ", name)
     name = re.sub(r"_+(?=\.)", "", name)
-
     if not original.startswith("_"):
         name = name.lstrip("_")
     if not original.endswith("_"):
@@ -182,7 +193,6 @@ def _clean(name: str, original: str) -> str:
 
 
 def transliterate(name: str) -> str:
-
     text = unicodedata.normalize("NFKC", name)
     text = FA_MARKS.sub("", text)
     if KANA.search(text) and _KAKASI:
@@ -199,7 +209,6 @@ def _key(path: Path) -> str:
 
 
 def unique_target(path: Path, claimed: set) -> Path:
-
     def free(p: Path) -> bool:
         return _key(p) not in claimed and not p.exists() and not p.is_symlink()
 
@@ -235,7 +244,6 @@ def main() -> int:
         print(f"error: not a directory: {root}", file=sys.stderr)
         return 1
     entries = [p for p in root.rglob("*") if not SKIP_DIRS.intersection(p.relative_to(root).parts)]
-
     entries.sort(key=lambda p: len(p.parts), reverse=True)
     claimed: set = set()
     renamed = failed = 0

@@ -1,17 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that analyzes a Python source file and translates its human-readable text into another language while leaving the code's logic intact. The tool should accept a source file path (and optionally a target language, output path, and concurrency settings) from the command line.
+Key behaviors:
+- Parse the source code structurally so that only user-facing text is translated: string literals used in print output, docstrings for modules, classes, and functions, and comments. Code identifiers, keywords, operators, imports, and string literals used as data or identifiers must remain unchanged.
+- Preserve the original formatting, indentation, quoting style, string prefixes (such as raw or byte markers), and triple-quote delimiters so the translated file remains valid, runnable Python.
+- Verify after translation that the output still parses and that its structure matches the original, reporting any mismatch clearly.
+- Translate segments in parallel with a configurable number of workers, batching requests where sensible and handling transient failures with retries and backoff.
+- Maintain a persistent state file that records already-translated segments keyed by content, so reruns skip completed work and only translate new or changed text, allowing interrupted jobs to resume.
+- Support a dry-run or preview mode that lists the segments that would be translated without making changes.
+- Write the result to a new file by default and never overwrite the original unless explicitly requested.
+- Print concise progress information and a final summary (segments translated, skipped, failed), and exit with a non-zero status code on unrecoverable errors.
+- Handle invalid input gracefully with clear error messages, including missing files, unreadable encodings, and syntax errors in the source.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import BytesIO
 import json
+from pathlib import Path
 import re
 import sys
 import time
 import tokenize
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from io import BytesIO
-from pathlib import Path
 
 STRING_RE = re.compile(r'^([rufbRUFB]*)([\'"]{3}|[\'"]{1})(.*)\2$', flags=re.DOTALL)
 COMMENT_RE = re.compile(r"^(#+)(\s*)(.*)$", flags=re.DOTALL)

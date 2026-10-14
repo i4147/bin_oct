@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that organizes the files within a given working directory into size-based subfolders. The script should recursively scan the directory, skip files and folders that should be ignored (such as hidden or system-related entries, as determter), and collect every regular file along with its size in bytes. It should then sort the files from smallest to largest and distribute them into a sensible number of folders so that each folder covers a contiguous range of file sizes, with files spread as evenly as possible across folders. The number of folders should scale with the spread between the smallest and largest files, and never exceed the number of files available. Each generated folder should be given a descriptive nameflects the size range it contains (for example, indicating the minimum and maximum sizes in a human-readable unit). Files should be moved into their assigned folders, and if a name collision occurs in the destination, the script should generate a unique alternative path rather than overwriting existing data. The script should handle edge cases gracefully: an empty directory or a directory with fewer than two files should be handled without errors, and the script should report a concise summary of what was done, such as the number of folders created and files moved. It should accept the target directory as input (defaulting to the current working directory) and should avoid moving files it is processing into the folders it has just created in a way that would corrupt the scan. Provide clear error messages for invalid inputs or filesystem problems, and make the logic robust, readable, and easy to test.
+---"""
 
 from __future__ import annotations
-
 import operator
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
-
 from dh import fsz, should_skip, unique_path
 
 

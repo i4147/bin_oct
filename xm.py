@@ -1,13 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a directory of Python source files, extracts each module's top-level docstring, and produces a consolidated, human-readable index of those modules along with a machine-readable JSON summary. The script should be safe to run on large collections of files, process files concurrently for speed, and tolerate files that are unreadable, non-UTF-8, or contain syntax errors by skipping them gracefully without crashing.
+Key behaviors to implement:
+- Accept command-line arguments that specify the source directory to scan (defaulting to a sensible location), an output location for the generated files, and options to control things like line width for wrapping text and the number of concurrent workers.
+- Walk the source tree to find Python files, excluding common non-source locations such as virtual environments, caches, and hidden folders.
+- For each module, pull out its module-level docstring, remove surrounding quote characters, and clean up formatting. If the docstring ends with a special marker line of the form "LiveDoc: <http or https URL>", separate that URL from the descriptive text and record it as a distinct field.
+- Wrap descriptive text to a configurable maximum line width while preserving paragraph breaks and sensible indentation.
+- Produce two outputs: (1) a readable plain-text or Markdown document listing each module with its relative path, wrapped description, and any associated live documentation link, sorted in a stable order; and (2) a JSON index file mapping each module to its metadata (path, description, live link), intended for consumption by other tools.
+- Process files in parallel using a thread pool with a configurable number of workers, and aggregate results deterministically regardless of completion order.
+- Report a concise summary to the user at the end, including how many modules were found, how many had usable docstrings, and how many were skipped and why.
+- Create the output directory if it does not exist, and handle common errors (missing source directory, permission problems) with clear, actionable messages and non-zero exit codes.
+The script should be self-contained, runnable from the command line, and include helpful usage/help text describing its options.
+---"""
 
+from __future__ import annotations
 import argparse
 import ast
 import concurrent.futures as cf
 import json
+from pathlib import Path
 import re
 import textwrap
-from pathlib import Path
 
 OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
 MAX_LINE: int = 80
@@ -98,15 +110,12 @@ def remove_module_docstring(path: Path) -> bool:
         isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
     ):
         return False
-
     lines: list[str] = source.splitlines(keepends=True)
     start: int = first.lineno - 1
     end: int = first.end_lineno
     new_source: str = "".join(lines[:start] + lines[end:])
-
     if not new_source.strip():
         new_source = "pass\n"
-
     path.write_text(new_source, encoding="utf-8")
     return True
 
@@ -119,24 +128,18 @@ def process_one(
     doc: str | None = extract_module_docstring(py_file)
     if doc:
         doc = strip_trailing_livedoc(doc)
-
     out_path: Path | None = None
     json_entry: dict[str, str] | None = None
-
     if doc:
         formatted: str = format_docstring(doc)
-
         target: Path = out_dir / f"{py_file.stem}.txt"
         out_path = unique_path(target)
         out_path.write_text(formatted + "\n", encoding="utf-8")
-
         one_line: str = " ".join(formatted.split())
         json_entry = {py_file.name: one_line}
-
     removed: bool = False
     if remove:
         removed = remove_module_docstring(py_file)
-
     return py_file, out_path, json_entry, removed
 
 
@@ -151,9 +154,7 @@ def process(
     files: list[Path] = sorted(root.rglob("*.py"))
     if not files:
         return
-
     json_entries: dict[Path, dict[str, str]] = {}
-
     with cf.InterpreterPoolExecutor(max_workers=workers) as ex:
         futures: dict[cf.Future[tuple[Path, Path | None, dict[str, str] | None, bool]], Path] = {
             ex.submit(process_one, f, out_dir, remove): f for f in files
@@ -165,14 +166,12 @@ def process(
             except Exception as exc:
                 print(f"[!] {py_file.name}: {exc!r}")
                 continue
-
             if out_path is not None:
                 print(f"[+] {py_file.name} -> {out_path.name}")
             if json_entry is not None:
                 json_entries[py_file] = json_entry
             if removed:
                 print(f"[-] removed module docstring from {py_file.name}")
-
     if json_out and json_entries:
         ordered: list[dict[str, str]] = [json_entries[p] for p in sorted(json_entries)]
         json_path: Path = unique_path(out_dir / JSON_INDEX_NAME)

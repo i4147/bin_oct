@@ -1,13 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a standalone HTML sanitizer and syntax-highlighting preparation utility. It should accept raw HTML content (from a string or file) and produce a cleaned, safe version of that HTML suitable for display in a web page.
+Key requirements:
+- **Purpose:** Parse HTML input and output a normalized, sanitized HTML string. Remove or neutralize potentially dangerous or malformed markup while preserving legitimate formatting and text content.
+- **Input:** A raw HTML string, optionally read from a file path or standard input. The tool should gracefully handle unclosed tags, self-closing void elements (such as line breaks, images, and inputs), and unescaped entities.
+- **Output:** A clean HTML string written to standard output or a specified file, with consistent structure and properly escaped text.
+- **Sanitization behavior:** Strip script-like elements, event-handler attributes, and unsafe URL schemes from links and images. Allow a reasonable whitelist of common formatting, structural, and media tags.
+- **Code block awareness:** Recognize code blocks within the HTML and tag them with a language class when the language is among a known list of supported highlighting languages (covering common languages such as Python, JavaScript, C++, Ruby, Bash, SQL, XML, CSS, and many others). Unknown or missing languages should fall back to a plain, safe default.
+- **Robustness:** Never crash on malformed input; report problems to standard error and continue processing where possible.
+- **Configurability:** Allow the caller to supply custom tag and attribute whitelists, and optionally toggle language tagging on or off.
+- **Usability:** Provide a simple command-line interface with options for input source, output destination, and the configuration flags above, plus a short usage message on invalid arguments.
+- **Testing expectation:** Include a small set of self-checks or example inputs demonstrating that dangerous markup is removed, void tags are handled, and code blocks receive the correct language annotations.
+Choose the implementation approach, data structures, and libraries freely, prioritizing correctness, security, and readability.
+---"""
 
 from __future__ import annotations
-
-import re
-import sys
 from abc import ABCMeta
 from dataclasses import dataclass, field
 from html import unescape
 from html.parser import HTMLParser
+import re
+import sys
 from typing import Final, Optional, Union, cast
 
 SELF_CLOSING_TAGS: Final[list[str]] = [
@@ -27,7 +39,6 @@ SELF_CLOSING_TAGS: Final[list[str]] = [
     "track",
     "wbr",
 ]
-
 HIGHLIGHT_LANGUAGES: Final[list[str]] = [
     "1c",
     "abnf",
@@ -217,7 +228,6 @@ HIGHLIGHT_LANGUAGES: Final[list[str]] = [
     "xquery",
     "zephir",
 ]
-
 Attr = dict[str, Optional[str]]
 
 
@@ -238,7 +248,7 @@ class Tag(metaclass=ABCMeta):
 
     def attr(self, attr_name: str) -> str:
         attr_value = self.attrs.get(attr_name, "")
-        return cast(str, attr_value)
+        return cast("str", attr_value)
 
     def append_child(self, child: Element) -> None:
         self.children.append(child)
@@ -382,9 +392,11 @@ class Ul(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if child.name not in ["li", "ul", "ol"]:
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if isinstance(child, Li):
             child.mark = "-"
         self.children.append(child)
@@ -402,9 +414,11 @@ class Ol(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if child.name not in ["li", "ul", "ol"]:
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if isinstance(child, Li):
             child.mark = "1."
         self.children.append(child)
@@ -456,9 +470,9 @@ class Table(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError()
+            raise ValueError
         if child.name not in ["tr", "thead", "tbody", "caption", "colgroup"]:
-            raise ValueError()
+            raise ValueError
         if isinstance(child, Tr):
             if self.head is None:
                 head = Thead(child.attrs)
@@ -483,8 +497,8 @@ class Table(Tag):
             self.create_body_from_tr()
         if not self.head and not self.body:
             return ""
-        head = cast(Thead, self.head)
-        body = cast(Tbody, self.body)
+        head = cast("Thead", self.head)
+        body = cast("Tbody", self.body)
         caption = f"{self.caption.inner()}\n" if self.caption else ""
         table = "\n".join(elem.to_str() for elem in [head, body])
         return caption + table + "\n"
@@ -515,9 +529,9 @@ class Thead(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError()
+            raise ValueError
         if not isinstance(child, Tr):
-            raise ValueError()
+            raise ValueError
         self.children.append(child)
 
     def to_str(self) -> str:

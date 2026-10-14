@@ -1,12 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that reads a text-based directory tree listing (the kind produced by the Unix `tree` command, using box-drawing characters or ASCII equivalents like `|--` and `` `-- ``) and converts it into a structured representation of the file system hierarchy. The script should accept the tree listing from a file path or standard input, and should robustly parse each line by identifying the nesting depth from indentation and branch markers, stripping decorative characters, and recovering the original file or folder names, including names that contain spaces or special characters.
+The script should ignore summary footer lines (such as "N directories, M files") and any blank or junk lines, and should be tolerant of inconsistent spacing or partially malformed input without crashing.
+For each entry, determine whether it is a directory or a file. Use trailing slashes or child presence where appropriate, and treat common image file extensions (such as png, jpg, jpeg, webp, bmp, gif, tif, tiff) as a distinct category so they can be counted or filtered separately.
+The output should be a clean, human-readable result that reconstructs the hierarchy, with an option to emit machine-readable output (such as JSON) and an option to limit or filter results, for example by showing only image files or only directories. Provide a command-line interface with sensible flags and help text, and handle errors gracefully with clear messages, returning appropriate exit codes.
+Include a short summary at the end reporting the total number of directories, files, and image files found. Keep the implementation self-contained, cross-platform, and well-documented with docstrings, and make it easy to extend with additional file categories.
+---"""
 
 from __future__ import annotations
-
 import argparse
 import itertools
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 NODE_MARKERS = ("\u251c\u2500\u2500", "\u2514\u2500\u2500", "|--", "`--")
 FOOTER_RE = re.compile(r"^\d+\s+(directories|files|dirs|items)(,\s*\d+\s+(directories|files|dirs|items))?$")

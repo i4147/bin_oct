@@ -1,10 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that cleans up raw terminal or console output text and saves the cleaned result. The tool should accept an input text file (or standard input) containing output captured from a terminal session, and write the sanitized text to an output file (or standard output).
+The script must perform the following high-level processing on the text:
+- Normalize line endings so that Windows-style and Unix-style line breaks are treated consistently.
+- Strip ANSI terminal escape sequences, such as color codes, cursor movement commands, and other control sequences, so that only human-readable content remains.
+- Resolve carriage-return overwrites, so that text which was repeatedly redrawn on the same line (for example, progress indicators) shows only its final visible state.
+- Apply backspace characters so that characters they erase are removed from the output, handling repeated or nested backspace sequences correctly.
+- Remove any remaining non-printable control characters while preserving normal tabs and newlines.
+The script should be a reusable command-line utility that:
+- Accepts the input file path and optional output file path as arguments, defaulting to standard input and standard output when none are given.
+- Handles missing files, encoding problems, and empty input gracefully with clear error messages and appropriate exit codes.
+- Reads and writes text using a robust, widely compatible encoding, tolerating malformed bytes.
+- Is structured so that each cleaning stage can be understood and tested independently, and includes a brief usage description accessible from the command line.
+---"""
 
 from __future__ import annotations
-
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 ANSI_ESCAPE_RE = re.compile(
     r"""

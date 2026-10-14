@@ -1,24 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a bibliography and citation verification tool. It should read one or more BibTeX files (including large reference collections or "anthology" files) and check every entry against authoritative online sources, reporting which citations are correct, which are inaccurate, and which appear to be fabricated or hallucinated.
+The tool should accept command-line input specifying the BibTeX file(s) to check, optional reference databases to load for local matching, and options controlling the level of verification and output detail. It should parse each bibliographic entry and normalize its key fields, such as title, authors, year, venue or journal, DOI, ISBN, and URL. For each entry, it should query external sources (for example, DOI registries, ISBN lookup services, scholarly knowledge bases, and academic publisher metadata) and compare the retrieved metadata against the entry using fuzzy string matching so that minor formatting differences, abbreviations, or capitalization changes are tolerated while substantive errors are flagged.
+The output should be a clear, color-coded console report that summarizes each entry's status (verified, mismatched, not found, or likely fabricated), explains which fields disagree and by how much, and provides a final summary of counts. The tool should also be able to write a corrected BibTeX file containing only verified or repaired entries, and should cache lookup results so repeated runs avoid redundant network requests. It should handle network failures, malformed entries, and missing identifiers gracefully, continuing processing and logging issues rather than crashing. Include a progress indicator while processing large files and a quiet mode for scripted use.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import datetime
+import contextlib
+import datetime as dt
+from difflib import SequenceMatcher
 import re
 import string
 import sys
+from typing import Any, Optional
 import urllib.error
 import urllib.request
-from difflib import SequenceMatcher
-from typing import Any, Optional
-
 import bibtexparser
+from bibtexparser.bparser import BibTexParser
+from bibtexparser.bwriter import BibTexWriter
 import bs4
 import isbnlib
 import pycountry
 import pyparsing
-from bibtexparser.bparser import BibTexParser
-from bibtexparser.bwriter import BibTexWriter
 from SPARQLWrapper import JSON, SPARQLWrapper
 from termcolor import colored
 
@@ -68,26 +71,8 @@ def similarity(str_1: str, str_2: str) -> float:
 NUM_REGEX = re.compile(r"[0-9]+(st|nd|rd|th)?")
 ORDINALS = re.compile(
     "("
-    + "|".join([
-        "First",
-        "Second",
-        "Third",
-        "Fourth",
-        "Fifth",
-        "Sixth",
-        "Seventh",
-        "Eighth",
-        "Ninth",
-        "Tenth",
-        "Eleventh",
-        "Twelfth",
-        "Thirteenth",
-        "Fourteenth",
-        "Fifteenth",
-        "Sixteenth",
-        "Seventeenth",
-    ])
-    + ")"
+    "First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth|Eleventh|Twelfth|Thirteenth|Fourteenth|Fifteenth|Sixteenth|Seventeenth"
+    ")"
 )
 PAPERS_VOLUME = re.compile("(Long|Short|Research|Shared Task) Papers")
 
@@ -102,7 +87,7 @@ def norm_booktitle(title: str) -> str:
 def check_year(entry: dict, _: bool) -> bool:
     try:
         year = int(entry["year"])
-        current_year = datetime.datetime.now().year
+        current_year = dt.datetime.now().year
         if year < 0:
             err_message(entry, "year '{}' is negative.".format(year))
             return False
@@ -133,7 +118,6 @@ MONTHS = [
     "November",
     "December",
 ]
-
 RANGE_REGEX = re.compile(r"^([A-Z][a-z]*)--([A-Z][a-z]*)$")
 
 
@@ -157,7 +141,7 @@ PAGE_REGEX = re.compile(r"^([1-9][0-9]*)[\W_]+([1-9][0-9]*)$")
 
 def check_pages(entry: dict, _: bool) -> bool:
     pages = entry["pages"]
-    if pages == "Online" or pages == "In Press":
+    if pages in {"Online", "In Press"}:
         return True
     pages_match = PAGE_REGEX.match(pages)
     if pages_match:
@@ -342,7 +326,7 @@ US_STATES = [
 def check_address(entry: dict, _: bool) -> bool:
     address = entry["address"]
     tokens = address.split(", ")
-    if address == "Online" or address == "Singapore":
+    if address in {"Online", "Singapore"}:
         return True
     if len(tokens) != 2 and (len(tokens) != 3 or tokens[-1] != "USA"):
         err_message(
@@ -359,16 +343,14 @@ def check_address(entry: dict, _: bool) -> bool:
             err_message(entry, "'{}' is not existing U.S. state abreviation.".format(tokens[1]))
             return False
         return True
-    if country == "Taiwan" or country == "Czech Republic" or country == "South Korea":
+    if country in {"Taiwan", "Czech Republic", "South Korea"}:
         return True
     if country == "Czechia":
         err_message(entry, "Use 'Czech Republic' instead of 'Czechia'.")
         return False
     country_lookup = None
-    try:
+    with contextlib.suppress(LookupError):
         country_lookup = pycountry.countries.lookup(country)
-    except LookupError:
-        pass
     if country_lookup is None:
         err_message(entry, "Unknown country: '{}'".format(country))
         return False
@@ -579,7 +561,6 @@ ENTRY_CHECKS = {
     "techreport": check_techreport,
     "phdthesis": check_phdthesis,
 }
-
 DOI_URL = "https://doi.org/{}"
 DOI_HEADER = {"Accept": "text/bibliography; style=bibtex"}
 
@@ -707,7 +688,7 @@ def look_for_misspellings(values: dict, name: str, threshold: float = 0.8) -> No
                     collision_groups[value1] = collision_groups[value1].union(collision_groups[value2])
                     collision_groups[value2] = collision_groups[value1]
                 else:
-                    new_group = set([value1, value2])
+                    new_group = {value1, value2}
                     collision_groups[value1] = new_group
                     collision_groups[value2] = new_group
     used_values: set = set()
@@ -783,7 +764,6 @@ def run_validate(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="subcommand", required=True)
-
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("input", type=argparse.FileType("r"), help="Input file, default is stdin.")
     check_parser.add_argument(
@@ -811,10 +791,8 @@ def main() -> None:
         help="List of BibTeX files with know papers.",
     )
     check_parser.set_defaults(func=run_check)
-
     validate_parser = subparsers.add_parser("validate")
     validate_parser.set_defaults(func=run_validate)
-
     args = parser.parse_args()
     args.func(args)
 

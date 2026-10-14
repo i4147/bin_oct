@@ -1,29 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import ast
+from collections import defaultdict
+from dataclasses import dataclass, field
 import difflib
 import io
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import textwrap
-import zipfile
-from collections import defaultdict
-from dataclasses import dataclass, field
-from multiprocessing import Pool
-from pathlib import Path
 from typing import TYPE_CHECKING
+import zipfile
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 try:
-    import zstandard as zstd  # type: ignore
+    import zstandard as zstd
 
     _HAS_ZSTD = True
 except ImportError:
@@ -606,7 +604,7 @@ class _DefCollector(ast.NodeVisitor):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._add(node.name, "func", node)
 
-    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]
+    visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._add(node.name, "class", node)

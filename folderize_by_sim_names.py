@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a directory tree for Lua script files and reorganizes them into groups based on a normalized base name. The tool should accept a root directory path as its main input (with an option to run in a preview or dry-run mode), locate all Lua files recursively while ignoring the script itself, and derive a clean, consistent group name for each file by stripping Lua-related extensions, trailing numeric version suffixes, and unsafe characters, then converting the result to a lowercase, hyphen-separated slug with a fallback name for files that yield nothing usable.
+Files sharing the same normalized name should be collected into a dedicated folder under the root, and each file should be moved into its group folder without overwriting existing files; when a name collision occurs, the tool should append an incrementing numeric suffix to the filename instead. The script should report clearly what it did or would do, including each planned or completed move, and handle missing paths, permission issues, and unexpected filesystem errors gracefully with informative messages and a sensible exit status. Design the command-line interface so the user can easily specify the target directory and toggle preview mode, and keep the overall behavior safe, predictable, and idempotent so that running it repeatedly does not corrupt or duplicate the organized structure.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import re
-import shutil
 from collections import defaultdict
 from pathlib import Path
+import re
+import shutil
 
 
 def normalize_name(path: Path) -> str:

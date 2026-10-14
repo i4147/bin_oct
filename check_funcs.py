@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans a given Python source file and produces a summary of its top-level public definitions, grouped into functions, classes, and constants. The tool should accept a file path, read the file safely using UTF-8 encoding, and analyze its structure without executing any of the code it inspects. It should identify both synchronous and asynchronous top-level functions and top-level classes, and capture module-level constant assignments (simple uppercase-style names are the typical target). Names beginning with an underscore are considered private and must be excluded from the results.
+Handle failures gracefully: if the file cannot be parsed due to syntax errors, encoding problems, or any other read error, log a clear error message and return an empty result structure rather than crashing. Logging should use the loguru library for all diagnostic output.
+The output should be a structured, easily consumable result (for example, a dictionary with three keys for functions, classes, and constants, each holding a list of names in the order they appear in the file). Design the script so it can also be imported and reused by other modules, and include a simple command-line entry point that accepts one or more file paths and prints a readable summary for each file, showing how many items of each kind were found and listing their names.
+Keep the implementation clean and robust, with clear docstrings describing behavior, and ensure the tool never modifies the files it inspects.
+---"""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
-
 from loguru import logger
 
 

@@ -1,15 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that crawls a single web page supplied by the user and collects every hyperlink it contains, producing a clean, deduplicated list of absolute URLs as output.
+The tool should accept a target page address from the command line, retrieve that page while presenting itself as a regular desktop web browser (using realistic request headers, including an English-preferred language setting), and handle network problems gracefully by reporting clear error messages instead of crashing. It should wait a reasonable amount of time for the server to respond and follow redirects.
+Once the page is retrieved, the script should parse the HTML and locate all anchor links. Relative links must be resolved against the page's own address so that every result is a fully qualified URL. Duplicate links should be removed, and empty or non-navigational entries (such as bare fragments, empty hrefs, or javascript pseudo-links) should be ignored. Results should be presented in a stable, readable order.
+The script should also support an optional output destination: by default, the links are printed to the console, one per line; if the user specifies a file path, the links are written to that file instead, and a short confirmation with the count of links found is shown. The tool should report how many unique links were discovered and exit with a non-zero status code on failure, with a helpful message explaining what went wrong.
+Keep the implementation self-contained and well-structured, include a clear command-line help description, and make sure the script runs on standard Python 3 installations with commonly available third-party packages for HTTP requests and HTML parsing.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
-
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 if TYPE_CHECKING:
     from requests.sessions import Session

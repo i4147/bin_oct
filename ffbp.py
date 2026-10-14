@@ -1,10 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that acts as a command-line utility for inspecting and cleaning up files within a directory tree. The tool should accept a target directory (defaulting to the current working directory) and an optional file extension filter from the command line. It should recursively walk the directory and report information about matching files, including their count and total size, with sizes displayed in human-readable units (bytes through terabytes, with two decimal places).
+The tool should also be able to identify extensionless scripts that are actually Python programs by examining each file's first kilobyte: the file must have no extension, must not be inside a hidden directory or a cache folder, must not be binary (no null bytes), and must begin with a shebang line that references Python. Files meeting these criteria should be listed as Python scripts.
+Include a cleanup mode that recursively finds all backup files ending in ".bak", prints each file's path relative to the starting directory as it is deleted, and removes it from disk. Handle file access errors gracefully so that a single unreadable file does not stop the overall scan.
+Use a clear command-line interface with help text describing each option, and print results in a readable, well-organized format. The script should exit cleanly on success and return a nonzero status code with a helpful message on invalid input, such as a nonexistent directory.
+---"""
 
 from __future__ import annotations
-
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 
 def format_size(size_bytes: int) -> str:
@@ -18,23 +22,17 @@ def format_size(size_bytes: int) -> str:
 def is_extensionless_python(file_path: Path) -> bool:
     if file_path.suffix or not file_path.is_file():
         return False
-
-    # Skip common cache/hidden directories
     if any(part.startswith(".") or part == "__pycache__" for part in file_path.parts):
         return False
-
     try:
         with file_path.open("rb") as f:
             header = f.read(1024)
-            # Check for binary null bytes
             if b"\0" in header:
                 return False
-            # Check for shebang containing python
             if header.startswith(b"#!") and b"python" in header.lower():
                 return True
     except Exception:
         pass
-
     return False
 
 
@@ -48,11 +46,9 @@ def clean_bak_files(cwd: Path) -> None:
 def get_extension_info(cwd: Path, extension: str) -> None:
     ext = extension.lstrip(".")
     files = list(cwd.rglob(f"*.{ext}"))
-
     if not files:
         print(f"No .{ext} files found in current directory")
         return
-
     total_size = sum(f.stat().st_size for f in files)
     print(f"Total number of .{ext} files: {len(files)}")
     print(f"Total size of .{ext} files: {format_size(total_size)}")
@@ -60,7 +56,6 @@ def get_extension_info(cwd: Path, extension: str) -> None:
 
 def find_extensionless_scripts(cwd: Path) -> None:
     scripts = [p for p in cwd.rglob("*") if is_extensionless_python(p)]
-
     if scripts:
         print("Found Python scripts without extension (relative paths):")
         for script in scripts:
@@ -71,7 +66,6 @@ def find_extensionless_scripts(cwd: Path) -> None:
 
 def list_by_prefix(cwd: Path, prefix: str) -> None:
     for p in cwd.iterdir():
-        # Hardcoded condition from original script to skip symlinks
         if p.name.startswith(prefix) and not p.is_symlink():
             print(p.name)
 
@@ -83,7 +77,6 @@ def search_by_substring(cwd: Path, substring: str, show_symlinks: bool) -> None:
             if not show_symlinks and p.is_symlink():
                 continue
             matched.append(p)
-
     for p in sorted(matched):
         if p.is_symlink():
             print(f"- {p.name} -> {p.resolve()}")
@@ -94,24 +87,17 @@ def search_by_substring(cwd: Path, substring: str, show_symlinks: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Unified File Utilities CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     subparsers.add_parser("clean-bak", help="Recursively delete .bak files")
-
     p_ext = subparsers.add_parser("extinfo", help="Get file count and total size for an extension")
     p_ext.add_argument("extension", help="File extension to scan for (e.g., 'py' or '.py')")
-
     subparsers.add_parser("find-scripts", help="Find extensionless Python scripts recursively")
-
     p_prefix = subparsers.add_parser("prefix", help="List items in current directory starting with prefix")
     p_prefix.add_argument("prefix", help="Prefix string to match")
-
     p_search = subparsers.add_parser("search", help="Search items in current directory containing substring")
     p_search.add_argument("substring", nargs="?", default="", help="Substring to match in filenames")
     p_search.add_argument("-s", "--show-symlinks", action="store_true", help="Include symlinks in the output")
-
     args = parser.parse_args()
     cwd = Path.cwd()
-
     if args.command == "clean-bak":
         clean_bak_files(cwd)
     elif args.command == "extinfo":

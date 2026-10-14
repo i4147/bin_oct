@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a Python script that scans one or more text or source-code files and identifies lines written in languages other than English, producing a report of the findings.
+The tool should accept one or more file or directory paths from the command line, with options to control the language-detection confidence threshold, the minimum and maximum line lengths considered, the number of lines processed per chunk, the file encoding, and the output format or destination. Directories should be searched for relevant text files, and files exceeding a reasonable size limit should be skipped with a clear notice.
+For each file, the script should read its contents, ignore lines that are too short or too long to be meaningful, and run language detection on the remaining lines. Lines whose detected language is not English with sufficient confidence should be recorded along with their line numbers, detected language, confidence score, and a short preview of the text. Files that cannot be read or decoded should be reported as errors without stopping the overall run.
+Processing should be efficient and able to handle many files at once, using parallel workers where it makes sense, and it should report progress and timing information. The final output should summarize the total files and lines scanned, the number of non-English lines found per file, and the overall results, presented in a readable console report and optionally exported to a structured file. The script should exit with a clear error message if its required language-detection dependency is missing, and it should log its activity using a logging facility with adjustable verbosity.
+---"""
 
 from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass, field
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
 
 if TYPE_CHECKING:
