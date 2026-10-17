@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line uting and cleaning Python dependency requirement files and The tool should accept a sub inter where the user selects an operation and provides the relevant file or directory paths as arguments.
-Core behaviors to implement:
-1. **Requirements file cleaning**: Read a requirements file (such as a pip requirements.txt), and produce a normalized version. For each line, strip comments and trailing inline comments, remove environment markers, and reduce each dependency specifier to its bare package name with version operators removed (supporting operators like ==, !=, >=, <=, ~=, >, <, and ===). Skip blank lines, and remove duplicates while preserving a stable order. The cleaned output should be written to a new file or printed to standard output, and missing input files should produce a clear error message on stderr with a non-zero exit status.
-2. **Installed-package awareness**: Be able to enumerate the packages currently installed in the active Python environment, so the tool can compare or filter a requirements list against what is actually installed.
-3. **Standard library detection**: Identify which top-level imported modules belong to the Python standard library (using the interpreter's built-in list where available, with a sensible fallback set for older Python versions), so that stdlib modules can be excluded from third-party dependency lists.
-4. **Dependency scanning of source code**: Given a project directory, recursively scan Python source files to detect third-party imports, excluding standard library modules and local project modules, and output names.
-5. **Archive handling**: Support working with compressed distribution or project archives (zip and tar formats), including extracting them to a temporary location, inspecting their contents, and cleaning up afterwards.
-6. **Parallel processing**: When scanning many files, use concurrent worker processes to speed up analysis, while keeping results deterministic.
-7. **Reporting**: Optionally export results as CSV, with columns describing each package and its source or status.
-Behavioral expectations: the script should be safe with respect to temporary files (always cleaned up), handle malformed input gracefully without crashing, provide helpful `--help` output, and exit with meaningful status codes. Keep the implementation self-contained and runnable directly from the command line on a standard Python 3 installation.
----"""
 
 from __future__ import annotations
 import argparse
@@ -24,6 +13,7 @@ import sys
 import tarfile
 import tempfile
 import zipfile
+
 
 try:
     STDLIB = set(sys.stdlib_module_names)

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line utility for inspecting and cleaning up files within a directory tree. The tool should accept a target directory (defaulting to the current working directory) and an optional file extension filter from the command line. It should recursively walk the directory and report information about matching files, including their count and total size, with sizes displayed in human-readable units (bytes through terabytes, with two decimal places).
-The tool should also be able to identify extensionless scripts that are actually Python programs by examining each file's first kilobyte: the file must have no extension, must not be inside a hidden directory or a cache folder, must not be binary (no null bytes), and must begin with a shebang line that references Python. Files meeting these criteria should be listed as Python scripts.
-Include a cleanup mode that recursively finds all backup files ending in ".bak", prints each file's path relative to the starting directory as it is deleted, and removes it from disk. Handle file access errors gracefully so that a single unreadable file does not stop the overall scan.
-Use a clear command-line interface with help text describing each option, and print results in a readable, well-organized format. The script should exit cleanly on success and return a nonzero status code with a helpful message on invalid input, such as a nonexistent directory.
----"""
 
 from __future__ import annotations
 import argparse

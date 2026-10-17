@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively finds HTML files in a given file or directory and reformats them in place using an external HTML beautifier, processing multiple files concurrently for speed.
-The tool should accept one or more paths on the command line, where each path may be a single HTML file or a directory to search. When given a directory, it should walk the tree and pick up files with common HTML extensions (such as .html, .htm, and .xhtml), matched case-insensitively, while skipping version-control metadata folders and not following symbolic links. Paths that are missing or are neither files nor directories should produce a clear warning rather than a crash.
-Allow the user to customize which file extensions are treated as HTML and to set the number of parallel workers, with a sensible default. Provide a dry-run or check mode that reports which files would change without modifying them, and make the exit status reflect whether any changes were needed or any errors occurred, so the tool can be used in continuous integration pipelines.
-Each file should be beautified safely: write the formatted output to a temporary file alongside the original and replace the original only on success, so a failure never corrupts or truncates the source. Verify that the external beautifier is installed before starting, and fail with a helpful message if it is not. Handle encoding gracefully, report per-file errors without stopping the whole run, and print a concise summary at the end showing how many files were scanned, changed, unchanged, and failed.
-Use structured, leveled logging for progress and diagnostics, with a quiet option that suppresses routine output. The script should be runnable directly from the command line with clear help text describing all options and their defaults.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,7 +10,9 @@ import shutil
 import subprocess
 import sys
 from typing import Iterable, Iterator
+
 from loguru import logger
+
 
 BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
 DEFAULT_SUFFIXES: tuple[str, ...] = (".html", ".htm", ".xhtml")

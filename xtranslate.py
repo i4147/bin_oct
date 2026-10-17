@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for translating non-English text inside a directory tree of text-based project files into English, in place, while preserving the original file structure and content formatting.
-The tool should accept a root directory (or single file) as input, along with options controlling the target language, the set of file extensions to process, directories to skip, parallelism level, retry behavior, request pacing, and whether to perform a dry run that only reports what would change. It should walk the directory recursively, automatically skipping common dependency, cache, version-control, and virtual-environment folders, and it should ignore binary files by inspecting file contents rather than trusting extensions alone.
-For each eligible text file, the tool should locate runs of non-ASCII text (with particular attention to Chinese characters) and translate only those segments, leaving code syntax, identifiers, markup, and existing English content untouched. Where possible, it should respect the structure of the file so the result remains valid and runnable: string literals, comments, and documentation text are the primary translation targets, and the tool should be careful not to corrupt escape sequences, regular expression patterns, or code tokens. Very large files should be split into chunks that fit within the translation service's size limits and reassembled correctly afterward.
-Translation should use an external free online translation service, with retries and backoff on transient failures, configurable delays between requests to avoid rate limiting, and graceful handling of network errors so that a single failure does not abort the entire run. Work on multiple files concurrently using a configurable number of worker processes, and guard against hangs by enforcing timeouts so that stuck workers are terminated cleanly. Handle interruption signals gracefully, ensuring that partially processed files are not left in a corrupted state, for example by writing to temporary files and atomically replacing originals, and optionally keeping backups of the originals before modification.
-The tool should validate its output where feasible, such as confirming that Python files still parse after translation, and roll back any file whose result fails validation. It should log progress and a clear end-of-run summary showing files scanned, files changed, segments translated, failures, and skipped items, using configurable verbosity. Exit codes should reflect success, partial failure, or fatal errors, and the script should report a helpful message if a required dependency is missing.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +14,7 @@ import sys
 import tempfile
 import time
 from typing import Any, Iterator, Sequence
+
 
 try:
     from deep_translator import GoogleTranslator

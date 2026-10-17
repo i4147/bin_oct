@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line word translation tool: it reads a list of words or short phrases from a file or standard input, translates each one from a chosen source language into a chosen target language using a pluggable set of translation backends (such as online machine translation services, with a sensible default), and writes the results to an output file or standard output in a structured format.
-The tool should accept command-line options to select the backend, the source and target languages, the input and output paths, and the output format, and it should validate these choices clearly, reporting unsupported language codes or missing configuration with friendly error messages. Backend credentials and settings should be read from environment variables or a configuration file, and the tool should fail gracefully with an explanatory message if a required key is absent.
-Translation requests should be resilient: transient network or service failures must be retried a limited number of times with increasing delays between attempts, while permanent errors should be reported without retrying. Work should be processed concurrently with a bounded number of workers to speed up large word lists, while still preserving the original input order in the output. The tool should support resuming or skipping words that were already translated in a previous run, and should cache results to avoid repeated requests for duplicate entries.
-The tool should log its activity to both the console and a rotating log file, with progress information shown during long runs. It should handle interruption signals cleanly by finishing or saving partial progress before exiting, and it should produce a summary at the end reporting the number of words processed, succeeded, failed, and skipped. Output should be encoded as UTF-8, and the tool should run on Windows, macOS, and Linux.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,6 +17,7 @@ import sys
 import tempfile
 import threading
 from typing import Callable, Optional
+
 
 try:
     from loguru import logger

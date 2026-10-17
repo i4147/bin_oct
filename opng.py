@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for losslessly optimizing PNG image files across an entire directory tree. The tool should accept a target directory (or a single file) and an optimization level setting, then recursively discover all PNG images while automatically skipping common dependency, build, cache, and version-control folders such as .git, node_modules, __pycache__, venv, and similar.
-The should process images in parallel using a configurable number of worker processes to speed up large batches, with a default worker count that can be overridden by the user. Each image should be optimized by delegating to an external PNG optimization utility, passing it an optimization level between 1 and 7 (defaulting to the maximum level), and enforcing a configurable per-file timeout so that a single stalled file does not block the whole run.
-Crucially, the tool must guarantee that optimization is safe: it should work on temporary copies, verify that the result is a valid PNG (checking the file signature), and only replace the original file when the optimized output is genuinely smaller and the external tool reports success. Originals must never be corrupted or lost, even if the process is interrupted, times out, or the external tool fails; temporary artifacts must be cleaned up in all cases. Files that are already optimal or that fail validation should be left untouched and reported as such.
-The script should also handle read-only files sensibly, for example by temporarily adjusting permissions where necessary and restoring them afterward. It must verify that the required external optimization tool is installed before starting and exit with a clear error message if it is missing.
-Finally, the tool should print a concise per-file progress report and a final summary showing how many files were scanned, optimized, skipped, or failed, and the total bytes saved. It should return a non-zero exit status if any file failed, and support a dry-run mode that reports what would be done without modifying anything.
----"""
 
 from __future__ import annotations
 import argparse
@@ -19,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 from typing import TYPE_CHECKING, Final, NamedTuple
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

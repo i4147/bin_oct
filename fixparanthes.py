@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a text file containing LaTeX-style or mixed-notation mathematical content, repairs unbalanced or mismatched bracket characters and escaped delimiters within it, and writes the corrected text to a new output file. The tool should accept the input and output file paths as command-line arguments, process the content so that square and curly brackets are normalized into parentheses while preserving string literals and escaped sequences that must remain intact, balance any unmatched parentheses by adding or removing closing characters as needed, and report a summary of the fixes applied (such as the number of brackets converted or parentheses added). It should handle file-not-found and encoding errors gracefully with clear error messages and a non-zero exit code, and it should also support a JSON-formatted input option where string values inside the JSON are repaired while the JSON structure itself remains valid and parseable. The output should be a corrected file that is ready for downstream use, with the original file left unmodified.
----"""
 
 from __future__ import annotations
 import json
 from pathlib import Path
 import re
 import sys
+
 
 STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
 

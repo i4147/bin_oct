@@ -1,21 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts Markdown content into a styled PDF document. The tool should accept its input either from a Markdown file on disk or from a raw Markdown string passed directly, and it should write the rendered result to a specified PDF output path.
-Core behavior:
-- Convert Markdown to HTML, supporting common extensions such as tables, auto-linked URLs, improved emphasis handling, and fenced code blocks, with the ability to enable additional user-specified Markdown extensions and pass per-extension configuration options.
-- Validate input: if no Markdown content is provided or the content is empty, fail with a clear, dedicated validation error.
-- Apply styling through a CSS stylesheet. By default, use a bundled, compressed (xz-compressed) stylesheet located at a known default path, and allow the user to supply a custom CSS file instead.
-- Resolve relative resources (images, links) against an optional base URL or the input file's location so they render correctly in the PDF.
-- Produce a PDF file at the requested output location, creating the output as needed.
-Command-line interface:
-- Accept an input Markdown file path or raw Markdown text, an output PDF path, an optional custom CSS file, an optional base URL, a list of extra Markdown extensions, and optional JSON-formatted extension configuration.
-- Provide a verbosity option to control logging detail.
-- Support batch processing of multiple Markdown files in parallel, with each file converted to a corresponding PDF.
-- Report errors clearly to the user and exit with a non-zero status code on failure; exit with zero on success.
-Quality expectations:
-- Handle malformed JSON configuration and missing files gracefully with helpful messages.
-- Log progress and key steps at appropriate levels, and include timing information for conversions.
-- Keep the script self-contained, readable, and organized into well-separated functions, with a docstring-style description of its usage.
----"""
 
 from __future__ import annotations
 import argparse
@@ -26,8 +9,10 @@ import lzma
 from pathlib import Path
 import sys
 from time import time
+
 from markdown import markdown
 from weasyprint import CSS, HTML
+
 
 MARKDOWN_BASE_EXTENSIONS = [
     "markdown.extensions.tables",

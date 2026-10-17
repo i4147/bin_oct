@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that wraps the contents of a plain text file so that it fits neatly within the current terminal width. The tool should accept a file path from the command line, read the file's text, and reflow each paragraph so that no line exceeds the available terminal columns, while preserving the original paragraph structure (blank lines separating paragraphs should remain). Long words should not be broken mid-word, and hyphenated words should not be split at hyphens. Lines that are already empty should stay empty. The wrapped result should be printed to standard output by default, so it can be piped or redirected, and the tool should also offer an option to write the result back to the original file or to a specified output file. Determine the target width automatically from the terminal size, with a sensible fallback when the size cannot be detected, and allow the user to override the width with a command-line option. The script should provide clear help text describing its usage, handle common errors gracefully (such as a missing or unreadable file, or an invalid width value) with informative messages and non-zero exit codes, and use a consistent UTF-8 text encoding for reading and writing.
----"""
 
 from __future__ import annotations
 import argparse

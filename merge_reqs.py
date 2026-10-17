@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory (or a set of files and archives) to detect third-party package requirements and produces a consolidated requirements list suitable for installation with pip. The tool should analyze Python source files and extract the external modules they import, distinguishing standard library modules and locally defined modules from genuine third-party dependencies. It should skip common non-source directories such as version control folders, caches, virtual environments, build outputs, and dependency folders by default, while allowing the user to add or override ignore patterns.
-Key requirements:
-- **Inputs**: a target path (directory, single Python file, or supported archive such as zip, wheel, or tar variants) provided on the command line. Optional settings include an output file path (defaulting to a pip requirements file at a configurable default location), a cache file path for speeding up repeated scans, ignore patterns, and flags controlling behavior such as whether to resolve package names to installed versions, whether to include or exclude optional/conditional imports, and whether to run in verbose or quiet mode.
-- **Analysis**: parse Python source safely without executing it, handle syntax errors gracefully by reporting and skipping the offending file, and recognize both plain and relative imports. Map imported module names to their distribution package names where a known mapping exists (for example, module names that differ from their pip package names), and fall back sensibly when no mapping is known.
-- **Caching**: store per-file results keyed by content hash so unchanged files are not re-parsed on subsequent runs; the cache should tolerate corruption by rebuilding itself.
-- **Performance**: process files in parallel when the number of files is large, with a progress indicator when available and a graceful fallback when optional progress libraries are not installed.
-- **Output**: write a deduplicated, sorted list of requirements in standard pip format, optionally with version pins taken from the current environment, and print a concise summary (files scanned, files skipped, modules found, unresolved names). Report results to standard output when no output file is requested.
-- **Robustness**: never crash on unreadable files, binary content, malformed archives, or permission errors; log such issues as warnings and continue. Exit with a non-zero status only for invalid arguments or a fatal failure to access the target.
-- **Portability**: the tool should run on common desktop and mobile Linux-like environments, with no mandatory third-party dependencies beyond the standard library (optional accelerators may be used if available).
----"""
 
 from __future__ import annotations
 import argparse
@@ -24,6 +14,7 @@ import sys
 import tarfile
 from typing import Any, Iterable, Iterator, Optional, Sequence
 import zipfile
+
 
 try:
     from tqdm import tqdm as _tqdm

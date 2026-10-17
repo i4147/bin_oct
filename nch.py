@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively audits and normalizes file permissions across a directory tree, with a command-line interface for controlling its behavior. The tool should walk a given root directory (skipping common version-control, cache, and virtual-environment folders by default, with options to add or override skipped names), and for each directory and file determine whether its permission bits match a sensible policy: directories and regular files should be set to standard read/write-friendly modes, while files that should be executable (such as shell scripts, shared libraries, and anything inside typical binary or script folders like bin, sbin, scripts, or tools) should carry execute bits, and Python source files outside of those folders should have execute bits removed. Allow users to customize which file suffixes and glob patterns receive or lose execute permissions, and which parent folder names keep their executable status.
-The script should support a dry-run mode that reports every intended change without modifying anything, a verbose mode that lists each file and its old and new permission values, and an apply mode that performs the changes. It should optionally use a process pool to parallelize inspection across large trees, and show a progress indicator when a suitable progress library is available, falling back gracefully to plain iteration when it is not. Where an optional binary-detection helper is available, it may be used to decide whether an unrecognized file looks like a binary executable; otherwise the script should function fully without it.
-Handle errors robustly: skip unreadable or vanished paths, never follow symbolic links out of the target tree, and continue processing after individual failures while collecting them into a summary. At the end, print a concise report showing counts of directories and files scanned, changes made or proposed, skipped items, and errors encountered, along with the total elapsed time. The script must exit with a non-zero status code if any errors occurred and zero otherwise, and it should accept the root path as a required positional argument and print helpful usage information when invoked incorrectly.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +11,7 @@ import stat as st
 import sys
 import time
 from typing import Iterator, Optional, Sequence
+
 
 try:
     from tqdm import tqdm

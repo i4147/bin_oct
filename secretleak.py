@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for accidentally committed secrets and credentials, reporting any findings to the user. The tool should accept a target directory path as input and recursively walk through its files, skipping binary files, compiled artifacts, imagesives, lock files, and version-adata folders. For each read file, contents against a builtatures, including cider access keys and secret keys, private key headers (RSA, DSA, EC, OpenSSH), GitHub and Google API keys, JSON Web Tokens, generic API key and password assignments, and database connection URLs with embedded credentials.
-The script should process files in parallel to remain fast on large repositories, and it should handle unreadable files, encoding problems, and permission errors gracefully without crashing. For every match, it should record the secret type, the file path, the line number, and a redacted preview of the matched value so that the real secret is never fully printed. Results should be logged with clear severity and summarized at the end, showing total files scanned, total findings, and a breakdown by secret type. The tzero status code when any secrets are found so it can be used as a pre-commit or CI gate, and zero when the scan is clean. Include a command-line interface that allows the user to specify the target path and optionally exclude additional file extensions or path patterns.
----"""
 
 from __future__ import annotations
 from multiprocessing import Pool
@@ -9,7 +6,9 @@ from pathlib import Path
 import re
 import sys
 from typing import Any
+
 from loguru import logger
+
 
 SECRET_PATTERNS: dict[str, str] = {
     "AWS Key": "AKIA[0-9A-Z]{16}",

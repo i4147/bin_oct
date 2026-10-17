@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a source-code compressor: it takes a Python source file as input, shrinks it as much as possible while preserving its exact runtime behavior, and writes the compacted result to an output text file. The tool should be built to run safely on a large batch of files in parallel, and it should be able to report what it changed.
-Key requirements:
-- **Input and output:** Accept one or more Python file paths (or a directory to scan) from the command line. Produce a compressed version of the code in a single output text file, appending or overwriting as appropriate, and print a short summary of the original versus compressed size for each file.
-- **Behavior preservation:** The compressed code must remain valid, importable Python with identical functionality. Never alter string literals, docstrings that are meaningful at runtime, module-level public APIs, or names that are accessed dynamically or reserved by Python.
-- **Comment and whitespace removal:** Strip comments, shebang lines, blank lines, and unnecessary indentation or spacing, while keeping the code syntactically correct, including inside multi-line constructs.
-- **Identifier shortening:** Rename local variables, function parameters, and private helper names to short identifiers to reduce size. Protect built-in names, Python keywords, dunder/special method names, `self`/`cls`, names imported from other modules, and any names that appear in string form or are part of a public interface.
-- **Safety checks:** Validate that each compressed output parses correctly before writing it. If compression would break the code, fall back to the original source or a less aggressive level and report the issue.
-- **Parallel processing:** Process many files concurrently using a configurable number of worker processes, with a sensible default.
-- **Configurability:** Provide command-line options to control the output path, the number of workers, whether identifier renaming is enabled, and a dry-run mode that reports results without writing files.
-- **Reporting:** Log per-file statistics (bytes before and after, percentage reduction, and any files skipped or failed) and end with an overall total.
-- **Robustness:** Handle unreadable files, encoding issues, and syntax errors gracefully without stopping the whole batch, and exit with a non-zero status if any file failed.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,7 +13,9 @@ import sys
 import sysconfig
 import token
 import tokenize
+
 from dh import append_text, runcmd
+
 
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8

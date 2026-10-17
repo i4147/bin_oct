@@ -1,13 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a Linux/Unix system for security-relevant file permission and ownership issues and reports them as a colored, human-readable terminal report. The tool should accept one or more root directories (defaulting to common system locations such as the filesystem root or key system directories) and an option to control whether symbolic links are followed. It should walk the directory tree efficiently, skipping or gracefully handling inaccessible paths, permission errors, and broken links without crashing.
-For each file and directory examined, the script should evaluate:
-- World-writable files and directories, especially those lacking the sticky bit where it matters.
-- Setuid and setgid executables, reporting their owners and groups so that unexpected privileged binaries can be spotted.
-- Files or directories owned by users or groups that no longer exist on the system (orphaned ownership).
-- Other permission anomalies relevant to hardening, such as overly permissive configuration or sensitive files readable by everyone.
-The script should group its findings by category, print each category under a clearly styled section header, and list the affected paths with brief notes explaining why each item was flagged. Output should use color when writing to an interactive terminal and plain text otherwise, and warnings or errors should be directed to the appropriate stream. The script should also print a concise summary at the end with total counts per category and an overall count of findings.
-Optionally, the script may compute and display a checksum for flagged executable files to help the user verify their integrity, and it should allow the user to limit output to a chosen category or to write the report to a file. It must run safely as an unprivileged user, never modify any files or permissions, and exit with a non-zero status code if any high-severity findings are discovered, and zero otherwise. Include a clear command-line help message describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,6 +14,7 @@ import stat
 import subprocess
 import sys
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

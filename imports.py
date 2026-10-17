@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory tree and reports which third-party packages the project depends on, so the user can see what to install or add to a requirements file.
-The tool should accept a path to a project root as a command-line argument (defaulting to the current directory). It should walk through all Python source files in the project, skipping common non-source or cache directories such as version control folders, build and test-cache folders, and virtual or tool-generated directories. For each Python file, it should parse the source into a syntax tree and collect the top-level module names referenced by both plain import statements and from-import statements, ignoring relative imports that refer to the project's own modules.
-It should also identify which imported names are local to the project (for example, by detecting packages defined by the project's own package directories) so they are excluded from the external dependency list. Names belonging to the Python standard library should be excluded as well.
-For the remaining external modules, the script should determine which ones are installed in the current environment and map each module name to its distribution package name where possible (since module names and package names often differ). The final output should clearly list the detected third-party packages, indicate which are installed and at which version, and flag any that are missing from the environment. The output should be human-readable, sorted, and free of duplicates.
-Because projects can contain many files, the file analysis should be parallelized across a small pool of worker processes to ke script should handle files that cannot be read or parsed gracefully, reporting a warning for them without stopping the overall scan. Include a timing summary showing how long the scan took.
-Optionally, the script may write the results in a machine-readable format (such as a requirements-style list) when requested via a command-line flag.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,7 +10,9 @@ from multiprocessing import Pool
 import numbers
 from pathlib import Path
 import time
+
 from dh import STDLIB, get_installed_pkgs
+
 
 NUM_WORKERS = 8
 SKIP_DIRS: set[str] = {

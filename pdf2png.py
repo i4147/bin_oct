@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts a PDF file into a set of PNG images, one per page, saved into an output folder. The tool should accept the path to a PDF as its main input, plus optional arguments for the destination directory and the rendering resolution (DPI, defaulting to 200). If no output directory is given, it should create one automatically, named after the PDF file's base name, in the current working directory.
-Key behaviors:
-- Validate up front that the input PDF exists; if it does not, report a clear error message to the standard error stream and exit with a non-zero status.
-- Check that the required external PDF rendering utility (poppler's `pdftoppm`) is available on the system; if it is missing, print a helpful error that tells the user how to install it and exit with a failure status.
-- Create the output directory if it does not already exist, without failing if it does.
-- Name the generated images consistently, using the PDF's base name followed by a page marker, so that page order is preserved.
-- Echo the command being executed to the console so the user can see what is happening.
-- If the rendering process fails, display the underlying error output to the user and exit with a failure status.
-- After rendering, list the generated PNG files in page order and report how many pages were converted and where the images were saved.
-- Provide a command-line interface that accepts the PDF path as a required positional argument and the output directory and DPI as optional flags, with sensible help text.
-- Keep the script self-contained, readable, and robust, with clean error handling and informative console messages throughout.
----"""
 
 from __future__ import annotations
 import os

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an automated web content extractor: given a URL (or a raw HTML page), it fetches the page, identifies and extracts the main article content, and returns structured results such as the cleaned body text, title, author, publication date, language, and site metadata. The tool should respect website crawling rules (such as robots.txt), handle common network and encoding issues gracefully, and cache previously fetched pages to avoid redundant downloads. It should be usable both as a command-line utility that prints or saves results in a machine-readable format (e.g., JSON) and as an importable library with a simple programmatic interface. Include a scoring mechanism that compares candidate text blocks against expected title or content hints to select the most relevant content, a way to detect the document's language, and a helper to optionally open the source page in a web browser for visual inspection. Design the tool to be robust against malformed HTML, to strip boilerplate such as navigation, ads, and footers, and to produce consistent output fields even when some metadata is unavailable.
----"""
 
 from __future__ import annotations
 import contextlib
@@ -16,6 +14,7 @@ from urllib.parse import urljoin
 import urllib.request
 import urllib.robotparser
 import webbrowser
+
 import diskcache
 import just
 import justext
@@ -26,6 +25,7 @@ from metadate import parse_date
 import requests
 from tldextract import tldextract
 import ujson as json
+
 
 __project__ = "auto_extract"
 __version__ = "0.1.3"

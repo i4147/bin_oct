@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that translates a large text file from one language to another, processing it in resumable batches so that interrupted runs can pick up where they left off. The tool should accept command-line arguments for the input file, the output file, and the source and target language codes, with sensible defaults (Chinese to English). It should split long text into manageable pieces that respect a maximum character limit per request, translate each piece through an online translation service, and reassemble the results in the original order while preserving the original structure, such as line breaks and blank lines.
-Key behaviors:
-- Track progress in a sidecar file next to the output so that a restarted run skips already-translated segments instead of starting over.
-- Save progress periodically during long runs, not only at the end, so little work is lost if the process stops unexpectedly.
-- Handle transient network or service failures gracefully by retrying with an increasing delay between attempts, and report each failed attempt clearly to the user on the error stream.
-- Pause briefly between successive translation requests to avoid overwhelming the service and triggering rate limits.
-- If a segment still fails after all retries, stop cleanly with a clear message explaining what was completed and how to resume, rather than silently producing a corrupted output.
-- Skip blank or whitespace-only segments without sending them to the service.
-- Print concise progress information to the user, such as the number of segments completed out of the total.
-- Upon successful completion, write the full translated text to the output file, clean up the progress file, and confirm the result to the user.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,7 +6,9 @@ import json
 from pathlib import Path
 import sys
 import time
+
 from translate import Translator
+
 
 SAVE_EVERY = 50
 SLEEP_BETWEEN = 0.5

@@ -1,16 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a Debian/Ubuntu package health and update checker for a Linux system. The script should run as a command-line tool and perform the following:
-- Enumerate all packages currently installed on the system, along with each package's installation status and version, and present them in a readable listing.
-- Accept one or more package names from the user (via command-line arguments or an interactive prompt) and verify whether each named package is correctly installed and in a healthy state, reporting a clear OK or a descriptive problem status for each. Handle packages that are not found or cannot be queried gracefully.
-- Check whether system updates are available by simulating an upgrade without actually installing anything, and summarize which packages would be upgraded, with a clear message when the system is up to date.
-- Handle errors robustly at every stage: if the system package tools are unavailable or a command fails, print a clear error message and exit with a non-zero status code rather than crashing with a raw traceback.
-- Provide a main entry point that lets the user choose which operation to run (list installed packages, check package health, or check for updates), or run all of them in sequence when requested.
-- Print results in a clean, human-readable format suitable for terminal use, with consistent labeling and clear section headers.
-- Never modify the system: all operations must be read-only and must not install, remove, or upgrade any packages.
----"""
 
 from __future__ import annotations
 import sys
+
 from dh import runcmd
 
 

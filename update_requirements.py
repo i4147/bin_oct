@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a pinned dependency file (such as a standard requirements file with lines in the form of package==version), checks each listed package against the Python Package Index to determine whether a newer release is available, and writes the packages that can be upgraded to an output file. The script should accept command-line options to specify the input file path and the output file path, with sensible defaults of a file named requirements.txt for input and upgradable.txt for output.
-The script should skip blank lines, comment lines, editable installs, and direct URL or VCS references, since these cannot be compared against index versions. Only exact-pinned entries should be considered.
-For each package, query the index with a short timeout and handle network failures, missing packages, and malformed or non-standard version strings gracefully without crashing the whole run. Perform the lookups concurrently using a bounded thread pool to keep the run fast on large files, and report progress or results as they complete.
-Version comparison must be correct under standard version semantics: a package should only be flagged when the latest available stable release is strictly newer than the pinned version, and pre-release versions should not be suggested as upgrades. Invalid or unparseable versions should be reported as skipped rather than causing errors.
-The output file should list each upgradable package in a clear, requirements-style format showing the target version, and the console should display a readable summary with color highlighting for upgradable entries when output is a terminal, while remaining plain text otherwise. The script should exit with a clear status code indicating success, and it should report a helpful error message if the input file is missing or unreadable.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,8 +7,10 @@ from pathlib import Path
 import re
 import sys
 from typing import Final
+
 from packaging.version import InvalidVersion, Version
 import requests
+
 
 _TIMEOUT: Final[float] = 10.0
 _MAX_WORKERS: Final[int] = 16

@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line log viewer and launcher for application log files. The tool should be a standalone, cross-platform utility that a developer can run from a terminal to quickly locate, inspect, and act on recent application logs stored in a conventional per-user log directory.
-Core behavior:
-- Accept one or more log file paths or glob patterns as command-line arguments. Patterns containing wildcard characters should be expanded, and the tool should gracefully handle patterns that match nothing, reporting a clear message rather than crashing.
-- Default to a sensible log directory in the user's home folder when no explicit files are given, and select the most recently modified logs first.
-- Provide options to control how much output is shown (for example, showing only the last N lines, following new lines as they are appended, or filtering lines by a keyword or pattern with an option to high Support copying the contents of a selected log (or a trimmed excerpt of it) to the system clipboard using whatever platform-appropriate mechanism is available, and enforce a reasonable maximum payload size, warning the user when content is truncated.
-- Allow the user to run an external command against the log content or a chosen file, passing arguments safely without shell injection risks, and report the command's exit status and duration.
-- Use colored terminal output to distinguish severity levels and headings when the output is interactive terminal, but automatically disable colors when output is redirected, when a no-color environment setting is present, or when the terminal is dumb.
-- Display timestamps in a human-readable format and include file metadata such as size and last-modified time in listings.
-- Handle errors robustly: missing files, permission problems, unreadable or binary content, unavailable clipboard tools, and interrupted operations (such as Ctrl+C during follow mode) should produce concise, user-friendly messages and appropriate exit codes.
-- Provide built-in help text describing all options, with examples of typical usage.
-- The script should be self-contained, require no third-party dependencies, and run on Python 3 across Linux, macOS, and Windows, degrading gracefully where platform features differ.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,6 +10,7 @@ import shlex
 import subprocess
 import sys
 import time
+
 
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 CLIPBOARD_MAX_BYTES = 1 * 1024 * 1024

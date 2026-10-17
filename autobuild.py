@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the current working directory for Python package projects (directories containing a setup.py, pyproject.toml, or setup.cfg file), builds a wheel for each one in parallel using a fixed-size pool of worker processes, and collects all build artifacts into a single output folder named "wheels" within the current directory, creating that folder if it does not already exist. The script should skip the output folder itself when looking for packages, and should print a clear message and exit gracefully if no packages are found.
-Each build should be run as an isolated external process using the current Python interpreter and the standard build tooling for producing wheel distributions. For every package, record whether the build succeeded, and if it failed, capture the tail end of the error output so the user can diagnose the problem. Exceptions raised during a build should be caught and reported without stopping the other builds.
-When all builds finish, print a concise summary to the console showing each package name with its status (success or failure, along with the error excerpt for failures), followed by totals of successful and failed builds. Packages should be processed in a deterministic, alphabetical order. The script should be runnable directly from the command line, with the main logic placed behind a standard entry-point guard, and should handle the multiprocessing setup correctly across platforms.
----"""
 
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import subprocess
 import sys
+
 
 NUM_WORKERS = 8
 CURRENT_DIR = Path.cwd()

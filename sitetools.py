@@ -1,20 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line file utility for archiving, compressing, inspecting, and organizing files and directories. The tool should accept a source path (a single file or a directory tree) and an operation selected via command-line arguments, then produce an output artifact or report while giving clear, colorized console feedback and logging.
-Core behaviors to implement:
-- **Archive and compression operations**: Bundle a file or directory into a compressed archive in a common format (such as tar with optional gzip or bzip2 compression), and extract such archives back into a target folder safely, guarding against path traversal in archive entries.
-- **Encoding utilities**: Provide optional encoding and decoding of files using a simple, reversible text representation (such as base64), writing results to a new file rather than overwriting the original.
-- **Inspection and reporting**: Report the total size of a file or directory tree in human-readable units, count files, and optionally export a manifest of entries (name, relative path, size, and a checksum such as SHA-256) to CSV or JSON.
-- **Duplicate detection**: Scan a directory for files with identical content using hashing, and list duplicate groups with their paths and sizes, optionally with parallel processing for speed.
-- **Safe output handling**: Never overwrite existing files silently. When a target name already exists, generate a unique alternative name (for example by appending a numeric suffix before the extension). Allow an explicit overwrite flag when the user requests it.
-- **Cleanup**: Offer an option to remove the source after a successful operation, with a confirmation prompt unless a non-interactive flag is supplied.
-Interface and robustness requirements:
-- Use a clear command-line interface with subcommands or flags, built-in help text, and sensible defaults.
-- Validate inputs up front and report missing paths, permission problems, and unsupported formats with clear error messages and nonzero exit codes.
-- Log progress and warnings to standard error, and print user-facing results to standard output with optional colored terminal output that degrades gracefully when color is unsupported.
-- Display human-readable file sizes throughout.
-- Handle keyboard interruption gracefully, cleaning up any partially written output files.
-- Keep the code modular, well structured, and easy to extend with new operations.
----"""
 
 from __future__ import annotations
 import argparse
@@ -31,6 +15,7 @@ import re
 import shutil
 import sys
 import tarfile
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s", stream=sys.stderr)
 logger = logging.getLogger(__name__)

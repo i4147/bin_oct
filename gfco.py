@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts font files between common web and desktop font formats. The tool should accept one or more font files (or a directory containing font files) as input, along with a target format chosen from TrueType (.ttf), OpenType (.otf), WOFF, WOFF2, and EOT. For each input file, it should produce a converted font file in the requested format, saving it either alongside the original or into a user-specified output directory. The user should be able to optionally delete the original source file after a successful conversion.
-Key behaviors to include:
-- Validate that the target format is supported and that each source file exists and has a supported font extension before attempting conversion; skip or report invalid inputs without stopping the whole batch.
-- Accept a directory and process all supported font files within it, optionally recursing into subdirectories.
-- Process multiple files efficiently, using parallel execution where it is beneficial, and gracefully fall back to sequential processing if parallelism is unavailable.
-- Provide a clear command-line interface with help text, sensible defaults, and options for output directory, removal of originals, and verbosity.
-- Print a concise summary at the end showing how many files were converted, skipped, or failed, along with any error messages.
-- Exit with a non-zero status code if fatal setup problems occur, such as a missing required font-processing dependency, and display a helpful installation hint in that case.
-- Handle errors robustly (corrupt fonts, unwritable output locations, unsupported conversions) and never leave partially written output files behind.
-- Preserve the font's glyph data and metadata as faithfully as the target format allows, and avoid overwriting existing files unless explicitly permitted.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,6 +7,7 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Optional
+
 
 try:
     from fontTools.ttLib import TTFont

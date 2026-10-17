@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line universal translation tool for text files, able to translate content using either an OpenAI-based or a Google Gemini-based language model backend. The tool should accept one or more input file paths or glob patterns, along with a target language and an optional choice of translation provider, and produce translated output files alongside or within a designated output location.
-Key requirements:
-- **Purpose**: Translate the contents of user-specified text documents into a requested target language using large language model APIs, preserving the original meaning, tone, formatting, and structure as closely as possible.
-- **Inputs**: Command-line arguments specifying the source file(s) (supporting wildcard patterns), the target language, an optional provider selection (OpenAI or Gemini, with a sensible default), and an optional output directory or naming convention. Optionally support specifying a model name.
-- **Configuration**: API credentials should be read from environment variables, and the tool should also be able to load settings from a user-level `.env` file in the home directory without overwriting variables already set in the environment. The script should fail gracefully with a clear message if the required API key for the chosen provider is missing, and should handle optional dependencies (the OpenAI and Google GenAI SDKs) being unavailable, reporting a helpful error only when the selected provider is actually needed.
-- **Outputs**: Translated text written to new files, with a clear naming scheme that indicates the target language. The tool should report progress and results to the user, including which files succeeded or failed.
-- **Behavior**: Process multiple files in a batch, skipping or reporting unreadable or missing files without stopping the entire run. Handle text encoding properly (UTF-8 by default). Large inputs should be handled gracefully, for example by splitting into chunks if needed. Provide clear error messages for invalid arguments, unsupported providers, and API failures, with retry or fallback behavior where reasonable.
-- **Usability**: Include a `--help` description, sensible defaults, and exit with appropriate status codes (zero on full success, non-zero when any translation fails).
-- **Extensibility**: Structure the solution so that additional translation providers could be added with minimal changes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,6 +6,7 @@ import glob
 import os
 from pathlib import Path
 import sys
+
 
 try:
     from openai import OpenAI

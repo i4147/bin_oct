@@ -1,13 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch source-code migration tool for converting legacy Python 2/compatibility-style code into modern Python 3 code. The tool should accept a directory (or set of files) as input, locate Python source files, and rewrite them in place or to an output location, applying a series of automated transformations: removing obsolete future imports, replacing Python 2 built-in names and iterator methods with their Python 3 equivalents, simplifying compatibility shims such as those from the six library (mapping six.moves references to their standard-library counterparts), and cleaning up old-style class and super() usage patterns. It should also handle Python 2-only idioms such as legacy unicode/bytes type checks and string-type helpers, using safe, syntax-aware rewriting where possible so that the output remains valid Python.
-The script should support a command-line interface with options for specifying the target path, choosing an output directory, performing a dry run that reports the planned changes without writing files, and controlling the level of parallelism for processing many files concurrently. Files that contain a header comment marking their original filename (for example, a "# File: name.py" sentinel line) should be recognized so that the tool can handle concatenated or bundled source dumps by splitting them into individual files and restoring their names before processing.
-Key behaviors:
-- Process files in parallel with a sensible default worker count, while keeping output deterministic.
-- Skip non-Python files, unreadable files, and files that fail to parse after transformation, reporting them without aborting the whole run.
-- Validate every rewritten file for syntactic correctness before committing it, leaving the original untouched if validation fails.
-- Print a concise summary at the end listing files changed, files skipped, and any errors encountered, with a non-zero exit status when errors occur.
-- Ensure transformations are idempotent so that running the tool repeatedly produces no further changes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,6 +7,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable
+
 
 WORKERS: int = 6
 FILENAME_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")

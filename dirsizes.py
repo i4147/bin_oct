@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user-specified directory tree recursively and reports the top K largest items by their total disk footprint, where folders are ranked by the combined size of all files beneath them. The tool should accept the root directory to scan, a configurable number of top results to display (defaulting to 10), and an optional list of directories or files to exclude from the scan. It should compute and display each item's size in human-readable units (bytes through petabytes), present the ranked results clearly in the terminal with appropriate formatting, and show a progress or status indicator while the scan is running. It should handle inaccessible files and directories gracefully without crashing, validate that the provided path exists and is a directory, and exit with a clear error message on invalid input. Design the scanning so it remains efficient on very large directory trees, and ensure the command-line interface is intuitive with short and long option names and helpful usage text.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,8 +8,10 @@ from pathlib import Path
 import sys
 import time
 from typing import Generator
+
 from rich.console import Console
 from rich.status import Status
+
 
 console = Console()
 

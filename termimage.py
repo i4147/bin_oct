@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
 import sys
+
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
 

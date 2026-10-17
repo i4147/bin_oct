@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import abc
 from copy import deepcopy
@@ -7,6 +8,7 @@ import re
 from typing import Any, Callable, Final, Self
 import urllib.parse
 import warnings
+
 
 try:
     from icecream import ic
@@ -17,6 +19,7 @@ except ImportError:
 
 
 from orderedmultidict import omdict1D
+
 
 __title__: Final[str] = "furl"
 __version__: Final[str] = "2.1.4"

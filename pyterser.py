@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for recursively scanning a directory tree and minifying JavaScript files in place using an external JavaScript minifier (such as Terser). The tool should accept a target directory (and optionally a set of options such as worker count, per-file timeout, and a dry-run or report-only mode), discover all JavaScript source files (with extensions for standard, module, and CommonJS scripts), and skip common dependency, build, cache, version-control, and virtual-environment directories so they are never processed.
-Key behaviors:
-- Process files in parallel across a configurable number of worker processes, and handle each file independently so that a failure in one file does not stop the others.
-- For each JavaScript file, run the external minifier on a safe temporary copy, compare the result with the original, and only replace the original when the minified output is valid (the minifier exits successfully) and actually saves a meaningful number of bytes. Preserve the original file's permission bits when replacing it, and never leave partially written or corrupted files behind; clean up temporary artifacts on every path, including errors and Enforce a per-file timeout for the minifier subprocess and report timeouts as failures without crashing the run.
-- Skip files that cannot be minified profitably, that are already minimized, or that are unreadable or unwritable, and record the reason.
-- Support a dry-run mode that reports what would be changed without modifying any files.
-- At the end, print a clear summary: number of files scanned, processed, skipped, and failed, total bytes before and after, bytes saved, and a percentage reduction, with sizes shown in human-readable units (e.g., KB, MB). Return a non-zero exit code if any file failed.
-- Gracefully handle missing minifier executables, invalid directories, and keyboard interrupts with informative error messages and clean shutdown.
-Keep the implementation self-contained, cross-platform where practical, and well-structured with clear separation between discovery, minification, file replacement, and reporting.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Final, Iterator, NamedTuple, Sequence
+
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",

@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-unused_imports.py – detect and optionally remove unused imports.
-Supports:
-  - plain .py files and directories
-  - .whl and .tar.zst archives
-  - built-in AST analyzer (default)
-  - external autoflake mode (--autoflake) for higher accuracy
-"""
 
 from __future__ import annotations
 import argparse
@@ -22,6 +14,7 @@ import sys
 import tarfile
 from typing import List, Optional, Set, Tuple
 import zipfile
+
 
 # Optional zstandard support
 try:

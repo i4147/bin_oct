@@ -1,16 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree and reports which files are executable scripts whose interpreter is unrecognized or unusual. The tool should accept a root directory path as input and recursively walk through it, skipping common non-source directories such as version control folders, dependency caches, virtual environments, build outputs, and editor metadata folders.
-For each regular file, the script should quickly determine whether it is a binary file and ignore it if so. For text files, it should read only the first line and check whether it is a shebang line. When a shebang is found, the script should extract the interpreter name, correctly handling both direct interpreter paths and the indirect form that routes through the `env` command, and reduce it to its base program name. Versioned suffixes on interpreter names (such as trailing digits or version numbers) should be normalized so that variants like "python3.11" and "python" are treated as the same interpreter family.
-The script should compare each detected interpreter against a built-in table of known interpreters and their expected shebang forms. It should produce a report listing files whose shebang refers to an interpreter that is not in the known set, along with each file's relative path, the raw shebang line, and the interpreter it resolves to. Files with no shebang, binary files, and unreadable files should be silently skipped.
-The processing of individual files should be parallelized across multiple workers to handle large directory trees efficiently, and the final output should be clearly organized and sorted by path. The script should be runnable from the command line with the root directory as an argument, provide helpful usage information, and exit with a meaningful status code indicating whether any suspicious shebangs were found.
----"""
 
 from __future__ import annotations
 import argparse
 from concurrent.futures import InterpreterPoolExecutor
 from pathlib import Path
 import re
+
 from dh import SHEBANG_MAP, is_binary
+
 
 SKIP_DIRS = {
     ".git",

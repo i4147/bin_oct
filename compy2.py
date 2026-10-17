@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that compresses a single Python source file into a smaller, functionally equivalent output file, with the goal of reducing its size as much as possible while preserving its exact behavior.
-The script should:
-- Accept a source file path (and optionally an output path) from the command line, with a sensible default output location for the compressed result.
-- Read the input Python code, analyze its structure, and rewrite it into a compact form, including shortening local identifiers, removing unnecessary whitespace, comments, and docstrings, and stripping imports of the standard library in a way that keeps the result runnable in the same environment.
-- Preserve names that must remain stable: built-in names, language keywords, special dunder attributes, module-level entry points, and common protocol method names. Never rename anything that would break attribute access, keyword arguments, or runtime introspection.
-- Insert a short header note into the output explaining that the code has been compressed and that standard library imports were removed.
-- Verify that the compressed result is still valid Python syntax before writing it, and report clearly if compression fails or produces invalid code.
-- Use parallel processing to speed up work where multiple independent units can be handled concurrently, with a configurable number of workers.
-- Print a concise summary to the user showing the original size, the compressed size, and the percentage reduction, and exit with a non-zero status on errors.
-- Handle missing files, unreadable input, and malformed source code gracefully with clear error messages.
-The result should be a single self-contained script that a developer can run from the terminal to produce a minified version of a Python file.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,7 +13,9 @@ import sys
 import sysconfig
 import token
 import tokenize
+
 from dh import runcmd
+
 
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8

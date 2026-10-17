@@ -1,9 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts a Gregorian (Western) calendar date entered by the user into its Persian (Solar Hijri / Jalali) equivalent and displays it as a formatted Persian-language date line. The output should include the Persian weekday name corresponding to the given date, the Persian day number, the Persian month name, and the Persian year, all presented in a single readable string with the digits rendered in Persian (Eastern Arabic) numerals. Accept the Gregorian year, month, and day as inputs (either as function arguments or interactive prompts), validate that the date is a real calendar date, and handle the conversion using a correct Gregorian-to-Jalali algorithm so that results are accurate across typical modern date ranges. Provide clean helper components for the calendar conversion, weekday lookup, month naming, and digit translation, and ensure the final result can be printed or returned for display. The script should be self-contained, produce only the formatted date output for valid input, and give a clear error message for invalid dates.
----"""
 
 from __future__ import annotations
 import datetime as dt
+
 from faprint import faprint
 
 

@@ -1,16 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a terminal Markdown viewer. The tool should take a single optional command-line argument specifying the path to a Markdown file, defaulting to a file named README.md in the current directory when no path is given. It should read the file as UTF-8 text and render it attractively in the terminal, with proper formatting for headings, lists, code blocks, emphasis, and other common Markdown elements.
-The viewer should display the content page by page, so that long documents fit the terminal height and the user can move forward and backward through the content using keyboard input, and quit at any time. If keyboard input capture is unavailable in the environment, the tool should gracefully fall back to a simpler, still-usable paging mode rather than crashing.
-If the specified file does not exist, the tool should print a clear, human-readable error message to standard error and exit with a non-zero status code instead of showing a raw stack trace. On successful completion it should exit with status code zero. Include a helpful description and usage text for the command-line interface, including a short summary of what the tool does and how the file argument works.
-Keep the implementation self-contained, handle terminal resizing gracefully, and ensure the output is readable on both light and dark terminal backgrounds.
----"""
 
 from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
+
 from rich.console import Console
 from rich.markdown import Markdown
+
 
 try:
     from readchar import (

@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory of Python source files, extracts each module's top-level docstring, and produces a consolidated, human-readable index of those modules along with a machine-readable JSON summary. The script should be safe to run on large collections of files, process files concurrently for speed, and tolerate files that are unreadable, non-UTF-8, or contain syntax errors by skipping them gracefully without crashing.
-Key behaviors to implement:
-- Accept command-line arguments that specify the source directory to scan (defaulting to a sensible location), an output location for the generated files, and options to control things like line width for wrapping text and the number of concurrent workers.
-- Walk the source tree to find Python files, excluding common non-source locations such as virtual environments, caches, and hidden folders.
-- For each module, pull out its module-level docstring, remove surrounding quote characters, and clean up formatting. If the docstring ends with a special marker line of the form "LiveDoc: <http or https URL>", separate that URL from the descriptive text and record it as a distinct field.
-- Wrap descriptive text to a configurable maximum line width while preserving paragraph breaks and sensible indentation.
-- Produce two outputs: (1) a readable plain-text or Markdown document listing each module with its relative path, wrapped description, and any associated live documentation link, sorted in a stable order; and (2) a JSON index file mapping each module to its metadata (path, description, live link), intended for consumption by other tools.
-- Process files in parallel using a thread pool with a configurable number of workers, and aggregate results deterministically regardless of completion order.
-- Report a concise summary to the user at the end, including how many modules were found, how many had usable docstrings, and how many were skipped and why.
-- Create the output directory if it does not exist, and handle common errors (missing source directory, permission problems) with clear, actionable messages and non-zero exit codes.
-The script should be self-contained, runnable from the command line, and include helpful usage/help text describing its options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +8,7 @@ import json
 from pathlib import Path
 import re
 import textwrap
+
 
 OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
 MAX_LINE: int = 80

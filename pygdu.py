@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an interactive terminal disk-usage explorer for a directory tree. The user launches it with a starting path (defaulting to the current directory) and it scans the directory structure recursively, computing the size of every file and aggregating totals for each folder. Scanning of large trees should be parallelized across multiple worker processes to keep the interface responsive and fast.
-Once the scan completes, present the results as a navigable, full-screen-style list within the terminal. Each row shows the item's name, a human-readable size, its share of the parent folder's total as a proportional bar, and a visual marker distinguishing folders from files and identifying symbolic links. Entries should be sorted by size, largest first, and folders should be visually distinct from files through color or emphasis.
-The user navigates with the arrow keys: up and down to move the selection, right to enter a folder, and left to return to the parent directory. The escape key or a quit key exits cleanly. The terminal should be placed into raw/unbuffered input mode during interaction and restored to its original settings on exit, even if an error occurs. Include a header showing the current path and total size, and a footer with key-binding hints. The display should adapt to the terminal's height so the selected item remains visible while scrolling.
-Symbolic links should be recorded but not followed, to avoid cycles, and should be counted with zero size. Files that cannot be accessed due to permission errors should be skipped gracefully without crashing the program. Log significant events and errors using a logging facility rather than printing debug noise to the screen. Human-readable sizes should use standard binary units (B, KB, MB, GB, TB) with sensible decimal precision. The script should handle the case where the given path does not exist or is not a directory by exiting with a clear error message.
----"""
 
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -13,8 +8,10 @@ import sys
 import termios
 import tty
 from typing import Final
+
 from dh import fsz
 from loguru import logger
+
 
 POOL_SIZE: Final[int] = 8
 BAR_WIDTH: Final[int] = 10

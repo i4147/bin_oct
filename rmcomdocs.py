@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that strips comments and docstrings from Python source files, producing a cleaned version of the code while preserving its executable behavior. The tool should be a command-line utility that accepts one or more file or directory paths as input, recursively discovers Python files within directories, and processes them either in place or writing results to a separate output location, with an option to preview changes without modifying anything.
-Key behaviors to implement:
-- Parse each Python source file into a syntax-aware representation so that only true comments and docstrings are removed, while string literals that merely look like comments and code structure are left intact.
-- Provide configurable handling for docstrings: remove them entirely, replace them with a placeholder statement so the surrounding block remains valid, or keep module-level documentation while stripping the rest.
-- Preserve important special comments by default, such as shebang lines, type annotations comments, formatter directives, and developer markers like TODO or noqa notes, with an option to strip those as well.
-- Offer options to control whitespace handling: keep original line numbers by blanking removed lines instead of deleting them, optionally collapse or remove resulting blank lines, and optionally trim a trailing newline.
-- Allow selecting between parsing strategies, and use multiple worker processes to speed up processing of large codebases, with a progress or summary report showing how many files were changed, skipped, or failed.
-- Validate that the output still compiles as valid Python; if a file cannot be parsed or the transformed result is invalid, report the error for that file without aborting the entire run and leave the original file untouched.
-- Exit with a clear status code indicating success, partial failure, or a missing dependency, and print helpful error messages to standard error when something goes wrong.
-The script should be self-contained, robust to encoding issues and malformed files, and easy to run from the terminal with sensible defaults.
----"""
 
 from __future__ import annotations
 import argparse
@@ -21,6 +10,7 @@ from pathlib import Path
 import sys
 import time
 from typing import Iterable, Sequence
+
 
 try:
     from tree_sitter import Language, Node, Parser, Query, QueryCursor

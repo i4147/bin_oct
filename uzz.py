@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a given directory (defaulting to the current working directory) for Python wheel package files (.whl) and unpacks each one in place. every wheel found, the script should extract its full contents into the same directory where the wheel resides, then delete the original wheel file once extraction succeeds. The script should log its progress clearly, including how many wheel files were found, the name of each file being processed, and a success message after each wheel is extracted and removed. If no wheel files are present, it should log a warning and exit gracefully. Any entries matching the wheel pattern that are not regular files (such as directories) should be skipped with a debug-level message. If a file is not a valid ZIP archive, the script should log an error with traceback details, leave the original file untouched, and continue processing the remaining wheels. If a file cannot be extracted or removed due to insufficient permissions, the script should log an appropriate error and move on without crashing. The overall goal is a robust, batch-oriented utility that safely converts downloaded wheel archives into their extracted contents while preserving data on any failure.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
+
 from loguru import logger
 
 

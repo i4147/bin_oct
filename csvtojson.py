@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts a CSV file into a JSON file. The script should accept the path to an input CSV file as a command-line argument, read its contents using the first row as column headers, and transform each subsequent row into a record keyed by those headers. All records should be collected into a single list and saved to a new JSON file placed alongside the original, using the same base name with a .json extension. The output should be human-readable with indentation and must preserve UTF-8 character encoding. The script should run as a standalone command-line tool and handle the input path cleanly so that it can be invoked directly from a terminal.
----"""
 
 from __future__ import annotations
 import csv

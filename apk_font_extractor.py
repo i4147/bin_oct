@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that extracts font files from Android APK packages and organizes them into a single output directory for later use. The tool should accept one or more paths as input, where each path may be an individual APK file or a directory that should be searched (recursively or at the top level) for APK files. For every APK found, it should inspect the archive contents, locate embedded font files in common formats such as TrueType, WOFF, and WOFF2, and copy them out to a configurable destination folder, defaulting to a standard fonts location on Android storage.
-Key behaviors to include:
-- Provide a command-line interface that lets the user specify input paths, an optional output directory, the number of parallel workers, and verbosity or logging options, with sensible defaults and clear help text.
-- Process multiple APK files concurrently to speed up extraction, while keeping the overall run robust so that a failure on one APK does not stop the others.
-- Avoid producing duplicate or conflicting output files: if two fonts share the same name, resolve collisions in a predictable way, and remember which fonts have already been processed during a run.
-- Where useful, read each font's internal metadata (such as family name, style, or weight) so that output filenames or a summary report can be more descriptive and meaningful.
-- Apply a per-APK time limit so that a stalled or corrupted archive cannot block the job indefinitely.
-- Sanitize filenames derived from font metadata or archive entries so they are safe for the file system and free of path traversal issues.
-- Log progress, warnings for unreadable or invalid fonts, and a final summary reporting how many APKs were scanned, how many fonts were extracted, and how many failed.
-- Exit with a non-zero status code if no fonts could be extracted or if required inputs are invalid, and zero otherwise.
-The script should be self-contained, runnable from the terminal, and designed so that it can be reused in batch workflows over a large collection of APK files.
----"""
 
 from __future__ import annotations
 import argparse
@@ -21,8 +9,10 @@ from pathlib import Path
 import re
 import sys
 import zipfile
+
 from fontTools.ttLib import TTFont
 from loguru import logger
+
 
 WORKERS: int = 8
 DEFAULT_OUTPUT_DIR: Path = Path("/sdcard/_static/fonts")

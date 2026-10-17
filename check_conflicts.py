@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the current Python environment for installed packages and detects naming conflicts between local module files and standard or third-party package names. The tool should accept an optional path to a JSON file containing a list of known PyPI package names (with a sensible default location) and an optional output path for a conflict report (defaulting to a JSON file in the current directory). If the PyPI name list is missing, it should print a warning to stderr and continue with the remaining checks rather than failing.
-The script should gather the set of standard library module names, the names of all installed distributions (normalizing names so that hyphens, underscores, and dots are treated equivalently and comparisons are case-insensitive), and the names of the known PyPI packages. It should then examine the project's Python files and flag any local module or package whose name shadows a standard library module, an installed distribution, or a known PyPI package, since such shadowing can cause import errors or unexpected behavior.
-For each detected conflict, record the local file path, the conflicting name, the category of conflict (standard library, installed, or PyPI), and a brief suggested remediation such as renaming the file. Write the complete results to the report file in a structured JSON format that includes a timestamp, the total counts of files scanned and conflicts found, and the list of individual conflicts. Print a concise human-readable summary to the console, and exit with a non-zero status code when conflicts are found so the tool can be used in automated checks. Handle unreadable files, malformed JSON input, and missing packages gracefully with clear error messages, and make the tool runnable from the command line with helpful usage information.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,7 +7,9 @@ from pathlib import Path
 import re
 import sys
 import time
+
 from dh import STDLIB
+
 
 PIP_JSON = Path("/sdcard/data/pip.json")
 DEFAULT_REPORT = Path("conflict_report.json")

@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user's personal scripts directory, analyzes which third-party package modules are imported across those scripts, and produces a usage report that highlights the most frequently used packages and their import patterns.
-The tool should accept command-line options to specify the target package to track (defaulting to a short, common package name), the directory of scripts to scan (defaulting to a standard personal "bin" folder in the user's home directory), the output file location for a plain-text report (defaulting to a file in the user's home directory), and the number of top entries to display. It should walk through all Python files in the given directory, parse each one safely without executing it, and identify every import of the target package, including both direct imports and `from ... import` forms, and tolerate files that fail to parse by skipping them and noting the failure.
-For each script that uses the target package, the tool should record which specific submodules and attributes are referenced, and count how often each one appears across all scripts. It should also determine which standard library and third-party modules are used alongside the target package, distinguishing standard library modules from external ones using a built-in fallback list when the runtime's standard library list is unavailable.
-The output should include a plain-text report summarizing: total number of scripts scanned, number of scripts using the target package, the most commonly used submodules and attributes with coun most common co-imported modules, and a per-script breakdown listing each file and the usages found in it. The report should be written to the specified output file and also printed in a concise form to the console.
-Optionally, the tool should be able to generate a bar chart visualization of the top usage counts and save it as an image file in a specified directory, using a configurable plot style, and should degrade gracefully with a clear message if the charting capability is not available in the environment.
-The script should handle errors robustly: missing directories should produce a clear error message and a nonzero exit status, unreadable or malformed files should be skipped with warnings, and the tool should run safely without executing any of the analyzed scripts.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,6 +10,7 @@ import importlib
 from pathlib import Path
 import sys
 from typing import Any, Sequence
+
 
 DEFAULT_PACKAGE = "dh"
 DEFAULT_DIR = Path.home() / "bin"

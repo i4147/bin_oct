@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a terminal-based PDF viewer, letting a user page through and read a PDF document directly inside a command-line window. The tool should take a PDF file path as its main input, along with optional command-line arguments that control basic display behavior, and should display a user-friendly error message and exit cleanly if the required PDF rendering dependency is not installed or the file cannot be opened or contains no pages.
-The script should render each PDF page as an image and draw it in the terminal using text-based graphics, so that a full page can be seen without leaving the shell. It should adapt the rendered output to the current terminal size, keep the display readable at different window dimensions, and recalculate the layout when the window is resized. Pages should be rendered on demand and a small cache of recently viewed pages should be kept so that moving back and forth stays responsive.
-Navigation should be keyboard-driven: the user can move to the next and previous pages, jump to the first or last page, go to a specific page number, and zoom in and out or fit the page to the window. The interface should show a concise status line or indicator with the current page number, total page count, zoom level, and a brief help hint, rendered with a visible highlight style that stands apart from the page content.
-The terminal should be placed into a full-screen alternate buffer while the viewer runs, with the cursor hidden during display and everything restored cleanly on exit, including after an interruption or error. Keyboard input should be read in a way that responds immediately to single keypresses, and the script should handle quitting gracefully from any state.
-The output should be a single, self-contained, runnable script that includes a usage description a standard help option, validates its inputs, and produces a predictable, polished terminal experience.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,10 +10,17 @@ import sys
 import termios
 import tty
 
+
 try:
-    import fitz
+    import pymupdf
 except ImportError:
-    sys.exit("tpv: PyMuPDF is required.  Install it with:  pip install PyMuPDF")
+    sys.exit("PyMuPDF is required.  Install it with:  pip install PyMuPDF")
+try:
+    import readchar
+    from readchar import key as rk
+except ImportError:
+    sys.exit("readchar is required.  Install it with:  pip install readchar")
+
 RESET = "\x1b[0m"
 HOME = "\x1b[H"
 CLEAR = "\x1b[2J"
@@ -28,26 +29,46 @@ SHOW_CURSOR = "\x1b[?25h"
 ENTER_ALT = "\x1b[?1049h"
 LEAVE_ALT = "\x1b[?1049l"
 REVERSE = "\x1b[7m"
-HALF_BLOCK = "\u2580"
+
+# Sentinel returned by our getchar_fn when no byte arrives within the
+# sequence-assembly timeout.  It is \x00 so readchar's ord() checks treat
+# it as a non-'[' continuation byte and return ESC + sentinel for a lone Esc.
+TIMEOUT_SENTINEL = "\x00"
 
 
 class RenderError(RuntimeError):
     pass
 
 
-class Renderer:
-    CACHE_LIMIT = 6
+def _wrap_line(text: str, width: int) -> list[str]:
+    text = text.replace("\r", "").replace("\t", "    ").rstrip()
+    if not text:
+        return [""]
+    out: list[str] = []
+    while len(text) > width:
+        cut = text.rfind(" ", 0, width + 1)
+        if cut <= 0:
+            cut = width
+        out.append(text[:cut].rstrip())
+        text = text[cut:].lstrip()
+        if not text:
+            return out
+    out.append(text)
+    return out
+
+
+class TextExtractor:
+    CACHE_LIMIT = 8
 
     def __init__(self, path: str) -> None:
         self.path = path
         try:
-            self.doc = fitz.open(path)
+            self.doc = pymupdf.open(path)
         except Exception as exc:
             raise RenderError(str(exc)) from exc
         if self.doc.page_count == 0:
-            msg = "document contains no pages"
-            raise RenderError(msg)
-        self._cache: dict[tuple[int, int], tuple[int, int, bytes]] = {}
+            raise RenderError("document contains no pages")
+        self._cache: dict[tuple[int, int], list[str]] = {}
 
     def close(self) -> None:
         with contextlib.suppress(Exception):
@@ -56,86 +77,61 @@ class Renderer:
     def page_count(self) -> int:
         return self.doc.page_count
 
-    def page(self, index: int, width: int) -> tuple[int, int, bytes]:
+    def page_lines(self, index: int, width: int) -> list[str]:
+        width = max(1, width)
         key = (index, width)
         hit = self._cache.get(key)
         if hit is not None:
             return hit
         try:
             pdf_page = self.doc.load_page(index)
+            blocks = pdf_page.get_text("blocks")
         except Exception as exc:
-            msg = f"cannot load page {index + 1}: {exc}"
-            raise RenderError(msg) from exc
-        rect = pdf_page.rect
-        if rect.width <= 0 or rect.height <= 0:
-            msg = f"page {index + 1} has zero area"
-            raise RenderError(msg)
-        scale = width / rect.width
-        matrix = fitz.Matrix(scale, scale)
-        try:
-            pix = pdf_page.get_pixmap(
-                matrix=matrix,
-                colorspace=fitz.csRGB,
-                alpha=False,
-                annots=True,
-            )
-        except Exception as exc:
-            msg = f"failed to render page {index + 1}: {exc}"
-            raise RenderError(msg) from exc
-        if pix.n != 3 or pix.alpha:
-            pix = fitz.Pixmap(fitz.csRGB, pix)
-        w, h = pix.width, pix.height
-        samples = bytes(pix.samples)
-        if len(samples) < w * h * 3:
-            msg = "renderer produced a truncated pixmap"
-            raise RenderError(msg)
-        if len(samples) != w * h * 3:
-            stride = len(samples) // h
-            samples = b"".join(samples[r * stride : r * stride + w * 3] for r in range(h))
-        result = (w, h, samples)
+            raise RenderError(f"cannot extract page {index + 1}: {exc}") from exc
+        lines: list[str] = []
+        for block in blocks:
+            if len(block) < 5:
+                continue
+            block_type = block[6] if len(block) > 6 else 0
+            if block_type != 0:
+                continue
+            text = block[4]
+            if not text:
+                continue
+            for para in text.split("\n"):
+                if not para.strip():
+                    lines.append("")
+                    continue
+                lines.extend(_wrap_line(para, width))
+            lines.append("")
+        while lines and lines[-1] == "":
+            lines.pop()
         if len(self._cache) >= self.CACHE_LIMIT:
             self._cache.clear()
-        self._cache[key] = result
-        return result
+        self._cache[key] = lines
+        return lines
 
 
-def read_key(fd: int, timeout: float | None = None) -> str | None:
-    ready, _, _ = select.select([fd], [], [], timeout)
+def _timed_getchar() -> str:
+    """One-byte reader with a short timeout, used by readchar.readkey()
+    so a lone ESC does not block waiting for a continuation byte."""
+    ready, _, _ = select.select([sys.stdin], [], [], 0.05)
     if not ready:
-        return None
-    first = os.read(fd, 1)
-    if not first:
-        return "q"
-    if first != b"\x1b":
-        return first.decode("utf-8", "replace")
-    seq = bytearray(first)
-    while len(seq) < 8:
-        ready, _, _ = select.select([fd], [], [], 0.03)
-        if not ready:
-            break
-        seq += os.read(fd, 1)
-        if seq[-1:].isalpha() or seq[-1:] == b"~":
-            break
-    return seq.decode("latin-1")
+        return TIMEOUT_SENTINEL
+    return readchar.readchar()
 
 
 class Viewer:
-    MIN_ZOOM = 0.25
-    MAX_ZOOM = 8.0
-    ZOOM_STEP = 1.25
-    MAX_RENDER_WIDTH = 4000
-
-    def __init__(self, path: str, page: int = 1, zoom: float = 1.0) -> None:
+    def __init__(self, path: str, page: int = 1) -> None:
         self.path = path
-        self.renderer = Renderer(path)
-        self.page_count = self.renderer.page_count()
+        self.extractor = TextExtractor(path)
+        self.page_count = self.extractor.page_count()
         if self.page_count == 0:
-            msg = "document contains no pages"
-            raise RenderError(msg)
+            raise RenderError("document contains no pages")
         self.page_index = max(0, min(page - 1, self.page_count - 1))
-        self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, zoom))
-        self.x = 0
-        self.y = 0
+        self.scroll = 0
+        self.lines: list[str] = []
+        self._lines_key: tuple[int, int] | None = None
         self.running = True
 
     def term_size(self) -> tuple[int, int]:
@@ -146,177 +142,100 @@ class Viewer:
         _, lines = self.term_size()
         return max(1, lines - 1)
 
-    def render_width(self) -> int:
+    def load_lines(self) -> list[str]:
         cols, _ = self.term_size()
-        return max(1, min(self.MAX_RENDER_WIDTH, round(cols * self.zoom)))
+        key = (self.page_index, cols)
+        if self._lines_key != key:
+            self.lines = self.extractor.page_lines(self.page_index, cols)
+            self._lines_key = key
+        return self.lines
 
-    def page_px_size(self) -> tuple[int, int]:
-        w, h, _ = self.renderer.page(self.page_index, self.render_width())
-        return w, h
+    def _clamp(self) -> None:
+        try:
+            lines = self.load_lines()
+        except RenderError:
+            self.scroll = 0
+            return
+        max_scroll = max(0, len(lines) - self.view_rows())
+        self.scroll = max(0, min(self.scroll, max_scroll))
 
-    @staticmethod
-    def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
-        bottom = top + 1
-        have_top = 0 <= top < h
-        have_bot = 0 <= bottom < h
-        base_t = top * w * 3
-        base_b = bottom * w * 3
-        out: list[str] = []
-        last_fg: tuple[int, int, int] | None = None
-        last_bg: tuple[int, int, int] | None = None
-        blank = False
-        for i in range(cols):
-            x = x0 + i
-            if x >= w:
-                if not blank:
-                    out.append(RESET)
-                    last_fg = last_bg = None
-                    blank = True
-                out.append(" ")
-                continue
-            blank = False
-            if have_top:
-                p = base_t + x * 3
-                fg = (data[p], data[p + 1], data[p + 2])
-            else:
-                fg = (0, 0, 0)
-            if have_bot:
-                p = base_b + x * 3
-                bg = (data[p], data[p + 1], data[p + 2])
-            else:
-                bg = (0, 0, 0)
-            if fg != last_fg:
-                out.append(f"\x1b[38;2;{fg[0]};{fg[1]};{fg[2]}m")
-                last_fg = fg
-            if bg != last_bg:
-                out.append(f"\x1b[48;2;{bg[0]};{bg[1]};{bg[2]}m")
-                last_bg = bg
-            out.append(HALF_BLOCK)
-        out.append(RESET)
-        return "".join(out)
-
-    def _status(self, cols: int, note: str = "") -> str:
-        name = os.path.basename(self.path)
-        if note:
-            line = f" {note} "
-        else:
-            try:
-                _, h = self.page_px_size()
-            except RenderError:
-                h = 0
-            rows = self.view_rows()
-            max_y = max(0, h - rows * 2)
-            pct = 100 if max_y == 0 else round(100 * self.y / max_y)
-            line = f" {name}  {self.page_index + 1}/{self.page_count}  {pct:3d}%  {self.zoom:.2f}x "
-        hint = " q quit  n/p page  j/k scroll  +/- zoom "
-        if len(line) + len(hint) <= cols:
-            line = line + " " * (cols - len(line) - len(hint)) + hint
-        return REVERSE + line[:cols].ljust(cols) + RESET
+    def goto_page(self, index: int) -> None:
+        if 0 <= index < self.page_count:
+            self.page_index = index
+            self.scroll = 0
+            self._lines_key = None
 
     def draw(self) -> None:
         cols, _ = self.term_size()
         rows = self.view_rows()
-        width = self.render_width()
         error: str | None = None
         try:
-            w, h, data = self.renderer.page(self.page_index, width)
+            lines = self.load_lines()
         except RenderError as exc:
             error = str(exc)
-            w = h = 1
-            data = b"\x00\x00\x00"
+            lines = []
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
-            w = h = 1
-            data = b"\x00\x00\x00"
-        if error is None:
-            max_y = max(0, h - rows * 2)
-            self.y = max(0, min(self.y, max_y))
-            max_x = max(0, w - cols)
-            self.x = max(0, min(self.x, max_x))
-        buf = [HOME]
+            lines = []
+        max_scroll = max(0, len(lines) - rows)
+        self.scroll = max(0, min(self.scroll, max_scroll))
+        buf: list[str] = [HOME]
         if error:
             buf.append(RESET)
             buf.append(f" {error} ".ljust(cols)[:cols])
             for _ in range(rows - 1):
                 buf.append("\r\n")
         else:
-            for row in range(rows):
-                buf.append(self._paint_row(data, w, h, self.y + row * 2, self.x, cols))
+            for i in range(rows):
+                idx = self.scroll + i
+                line = lines[idx] if idx < len(lines) else ""
+                buf.append(line[:cols].ljust(cols))
                 buf.append("\r\n")
         buf.append(RESET)
-        buf.append(self._status(cols, error or ""))
+        buf.append(self._status(cols, error or "", len(lines), rows))
         sys.stdout.write("".join(buf))
         sys.stdout.flush()
 
-    def goto_page(self, index: int) -> None:
-        if 0 <= index < self.page_count:
-            self.page_index = index
-            self.x = self.y = 0
-
-    def screen_down(self) -> None:
-        step = self.view_rows() * 2
-        _, h = self.page_px_size()
-        max_y = max(0, h - step)
-        if self.y >= max_y:
-            if self.page_index + 1 < self.page_count:
-                self.page_index += 1
-                self.x = self.y = 0
+    def _status(self, cols: int, note: str, total: int, rows: int) -> str:
+        name = os.path.basename(self.path)
+        if note:
+            line = f" {note} "
         else:
-            self.y = min(self.y + step, max_y)
-
-    def screen_up(self) -> None:
-        step = self.view_rows() * 2
-        if self.y <= 0:
-            if self.page_index > 0:
-                self.page_index -= 1
-                self.x = 0
-                _, h = self.page_px_size()
-                self.y = max(0, h - step)
-        else:
-            self.y = max(0, self.y - step)
-
-    def set_zoom(self, value: float) -> None:
-        value = max(self.MIN_ZOOM, min(self.MAX_ZOOM, value))
-        if value == self.zoom:
-            return
-        old_w = self.render_width()
-        _, old_h = self.page_px_size()
-        frac = self.y / old_h if old_h else 0.0
-        self.zoom = value
-        new_w = self.render_width()
-        new_h = max(1, round(old_h * new_w / old_w))
-        self.y = int(frac * new_h)
+            max_scroll = max(0, total - rows)
+            pct = 100 if max_scroll == 0 else round(100 * self.scroll / max_scroll)
+            line = f" {name}  {self.page_index + 1}/{self.page_count}  {pct:3d}% "
+        hint = " q quit  n/p page  j/k line  PgUp/PgDn scroll "
+        if len(line) + len(hint) <= cols:
+            line = line + " " * (cols - len(line) - len(hint)) + hint
+        return REVERSE + line[:cols].ljust(cols) + RESET
 
     def handle(self, key: str) -> None:
-        if key in ("q", "Q", "\x03") or key == "\x1b":
+        if key in ("q", "Q", rk.CTRL_C):
             self.running = False
-        elif key in ("j", "\x1b[B", "\n", "\r"):
-            self.y += 2
-        elif key in ("k", "\x1b[A"):
-            self.y -= 2
-        elif key in ("h", "\x1b[D"):
-            self.x -= 4
-        elif key in ("l", "\x1b[C"):
-            self.x += 4
-        elif key in (" ", "\x1b[6~", "f", "J"):
-            self.screen_down()
-        elif key in ("b", "\x1b[5~", "K"):
-            self.screen_up()
+            return
+        # Lone Escape (with no continuation byte within the timeout).
+        if key == rk.ESC or key == rk.ESC + TIMEOUT_SENTINEL:
+            self.running = False
+            return
+        if key in ("j", rk.DOWN, rk.ENTER, "\n"):
+            self.scroll += 1
+        elif key in ("k", rk.UP):
+            self.scroll -= 1
+        elif key in (" ", rk.PAGE_DOWN, "f", "J"):
+            self.scroll += self.view_rows()
+        elif key in ("b", rk.PAGE_UP, "K"):
+            self.scroll -= self.view_rows()
         elif key == "n":
             self.goto_page(self.page_index + 1)
+            return
         elif key in ("N", "p"):
             self.goto_page(self.page_index - 1)
-        elif key in ("g", "\x1b[H", "\x1b[1~", "\x1b[7~", "\x1bOH"):
-            self.x = self.y = 0
-        elif key in ("G", "\x1b[F", "\x1b[4~", "\x1b[8~", "\x1bOF"):
-            self.y = 1 << 30
-        elif key in ("+", "="):
-            self.set_zoom(self.zoom * self.ZOOM_STEP)
-        elif key in ("-", "_"):
-            self.set_zoom(self.zoom / self.ZOOM_STEP)
-        elif key == "0":
-            self.zoom = 1.0
-            self.x = self.y = 0
+            return
+        elif key in ("g", rk.HOME, "\x1b[1~", "\x1b[7~", "\x1bOH"):
+            self.scroll = 0
+        elif key in ("G", rk.END, "\x1b[4~", "\x1b[8~", "\x1bOF"):
+            self.scroll = 1 << 30
+        self._clamp()
 
     def run(self, fd: int) -> None:
         dirty = True
@@ -325,13 +244,21 @@ class Viewer:
             size = self.term_size()
             if size != last_size:
                 last_size = size
-                self.renderer._cache.clear()
                 dirty = True
             if dirty:
                 self.draw()
                 dirty = False
-            key = read_key(fd, 0.25)
-            if key is None:
+            ready, _, _ = select.select([fd], [], [], 0.25)
+            if not ready:
+                continue
+            try:
+                key = readchar.readkey(getchar_fn=_timed_getchar)
+            except KeyboardInterrupt:
+                self.running = False
+                continue
+            except Exception:
+                continue
+            if key == TIMEOUT_SENTINEL:
                 continue
             self.handle(key)
             dirty = True
@@ -340,18 +267,17 @@ class Viewer:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="tpv",
-        description="View a PDF file in the terminal (PyMuPDF backend).",
+        description="View the text of a PDF file in the terminal (PyMuPDF backend).",
     )
     parser.add_argument("file", help="path to the PDF file")
     parser.add_argument("-p", "--page", type=int, default=1, help="page to open first (1-based, default 1)")
-    parser.add_argument("-z", "--zoom", type=float, default=1.0, help="initial zoom factor (default 1.0)")
     args = parser.parse_args(argv)
     if not os.path.isfile(args.file):
         parser.error(f"no such file: {args.file}")
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         parser.error("must be run from an interactive terminal")
     try:
-        viewer = Viewer(args.file, args.page, args.zoom)
+        viewer = Viewer(args.file, args.page)
     except Exception as exc:
         sys.exit(f"tpv: could not open {args.file!r}: {exc}")
     fd = sys.stdin.fileno()
@@ -367,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         termios.tcsetattr(fd, termios.TCSADRAIN, saved)
         sys.stdout.write(RESET + SHOW_CURSOR + LEAVE_ALT)
         sys.stdout.flush()
-        viewer.renderer.close()
+        viewer.extractor.close()
     return 0
 
 

@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a general-purpose data format converter for tabular and structured data files. The tool should accept a single input file and an output target format specified on the command line, then convert the data and write it to a new file.
-Requirements:
-- **Supported input formats:** SQLite databases (detected by file extension and by checking the file's binary header signature), JSON, JSON Lines/NDJSON, CSV, TSV, pickled Python data, Parquet, and Excel spreadsheets. The format should be inferred automatically from the file extension, and the tool should reject unsupported extensions with a clear error message.
-- **Supported output formats:** the same family of formats, including SQLite database output. The target format should be selectable by name or extension, with common aliases accepted (for example, both "sqlite" and "db", or "jsonl" and "ndjson", should be treated equivalently).
-- **Input handling:** for SQLite inputs, read the tables (allowing a specific table to be selected, with a sensible default when only one table exists). For tabular text and binary formats, load the content into a consistent in-memory tabular representation. Handle missing or malformed files gracefully with informative errors.
-- **Output handling:** write the converted data to the specified output path. For SQLite output, create or replace a named table within the database file. For text-based formats, produce well-formed output that another tool can read back without loss of meaning. Preserve column names and row values as faithfully as the target format allows.
-- **Command-line interface:** provide clear arguments for the input path, output path, optional target format override, and optional table name for SQLite operations. Include helpful usage text and a readable success message summarizing the conversion (such as the number of rows and columns written).
-- **Robustness:** validate that input files exist before processing, prevent accidental overwrites when appropriate or clearly warn about them, and return non-zero exit codes on failure.
-- **Scope:** the script should be a self-contained, single-file command-line utility that runs with standard Python and widely used data-handling libraries, focused entirely on reliable conversion between these formats.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,7 +7,9 @@ from pathlib import Path
 import pickle
 import sqlite3
 import sys
+
 import pandas as pd
+
 
 SQLITE_MAGIC = b"SQLite format 3\x00"
 

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a directory tree for text-based source or documentation files, detects which ones contain non-English content, translates that content into English using an online translation service, and writes the results back safely.
-The tool should accept a root directory path and optional settings from the command line, including the list of directories to skip (with sensible defaults for version control, cache, and environment folders), the target language, the number of concurrent workers, and whether to run in a dry-run mode that only reports what would change. Input files may be encoded in a variety of common encodings, so the script must reliably detect or try several encodings before reading each file, and it should skip binary or unreadable files gracefully.
-Detection should identify files containing meaningful amounts of non-English text (for example, Cyrillic or other non-ASCII scripts), while leaving purely English files untouched. Translation should be performed in chunks that respect the translation service's size limits, preserve line structure, and avoid altering code syntax, identifiers, or formatting where practical. Translation requests should be retried with exponential backoff and jitter when transient errors or rate limits occur, and the script should stop gracefully if the service repeatedly rejects requests for rate-limit reasons.
-The script should process multiple files concurrently, show clear progress and logging, and produce a final summary listing the number of files scanned, translated, skipped, and failed, along with any errors encountered. Translated content should be written atomically (for example, via a temporary file that replaces the original only on success) and should optionally create backups of the originals. The tool must handle keyboard interruption (Ctrl+C) cleanly, finishing or rolling back in-progress work and reporting partial results. Include helpful error messages for invalid paths or missing dependencies, and design the script so it can run both as a command-line utility and as an importable module.
----"""
 
 from __future__ import annotations
 import argparse
@@ -19,7 +14,9 @@ import signal
 import sys
 import time
 from typing import Final, Iterable, Sequence
+
 from deep_translator import GoogleTranslator
+
 
 try:
     from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter

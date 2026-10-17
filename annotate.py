@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an automated type-annotation tool for existing Python source code. It should take one or more Python source files or a project directory as input, analyze their functions and methods, and add or refine type annotations without altering the program's runtime behavior. The tool should leverage type information from a stub-based source of truth (such as typeshed-style stub definitions and inferred call-site types) to propose parameter and return annotations, and it should be able to sanitize references to stub-only modules so the output remains valid, importable Python code.
-Key behaviors:
-- Accept command-line arguments specifying the target files or directory, whether to write changes in place or only preview them, and options controlling how aggressively types are inferred.
-- Preserve the original formatting, comments, and structure of each file as much as possible, modifying only the annotation-related portions.
-- Replace any imports that reference stub-only or non-runtime modules with valid runtime equivalents (for example, substituting standard typing constructs), ensuring the resulting code does not depend on unavailable modules.
-- Run candidate changes in an isolated manner so that a failure in one file does not stop processing of the others, and report per-file success, skipped files, and errors.
-- Verify each modified file still parses and compiles; if verification fails, leave the original file untouched and report the reason.
-- When running in preview mode, print a unified diff of proposed changes for each file instead of writing to disk.
-- Produce a concise summary at the end listing how many files were processed, modified, skipped, and failed, along with the total number of annotations added.
-- Handle file-system edge cases gracefully, including read-only files, missing paths, non-UTF-8 encodings, and unreadable or binary content.
-- Use clear exit codes: zero on full success, a non-zero code when any file failed verification or an unrecoverable error occurred.
----"""
 
 from __future__ import annotations
 import argparse
@@ -27,6 +15,7 @@ import stat
 import subprocess
 import sys
 from typing import Optional
+
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor

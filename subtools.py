@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory of subtitle files (SRT format) and produces a summary of the dialogue they contain. The script should accept a target directory path from the command line, with an option to search subdirectories recursively. It should locate all subtitle files, read each one, and strip out the non-spoken material such as sequence numbers, timestamp lines, and inline formatting or markup tags, leaving only the dialogue text.
-From the cleaned dialogue, the script should compute word-level statistics across all files: the total number of subtitle entries and words processed, and the most frequently used words, excluding common stop words and very short tokens. Results should be presented as a readable, color-highlighted report in the terminal, listing per-file figures alongside overall totals and the top frequent terms.
-The script should handle large collections efficiently by processing files in parallel across multiple worker processes, while remaining robust against malformed or unreadable files: problematic files should be skipped with a clear warning rather than stopping the whole run. It should also report total elapsed time at the end. Optionally, the user should be able to export the results to a structured file (such as CSV or JSON) and to limit how many top terms are displayed. Provide sensible defaults, helpful command-line help text, and clear error messages when the input path is invalid or contains no subtitle files.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +9,7 @@ from pathlib import Path
 import re
 import time
 from typing import Iterable, Optional
+
 
 _ANSI = {
     "red": "\033[31m",

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that takes the path to a JSON file containing a list of quote records (each record is an object with at least a "quote" text field and an "author" field) and cleans up the collection in place. The script should remove duplicate quotes, treating two entries as duplicates when their quote text matches regardless of letter case or surrounding whitespace, keeping only the first occurrence. It should then reorder the remaining entries alphabetically by author name, ignoring case, and save the result back to the same file as human-readable, indented JSON that preserves non-ASCII characters. The file path should be provided as a command-line argument. If the file does not exist, the script should print a clear error message and exit without modifying anything. If the file is empty or contains malformed JSON, it should print a clear error message explaining the problem and leave the file untouched. On success, it should print a short confirmation message indicating the file was sorted. Handle entries that lack an author field gracefully by treating their author as an empty string for sorting purposes.
----"""
 
 from __future__ import annotations
 import json

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an interactive terminal-based disk usage analyzer, similar to the classic "ncdu" utility, for exploring how much space directories and files consume on a filesystem. The tool should accept a starting directory (defaulting to the current directory) from the command line, along with options for verbosity level, an optional log file destination for di version flag.
-The core behavior should be a fast, parallel scan of the directory tree that gathers file sizes and aggregates totals per directory, gracefully handling unreadable paths, permission errors, bro files without crashing. The scanning work should be distributed across multiple worker processes so large filesystems are traversed efficiently, while the results are collected and presented back to the user as they become available.
-Once scanning is underway or complete, present an interactive full-screen text interface in the terminal that lets the user browse the directory hierarchy: navigate into and out of folders, see each entry's size with a visual indication of its proportion relative to its parent, and sort entries by name or size. The interface should show progress information during the scan, display summary totals, and provide keyboard controls for navigation, sorting, refreshing, showing help, and quitting. It should restore the terminal cleanly on exit, including after errors or interruptions.
-Include sensible logging behavior: at low verbosity only warnings are shown, at higher verbosity more detailed informational and debug messages are emitted, and logs are written either to standard error or to the specified log file. Human-readable size formatting should be used throughout the display, and the script should be runnable directly from the command line with clear usage help.
----"""
 
 from __future__ import annotations
 import argparse
@@ -19,6 +14,7 @@ import stat
 import sys
 import time
 from typing import Any, Iterator
+
 
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"

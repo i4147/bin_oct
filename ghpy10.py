@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that searches GitHub for recently created Python repositories and saves a ranked list of them to a text file. The script should load a GitHub API access token from a environment configuration file located in the user's home directory, and fail with a clear error message if the token is missing. It should look for public repositories whose primary language is Python and that were created within the last 10 days, ordered by star count from highest to lowest, retrieving up to 50 results. Authenticate requests to the GitHub REST search API using the token, and handle HTTP errors so that failed requests are reported clearly rather than silently producing bad output. Write each matching repository's full name (owner and repository name) on its own line into an output file named "ghpy10.txt" in the current working directory, overwriting any previous contents. Keep the implementation simple and self-contained, and make sure the script runs as a standalone command-line program.
----"""
 
 from __future__ import annotations
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 import requests
 

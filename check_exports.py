@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a given Python source file and produces a summary of its top-level public definitions. The tool should accept a file path (or a directory of Python files) from the command line, parse each file without executing it, and identify the public functions, classes, and module-level constants defined at the top level of the module. Names beginning with an underscore should be excluded from the results.
-The script should report its findings in a clear, human-readable format, listing each file and the names found in each category, and should handle missing files, non-Python input, files with syntax errors, and encoding problems gracefully by logging a meaningful error message and continuing with the remaining inputs rather than crashing. It should use a logging facility for diagnostics and keep normal output separate from error messages. Include an option to output the results as structured data (such as JSON) for use by other tools, and make sure the command-line interface provides helpful usage information and clear exit codes that indicate whether any errors occurred.
----"""
 
 from __future__ import annotations
 import argparse
 import ast
 from pathlib import Path
+
 from loguru import logger
 
 

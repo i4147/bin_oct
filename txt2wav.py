@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a plain-text file from a user-supplied file path and reads its contents aloud using the device's text-to-speech capability, designed to run in a Termux environment on Android.
-The script should:
-- Accept a path to a UTF-8 encoded text file as its input and fail with a clear, human-readable error message if the file does not exist.
-- Read the full contents of the file and split it into manageable segments so that very long documents are spoken in sequential portions rather than as one oversized utterance. Segment boundaries should respect line and paragraph structure where possible, and any single line that exceeds the maximum segment size must still be broken up so that no segment is too long.
-- Ignore empty or whitespace-only segments so that silence is not produced unnecessarily.
-- Speak each segment in order, waiting for each one to finish before starting the next, so the narration flows continuously from beginning to end.
-- Report a failure clearly if the text-to-speech system returns an error, rather than silently continuing.
-- Provide a simple command-line interface where the file path is supplied as an argument, with brief usage guidance shown when the argument is missing.
-- Keep the design simple, readable, and dependency-light, relying only on standard facilities and the device's existing speech command.
----"""
 
 from __future__ import annotations
 from pathlib import Path

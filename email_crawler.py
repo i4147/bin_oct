@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Email Crawler – single-file consolidated version
-Original multi-file package (ColorStreamHandler + database + email_crawler + settings)
-"""
 
 from __future__ import annotations
 import curses
@@ -16,7 +12,9 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
+
 
 # ---------------------------------------------------------------------------
 # Settings

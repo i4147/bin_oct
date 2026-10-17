@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user-specified root folder recursively for image files, groups the images by their pixel dimensions (width × height), and organizes them into a new output directory so that each distinct resolution gets its own subfolder named after that size. The tool should accept the source folder (and optionally an output location) as input, consider only common image formats such as JPEG, PNG, GIF, BMP, TIFF, WebP, and ICO, and safely skip any file that cannot be opened as an image while reporting a warning. When copying or moving files into the size-based folders, it must never overwrite existing files: if a name collision occurs, it should generate a unique filename automatically. The script should check for a required third-party imaging dependency at startup, and if it is missing, print a clear installation instruction and exit gracefully. Provide a concise summary at the end showing how many images were found and how many fall into each resolution group. Keep the interface simple and command-line friendly, with clear error messages for invalid or missing paths, and make sure the original files are handled safely according to a sensible default (such as copying rather than deleting originals).
----"""
 
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 import shutil
 import sys
+
 
 try:
     from PIL import Image

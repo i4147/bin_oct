@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree on the local machine and builds a personal dictionary of words that a spell checker does not recognize, so the user can review potential misspellings or project-specific vocabulary.ool should:
-- Accept a starting directory (defaulting to the current working directory) and recursively walk through its contents.
-- Skip common non-source directories such as version control folders, dependency and virtual environment folders, build output, caches, and IDE metadata, as well as binary files and compiled artifacts, so that only human-readable text files are analyzed.
-- Detect whether a file is text rather than binary before reading it, and handle unreadable files or encoding problems gracefully without stopping the run.
-- Extract alphabetic words from file contents, treating contractions and apostrophe-joined words as single tokens and ignoring numbers and underscores.
-- Check each extracted word against an English spell-checking dictionary, ignoring case where appropriate, and collect the words that are not recognized.
-- Process files in parallel across multiple worker processes to keep scanning fast on large projects, while safely merging results from all workers.
-- Write the final collection of unrecognized words, one per line in sorted order, to a file in the user's home directory named `.personal_dict`, overwriting or merging with any existing content as appropriate.
-- Print concise progress or summary information to the console, such as the number of files scanned and unique words found, and report errors clearly without crashing.
-- Run as a command-line program with sensible defaults, allowing the user to optionally specify the target directory and perhaps extra ignore rules.
----"""
 
 from __future__ import annotations
 import multiprocessing as mp
@@ -17,7 +6,9 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator
+
 from spellchecker import SpellChecker
+
 
 WORD_RE = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*", re.UNICODE)
 _TEXT_CHARS = bytes({7, 8, 9, 10, 12, 13, 27} | (set(range(0x20, 0x100)) - {0x7F}))

@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that batch-converts HTML web pages into clean Markdown files. The tool should accept a single HTML file or a directory of HTML files as input, along with an output location and options controlling the conversion. Before conversion, it should strip out non-content elements from each page, such as scripts, styles, comments, navigation bars, footers, sidebars, embedded frames, noscript blocks, and forms, so that only the main readable content remains. The cleaned HTML should then be converted into Markdown, with the resulting .md file written alongside or into a designated output folder under the same base name as the source file. Only files with .html or .htm extensions should be processed; any other file should be skipped with a clear warning message. When processing a directory, the tool should handle many files efficiently, ideally in parallel using a sensible default number of workers that the user can override from the command line. The script should report progress and a final summary showing how many files were converted, skipped, or failed, and should continue processing remaining files if one fails rather than stopping entirely. Provide a command-line interface with clear help text, sensible defaults, and input validation that gives helpful error messages for missing paths or invalid arguments.
----"""
 
 from __future__ import annotations
 import argparse
 from multiprocessing import cpu_count
 from pathlib import Path
 import sys
+
 from bs4 import BeautifulSoup
 from html_to_markdown import Options, convert
 

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a multi-tool Python type-checking and linting aggregator. The script should accept a target file or directory of Python code and run several static analysis tools against it, either in parallel across multiple worker processes or sequentially, depending on user configuration. It should support selecting which tools to run, including common checkers such as mypy, pyright, pylint, ty, pyrefly, and pylyzer, and it should apply sensible default tool selections when the user does not specify any.
-The tool should handle missing executables gracefully, reporting clearly when a requested checker is not installed rather than crashing. It should capture each tool's output and exit status, and filter out known noise, such as unresolved-import errors for a specific project-internal module, so that the results remain meaningful.
-The script should produce a consolidated report written to a configurable output directory, with one result file per tool and an overall summary that lists each tool's status, the number of issues found, and the location of its detailed output. It should also print a concise summary to the console. Command-line options should allow the user to choose the target path, the number of workers, the output directory, and the specific tools to run, and it should provide helpful usage and error messages when arguments are invalid.
-The implementation should be robust, cross-platform where practical, and structured so that adding or removing supported tools is straightforward. Choose whatever internal design, libraries, and structure you consider best, provided the observable behavior described above is met.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 from typing import Iterable, Iterator
+
 
 APPEND_TOOLS: dict[str, list[str]] = {
     "ty": ["ty", "check"],

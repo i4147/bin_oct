@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that takes two text file paths from the command line: a primary file and a reference file. The script should remove from the primary file every line whose content matches any line appearing in the reference file, while preserving all other lines exactly as they are, including their original line endings. Comparison should ignore trailing newline characters only; all other characters, including leading whitespace and trailing spaces, must be compared exactly. Both files should be read and written using UTF-8 encoding.
-The script must update the primary file in place in a safe manner: write the filtered content to a temporary file alongside the original, then replace the original with it so that a failure partway through does not corrupt the primary file. The script should exit cleanly on success and return a zero status code. It should accept exactly two positional arguments and run only when executed directly, not when imported as a module.
----"""
 
 from __future__ import annotations
 from pathlib import Path

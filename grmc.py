@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line source-code cleaner for Python files, removing or stripping selected elements (such as comments, docstrings, and type annotations) while preserving the program's runtime behavior and valid syntax. The tool should accept one or more target files or directories as input, optionally process them recursively, and let the user choose which categories of content to strip, including a convenient "remove everything" mode. It should support configurable options for keeping the module-level docstring, removing only inline comments versus all comments, and selecting the parsing/transformation backend, falling back gracefully to an alternative approach when a preferred library is unavailable. Output should either overwrite the original files in place, write results to a separate output location, or perform a dry run that reports what would change without modifying anything. The script should handle multiple files efficiently (for example, by processing them in parallel), skip or report files that fail to parse without aborting the whole run, preserve file encodings and line endings where feasible, and emit clear progress and summary logging, including counts of files processed, changed, and failed. It should validate that its output is still syntactically valid Python, exit with a meaningful status code reflecting success or errors, and provide a clear help message describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,7 +11,9 @@ from pathlib import Path
 import sys
 import tempfile
 from typing import Any
+
 from loguru import logger
+
 
 try:
     import libcst as cst

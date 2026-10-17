@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import ast
@@ -15,6 +16,7 @@ import tarfile
 import textwrap
 from typing import Iterable, Iterator
 import zipfile
+
 
 try:
     import libcst as cst

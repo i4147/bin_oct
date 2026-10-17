@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that takes a path to another Python source file, reads it safely, and reorganizes its top-level structure into a consistent, standardized layout without changing its behavior. The tool should preserve a leading shebang line at the top, keep the module docstring (if one exists) directly after it, and then group the remaining top-level definitions so that imports, functions, classes, and the main entry-point block appear in a predictable order, with the main execution block placed last. It should handle files that cannot be read or that contain syntax errors by reporting a clear error message and leaving the original file untouched. Each top-level element should be preserved exactly as written, including its comments and formatting where feasible, and the output should remain valid, runnable Python. The script should accept a file path from the command line, write the reorganized code back to that file (or to a clearly indicated output location), and print a concise status message describing the result. Focus on robustness, clean output, and maintaining the original semantics of the code.
----"""
 
 from __future__ import annotations
 import ast

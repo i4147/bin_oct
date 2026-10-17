@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that processes a collection of Python source files and translates their docstrings and comments into English, while leaving the executable code itself untouched. The script should accept a source directory or file list as input and produce updated files (or a report of changes) as output.
-Key requirements:
-- **Purpose:** Scan Python files, identify docstrings and comments that are written in non-English languages (detected through character-set heuristics and common stopword patterns for several languages), and replace them with English translations, preserving the original code structure, indentation, and syntax validity.
-- **Input:** A path to a directory or one or more Python files, plus optional settings such as chunk size, number of parallel workers, request delay, timeout, and maximum retry count.
-- **Output:** The modified source files written safely (e.g., via a temporary file that is atomically swapped in), along with a summary of how many files, docstrings, and comments were processed or skipped. Logging should report progress and errors.
-- **Translation behavior:** Send text to an external translation web service over HTTP, batching text into chunks to respect size limits. Handle rate limiting and transient network failures with retries and backoff, and skip (rather than corrupt) segments that fail to translate.
-- **Parallelism:** Process files concurrently across multiple worker processes, coordinating shared counters safely across workers.
-- **Safety:** Never alter code tokens, string literals used as data, or identifiers. Validate that each modified file still parses as valid Python before committing changes; if validation fails, leave the original file intact.
-- **Idempotency:** Files that are already fully in English should be left unchanged and not sent for translation.
-- **Command-line interface:** Expose options through a clear command-line interface with sensible defaults and a helpful usage message.
----"""
 
 from __future__ import annotations
 import argparse
@@ -27,7 +16,9 @@ from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
 from loguru import logger
+
 
 WORKER_COUNT: Final[int] = 8
 DEFAULT_CHUNK_SIZE: Final[int] = 2500

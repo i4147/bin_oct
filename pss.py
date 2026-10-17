@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that searches a local SQLite database of package names and their download counts, then prints the most relevant matches for a user-supplied query.
-The script should automatically locate the database file at a fixed default path, but also allow the user to override that path from the command line. It should inspect the database schema on its own, choosing a suitable table: prefer a table with exactly two columns, where the first column holds a name (such as a package name) and the second holds a numeric download or popularity count. If no such table exists, fall back to the first table with at least two columns, and exit with a clear error message if the database is empty or the schema is unusable.
-The main behavior is fuzzy, forgiving name search. Given a search term, the script should rank matching names using a combination of exact matches, prefix matches, substring matches, and approximate (typo-tolerant) similarity, so that the most relevant results appear first. Results should be ordered primarily by relevance and secondarily by download count. Searches should be case-insensitive. Short search terms should still return useful results, and the script should support a configurable maximum number of results, with a sensible default.
-Consider using an efficient indexing or candidate-filtering strategy so that searches remain fast on large databases with many thousands of rows, rather than scoring every row naively where avoidable.
-The output should be a clean, human-readable list showing each matched name, its download count formatted for readability (for example with thousands separators), and its rank. The script should handle empty queries gracefully, report when nothing matches, and handle a missing database file or database errors with friendly messages and nonzero exit codes instead of tracebacks.
-Provide a simple command-line interface: the search term is a required positional argument, with optional flags for the database path, the result limit, and an option to output results as JSON. Include brief usage help.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +6,7 @@ import heapq
 from pathlib import Path
 import sqlite3
 import sys
+
 
 DB_PATH = Path("/sdcard/data/pip.db")
 DEFAULT_LIMIT = 20

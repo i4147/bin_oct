@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line code formatting and modernization tool for Python source files. It should accept one or more file or directory paths (optionally with glob-style include/exclude patterns), recursively discover Python source files (such as .py, .pyi, and .pyw), and skip common non-source directories like version control folders, virtual environments, and caches.
-The tool should rewrite source code in place to target a recent Python language version by applying safe, behavior-preserving transformations that modernize syntax and idioms, while leaving all other formatting intact as much as possible. It must preserve comments, encoding cookies, and special directive comments (such as type or fmt directives), and must never alter code semantics.
-Key behaviors:
-- Support a dry-run mode that reports which files would change without writing anything, and a check mode that exits with a non-zero status if any file would be modified, suitable for CI pipelines.
-- Show a unified diff of proposed changes when requested, and produce a clear summary of how many files were scanned, modified, unchanged, or failed.
-- Process files in parallel with a configurable number of worker processes, with an option to run sequentially for debugging.
-- Accept a configurable target language version and a line-length setting, and allow users to enable or disable specific transformation rules.
-- Write changes atomically and safely, preserving file permissions and line endings, and skip files that cannot be parsed, reporting the error without aborting the whole run.
-- Respect interrupt signals gracefully, shutting down worker processes cleanly.
-- Log progress and errors using a structured logging approach with adjustable verbosity, and optionally emit a machine-readable JSON report of results.
-- Provide a version flag and clear help documentation for all options, with sensible defaults so it runs with just a path argument.
-- Exit with distinct status codes for success, unchanged-in-check-mode, internal errors, and invalid usage.
----"""
 
 from __future__ import annotations
 import argparse
@@ -33,8 +20,10 @@ import sys
 import tempfile
 import textwrap
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
+
 import libcst as cst
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

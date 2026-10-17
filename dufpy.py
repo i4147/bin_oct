@@ -1,42 +1,87 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a collection of Python source files and removes all type annotations from them, producing annotation-free versions of the code while preserving its runtime behavior.
-The tool should:
-- Accept a directory or set of Python files as input, discover all Python files within it, and process them.
-- Parse each file into its syntax structure, strip every form of type annotation (function return types, parameter annotations, and variable annotations), and regenerate valid Python source code from the result.
-- Handle annotated variable declarations that have an initial value by converting them into plain assignments, and handle declarations without a value by replacing them with a no-op statement so the code remains valid.
-- Support both regular and asynchronous function definitions.
-- Process files in parallel to speed up work on large codebases, with an option to control the number of workers.
-- Skip or report files that fail to parse, without halting the entire run.
-- Write the stripped output to a destination (in-place or to a mirrored output directory), and provide a summary of how many files were processed, updated, and skipped.
-- Use a content-based fingerprint so unchanged files are not reprocessed on subsequent runs, if they have not changed since the last run.
-- Print clear, colorized progress and status messages to the console.
-- Ensure the resulting code is syntactically valid and importable, with no behavioral changes beyond removing annotations.
----"""
+"""Find duplicate Python files after normalizing away noise.
+
+Normalization removes comments (incl. shebangs), docstrings, type
+annotations, blank lines, and source positions. Two files are duplicates
+when their normalized ASTs are identical.
+
+The normalized AST is hashed with xxHash, then re-verified before any
+deletion when ``-r`` is used.
+"""
 
 from __future__ import annotations
+
+import argparse
 import ast
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+
 from dh import cprint, get_pyfiles
-from joblib import Parallel, delayed
-from xxhash import xxh64_hexdigest
+
+try:
+    from xxhash import xxh3_64_hexdigest as _hash_bytes
+except ImportError:  # pragma: no cover
+    from xxhash import xxh64_hexdigest as _hash_bytes
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Sequence
+
+try:
+    from rich.progress import (
+        BarColumn,
+        MofNCompleteColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
+
+    _RICH_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _RICH_AVAILABLE = False
 
 
-class TypeAnnotationStripper(ast.NodeTransformer):
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+# ---------------------------------------------------------------------------
+# AST normalization
+# ---------------------------------------------------------------------------
+
+
+def _strip_docstring(node: ast.AST) -> None:
+    """Remove the leading string-literal statement of a body-bearing node."""
+    body = getattr(node, "body", None)
+    if not body:
+        return
+    first = body[0]
+    if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+        del body[0]
+        if not body and not isinstance(node, ast.Module):
+            body.append(ast.Pass())
+
+
+class Normalizer(ast.NodeTransformer):
+    """Strip docstrings and type annotations from an AST in place."""
+
+    def visit_Module(self, node: ast.Module) -> ast.AST:
+        _strip_docstring(node)
+        return self.generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
+        _strip_docstring(node)
         node.returns = None
-        self.generic_visit(node)
-        return node
+        return self.generic_visit(node)
 
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
+        _strip_docstring(node)
         node.returns = None
-        self.generic_visit(node)
-        return node
+        return self.generic_visit(node)
 
-    def visit_arg(self, node: ast.arg) -> ast.arg:
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
+        _strip_docstring(node)
+        return self.generic_visit(node)
+
+    def visit_arg(self, node: ast.arg) -> ast.AST:
         node.annotation = None
         return node
 
@@ -44,65 +89,220 @@ class TypeAnnotationStripper(ast.NodeTransformer):
         if node.value is not None:
             new_node = ast.Assign(targets=[node.target], value=node.value)
             return ast.copy_location(new_node, node)
-        pass_node = ast.Pass()
-        return ast.copy_location(pass_node, node)
+        return ast.copy_location(ast.Pass(), node)
 
 
-def mpf(
-    func: Callable[..., Any],
-    items: Iterable[Any],
-    workers: int | None = None,
-) -> list[Any]:
-    n_jobs = -1 if workers is None else workers
-    items_list = list(items)
-    return Parallel(n_jobs=n_jobs)(delayed(func)(item) for item in items_list)
-
-
-def process_file(path: str | Path) -> tuple[str, str] | None:
-    p = Path(path)
+def canonicalize(path: Path) -> str | None:
+    """Return a canonical (normalized, position-free) dump of *path*."""
     try:
-        code = p.read_text(encoding="utf-8")
-        parsed = ast.parse(code)
-        stripper = TypeAnnotationStripper()
-        parsed = stripper.visit(parsed)
-        ast.fix_missing_locations(parsed)
-        unparsed = ast.unparse(parsed)
-        digest = xxh64_hexdigest(unparsed.encode("utf-8"))
-        return digest, str(p)
-    except Exception:
+        source = path.read_bytes()
+        tree = ast.parse(source)
+        Normalizer().visit(tree)
+        return ast.dump(tree, include_attributes=False)
+    except (SyntaxError, ValueError, OSError, MemoryError, RecursionError):
         return None
 
 
-def main() -> None:
-    cwd: Path = Path.cwd()
-    files: list[Path] = list(get_pyfiles(cwd))
-    file_dict: dict[str, list[str]] = {}
-    raw_results = mpf(process_file, files)
-    results: list[tuple[str, str]] = [res for res in raw_results if res is not None]
-    for digest, path in results:
-        file_dict.setdefault(digest, []).append(path)
-    for digest, paths in file_dict.items():
-        if len(paths) > 1:
-            print(f"files with hash: {digest}")
-            for path in paths:
-                print(f"  - {path}")
-    deleted: int = 0
-    for paths in file_dict.values():
-        if len(paths) <= 1:
-            continue
-        for path in paths[1:]:
-            file_path = Path(path)
-            if file_path.exists():
-                try:
-                    file_path.unlink()
-                    print(f"{path} removed")
-                    deleted += 1
-                except OSError as e:
-                    print(f"Failed to remove {path}: {e}")
-    if deleted:
-        cprint(f"{deleted} files removed.", "cyan")
+def process_file(path: Path) -> tuple[str, str] | None:
+    canonical = canonicalize(path)
+    if canonical is None:
+        return None
+    return _hash_bytes(canonical.encode("utf-8")), str(path)
+
+
+# ---------------------------------------------------------------------------
+# Parallel processing
+# ---------------------------------------------------------------------------
+
+
+def _process_batch(paths: Sequence[Path]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    for p in paths:
+        r = process_file(p)
+        if r is not None:
+            out.append(r)
+    return out
+
+
+def _make_progress() -> "Progress":
+    return Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+    )
+
+
+def _run_serial(paths: Sequence[Path], show_progress: bool) -> list[tuple[str, str]]:
+    results: list[tuple[str, str]] = []
+    if show_progress and _RICH_AVAILABLE:
+        with _make_progress() as progress:
+            task = progress.add_task("Hashing files", total=len(paths))
+            for p in paths:
+                r = process_file(p)
+                if r is not None:
+                    results.append(r)
+                progress.update(task, advance=1)
     else:
+        for p in paths:
+            r = process_file(p)
+            if r is not None:
+                results.append(r)
+    return results
+
+
+def process_files(
+    paths: Sequence[Path],
+    workers: int,
+    show_progress: bool,
+) -> list[tuple[str, str]]:
+    if not paths:
+        return []
+
+    # Avoid process-pool overhead for small workloads.
+    if workers <= 1 or len(paths) < 128:
+        return _run_serial(paths, show_progress)
+
+    batch_size = max(32, len(paths) // (workers * 4))
+    batches = [paths[i : i + batch_size] for i in range(0, len(paths), batch_size)]
+
+    results: list[tuple[str, str]] = []
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        if show_progress and _RICH_AVAILABLE:
+            with _make_progress() as progress:
+                task = progress.add_task("Hashing files", total=len(paths))
+                futures = {ex.submit(_process_batch, b): len(b) for b in batches}
+                for fut in as_completed(futures):
+                    results.extend(fut.result())
+                    progress.update(task, advance=futures[fut])
+        else:
+            for chunk in ex.map(_process_batch, batches):
+                results.extend(chunk)
+    return results
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="dupfinder",
+        description=(
+            "Find (and optionally delete) duplicate Python files after "
+            "normalizing away comments, docstrings, shebangs, "
+            "type annotations, and blank lines."
+        ),
+    )
+    parser.add_argument(
+        "-r",
+        "--remove",
+        action="store_true",
+        help="Delete duplicate files (the first file of each group is kept).",
+    )
+    parser.add_argument(
+        "--rich",
+        action="store_true",
+        help="Show a rich progress bar while hashing files.",
+    )
+    parser.add_argument(
+        "-w",
+        "--workers",
+        type=int,
+        default=None,
+        help="Number of worker processes (default: CPU count).",
+    )
+    parser.add_argument(
+        "-d",
+        "--dir",
+        type=Path,
+        default=Path.cwd(),
+        help="Root directory to scan (default: current working directory).",
+    )
+    return parser
+
+
+def _resolve_workers(requested: int | None) -> int:
+    if requested is None:
+        return max(1, os.cpu_count() or 1)
+    return max(1, requested)
+
+
+def _verify_group(paths: Sequence[str]) -> bool:
+    """Re-canonicalize every path and confirm they are truly identical."""
+    first: str | None = None
+    for raw in paths:
+        canonical = canonicalize(Path(raw))
+        if canonical is None:
+            return False
+        if first is None:
+            first = canonical
+        elif canonical != first:
+            return False
+    return True
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
+
+    root: Path = args.dir.expanduser().resolve()
+    if not root.exists():
+        cprint(f"Path does not exist: {root}", "red")
+        return 1
+
+    files: list[Path] = [Path(p) for p in get_pyfiles(root)]
+    if not files:
+        cprint("No Python files found.", "yellow")
+        return 0
+
+    if args.rich and not _RICH_AVAILABLE:
+        cprint("rich is not installed; --rich ignored.", "yellow")
+
+    workers = _resolve_workers(args.workers)
+    results = process_files(files, workers, args.rich and _RICH_AVAILABLE)
+
+    groups: dict[str, list[str]] = {}
+    for digest, path in results:
+        groups.setdefault(digest, []).append(path)
+
+    duplicates = {d: ps for d, ps in groups.items() if len(ps) > 1}
+    if not duplicates:
         cprint("No duplicate files found.", "green")
+        return 0
+
+    extra = sum(len(ps) - 1 for ps in duplicates.values())
+    for digest, paths in duplicates.items():
+        print(f"files with hash: {digest}")
+        for p in paths:
+            print(f"  - {p}")
+    print()
+    cprint(f"{len(duplicates)} group(s), {extra} duplicate file(s).", "cyan")
+
+    if not args.remove:
+        cprint("Pass -r to delete duplicate files.", "yellow")
+        return 0
+
+    deleted = 0
+    for paths in duplicates.values():
+        if not _verify_group(paths):
+            cprint(f"Skipping group due to hash collision: {paths[0]}", "red")
+            continue
+        for raw in paths[1:]:
+            fp = Path(raw)
+            try:
+                fp.unlink()
+                print(f"{raw} removed")
+                deleted += 1
+            except OSError as exc:
+                cprint(f"Failed to remove {raw}: {exc}", "red")
+
+    if deleted:
+        cprint(f"{deleted} file(s) removed.", "cyan")
+    else:
+        cprint("Nothing was removed.", "green")
+    return 0
 
 
 if __name__ == "__main__":

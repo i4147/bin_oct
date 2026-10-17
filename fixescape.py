@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for scanning Python source files and detecting (and optionally auto-fixing) invalid escape sequences in string literals, which trigger SyntaxWarnings in modern Python versions. The tool should accept one or more file paths or directories as input, recursively discover Python files within directories, and process them concurrently across multiple worker processes to keep it fast on large codebases. For each file, it should read the source as UTF-8, detect whether the file contains syntax errors or invalid escape sequence warnings during compilation, and report these findings clearly in the terminal using color-coded output (red for errors and warnings, cyan for informational messages). When fix mode is enabled via a command-line flag, the tool should rewrite problematic string literals by correcting the escape sequences (for example, by converting them to raw strings or doubling backslashes) while preserving the original meaning and leaving the rest of the file's formatting, comments, and code untouched. Use tokenization to identify string literals accurately so that comments and non-string code are never modified. After processing, the tool should print a summary showing how many files were scanned, how many had issues, and how many were fixed, and it should exit with a nonzero status code if any unfixed errors remain. Handle file read errors gracefully by reporting them without crashing the entire run, and ensure the output is readable whether or not the terminal supports color.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +10,7 @@ import re
 import sys
 import tokenize
 import warnings
+
 
 RED = "\033[91m"
 CYAN = "\033[96m"

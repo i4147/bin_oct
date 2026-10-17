@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that watches a directory tree for file changes and reports them in real time to the console, with optional filtering and a way to inspect the tail of changed text files.
-The tool should accept a target directory (defaulting to the current directory) and a command-line option that restricts monitoring to specific file extensions, supplied as a comma-separated list where the leading dot is optional and matching is case-insensitive. When no extensions are given, all files should be monitored.
-For each relevant filesystem event (creation, modification, deletion, or move), the script should print a concise, timestamped line identifying the event type and the affected file path. For modified or newly created files, it should display the file's current size in a human-readable form (such as bytes, KB, MB, GB, or TB) and, when the file is a readable text file, optionally show the last N lines of its content (with N configurable via a command-line option, defaulting to 10). Errors encountered while reading files should be reported to standard error without terminating the program.
-The script should run continuously until the user interrupts it, then shut down cleanly, stopping the monitoring service and releasing resources. It should handle rapid successive events on the same file gracefully, avoiding duplicate or flooding output where practical. Include a clear help message describing all options, and provide meaningful exit behavior for invalid arguments or a nonexistent target directory.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,6 +9,7 @@ import sys
 import threading
 import time
 import traceback
+
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 

@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads font files (such as TrueType or OpenType fonts) from a given folder or set of file paths, extracts each font's family name and style/subfamily name from its embedded naming metadata, and produces a clean, filesystem-safe filename for each font based on those names. The script should prefer English (US) naming records when available, fall back to any printable ASCII name otherwise, and skip fonts that lack a usable family name. Sanitize the resulting names by removing unsafe or non-word characters and trimming stray separators, then rename or report the proposed renames so that no existing file is overwritten (append a unique suffix when a name collision occurs). The script should use clear console output to report progress, successes, and errors for each file, handle corrupted or unreadable font files gracefully without stopping the whole batch, and support a dry-run mode that previews the renifying anything. Provide a command-line interface that accepts the target directory or files as arguments and summarizes the total number of fonts processed, renamed, skipped, and failed at the end.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.ttFont import TTFont

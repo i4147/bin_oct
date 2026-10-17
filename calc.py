@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that implements a terminal-based calculator application with a graphical-style interface rendered in the console. The user should see a numeric display at the top showing the current input or result, and a grid of clickable buttons below it for digits 0–9, a decimal point, basic arithmetic operators (addition, subtraction, multiplication, division), an equals key to evaluate the pending expression, a clear key to reset the state, and a sign-toggle or similar convenience control. The layout should be compact, visually organized into a fixed-column grid, with operator buttons styled distinctly from numeric buttons and the display clearly separated from the keypad.
-The calculator should accept both mouse clicks on buttons and keyboard input (digits, operators, Enter for equals, Escape or a dedicated key for clear, and Backspace to delete the last entered character). It should follow standard calculator behavior: entering a number after a completed result starts fresh, chained operations evaluate left to right, and the display updates immediately after each key press. Handle edge cases gracefully, including division by zero (show a clear error message on the display and allow recovery via clear), repeated decimal points within a single number, and pressing operators consecutively (the most recent operator should replace the previous one).
-Design the application so the numeric logic is separated from the presentation layer, making the arithmetic behavior testable on its own. Keep the code self-contained and runnable as a single script launched from the command line, with the application exiting cleanly when the user presses a quit key (such as Q or Ctrl+C). Include brief inline documentation explaining the key behaviors and how to run the program.
----"""
 
 from __future__ import annotations
 import re
 import sys
+
 from textual.app import App, ComposeResult
 from textual.containers import Grid
 from textual.widgets import Button, Static

@@ -1,13 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up a requirements file by removing entries that do not need to be installed. The script should accept an optional path to a requirements file as a command-line argument, defaulting to a standard "requirements.txt" in the current directory if none is given.
-The script should read the requirements file, ignoring blank lines and comment lines. It should normalize each package name so that differences in case and in hyphen versus underscore spelling are treated as equivalent. It should then remove any package that is already installed in the current Python environment, and any package that belongs to the Python standard library, since these never need to be listed as dependencies.
-After filtering, the script should remove duplicate entries, sort the remaining names alphabetically, and overwrite the original file with the cleaned list using UTF-8 encoding, one package per line with a trailing newline. Finally, it should print a short message to the console stating how many packages were removed.
-The script should handle the case where the file is missing or unreadable by reporting a clear error rather than crashing with an unhandled traceback, and it should not modify the file if no changes are needed. Choose any suitable libraries and internal structure, provided the observable behavior described above is preserved.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import STDLIB, get_installed_pkgs
 
 

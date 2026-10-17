@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an interactive terminal-based duplicate file finder and cleaner. The tool should let a user choose a directory to scan (through a navigable directory browser in the terminal), then recursively discover all files under it, and identify duplicate files using a two-stage approach: first grouping candidates by size and name similarity, then confirming exact duplicates by content hashing. It should also detect near-duplicates by filename similarity, with each group carrying a match score and a reason label (such as exact content match or similar name). Each duplicate group should track its member files and the total size they occupy.
-The interface should present results in a sortable, selectable table show files, sizes, and match details, with a summary of total reclaimable space. Users must be able to mark which copies to keep and which to delete, with a clear confirmation step before any deletion occurs, and an option to choose a deletion strategy (such as keeping the oldest, newest, or shortest-path copy). Provide a progress indicator during scanning and hashing, a settings area for options like minimum file size, whether to include hidden files, whether to follow symbolic links, and the similarity threshold for near-duplicate detection. The script should handle unreadable files and permission errors gracefully, skip the user-specified exclusions, and never delete the last remaining copy of any file. Include keyboard shortcuts for common actions, a dry-run mode that reports what would be deleted without touching disk, and a final report summarizing actions taken and space freed.
----"""
 
 from __future__ import annotations
 from collections import defaultdict
@@ -11,6 +8,7 @@ import hashlib
 from pathlib import Path
 import sys
 from typing import ClassVar
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding

@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a given file or directory for Python source files, checks each one for syntax validity, and reports the results along with the overall size of the scanned content in a human-readable form.
-The tool should accept a target path from the command line. If the target is a single Python file, it should analyze only that file; if it is a directory, it should recursively discover all Python files beneath it. It must skip anything that is missing, is a symbolic link, or lies inside a version-control metadata folder, so that results reflect only genuine source files.
-For each discovered Python file, the tool should determine whether it compiles cleanly and report any syntax errors clearly, including the file path and the reason for failure. Because the number of files may be large, the checking work should be able to run in parallel across multiple worker processes to keep the scan fast, while still producing a single consolidated summary.
-The tool should also measure the total disk size of the target directory (or file), ignoring symbolic links, and present sizes in a readable unit such as bytes, KB, MB, GB, or TB, scaling automatically to the most appropriate unit with a sensible number of decimal places.
-Final output should be a concise, well-organized console report that includes: the number of Python files found, how many passed and failed validation, a list of failing files with their error messages, and the total size of the scanned content. The tool should exit with a nonzero status code if any file fails validation, and zero otherwise. Handle invalid or nonexistent paths gracefully with a helpful message rather than a crash.
----"""
 
 from __future__ import annotations
 import argparse

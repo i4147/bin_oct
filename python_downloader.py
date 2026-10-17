@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line download manager, fetching one or more files fromLs over HTTP/HTTPS and saving them to a local directory while showing a live, pip-style progress display. The tool should accept a list of URLs as input, plus optional arguments for choosing the output directory or filename, controlling how many downloads run concurrently, and enabling multi-part (segmented) downloading for large files. It should use a clear, identifying User-Agent header that includes the tool's name and version.
-Key behaviors to cover:
-- Download files efficiently in chunks, streaming to disk so memory use stays low even for very large files.
-- For large files whose server supports byte-range requests, split the download into several parallel parts and reassemble them into a single correct output file; fall back to a normal single-stream download when ranges are not supported or the file is small.
-- Show real-time progress for each active download, including a visual progress bar, percentage, bytes transferred over total size, transfer speed, and estimated time remaining. Display file sizes in human-readable units (bytes, kB, MB) that adapt to magnitude, and show "unknown" when the total size is not provided by the server.
-- Run multiple downloads concurrently with a configurable limit, and keep the terminal display updated in place rather than printing a new line for every update.
-- Handle interruptions gracefully: a Ctrl+C or termination signal should stop all active transfers cleanly, clean up partial files or temporary parts, and exit with a clear message.
-- Retry transient network failures a reasonable number of times with backoff, and report clearly which downloads succeeded and which failed at the end, with a non-zero exit code if any failed.
-- Derive a sensible local filename from the URL when none is specified, avoid silently overwriting existing files (for example by appending a suffix or requiring a flag to overwrite), and support resuming an interrupted download when the server allows it.
-- Provide a `--version` flag and a `--help` usage message that describes all options with examples.
-- Be robust to malformed URLs and report them as errors without crashing the whole batch.
----"""
 
 from __future__ import annotations
 import argparse
@@ -26,6 +14,7 @@ import time
 from typing import Iterator, Optional, Self
 import urllib.parse
 import urllib.request
+
 
 __version__ = "2.0.0"
 CHUNK = 64 * 1024

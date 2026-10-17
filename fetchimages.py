@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that crawls a website starting from a given seed URL and downloads the images it finds, saving them into a local output directory. The tool should be a command-line utility that accepts the starting URL, a maximum crawl depth, a limit on the number of pages to visit, and an option to restrict crawling to the same domain as the seed. It should parse HTML pages to discover both hyperlinks to follow and image references, including images that use common lazy-loading attributes and responsive image sources, and it should respect a `<base>` tag when resolving relative URLs. Resolve all discovered links to absolute URLs and avoid visiting the same page or downloading the same image more than once.
-The tool should fetch pages and images over HTTP/HTTPS with a descriptive user-agent header, follow redirects, and handle timeouts and network errors gracefully without stopping the entire crawl. Only process content that is actually HTML for link discovery, and only save resources recognized as images, based on file extension or content type, including formats such as JPEG, PNG, GIF, WebP, BMP, SVG, TIFF, ICO, and AVIF.
-Downloaded images should be saved with safe, sanitized filenames derived from the source URL, and filename collisions must be handled so no file is overwritten. Optionally, identical image content fetched from different URLs should be detected (for example via content hashing) and stored only once. The script should report progress and a final summary to the user, including the number of pages visited, images downloaded, duplicates skipped, and errors encountered. It should support a configurable delay between requests to be polite to servers, and it should exit with a clear error message if the seed URL is invalid or the output directory cannot be created.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,7 +10,9 @@ from pathlib import Path
 import re
 import sys
 from urllib.parse import unquote, urljoin, urlparse
+
 import pycurl
+
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".tif", ".tiff", ".ico", ".avif"}
 USER_AGENT = "Mozilla/5.0 (compatible; ImageCrawler/1.0)"

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -13,6 +14,7 @@ import time
 from typing import Any, Iterable, Optional, Sequence
 import urllib.error
 import urllib.request
+
 
 try:
     import requests

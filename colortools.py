@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""opt in text-based source files such as stylesheets, HTML, and configuration files. The tool should accept a root path as input, along with options to control recursion, file extension filtering, and skipping of ignored or binary files. It should detect color literals in several common notations, including hexadecimal colors in 3-, 6-, and 8-digit forms, and functional RGB/RGBA color expressions, and it should be able to convert between these formats where appropriate.
-The script should produce a readable, colorized terminal report that, theary of the colors discovered, ideally grouped or sorted by frequency or similarity. It-only mode as well as an option to rewrite files in place (for example, normalizing colors to a single canonical format, or replacing colors with a chosen palette entry). When rewriting, the script must preserve the rest of each file's content exactly, create a backup or require explicit confirmation before modifying files, and report every change it makes.
-Additional expected behaviors include: a helper mode that generates a random or harmonious color palette using color-theory relationships (complementary, analogous, triadic) and displays it with swatches in the terminal; a way to compute and display the relative luminance and contrast ratio between two colors, flagging pairs that fail common accessibility thresholds; graceful handling of unreadable files, encoding issues, and permission errors without aborting the whole run; and clear command-line help with sensible defaults. The output should be deterministic when a seed is supplied, and the script should exit with a meaningful status code indicating success, invalid arguments, or problems encountered during processing.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +11,7 @@ import random
 import re
 import sys
 from typing import Iterator, Optional, Sequence
+
 
 try:
     from dh import cprint, is_binary, should_skip

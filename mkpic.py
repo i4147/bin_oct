@@ -1,15 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that compiles Python source files into bytecode, accepting one or more file or directory paths from the command line and processing every Python file found within them. The tool should walk directories recursively to locate Python source files, skip symbolic links, nonexistent paths, and anything inside version-control metadata folders, and report or handle errors gracefully without aborting the whole run.
-Support configurable behaviors through command-line flags, including: whether to delete the original source files after successful compilation, whether to emit legacy-style bytecode placement next to the source files (removing any existing compiled file in that location first), and selecting the bytecode optimization level. Set sensible defaults for these options and make them clearly documented via a help message.
-Before running, configure the environment so that the Python bytecode cache directory is redirected to a dedicated folder named __pycache__. Each compiled file should be processed individually, and the script should return a clear exit status indicating success or failure. Include a main entry point that parses arguments, validates input paths, and prints concise progress or summary messages about how many files were compiled, skipped, or failed.
----"""
 
 from __future__ import annotations
 import compileall
 import os
 from pathlib import Path
 import sys
+
 from dh import get_pyfiles, mpf
+
 
 REMOVE_ORIG = False
 LEGACY_MODE = False

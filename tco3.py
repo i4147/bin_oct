@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
@@ -12,7 +13,9 @@ import tempfile
 import threading
 import time
 from typing import Any, Callable
+
 from loguru import logger
+
 
 Translator = Callable[[str], str]
 REQUEST_LOCK = threading.Lock()

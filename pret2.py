@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a project directory for web and TypeScript-related source files and formats them in parallel using the Prettier code formatter. The tool should accept a root directory (defaulting to the current working directory) and locate files with the extensions .js, .css, .html, .json, .mjs, .cjs, .ts, .jsx, .tsx, .tsm, and .jsm. It must skip minified bundles (names ending in .min.js or .min.css), TypeScript declaration files (names ending in .d.ts), any file located inside a directory named "error", and directories themselves.
-The script should run formatting concurrently with a bounded number of worker processes (around 8), apply a generous per-file timeout (on the order of 15 minutes) so that a hung formatter does not block the run, and report progress and results through clear logging. Each file should be formatted in place by invoking the Prettier command-line tool; the script should first verify that Prettier is available on the system and fail with a helpful message if it is not.
-Failures must be handled gracefully: when a file cannot be formatted (syntax errors, timeouts, or other formatter failures), the script should not crash the whole run. Instead, it should move the problematic file into an "error" subdirectory placed at the root of the scanned tree, preserving its relative structure where practical, and if a name collision occurs there, generate a unique filename rather than overwriting an existing file. At the end, the script should print a concise summary including the number of files successfully formatted, the number that failed and were quarantined, and the total elapsed time, and it should exit with a non-zero status code if any files failed.
----"""
 
 from __future__ import annotations
 from multiprocessing.pool import Pool
@@ -10,7 +6,9 @@ from pathlib import Path
 import shutil
 import subprocess
 from typing import Final, NamedTuple
+
 from loguru import logger
+
 
 MAX_WORKERS: Final[int] = 8
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900

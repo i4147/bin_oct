@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a source-code maintenance and cleanup utility for Python projects. The tool should accept a file or directory path from the command line (with options to recurse into subdirectories and to restrict processing to Python files), discover the relevant source files while skipping binary files, and report progress and timing information as it works.
-For each Python file, the tool should be able to analyze and improve the code's readability and structure without changing its behavior. Its capabilities should include: normalizing and cleaning up documentation strings and comments, reformatting code layout by optionally delegating to well-known external formatters (such as black, isort, autoflake, autopep8, or yapf) selected by the user, and performing targeted structural fixes such as ensuring top-level definitions and main-guard blocks are properly separated by blank lines and that control-flow statements are correctly spaced.
-The tool should support a dry-run or preview mode that shows what would change (for example as a diff or summary) without modifying files, and an in-place mode that writes changes back safely. Before writing any change, it must verify that the transformed source still parses as valid Python, and it should skip or report any file that cannot be processed rather than crashing the whole run.
-Output should be a clear console report listing each processed file, the number of changes or the status for each, total counts, and elapsed time, with optional color-coded or formatted terminal output. Errors such as unreadable files, missing paths, or failing external formatters should be reported with helpful messages and a non-zero exit code when appropriate.
-Design the command-line interface so that users can specify the target path, choose the formatting style(s), toggle recursion, select dry-run versus write mode, and request verbose output. Keep the implementation modular and readable, and make sure the tool is robust, safe by default, and easy to extend with additional cleanup rules.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,7 +14,9 @@ import time
 import tokenize
 from typing import Optional
 import unicodedata
+
 from dh import cprint, format_time, fsz, get_files, get_pyfiles, is_binary, mpf
+
 
 _DOC_TOKENS = ('"""', "'''")
 _FORMAT_STYLES = ("black", "isort", "autoflake", "autopep", "yapf")

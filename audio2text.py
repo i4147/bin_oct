@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that transcribes a long WAV audio file into text by splitting it into fixed-length segments, converting each segment to text with a speech recognition service, and saving the transcript progressively to an output text file. The script should accept an input audio file path, an output file path (defaulting to a text file in the current directory), and a configurable chunk duration in milliseconds (defaulting to 30 seconds). Before processing, it should verify that the input file exists, exit with a clear error message if it does not, and warn (but continue) if the file does not have a WAV extension.
-The script should print informative progress messages to the console, including the input file, chunk duration, output file location, and per-chunk status so the user can follow along. Each successfully transcribed chunk should be appended to the output file as soon as it is recognized, so partial results are never lost. If a chunk cannot be understood by the recognizer, the script should note this in the console, skip that chunk gracefully, and continue with the rest of the audio rather than crashing.
-Handle user interruption (Ctrl+C) gracefully: when the user interrupts, the script should stop after finishing or abandoning the current chunk, make sure all progress collected so far is saved to the output file, report how far it got, and exit cleanly. Also handle network or service errors from the recognition backend by reporting them clearly and continuing or stopping safely, without losing already-saved text.
-Upon completion, the script should print a summary indicating the total number of chunks processed, how many were transcribed successfully, how many were skipped, and the final location of the transcript. Temporary files used for splitting or processing audio should be created in a system temporary location and cleaned up afterward, even when the process is interrupted or fails. The script should be runnable from the command line, taking the input file and optional arguments as parameters, and should include brief usage help when invoked incorrectly.
----"""
 
 from __future__ import annotations
 import os
@@ -11,8 +6,10 @@ import signal
 import sys
 import tempfile
 import time
+
 from pydub import AudioSegment
 import speech_recognition as sr
+
 
 interrupted = False
 output_file_global = "out.txt"

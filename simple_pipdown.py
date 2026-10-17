@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line package downloader for the Python Package Index. It should accept a package requirement specification (a package name with an optional version constraint, such as a name followed by a version specifier) and an output directory as inputs. The script should query the public PyPI simple index to discover all available distribution files for that package, then select the single best-matching release file that is compatible with the current machine's Python interpreter and platform. Selection must respect the requested version constraints, prefer compatible binary wheels over source distributions, skip releases that have been yanked or that declare an incompatible Python version requirement, and favor the highest available version.
-Once a file is chosen, the script should download it efficiently in chunks into the output directory, verify its integrity against the SHA-256 checksum published in the index metadata, and report clearly whether the download succeeded. It should handle common failure cases gracefully, including invalid requirement strings, packages that do not exist, no compatible release being found, network errors, and checksum mismatches, with informative log messages and non-zero exit codes on failure. The script should also support resolving relative file links from the index correctly, cleaning up partially downloaded or corrupted files, and logging progress and key decisions so the user can understand what was selected and why.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,6 +7,7 @@ import hashlib
 from pathlib import Path
 import sys
 from urllib.parse import unquote, urljoin, urlparse
+
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
@@ -23,6 +21,7 @@ from packaging.utils import (
     parse_wheel_filename,
 )
 from packaging.version import InvalidVersion, Version
+
 
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"

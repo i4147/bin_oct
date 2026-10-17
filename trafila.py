@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that batch-converts local HTML files into Markdown documents. The tool should accept one or more file or directory inputs from the command line, locate all HTML files to process, and for each one produce a Markdown file with the same base name placed alongside it. Extraction should prioritize clean main-content extraction that preserves links, images, and tables, falling back to a more generic HTML-to-Markdown conversion when the primary method yields no usable output. Skip any file whose Markdown counterpart already exists so that repeated runs are safe and incremental. Read and write all files using UTF-8 encoding. Print a concise status message for each successful conversion showing the source and output filenames. Provide an optional flag that, when supplied, deletes the original HTML file only after its Markdown output has been successfully written. Handle empty or failed conversions gracefully by reporting them without crashing, and continue processing the remaining files. The script should be runnable from the command line and produce a clear summary of converted, skipped, and failed files at the end.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import get_files, mpf
 import trafilatura
+
 
 remove_orig = "-r" in sys.argv
 

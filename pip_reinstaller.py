@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a text file containing a list of package names (one per line, ignoring blank lines), then force-reinstalls each package into the currently running Python interpreter using pip, in the order listed.
-The script should accept the path to the package list file as a single command-line argument, expand user home shortcuts in that path, and exit with a usage message or a clear "file not found" message if the argument is missing or the file does not exist.
-Before starting, it should report the total number of packages and which Python interpreter is being used. During processing, it should print progress in the form "[current/total] Reinstalling <package> ..." so the user can follow along in real time, with output flushed immediately.
-Each installation should run non-interactively: suppress prompts, skip pip's version-check notice, and allow running as root without warnings. Pass the environment through to pip, while ensuring a default compiler flag of "-O2" is set only if the user has not already defined one.
-Any package whose installation fails (non-zero exit status) should be recorded by name in a report file placed in the user's home directory, named reinstall_pip_failed.txt. The report file should be created or cleared at the start of each run so it reflects only the current run. The script should continue with the remaining packages after a failure rather than aborting.
-At the end, the script should print a summary showing how many packages succeeded and how many failed, and point the user to the failure report. It should also record and display the total elapsed time for the run. The script should exit with a nonzero status if any installations failed, and zero otherwise.
----"""
 
 from __future__ import annotations
 import os

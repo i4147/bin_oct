@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the Python packages installed in the current environment, determines the dependency relationships between them, and produces a readable report of those relationships as an HTML document.
-The tool should:
-- Discover all installed distributions and build a normalized, case-insensitive index of their names so that differently formatted names for the same package are treated as identical.
-- Read each installed package's declared requirements, ignoring environment markers and version constraints, and reduce each requirement to the bare package name it refers to.
-- Compute dependencies for all installed packages concurrently across multiple workers to keep processing fast on large environments, while printing a simple progress message for each package as it is handled.
-- Build both directions of the relationship: for each package, the packages it depends on, and the packages that depend on it (reverse dependencies).
-- Accept command-line arguments that let the user choose the output file path and optionally limit or filter the report, for example to a single package or to packages that are not installed.
-- Generate a self-contained HTML page that lists every package with its direct dependencies and reverse dependencies, is easy to navigate and search, escapes all displayed text safely, and clearly indicates packages that have no dependencies or no dependents.
-- Print a concise summary to the console once the report is written, including the total number of packages analyzed and the location of the generated file.
-- Handle errors gracefully, such as unreadable package metadata or invalid output paths, reporting them without crashing the whole run.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,7 +7,9 @@ import html
 from importlib import metadata
 from pathlib import Path
 import re
+
 from joblib import Parallel, delayed
+
 
 WORKERS = 8
 

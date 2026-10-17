@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user's local shared-library directory (the ".local/lib" folder inside the current user's home directory) and creates clean, unversioned symbolic links for versioned shared object files. The tool should first verify that the target directory exists and report a clear error message if it does not.
-The script should discover all shared object files in that directory, including both plain ".so" files and versioned variants such as ".so.1" or ".so.1.2.3". It should process them in a stable, sorted order and skip any entries that are already symbolic links, as well as files whose names indicate minor or placeholder version suffixes (such as ending in ".0" or ".1") or other fully versioned forms that should not serve as the canonical entry point.
-For each remaining library, the script should determine its base name by stripping trailing version numbers so that all versions of the same library map to a single common name (for example, "libfoo.so.1.2.3" maps to "libfoo.so"). Only the first encountered file for each base name should be used to create the link, so that no base name is processed more than once in a single run.
-For each selected library, the script should resolve the real underlying file path and create a symbolic link named with the base name inside the same directory, pointing to the resolved real file. If a link or file with that name already exists, the script should handle it safely: it should replace an existing symbolic link that points elsewhere, leave a regular file untouched and report it, and avoid crashing on individual failures.
-The script should print clear, concise progress messages for each link created, updated, or skipped, and a final summary of how many links were created, updated, and skipped. It should be robust to permission errors and missing files, continuing with the remaining libraries when one entry fails. It should run as a standalone command-line tool with no required arguments and should not modify anything outside the target directory.
----"""
 
 from __future__ import annotations
 import glob

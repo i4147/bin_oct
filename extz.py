@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory and produces a clear, colorized terminal report summarizing the files it contains. The tool should accept a target directory (defaulting to the current working directory) and an optional flag to control display options, such as whether to show a per-file listing or only aggregate statistics.
-The script should walk the directory tree recursively while automatically ignoring common non-source or generated folders (for example version control metadata, dependency caches, virtual environments, build outputs, and tool caches) as well as symbolic links. It should group the discovered files by their file extension and, for each group, report the number of files and their combined size in a human-readable format (such as bytes, KB, MB, GB, or TB). Files without an extension should be handled gracefully and reported under a clearly labeled category.
-The output should be well-organized and easy to scan, with a header, a summary of totals (overall file count and total size), and a breakdown sorted in a sensible order (for example, by count or size, descending). Use terminal colors to visually distinguish headers, extensions, counts, and data values, but ensure the output remains readable when colors are not supported. The tool should handle permission errors and unreadable files without crashing, skipping them and continuing the scan.
-The script should be runnable from the command line, provide a help message describing its options, and exit with a non-zero status code on invalid input such as a nonexistent or non-directory path. Output should go to standard output, and the script should be self-contained with no external dependencies beyond the Python standard library.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,21 +8,11 @@ import shutil
 import sys
 
 
-class Colors:
-    RESET = "\033[0m"
-    BOLD = "\033[1m"
-    DIM = "\033[2m"
-    CYAN = "\033[36m"
-    YELLOW = "\033[33m"
-    GREEN = "\033[32m"
-    MAGENTA = "\033[35m"
-    WHITE = "\033[37m"
-    GRAY = "\033[90m"
-    HEADER_FG = BOLD + CYAN
-    EXT_FG = BOLD + MAGENTA
-    COUNT_FG = BOLD + GREEN
-    DATA_FG = YELLOW
+# --------------------------------------------------------------------------- #
+# Config
+# --------------------------------------------------------------------------- #
 
+TOP_N_PIE = 30  # top N extensions to show in the pie chart (tail → "other")
 
 SKIP_DIRS = {
     ".git",
@@ -53,7 +38,33 @@ SKIP_DIRS = {
 }
 
 
-def format_size(bytes_val: int) -> str:
+# --------------------------------------------------------------------------- #
+# Colors
+# --------------------------------------------------------------------------- #
+
+
+class Colors:
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    CYAN = "\033[36m"
+    YELLOW = "\033[33m"
+    GREEN = "\033[32m"
+    MAGENTA = "\033[35m"
+    WHITE = "\033[37m"
+    GRAY = "\033[90m"
+    HEADER_FG = BOLD + CYAN
+    EXT_FG = BOLD + MAGENTA
+    COUNT_FG = BOLD + GREEN
+    DATA_FG = YELLOW
+
+
+# --------------------------------------------------------------------------- #
+# Helpers
+# --------------------------------------------------------------------------- #
+
+
+def format_size(bytes_val: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if bytes_val < 1024:
             return f"{bytes_val:.1f} {unit}"
@@ -67,18 +78,31 @@ def should_skip(path: Path) -> bool:
     return any(part in SKIP_DIRS for part in path.parts)
 
 
+# --------------------------------------------------------------------------- #
+# Scanning
+# --------------------------------------------------------------------------- #
+
+
 def scan_extensions(show_size: bool = False) -> dict[str, tuple[list[Path], int]]:
     ext_map: dict[str, tuple[list[Path], int]] = defaultdict(lambda: ([], 0))
     cwd = Path.cwd()
     for file_path in cwd.rglob("*"):
-        if should_skip(file_path):
-            continue
-        if file_path.is_file():
-            ext = file_path.suffix or "<no-ext>"
-            paths, total_size = ext_map[ext]
-            file_size = file_path.stat().st_size if show_size else 0
-            ext_map[ext] = (paths + [file_path], total_size + file_size)
+        try:
+            if should_skip(file_path):
+                continue
+            if file_path.is_file():
+                ext = file_path.suffix or "<no-ext>"
+                paths, total_size = ext_map[ext]
+                file_size = file_path.stat().st_size if show_size else 0
+                ext_map[ext] = (paths + [file_path], total_size + file_size)
+        except OSError:
+            continue  # permission denied, races, dangling entries
     return ext_map
+
+
+# --------------------------------------------------------------------------- #
+# Terminal report
+# --------------------------------------------------------------------------- #
 
 
 def generate_report(
@@ -110,15 +134,18 @@ def format_table(
     col3_width = max(25, term_width - col1_width - col2_width - 5)
     lines = []
     col3_label = "Total Size" if show_size else "Example Files"
-    header = f"{'Extension':<{col1_width}} | {'Count':>{col2_width}} | {col3_label:<{col3_width}}"
     if use_color:
         header = (
             f"{Colors.HEADER_FG}{'Extension':<{col1_width}}{Colors.RESET} | "
             f"{Colors.HEADER_FG}{'Count':>{col2_width}}{Colors.RESET} | "
             f"{Colors.HEADER_FG}{col3_label:<{col3_width}}{Colors.RESET}"
         )
+    else:
+        header = f"{'Extension':<{col1_width}} | {'Count':>{col2_width}} | {col3_label:<{col3_width}}"
     lines.append(header)
-    lines.append(f"{Colors.DIM}{'-' * len(header)}{Colors.RESET}" if use_color else "-" * len(header))
+    sep = "-" * len(header)
+    lines.append(f"{Colors.DIM}{sep}{Colors.RESET}" if use_color else sep)
+
     for ext, count, info in report_data:
         if len(info) > col3_width:
             info = info[: col3_width - 3] + "..."
@@ -134,6 +161,99 @@ def format_table(
     return "\n".join(lines)
 
 
+# --------------------------------------------------------------------------- #
+# Pie chart (opt-in via -p/--pie-chart)
+# --------------------------------------------------------------------------- #
+
+
+def write_pie_chart(
+    ext_map: dict[str, tuple[list[Path], int]],
+    out_path: Path = Path("extinfo.png"),
+    top_n: int = TOP_N_PIE,
+) -> None:
+    """Render a pie chart of extension → total bytes. Requires matplotlib."""
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")  # headless: no display needed
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print(
+            "Error: --pie-chart requires matplotlib (pip install matplotlib)",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    if not ext_map:
+        print("No files found — nothing to plot.", file=sys.stderr)
+        return
+
+    # ext -> total bytes (we may have skipped stat()ing if size wasn't requested).
+    sizes: dict[str, int] = {}
+    for ext, (paths, cached_size) in ext_map.items():
+        if cached_size:
+            sizes[ext] = cached_size
+        else:
+            total = 0
+            for p in paths:
+                try:
+                    total += p.stat().st_size
+                except OSError:
+                    pass
+            sizes[ext] = total
+
+    total_files = sum(len(paths) for paths, _ in ext_map.values())
+    total_exts = len(sizes)
+
+    # Sort descending, cap at top_n, bucket tail into "other".
+    ordered = sorted(sizes.items(), key=lambda kv: kv[1], reverse=True)
+    if 0 < top_n < total_exts:
+        head = ordered[:top_n]
+        tail_size = sum(s for _, s in ordered[top_n:])
+        ordered = [*head, (f"other ({total_exts - top_n} exts)", tail_size)]
+        shown = top_n
+    else:
+        shown = total_exts
+
+    values = [s for _, s in ordered]
+    total_size = sum(values) or 1  # avoid /0 on empty-ish trees
+
+    legend_labels = [f"{ext}  ({size / total_size * 100:.1f}%, {format_size(size)})" for ext, size in ordered]
+
+    fig, ax = plt.subplots(figsize=(11, 8))
+    wedges, _ = ax.pie(
+        values,
+        startangle=90,
+        counterclock=False,
+        wedgeprops={"linewidth": 0.6, "edgecolor": "white"},
+    )
+    ax.axis("equal")
+    ax.legend(
+        wedges,
+        legend_labels,
+        title=f"Top {shown} of {total_exts} exts",
+        loc="center left",
+        bbox_to_anchor=(1.0, 0.5),
+        fontsize=9,
+    )
+    ax.set_title(
+        f"Disk usage by extension\n"
+        f"{total_files:,} files · {format_size(total_size)} total · "
+        f"{total_exts:,} distinct exts",
+        fontsize=13,
+    )
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"\nWrote pie chart: {out_path} ({out_path.stat().st_size:,} bytes)")
+
+
+# --------------------------------------------------------------------------- #
+# CLI
+# --------------------------------------------------------------------------- #
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Report file extensions in current directory recursively.")
     parser.add_argument(
@@ -142,51 +262,60 @@ def main() -> None:
         action="store_true",
         help="Show total size per extension instead of example files",
     )
+    parser.add_argument(
+        "-p",
+        "--pie-chart",
+        action="store_true",
+        help=f"Also write a matplotlib pie chart to extinfo.png (top {TOP_N_PIE} exts)",
+    )
     parser.add_argument("--no-color", action="store_true", help="Disable color output")
     args = parser.parse_args()
+
     try:
         term_width = shutil.get_terminal_size(fallback=(80, 24)).columns
         use_color = not args.no_color and sys.stdout.isatty()
         mode_str = "size mode" if args.size else "example files mode"
         cwd_str = str(Path.cwd())
+
         if use_color:
             print(f"Scanning {Colors.BOLD}{cwd_str}{Colors.RESET} ({mode_str})...\n")
         else:
             print(f"Scanning {cwd_str} ({mode_str})...\n")
-        ext_map = scan_extensions(show_size=args.size)
+
+        # When --pie-chart is on we need sizes regardless of -s.
+        need_sizes = args.size or args.pie_chart
+        ext_map = scan_extensions(show_size=need_sizes)
         if not ext_map:
             print("No files found.")
             sys.exit(0)
+
         report_data = generate_report(ext_map, show_size=args.size)
         table = format_table(report_data, term_width, show_size=args.size, use_color=use_color)
         print(table)
+
         total_files = sum(count for _, count, _ in report_data)
         total_exts = len(report_data)
+
         if args.size:
             total_bytes = sum(ext_map[ext][1] for ext in ext_map)
-            summary = (
-                (
-                    f"\n{Colors.GRAY}✓ Total unique extensions: {total_exts}{Colors.RESET}\n"
-                    f"{Colors.GRAY}✓ Total files: {total_files}{Colors.RESET}\n"
-                    f"{Colors.GRAY}✓ Total size: {format_size(total_bytes)}{Colors.RESET}"
-                )
-                if use_color
-                else (
-                    f"\n✓ Total unique extensions: {total_exts}\n"
-                    f"✓ Total files: {total_files}\n"
-                    f"✓ Total size: {format_size(total_bytes)}"
-                )
-            )
+            lines = [
+                f"✓ Total unique extensions: {total_exts}",
+                f"✓ Total files: {total_files}",
+                f"✓ Total size: {format_size(total_bytes)}",
+            ]
         else:
-            summary = (
-                (
-                    f"\n{Colors.GRAY}✓ Total unique extensions: {total_exts}{Colors.RESET}\n"
-                    f"{Colors.GRAY}✓ Total files: {total_files}{Colors.RESET}"
-                )
-                if use_color
-                else (f"\n✓ Total unique extensions: {total_exts}\n✓ Total files: {total_files}")
-            )
-        print(summary)
+            lines = [
+                f"✓ Total unique extensions: {total_exts}",
+                f"✓ Total files: {total_files}",
+            ]
+
+        print()
+        for line in lines:
+            print(f"{Colors.GRAY}{line}{Colors.RESET}" if use_color else line)
+
+        if args.pie_chart:
+            write_pie_chart(ext_map, out_path=Path.cwd() / "extinfo.png")
+
     except KeyboardInterrupt:
         print("\nCancelled.", file=sys.stderr)
         sys.exit(130)

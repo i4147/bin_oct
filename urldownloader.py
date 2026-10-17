@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that downloads files from URLs and saves them to a specified local path, with resilient, resumable downloading. The tool should accept a source URL and a destination file path, along with optional request headers and a timeout, and fetch the remote resource efficiently. It should support resuming partially completed downloads by storing in-progress data in a temporary location and continuing from where it left off when possible, rather than starting over. Downloads should be written to a temporary staging area first and only moved to the final destination once complete, so that interrupted transfers never leave corrupted or incomplete files at the target path. If the destination file already exists, the tool should skip the download and report that the file is already present instead of overwriting it.
-The script should handle network and HTTP errors gracefully: retry failed attempts a limited number of times with a short delay between tries, log meaningful status messages for successes, skips, and failures, and return a clear success or failure result to the caller rather than crashing unexpectedly. It should expose a simple public interface for downloading a single resource and saving it, along with a reusable helper class that manages the save-to-disk workflow, including the temporary file naming scheme derived from the URL so that the same URL maps consistently to the same staging file across runs. Include version metadata for the module and make the code reusable as an importable utility as well as runnable on its own.
----"""
 
 from __future__ import annotations
 from hashlib import sha224
@@ -12,7 +9,9 @@ from shutil import move
 from tempfile import gettempdir
 from time import sleep
 from typing import Any, Callable, Optional
+
 from requests import Response, get
+
 
 __all__ = ["SaveToDisk", "get_resource", "save_file"]
 __name__ = "url_downloader"

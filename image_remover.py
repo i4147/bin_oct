@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up badge and image references from documentation files, such as README files, so that the text content remains readable and free of decorative clutter. The tool should accept one or more file paths or directories as input, with options to choose how aggressively images are removed (for example, removing all embedded images versus only recognizable badge-style images, such as CI status, coverage, and license shields). It should support common lightweight markup formats, including Markdown, reStructuredText, and HTML-embedded images, detecting image references by their syntax and by whether their source is a remote URL.
-The script should process files in parallel to handle large numbers of documents efficiently, and it should be able to run in a dry-run mode that reports what would be changed without modifying anything. By default it should overwrite files in place, but it should also offer an option to write results to a separate output location or create backup copies before modification. Each file should be handled independently so that one failing file does not stop the rest of the batch.
-For every processed file, the tool should track and report statistics such as the number of references removed, file size and line count before and after cleaning, and any error encountered. At the end, it should print a clear summary table or report covering all files, along with totals. The script should provide a command-line interface with helpful usage text, validate inputs gracefully, return a meaningful exit status, and avoid corrupting files if an error occurs during processing.
----"""
 
 from __future__ import annotations
 import argparse

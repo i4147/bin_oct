@@ -1,18 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a given directory tree for Python source files and ensures each one begins with a standardized shebang line targeting a specific Termux-based Python interpreter path.
-The tool should accept a root directory as input and locate all Python files beatever discovery mechanism is most suitable. For each file found, it should skip symbolic links and report that they were skipped. For regular files, it should read the content as UTF-8 text and handle the following cases:
-- If the file has no shebang line, prepend the standardized shebang followed by a newline, preserving the rest of the content exactly, and record the file as "added".
-- If the file already begins with a shebang that references Python (any Python 2 or 3 variant, optionally with version suffixes or arguments), replace that first line with the standardized shebang and record the file as "updated" when a change is made, or leave it untouched and record it as unchanged when it already matches.
-- If the first line starts with a shebang that does not reference Python, leave the file untouched and report it as skipped with the reason "Not a Python shebang".
-Processing should be parallelized across multiple worker processes to handle large directory trees efficiently. Each file's result should be returned as a tuple containing the file path, a success flag, an optional message describing any skip or error, the path relative to the root directory, and a status label. Errors such as encoding or permission problems should be caught per file so one failure does not halt the whole run.
-After processing, the tool should print a concise summary showing counts of files added, updated, unchanged, skipped, and failed, along with details for any skipped or failed entries. The script should be runnable from the command line with the target directory supplied as an argument, defaulting to the current working directory when none is given.
----"""
 
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any, Final
+
 
 SHEBANG_PATTERN: Final[re.Pattern[str]] = re.compile(r"^#!.*python[23]?(?:\.\d+)?(?:[ \t]+.*)?$", re.MULTILINE)
 PY_SHEBANG: Final[str] = "#!/data/data/com.termux/files/usr/bin/python"

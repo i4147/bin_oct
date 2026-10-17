@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from collections import OrderedDict
@@ -11,6 +12,7 @@ import tempfile
 import threading
 import time
 from typing import Callable, Optional
+
 from loguru import logger
 
 

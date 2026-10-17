@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a binary patching and rule-based file modification tool. The script should read a rules file that describes byte-level replacements (each rule specifying a target offset and a replacement value, optionally grouped into named sections and optionally tied to a rule index), apply thoseacements to a target binary file, and write the modified result to an output location while leaving the original untouched.
-The tool should accept command-line arguments for the path to the rules file, the path to the input binary, and the output path, with sensible defaults or an option to write in place. It should parse the rules file tolerantly: ignore blank lines and comments, support section headers that organize groups of rules, and interpret each rule as an offset plus a hexadecimal or literal value to write. Where a rule carries an index prefix, the script should only apply it to the corresponding matching instance or pass, so that the same offset can be patched differently across multiple iterations.
-The script should support a randomized or repeated-application mode in which rules are applied across many generated variants, using multiple worker processes to speed up batch generation. Each variant should be written to a separate, uniquely named output file in a specified directory, and the tool should report progress and a final summary of how many variants were produced and where they were saved.
-Key behaviors: validate that offsets fall within the file bounds and report clear errors for malformed rules without crashing on the whole batch; ensure output files are written atomically so partial writes never leave corrupted results; never modify the source binary; and print a concise, human-readable log of actions taken. Prefer a robust, well-documented command-line interface with a `--help` description, and exit with a nonzero status code on fatal errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,6 +12,7 @@ import re
 import sys
 import tempfile
 from typing import Any, Iterator, Optional, Sequence
+
 
 _CUSTOM_RULE_RE = re.compile(r"^(?:(\d+?)>)?(\d+)=")
 

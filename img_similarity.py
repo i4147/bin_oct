@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for finding visually duplicate or near-duplicate images within a folder (and optionally its subfolders). The tool should accept a directory path as its main input, along with options to choose the perceptual hashing method, set a similarity threshold appropriate to that method, control how many worker threads are used for processing, and optionally restrict the scan to a set of supported image file extensions. It should recursively discover image files, compute a perceptual fingerprint for each one, and compare fingerprints to group images that look alike even when they differ in size, format, compression, minor edits, or color adjustments.
-The tool should support several hashing strategies, including classic average, difference, and perceptual hashes, wavelet-based hashes, a color-aware hash, a crop-resistant hash, and a combined multi-hash that weighs several methods together. Each method should have a sensible default threshold, and the user should be able to override it. The script should handle formats that may require optional third-party support (such as HEIC, RAW, or SVG), and when a required package for the chosen method is missing, it should report a clear error message explaining what to install rather than crashing unexpectedly.
-Processing should be fast and robust: images that cannot be opened or hashed should be skipped with a warning, progress or timing information should be reported to the user, and the workload should be parallelized across threads. The output should clearly list each group of duplicate or near-duplicate images, along with their paths and useful details such as file sizes or resolutions. The tool should also offer an option to act on duplicates safely, such as moving redundant copies into a separate quarantine folder rather than deleting them outright, and should include a dry-run mode that reports what would happen without modifying any files. Provide sensible command-line help text, validate user inputs, and exit with appropriate status codes for success, invalid arguments, and errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +9,7 @@ import shutil
 import sys
 import time
 from typing import Any, Iterable, Optional, Sequence
+
 
 SUPPORTED_EXTS = {
     ".jpg",

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree recursively, computes a fuzzy (similarity) hash for every file it finds, and groups together files whose contents are similar to each other according to a user-adjustable similarity threshold. The tool should accept a root directory and a similarity threshold as inputs, skip or gracefully report files that cannot be read, and produce a clear report of the resulting groups of near-duplicate or related files. Each group should list its member files along with their similarity information, and the results should be presentable both as a human-readable table in the terminal and exportable to a machine-readable format such as CSV or JSON for further processing. The script should handle errors gracefully, provide informative messages about progress and skipped files, and degrade gracefully when optional formatting enhancements (such as colored output or nicely aligned tables) are unavailable, falling back to plain text output. It should be runnable from the command line, validate its arguments, and make sure that only files actually meeting the similarity criteria are reported as grouped, with singletons optionally omitted.
----"""
 
 from __future__ import annotations
 import csv
@@ -9,7 +7,9 @@ import os
 from pathlib import Path
 import shutil
 import sys
+
 import ssdeep
+
 
 try:
     from tabulate import tabulate

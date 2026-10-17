@@ -1,14 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up terminal-captured log files in a directory tree by stripping ANSI escape sequences, control characters, and other terminal formatting artifacts, while preserving the readable text content. The script should accept a root directory path as input, recursively locate all log files (with the .log extension), and process each one in place so that the final files contain only clean, human-readable text. Collapse runs of multiple consecutive spaces into a single space after stripping the artifacts.
-Handle files of different sizes appropriately: small files can be read and rewritten directly, while large files (above roughly 1 MB) should be processed using a memory-efficient approach that avoids loading the entire file into memory at once. Process files concurrently using a small pool of parallel workers to speed up work across many files. Each file's processing must be isolated so that a failure on one file does not stop the others.
-The script should report progress and results clearly: for each file, indicate whether it was cleaned successfully, the method used based on size, and any error encountered. At the end, print a summary with the total number of files processed, the number succeeded, and the number failed. Handle encoding errors gracefully by ignoring undecodable bytes, and ensure that writes do not leave corrupted files if an error occurs partway through. Include a command-line interface that accepts the target directory and optionally the number of workers, and display helpful messages if the directory is invalid or does not exist.
----"""
 
 from __future__ import annotations
 import mmap
 from pathlib import Path
 import re
+
 from dh import mpf
+
 
 LOG_EXT = ".log"
 MMAP_THRESHOLD = 1 * 1024 * 1024

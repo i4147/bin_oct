@@ -1,14 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the current working directory recursively to find groups of duplicate files based on their content, and optionally removes the redundant copies. The tool should skip version-control metadata directories, ignore empty files and symbolic links, and only consider regular files. Content comparison should be performed efficiently, with hashing computed in parallel across many files to keep runtime low on large directory trees.
-The script should accept a command-line flag that enables removal mode. When the flag is absent, the tool should run in a read-only reporting mode that lists each set of identical files, showing the paths grouped together and clearly indicating how many duplicates were found, or reporting that no duplicates exist. When removal mode is enabled, the tool should keep one file from each duplicate group (choosing a sensible, deterministic one) and delete the others, reporting every deletion it performs and handling errors such as permission problems or files that disappear mid-run gracefully without crashing the whole process.
-The output should be human-readable,ise, and colorized or otherwise visually distinct for headings, duplicate groups, and warnings. Files that cannot be read should be skipped with a notice rather than halting execution. The script should be self-contained as a command-line utility that runs from the terminal, prints its results to standard output, and exits cleanly with an appropriate status code.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import cprint, mpf
 from xorhash import get_xorhash
+
 
 REMOVE = "-r" in sys.argv
 

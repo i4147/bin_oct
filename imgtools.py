@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import base64
@@ -11,6 +12,7 @@ import re
 import subprocess
 import tempfile
 from typing import Any, Callable, Iterable, Sequence
+
 
 try:
     from tqdm import tqdm

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line minifier for web source files (HTML, CSS, JavaScript, and TypeScript). The tool should accept one or more file paths or directories as input, recursively discover supported files by extension, and produce minified output either in place a designated output location. It should use a proper syntax-aware approach so that code structure and string/regex literals remain intact, while stripping comments, redundant whitespace, and unnecessary line breaks, with per-language rules (for example, preserving newlines in JypeScript, and CSS where they affect semantics or readability, while allowing more aggressive compaction for HTML).
-The script should support a configurable number of parallel worker processes for batch processing, with a sensible default. It should offer command-line options to control behavior such as choosing output paths or suffixes, toggling newline preservation per language, enabling a dry-run or summary mode that reports original versus minified sizes and savings, and optionally excluding certain paths or patterns. It should handle errors gracefully per file (reporting failures without aborting the whole batch), skip unsupported or unchanged files as appropriate, and exit with a meaningful status code reflecting success or failure.
-Optionally, the tool may fetch remote resources referenced by a URL input, downloading the content to a temporary location before processing. Output should be clear progress and result reporting to the console, with the minified content preserving the original functional behavior of each file.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +11,7 @@ import re
 import sys
 from typing import Optional
 import urllib.request
+
 
 DEFAULT_WORKERS: int = 8
 EXT_TO_LANG: dict[str, str] = {

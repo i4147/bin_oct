@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that removes comments from Rust source files in a given directory tree, using a syntax-aware parser so that comment-like text inside string literals and other non-comment contexts is preserved. The tool should accept a root directory (or a set of files) as input, locate all Rust source files, and rewrite each file in place with its comments stripped while keeping the rest of the code intact, including line structure and code formatting as much as practical. It should process files in parallel using a fixed pool of worker processes to speed up large codebases, and it should report progress or a summary of how many files were processed, modified, skipped, or failed. The script must check at startup that its required parsing dependencies are available, and if they are missing, print clear installation instructions and exit with a non-zero status. Handle malformed or unreadable files gracefully without aborting the whole run, and ensure that files are only rewritten when their content actually changes. Include a timing measurement of the total run and a clear final report to the user.
----"""
 
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import sys
 import time
+
 
 try:
     from tree_sitter import Language, Parser

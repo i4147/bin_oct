@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts a plain Python source file into a Jupyter Notebook file. The script should accept a path to an existing `.py` file as its input and produce a corresponding `.ipynb` notebook as output, with an optional custom output path. If the input file does not exist, it should print a clear error message and exit gracefully without creating any output.
-The core behavior is to intelligently split the source code into multiple notebook cells rather than placing everything into one large cell. Splitting should occur at logical boundaries in the code, such as the start of new function or class definitions, transitions between import blocks and other statements, and blank lines that separate top-level sections from following unindented code. Consecutive related lines should remain grouped together, and empty or whitespace-only cells should be discarded. Each resulting segment should be stored as a code cell in a properly structured notebook with a standard format version, and the file should be saved with UTF-8 encoding.
-The tool should be runnable from the command line, accepting the input file as a required positional argument and an optional flag for specifying the output file. When no output path is given, the notebook should be saved alongside the input file using the same base name with the `.ipynb` extension. Upon successful conversion, the script should report the location of the generated notebook to the user. The solution should be robust, handle edge cases such as empty files or files with only blank lines gracefully, and rely on well-established libraries for notebook creation.
----"""
 
 from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+
 import nbformat as nbf
 
 

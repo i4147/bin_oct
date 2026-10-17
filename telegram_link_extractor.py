@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for extracting links from a Telegram chat history. The tool should connect to the Telegram API using user-provided credentials (API ID and API hash), which can be supplied directly as command-line arguments or loaded from a local environment file, with explicit command-line values taking precedence over stored ones. If credentials are missing, it should exit with a clear error message explaining what is required.
-The tool should accept a target chat or channel identifier, along with an optional message limit to control how far back in the history it searches. Users should be able to choose between a set of predefined link-matching presets (one tailored to Clash of Clans invite links and one general-purpose web URL matcher), or supply their own custom regular expression pattern. The tool should also allow specifying an output file path for saving results.
-Its core behavior is to fetch messages from the specified chat asynchronously, scan the text of each message for all occurrences matching the selected pattern, and collect the matches while handling messages that contain no text gracefully. The results should be written to the output file, with duplicates optionally removed and each link on its own line, and a summary of how many messages were scanned and how many unique links were found should be printed to the console. The tool should handle common errors such as invalid patterns, authentication failures, inaccessible chats, and interruptions by the user, reporting them in a readable way without crashing. Session data should be stored in a local, persistent form so the user does not need to re-authenticate on every run.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,8 +8,10 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterator
+
 from dotenv import load_dotenv
 from telethon import TelegramClient
+
 
 PATTERN_PRESETS: dict[str, str] = {
     "coc": r"https://link\.clashofclans\.com/[a-zA-Z0-9\?\=\&_]+",

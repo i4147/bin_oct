@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -14,6 +15,7 @@ from typing import Any, Callable, Optional, Sequence
 import urllib.error
 import urllib.request
 import zipfile
+
 
 try:
     from rapidfuzz import fuzz as _rapidfuzz

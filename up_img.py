@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for capturing or selecting images and uploading them to a cloud image hosting service, then returning a shareable Markdown-style or plain URL for the uploaded image.
-The tool should support the following behaviors:
-- Accept an image from the system clipboard (screenshot or copied image) as well as from a local file path passed on the command line; when nothing is provided, it should grab the current clipboard image.
-- Upload the image to a remote file storage/CDN service using credentials and a target upload directory, and generate a unique, time-based filename for each upload.
-- Build a public URL for the uploaded file from a configurable base URL and the upload path, and copy the resulting link to the system clipboard so the user can paste it immediately.
-- Persist user settings (service type, username, password, upload path, and base URL) in a configuration file in the user's home directory, with sensible defaults on first run and an interactive or command-line way to set and view these values.
-- Optionally convert or compress images before upload (for example, to a standard format and reduced size) when requested, while keeping the original where appropriate.
-- Provide cross-platform behavior for Windows, macOS, and Linux, including native desktop notifications on success or failure where the platform supports them, falling back gracefully when they are unavailable.
-- Report errors clearly to the user (missing clipboard image, invalid credentials, network failures, unsupported file types) without crashing, and offer a verbose or debug mode that prints the full error trace.
-- Print the final URL to standard output so the tool can be used in shell scripts and pipelines, with a quiet option to suppress extra messages.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,9 +12,11 @@ import subprocess
 import sys
 from traceback import print_exc
 from urllib.parse import urljoin
+
 from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
 import upyun
+
 
 SYSTEM = platform.system()
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".upimg_config.pkl")
@@ -117,6 +108,7 @@ def set_config():
     if SYSTEM == "Windows":
         try:
             import winreg
+
             import pythoncom
             from win32com.shell import shell
 

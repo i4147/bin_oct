@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for bulk-managing license or copyright header blocks at the top of source files across a project directory. The tool should accept a target directory (defaulting to the current working directory) and a path to a file containing the header text or pply. It should walk the directory tree recursively, skipping common version-control, cache, and tooling folders by default, and ignoring binary files so that only text-based source files are processed.
-The script should support at least two operating modes: one that inserts or replaces a header block at the top of each eligible file, and one that removes an existing header matching a configurable regular expression. When replacing headers, it should detect an existing header using a configurable pattern (with a sensible default that matches author, email, and time metadata lines at the start of a Python file) and substitute it without disturbing the rest of the file content. Preserve file encodings where possible, handle a leading shebang line correctly, and avoid duplicating headers when the script is run more than once.
-Processing should be parallelized across a configurable number of worker threads, with a sensible default. The tool should offer a dry-run option that reports which files would change without writing anything, and a verbose option that lists each file processed along with its outcome (updated, unchanged, skipped, or failed). Errors on individual files must not stop the overall run; instead, they should be collected and summarized at the end, and the script should exit with a non-zero status code if any failures occurred.
-Output should be human-readable, optionally colorized when writing to a terminal, and end with a concise summary of counts for files scanned, modified, unchanged, skipped, and failed. The script should also allow the user to specify additional directory names or file extensions to include or exclude, and should guard against accidentally rewriting files outside the target directory, such as through symbolic link traversal.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +10,7 @@ import shutil
 import string
 import sys
 from typing import Iterator, Sequence
+
 
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8

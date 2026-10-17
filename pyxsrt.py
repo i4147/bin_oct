@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that inspects video files and extracts their embedded SRT subtitle tracks. The tool should accept one or more video file paths (or a directory to scan) and, for each video, detect all embedded subtitle streams, reporting each stream's index, language, title, and whether it is flagged as forced. It should identify which streams use the SRT (SubRip) format and make it easy to select a specific track by index or language, and then export the chosen subtitle streams to standalone .srt files in a specified output directory, using a sensible default naming scheme that includes the source video name and the track language or index.
-The tool must verify up front that the required external multimedia utilities are installed and exit with a clear, user-friendly error message if they are missing. It should handle failures gracefully: skip videos that cannot be probed, report per-file errors without aborting the entire batch, and summarize results at the end (files processed, tracks found, tracks exported, errors encountered). Provide a dry-run or listing mode that shows what would be extracted without writing any files, and an option to overwrite or skip existing output files.
-Output should be human-readable by default, with an optional machine-readable JSON output mode for scripting. The tool should return a non-zero exit status when errors occur or when no matching subtitle tracks are found for the requested selection. Keep the interface self-documenting with built-in help, and ensure file paths with spaces or special characters are handled safely.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,6 +7,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+
 
 SRT_CODEC_NAMES: frozenset[str] = frozenset({"subrip", "srt"})
 PROBE_ENTRIES: str = "stream=index,codec_name:stream_tags=language,title:stream_disposition=forced"

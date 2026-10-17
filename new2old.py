@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a Python project's metadata from its packaging configuration files (a modern pyproject.toml file and, as a fallback, a legacy setup.py file) and produces a consolidated, structured summary of the project's information, such as its name, version, description, license, authors and maintainers (with names and emails separated), keywords, classifiers, dependencies, supported Python version requirements, and project URLs. The script should be runnable from the command line in the project's root directory, gracefully handle a missing or malformed configuration file by reporting a clear message rather than crashing, normalize the different ways authors and maintainers can be written (as plain strings like "Name <email>", as dictionaries with name and email keys, or as lists of either), and output the final result in a readable human-friendly format as well as an optional machine-readable format such as JSON that can be written to stdout or to a file. Support both Python 3.11+ (using the built-in TOML parser) and older Python versions by falling back to a compatible third-party TOML library when needed. Design the data model so that all extracted fields have sensible defaults when absent, and make the script easy to extend with additional metadata fields in the future.
----"""
 
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import sys
 from typing import Any, Callable
+
 
 if sys.version_info < (3, 11):
     import tomli as tomllib

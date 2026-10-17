@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that flattens a directory tree by moving every file found in its subdirectories up into a single chosen root folder. The script should accept a directory path (defaulting to the current working directory), validate that it exists and is a directory, and report a clear error if it does not. It should recursively discover all files beneath the root, skipping any that already sit directly in the root, and print a summary at the start showing the resolved root path and the number of files to be moved.
-When moving a file would collide with an existing file of the same name in the root, the script must never overwrite existing data. Instead, it should generate a unique alternative filename by appending an incrementing numeric suffix before the file extension, repeating until a free name is found, and it should count how many files were renamed this way.
-After all files are moved, the script should remove any subdirectories that have become empty as a result, cleaning up the tree while leaving the root itself intact. It should handle errors gracefully on individual files (for example permission problems or files that vanish mid-operation) by reporting the problem and continuing with the remaining files rather than crashing. Finally, it should print a concise completion report stating how many files were moved, how many were renamed to avoid conflicts, and any errors encountered. The script should be runnable from the command line, optionally taking the target directory as an argument, and should provide informative console output throughout the process.
----"""
 
 from __future__ import annotations
 from pathlib import Path

@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans Python source files within a givenree (or a single file) and automatically rewrites common code-quality and correctness issues in place, with a dry-run/preview mode that shows the proposed changes as a diff before anything is written.
-The tool should accept a target path, optional selection of which fix categories to apply (choosing from: fixing regular-expression patterns that are missing raw-string prefixes, correcting invalid escape sequences in string literals, converting bytes-related string-prefix mistakes, and replacing identity comparisons against literal values with equality comparisons where appropriate), and options controlling dry-run behavior, verbosity, and parallelism. It should skip common non-source directories such as version control folders, virtual environments, caches, and dependency folders, and only process files with Python extensions.
-Key behaviors:
-- Analyze each file using the language's own parsing and tokenization facilities so that only actual code tokens are altered, never comments in a way that breaks them or other content unrelated to the fix.
-- Ensure every rewritten file still parses as valid Python; if a transformation would produce invalid syntax, leave that file unchanged and report it.
-- Process multiple files concurrently using a configurable number of worker processes, with a sensible default.
-- Report, per file, which fixes were applied and how many changes were made, plus a summary of totals at the end.
-- In dry-run mode, print unified diffs of proposed changes without modifying any files.
-- Use a logging library for structured output with verbosity levels, and return a nonzero exit status when errors occur or when dry-run detects pending changes, so the tool can be used in continuous-integration checks.
-- Handle encoding detection gracefully, preserving each file's original line endings and encoding where possible, and tolerate unreadable files by logging a warning and continuing.
-- Suppress noisy parser warnings from analyzed code so the console output stays clean.
-Give the implementation complete freedom in structure, naming, libraries, and internal design; the deliverable is a single self-contained, command-line-runnable script with a clear help message.
----"""
 
 from __future__ import annotations
 import argparse
@@ -30,7 +17,9 @@ import sys
 import tokenize
 from typing import TYPE_CHECKING, NamedTuple
 import warnings
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

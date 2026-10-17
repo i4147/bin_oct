@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that formats TOML configuration files using a syntax-tree-based parser, so the output is consistently styled and structurally correct. The tool should accept one or more TOML file paths (or directories to scan recursively) from the command line, parse each file into a syntax tree, and rewrite it with normalized formatting: consistent indentation (configurable, defaulting to 2 spaces), aligned key-value assignments within each table or block, a preferred maximum line width of about 80 characters, and clean spacing around tables, arrays, and inline tables. Comments and the logical ordering of content should be preserved, and the original meaning of every value must remain unchanged.
-The script should support an in-place mode that overwrites files, a check mode that reports which files would change without modifying them (with a non-zero exit status if any would change), and a default mode that prints the formatted result to standard output. It should process multiple files in parallel when there are several inputs, handle errors gracefully per file (reporting unparseable or unreadable files without aborting the whole run), and provide clear command-line help. The parser language grammar should be loaded from a compiled language library when available, falling back to an installed TOML grammar package, and should fail with a helpful installation message if neither is present. Formatting behavior should be controlled by a small configuration object with sensible defaults that can be overridden from the command line.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,6 +8,7 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 import sys
 from typing import Any, Optional
+
 from tree_sitter import Language, Parser
 
 

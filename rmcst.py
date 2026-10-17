@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for stripping inline comments from Python source files in a project, while leaving full-line comments, docstrings, and all other code exactly as they are. The tool should accept one or more file or directory paths as input; when given a directory, it should recursively discover Python files, automatically skipping common version-control, virtual-environment, cache, build, and dependency folders. It should support a dry-run or check mode that reports which files would change without modifying them, and a normal mode that rewrites affected files in place. Edits must be applied safely so that a file is never left partially written, and original file permissions should be preserved. The tool should process files in parallel across multiple worker processes for speed, and it should only write back a file when its content actually changes. Each file's modifications must be verified so that the resulting source still parses as valid Python; if verification fails, the original file must be left untouched and the failure reported. The script should print a concise summary at the end showing how many files were scanned, how many were modified (or would be modified in check mode), how many inline comments were removed in total, and any errors encountered, and it should exit with a nonzero status when errors occur or when check mode finds files needing changes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,7 +12,9 @@ import sys
 import tempfile
 import tokenize
 from typing import Iterable, Iterator
+
 import libcst as cst
+
 
 NUM_WORKERS = 8
 CHUNKSIZE = 4

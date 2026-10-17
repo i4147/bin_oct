@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that removes a specified file entry from a compressed tar archive compressed with Zstandard (.tar.zst), producing a new modified archive while leaving the original intact.
-The tool should accept an archive path and the name of a member to delete as inputs. It must first verify that the archive exists, reporting a clear error to the standard error stream and exiting with a non-zero status if it does not. It should inform the user of the archive being read and the entry being deleted.
-The script should decompress the Zstandard-compressed archive, then examine the contained tar archive to locate the requested member. Only the matching entry should be excluded; all other members, including their metadata, directory structure, permissions, and contents, must be preserved faithfully in the output. If the requested file is not found in the archive, the tool should report this clearly to the user rather than silently producing an unchanged archive.
-The output should be written to a new file derived from the input name: for archives ending in a `.zst` extension, append a `_modified` suffix before the `.tar.zst` extension; for other archive names, append `_modified` to the full filename. The original archive must never be overwritten.
-Use temporary storage for intermediate data and ensure that any temporary files are cleaned up whether the operation succeeds or fails. The tool should handle errors gracefully, such as corrupted archives, decompression failures, or I/O problems, providing informative messages to the user.
-Finally, the script should be runnable from the command line, taking the archive path and target filename as arguments, and should report the outcome of the operation, including the location of the newly created archive on success.
----"""
 
 from __future__ import annotations
 import os
@@ -13,6 +6,7 @@ import shutil
 import sys
 import tarfile
 import tempfile
+
 import zstandard as zstd
 
 

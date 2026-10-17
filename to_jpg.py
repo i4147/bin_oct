@@ -1,22 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that batch-converts image files to JPEG format. The script should accept a file or folder path as input, locate the image files to process, and produce a JPEG copy of each one alongside its original.
-Key requirements:
-- Accept one or more file paths or a directory from the command line; when a directory is given, process the images it contains.
-- Skip anything that is not a regular file or is already a JPEG, printing a short notice for unsupported or invalid entries.
-- Save each output next to the source file, reusing the original base name with a .jpg extension. If that name is already taken, generate a unique alternative rather than overwriting existing files.
-- Handle images with transparency (alpha channel) by compositing them onto a solid white background so no transparent areas turn black or distorted.
-- Support common input formats such as PNG, BMP, GIF, TIFF, and WebP, and convert color modes appropriately (e.g., grayscale, palette, or RGBA images) to RGB before saving.
-- Use a reasonable JPEG quality setting that balances file size and visual fidelity.
-- Report, for each file, the original size and the resulting size, along with a summary of how many files were converted, skipped, or failed.
-- Gracefully report decoding or write errors for individual files without stopping the entire batch.
-- Prefer a high-performance image library when available, but fall back to a more widely available imaging library if it is not installed, producing equivalent results either way.
-- Provide clear console output so the user can follow progress and understand any problems.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import cprint, fsz, get_files, gsz, mpf, rrs, unique_path
+
 
 try:
     import cv2

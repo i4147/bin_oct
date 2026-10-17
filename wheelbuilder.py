@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a local directory for Python source distribution archives (.tar.gz) and builds each one into a wheel file, storing the results in a target wheels directory, so that a device or environment can later install these packages offline.
-The script should:
-- Accept command-line arguments that specify the source archive directory and the output wheels directory, with sensible defaults for an Android/Termux-style setup where packages are kept under a shared storage folder.
-- Skip any source package whose wheel already exists in the output directory, matching packages by their normalized name regardless of version string formatting, so repeated runs are fast and idempotent.
-- Safely extract each source archive into a temporary working area, locate the package root, and clean up temporary files afterward even when a build fails.
-- Detect whether a package requires a Rust toolchain (for example, by checking for a Cargo manifest in the extracted project) and handle those packages differently, such as warning the user, skipping them, or applying environment adjustments needed for compilation.
-- Build wheels using the current Python interpreter in an isolated, non-interactive way, capturing build output and reporting failures without stopping the entire batch.
-- Process multiple packages in parallel using a sensible number of worker processes based on available CPU cores, while keeping logging coherent across workers.
-- Log progress clearly at info level, including which packages were built, skipped, or failed, and print a final summary with counts for each outcome.
-- Return a non-zero exit status if any build failed, and zero otherwise.
-- Validate that input paths exist and give helpful error messages when they do not.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,6 +11,7 @@ import sys
 import tarfile
 import tempfile
 from typing import Optional
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

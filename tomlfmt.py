@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line formatter for TOML files. It should accept one or more file or directory paths (defaulting to the current directory when none are given), recursively discover all TOML files while skipping common virtual environment, version control, cache, and dependency directories, and reformat each file's contents to a consistent, canonical style. The formatter should normalize spacing around keys, equals signs, and values; standardize indentation for nested tables and arrays; wrap long arrays and inline tables across multiple lines within a configurable column width; limit consecutive blank lines to a configurable maximum; and preserve all comments and the semantic meaning of the data exactly. It should correctly handle the full range of TOML value types, including basic, literal, and multi-line strings, integers, floats, booleans, dates, times, and datetimes (including datetimes with a space instead of a "T" separator), as well as arrays and inline tables.
-The tool should support a check mode that reports which files would change without writing anything and exits with a nonzero status if any file needs reformatting, and a diff mode that prints a unified diff of proposed changes. By default, it should rewrite files in place, writing through a temporary file and replacing the original atomically so that a failure never corrupts the source must validate that the reformatted output parses to the same data as the original before writing, and refuse to modify any file that fails to parse, reporting a clear error with the file path and line information.
-To improve speed on large projects, process files in parallel using a configurable number of worker processes, with chunked work distribution. At the end, print a summary showing how many files were scanned, reformatted, unchanged, and failed, along with a brief per-file status for changes and errors. Expose all tunable settings (worker count, column width, indent string, allowed blank lines, and mode selection) as command-line options with sensible defaults, and return appropriate exit codes for success, formatting differences in check mode, and errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,6 +13,7 @@ import re
 import sys
 import tempfile
 from typing import Iterator, Sequence
+
 
 try:
     import tomllib

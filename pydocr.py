@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory, locates the Python source files within it, and automatically generates Markdown documentation for each module. For every file, the script should extract the module-level description along with the descriptions of its top-level functions and classes, without executing the code under analysis, and organize them into a clearly structured document with a title identifying the module, sections for module overview, functions, and classes, and consistent heading hierarchy.
-The tool should be able to handle files that cannot be parsed (for example, due to syntax errors) gracefully, producing an empty or minimal document rather than crashing. It should write all generated documentation into a dedicated output folder named after the current working directory, creating that folder if it does not exist, and it should avoid overwriting existing files by generating unique filenames when conflicts occur. Where appropriate, the script should use parallel processing to speed up documentation of many files, and it should report progress or a summary of how many modules were documented and where the output was saved.
-The script should be self-contained in its behavior, run from the command line in the project's root directory with no required arguments, and produce clean, readable Markdown output that a developer could use as reference documentation.
----"""
 
 from __future__ import annotations
 import ast
@@ -13,7 +9,9 @@ from multiprocessing import get_context
 from pathlib import Path
 import sys
 from textwrap import dedent
+
 from dh import get_files, unique_path
+
 
 cwd = Path.cwd()
 cwdname = cwd.name

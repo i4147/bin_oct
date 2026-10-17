@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 import argparse
 import concurrent.futures
 import json
@@ -6,15 +7,16 @@ import os
 import pathlib
 import shutil
 import subprocess
-import urllib.request
-import urllib.error
 from typing import Any, Dict, List, Optional, Tuple
+import urllib.error
+import urllib.request
+
 
 _SOURCE_CITATION: str = "[cite: 1]"
 
 
 def run_git(
-    args: List[str], cwd: Optional[pathlib.Path] = None, check: bool = True, timeout: int = 60
+    args: list[str], cwd: Optional[pathlib.Path] = None, check: bool = True, timeout: int = 60
 ) -> subprocess.CompletedProcess[str]:
     try:
         return subprocess.run(
@@ -58,7 +60,7 @@ def get_github_token(env_file: Optional[pathlib.Path] = None) -> str:
     raise RuntimeError(f"GITHUB_TOKEN not found in {path}")
 
 
-def github_api_request(token: str, method: str, url: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def github_api_request(token: str, method: str, url: str, data: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     body = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(url, data=body, method=method)
     req.add_header("Authorization", f"token {token}")
@@ -81,8 +83,8 @@ def github_api_request(token: str, method: str, url: str, data: Optional[Dict[st
 
 def create_github_repo(
     token: str, name: str, private: bool, description: Optional[str], auto_init: bool
-) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {"name": name, "private": private, "auto_init": auto_init}
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {"name": name, "private": private, "auto_init": auto_init}
     if description:
         payload["description"] = description
     try:
@@ -99,8 +101,8 @@ def create_github_repo(
         raise
 
 
-def find_git_repos(root_path: pathlib.Path) -> List[pathlib.Path]:
-    repos: List[pathlib.Path] = []
+def find_git_repos(root_path: pathlib.Path) -> list[pathlib.Path]:
+    repos: list[pathlib.Path] = []
     for root, dirs, _ in os.walk(root_path):
         current = pathlib.Path(root)
         if (current / ".git").is_dir():
@@ -116,7 +118,7 @@ def cmd_scan_changes(args: argparse.Namespace) -> int:
         print("No git repositories found.")
         return 0
 
-    def check_repo(repo: pathlib.Path) -> Tuple[pathlib.Path, bool, str]:
+    def check_repo(repo: pathlib.Path) -> tuple[pathlib.Path, bool, str]:
         try:
             res = run_git(["status", "--porcelain"], cwd=repo, check=False, timeout=10)
             if res.returncode != 0:
@@ -153,7 +155,7 @@ def cmd_pull_all(args: argparse.Namespace) -> int:
         print("No git repositories found.")
         return 0
 
-    def pull_repo(repo: pathlib.Path) -> Tuple[pathlib.Path, bool, str]:
+    def pull_repo(repo: pathlib.Path) -> tuple[pathlib.Path, bool, str]:
         try:
             branch = get_current_branch(repo)
             res = run_git(["remote"], cwd=repo, check=False)
@@ -212,7 +214,7 @@ def cmd_gitignore_add(args: argparse.Namespace) -> int:
     if not line:
         raise RuntimeError("line cannot be empty")
     paths = [pathlib.Path(p).resolve() for p in (args.paths or ["."])]
-    gi_files: List[pathlib.Path] = []
+    gi_files: list[pathlib.Path] = []
     for p in paths:
         if p.is_file() and p.name == ".gitignore":
             gi_files.append(p)

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that migrates a developer's git and GitHub identity across a local project tree. The tool should scan a given root directory (and optionally a target repository) for text-based configuration and source files, replace occurrences of an old username and email address with new ones, and rewrite git commit authorship history (author and committer name/email) for the affected repositories. It should accept command-line arguments to specify the root path, the old and new username and email values (with sensible built-in defaults), and flags for dry-run preview, verbose logging, and skipping certain steps. The script should ignore dependency, build, cache, and version-control internals, skip binary or overly large files, and only modify files whose content actually changes. Every action should be logged both to the console and to a persistent log file, with a clear summary at the end reporting how many files were scanned, modified, and how many commits were rewritten. Before making destructive changes, it should verify that the target is a valid git repository, warn if there are uncommitted changes, and ask for explicit user confirmation unless a non-interactive flag is provided. Errors in individual files or repositories should be handled gracefully so that one failure does not abort the entire run, and the script should exit with a meaningful status code reflecting overall success or failure.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,6 +9,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+
 
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"

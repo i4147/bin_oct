@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch text translation tool. It reads source text from an input file, splits the content into manageable chunks of roughly a configurable maximum size (preferably at natural boundaries such as paragraphs or sentences), and translates each chunk from a configurable source language to a configurable target language using a free online translation service. The user should be able to set the input file, output file, source and target language codes, the number of concurrent workers, the delay between requests, the chunk size, and how often progress is saved, all through command-line options with sensible defaults.
-Key behaviors:
-- Process chunks concurrently with a bounded number of workers while respecting a small delay between requests to avoid rate limiting.
-- Retry failed translation requests a limited number of times using exponential backoff, and handle empty results or unsupported-language errors gracefully.
-- Periodically checkpoint progress to the output file as structured JSON that records each chunk's original text, translated text, and status, so that an interrupted run can be resumed without re-translating completed chunks.
-- Record any chunks that ultimately fail to a separate failure log file so the user can review or retry them later.
-- Support graceful shutdown on interrupt signals: stop accepting new work, finish or save in-progress results, and write a final checkpoint before exiting.
-- Map common ISO-style language codes (such as en, fr, es, de, it, pt, ru, zh, ja, ar) to the naming conventions expected by the translation backend, and validate the requested languages before starting.
-- Log progress, retries, and errors with clear, timestamped messages, and print a final summary of total chunks, successes, failures, and elapsed time.
-- Ensure the script is safe to run repect existing output, skip completed work, and never corrupt previously saved results if the process is stopped mid-write.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,9 +11,11 @@ import sys
 from threading import Lock
 import time
 from typing import Callable, Optional
+
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from loguru import logger
+
 
 DEFAULT_INPUT = "input.txt"
 DEFAULT_OUTPUT = "chunks.json"

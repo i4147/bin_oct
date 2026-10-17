@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a commandression utility implementing a Snappy-style block compression scheme for files and archives. The tool should accept one or more file or directory paths as input, walk directories to collect their contents, and produce compressed output files alongside or in a designated output location. It should support compressing individual files and bputs into a tar-based archive before compression, with an option to choose between producing separate compressed outputs per file or a single combined archive.
-The compression logic should split input data into fixed-size blocks, encode each block using a variable-length integer header followed by a stream of literal runs and back-reference copy operations, using a hash-based match finder over a sliding window to locate repeated byte sequences. Ensure the encoding is compatible with the standard Snappy raw block format so that the output can be decompressed by common Snappy decoders.
-The script should also support the reverse operation: decompressing previously produced Snappy-compressed files or archives back to their original form, restoring directory structures where an archive was used.
-Provide a command-line interface with options for input paths, output destination, compression vs. decompression mode, recursive directory handling, and verbosity. Use parallel processing across files or blocks where it improves throughput, and display progress and a summary of original size, compressed size, and compression ratio upon completion. If an optional fast-compression backend is available, the tool should prefer it, and otherwise fall back gracefully to its own implementation. Handle errors such as missing paths, permission problems, corrupted compressed input, and existing output files with clear messages and sensible exit codes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +8,7 @@ import sys
 import tarfile
 from typing import Optional, Sequence
 
+
 try:
     import cramjam
     from loguru import logger
@@ -21,6 +17,7 @@ try:
 except ImportError:
     _HAS_CRAMJAM = False
 from dh import cprint, fsz, get_files, gsz
+
 
 _BLOCK_SIZE = 16384
 _MAX_OFFSET_1B = 2047

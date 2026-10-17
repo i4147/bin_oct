@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that translates the text content of one or more files from a source language into a target language, using a configurable chain of translation backends with automatic fallback when a backend fails or is unavailable.
-The tool should be operated from the command line and accept the input file or files (or a directory to process), the target language, an optional source language (defaulting to automatic detection), and an option to choose a specific backend or the order in which backends are tried. Language codes should be normalized so common aliases (such as variants of Chinese, Portuguese, Hebrew, or Javanese codes) are handled consistently.
-The script should write translated output to a new file or directory without destroying the original input, with a sensible naming scheme that makes the language clear. It should preserve the overall structure of the source text as much as possible, including line breaks, and should be able to handle large files by splitting text into safely sized chunks that respect sentence or line boundaries, then reassembling the results in the correct order.
-To keep providers from rate-limiting the tool, the script should enforce a configurable minimum delay between requests, safely shared across concurrent workers. It should support parallel translation of chunks with a configurable number of worker threads, and should retry transient failures with backoff before moving on to the next backend in the fallback chain. If every backend fails for a chunk, the script should report a clear error rather than silently writing partial or incorrect output.
-Progress and diagnostics should be logged clearly, with a verbosity option. The script should validate its inputs and exit with meaningful error messages and non-zero status codes on failure. Optionally, it should support a dry-run mode that reports what would be translated without calling any external service, and a cache so that repeated runs do not re-translate unchanged text. Write the output atomically so that an interrupted run never leaves a corrupted file behind.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,7 +12,9 @@ import tempfile
 import threading
 import time
 from typing import Callable
+
 from loguru import logger
+
 
 Translator = Callable[[str], str]
 FALLBACK_BACKENDS = (

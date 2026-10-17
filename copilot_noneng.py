@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a set of user-supplied file and directory paths, identifies the natural language(s) used in each text file, and reports the detected languages in a structured, machine-readable output.
-The tool should accept one or more file or directory paths from the command line. When a directory is given, it should recursively examine the files it contains. Symbolic links should be skipped, and binary files should be excluded so that only human-readable text is analyzed. Files that cannot be decoded with common text encodings should be handled gracefully, with a fallback strategy rather than a crash.
-For each text file, the script should read its contents (or a representative sample of them) and determine the most likely language or languages present. To improve reliability, it should combine multiple language-detection approaches and reconcile their results, for example by favoring agreement between detectors and reporting confidence or probability scores where available. Short or ambiguous content should be flagged as low confidence rather than silently mislabeled. Detection should be deterministic so that repeated runs on the same input produce identical results.
-Processing should be efficient on large directory trees: the script should be able to analyze multiple files in parallel and safely collect results from concurrent workers, while keeping console output coherent and free of interleaved messages.
-The output should be a JSON document listing, for each analyzed file, its path, the detected language code(s), confidence or probability values, and any warnings (such as skipped, unreadable, or low-confidence files). The script should also print a concise human-readable summary to the terminal, including counts of files per detected language and totals of skipped or failed files. Include an option to write the JSON results to an output file instead of standard output, and a verbosity option to control progress and diagnostic messages.
-The script should exit with a non-zero status code on invalid arguments or fatal errors, and with zero when the analysis completes, even if some individual files were skipped or could not be analyzed.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,10 +8,12 @@ from pathlib import Path
 import sys
 import threading
 from typing import TYPE_CHECKING, Any
+
 from dh import is_binary
 import gcld3
 from langdetect import DetectorFactory, detect_langs
 import pycld2 as cld2
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

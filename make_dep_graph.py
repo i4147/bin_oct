@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that inspects the Python environment it runs in and produces a report of all installed third-party packages along with the dependencies each package declares. The tool should locate the active site-packages directory from the interpreter's module search paths, scan each installed distribution's metadata for its declared requirements, and clean up those requirement strings so that only the dependency name (and optionally its version constraint) remains, dropping environment markers and extras noise. The script should gracefully handle cases where the site-packages directory cannot be found, where metadata files are missing or unreadable, or where encoding issues occur, reporting such problems clearly rather than crashing. The final output should be a structured, human-readable summary mapping each installed package to its list of dependencies, with packages that declare no dependencies clearly indicated, and it should optionally be exportable in a machine-readable format such as JSON for further processing. Keep the tool self-contained, runnable from the command line, and focused on read-only inspection of the environment without modifying any installed packages.
----"""
 
 from __future__ import annotations
 import json

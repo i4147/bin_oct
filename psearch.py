@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that searches the Python Package Index (PyPI) for packages matching a user-supplied keyword and displays the results in a readable form. The tool should be runnable from the command line and accept the search term as a required argument, with an optional parameter to limit the number of results returned. It should fetch package metadata from PyPI's public web interface, tolerate network failures gracefully by reporting errors to the standard error stream and returning no results rather than crashing, and match the query case-insensitively against package names. For each matching package, it should collect the package name, version, a short summary description, and a link to the package's page, and present them in a clean, human-readable layout. The output should be easy to scan, with each package's details clearly separated from the others. Design the tool so that it canported and its search capability reused programmatically, with a configurable network timeout. Structure the code cleanly and handle edge cases such as empty queries, no matches, and malformed responses sensibly.
----"""
 
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import json
 import sys
+
 import requests
 
 

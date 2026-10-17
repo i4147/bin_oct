@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from collections import OrderedDict
@@ -18,12 +19,14 @@ from traceback import format_exc
 from typing import Any, Optional
 from urllib.parse import urljoin
 import zipfile
+
 from bs4 import BeautifulSoup
 from guessit import guessit
 import rarfile
 import requests
 from requests import exceptions
 from requests.utils import quote
+
 
 __version__ = "0.0.0"
 SUB_FORMATS: list[str] = [".ass", ".srt", ".ssa", ".sub", ".sup"]

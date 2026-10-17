@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for text-based files (such as .txt, .md, .py, .json, and .csv by default, with a configurable list of extensions), detects which files contain Persian/Farsi text, and translates that Persian content into English while preserving the original structure and formatting of each file.
-The tool should accept command-line options to specify the root directory, which file types to process, which folder or file names to exclude (with sensible defaults such as version control folders, caches, and virtual or temporary directories), and whether to modify files in place or write translated copies to a separate output location. It should be robust to files stored in different text encodings, falling back gracefully when one cannot be decoded, and it should skip or report files it cannot read rather than crashing.
-Translation should be performed in chunks so that long files are handled reliably: split text at natural boundaries such as line breaks, sentence endings, and punctuation so that translated segments remain coherent and within translation service size limits. Only segments containing Farsi characters need to be sent for translation; English text, code syntax, numbers, and markup should be left untouched wherever possible. The translation step should be retried on transient failures and should degrade gracefully, keeping the original text if a segment cannot be translated.
-For performance, the tool should process multiple files concurrently using parallel workers, with a configurable number of workers, and display a progress indicator showing overall completion. It should log its activity, including which files were changed, skipped, or failed, and produce a final summary report with counts of files scanned, files translated, segments translated, errors encountered, and elapsed time.
-Include a dry-run mode that lists the files that would be translated without modifying anything, and make sure the tool never corrupts files: writes should be safe, so that a failure mid-run does not leave a partially written file behind. The output should be a clean, well-structured, reusable command-line utility with clear help text.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,9 +10,11 @@ import re
 import sys
 import time
 from typing import Callable, Iterable, Optional, Sequence
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm
+
 
 FARSI_RE: re.Pattern[str] = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]")
 TOFA_MARKERS: tuple[str, ...] = (

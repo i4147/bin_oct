@@ -1,19 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a single image file provided as a command-line argument and reports whether the image is predominantly dark, predominantly bright, or mixed in tone. The script should accept the image path from the command line and, if no path is given, display a short usage message and exit with an error status.
-The analysis should treat each pixel's perceived brightness as a weighted combination of its red, green, and blue channels, using a standard luminance weighting that reflects human visual sensitivity. A pixel counts as "dark" when its brightness falls below a fixed threshold (around 50 on a 0–255 scale). Compute the proportion of dark pixels across the whole image, then classify the image as:
-- "Mostly Dark" if the dark-pixel proportion exceeds 60%,
-- "Mostly Bright" if the dark-pixel proportion is below 40%,
-- "Mixed" otherwise.
-Both the dark-pixel threshold and the classification cutoff should be configurable through the function's parameters with those defaults. The script must handle images in any common format by converting them to a consistent RGB representation before analysis, and it should release the file properly after reading it.
-Output should be two lines printed to the console:
-1. The image's file name followed by the classification label (e.g., "photo.jpg: Mostly Dark").
-2. The dark-pixel ratio, displayed as a value with two decimal places.
-Note that the reported ratio is a fraction between 0 and 1, so ensure the displayed value is clearly and correctly formatted for the reader. Keep the implementation self-contained, readable, and suitable for running from a terminal on any operating system.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from PIL import Image
 
 

@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a set of model-alias placeholder tokens from a text or configuration file (or a provided input source), maps each recognized token to its corresponding AI model identifier using a predefined lookup table, and outputs the resolved model names. The tool should work on a file or directory of files: scan the contents for occurrences of the known tokens, replace or report each one with its mapped model identifier, and summarize how many times each token was found and resolved. Tokens with no mapping should be flather than silently ignored. The script should support a dry-run mode that previews changes without modifying files, and a mode that writes the substitutions back in place. Include clear console output listing the files processed, the replacements made, and any unresolved tokens, along with a final summary report. Handle missing paths, unreadable files, and encoding issues gracefully, and make the mapping table easy to extend or override from an external source.
----"""
 
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 import re
+
 
 MODEL_MAPPINGS = {
     "COBUDDY_TOKEN": "baidu/cobuddy:free",

@@ -1,15 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that checks HTML files for structural tag problems and reports the results. The tool should accept one or more HTML file paths (or a directory to scan recursively for HTML files) from the command line, parse each document, and detect issues such as unclosed elements, closing tags that have no matching opening tag, mismatched or out-of-order nesting, and closing tags applied to void elements that should never be closed (for example, line breaks, images, or input fields). Each detected problem should be reported with the file name and the precise line and column where it occurs, along with a clear, human-readable description.
-The script should log its progress and findings using a structured logging approach, print a concise summary at the end (number of files checked, number of files with errors, and total errors found), and exit with a non-zero status code when any errors are found so it can be used in continuous integration pipelines. It should handle missing files, unreadable files, and malformed input gracefully without crashing, reporting these as errors for the affected file while continuing to process the remaining files. Optionally, it should support a flag that suppresses non-error output for quiet operation, and a flag that writes the report to a specified output file in a machine-readable format such as JSON as well as the console.
-The tool should be self-contained, robust, and well organized, with a clear command-line interface that includes help text describing each option.
----"""
 
 from __future__ import annotations
 import argparse
 from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
+
 from loguru import logger
+
 
 VOID_ELEMENTS = {
     "area",
@@ -173,6 +171,7 @@ def backend_lxml(raw):
 
 def backend_html5lib(raw):
     from xml.etree import ElementTree as ET
+
     import html5lib
 
     errors = []

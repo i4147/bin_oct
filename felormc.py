@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that scans a project directory (or individual files) for Python source files and removes unnecessary comments and blank lines from them while preserving the code's behavior and any meaningful directives. The tool should accept a target path, optionally recurse into subdirectories, and process files concurrently using a configurable number of worker processes, with a sensible default. It must recognize Python files by extension and by a Python shebang line, and skip everything else.
-When cleaning a file, the tool should leave intact any comments that carry tooling meaning, such as type annotations, formatter toggles, and lint suppression markers, as well as the shebang line itself. Other ordinary comments and redundant blank lines should be stripped, while the structure, indentation, and syntax of the code remain valid. Parsing and rewriting should be done in a way that is robust to the full range of modern Python syntax, so that the resulting file is always syntactically equivalent to the original.
-The tool should support a dry-run mode that reports which files would change without writing anything, and a verbose mode that increases logging detail. Logging should go to standard error with timestamps and severity levels. For each file, the tool should report whether it was modified, skipped, or failed, and should continue processing remaining files if one file errors. At the end, it should print a summary of processed, modified, skipped, and failed counts and exit with a non-zero status code if any file failed.
-Design the command-line interface with clear help text and sensible defaults, validate inputs gracefully, and handle missing paths or permission problems with informative error messages rather than crashes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +7,7 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Final, Iterable, Iterator, Optional
+
 import libcst as cst
 from libcst import (
     BaseStatement,
@@ -23,6 +19,7 @@ from libcst import (
     TrailingWhitespace,
 )
 from loguru import logger
+
 
 DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")

@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts an audio recording in M4A format into a plain-text transcript. The tool should accept an input audio file path and an optional output text file path (defaulting to a generic name such as "out.txt"). Before doing any work, it should verify that the input file exists and report a clear error and exit with a failure status if it does not. It should also warn, without stopping, if the file does not carry the expected M4A extension.
-The script should convert the compressed M4A audio into an uncompressed intermediate format suitable for speech recognition, using a temporary file that is cleaned up after use. It should then load the converted audio, estimate and compensate for background noise before transcribing, and send the audio to a speech-to-text service to produce the recognized text. The transcript should be written to the specified output file, and the tool should print clear progress messages at each stage (processing, converting, loading, noise adjustment, transcribing, and saving).
-Handle failures gracefully: if the speech service cannot understand the audio or cannot be reached, report a meaningful message to the user rather than crashing with a raw traceback. Ensure temporary files are removed even when an error occurs. The script should be runnable from the command line with the input file as a required argument and the output file as an optional argument, and it should print a confirmation with the output location when the transcription succeeds.
----"""
 
 from __future__ import annotations
 import os
 import sys
 import tempfile
+
 from pydub import AudioSegment
 import speech_recognition as sr
 

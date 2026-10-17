@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that fetches the public GitHub repositories of a given user and produces a structured summary of them. The script should accept a GitHub username as input, and optionally a personal access token loaded from the environment or a `.env` file so that rate limits and request quotas can be raised. It should query the GitHub API for the user's repositories, handle the case where the user has no public repositories by informing the user clearly, and handle common failure cases such as an unknown username, invalid credentials, or network timeouts with informative messages rather than crashes.
-While the request is in progress, the script should display a visible countdown or progress indicator in the terminal that runs concurrently with the work and disappears cleanly once the operation finishes. The request should use a configurable timeout, defaulting to 60 seconds.
-For each repository, the script should collect useful metadata such as name, description, primary language, star and fork counts, last update time, and URL, and output the results in a readable format. The output should be available either as a human-friendly console listing or as machine-readable JSON saved to a file, selectable by the user. The script should be runnable from the command line, validate its inputs, and provide helpful usage guidance when arguments are missing or incorrect.
----"""
 
 from __future__ import annotations
 import json
@@ -11,6 +7,7 @@ from pathlib import Path
 import sys
 import threading
 import time
+
 from dotenv import load_dotenv
 from github import Auth, Github, GithubException
 

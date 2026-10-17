@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""ans every skipping any version-control metadata folders) and collects the set of environment variable names defined in those files. A variable definition is recognized whenifier madeits, and underscores, immediately followed by an equ filesTF-8 text, tolerate un reporting a warning for each fail and continuing with and never file
-Once sces, the script should write unique variable names to a text_vars.txt in the current directory, one namele write. Finally, printable names were found and standnable command-line script with a clear entry point, inenced across its configuration and files.
----"""
 
 from __future__ import annotations
 import builtins

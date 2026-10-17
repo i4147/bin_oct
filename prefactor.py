@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a Python project directory and produces a dependency map showing how the project's internal modules import one another. The tool should be runnable from the command line and accept a root directory to scan, with optional arguments to exclude a subdirectory from the scan, to treat the project as a package (using a supplied package name) so that module names are computed accordingly, and to control how many levels or results are reported.
-The script should walk the project tree and collect every Python source file, skipping cache directories and any excluded path. For each file, it should determine a canonical module name relative to the project root, taking package-mode settings into account (for example, treating package initializer files as their parent package). It should then parse each file's source without executing it, extract the import statements it contains (both absolute and relative imports), and resolve those imports to modules that exist within the scanned project, ignoring third-party and standard-library imports.
-Use the collected information to build a directed graph of module dependencies. The tool should be able to report, in clear human-readable text: the list of discovered modules, each module's direct internal dependencies, modules that are imported by many others, and any circular import cycles found in the graph. Where the number of items could be large, the tool should limit output to a configurable maximum (defaulting to 10 entries per section) while indicating how many more exist.
-Parsing and analysis of many files should be able to run in parallel across available CPU cores to keep runtime reasonable on large projects, while still producing deterministic, sorted output. The script should handle files with syntax errors or unreadable encodings gracefully by reporting them as warnings rather than crashing, and should exit with a non-zero status code only for invalid command-line usage or a missing/invalid root directory. Include a clear help message describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +8,7 @@ from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 import sys
+
 
 MAX_DEFAULT = 10
 

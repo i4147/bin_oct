@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user-specified folder (and its subfolders) for image files and detects human faces in each image, then organizes the results. The tool should accept a source directory and, optionally, a destination directory as inputs, and should only consider common image formats such as JPEG, PNG, BMP, TIFF, and WebP.
-The script should use a classic, pre-trained frontal face detection approach, trying several available detection model variants in order of preference and falling back gracefully if one is unavailable. Images should be downscaled to a reasonable maximum dimension before analysis to keep processing fast, while still reporting detections relative to the original image.
-Processing should be parallelized across available CPU cores so that large image collections are handled efficiently, with a visible progress indicator showing how many images have been processed.
-The main outputs are: copies or moves of images into categorized output folders (for example, images containing faces versus images without faces), and a summary of results including the total number of images scanned, how many contained faces, the total face count, and any files that failed to load or process. Each image that fails should be skipped without stopping the overall run.
-The script should log its activity both to the console and to a log file in the user's home directory, recording informational messages, warnings, and errors with timestamps. If a required dependency is missing, the script should print a clear installation hint and exit cleanly. Handle invalid or non-existent input paths with clear error messages, and make sure the script can be run safely from the command line with sensible defaults.
----"""
 
 from __future__ import annotations
 import logging
@@ -13,7 +7,9 @@ from pathlib import Path
 import shutil
 import sys
 import time
+
 from tqdm import tqdm
+
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for Python source files and reports which of them contain type annotations and which do not, so that a developer can quickly assess how well a codebase adopts type hints.
-The script should accept a root directory path from the command line (defaulting to the current directory) and walk through it recursively, skipping common non-source or generated folders such as version control directories, virtual environments, caches, build outputs, dependency folders, and any "output" directories. It should parse each Python file's syntax tree without executing the code, and determine whether the file meaningfully uses type annotations on function parameters, return values, or variable declarations. Files that are too trivial to judge (for example, nearly empty files or files with very few syntax elements) should be excluded from the analysis or flagged separately rather than counted as either annotated or unannotated.
-The script must handle unreadable files, encoding problems, and syntax errors gracefully by recording them as problems in the report without stopping the whole scan. It should optionally run the per-file analysis in parallel to speed up large projects, and it should support a flag that switches the output format between a human-readable text summary and machine-readable JSON.
-The final output should include, for each analyzed file, its relative path and annotation status, followed by an overall summary showing the total number of files scanned, how many are fully or partially annotated, how many are not annotated, how many were skipped or failed, and an overall annotation coverage percentage. The script should exit with a zero status code on success and a non-zero code if the scan encounters a fatal error such as an invalid root path.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +8,7 @@ import json
 from pathlib import Path
 import sys
 from typing import Any
+
 
 DEFAULT_EXCLUDES: set[str] = {
     ".git",

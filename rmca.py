@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for analyzing and transforming Python source code across an entire project. The tool should accept one or more file or directory paths, recursively discover Python files while skipping irrelevant or generated directories, and process the files in parallel using a configurable number of worker processes to keep throughput high on large codebases.
-The tool should support multiple parsing or processing backends, selectable by the user from a small set of options (a full-fidelity concrete-syntax backend, a faster tree-based backend, and a standard abstract-syntax backend). When the preferred backend is unavailable, it should fall back gracefully to one that is installed and inform the user which backend is in use. The script should preserve important source features such as shebang lines, type-hint and formatting directive comments, and file encodings, so that output remains faithful to the original code wherever edits are made.
-Its core behavior should include reading each Python file, performing the requested analysis or transformation (for example, reporting problems, extracting structural information such as functions, classes, and imports, or applying automated fixes), and producing results either as human-readable console output or as a structured machine-readable report. It should offer a dry-run mode that shows what would change without modifying files, an option to write changes in place, and a summary at the end with counts of files processed, files changed or flagged, and any errors encountered. Failures on individual files must not abort the whole run; errors should be captured, reported, and reflected in a meaningful exit status.
-Provide clear, configurable logging with a verbose mode that increases detail, and a quiet mode that suppresses everything except errors. The script should use a clean command-line interface with help text, validate its arguments, and handle keyboard interruption gracefully by shutting down worker processes cleanly. Include sensible defaults, ignore common virtual-environment and cache directories automatically, and allow the user to override ignore patterns and the worker count. Aim for robust, well-structured, documented code that can run on Windows, macOS, and Linux.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +7,7 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Sequence
+
 
 try:
     import libcst as cst

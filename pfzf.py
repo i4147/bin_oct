@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that runs as an interactive terminal fuzzy-search picker. The user types a query, and the tool ranks a list of candidate items by how well the query fuzzy-matches each item, showing the best matches first and updating live as each keystroke is entered.
-Core behavior to implement:
-- Accept a list of candidate strings (for example, lines read from standard input or a file path given as an argument) to search over.
-- Matching is subsequence-based: every character of the query must appear in the candidate in the same order, but not necessarily adjacent. Matching should be case-insensitive.
-- Score each match so that higher quality matches rank higher. Reward consecutive character runs, matches that begin at the start of the string, and matches that fall right after word boundaries or separators such as spaces, slashes, dashes, underscores, and dots. Penalize large gaps between matched characters and longer candidates when other factors are equal.
-- Return the matched character positions alongside the score so the interface can highlight them.
-- Provide a responsive terminal interface: read keystrokes in raw or cursor-friendly mode without requiring Enter, support backspace, arrow keys for moving the selection, Enter to choose the highlighted item, and Escape or Ctrl-C to cancel. Restore the terminal state cleanly on exit, even on error.
-- Redraw the filtered list on every keystroke, limiting the visible rows to the terminal height, highlighting matched characters in each row, and marking the currently selected item.
-- On selection, print the chosen item to standard output and exit with status 0; on cancel, exit with a nonzero status and print nothing to standard output.
-- Handle edge cases gracefully: an empty query shows all items in their original order, no matches shows a clear empty-state message, and input lists that are empty or unreadable produce a helpful error message.
-- Keep the code self-contained, runnable as a single script, and suitable for use in shell pipelines such as piping `ls` or `git branch` output into it.
----"""
 
 from __future__ import annotations
 import os

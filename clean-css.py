@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line CSS minifier for entire project trees. It should accept a root directory (and optionally a target output location), recursively discover all CSS files while skipping common non-source directories such as version control folders, virtual environments, dependency folders, IDE settings, and build output folders. For each CSS file, it should strip comments and unnecessary whitespace to produce a compact, functionally equivalent stylesheet, using a robust syntax-aware parsing approach so that comments inside strings or malformed input are handled safely. Files that fail to parse cleanly should be left unmodified or reported rather than corrupted, and empty files should pass through unchanged.
-The tool should process files in parallel across available CPU cores to handle large projects efficiently, and should report progress and a summary of results, including the number of files processed, skipped, and failed, along with total bytes saved and elapsed time. It should support a dry-run mode that shows a unified diff of the proposed changes without writing anything, and an option to write the minified output in place or to a separate mirrored directory tree. Where optional advanced compression libraries are available, the script may use them as an enhancement, but it must still function correctly without them. Handle errors gracefully, provide clear command-line help, and exit with a non-zero status code if any file fails.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,8 +9,10 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_css as ts_css
+
 
 try:
     import tinycss2

@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line WHOIS lookup tool for domain names and IP addresses. It should accept a domain or IP as a required positional argument and query WHOIS information from an online WHOIS service over HTTP, returning the results as structured data.
-Key requirements:
-- Provide a command-line interface with options to control output, such as selecting raw versus formatted/pretty-printed JSON output, optionally applying syntax highlighting for terminal display, and an option to print only specific fields or a summary.
-- Support an optional date-based query, where the user supplies a date in YYYY-MM-DD format for historical lookups, and validate the date input with a clear error message if it is malformed.
-- Accept an optional API key or configuration value, and load default settings from a user configuration file located in the current directory, the user's home directory, or a Termux-specific system path, with command-line arguments taking precedence over file settings.
-- Handle international domain names by converting them to their punycode form when the appropriate support is available, and gracefully fall back if it is not installed.
-- Display a version flag and a help message describing all options.
-- Recursively render nested response data as an indented, human-readable text tree when plain-text output is selected, handling lists and nested dictionaries cleanly.
-- Handle network and API errors gracefully, reporting clear messages to the user and exiting with a non-zero status code on failure, without crashing on unexpected responses.
-- Write output to standard output by default, with an option to save results to a file.
----"""
 
 from __future__ import annotations
 from argparse import ArgumentParser
@@ -18,10 +7,12 @@ import datetime as dt
 import json
 from pathlib import Path
 import sys
+
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
 import requests
+
 
 IDN = True
 try:

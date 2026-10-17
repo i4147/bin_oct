@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for text-based source and document files, detects the natural language(s) used in each file, and reports a per-file and aggregate breakdown of languages found across the project.
-The tool should accept a root directory path (defaulting to the current directory) and optional command-line options to control which kinds of files are included or excluded, such as skipping common dependency, build, cache, and version-control folders and ignoring files above a configurable size limit. It should only analyze files that appear to be human-readable text, safely skipping binary files, and it should handle unreadable or oddly encoded files gracefully without stopping the whole run.
-For language detection, the script should rely on character-set heuristics to distinguish scripts such as Latin, Chinese (CJK ideographs), Japanese (kana), Korean (Hangul), and Arabic, and report the dominant script or language mix for each file, along with confidence or proportion information where useful.
-The output should present a clear summary: the number of files scanned and skipped, a table or list of detected languages with file counts and percentages, and optionally a detailed per-file listing. The tool should support a machine-readable output format (such as JSON) as well as a human-friendly terminal display.
-Processing of many files should be parallelized to keep runtime reasonable on large repositories, and a live progress indicator should show completion status while the scan runs. The script should exit with a meaningful status code, provide helpful error messages for invalid paths or arguments, and include a `--help` option describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +6,7 @@ from concurrent.futures import as_completed
 from pathlib import Path
 import re
 import shutil
+
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -22,6 +17,7 @@ from rich.progress import (
     TimeElapsedColumn,
     TimeRemainingColumn,
 )
+
 
 try:
     from concurrent.futures import InterpreterPoolExecutor

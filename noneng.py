@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans files and directories for text written in languages other than English, and reports which files contain such text. The tool should be a command-line utility that accepts one or more file or directory paths as input (defaulting to the current working directory when none are given), recursively walks directories while skipping common non-source folders such as version control metadata, virtual environments, caches, dependency folders, and editor configers only text-based files, ignoring binary content.
-The script should read each candidate file in chunks so that large files can be handled efficiently, and it should use a language-detection engine that the user can choose from several supported backends, with a sensible default. For each file, it should determine whether the sampled text is predominantly English or contains a meaningful proportion of another language, ignoring files that contain too few alphabetic characters to produce a reliable judgment. Scanning should be parallelized across multiple worker processes so that many files are processed quickly.
-The output should clearly list the files identified as containing non-English text, along with the detected language information where useful, and should provide a concise summary of the results. Logging should be used to report progress, warnings for unreadable or problematic files, and errors without crashing the entire run. The tool should return a meaningful exit status indicating whether non-English text was found. Design the command-line interface so that it is intuitive, self-documenting with helpful help text, and validates user-supplied options and paths gracefully.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,7 +7,9 @@ from dataclasses import dataclass
 import multiprocessing
 from pathlib import Path
 from typing import Any, Iterable, Iterator
+
 from loguru import logger
+
 
 WORKERS = 8
 CHUNK_SIZE = 64 * 1024

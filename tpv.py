@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a terminal-based PDF viewer. It should open a PDF file given as a command-line argument, render its pages as images using an external PDF rendering tool available on the system, and display them interactively inside the terminal using text-based graphics that compress two vertical pixels into one character cell with colored half-block characters. The viewer should take over the full terminal screen while running, restore the terminal to its original state on exit (including cursor visibility and any raw-mode settings), and handle window resizing so the page scales to fit the current terminal dimensions.
-Users should be able to navigate pages with keyboard controls (moving forward and backward, jumping to the first or last page, and jumping to a specific page number), zoom in and out, scroll the page when it is larger than the screen, and quit cleanly with a key press. The viewer should display a status line or bar showing the current page number, total page count, zoom level, and available key hints, using reverse-video styling for emphasis. The script should determine the page count from the PDF's metadata, cache rendered pages so revisiting them is fast, and gracefully report errors such as a missing file, a missing rendering tool, a non-PDF or corrupted file, or a rendering failure, both before entering the interactive mode and during it, without leaving the terminal in a broken state.
-The script should also be runnable from the command line with a clear usage message and support optional arguments for setting an initial page and an initial zoom level. It should work on Unix-like terminals that support raw keyboard input and standard terminal escape sequences, and it should be written to keep the user's experience smooth, responsive, and free of visual flicker.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,6 +12,7 @@ import sys
 import tempfile
 import termios
 import tty
+
 
 RESET = "\x1b[0m"
 HOME = "\x1b[H"

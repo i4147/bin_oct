@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that resumably downloads a list of Debian/Termux packages (in the style of an apt package cache fetcher) for a Termux environment, using a plain-text package list file as input. The script should read package names from the file while ignoring blank lines and comment lines, and track its progress in a companion progress file so that an interrupted run can be resumed without re-downloading packages that already succeeded. It should record which packages have completed, which have failed, and which is currently in progress, tolerating a missing or corrupted progress file by starting fresh with a clear warning.
-For each package, the script should fetch the package and its dependencies into the local apt archive cache directory, skipping anything already present. It should invoke the system package tooling through a shared command-running helper, pass along an environment that respects existing apt configuration, and handle failures gracefully: a failed package should be recorded and reported without aborting the whole run, and the user should be able to retry only the failed items later.
-The script should print clear, concise progress output showing how many packages are done, failed, and remaining, and should finish with a summary report. It should exit with a nonzero status if any packages failed and zero if everything succeeded. It should accept a command-line argument specifying the package list file path, and handle missing files or invalid input with helpful error messages instead of crashes. Keep the design simple, robust to interruption at any point (including Ctrl+C, which should save progress before exiting), and suitable for running unattended on a mobile Linux terminal environment.
----"""
 
 from __future__ import annotations
 import glob
@@ -11,7 +7,9 @@ import os
 from pathlib import Path
 import sys
 from typing import Any
+
 from dh import runcmd
+
 
 PROGRESS_SUFFIX: str = ".progress"
 APT_ARCHIVES: Path = Path("/data/data/com.termux/cache/apt/archives")

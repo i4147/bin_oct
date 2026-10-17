@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import contextlib
@@ -14,6 +15,7 @@ import sys
 import tarfile
 import time
 from typing import Any, Optional, Sequence
+
 
 try:
     import lzma_mt

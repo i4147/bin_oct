@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up a project's requirements file by using pip's dependency checker to detect and resolve missing-dependency problems. The script should read a requirements.txt file in the current directory, run a pip consistency check on the current environment, and parse its output to identify which installed packages are missing dependencies that other packages declare. It should then add the missing dependencies to the requirements file, while skipping any packages on a predefined exclusion list of heavy or problematic libraries (such as large machine learning, scientific computing, and browser automation packages) so they are never auto-added. The script should avoid duplicate entries, keep the requirements file clean and sorted, and write the updated list back to disk. It should report to the user, in readable form, which dependencies were detected as missing, which were added, and which were skipped due to the exclusion list. The script should handle the case where the requirements file does not yet exist, handle pip failures gracefully (including non-zero exit codes whose output is still useful), and make no changes if no new packages need to be added. The overall goal is to make the requirements file complete and consistent with the packages actually needed by the environment, with a clear command-line experience and safe, idempotent behavior when run repeatedly.
----"""
 
 from __future__ import annotations
 from collections import defaultdict
@@ -8,6 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+
 
 REQ = Path("requirements.txt")
 BLACKLIST = {

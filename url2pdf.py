@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import sys
+
 from weasyprint import HTML
 
 

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import ast
@@ -23,6 +24,7 @@ import tokenize
 from typing import IO, Any, Callable, Iterator, Sequence, Union
 import warnings
 import zipfile
+
 
 MAX_FILE_BYTES: int = 8 * 1024 * 1024
 LINE_LIMIT: int = 88

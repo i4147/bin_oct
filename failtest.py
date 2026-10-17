@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that repeatedly runs a user-supplied shell command until it produces an unexpected result, then reports the failure. The tool should be launched from the command line and accept the command to execute as a required positional argument.
-Key requirements:
-- **Input:** A shell command string provided by the user. Optionally accept a list of exit codes that are considered acceptable (defaulting to success only, i.e., code 0), and a configurable pause in seconds between iterations (defaulting to one second). Allow the user to supply a short description of the tool's purpose via help output.
-- **Core behavior:** Execute the command in a loop. After each run, print a clearly labeled iteration counter so the user can track progress. If the exit code is among the allowed codes, pause for the configured interval and run again. As soon as an exit code falls outside the allowed set, stop looping immediately.
-- **Output:** When the loop halts, report the iteration number at which the failure occurred and the unexpected exit code. The tool should then terminate with an appropriate process exit status reflecting the outcome.
-- **Robustness:** Handle keyboard interruption gracefully, showing a clean message rather than a traceback. Validate that numeric inputs (exit codes, sleep duration) are sensible, and provide clear error messages for invalid arguments.
-- **Usability:** Include built-in help documentation describing all options and their defaults. The script should be self-contained, runnable as a standalone program, and suitable for stress-testing flaky programs or reproducing intermittent failures.
----"""
 
 from __future__ import annotations
 import argparse

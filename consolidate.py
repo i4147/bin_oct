@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 import argparse
 import ast
+from dataclasses import dataclass, field
+from pathlib import Path
 import re
 import sys
 import time
-import warnings
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import NoReturn, Optional, Union
+import warnings
 
 from loguru import logger
+
 
 WORKERS: int = 8
 LOGURU_LOGFORMAT: str = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
@@ -364,7 +366,7 @@ class _ExecutorMethodRenamer(ast.NodeTransformer):
 
 
 class ExecutorTransformer(ast.NodeTransformer):
-    def visit_With(self, node: ast.With) -> Union[ast.AST, list[ast.stmt]]:
+    def visit_With(self, node: ast.With) -> ast.AST | list[ast.stmt]:
         self.generic_visit(node)
         if len(node.items) != 1:
             return node
@@ -433,7 +435,7 @@ class LoggingTransformer(ast.NodeTransformer):
             return ast.Constant(value=node.attr)
         return node
 
-    def visit_Expr(self, node: ast.Expr) -> Union[ast.AST, list[ast.stmt]]:
+    def visit_Expr(self, node: ast.Expr) -> ast.AST | list[ast.stmt]:
         self.generic_visit(node)
         call = node.value
         if not isinstance(call, ast.Call):

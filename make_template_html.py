@@ -1,9 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree (defaulting to the current working directory) for HTML documents, including both .html and .htm files, while skipping any file named template.html. The script should analyze the markup of every discovered page and identify the structural elements they have in common, such as shared head metadata, stylesheet links, external script references, and the common class names applied to the document body. It should produce a consolidated summary of these shared elements, reporting them in a clear, human-readable form, and handle unreadable or malformed files gracefully by skipping them with a warning rather than stopping the whole run. The output should make it easy for a developer to see what a set of web pages has in common so they can extract that shared scaffolding into a reusable template.
----"""
 
 from __future__ import annotations
 from pathlib import Path
+
 from bs4 import BeautifulSoup
 
 

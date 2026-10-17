@@ -1,24 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that strips docstrings from Python source files in bulk, using a command-line interface that accepts a target file or directory and processes all matching Python files found within it.
-The tool should:
-- Accept a path to a single Python file or a directory from the command line, and recursively discover all Python source files beneath a given directory.
-- Parse each Python file's source to identify string-literal docstrings attached to modules, classes, and functions (including nested definitions), and remove them while leaving the remaining code intact and syntactically valid.
-- Preserve a module-level docstring at the top of a file when the intended behavior is to keep it, while removing other docstrings elsewhere in the file.
-- Gracefully skip files that cannot be parsed due to syntax errors, leaving them unchanged and reporting them without crashing the run.
-- Remove docstring text precisely by its line range so that surrounding code, indentation, comments, and blank-line structure remain as close to the original as possible; ensure that a function or class body never becomes empty as a result of the removal (substitute a harmless placeholder statement where necessary).
-- Process files in parallel across multiple CPU cores to speed up work on large codebases, while keeping the total output deterministic.
-- Support a dry-run or preview mode that reports which files and how many docstrings would be removed without modifying anything on disk.
-- Optionally write results to a separate output directory instead of overwriting the originals, preserving the relative folder structure.
-- Print a concise summary at the end including the number of files scanned, files modified, docstrings removed, and files skipped due to errors.
-- Exit with a clear status code indicating success, partial failure (some files skipped), or invalid arguments.
-Keep the tool self-contained, handle encoding and line-ending differences gracefully, and provide helpful `--help` text describing each option.
----"""
 
 from __future__ import annotations
 import argparse
 import ast
 import multiprocessing as mp
 from pathlib import Path
+
 from dh import get_pyfiles
 
 

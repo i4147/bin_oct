@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory tree and collects its text-based license and documentation content into a single consolidated output file. The tool should accept a target directory, a destination file path, and an optional list of directory names to skip during traversal. It should walk the directory recursively, skipping symbolic links, non-regular files, and any binary files (detected by the presence of null bytes in an initial sample of the file), while also ignoring the excluded directories. From the remaining files, it should identify files whose names indicate licensing or notice content (such as LICENSE, COPYING, NOTICE, or similar variants) and gather them into one aggregated report.
-The output file should be organized so that each collected file is clearly delimited with its relative path and a header, making it easy for a human reader to know where each license or notice originated. The script should create any missing parent directories for the output location and handle unreadable files gracefully without stopping the entire run.
-Include a helper capability for presenting human-readable file sizes (bytes, KB, MB, GB, with a fallback to larger units) so that the tool can report the total size of collected material and summarize how many files were gathered. The script should provide a clean command-line interface with a sub-command for the collection operation, use sensible defaults for the excluded directories, print a concise completion summary to the console, and exit with a non-zero status on invalid input such as a missing or non-directory source path.
----"""
 
 from __future__ import annotations
 import argparse

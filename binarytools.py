@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for executable binaries and checks whether each one can actually run, reporting any that fail because of missing shared libraries or other loading errors.
-The tool should accept a root directory (defaulting to the current working directory) as its main input, along with options that control behavior such as the number of parallel workers, the maximum time allowed per probe, whether to follow symbolic links, and whether to emit verbose logging. It should walk the tree while skipping common non-essential directories such as version control folders, dependency caches, virtual environments, and build output directories.
-For each candidate file that is executable, the script should attempt a lightweight probe by invoking the binary with common harmless flags (such as help or version options), treating a timeout or a clean exit as healthy. When a probe fails, the script should inspect the resulting error output for signs of a broken dependency, such as a message about shared libraries that cannot be loaded or a missing library file, and classify the result accordingly. Where the platform supports it, the script should also inspect the binary's dynamic library dependencies and report which ones cannot be resolved.
-Probing should run concurrently to keep scanning fast, and the script should guard against hanging processes with a configurable timeout. Results should be summarized in a clear, human-readable report on the console, with color highlighting when the output is a terminal, listing broken binaries, the reason for each failure, and the missing libraries where identifiable. The script should also support an optional machine-readable output format, such as JSON, for use in automation. Exit with a nonzero status code when any broken binaries are found, and zero otherwise.
-The script should handle errors gracefully: unreadable directories, permission problems, binaries that vanish during the scan, and unsupported platforms should produce informative log messages rather than crashing the run. It should be safe to run on large file trees and should never modify the files it inspects.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,6 +12,7 @@ import subprocess
 import sys
 import time
 from typing import Iterator, Optional, Sequence
+
 
 SKIP_DIR_NAMES = {
     ".git",

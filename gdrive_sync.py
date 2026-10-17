@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that backs up files from a user's Google Drive to a local directory. The tool should authenticate the user with Google's OAuth flow using a locally provided client credentials file, cache the resulting access token so subsequent runs do not require re-authorization, and refresh it automatically when it expires. It should read configuration such as credential and token file locations, the backup destination, and any other settings from environment variables or a `.env` file, with sensible defaults when they are not provided.
-The script should accept command-line arguments that let the user choose which Drive content to back up (for example, the entire Drive, a specific folder by ID or name, or files matching a filter), set the local output directory, and optionally limit the operation or enable a dry-run mode that only reports what would be downloaded. It should recursively traverse Drive folder hierarchies, reproduce the folder structure locally, and skip files that have already been downloaded and are unchanged, using modification timestamps to decide whether a file needs updating.
-Regular Google Workspace documents (Docs, Sheets, Slides) that cannot be downloaded as raw binary should be exported to suitable common formats, while ordinary binary files should be streamed to disk in chunks with progress reporting. The script should handle Drive API errors, rate limits, and network failures gracefully with retries and clear messages, continue past individual file failures, and produce a final summary of downloaded, skipped, updated, and failed items. It should preserve original modification times on downloaded files where possible and write a log or manifest file recording what was backed up and when.
-The script must run as a command-line tool, exit with meaningful status codes, print helpful usage and error messages to the user, and never expose credentials or tokens in its output.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,6 +9,7 @@ import pickle
 import sys
 from typing import Any, Optional
 from urllib.parse import urlencode
+
 
 try:
     from dotenv import load_dotenv
@@ -30,6 +26,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 import requests
+
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 FOLDER_MIME = "application/vnd.google-apps.folder"

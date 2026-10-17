@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a source tree for Python files and removes comments from them while preserving the rest of each file's code exactly as written. The tool should accept a file or directory path (and optionally a list of directories to skip) from the command line, and walk the tree recursively, ignoring common version-control, virtual-environment, cache, and build-output folders by default.
-For each Python file, the tool should parse the source with a robust syntax-aware parser so that only true comment text is removed, leaving string literals, docstrings, and any code that merely contains a "#" character untouched. Blank lines left behind by removed full-line comments should be cleaned up sensibly, and trailing whitespace should be stripped only where a comment was removed. Files that have no comments should be left byte-for-byte unchanged, and files that fail to parse should be reported as errors without being modified.
-The tool should support a dry-run mode that reports which files would change without writing anything, a check mode that exits with a non-zero status if any file would be modified (useful in CI), and a verbose mode that logs per-file results. After processing, it should print a summary showing counts of files stripped, unchanged, skipped, and errored. Writes should be safe: changes must be applied atomically (for example via a temporary file replaced into place) so a crash never leaves a partially written file.
-Processing should be parallelizable across CPU cores, with a command-line option to choose the number of workers and the multiprocessing dispatch strategy, falling back to sequential processing when only one worker is requested. Results from parallel workers must be aggregated correctly and deterministically reported. Provide a clear help message describing all options, and return appropriate exit codes for success, check-mode failures, and errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,8 +17,10 @@ import shutil
 import sys
 import tempfile
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import Pool

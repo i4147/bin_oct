@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for downloading and managing Python package wheels for offline or multi-platform use. The tool should accept a list of package requirements (either directly on the command line or from a requirements file) and resolve each one to a compatible distributable file, targeting a specific Python version, platform, and architecture chosen by the user, with sensible defaults based on the current interpreter.
-Key behaviors:
-- Accept inputs for package names and version specifiers, optional requirements files, target platform and Python version constraints, an output directory, and options controlling concurrency and whether existing files should be overwritten or skipped.
-- Determine which packages are already installed locally and report their versions, and detect when a requested package is missing or at an incompatible version.
-- Query a remote package index for available distributions, select the most suitable compatible file for the requested environment, and download it with a visible progress indication when a rich-capable terminal is available, falling back gracefully to plain text output otherwise.
-- Verify downloaded artifacts where possible (for example, confirming a file is a valid archive) and skip or retry failed downloads with clear error reporting.
-- Download multiple packages concurrently using a configurable number of worker processes, defaulting to the number of available CPU cores.
-- Optionally produce a summary report in a structured machine-readable format (such as JSON) listing each package, its resolved version, the file downloaded, its size, and its status.
-- Optionally bundle all downloaded artifacts into a single compressed archive for transfer to an air-gapped or offline machine.
-- Provide a dry-run mode that shows what would be downloaded without fetching anything, and a verbose mode for detailed logging.
-- Present human-readable file sizes in output, handle keyboard interruption gracefully by cleaning up partial downloads, and exit with a meaningful non-zero status code when any requested package fails.
-- Include a complete help message describing all options, with examples of typical usage.
----"""
 
 from __future__ import annotations
 import argparse
@@ -26,6 +13,7 @@ import sys
 import textwrap
 from typing import Optional, Sequence
 import zipfile
+
 
 try:
     from packaging.tags import parse_tag

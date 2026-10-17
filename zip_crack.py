@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for recovering the password of a password-protected ZIP archive using a wordlist-based dictionary attack. The tool should take the path to the ZIP file and a path to a text file containing candidate passwords (one per line) as inputs, and should attempt each candidate against the archive until it finds the correct password or exhausts the list.
-The script should leverage multiple CPU cores to speed up the search, dividing the candidate passwords into batches that are distributed across parallel worker processes. The batch size and the interval for progress updates should be configurable from the command line, with sensible defaults. Each worker should validate candidates against the archive without extracting any files to disk.
-While running, the tool should periodically report progress to the user, including the number of passwords tested, the current rate of attempts per second, and the elapsed time, formatted in a human-readable way (for example, hours, minutes, and seconds as appropriate). Once the search completes, it should clearly report whether the password was found, and if so, display the recovered password, along with a summary of the total attempts made and the total time taken.
-The tool should handle common error conditions gracefully with clear user-facing messages, such as a missing or unreadable archive file, a missing or empty wordlist, an archive that is not password-protected, or an invalid command-line argument. It should stop all worker processes cleanly when a password is found or when the user interrupts execution (for example with Ctrl+C), and it should exit with appropriate status codes indicating success, failure to find the password, or error. The script should be designed for use on the command line, with help text describing its usage and options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +10,7 @@ import sys
 import time
 from typing import TYPE_CHECKING, Final
 import zipfile
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

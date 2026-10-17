@@ -1,17 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
 import argparse
-from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 import hashlib
 import multiprocessing as mp
+from multiprocessing import Pool, cpu_count
+import os
 from pathlib import Path
 import shutil
+import struct
 import sys
 import tarfile
+import tempfile
 import time
-from typing import Iterator, Optional, Sequence
+from typing import Callable, Iterator, Optional, Sequence
+
 import brotli
+
 
 try:
     from rich import box
@@ -25,8 +29,10 @@ try:
 except ImportError:
     RICH_AVAILABLE = False
     print("💡 Tip: Install 'rich' for prettier output: pip install rich")
-DEFAULT_CHUNK_SIZE: int = 1024 * 1024
-MIN_CHUNK_SIZE: int = 4096
+
+DEFAULT_CHUNK_SIZE: int = 4 * 1024 * 1024
+MIN_CHUNK_SIZE: int = 64 * 1024
+
 EXCLUDED_EXTENSIONS: set[str] = {
     ".br",
     ".xz",
@@ -106,6 +112,7 @@ EXCLUDED_EXTENSIONS: set[str] = {
     ".vmdk",
     ".qcow2",
 }
+
 EXCLUDED_DIRS: set[str] = {
     ".git",
     ".svn",
@@ -116,6 +123,102 @@ EXCLUDED_DIRS: set[str] = {
     "venv",
     ".env",
 }
+
+
+class ParallelBrotliCompressor:
+    MAGIC: bytes = b"PBRT0001"
+
+    def __init__(
+        self,
+        quality: int = 1,
+        chunk_size: int = 4 * 1024 * 1024,
+        workers: Optional[int] = None,
+        mode: int = brotli.MODE_GENERIC,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> None:
+        if not 0 <= quality <= 11:
+            raise ValueError("quality must be between 0 and 11")
+        if chunk_size < 64 * 1024:
+            raise ValueError("chunk_size should be at least 64KB")
+        self.quality: int = quality
+        self.chunk_size: int = chunk_size
+        self.workers: int = workers or cpu_count()
+        self.mode: int = mode
+        self.progress_callback: Optional[Callable[[int, int], None]] = progress_callback
+
+    def compress_file(self, input_path: str, output_path: str) -> None:
+        in_path: Path = Path(input_path)
+        out_path: Path = Path(output_path)
+        total_size: int = in_path.stat().st_size
+        tasks = self._iter_chunk_tasks(in_path)
+        bytes_done: int = 0
+        with open(out_path, "wb") as f_out:
+            f_out.write(self.MAGIC)
+            count_pos: int = f_out.tell()
+            f_out.write(struct.pack("<I", 0))
+            chunk_count: int = 0
+            with Pool(processes=self.workers) as pool:
+                for chunk_index, compressed, orig_len in pool.imap(
+                    _compress_worker,
+                    tasks,
+                    chunksize=1,
+                ):
+                    f_out.write(struct.pack("<I", len(compressed)))
+                    f_out.write(struct.pack("<I", orig_len))
+                    f_out.write(compressed)
+                    chunk_count += 1
+                    bytes_done += orig_len
+                    if self.progress_callback:
+                        self.progress_callback(bytes_done, total_size)
+            end_pos: int = f_out.tell()
+            f_out.seek(count_pos)
+            f_out.write(struct.pack("<I", chunk_count))
+            f_out.seek(end_pos)
+
+    @staticmethod
+    def decompress_file(input_path: str, output_path: str) -> None:
+        with open(input_path, "rb") as f_in, open(output_path, "wb") as f_out:
+            magic: bytes = f_in.read(len(ParallelBrotliCompressor.MAGIC))
+            if magic != ParallelBrotliCompressor.MAGIC:
+                raise ValueError("Not a ParallelBrotli container")
+            (chunk_count,) = struct.unpack("<I", f_in.read(4))
+            for _ in range(chunk_count):
+                (comp_len,) = struct.unpack("<I", f_in.read(4))
+                (orig_len,) = struct.unpack("<I", f_in.read(4))
+                payload: bytes = f_in.read(comp_len)
+                if len(payload) != comp_len:
+                    raise IOError("Truncated chunk payload")
+                f_out.write(brotli.decompress(payload))
+
+    def compress_bytes(self, data: bytes) -> bytes:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_in:
+            tmp_in.write(data)
+            tmp_in_path: str = tmp_in.name
+        tmp_out_fd, tmp_out_path = tempfile.mkstemp()
+        os.close(tmp_out_fd)
+        try:
+            self.compress_file(tmp_in_path, tmp_out_path)
+            with open(tmp_out_path, "rb") as f:
+                return f.read()
+        finally:
+            os.unlink(tmp_in_path)
+            os.unlink(tmp_out_path)
+
+    def _iter_chunk_tasks(self, input_path: Path) -> Iterator[tuple[int, bytes, int, int]]:
+        index: int = 0
+        with open(input_path, "rb") as f:
+            while True:
+                chunk: bytes = f.read(self.chunk_size)
+                if not chunk:
+                    break
+                yield (index, chunk, self.quality, self.mode)
+                index += 1
+
+
+def _compress_worker(task: tuple[int, bytes, int, int]) -> tuple[int, bytes, int]:
+    index, chunk, quality, mode = task
+    compressed: bytes = brotli.compress(chunk, quality=quality, mode=mode)
+    return index, compressed, len(chunk)
 
 
 @dataclass
@@ -166,68 +269,64 @@ def relative_display(path: Path, directory: Path) -> str:
         return str(path)
 
 
-def stream_compress(
+def _hash_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1024 * 1024), b""):
+            hasher.update(block)
+    return hasher.hexdigest()
+
+
+def compress_with_parallel(
     input_path: Path,
     output_path: Path,
     quality: int,
     chunk_size: int,
-    flush_each_chunk: bool,
+    workers: int,
     hash_input: bool,
 ) -> tuple[int, Optional[str]]:
-    compressor = brotli.Compressor(quality=quality)
-    hasher = hashlib.sha256() if hash_input else None
-    written: int = 0
-    with open(input_path, "rb") as f_in, open(output_path, "wb") as f_out:
-        while True:
-            chunk: bytes = f_in.read(chunk_size)
-            if not chunk:
-                break
-            if hasher is not None:
-                hasher.update(chunk)
-            payload: bytes = compressor.process(chunk)
-            if flush_each_chunk:
-                payload += compressor.flush()
-            if payload:
-                f_out.write(payload)
-                written += len(payload)
-        tail: bytes = compressor.finish()
-        if tail:
-            f_out.write(tail)
-            written += len(tail)
-    return written, hasher.hexdigest() if hasher is not None else None
+    compressor: ParallelBrotliCompressor = ParallelBrotliCompressor(
+        quality=quality,
+        chunk_size=chunk_size,
+        workers=workers,
+    )
+    compressor.compress_file(str(input_path), str(output_path))
+    written: int = output_path.stat().st_size
+    source_digest: Optional[str] = None
+    if hash_input:
+        source_digest = _hash_file(input_path)
+    return written, source_digest
 
 
-def stream_decompress(
+def decompress_with_parallel(
     input_path: Path,
     output_path: Optional[Path],
-    chunk_size: int,
-    allow_truncated: bool,
     hash_output: bool,
+    allow_truncated: bool = False,
 ) -> tuple[int, Optional[str]]:
-    decompressor = brotli.Decompressor()
-    hasher = hashlib.sha256() if hash_output else None
-    written: int = 0
-    f_out = open(output_path, "wb") if output_path is not None else None
+    tmp_path: Optional[Path] = None
+    target: Path
+    if output_path is None:
+        fd, tmp_name = tempfile.mkstemp()
+        os.close(fd)
+        tmp_path = Path(tmp_name)
+        target = tmp_path
+    else:
+        target = output_path
     try:
-        with open(input_path, "rb") as f_in:
-            while True:
-                chunk: bytes = f_in.read(chunk_size)
-                if not chunk:
-                    break
-                payload: bytes = decompressor.process(chunk)
-                if payload:
-                    if f_out is not None:
-                        f_out.write(payload)
-                    if hasher is not None:
-                        hasher.update(payload)
-                    written += len(payload)
+        try:
+            ParallelBrotliCompressor.decompress_file(str(input_path), str(target))
+        except (IOError, ValueError):
+            if not allow_truncated:
+                raise
+        written: int = target.stat().st_size
+        digest: Optional[str] = None
+        if hash_output:
+            digest = _hash_file(target)
+        return written, digest
     finally:
-        if f_out is not None:
-            f_out.close()
-    if not decompressor.is_finished() and not allow_truncated:
-        msg = "Incomplete Brotli stream (missing end-of-stream marker)"
-        raise ValueError(msg)
-    return written, hasher.hexdigest() if hasher is not None else None
+        if tmp_path is not None and tmp_path.exists():
+            tmp_path.unlink()
 
 
 def tar_directory(directory: Path, output_path: Path, delete_original: bool = False) -> tuple[int, bool]:
@@ -252,6 +351,7 @@ def compress_file_streaming(
     keep_original: bool = False,
     was_tarred: bool = False,
     verify: bool = False,
+    workers: int = 1,
 ) -> CompressionResult:
     start_time: float = time.time()
     try:
@@ -267,16 +367,11 @@ def compress_file_streaming(
                 operation="compress",
                 was_tarred=was_tarred,
             )
-        try:
-            compressed_size, source_digest = stream_compress(
-                input_path, output_path, quality, chunk_size, False, verify
-            )
-        except AssertionError:
-            if output_path.exists():
-                output_path.unlink()
-            compressed_size, source_digest = stream_compress(input_path, output_path, quality, chunk_size, True, verify)
+        compressed_size, source_digest = compress_with_parallel(
+            input_path, output_path, quality, chunk_size, workers, verify
+        )
         if verify:
-            check_size, check_digest = stream_decompress(output_path, None, chunk_size, False, True)
+            check_size, check_digest = decompress_with_parallel(output_path, None, True)
             if check_size != original_size or check_digest != source_digest:
                 msg = "Verification failed: round-trip does not match source"
                 raise ValueError(msg)
@@ -316,6 +411,7 @@ def decompress_file_streaming(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     keep_original: bool = False,
     allow_truncated: bool = False,
+    workers: int = 1,
 ) -> CompressionResult:
     start_time: float = time.time()
     try:
@@ -330,7 +426,7 @@ def decompress_file_streaming(
                 duration=time.time() - start_time,
                 operation="decompress",
             )
-        decompressed_size, _ = stream_decompress(input_path, output_path, chunk_size, allow_truncated, False)
+        decompressed_size, _ = decompress_with_parallel(input_path, output_path, False, allow_truncated)
         original_deleted: bool = False
         if not keep_original and output_path.exists():
             input_path.unlink()
@@ -446,38 +542,19 @@ def process_subdirs_with_tar(
         jobs.append((tar_path, output_path))
     if jobs:
         print(f"\n🗜️  Step 2: Compressing {len(jobs)} tar files with Brotli (quality: {quality})...")
-        if workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=workers) as executor:
-                futures: dict[Future, Path] = {}
-                for tar_path, output_path in jobs:
-                    future = executor.submit(
-                        compress_file_streaming,
-                        tar_path,
-                        output_path,
-                        quality=quality,
-                        chunk_size=chunk_size,
-                        keep_original=False,
-                        was_tarred=True,
-                        verify=verify,
-                    )
-                    futures[future] = tar_path
-                for i, future in enumerate(as_completed(futures), 1):
-                    result: CompressionResult = future.result()
-                    results.append(result)
-                    report_tar_result(result, i, len(jobs))
-        else:
-            for i, (tar_path, output_path) in enumerate(jobs, 1):
-                result = compress_file_streaming(
-                    tar_path,
-                    output_path,
-                    quality=quality,
-                    chunk_size=chunk_size,
-                    keep_original=False,
-                    was_tarred=True,
-                    verify=verify,
-                )
-                results.append(result)
-                report_tar_result(result, i, len(jobs))
+        for i, (tar_path, output_path) in enumerate(jobs, 1):
+            result = compress_file_streaming(
+                tar_path,
+                output_path,
+                quality=quality,
+                chunk_size=chunk_size,
+                keep_original=False,
+                was_tarred=True,
+                verify=verify,
+                workers=workers,
+            )
+            results.append(result)
+            report_tar_result(result, i, len(jobs))
     if tar_errors:
         print(f"\n❌ Failed to tar {len(tar_errors)} directories:")
         for subdir, error in tar_errors:
@@ -612,56 +689,27 @@ def run_jobs(
     verify: bool,
     allow_truncated: bool,
 ) -> Iterator[CompressionResult]:
-    if workers > 1 and len(jobs) > 1:
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            futures: list[Future] = []
-            for input_path, output_path in jobs:
-                if operation == "compress":
-                    futures.append(
-                        executor.submit(
-                            compress_file_streaming,
-                            input_path,
-                            output_path,
-                            quality=quality,
-                            chunk_size=chunk_size,
-                            keep_original=keep_original,
-                            was_tarred=False,
-                            verify=verify,
-                        )
-                    )
-                else:
-                    futures.append(
-                        executor.submit(
-                            decompress_file_streaming,
-                            input_path,
-                            output_path,
-                            chunk_size=chunk_size,
-                            keep_original=keep_original,
-                            allow_truncated=allow_truncated,
-                        )
-                    )
-            for future in as_completed(futures):
-                yield future.result()
-    else:
-        for input_path, output_path in jobs:
-            if operation == "compress":
-                yield compress_file_streaming(
-                    input_path,
-                    output_path,
-                    quality=quality,
-                    chunk_size=chunk_size,
-                    keep_original=keep_original,
-                    was_tarred=False,
-                    verify=verify,
-                )
-            else:
-                yield decompress_file_streaming(
-                    input_path,
-                    output_path,
-                    chunk_size=chunk_size,
-                    keep_original=keep_original,
-                    allow_truncated=allow_truncated,
-                )
+    for input_path, output_path in jobs:
+        if operation == "compress":
+            yield compress_file_streaming(
+                input_path,
+                output_path,
+                quality=quality,
+                chunk_size=chunk_size,
+                keep_original=keep_original,
+                was_tarred=False,
+                verify=verify,
+                workers=workers,
+            )
+        else:
+            yield decompress_file_streaming(
+                input_path,
+                output_path,
+                chunk_size=chunk_size,
+                keep_original=keep_original,
+                allow_truncated=allow_truncated,
+                workers=workers,
+            )
 
 
 def process_files(
@@ -1042,7 +1090,10 @@ def swallowed_directory(args: argparse.Namespace) -> Optional[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="📦 Recursively compress/decompress files using Brotli with parallel processing (deletes originals by default)",
+        description=(
+            "📦 Recursively compress/decompress files using Brotli with parallel processing "
+            "(deletes originals by default)"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1222,10 +1273,6 @@ Examples:
                 args.tar_subdirs_first,
                 args.verify,
             )
-            if not keep_original and not args.yes:
-                targets: str = f"{len(files)} files"
-                if subdirs:
-                    targets += f" and {len(subdirs)} directories"
             if args.tar_subdirs_first and subdirs:
                 results.extend(
                     process_subdirs_with_tar(

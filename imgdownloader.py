@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for bulk image searching and downloading from a web-based image search engine. The tool should accept a search keyword (or a list of keywords) along with optional filters such as the number of images to fetch, image type or category, color preference, image size (including a custom "WIDTH*HEIGHT" format that must be validated with a clear error for invalid input), and an output directory where downloaded images are saved (creating it if it does not exist). It should support selecting a browser-driven approach for pages that require JavaScript rendering, handle multiple concurrent downloads to speed up retrieval, and use a fallback mechanism across several HTTP client options when one is unavailable. The tool should gracefully handle network failures, skip or retry broken links, avoid saving duplicate images, and report progress and a final summary of successes and failures to the user. Provide clear help text describing every option, validate all user-supplied arguments before starting work, and ensure the output filenames are safe for the local filesystem. The script should be runnable from the terminal and exit with meaningful status codes on success, partial success, or fatal errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,6 +8,7 @@ import os
 import re
 import sys
 import urllib.parse
+
 
 try:
     import requests

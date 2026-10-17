@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that splits PDF files into individual single-page PDF files, using parallel processing to handle multiple documents efficiently. The tool should accept one or more PDF file paths or a directory containing PDFs as input, along with an optional output directory (defaulting to a folder named "output") where results are saved. For each input PDF, it should produce one separate PDF file per page, named using the original file's base name followed by a zero-padded page number whose width matches the total page count, so that files sort naturally. The tool should also support an optional mode that extracts the text content of each page and saves it alongside or instead of the split pages, selectable via a command-line flag. Processing should run across a configurable number of worker processes, with a sensible default, and should allow the user to choose among multiple parallel execution strategies. The script should log progress and any errors clearly, continue processing remaining files if one file fails, create the output directory if it does not exist, and print a summary at completion listing how many files were processed, how many pages were produced, and any failures. Provide a clear command-line interface with help text describing all options.
----"""
 
 from __future__ import annotations
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

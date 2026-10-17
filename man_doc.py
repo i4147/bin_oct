@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a directory tree and collects file paths matching a given set of file extensions, with support for compressed manual-page-style files. The script should accept a root directory and an optional list of extensions (or treat "no filter" as matching all files). It should traverse breadth-first, skip version-control and cache directories, avoid following symbolic links, and gracefully ignore directories that cannot be read due to permission or OS errors. Beyond plain extensions, it should also recognize gzip-compressed files whose underlying name ends in numbered section suffixes (such as manual pages compressed with a .gz extension), treating them as matches when the caller requests the corresponding extension family. The result should be a list of matching file paths returned to the caller, suitable for further processing such as indexing, searching, or batch conversion. Where useful, the script may also provide helper behavior for reading or decompressing matched gzip files into temporary files and for printing progress or status messages to the console, but the core deliverable is a robust, memory-efficient file discovery routine with clear, documented inputs and outputs and sensible error handling.
----"""
 
 from __future__ import annotations
 from collections import deque
@@ -8,6 +6,7 @@ import gzip
 from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
+
 from dh import cprint, mpf, runcmd
 
 

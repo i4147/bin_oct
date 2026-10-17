@@ -1,611 +1,123 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a directory tree for JPEG image files (.jpg and .jpeg, identified by both file extension and file signature), skipping configured excluded directories, and losslessly or near-losslessly optimizes each image in parallel using an external JPEG optimization command-line tool. The script should accept command-line arguments to specify the target directory (defaulting to the current working directory), the number of parallel worker processes, a per-file timeout in seconds, and options that control optimization behavior such as a quality setting or a dry-run mode that reports potential savings without modifying files.
-For each processed file, the script should run the external optimizer on a temporary copy, verify that the optimizer completed successfully, compare the original and optimized sizes using a chunked byte-by-byte comparison where appropriate, and replace the original only when the result is valid and smaller. It must preserve file permissions and handle read-only files safely, clean up temporary files even on failure, and never leave a partially written file behind.
-The script should report progress and a final summary showing the number of files scanned, files optimized, files skipped, files that failed, and total bytes saved, with sizes presented in human-readable units such as B, KiB, MiB, and GiB. Errors on individual files should be logged and must not stop the overall run. The script should exit with a non-zero status code if any fatal configuration error occurs, such as a missing optimizer executable or an invalid target directory, and with zero otherwise.
----"""
-
 from __future__ import annotations
+
 import argparse
-import contextlib
-from functools import partial
-from multiprocessing import Pool
+import multiprocessing as mp
 import os
-from pathlib import Path
 import shutil
-import stat
 import subprocess
 import sys
-import tempfile
-from typing import TYPE_CHECKING, Final, NamedTuple
-from dh import SKIP_DIRS, fsz
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterator
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
-cwd = Path.cwd().resolve()
-JPEG_MAGIC: Final[bytes] = b"\xff\xd8\xff"
-WALK_CHUNK: Final[int] = 512
-DEFAULT_WORKERS: Final[int] = 8
-IMAP_CHUNKSIZE: Final[int] = 4
-DEFAULT_TIMEOUT: Final[float] = 300.0
-COMPARE_CHUNK: Final[int] = 1 << 16
-JPEGOPTIM_SUCCESS: Final[int] = 0
-QUALITY_RANGE: Final[range] = range(101)
+JPEG_EXTS = {".jpg", ".jpeg"}
+SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", "lazy"}
+GREEN = "\033[32m"
+DIM = "\033[2m"
+RESET = "\033[0m"
 
 
-class ProcessResult(NamedTuple):
+@dataclass
+class Result:
     path: Path
-    original_size: int
-    new_size: int
-    stdout: str
-    stderr: str
-    skipped: bool
-    no_change: bool
-    error: str | None
+    before: int
+    after: int
+    status: str
+    detail: str = ""
+
+    @property
+    def saved(self) -> int:
+        return max(self.before - self.after, 0)
 
 
-def walk_files(directory: Path) -> Iterator[Path]:
-    for root, dirs, files in directory.walk():
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for name in files:
-            p = root / name
-            if p.is_symlink():
-                continue
-            yield p
+def walk_jpegs(root: Path) -> Iterator[Path]:
+    for dirpath, dirnames, filenames in root.walk():
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for name in filenames:
+            p = dirpath / name
+            if p.suffix.lower() in JPEG_EXTS and not p.is_symlink() and p.is_file():
+                yield p
 
 
-def _dedupe(path: Path, seen: set[Path]) -> bool:
+def optimize_one(args: tuple[Path, int, bool]) -> Result:
+    path, quality, dry_run = args
     try:
-        key = path.resolve()
-    except OSError:
-        key = path
-    if key in seen:
-        return False
-    seen.add(key)
-    return True
+        before = path.stat().st_size
+    except OSError as e:
+        return Result(path, 0, 0, "error", str(e))
 
+    cmd = ["jpegoptim", f"-m{quality}", "--strip-all", "-q"]
+    cmd.append("-t" if dry_run else "-o")
+    cmd.append(str(path))
 
-def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
-        found = list(walk_files(root))
-    except Exception as exc:
-        print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
-        return
-    for start in range(0, len(found), WALK_CHUNK):
-        for path in found[start : start + WALK_CHUNK]:
-            if path.suffix.lower() not in JPEG_SUFFIXES:
-                continue
-            try:
-                rel = path.relative_to(root)
-            except ValueError:
-                rel = path
-            if any(part in SKIP_DIRS for part in rel.parts[:-1]):
-                continue
-            try:
-                if path.is_symlink():
-                    continue
-            except OSError:
-                continue
-            if not _dedupe(path, seen):
-                continue
-            yield path
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        return Result(path, before, before, "error", "jpegoptim not found")
 
+    if proc.returncode != 0:
+        return Result(path, before, before, "error", (proc.stderr or proc.stdout).strip()[:200])
 
-def iter_jpeg_files(roots: Sequence[Path]) -> Iterator[Path]:
-    seen: set[Path] = set()
-    for raw_root in roots:
-        try:
-            if not raw_root.exists():
-                print(
-                    f"warning: path does not exist: {raw_root}",
-                    file=sys.stderr,
-                )
-                continue
-            if raw_root.is_file():
-                if raw_root.is_symlink():
-                    print(
-                        f"warning: skipping symlink: {raw_root}",
-                        file=sys.stderr,
-                    )
-                    continue
-                if raw_root.suffix.lower() in JPEG_SUFFIXES and _dedupe(raw_root, seen):
-                    yield raw_root
-                continue
-            if raw_root.is_dir():
-                try:
-                    root = raw_root.resolve()
-                except OSError as exc:
-                    print(
-                        f"warning: cannot resolve {raw_root}: {exc}",
-                        file=sys.stderr,
-                    )
-                    continue
-                yield from _iter_directory(root, seen)
-                continue
-            print(
-                f"warning: not a file or directory: {raw_root}",
-                file=sys.stderr,
-            )
-        except OSError as exc:
-            print(
-                f"warning: cannot inspect {raw_root}: {exc}",
-                file=sys.stderr,
-            )
-
-
-def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
-    if a_size != b_size:
-        return False
-    with a.open("rb") as fa, b.open("rb") as fb:
-        while True:
-            chunk_a = fa.read(COMPARE_CHUNK)
-            chunk_b = fb.read(COMPARE_CHUNK)
-            if chunk_a != chunk_b:
-                return False
-            if not chunk_a:
-                return True
-
-
-def _is_valid_jpeg(path: Path) -> tuple[bool, str | None]:
-    try:
-        with path.open("rb") as f:
-            header = f.read(len(JPEG_MAGIC))
-    except OSError as exc:
-        return False, f"cannot read output: {exc}"
-    if header != JPEG_MAGIC:
-        return False, "output is not a JPEG (bad signature)"
-    return True, None
-
-
-def process_file(
-    path: Path,
-    *,
-    jpegoptim: str,
-    max_quality: int | None,
-    strip: bool,
-    progressive: bool,
-    normal: bool,
-    extra_args: Sequence[str],
-    timeout: float,
-    dry_run: bool,
-) -> ProcessResult:
-    try:
-        target = path.resolve(strict=True)
-    except OSError as exc:
-        return ProcessResult(path, 0, 0, "", "", False, False, f"cannot resolve: {exc}")
-    try:
-        st = target.stat()
-    except OSError as exc:
-        return ProcessResult(path, 0, 0, "", "", False, False, f"cannot stat: {exc}")
-    original_size = st.st_size
-    original_mode = stat.S_IMODE(st.st_mode)
-    tmp_path: Path | None = None
-    try:
-        try:
-            tmp_dir = os.environ.get("TMPDIR")
-            fd, tmp_name = tempfile.mkstemp(
-                prefix=target.stem + ".",
-                suffix=target.suffix + ".tmp",
-                dir=tmp_dir,
-            )
-            with contextlib.suppress(OSError):
-                os.close(fd)
-            tmp_path = Path(tmp_name)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"cannot create temp file: {exc}",
-            )
-        try:
-            shutil.copy2(target, tmp_path)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"cannot stage temp copy: {exc}",
-            )
-        cmd: list[str] = [jpegoptim]
-        if max_quality is not None:
-            cmd += ["-m", str(max_quality)]
-        if strip:
-            cmd.append("--strip-all")
-        if progressive and not normal:
-            cmd.append("--all-progressive")
-        if normal and not progressive:
-            cmd.append("--all-normal")
-        cmd.extend(extra_args)
-        cmd.append("--")
-        cmd.append(str(tmp_path))
-        try:
-            completed = subprocess.run(
-                cmd,
-                capture_output=True,
-                timeout=timeout,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"jpegoptim timed out after {timeout:g}s",
-            )
-        except FileNotFoundError:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"jpegoptim executable not found: {jpegoptim!r}",
-            )
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"failed to run jpegoptim: {exc}",
-            )
-        stdout = completed.stdout.decode("utf-8", errors="replace")
-        stderr = completed.stderr.decode("utf-8", errors="replace")
-        if completed.returncode != JPEGOPTIM_SUCCESS:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"jpegoptim exited with status {completed.returncode}",
-            )
-        try:
-            new_size = tmp_path.stat().st_size
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"jpegoptim produced no output: {exc}",
-            )
-        if new_size == 0:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                "jpegoptim produced an empty file",
-            )
-        ok, sig_err = _is_valid_jpeg(tmp_path)
-        if not ok:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                sig_err,
-            )
-        try:
-            identical = _files_identical(target, tmp_path, original_size, new_size)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"cannot compare files: {exc}",
-            )
-        if identical:
-            return ProcessResult(
-                path,
-                original_size,
-                original_size,
-                stdout,
-                stderr,
-                False,
-                True,
-                None,
-            )
-        if new_size > original_size:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                True,
-                False,
-                None,
-            )
-        if new_size == original_size:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                True,
-                False,
-                None,
-            )
-        if dry_run:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                None,
-            )
-        try:
-            os.chmod(tmp_path, original_mode)
-            os.replace(tmp_path, target)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"failed to replace original: {exc}",
-            )
-        tmp_path = None
-        return ProcessResult(
-            path,
-            original_size,
-            new_size,
-            stdout,
-            stderr,
-            False,
-            False,
-            None,
-        )
-    finally:
-        if tmp_path is not None:
-            with contextlib.suppress(OSError):
-                tmp_path.unlink()
-
-
-def _classify(result: ProcessResult, dry_run: bool) -> str:
-    if result.error is not None:
-        return "ERROR"
-    if result.no_change:
-        return "NOCHG"
-    if result.skipped:
-        return "SAME" if result.new_size == result.original_size else "SKIP"
     if dry_run:
-        return "DRY-RUN"
-    return "OK"
+        return Result(path, before, before, "unchanged")
+
+    after = path.stat().st_size
+    if after >= before:
+        return Result(path, before, after, "unchanged")
+    return Result(path, before, after, "optimized")
 
 
-def _emit_jpegoptim_output(result: ProcessResult) -> None:
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-        if not result.stdout.endswith("\n"):
-            sys.stdout.write("\n")
-        sys.stdout.flush()
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-        if not result.stderr.endswith("\n"):
-            sys.stderr.write("\n")
-        sys.stderr.flush()
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("-q", "--quality", type=int, default=70)
+    ap.add_argument("-n", "--dry-run", action="store_true")
+    ap.add_argument("--root", default=".")
+    args = ap.parse_args()
 
+    if not shutil.which("jpegoptim"):
+        print("Error: jpegoptim not found in PATH.", file=sys.stderr)
+        return 1
 
-def _print_status(result: ProcessResult, tag: str) -> None:
-    path = result.path
-    orig = result.original_size
-    new = result.new_size
-    if tag == "OK":
-        saved = orig - new
-        pct = (saved / orig * 100.0) if orig else 0.0
-        print(f"[OK]      {path.name}  (-{fsz(saved)}, -{pct:.1f}%)")
-    elif tag == "DRY-RUN":
-        saved = orig - new
-        pct = (saved / orig * 100.0) if orig else 0.0
-        print(f"[DRY-RUN] {path.name}  (would save {fsz(saved)}, {pct:.1f}%)")
-    elif tag == "NOCHG":
-        print(f"[NOCHG]   {path.name}  {fsz(orig)}  (byte-identical)")
-    elif tag == "SAME":
-        print(f"[SAME]    {path.name}  {fsz(orig)}  (same size, different bytes)")
-    elif tag == "SKIP":
-        growth = new - orig
-        print(f"[SKIP]    {path.name}  {fsz(orig)} -> {fsz(new)}  (larger by {fsz(growth)})")
+    root = Path(args.root).resolve()
+    files = list(walk_jpegs(root))
+    if not files:
+        print(f"No JPEGs found under {root}")
+        return 0
+
+    print(f"Root: {root}")
+    print(
+        f"Files: {len(files)} | Quality: {args.quality} | "
+        f"strip-all | skip-if-larger | jobs: {args.jobs} | dry-run: {args.dry_run}"
+    )
+    print("-" * 60)
+
+    tasks = [(p, args.quality, args.dry_run) for p in files]
+    total_saved = 0
+    optimized = unchanged = errors = 0
+
+    with mp.Pool(processes=args.jobs) as pool:
+        for r in pool.imap_unordered(optimize_one, tasks):
+            if r.status == "optimized":
+                optimized += 1
+                total_saved += r.saved
+                print(f"{r.path.name} {GREEN}{r.saved}{RESET}")
+            elif r.status == "unchanged":
+                unchanged += 1
+                print(f"{r.path.name} {DIM}unchanged{RESET}")
+            else:
+                errors += 1
+                print(f"{r.path.name} {DIM}error: {r.detail}{RESET}", file=sys.stderr)
+
+    print("-" * 60)
+    if args.dry_run:
+        print(f"Dry run complete. {len(files)} files scanned.")
     else:
-        print(
-            f"[ERROR]   {path.name}  {result.error}",
-            file=sys.stderr,
-        )
-
-
-def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
-    total = sum(counters.values())
-    skipped = counters["SAME"] + counters["SKIP"]
-    print()
-    print("-" * 66)
-    print("Summary")
-    print("-" * 66)
-    print(f"  Processed : {total}")
-    print(f"  Changed   : {counters['OK']}")
-    if counters["DRY-RUN"]:
-        print(f"  Dry-run   : {counters['DRY-RUN']}")
-    print(f"  Unchanged : {counters['NOCHG']}")
-    print(f"  Skipped   : {skipped}")
-    if skipped:
-        print(f"      same-size-different-bytes : {counters['SAME']}")
-        print(f"      larger-output             : {counters['SKIP']}")
-    print(f"  Errored   : {counters['ERROR']}")
-    if total_before:
-        saved = total_before - total_after
-        pct = (saved / total_before * 100.0) if total_before else 0.0
-        print()
-        print(f"  Bytes     : {fsz(total_before)} -> {fsz(total_after)}  (saved {fsz(saved)}, {pct:.1f}%)")
-    else:
-        print()
-        print("  Bytes     : no size changes")
-
-
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="jpegoptim-optimize",
-        description=(
-            "Optimize .jpeg / .jpg files in place using jpegoptim. "
-            "With no paths, the current directory is walked recursively."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        metavar="PATH",
-        help="Files or directories to process (default: current directory).",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Do not print jpegoptim's own stdout/stderr; only summary lines.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Run and validate, but do not modify any files.",
-    )
-    parser.add_argument(
-        "-m",
-        "--max",
-        dest="max_quality",
-        type=int,
-        choices=QUALITY_RANGE,
-        default=None,
-        metavar="0-100",
-        help=(
-            "jpegoptim -m/--max value: maximum quality factor (0-100). "
-            "When omitted, jpegoptim's default lossless-ish mode is used "
-            "(existing quality is preserved)."
-        ),
-    )
-    parser.add_argument(
-        "--strip",
-        action="store_true",
-        help="Pass --strip-all to jpegoptim (remove all metadata markers).",
-    )
-    parser.add_argument(
-        "--progressive",
-        action="store_true",
-        help="Pass --all-progressive to force progressive (interlaced) output.",
-    )
-    parser.add_argument(
-        "--normal",
-        action="store_true",
-        help="Pass --all-normal to force baseline (non-progressive) output.",
-    )
-    parser.add_argument(
-        "--jpegoptim",
-        default="jpegoptim",
-        metavar="PATH",
-        help="Path to the jpegoptim executable (default: search PATH).",
-    )
-    parser.add_argument(
-        "--jpegoptim-arg",
-        action="append",
-        default=[],
-        metavar="ARG",
-        help="Extra argument to pass to jpegoptim; may be repeated.",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=DEFAULT_TIMEOUT,
-        metavar="SECONDS",
-        help=f"Per-file jpegoptim timeout (default: {DEFAULT_TIMEOUT:g}s).",
-    )
-    return parser
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
-    if args.progressive and args.normal:
-        print(
-            "error: --progressive and --normal are mutually exclusive",
-            file=sys.stderr,
-        )
-        return 2
-    roots = [Path(p) for p in args.paths] if args.paths else [Path()]
-    worker = partial(
-        process_file,
-        jpegoptim=args.jpegoptim,
-        max_quality=args.max_quality,
-        strip=args.strip,
-        progressive=args.progressive,
-        normal=args.normal,
-        extra_args=tuple(args.jpegoptim_arg),
-        timeout=args.timeout,
-        dry_run=args.dry_run,
-    )
-    counters: dict[str, int] = {
-        "OK": 0,
-        "DRY-RUN": 0,
-        "NOCHG": 0,
-        "SAME": 0,
-        "SKIP": 0,
-        "ERROR": 0,
-    }
-    total_before = 0
-    total_after = 0
-    files = iter_jpeg_files(roots)
-    try:
-        with Pool(processes=DEFAULT_WORKERS) as pool:
-            for result in pool.imap_unordered(worker, files, chunksize=IMAP_CHUNKSIZE):
-                if not args.quiet:
-                    _emit_jpegoptim_output(result)
-                tag = _classify(result, args.dry_run)
-                counters[tag] += 1
-                if tag in ("OK", "DRY-RUN"):
-                    total_before += result.original_size
-                    total_after += result.new_size
-                _print_status(result, tag)
-    except KeyboardInterrupt:
-        print("\nInterrupted.", file=sys.stderr)
-        return 130
-    _print_summary(counters, total_before, total_after)
-    return 1 if counters["ERROR"] else 0
+        print(f"Optimized: {optimized} | Unchanged: {unchanged} | Errors: {errors}")
+        print(f"Space freed: {GREEN}{total_saved:,} bytes{RESET} ({total_saved / 1024 / 1024:.2f} MiB)")
+    return 0 if errors == 0 else 2
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

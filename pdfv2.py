@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an interactive terminal viewer for PDF documents. The tool takes a PDF file path as its main input (with optional command-line arguments for starting page and rendering options), renders each page into a bitmap image using an external PDF rendering utility available on the system, and displays the rendered pages directly inside the terminal using text-based graphics that compress two vertical pixels into one character cell with color.
-Key behaviors:
-- Launch the viewer on a given PDF file, validating that the file exists and that the required external rendering tools are installed, with clear error messages if they are not.
-- Determine the total page count of the document and allow the user to navigate between pages (next, previous, jump to first/last, and go to a specific page number) using single keystrokes read directly from the terminal without requiring Enter.
-- Render pages at a size that fits the current terminal dimensions, automatically adapting when the terminal window is resized, and cache rendered pages so that revisiting them is fast.
-- Parse the raw image output from the renderer robustly, handling header comments and whitespace, and convert pixel data into colored terminal output using ANSI escape sequences.
-- Use the alternate terminal screen buffer, hide the cursor while viewing, and restore the terminal's original state (cursor visibility, screen, and input mode) cleanly on exit, including after interruption or errors.
-- Display a status bar showing the file name, current page number, total pages, and a short list of available keyboard controls, using reverse-video styling for readability.
-- Support quitting with a dedicated key, and handle errors gracefully by showing a message rather than crashing when a page fails to render.
-- Keep the implementation self-contained, cross-platform where reasonable for Unix-like terminals, and focused on a smooth, flicker-minimized reading experience.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,6 +12,7 @@ import sys
 import tempfile
 import termios
 import tty
+
 
 RESET = "\x1b[0m"
 HOME = "\x1b[H"

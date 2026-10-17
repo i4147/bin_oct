@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that cleans up Python source files by removing comments and docstrings while preserving code behavior and any comments or markers that must remain intact. The tool should accept one or more file or directory paths as input, recursively discover Python source files (including stub files), and skip common version-control, virtual environment, cache, build, and dependency directories. For each file, it should remove ordinary comments and docstrings (including those marked by a specific project-defined docstring convention), but keep shebang lines, encoding declarations, formatter/linter/type-checker directives, and similar tool-specific pragmas. It should only rewrite files that actually contain strippable content, and it should first save a backup copy of each original file so changes can be reverted. The tool should validate that every rewritten file still parses as valid Python and should refuse to write output that breaks syntax. It should process files in parallel to handle large codebases efficiently, and it should provide a dry-run mode that reports what would change without modifying anything. Output should include a summary of files processed, files modified, bytes saved (formatted in human-readable units), and any files that failed, with colorized terminal output for readability. Handle errors per file gracefully so one failure does not stop the whole run, and report exit status appropriately.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,8 +12,10 @@ from pathlib import Path
 import sys
 import tempfile
 import tokenize as _tokenize
+
 from dh import DOC_TH1, DOC_TH2
 import libcst as cst
+
 
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4

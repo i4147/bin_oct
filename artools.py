@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import bz2
@@ -15,12 +16,14 @@ import tarfile
 import tempfile
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Optional
 import zipfile
+
 import brotli
 import cramjam
 from loguru import logger
 import lz4.frame
 import py7zr
 import zstandard as zstd
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

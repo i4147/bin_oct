@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that processes a PDF file by splitting it into individual single-page PDF files and extracting the text content of each page into separate text files. The script should accept a path to an input PDF and an output directory as inputs, creating the output directory if it does not exist. For each page of the source document, it should produce one standalone PDF file containing only that page, and one plain-text file containing the extracted text of that page. Output filenames should be derived from the original document's base name, followed by a zero-padded page number whose width adapts to the total page count, so files sort correctly in order. The script should process pages efficiently, may use parallel execution for independent per-page work, and must properly close all document resources. It should handle common errors gracefully, such as missing input files, unreadable or encrypted PDFs, and unwritable output locations, by reporting clear messages to the user rather than crashing silently. Provide a command-line interface that accepts the input PDF path and optional output directory, and print a concise summary upon completion indicating how many pages were processed and where the results were saved.
----"""
 
 from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
+
 import pymupdf
 
 

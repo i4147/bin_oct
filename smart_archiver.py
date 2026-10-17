@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an adaptive, multi-algorithm file compression tool. It should accept a file or directory path (and optional output location) from the command line, and compress the contents using the best-suited algorithm for each file type. The tool should maintain a configurable mapping from file extensions to compression algorithms and compression levels, so that text-based formats (such as logs, CSV, JSON, markup, stylesheets, scripts, and configuration files) are compressed with one strong algorithm, while source code and other file types may use different algorithms tuned to their characteristics. Support the common compression families (Brotli, Zstandard, LZ4, gzip, bzip2, LZMA/XZ) and fall back to a sensible default for unknown extensions.
-The script should process files efficiently, including the ability to handle many files in parallel using multiple worker processes, and it should report progress andearly. For each file, it should record the original size, compressed size, compression ratio, algorithm used, and elapsed time, and produce a summary at the end showing totals and overall savings. Ensure that compression is lossless: the output must be decompressible back to the exact original bytes, and the script should include a verification mode that decompresses outputs and confirms integrity against the originals.
-Provide a companion decompression capability that restores files from their compressed form, automatically detecting the algorithm from the output's naming or a stored metadata record. Optionally support archiving a directory tree into a single compressed bundle and extracting it again, preserving relative paths.
-Handle errors gracefully: skip unreadable or unsupported files with a logged warning, never silently overwrite existing outputs unless an explicit flag allows it, and exit with a non-zero status code on fatal failures. Log activity with timestamps and configurable verbosity. Allow the user to override the extension-to-algorithm mapping and default compression levels through command-line options or a JSON configuration file. Include a dry-run option that reports what would be compressed without writing any files, and a option to delete originals after successful verified compression.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,10 +15,12 @@ import tarfile
 import tempfile
 import time
 from typing import Any
+
 import brotli
 from loguru import logger
 import lz4.frame
 import zstandard as zstd
+
 
 EXTENSION_MAP: dict[str, dict[str, str | int]] = {
     ".txt": {"algo": "brotli", "level": 11},

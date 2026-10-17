@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch document and text translation tool, reading source content from files or standard input, translating it into one or more target languages through a pluggable set of translation backends, and writing the results to organized output files.
-The tool should:
-- Accept command-line options for the input source, the source and target languages, the chosen translation service, the output location, and a debug log destination, with sensible defaults for anything not supplied.
-- Support multiple translation providers behind a common interface, where each provider maps standard language identifiers to its own language codes. Users should be able to select a provider and receive a clear error if a requested language is not supported by that provider.
-- Translate content in parallel across multiple worker threads to speed up large jobs, while keeping results ordered and reporting progress as work completes.
-- Split long texts into manageable chunks that respect provider size limits and sentence or paragraph boundaries, then reassemble the translated chunks faithfully.
-- Retry transient failures such as network errors or rate limits with a backoff strategy, and skip or flag items that ultimately fail without aborting the whole job.
-- Handle interruption signals gracefully: when the user cancels, stop pending work, finish or discard in-progress items cleanly, save any completed results, and exit with a meaningful status code.
-- Log detailed debug information to a rotating log file and surface only errors to the console, so the user sees a clean summary.
-- Produce a structured JSON summary at the end reporting, per file and per language, the number of segments translated, failures, elapsed time, and output paths.
-- Preserve the original formatting, line breaks, and any structural markers in the content where possible, and avoid translating code blocks or placeholders when so configured.
-- Validate all inputs up front and print helpful usage messages for missing files, unsupported languages, or invalid arguments.
----"""
 
 from __future__ import annotations
 import argparse
@@ -24,6 +11,7 @@ import sys
 import threading
 import time
 from typing import Callable, Optional
+
 from loguru import logger
 
 

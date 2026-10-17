@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a Python project or source file set and reports which third-party packages it depends on, producing a requirements-style summary that a developer can use to set up an environment.
-The tool should accept a path to a file or directory as its main input. When given a directory, it should discover all Python source files within it, skipping common non-source locations such as virtual environments, version control folders, caches, and build output. For each file, it should parse the code structurally (not with simple text matching) to find every import statement, including plain imports, from-imports, and imports nested inside functions or conditional blocks.
-From the collected imports, the tool should separate standard library modules from external dependencies. It should use the running interpreter's knowledge of the standard library where available, and fall back to a reasonable built-in list when that knowledge is unavailable. Local modules that belong to the analyzed project should be recognized and excluded from the external dependency list.
-The tool should map import names to their installable distribution names where they differ (for example, an importable module whose package name is different on the package index), using a built-in mapping table for well-known cases and a sensible default otherwise. It should optionally consult the package index to verify whether a name exists or to fetch the latest available version, and must handle network failures gracefully without crashing.
-Output should be a clear, deterministic list of required third-party packages, one per line, optionally with version specifiers when requested by a command-line flag. The tool should support writing the result to a file as well as printing it to standard output, and should offer a machine-readable JSON output mode that includes, for each dependency, the importing files and line numbers where it is used.
-Command-line behavior should include options for: specifying the target path, choosing output format (plain list or JSON), writing to an output file, including or excluding optional imports inside try/except blocks, and enabling verbose logging. The tool should return a non-zero exit status for invalid paths or unparseable files, while still reporting results for the files that could be processed. Provide helpful error messages and a concise help screen.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,6 +11,7 @@ import sys
 from typing import Iterable, Iterator, Optional
 import urllib.error
 import urllib.request
+
 
 try:
     STDLIB: set[str] = set(sys.stdlib_module_names)

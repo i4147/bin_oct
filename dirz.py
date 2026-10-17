@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a directory tree starting from a user-specified root path and reports disk usage statistics for each top-level subdirectory and the files directly in the root. The tool should be a command-line utility that accepts a target directory (defaulting to the current working directory) and an optional flag controlling how many results to display or how entries are sorted.
-Key requirements:
-- Traverse the entire directory tree iteratively, efficiently handling large folder structures without relying on deep recursion.
-- Skip version-control metadata directories (such as `.git`) entirely, and do not follow symbolic links, so they are neither counted nor descended into.
-- Attribute every discovered file's size to the top-level child of the root it belongs to, so that the output shows, for each immediate subdirectory, the total size of everything beneath it, plus a separate entry for loose files located directly in the root.
-- Compute file sizes safely: tolerate permission errors, files that disappear mid-scan, and unreadable entries by skipping them gracefully rather than crashing, and optionally report how many entries were skipped.
-- Present results in a human-readable table or list sorted by size in descending order by default, showing each item's name, its total size formatted in adaptive units (bytes, KB, MB, GB, TB, PB with one decimal place for larger units), and optionally its percentage of the overall total.
-- Include a grand total line summarizing the scanned root.
-- Handle invalid or non-existent paths with a clear error message and a non-zero exit status.
-- Keep the output clean and suitable for both interactive terminal use and piping into other tools, and make the script self-contained with a clear `--help` description.
----"""
 
 from __future__ import annotations
 import argparse

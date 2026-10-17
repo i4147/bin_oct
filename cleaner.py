@@ -1,12 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up raw terminal or log text captured from a command-line session. The script should read text input (from a file path given as an argument, or from standard input when no argument is provided) and write the cleaned result to standard output or to an output file specified by the user.
-The cleaning should remove terminal control artifacts so the result reads as plain, human-readable text. This includes stripping ANSI escape sequences used for colors, cursor movement, and screen control; resolving carriage returns and normalizing line endings; applying backspace characters so that overwritten characters are removed; and dropping null bytes and other non-printable control characters while preserving ordinary whitespace and newlines. Collapse runs of excessive blank lines into a single blank line, strip trailing whitespace from every line, and ensure the output ends with exactly one newline.
-The script should also support a second, more specialized cleaning mode aimed at email-style or mail-transcript content. In this mode, after the same terminal artifact removal, it should locate a header line beginning with "Received:" (case-insensitive) and trim the text so that only the content following that header block remains, skipping the header's first line and any leading blank lines that follow. If no such header is found, the text should pass through unchanged apart from the general cleanup.
-Allow the user to select the mode via a command-line option, default to the general cleaning mode, and print a brief usage message on invalid arguments. Handle missing input files with a clear error message and a non-zero exit code. The script should be robust to large inputs and to text containing mixed line endings or unusual control characters, and it should never crash on malformed escape sequences.
----"""
 
 from __future__ import annotations
 import sys
+
 import regex as re
 
 

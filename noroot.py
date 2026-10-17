@@ -1,15 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for shell script files andes a specific kind of conditional exit guard from them. The script should start from the current working directory, obtain the list of target files through a helper that returns the non-binary files in that location, and process each file in turn.
-For each file, the script should read its contents as UTF-8 text and repeatedly locate and delete every block that matches this pattern: an `if` statement that tests whether a command substitution of some variable or expression returns a non-zero value (written in the style `if [ $(...) -ne 0 ]; then`), followed by a body that ends with an `exit 1` line, and then closed by an `fi` terminator. The match should be case-insensitive and span multiple lines, and any content between the `exit 1` line and the `fi` should also be removed along with the whole block. Only the matching blocks should be removed; all other content must be preserved exactly as it was.
-If a file was changed, the script should write the cleaned content back to that same file in UTF-8 and print a short message identifying the file that was cleaned. Files with no matches must be left untouched and not rewritten. If any error occurs while handling a particular file (such as an unreadable file or a write failure), the script should print a descriptive error message to standard error that includes the file path, and then continue processing the remaining files rather than stopping.
-The script should be runnable directly from the command line with no required arguments and should produce no output for files that do not need changes beyond the cleaned-file messages and error reports.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+
 from dh import get_nobinary
+
 
 IF_BLOCK_REGEX = re.compile(
     r"^if\s+\[\s*\$\((\S+)\)\s*\{\-ne\s+0\s*\}\]\s*;\s*then\s*\n((?:.|\n)*?)^\s*exit\s+1\s*$(.*?)^\s*fi",

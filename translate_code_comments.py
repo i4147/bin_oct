@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a source code project (a directory tree or a single file) and translates non-English comments and docstrings into English, leaving the code logic itself untouched. The tool should be a command-line utility with options for the target directory, the target language (defaulting to English), the source language (auto-detect by default), a dry-run mode that reports what would change without modifying files, and options controlling recursive scanning and which directories to skip (with sensible defaults such as version control folders, caches, and virtual environments).
-Key behaviors:
-- Walk through Python files, skipping excluded directories and non-matching files, and process them in parallel for speed.
-- Identify comments and docstrings using the language's tokenization and syntax analysis, so that string literals used as data and the executable code are never altered.
-- Detect whether a comment or docstring is written in a non-English language, using both character-based heuristics (e.g., CJK or other non-ASCII scripts) and statistical language detection, while ignoring lines that are already in the target language or contain only special markers and tool directives (such as TODO, FIXME, NOQA, type-ignore pragmas, and encoding declarations), which must be preserved verbatim.
-- Translate the detected text through an online translation service with a configurable delay between requests to respect rate limits, and handle translation failures gracefully by keeping the original text and logging a warning.
-- Preserve indentation, comment prefixes, docstring quoting style, line structure, and file encoding so that the rewritten file remains valid and behaviorally identical.
-- Verify that each modified file still parses correctly before writing it; if not, leave the original untouched and report the error.
-- Report a clear summary at the end: number of files scanned, files changed, segments translated, segments skipped, and any errors, with detailed logging controllable by a verbosity flag.
-- Provide a dry-run mode that prints a preview of the proposed translations without writing any changes to disk.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,7 +12,9 @@ import re
 import shutil
 import tokenize
 from typing import Iterator, Sequence
+
 from deep_translator import GoogleTranslator
+
 
 LOGGER = logging.getLogger("merged_translator")
 DEFAULT_EXCLUDED_DIRS = frozenset({

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a plain-text file provided as a command-line argument, where each non-empty line contains a web URL. Forate a path segment following the word "series" and extract it as a movie name, decoding any percent-encoded characters. Lines without a recognizable series segment should be skipped or reported without stopping the overall process. The script should collect the unique movie names it finds, sanitize them so they are safe to use as filenames on common operating systems (replacing forbidden characters, trimming stray spaces and dots, and falling back to a generic name if nothing remains), and handle these cases gracefully: display a usage message when no file argument is given, exit with a clear error when the input file does not exist, and tolerate malformed or blank lines. The final output should be a clean, deduplicated, sanitized list of movie names, printed to the console in a readable form, with a summary of how many URLs were processed and how many were recognized. Use UTF-8 encoding for reading the input and keep the behavior robust, predictable, and easy to follow for a user who runs it from the terminal.
----"""
 
 from __future__ import annotations
 from pathlib import Path

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line text search and archive-aware file scanner. It should accept a root path (directory or single file) and a search pattern (plain text or regular expression), then recursively walk the target and report every match with its file location, line number, and surrounding context. The tool should be able to look inside common archive formats (zip, tar variants including compressed tar archives, wheel and apk packages, and optionally 7z, brotli, and zstandard-compressed content when the corresponding optional support is available) without requiring manual extraction, and it should treat matches inside archive members as first-class results labeled with the archive and member path.
-Support filtering controls such as include and exclude glob patterns for file names and directories, a configurable set of text-like extensions to search and a set of binary-like extensions to skip, and a option to ignore version-control and dependency-cache directories by default. Allow case-insensitive matching, whole-word matching, and a limit on the number of results or context lines. Provide a summary at the end that reports the number of files scanned, archives opened, total matches, and a breakdown of match counts by file extension.
-For performance, the tool should be able to process many files in parallel across multiple worker processes when the workload is large, while keeping output deterministic and ordered by path. Output should be human-readable in the terminal with optional color highlighting of matched text, and should also be available as machine-readable JSON for downstream tooling. Handle unreadable files, corrupt archives, encoding problems, and permission errors gracefully by logging a warning and continuing rather than aborting the whole run.
-Optionally, the tool may support a live control mode where a global hotkey can pause or cancel an in-progress scan, using the keyboard library only if it is installed and degrading cleanly if it is not. Keep the interface self-documenting through a standard help message, and return a non-zero exit status when errors prevent completion or when no matches are found, with a documented convention for each.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +15,7 @@ import tarfile
 import threading
 from typing import Iterator, Optional, Sequence
 import zipfile
+
 
 try:
     import py7zr

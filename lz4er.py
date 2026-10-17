@@ -1,18 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for compressing and decompressing files and directory trees using LZ4 frame compression, with a focus on speed and parallel processing for large inputs.
-The tool should accept a source path (single file or directory) and an output destination, and it should support both compressing and decompressing operations selectable through command-line arguments. When compressing a directory, it should walk the tree, preserve the relative folder structure, and bundle the contents into a single archive or write individual compressed files, depending on a clearly documented option. When decompressing, it should restore the original files and directory layout faithfully and report any errors without leaving partially written output.
-Key behaviors to include:
-- Skip files that are already compressed (based on a configurable or built-in list of common compressed extensions) and files below a configurable minimum size, copying them through unchanged instead.
-- For large files, split the data into chunks and compress them in parallel across multiple worker processes, then reassemble the compressed segments in order so that the output remains a valid, self-describing stream.
-- Allow the user to configure the compression level, worker count, chunk size, chunk threshold, and block size, with sensible defaults and validation that rejects out-of-range values with clear error messages.
-- Optionally enable content checksums to verify data integrity, and verify them during decompression.
-- Show progress or a summary at the end, including original size, compressed size, compression ratio, and elapsed time, formatted in human-readable units.
-- Provide a dry-run mode that reports what would be compressed or skipped without writing any output.
-- Handle errors gracefully: missing paths, permission problems, corrupted input, and interrupted operations should produce clear messages and a non-zero exit status, and temporary artifacts should be cleaned up.
-- Preserve file metadata such as modification times and permissions where the platform allows.
-- Use a clear command-line interface with help text describing every option, and return appropriate exit codes for success, partial failure, and fatal errors.
-The script should be self-contained, safe to run on large datasets, and designed so that the parallel and single-threaded paths produce identical results for the same input.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,7 +9,9 @@ from pathlib import Path
 import shutil
 import sys
 import tarfile
+
 import lz4.frame
+
 
 DEFAULT_SKIP_EXT = {".gz", ".br", ".xz", ".zst", ".bz2", ".zip", ".whl", ".lz4", ".7z", ".rar"}
 DEFAULT_MIN_SIZE = 1024

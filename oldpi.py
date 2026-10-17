@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a given directory tree for Python source files and reports legacy Python 2-style `print` statements that have been left in the code. The tool should accept a root path as input and walk through all subdirectories, skipping common non-source folders such as version control metadata, caches, and virtual or generated directories, as well as symbolic links. It should only consider Python files, and it should tolerate permission errors or unreadable entries without crashing.
-For each file, the script should read its contents efficiently, handling very large files differently from small ones so that memory usage stays reasonable. It should detect `print` statements written without parentheses (the Python 2 form) while ignoring legitimate Python 3 calls such as `print(...)`, and it should take care to avoid false positives inside comments, strings, or docstrings, using the language's own tokenization where appropriate.
-The output should be a clear, human-readable report listing each offending file with the line number and the offending line's content, followed by a summary showing the total number of files scanned, the number of files with issues, and the total number of problematic lines found. The script should also return a non-zero exit status when any issues are found so it can be used in continuous integration pipelines, and it should provide a simple command-line interface with a helpful usage message and an option to restrict scanning to specific file extensions.
----"""
 
 from __future__ import annotations
 from collections import deque
@@ -11,6 +7,7 @@ from mmap import mmap
 from pathlib import Path
 import re
 import tokenize
+from dh import mpf
 
 
 def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
@@ -195,7 +192,7 @@ def main() -> None:
     if not files:
         print("No Python files found.")
         return
-    results = mpf_joblib(process_file, files, autofix=args.autofix)
+    results = mpf(process_file, files)
     found_issues = False
     for result in results:
         if result:

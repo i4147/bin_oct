@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that extracts plain text from PDF files supplied by the user on the command line. The tool should accept a path to a PDF, optionally support password-protected documents, let the user choose among multiple PDF parsing backends (with a sensible default), and produce the extracted text either to the console or to an output file. The extraction should process the document page by page, preserve page boundaries in the output so readers can tell where one page ends and the next begins, and optionally normalize whitespace (collapsing excess spaces and blank lines) while allowing that cleanup to be turned off. The text should be encoded using a configurable character encoding. The script should handle common failure cases gracefully, such as missing files, wrong or missing passwords, unsupported or unavailable backends, and corrupted PDFs, reporting clear error messages without crashing. Design the command-line interface so that all options have sensible defaults and a help message describing each one, and structure the code so the extraction logic can also be reused programmatically by other Python modules.
----"""
 
 from __future__ import annotations
 import argparse

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line JSON file sorter. It takes a path to a JSON file containing a top-level object (key-value mapping) and rewrites that same file with its entries reordered. By default, entries are ordered by the length of their keys, shortest first. An optional verbose flag switches the ordering criterion: entries are instead ordered by the number of items in their values when the value is a list, with non-list values treated as having zero items. The output must remain valid, human-readable JSON with two-space indentation, preserve non-ASCII characters without escaping, and be written back as UTF-8. The script should validate that its own output is parseable JSON before saving, and exit with a non-zero status code when no file path is provided. Focus on producing a clean, robust, and self-contained command-line tool with clear handling of the file-reading, sorting, and file-writing steps.
----"""
 
 from __future__ import annotations
 import json

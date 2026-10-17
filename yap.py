@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a multi-tool Python source code formatter and cleanup utility, which can be run from the command line against a single file or an entire directory tree of Python files. The script should discover Python files recursively (with options to include or exclude paths by glob-style patterns), then apply a configurable pipeline of code-quality tools to each file, such as unused-import removal, import sorting, opinionated code formatting, PEP 8 style correction, and linting-based auto-fixes, in a well-defined, canonical order. Users should be able to select which formatters to run, or let the script auto-detect which available formatters are installed on the system and pick a sensible default set, with graceful handling of any that are missing.
-Key behaviors:
-- Accept inputs such as target paths, line length, target Python version, the list of formatters to use, and fl (dry-run) mode, showing diffs, and writing results back to disk.
-- In check-only mode, report which files would change without modifying them; when showing diffs, print unified-diff style output for each changed file.
-- Apply each enabled formatter in sequence, passing the current source text forward, and skip writing a file when no changes result.
-- Validate that code remains syntactically correct after transformation, and refuse to write output that breaks the file.
-- Use a persistent cache file within the project so that unchanged files (identified by content and settings) are skipped on subsequent runs, with an option to bypass or clear the cache.
-- Process multiple files in parallel across multiple CPU cores when there are many files, with an option to control the number of workers, and aggregate results safely.
-- Produce a clear end-of-run summary showing counts of files scanned, changed, unchanged, failed, and skipped, plus elapsed time and total file size processed, with color-coded or otherwise readable console output and a non-zero exit code when check mode finds files needing changes or when errors occur.
-- Provide a version flag and built-in help describing all options.
-- Handle errors per file gracefully so that one failing file does not abort the whole run, reporting each failure clearly.
----"""
 
 from __future__ import annotations
 import argparse
@@ -32,7 +20,9 @@ import tempfile
 from time import perf_counter as pff
 import tokenize
 from typing import Any, Protocol, Sequence, runtime_checkable
+
 from dh import cprint, format_time, fsz, get_pyfiles
+
 
 __version__ = "2.0.0"
 DEFAULT_LINE_LENGTH = 88

@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch tool for auditing and normalizing a collection of Python source files within a project directory. The tool should walk a given directory tree (skipping common virtual environment, build, and version-control folders), and for each Python file it finds, perform the following high-level tasks:
-- Detect whether each file appears to be written for Python 2 or Python 3, using a scoring approach that considers syntax and idioms, and report the classification against a configurable confidence threshold.
-- Ensure each script begins with a correct interpreter line (shebang), inserting or replacing a configurable default interpreter path when it is missing or incorrect, while preserving the rest of the file's content and encoding.
-- Analyze third-party and standard-library imports and identify which modules a script depends on, flagging any that are not part of the standard library so the user can review them.
-- Optionally verify that each file is syntactically valid and report any files that fail to parse, including the error location and a brief description.
-The tool should accept command-line arguments that let the user choose the target directory, set the number of parallel workers, adjust the Python 2 detection threshold, supply a custom shebang, run in a dry-run/report-only mode that makes no file changes, and produce a concise summary at the end. Processing should be parallelized across files for speed, and the tool should handle unreadable files, encoding problems, and unexpected errors gracefully by logging them and continuing with the remaining files rather than crashing. The final output should present a clear per-file status list plus aggregate counts (scanned, modified, Python 2 detected, syntax errors, external dependencies found), and it should exit with a non-zero status code if any errors occurred.
----"""
 
 from __future__ import annotations
 import argparse
@@ -21,6 +14,7 @@ import sys
 import textwrap
 import traceback
 from typing import Any, Iterable, Iterator
+
 
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8

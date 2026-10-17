@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes Python source files to determine whether they use type annotations, and then produces a clean, annotation-free version of each file. The tool should accept a file or directory path as input, scan the Python source code, and report which files contain type hints (such as annotated function parameters, return types, variable annotations, and variadic or keyword-only arguments). For files that include annotations, it should generate a rewritten version with all hints removed while preserving the original logic, structure, comments-safe formatting, and runnable behavior.
-The script should walk through the provided path (recursively for directories), process each Python file independently, and handle files that fail to parse gracefully by logging the error and continuing with the rest. It should be able to run the processing in parallel across multiple files to improve speed on large codebases, and it should exit cleanly when finished.
-Outputs should include a structured summary (in JSON format) listing each processed file, whether annotations were detected, whether a stripped version was produced, and any errors encountered. Stripped files should be written to a configurable output location, with the original files left untouched. The tool should also support a dry-run mode that only reports findings without writing any files, and it should print a concise human-readable progress and results summary to the console.
-Ensure the resulting code is well-structured, robust against malformed input, and verifies that rewritten files remain syntactically valid Python beforeving them.
----"""
 
 from __future__ import annotations
 import ast

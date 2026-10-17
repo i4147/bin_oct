@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a bibliography and citation verification tool. It should read one or more BibTeX files (including large reference collections or "anthology" files) and check every entry against authoritative online sources, reporting which citations are correct, which are inaccurate, and which appear to be fabricated or hallucinated.
-The tool should accept command-line input specifying the BibTeX file(s) to check, optional reference databases to load for local matching, and options controlling the level of verification and output detail. It should parse each bibliographic entry and normalize its key fields, such as title, authors, year, venue or journal, DOI, ISBN, and URL. For each entry, it should query external sources (for example, DOI registries, ISBN lookup services, scholarly knowledge bases, and academic publisher metadata) and compare the retrieved metadata against the entry using fuzzy string matching so that minor formatting differences, abbreviations, or capitalization changes are tolerated while substantive errors are flagged.
-The output should be a clear, color-coded console report that summarizes each entry's status (verified, mismatched, not found, or likely fabricated), explains which fields disagree and by how much, and provides a final summary of counts. The tool should also be able to write a corrected BibTeX file containing only verified or repaired entries, and should cache lookup results so repeated runs avoid redundant network requests. It should handle network failures, malformed entries, and missing identifiers gracefully, continuing processing and logging issues rather than crashing. Include a progress indicator while processing large files and a quiet mode for scripted use.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +11,7 @@ import sys
 from typing import Any, Optional
 import urllib.error
 import urllib.request
+
 import bibtexparser
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.bwriter import BibTexWriter
@@ -24,6 +21,7 @@ import pycountry
 import pyparsing
 from SPARQLWrapper import JSON, SPARQLWrapper
 from termcolor import colored
+
 
 CITATION_DATABASE: dict[str, dict] = {}
 CACHED_JOURNALS: dict[str, str] = {}

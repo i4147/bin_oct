@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that comments out a specified range of lines in a source file. The tool should accept three command-line arguments: the path to a file, a starting line number, and an ending line number. It must validate its inputs and print clear, user-friendly error messages (then exit with a non-zero status) when arguments are missing, when line numbers are not valid integers, when the line range is invalid (line numbers must be at least 1 and the end line must not precede the start line), or when the file does not exist.
-The script should determine the correct single-line comment syntax from the file's extension, supporting common languages such as Python, shell, YAML, Ruby, JavaScript, TypeScript, C, C++, Java, Go, HTML, and CSS, and falling back to a sensible default comment style for unrecognized extensions. Lines within the requested range should be commented out in place, with the rest of the file left untouched, and the modified content should be written back to the same file. Preserve the original line endings and indentation as much as practical, and handle blank lines within the range in a consistent, readable way.
-For block-style languages where a single-line comment marker is not natural (such as HTML and CSS), choose an appropriate wrapping approach so that the commented region remains valid and clearly marked. Ensure the script handles files with unusual encodings or trailing newline differences gracefully and reports a clear message when the operation succeeds, including how many lines were commented.
----"""
 
 from __future__ import annotations
 import os
 import sys
+
 
 EXTENSION_COMMENTS = {
     ".py": "#",

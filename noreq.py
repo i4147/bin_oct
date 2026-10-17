@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that inspects a file on disk and determines whether it is a valid, uncorrupted archive. The script should accept a file path as input and return a clear boolean-style result indicating whether the archive can be read and passes integrity checks. It should handle the common archive formats used for software packaging, including ZIP-based files as wheel packages, plain tar archives, and compressed tar archives (gzip and xz variants), identifying the format from the file name extension.
-The script should treat the following as invalid without raising unhandled errors: paths that do not point to an existing regular file, empty files, files whose extension is not a recognized archive type, and archives that are malformed, truncated, or fail their internal integrity checks. For ZIP and wheel files, verify the contents using the archive's own test mechanism; for tar-based files, confirm the archive can be opened and its members enumerated without error. Missing files and unexpected exceptions should be caught and reported as failures rather than crashing the program.
-The core behavior should be a reusable validation function that can be called from other code, and it should be usable as a standalone command-line tool that accepts one or more archive paths and prints a result for each (for example, OK or INVALID). The script should use only the Python standard library, avoid leaving temporary files behind, and close all file handles properly. Include brief docstrings explaining each function's purpose and return value.
----"""
 
 from __future__ import annotations
 from pathlib import Path

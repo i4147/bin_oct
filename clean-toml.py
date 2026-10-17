@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python tool that cleans up TOML configuration files by removing all comments while preserving the valid structure and values of each file. The tool should accept a target path (a single file or a directory tree) and recate all T it, skipping common non-source directories such as version control folders, virtual environments, dependency caches, IDE settings folders, and build output directories.
-Processing should be parallelized across available CPU cores so that large repositories with many TOML files are handled efficiently. Each file should be parsed using a syntax-aware parser so that comments are identified precisely, without relying on fragile text matching that could damage string values containing comment-like characters.
-Behavior requirements:
-- Empty files should be left unchanged.
-- If a file cannot be parsed as valid TOML, it should be left untouched and reported as skipped or failed rather than corrupted.
-- Only files whose content actually changes should be rewritten; the tool should report which files were modified.
-- Before overwriting any file, the tool should be able to show a unified diff of the proposed changes, and support a dry-run mode that reports what would change without writing anything.
-- Provide a command-line interface that accepts the target path and flags for dry-run and diff display, with clear help text.
-- Report a summary at the end, including counts of files processed, modified, skipped, and failed, along with the elapsed time.
-- Handle errors gracefully, including missing paths, permission issues, and unreadable files, without crashing the entire run.
-- Optionally, if a TOML parsing library is available, validate the cleaned output to confirm it still parses and matches the original data before writing.
----"""
 
 from __future__ import annotations
 import argparse
@@ -21,8 +9,10 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_toml as ts_toml
+
 
 try:
     import tomllib

@@ -1,14 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that generates a ready-to-publish Python package setup configuration for a given project directory. The script should accept a path to a project folder and automatically detect the main package inside it, whether that is a directory containing an initialization file, a subdirectory that forms a package, or a single standalone module file. It should skip non-essential files such as setup scripts when looking for the module.
-Once the package is located, the script should scrape project metadata from the package's source files, including the version number, author name, author email, project URL, and license. If a version cannot be found, it should fall back to a sensible default version. The metadata extraction should tolerate imperfect or partially readable source files without crashing.
-The script should then produce the packaging files needed for distribution, such as a setup configuration and a project description file, populated with the detected name, version, author details, and other metadata. It should report clearly to the user which package was detected, what metadata was found or defaulted, and where the generated files were written. Handle missing paths, empty directories, and unreadable files gracefully with informative error messages and a non-zero exit status on failure.
-The tool should be runnable from the command line, taking the path as its primary argument, and should avoid overwriting existing packaging files without confirmation or an explicit override option.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+
 
 DEFAULT_VERSION: str = "1.4.7"
 

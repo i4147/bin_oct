@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an HTML minifier tool. It should accept raw HTML markup as input (from a string, a file, or a batch of files in a directory) and produce a smaller, functionally equivalent HTML output. The tool should be configurable with options that control which optimizations are applied: removing HTML comments, collapsing redundant whitespace while leaving whitespace-sensitive content untouched, stripping empty attributes, optionally removing optional closing or implied tags, and optionally minifying embedded CSS and JavaScript blocks. Whitespace-sensitive elements such as preformatted text, code samples, text areas, and script or style contents must be preserved exactly. The tool should gracefully handle malformed or fragmentary HTML by parsing it leniently and still producing valid output. It should be usable both as an importable class with a simple minify method and as a command-line utility that reads one or more input files, writes minified results to an output location (or alongside the originals with a suffix), and reports basic statistics such as original size, minified size, and percentage saved. Include clear error handling for missing files, unreadable input, and parsing failures, and print a concise summary when processing multiple files.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING
+
 from dh import get_files, mpf
 from lxml import html as lxml_html
+
 
 if TYPE_CHECKING:
     from lxml.html import HtmlElement

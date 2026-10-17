@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user-specified directory tree and identifies operating-system and platform junk or system-generated files and folders that should typically be excluded from backups, archives, or cleanup operations. The script should accept a root directory path from the user, recursively walk its contents, and flag or report every item whose name matches a predefined set of known macOS metadata artifacts (such as Finder and Spotlight leftovers, resource-fork files, and trash folders) and known Windows system or executable-style artifacts (such as thumbnail caches, desktop configuration files, recycle bin entries, and certain binary or installer extensions). Matching should support both exact filename matches and wildcard-style patterns, including prefix and suffix rules, and should apply consistently to both files and directories.
-The script should produce a clear, human-readable summary listing each matched path along with its type and size where applicable, plus overall totals for count and combined size. It should offer a dry-run mode that only reports findings, and an optional mode that actually removes the matched items after confirmation. Handle permission errors, broken symbolic links, and unreadable paths gracefully by logging a warning and continuing. Allow the user to choose which platform pattern sets to apply (macOS, Windows, or both), and let the user add custom patterns from the command line. Provide helpful command-line usage information, validate inputs before scanning, and exit with meaningful status codes for success, invalid input, and partial failures.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import fsz
+
 
 DARWIN_PATTERNS = {
     ".DS_Store",

@@ -1,14 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for gathering the text contents of many source files in a directory tree and combining them into a single merged document for easy sharing with an AI assistant. The tool should accept a target directory (defaulting to the current working directory) and optional filters to include or exclude files by extension and to skip binary or otherwise unwanted files. It should walk the directory recursively, read each eligible file as text while gracefully ignoring files that cannot be read or decoded, and skip common non-essential paths such as hidden folders, version control metadata, build outputs, and dependency directories.
-For each included file, the merged output should begin with a header line showing the file's path relative to the working directory, followed by the file's full contents, with a trailing newline ensured between entries so the result remains cleanly separated and readable. Files should be processed in a deterministic order.
-The tool should then deliver the merged result: it should copy the combined text to the device clipboard when the content is within a reasonable size limit (about 1 MB), and print a clear confirmation message on success. If the content exceeds that limit, it should instead report to the user that the merged content is too large for the clipboard and suggest narrowing the selection, without silently failing. If no eligible files are found or the merged content is empty, the tool should inform the user and exit without attempting to copy anything.
-The script should also support a dry-run or summary mode that lists which files would be included and the total size, without producing the merged output. Provide helpful command-line help text, handle missing or invalid directories with clear error messages, and exit with appropriate status codes. Prioritize robustness, readable console output using simple emoji status indicators, and a design that is easy to extend with additional filters or output destinations.
----"""
-
-from __future__ import annotations
 import argparse
 from pathlib import Path
-from dh import get_nobinary, get_random_filename, runcmd, should_skip
+import subprocess
+import sys
+
+from dh import get_nobinary, get_random_filename, should_skip
+
+
+def runcmd(cmd: list[str]) -> int:
+    try:
+        return subprocess.run(cmd, check=False).returncode
+    except FileNotFoundError:
+        print(f"❌ Command not found: {cmd[0]}")
+        return 127
 
 
 def read_file(path: Path) -> str | None:
@@ -135,6 +139,48 @@ def merge_files(args: argparse.Namespace) -> None:
         print(f"📁 All merged files saved in: {cwd / 'merged'}")
 
 
+def unmerge_file(merged_file: Path, output_dir: Path) -> list[Path]:
+    if not merged_file.is_file():
+        print(f"❌ File not found: {merged_file}")
+        return []
+    try:
+        content = merged_file.read_text(encoding="utf-8", errors="ignore")
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"❌ Cannot read {merged_file}: {e}")
+        return []
+    lines = content.split("\n")
+    marker = "# File: "
+    current_path: Path | None = None
+    buffer: list[str] = []
+    written: list[Path] = []
+
+    def flush() -> None:
+        if current_path is None:
+            return
+        target = output_dir / current_path
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("\n".join(buffer), encoding="utf-8")
+            written.append(target)
+        except OSError as e:
+            print(f"❌ Error writing {target}: {e}")
+
+    for line in lines:
+        if line.startswith(marker):
+            flush()
+            rel = line[len(marker) :].strip()
+            current_path = Path(rel) if rel else None
+            buffer = []
+        elif current_path is not None:
+            buffer.append(line)
+    flush()
+    if not written:
+        print("ℹ️  No files extracted (missing '# File:' markers).")
+    else:
+        print(f"✅ Extracted {len(written)} files into: {output_dir}")
+    return written
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Merge text files in the current directory.",
@@ -146,6 +192,7 @@ Examples:
   python merger.py -e py cpp          # Merge only .py and .cpp files
   python merger.py -w -c              # Group files by extension and write to files
   python merger.py -c -e py cpp       # Group .py and .cpp files by extension
+  python merger.py -u merged.txt      # Split a previously merged file
         """,
     )
     parser.add_argument(
@@ -166,9 +213,32 @@ Examples:
         action="store_true",
         help="Write merged output to file(s) (default: only copy to clipboard)",
     )
+    parser.add_argument(
+        "-u",
+        "--unmerge",
+        action="store_true",
+        help="Split a previously merged file (path given as positional argument)",
+    )
+    parser.add_argument(
+        "file",
+        nargs="?",
+        help="Path to the merged file to split (used with -u)",
+    )
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main() -> None:
     args = parse_args()
+    if args.unmerge:
+        if not args.file:
+            print("❌ Please provide the merged file path: python merger.py -u <file>")
+            sys.exit(1)
+        merged_path = Path(args.file)
+        output_dir = merged_path.parent / f"{merged_path.stem}_unmerged"
+        unmerge_file(merged_path, output_dir)
+        return
     merge_files(args)
+
+
+if __name__ == "__main__":
+    main()

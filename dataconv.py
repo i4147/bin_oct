@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import csv
@@ -13,7 +14,9 @@ import re
 import sqlite3
 import sys
 from typing import Any, Callable, Optional
+
 from loguru import logger
+
 
 Tables = dict[str, list[dict[str, Any]]]
 MMAP_THRESHOLD = 5 * 1024 * 1024

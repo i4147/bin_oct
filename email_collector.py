@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Email crawler – complete rewrite.
-Behaviorally equivalent to the original multi-file package for CLI usage,
-logging, database side-effects, file output, and network requests.
-"""
 
 from __future__ import annotations
 import curses
@@ -18,7 +13,9 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
+
 
 # ---------------------------------------------------------------------------
 # Configuration (matches original constants and logging contract)
@@ -121,6 +118,7 @@ class ColorStreamHandler(logging.Handler):
 
 # Make the class visible to dictConfig
 import sys as _sys
+
 
 _sys.modules[__name__].ColorStreamHandler = ColorStreamHandler
 logging.config.dictConfig(LOGGING)

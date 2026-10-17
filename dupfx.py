@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that finds duplicate files across one or more directory trees supplied on the command line, and reports groups of files whose contents are identical.
-The tool should accept one or more root directories (and optionally a minimum file size threshold) through command-line arguments, recursively walk those directories, and skip entries that cannot be accessed. To keep the process efficient, it should first group candidate files by size, then apply a cheap partial fingerprint that samples the beginning, and for larger files the end, of each file before computing a full-content fingerprint only for files that still collide. Hashing should be fast and streamed in chunks so that large files do not exhaust memory. The work should be parallelized across multiple worker processes to speed up hashing of many files.
-Hard links (multiple paths referring to the same underlying file on disk) must be recognized and not reported as duplicates of each other, since they do not consume extra space. Symbolic links should be handled deliberately, for example by not following them, to avoid loops and double counting.
-The output should be a human-readable report listing each group of duplicate files with their size and paths, along with a summary of how many duplicate groups were found and how much disk space could be reclaimed. Optionally, the tool should support a machine-readable output format. Progress and errors should be logged to the console in a non-intrusive way, and unreadable files should be reported as warnings without stopping the scan. The script should exit with a clear status code indicating whether duplicates were found and should handle keyboard interruption gracefully.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,8 +6,10 @@ from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from xxhash import xxh64
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

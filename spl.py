@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line text file splitter and reassembler, capable of breaking large text files into smaller, manageable chunks and later recombining them into the original content. The script should accept an input file path and a target chunk size (specified in bytes, lines, or approximate character counts), along with an output directory and naming options for the generated parts. It should produce sequentially numbered part files whose names clearly indicate their order, and it should avoid splitting in the middle of words or sentences where practical, preferring natural boundaries such as sentence endings or whitespace. The tool should detect and reject binary files gracefully, using a best-effort check that works even when optional helper libraries are unavailable, and it should provide informative logging of progress and any warnings or errors. Support a complementary mode that takes a set of previously generated part files and merges them back into a single file in the correct order, validating that all expected parts are present and reporting any gaps or mismatches. Allow optional parallel processing for large inputs to speed up chunk creation or verification, while keeping the default behavior simple and deterministic. Include a dry-run option that reports the planned split without writing any files, and a verbose option that controls logging detail. Handle common error conditions such as missing files, unreadable paths, permission problems, and invalid arguments with clear, user-friendly messages and appropriate exit codes. The output should consist of the generated part files and a concise summary of the operation, and the tool should be designed to run as a standalone command-line utility with helpful usage documentation.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,6 +12,7 @@ import string
 import sys
 from typing import Optional, Sequence
 import uuid
+
 
 try:
     from loguru import logger as _loguru_logger

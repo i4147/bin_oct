@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts font files between common web and desktop font formats (TTF, OTF, WOFF, and WOFF2), intended for batch use from the command line.
-The tool should accept one or more input font files or directories containing fonts, and an output format selection that defaults to WOFF2. For source format, convert it to the requested target format, and write the result to an output location, either alongside the source or into a specified output directory. It should skip conversions that are unnecessary (for example, when the input is already in the target format) and report that clearly rather than failing. Where a format requires an optional compression capability that is not available, the tool should degrade gracefully with a clear message telling the user what to install.
-Key behaviors to include:
-- Process multiple font files in parallel using a configurable number of worker processes, with a sensible default.
-- For each conversion, record the input format, input and output file sizes, elapsed time, whether it succeeded, and whether it was skipped and why. Log failures without stopping the r Print a concise end-of-run summary showing how many files succeeded, were skipped, or failed, along with total size savings where applicable.
-- Handle errors such as corrupt fonts, unsupported extensions, missing files, and unwritable output locations gracefully, reporting each problem per file.
-- If the required font-processing library is not installed, exit early with a clear installation hint printed to the error stream.
-- Provide a command-line interface with options for input paths, output format, output directory, worker count, and verbosity or logging level.
-- Use structured logging for progress and diagnostics, and return a non-zero exit status if any conversion failed.
----"""
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -19,11 +8,17 @@ from pathlib import Path
 import sys
 import time
 from typing import Optional, Sequence
+
 from dh import fsz
 from loguru import logger
 
+
 try:
     from fontTools.ttLib import TTFont
+    from fontTools.t1Lib import T1Font
+    from fontTools.fontBuilder import FontBuilder
+    from fontTools.pens.t2CharStringPen import T2CharStringPen
+    from fontTools.misc.psCharStrings import T2CharString
 except ImportError:
     sys.stderr.write("fonttools is not installed.\n  pip install fonttools\n")
     sys.exit(1)
@@ -33,7 +28,11 @@ try:
     HAS_BROTLI = True
 except ImportError:
     HAS_BROTLI = False
-SUPPORTED_FORMATS = frozenset({"ttf", "otf", "woff", "woff2"})
+
+INPUT_FORMATS = frozenset({"ttf", "otf", "woff", "woff2", "pfa", "pfb"})
+OUTPUT_FORMATS = frozenset({"ttf", "otf", "woff", "woff2"})
+TYPE1_FORMATS = frozenset({"pfa", "pfb"})
+SUPPORTED_FORMATS = INPUT_FORMATS
 SFNT_VERSIONS = {
     "ttf": 0x00010000,
     "otf": "OTTO",
@@ -43,7 +42,7 @@ FLAVORS = {
     "woff2": "woff2",
 }
 DEFAULT_OUTPUT_FORMAT = "woff2"
-DEFAULT_WORKERS = 8
+WORKERS = 4
 CFF_TABLES = frozenset({"CFF ", "CFF2"})
 TRUETYPE_TABLE = "glyf"
 
@@ -71,7 +70,7 @@ class ConversionResult:
 
 def detect_format(path: Path) -> Optional[str]:
     ext = path.suffix.lower().lstrip(".")
-    return ext if ext in SUPPORTED_FORMATS else None
+    return ext if ext in INPUT_FORMATS else None
 
 
 def generate_output_path(
@@ -93,6 +92,44 @@ def _outline_kind(font: TTFont) -> str:
     return "unknown"
 
 
+def _t1_to_ttfont(input_path: Path) -> TTFont:
+    t1 = T1Font(str(input_path))
+    glyph_set = t1.getGlyphSet()
+    glyph_order: list[str] = list(glyph_set.keys())
+    charstrings: dict[str, T2CharString] = {}
+    metrics: dict[str, tuple[int, int]] = {}
+    for name in glyph_order:
+        glyph = glyph_set[name]
+        width = int(round(glyph.width))
+        pen = T2CharStringPen(width, glyph_set)
+        glyph.draw(pen)
+        charstrings[name] = pen.getCharString()
+        metrics[name] = (width, 0)
+    fm = getattr(t1, "fontMatrix", (0.001, 0, 0, 0.001, 0, 0))
+    upm = int(round(1 / abs(fm[0]))) if fm and fm[0] else 1000
+    bbox = getattr(t1, "fontBBox", None)
+    if bbox and len(bbox) >= 4:
+        ascent = int(round(bbox[3]))
+        descent = int(round(bbox[1]))
+    else:
+        ascent, descent = 880, -120
+    fb = FontBuilder(unitsPerEm=upm, isTTF=False)
+    fb.setupGlyphOrder(glyph_order)
+    fb.setupCharacterMap({})
+    fb.setupCFF(
+        t1.fontName,
+        {"FullName": t1.fontName, "FamilyName": t1.fontName, "Weight": "Regular"},
+        charstrings,
+        {},
+    )
+    fb.setupHorizontalMetrics(metrics)
+    fb.setupHorizontalHeader(ascent=ascent, descent=descent)
+    fb.setupNameTable({"familyName": t1.fontName, "styleName": "Regular"})
+    fb.setupOS2()
+    fb.setupPost()
+    return fb.font
+
+
 def convert_font(
     input_path: Path,
     output_format: str,
@@ -109,6 +146,9 @@ def convert_font(
         if input_format is None:
             msg = f"unsupported extension '{input_path.suffix}'"
             raise ValueError(msg)
+        if output_format not in OUTPUT_FORMATS:
+            msg = f"cannot write to .{output_format} (input-only format)"
+            raise ValueError(msg)
         result.input_format = input_format
         result.input_size = input_path.stat().st_size
         if input_format == output_format:
@@ -122,12 +162,15 @@ def convert_font(
             msg = f"output exists (use --force): {output_path}"
             raise FileExistsError(msg)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        font = TTFont(
-            str(input_path),
-            lazy=True,
-            recalcBBoxes=False,
-            recalcTimestamp=False,
-        )
+        if input_format in TYPE1_FORMATS:
+            font = _t1_to_ttfont(input_path)
+        else:
+            font = TTFont(
+                str(input_path),
+                lazy=True,
+                recalcBBoxes=False,
+                recalcTimestamp=False,
+            )
         try:
             kind = _outline_kind(font)
             warning: Optional[str] = None
@@ -288,7 +331,10 @@ def print_summary(results: Sequence[ConversionResult]) -> None:
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="fontconverter.py",
-        description="Convert font files between TTF, OTF, WOFF, and WOFF2.",
+        description=(
+            "Convert font files between TTF, OTF, WOFF, and WOFF2. "
+            "PFA/PFB (Type 1) are accepted as input and converted to a CFF-outlined OTF."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
@@ -297,6 +343,7 @@ Examples:
   %(prog)s ./fonts/ --to ttf -r          Dir → ttf, remove originals
   %(prog)s a.ttf b.otf --to woff2        Two files
   %(prog)s ./fonts/ --to otf -o ./out/   Output to ./out/ directory
+  %(prog)s font.pfa --to otf             Type 1 → OTF (CFF outlines)
   %(prog)s ./fonts/ --to otf --allow-outline-mismatch
                                         Allow non-standard TTF↔OTF mismatch
 """,
@@ -311,7 +358,7 @@ Examples:
         "--to",
         "-t",
         dest="output_format",
-        choices=sorted(SUPPORTED_FORMATS),
+        choices=sorted(OUTPUT_FORMATS),
         default=DEFAULT_OUTPUT_FORMAT,
         help=f"Output format (default: {DEFAULT_OUTPUT_FORMAT})",
     )
@@ -353,12 +400,6 @@ Examples:
             "target convention. This writes a non-standard font and only "
             "changes the sfnt version; outlines are NOT converted."
         ),
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of worker processes (default: {DEFAULT_WORKERS})",
     )
     return parser.parse_args(argv)
 
@@ -420,7 +461,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         all_results.append(result)
         print_file_stats(result)
     else:
-        workers = max(1, min(args.workers, len(worker_args)))
+        workers = min(WORKERS, len(worker_args))
         pool = Pool(processes=workers)
         try:
             async_results = [pool.apply_async(convert_font, args=wa) for wa in worker_args]

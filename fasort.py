@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads a plain-text file containing Persian (Farsi) words, one per line, sorts them according to the standard Persian alphabetical order, and writes or displays the sorted result. The script should take the input file path from the command line, handle file read errors gracefully with clear messages, and support UTF-8 encoding throughout. It should norm Arabic-variant and equivalent Persian letter forms (for example, different forms of yeh, kaf, heh, and alef-madda) so that visually or phonetically equivalent characters are treated as the same letter during comparison, while preserving the original spelling in the output. Spaces within entries should be considered when ordering, and characters not present in the Persian alphabet should sort after all Persian letters in a consistent way. The script should be self-contained, print results to standard output by default, and optionally allow saving the sorted list to a new file specified by the user.
----"""
 
 from __future__ import annotations
 import sys

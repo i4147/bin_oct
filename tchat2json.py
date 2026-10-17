@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that parses an exported group chat log file and converts it into a structured output file, grouping each participant's messages together. The tool should accept a path to a plain-text chat export as input, along with a desired output format (such as JSON, CSV, or a local SQLite database) and an output destination path provided via command-line arguments.
-The script should read each line of the chat export, recognize timestamped entries in the form of a bracketed date and time followed by a username and message, and treat any subsequent non-empty lines without a timestamp as continuations of the previous message (preserving line breaks). Blank lines and malformed content before the first valid entry should be handled gracefully without crashing.
-Once parsed, the messages should be organized by user, with each user's messages collected in the order they first appeared in the chat. Duplicate messages from the same user should be removed so each unique message appears only once per user. The final result should be a list of records, each containing a username and that user's list of unique messages.
-The script should write this grouped data to the chosen output format: a formatted, human-readable JSON file preserving non-ASCII characters, a CSV file with one row per user and messages suitably joined or serialized, or a SQLite database table holding the same information. It should validate that the input file exists, report clear error messages for missing files or unsupported formats, and print a concise summary (such as the number of users and messages processed) upon successful completion. Ensure the script can be run directly from the command line and handles file encoding issues robustly.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +8,7 @@ from pathlib import Path
 import re
 import sqlite3
 import sys
+
 
 LINE_RE = re.compile(r"^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(.*?):\s?(.*)$")
 

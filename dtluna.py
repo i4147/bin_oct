@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line subtitle translation tool. It should take a subtitle file (such as SRT or similar timed-text formats) as input, along with source and target language options, and produce a translated subtitle file as output while preserving the original timing, numbering, and structure of each subtitle entry.
-Requirements:
-- Accept the input subtitle file path, an output path (with a sensible default if omitted), a source language (defaulting to automatic detection), and a target language via command-line arguments. Support a broad set of common language codes, including regional variants such as Brazilian Portuguese and Simplified Chinese, and normalize user-provided codes to the codes accepted by the translation backend.
-- Parse the subtitle file robustly, handling multi-line subtitle text, blank lines, and minor formatting irregularities. Leave timestamps and sequence indices untouched in the output.
-- Translate subtitle text in batches or concurrently to improve throughput, with a configurable number of workers. Implement retry behavior for transient failures and clear error reporting when translation ultimately fails for a given entry.
-- Support pluggable translation backends so that different translation services or a custom translator function can be used without rewriting the core logic. Ship with a default backend that works out of the box.
-- Include a similarity-based check that compares original and translated text, for example to detect cases where a translation was not actually performed and to warn or fall back accordingly.
-- Use structured logging to report progress, warnings, and errors, with an option to control verbosity.
-- Optionally allow loading a user-supplied Python module that provides custom translation logic, validated before use.
-- Write results atomically so that a failed run never leaves a partially written or corrupted output file, and avoid overwriting existing files without explicit confirmation or a flag.
-- Print a concise summary at the end indicating how many entries were translated, skipped, or failed, and return a non-zero exit status when errors occur.
-- Handle invalid inputs, missing files, unsupported language codes, and interruption (such as Ctrl+C) gracefully with informative messages.
----"""
 
 from __future__ import annotations
 import argparse
@@ -26,7 +13,9 @@ from tempfile import NamedTemporaryFile
 import threading
 import time
 from typing import Callable, TypeAlias
+
 from loguru import logger
+
 
 Translator: TypeAlias = Callable[[str], str]
 LANGUAGE_CODES: dict[str, str] = {

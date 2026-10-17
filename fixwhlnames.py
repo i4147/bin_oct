@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line utility for cleaning up a local directory of Python wheel (.whl) files. The tool should scan a given folder for wheel packages, inspect each wheel's internal metadata to determine its package name, version, and platform/interpreter compatibility tags, and then decide which wheels to keep and which to move aside. Its goal is to reduce clutter by identifying redundant or outdated builds, for example multiple versions of the same package or wheels built for incompatible Python versions or operating systems, while preserving the most relevant builds.
-The script should accept a directory path (and optionally a target Python version or platform filter) from the command line, with sensible defaults. It should process wheel files in parallel to keep scanning fast on large collections, and must handle corrupt or unreadable wheels gracefully by logging a warning and skipping them rather than crashing. Instead of permanently deleting anything, it should relocate superseded or incompatible wheels into a backup subfolder within the target directory so the user can review or restore them. The tool should produce clear, human-readable log output summarizing what was scanned, what was kept, what was moved, and any errors encountered, and it should support a dry-run mode that reports planned actions without modifying any files.
-Recognize wheel filenames that follow standard naming conventions, including compressed tag sets (for example combined Python or ABI tags) and both manylinux and Windows/macOS platform tags. Parse the metadata and wheel descriptor files stored inside each archive to extract the declared tags and version information, and use that information, not just the filename, when making keep-or-move decisions. The script should exit with a non-zero status code on fatal errors such as a missing directory, and zero otherwise.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,7 +9,9 @@ import re
 import shutil
 from typing import Any, Final
 import zipfile
+
 from loguru import logger
+
 
 WHEEL_SUFFIX: Final[str] = ".whl"
 METADATA_SUFFIX: Final[str] = ".dist-info/METADATA"

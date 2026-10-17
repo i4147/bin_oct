@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that automatically modernizes Python source files by upgrading their type-annotation style and cleaning up related code constructs, while preserving the original program behavior.
-The tool should accept one or more file or directory paths as input, recursively discover Python source files (supporting standard Python extensions), and respect ignore rules, including default exclusions for cache and version-control directories and user-defined ignore patterns loaded from a configuration file placed in the project tree. It should support a dry-run mode that reports which files would change along with a unified diff of the proposed edits, and an in-place mode that rewrites files safely (for example, by writing to a temporary file and replacing the original only on success). It should also offer an option to print a summary of changes and exit with a non-zero status when changes are needed, suitable for use in continuous integration checks.
-Core behaviors to implement:
-- Rewrite legacy typing constructs (such as Optional, Union, List, Dict, Tuple, Set, and Callable imports from the typing module) into modern built-in generic and union syntax appropriate for a target Python version, and remove imports that become unused as a result.
-- Optionally strip comments that are not functional (keeping shebang lines, type-ignore and formatting directives), controlled by a command-line flag.
-- Preserve formatting, comments, and layout of untouched code as much as possible by operating on the concrete syntax tree rather than re-generating code from a plain syntax tree.
-- Validate that every transformed file still parses correctly; if a transformation would produce invalid code, skip that file and report the error without corrupting it.
-- Support parallel processing across multiple files with a configurable number of workers, and handle per-file timeouts so a single problematic file cannot hang the whole run.
-- Handle keyboard interruption gracefully, cleaning up any temporary files and reporting partial progress.
-- Log progress and errors through a structured logging facility with adjustable verbosity, and print a final summary of files scanned, files changed, files skipped, and errors encountered.
-- Exit with clear status codes: zero when no changes are needed or changes were applied successfully, non-zero when changes are pending in check mode or when errors occurred.
-The tool should be self-contained, provide helpful command-line help text, and be structured so that each transformation can be enabled or disabled independently.
----"""
 
 from __future__ import annotations
 import argparse
@@ -30,9 +17,11 @@ import sys
 import tempfile
 import tokenize
 from typing import Any, Callable, Iterable, Optional, Sequence
+
 import libcst as cst
 from libcst.helpers import get_full_name_for_node
 from loguru import logger
+
 
 SUPPORTED_EXTENSIONS = frozenset({".py", ".pyw"})
 IGNORE_FILENAME = ".ignore"

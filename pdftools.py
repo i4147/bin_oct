@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that processes one or more PDF files supplied via the command line and produces a combined plain-text extraction of their contents. The tool should accept a set of input PDF paths and an output location, validate that each input is a readable, unencrypted PDF with at least one page, and skip or report any files that cannot be used without stopping the entire run. For each valid PDF, it should extract the text of every page, strip trailing form-feed or page-break artifacts, and preserve page order within each document. Extraction work should be parallelized across CPU cores for large documents, dividing pages into balanced batches so that throughput scales with the number of available processors, while the final output remains deterministic and correctly ordered.
-The script should also support merging the results into a single consolidated output file, with clear separation between documents and pages (for example, labeled headers indicating source file and page number). Output file names derived from input names must be sanitized to contain only safe characters, falling back to a sensible default when the sanitized name is empty. The tool should print concise progress and summary information to the console, including counts of processed, skipped, and failed files and total pages extracted, and should return a meaningful exit status indicating success, partial success, or failure. Provide a clear command-line interface with helpful help text, sensible defaults for output directory and worker count, and graceful handling of missing files, permission errors, encrypted documents, and interruptions from the user.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,7 +8,9 @@ from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING
+
 import pymupdf
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

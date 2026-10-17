@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a multi-language source code formatter and reformatter tool, operating on files and directories from the command line. It should detect each file's language from its extension and support a broad set of languages, including Rust, Bash/shell, C and C++ (including headers), CSS, HTML, JavaScript, JSX, TypeScript, TSX, Lua, and TOML.
-The tool should accept one or more file or directory paths, recursively discover supported source files within directories, and skip unsupported files. It should provide a check mode that reports which files would change without modifying them, a diff mode that shows unified differences between original and reformatted content, and an in-place mode that rewrites files that need changes. The exit status should reflect whether any files needed changes or encountered errors, which is useful for use in continuous integration pipelines.
-Behavior requirements:
-- Parse each source file using an appropriate syntax-aware parser for its language, so formatting respects the code's structure rather than relying on naive text manipulation.
-- Normalize indentation, spacing, and line layout consistently for each language while preserving the program's semantics and comments.
-- Process multiple files in parallel using a configurable number of worker processes, with a sensible default.
-- Handle files that fail to parse or read gracefully: log a clear, descriptive error for the affected file, continue processing the rest, and never corrupt or partially overwrite a file.
-- Leave files unchanged when they are already correctly formatted, and avoid unnecessary writes.
-- Report progress and results through a logging facility, with a summary of how many files were checked, changed, or failed.
-- Support a quiet or verbose output option to control log detail.
-- Keep the design modular so that adding support for another language requires minimal changes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +8,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
@@ -32,6 +21,7 @@ import tree_sitter_lua
 import tree_sitter_rust
 import tree_sitter_toml
 import tree_sitter_typescript
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

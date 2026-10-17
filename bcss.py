@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch CSS formatter. It should accept one or more CSS file paths from the command line; if none are given, it should automatically find all CSS files in the current working directory (including minified CSS files). For each file, it should reformat the CSS into a beautified, human-readable layout by invoking an external CSS beautification tool, overwriting the file in place. The script should process multiple files in parallel for speed, and report per-file progress with the file name and the outcome: whether the file was successfully beautified and how many bytes were saved or added (with a percentage change), reported as "no change" if nothing differed, or flagged as an error if the external tool failed. Missing files should be skipped gracefully. Output should use colored console messages to distinguish success, no-change, and error states. After processing, the script should display the total size difference across the working directory, showing the overall space change in human-readable units. The script should be robust, avoid crashing on individual file failures, and keep the console output concise and easy to scan.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
 
 

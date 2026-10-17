@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for downloading Python package distributions from a Python package index (such as PyPI) that are compatible with the current interpreter and platform. The user supplies one or more package requirement specifications (for example, a package name with an optional version constraint) and optionally a target directory and an alternative index URL. The tool should resolve each requirement against the index's simple repository listing, select the newest release that satisfies the version specifier and is not yanked, and then choose the most suitable distribution file for the running environment, preferring wheels whose compatibility tags match the local Python implementation, version, and operating system, and falling back to source distributions when no compatible wheel exists.
-Key behaviors to include:
-- Accept requirements in standard dependency-specifier syntax, handle invalid input gracefully, and report clearly which packages or versions could not be found or satisfied.
-- Respect each file's declared Python version requirement, skipping releases whose requirement excludes the current interpreter.
-- Verify the integrity of each downloaded file against the SHA-256 hash published by the index, and discard or flag any mismatched download.
-- Stream downloads to disk in chunks, showing a live progress indicator with transfer speed and estimated remaining time, and avoid re-downloading files that already exist and pass verification.
-- Follow redirects and resolve relative file links correctly, with sensible timeouts and clear handling of network or HTTP errors.
-- Provide a dry-run or summary mode that lists what would be downloaded without fetching the files.
-- Log progress and warnings through a clean logging setup, with a verbosity option.
-- Exit with a non-zero status code if any requested package fails to download, and zero otherwise.
-- Produce a concise final report listing each downloaded file, its destination path, and its size.
-The script should be self-contained, robust to malformed index entries, and designed as a practical command-line utility that a developer could run from a terminal.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +7,7 @@ import hashlib
 from pathlib import Path
 import sys
 from urllib.parse import unquote, urljoin, urlparse
+
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
@@ -34,6 +22,7 @@ from packaging.utils import (
 )
 from packaging.version import InvalidVersion, Version
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+
 
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"

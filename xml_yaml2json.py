@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import concurrent.futures
@@ -6,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 from typing import Any, Optional
+
 
 try:
     import toml

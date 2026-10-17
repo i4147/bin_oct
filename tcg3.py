@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that runs in the Termux environment on Android and saves code from the device clipboard as an executable script file. The tool should read the current clipboard contents using Termux's clipboard utility, and report a clear error to the user if that utility is missing or the read fails. It should analyze the clipboard text to determine what kind of script it is (Python, Bash, or POSIX shell), either from an existing shebang line or from recognizable content patterns, and fall back to a sensible default or an "unknown" result when the type cannot be determined. If the clipboard is empty or contains only whitespace, it should exit gracefully with a helpful message.
-When a script type is identified, the tool should ensure the saved file begins with the correct Termux-specific shebang for that interpreter (pointing to the Termux prefix paths under the Android data directory), replacing or adding it as needed, and should normalize the content so it is ready to run. It should prompt the user for a filename, suggest a sensible default name when none is given, and sanitize the name so it is safe for the filesystem and has an appropriate extension for the detected type. The file should be written to one of the user's standard personal script directories (such as a bin folder in the home directory), creating the directory if necessary, and the tool should set the file's permissions so it is executable. Beforewriting an existing file, it should ask the user for confirmation.
-Finally, the tool should print a concise summary of the outcome, including the detected type, the full path where the script was saved, and a reminder of how to run it, and it should handle user interruptions (such as Ctrl+C) and unexpected errors cleanly with informative messages and nonzero exit codes where appropriate.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import subprocess
 import sys
+
 
 TERMUX_SHEBANGS = {
     "python": "#!/data/data/com.termux/files/usr/bin/python",

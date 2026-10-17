@@ -1,608 +1,150 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a project directory for PNG image files and losslessly-or-near-losslessly compresses them in place using an external PNG optimization tool, reporting how much disk space was saved.
-The script should:
-- Accept a target directory (defaulting to the current working directory) and an optional number of parallel workers, plus an optional timeout per file, via command-line arguments.
-- Walk the directory tree while skipping common non-source folders such as version control metadata, virtual environments, dependency caches, build output, and tool caches (for example .git, node_modules, venv, __pycache__, build, dist).
-- Identify PNG files by their file extension and confirm them by checking the PNG file signature, ignoring anything that is not a valid PNG.
-- Process files concurrently across multiple worker processes to speed up large projects, with sensible chunking of work.
-- For each file, run an external PNG optimizer command as a subprocess with a timeout, treating the optimizer's exit codes appropriately: success means the file was rewritten, and an "already optimal" result means the file was left untouched.
-- Write the optimized output safely, using a temporary file and an atomic replace so that a failure never corrupts the original image, and preserve the original file permissions.
-- Compare file sizes before and after, and only keep the optimized version if it is actually smaller.
-- Handle errors gracefully per file (missing tool, timeouts, permission problems, corrupt images) without stopping the whole run, and report them clearly.
-- Print a human-readable summary showing the number of files processed, files reduced, files unchanged, errors encountered, total bytes saved, and the percentage reduction, with sizes formatted in readable units (B, KiB, MiB, GiB, TiB).
-- Exit with a non-zero status code if the external optimizer is not installed or if fatal errors occurred, and zero otherwise.
-Keep the implementation self-contained, use only the Python standard library, and produce clear, well-documented code with a command-line help message.
----"""
-
 from __future__ import annotations
+
 import argparse
-import contextlib
-from functools import partial
-from multiprocessing import Pool
+import multiprocessing as mp
 import os
-from pathlib import Path
-import stat
+import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Final, Iterator, NamedTuple, Sequence
-from dh import SKIP_DIRS, fsz
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterator
 
-cwd = Path.cwd().resolve()
-PNG_MAGIC: Final[bytes] = b"\x89PNG\r\n\x1a\n"
-DEFAULT_WORKERS: Final[int] = 8
-IMAP_CHUNKSIZE: Final[int] = 4
-DEFAULT_TIMEOUT: Final[float] = 300.0
-COMPARE_CHUNK: Final[int] = 1 << 16
-PNGQUANT_SUCCESS: Final[int] = 0
-PNGQUANT_ALREADY_OPTIMAL: Final[int] = 25
+PNG_EXTS = {".png"}
+SKIP_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv"}
+GREEN = "\033[32m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+PNGQUANT_NOOP_CODES = {98, 99}
 
 
-class ProcessResult(NamedTuple):
+@dataclass
+class Result:
     path: Path
-    original_size: int
-    new_size: int
-    stdout: str
-    stderr: str
-    skipped: bool
-    no_change: bool
-    error: str | None
+    before: int
+    after: int
+    status: str
+    detail: str = ""
+
+    @property
+    def saved(self) -> int:
+        return max(self.before - self.after, 0)
 
 
-def _dedupe(path: Path, seen: set[Path]) -> bool:
-    try:
-        key = path.resolve()
-    except OSError:
-        key = path
-    if key in seen:
-        return False
-    seen.add(key)
-    return True
+def walk_pngs(root: Path) -> Iterator[Path]:
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for name in filenames:
+            p = Path(dirpath) / name
+            if p.suffix.lower() in PNG_EXTS and not p.is_symlink() and p.is_file():
+                yield p
 
 
-def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
-    stack: list[str] = [str(root)]
-    while stack:
-        current = stack.pop()
-        try:
-            with os.scandir(current) as it:
-                entries = list(it)
-        except OSError as exc:
-            print(f"warning: cannot scan {current}: {exc}", file=sys.stderr)
-            continue
-        for entry in entries:
-            name = entry.name
-            try:
-                is_dir = entry.is_dir(follow_symlinks=False)
-                is_symlink = entry.is_symlink()
-            except OSError:
-                continue
-            if is_dir:
-                if name in SKIP_DIRS:
-                    continue
-                stack.append(entry.path)
-                continue
-            if is_symlink:
-                continue
-            if not name.endswith((".PNG", ".png")):
-                continue
-            path = Path(entry.path)
-            if not _dedupe(path, seen):
-                continue
-            yield path
-
-
-def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
-    seen: set[Path] = set()
-    for raw_root in roots:
-        try:
-            if not raw_root.exists():
-                print(
-                    f"warning: path does not exist: {raw_root}",
-                    file=sys.stderr,
-                )
-                continue
-            if raw_root.is_file():
-                if raw_root.is_symlink():
-                    print(
-                        f"warning: skipping symlink: {raw_root}",
-                        file=sys.stderr,
-                    )
-                    continue
-                if raw_root.suffix.lower() in PNG_SUFFIXES and _dedupe(raw_root, seen):
-                    yield raw_root
-                continue
-            if raw_root.is_dir():
-                try:
-                    root = raw_root.resolve()
-                except OSError as exc:
-                    print(
-                        f"warning: cannot resolve {raw_root}: {exc}",
-                        file=sys.stderr,
-                    )
-                    continue
-                yield from _iter_directory(root, seen)
-                continue
-            print(
-                f"warning: not a file or directory: {raw_root}",
-                file=sys.stderr,
-            )
-        except OSError as exc:
-            print(
-                f"warning: cannot inspect {raw_root}: {exc}",
-                file=sys.stderr,
-            )
-
-
-def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
-    if a_size != b_size:
-        return False
-    with a.open("rb") as fa, b.open("rb") as fb:
-        while True:
-            chunk_a = fa.read(COMPARE_CHUNK)
-            chunk_b = fb.read(COMPARE_CHUNK)
-            if chunk_a != chunk_b:
-                return False
-            if not chunk_a:
-                return True
-
-
-def _is_valid_png(path: Path) -> tuple[bool, str | None]:
-    try:
-        with path.open("rb") as f:
-            header = f.read(len(PNG_MAGIC))
-    except OSError as exc:
-        return False, f"cannot read output: {exc}"
-    if header != PNG_MAGIC:
-        return False, "output is not a PNG (bad signature)"
-    return True, None
-
-
-def process_file(
-    path: Path,
-    *,
-    pngquant: str,
-    extra_args: Sequence[str],
-    quality: str | None,
-    speed: int | None,
-    strip: bool,
-    posterize: int | None,
-    timeout: float,
-    dry_run: bool,
-) -> ProcessResult:
-    try:
-        target = path.resolve(strict=True)
-    except OSError as exc:
-        return ProcessResult(path, 0, 0, "", "", False, False, f"cannot resolve: {exc}")
-    try:
-        st = target.stat()
-    except OSError as exc:
-        return ProcessResult(path, 0, 0, "", "", False, False, f"cannot stat: {exc}")
-    original_size = st.st_size
-    original_mode = stat.S_IMODE(st.st_mode)
-    tmp_path: Path | None = None
-    try:
-        try:
-            tmp_dir = os.environ.get("TMPDIR")
-            fd, tmp_name = tempfile.mkstemp(
-                prefix=target.stem + ".",
-                suffix=target.suffix + ".tmp",
-                dir=str(tmp_dir),
-            )
-            with contextlib.suppress(OSError):
-                os.close(fd)
-            tmp_path = Path(tmp_name)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"cannot create temp file: {exc}",
-            )
-        cmd: list[str] = [pngquant]
-        if quality is not None:
-            cmd += ["--quality", quality]
-        if speed is not None:
-            cmd += ["--speed", str(speed)]
-        if strip:
-            cmd.append("--strip")
-        if posterize is not None:
-            cmd += ["--posterize", str(posterize)]
-        cmd.extend(extra_args)
-        cmd += ["--force", "--output", str(tmp_path), "--", str(target)]
-        try:
-            completed = subprocess.run(
-                cmd,
-                capture_output=True,
-                timeout=timeout,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"pngquant timed out after {timeout:g}s",
-            )
-        except FileNotFoundError:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"pngquant executable not found: {pngquant!r}",
-            )
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"failed to run pngquant: {exc}",
-            )
-        stdout = completed.stdout.decode("utf-8", errors="replace")
-        stderr = completed.stderr.decode("utf-8", errors="replace")
-        if completed.returncode == PNGQUANT_ALREADY_OPTIMAL:
-            return ProcessResult(
-                path,
-                original_size,
-                original_size,
-                stdout,
-                stderr,
-                False,
-                True,
-                None,
-            )
-        if completed.returncode != PNGQUANT_SUCCESS:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"pngquant exited with status {completed.returncode}",
-            )
-        try:
-            new_size = tmp_path.stat().st_size
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"pngquant produced no output: {exc}",
-            )
-        if new_size == 0:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                "pngquant produced an empty file",
-            )
-        ok, sig_err = _is_valid_png(tmp_path)
-        if not ok:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                sig_err,
-            )
-        try:
-            identical = _files_identical(target, tmp_path, original_size, new_size)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"cannot compare files: {exc}",
-            )
-        if identical:
-            return ProcessResult(
-                path,
-                original_size,
-                original_size,
-                stdout,
-                stderr,
-                False,
-                True,
-                None,
-            )
-        if new_size > original_size:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                True,
-                False,
-                None,
-            )
-        if new_size == original_size:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                True,
-                False,
-                None,
-            )
-        if dry_run:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                None,
-            )
-        try:
-            os.chmod(tmp_path, original_mode)
-            os.replace(tmp_path, target)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"failed to replace original: {exc}",
-            )
-        tmp_path = None
-        return ProcessResult(
-            path,
-            original_size,
-            new_size,
-            stdout,
-            stderr,
-            False,
-            False,
-            None,
-        )
-    finally:
-        if tmp_path is not None:
-            with contextlib.suppress(OSError):
-                tmp_path.unlink()
-
-
-def _classify(result: ProcessResult, dry_run: bool) -> str:
-    if result.error is not None:
-        return "ERROR"
-    if result.no_change:
-        return "NOCHG"
-    if result.skipped:
-        return "SAME" if result.new_size == result.original_size else "SKIP"
-    if dry_run:
-        return "DRY-RUN"
-    return "OK"
-
-
-def _emit_pngquant_output(result: ProcessResult) -> None:
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-        if not result.stdout.endswith("\n"):
-            sys.stdout.write("\n")
-        sys.stdout.flush()
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-        if not result.stderr.endswith("\n"):
-            sys.stderr.write("\n")
-        sys.stderr.flush()
-
-
-def _print_status(result: ProcessResult, tag: str) -> None:
-    path = result.path
-    orig = result.original_size
-    new = result.new_size
-    if tag == "OK":
-        saved = orig - new
-        pct = (saved / orig * 100.0) if orig else 0.0
-        print(f"[OK]      {path.resolve().relative_to(cwd)}  {fsz(orig)} -> {fsz(new)}  (-{fsz(saved)}, -{pct:.1f}%)")
-    elif tag == "DRY-RUN":
-        saved = orig - new
-        pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[DRY-RUN] {path.resolve().relative_to(cwd)}  "
-            f"{fsz(orig)} -> {fsz(new)}  "
-            f"(would save {fsz(saved)}, {pct:.1f}%)"
-        )
-    elif tag == "NOCHG":
-        print(f"[NOCHG]   {path.resolve().relative_to(cwd)}  {fsz(orig)}  (byte-identical)")
-    elif tag == "SAME":
-        print(f"[SAME]    {path.resolve().relative_to(cwd)}  {fsz(orig)}  (same size, different bytes)")
-    elif tag == "SKIP":
-        growth = new - orig
-        print(f"[SKIP]    {path.resolve().relative_to(cwd)}  {fsz(orig)} -> {fsz(new)}  (larger by {fsz(growth)})")
-    else:
-        print(
-            f"[ERROR]   {path.resolve().relative_to(cwd)}  {result.error}",
-            file=sys.stderr,
-        )
-
-
-def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
-    total = sum(counters.values())
-    skipped = counters["SAME"] + counters["SKIP"]
-    print()
-    print("-" * 66)
-    print("Summary")
-    print("-" * 66)
-    print(f"  Processed : {total}")
-    print(f"  Changed   : {counters['OK']}")
-    if counters["DRY-RUN"]:
-        print(f"  Dry-run   : {counters['DRY-RUN']}")
-    print(f"  Unchanged : {counters['NOCHG']}")
-    print(f"  Skipped   : {skipped}")
-    if skipped:
-        print(f"      same-size-different-bytes : {counters['SAME']}")
-        print(f"      larger-output             : {counters['SKIP']}")
-    print(f"  Errored   : {counters['ERROR']}")
-    if total_before:
-        saved = total_before - total_after
-        pct = (saved / total_before * 100.0) if total_before else 0.0
-        print()
-        print(f"  Bytes     : {fsz(total_before)} -> {fsz(total_after)}  (saved {fsz(saved)}, {pct:.1f}%)")
-    else:
-        print()
-        print("  Bytes     : no size changes")
-
-
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="pngquant-optimize",
-        description=(
-            "Optimize PNG files in place using pngquant. With no paths, the current directory is walked recursively."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        metavar="PATH",
-        help="Files or directories to process (default: current directory).",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Do not print pngquant's own stdout/stderr; only summary lines.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Run and validate, but do not modify any files.",
-    )
-    parser.add_argument(
-        "--quality",
-        default=None,
-        metavar="MIN-MAX",
-        help=(
-            "pngquant --quality value, e.g. '65-80'. Files that cannot be "
-            "compressed within this range are skipped by pngquant itself."
-        ),
-    )
-    parser.add_argument(
-        "--speed",
-        type=int,
-        choices=range(1, 12),
-        default=None,
-        metavar="1-11",
-        help="pngquant --speed value (1 slowest/best, 11 fastest).",
-    )
-    parser.add_argument(
+def run_pngquant(path: Path, quality: str, output: Path) -> int:
+    cmd = [
+        "pngquant",
+        "--force",
         "--strip",
-        action="store_true",
-        help="Pass --strip to pngquant to remove optional metadata.",
-    )
-    parser.add_argument(
-        "--posterize",
-        type=int,
-        choices=range(5),
-        default=None,
-        metavar="0-4",
-        help="Pass --posterize to pngquant to reduce the number of levels.",
-    )
-    parser.add_argument(
-        "--pngquant",
-        default="pngquant",
-        metavar="PATH",
-        help="Path to the pngquant executable (default: search PATH).",
-    )
-    parser.add_argument(
-        "--pngquant-arg",
-        action="append",
-        default=[],
-        metavar="ARG",
-        help="Extra argument to pass to pngquant; may be repeated.",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=DEFAULT_TIMEOUT,
-        metavar="SECONDS",
-        help=f"Per-file pngquant timeout (default: {DEFAULT_TIMEOUT:g}s).",
-    )
-    return parser
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
-    roots = [Path(p) for p in args.paths] if args.paths else [Path()]
-    worker = partial(
-        process_file,
-        pngquant=args.pngquant,
-        extra_args=tuple(args.pngquant_arg),
-        quality=args.quality,
-        speed=args.speed,
-        strip=args.strip,
-        posterize=args.posterize,
-        timeout=args.timeout,
-        dry_run=args.dry_run,
-    )
-    counters: dict[str, int] = {
-        "OK": 0,
-        "DRY-RUN": 0,
-        "NOCHG": 0,
-        "SAME": 0,
-        "SKIP": 0,
-        "ERROR": 0,
-    }
-    total_before = 0
-    total_after = 0
-    files = iter_png_files(roots)
+        f"--quality={quality}",
+        "--output",
+        str(output),
+        "--",
+        str(path),
+    ]
     try:
-        with Pool(processes=DEFAULT_WORKERS) as pool:
-            for result in pool.imap_unordered(worker, files, chunksize=IMAP_CHUNKSIZE):
-                if not args.quiet:
-                    _emit_pngquant_output(result)
-                tag = _classify(result, args.dry_run)
-                counters[tag] += 1
-                if tag in ("OK", "DRY-RUN"):
-                    total_before += result.original_size
-                    total_after += result.new_size
-                _print_status(result, tag)
-    except KeyboardInterrupt:
-        print("\nInterrupted.", file=sys.stderr)
-        return 130
-    _print_summary(counters, total_before, total_after)
-    return 1 if counters["ERROR"] else 0
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        return -1
+    return proc.returncode
+
+
+def optimize_one(args: tuple[Path, str, bool]) -> Result:
+    path, quality, dry_run = args
+    tmp_out: Path | None = None
+    try:
+        before = path.stat().st_size
+        with tempfile.NamedTemporaryFile(suffix=path.suffix, dir=path.parent, delete=False) as tmp:
+            tmp_out = Path(tmp.name)
+
+        rc = run_pngquant(path, quality, tmp_out)
+        if rc == -1:
+            return Result(path, before, before, "error", "pngquant not found")
+        if rc in PNGQUANT_NOOP_CODES:
+            return Result(path, before, before, "unchanged")
+        if rc != 0:
+            return Result(path, before, before, "error", f"exit {rc}")
+
+        after = tmp_out.stat().st_size
+        if after >= before:
+            return Result(path, before, after, "unchanged")
+
+        if not dry_run:
+            shutil.copymode(path, tmp_out)
+            os.replace(tmp_out, path)
+            tmp_out = None
+        return Result(path, before, after, "optimized")
+    except Exception as e:
+        return Result(path, 0, 0, "error", f"{type(e).__name__}: {e}")
+    finally:
+        if tmp_out is not None:
+            try:
+                tmp_out.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("-q", "--quality", default="65-80", help="pngquant --quality min-max, e.g. 65-80 (default: 65-80)")
+    ap.add_argument("-n", "--dry-run", action="store_true")
+    ap.add_argument("--root", default=".")
+    args = ap.parse_args()
+
+    if not shutil.which("pngquant"):
+        print("Error: pngquant not found in PATH.", file=sys.stderr)
+        return 1
+
+    root = Path(args.root).resolve()
+    files = list(walk_pngs(root))
+    if not files:
+        print(f"No PNGs found under {root}")
+        return 0
+
+    print(f"Root: {root}")
+    print(
+        f"Files: {len(files)} | Quality: {args.quality} | "
+        f"strip | skip-if-larger | jobs: {args.jobs} | dry-run: {args.dry_run}"
+    )
+    print("-" * 60)
+
+    tasks = [(p, args.quality, args.dry_run) for p in files]
+    total_saved = 0
+    optimized = unchanged = errors = 0
+
+    with mp.Pool(processes=args.jobs) as pool:
+        for r in pool.imap_unordered(optimize_one, tasks):
+            if r.status == "optimized":
+                optimized += 1
+                total_saved += r.saved
+                print(f"{r.path.name} {GREEN}{r.saved}{RESET}")
+            elif r.status == "unchanged":
+                unchanged += 1
+                print(f"{r.path.name} {DIM}unchanged{RESET}")
+            else:
+                errors += 1
+                print(f"{r.path.name} {DIM}error: {r.detail}{RESET}", file=sys.stderr)
+
+    print("-" * 60)
+    if args.dry_run:
+        print(f"Dry run complete. {len(files)} files scanned.")
+    else:
+        print(f"Optimized: {optimized} | Unchanged: {unchanged} | Errors: {errors}")
+        print(f"Space freed: {GREEN}{total_saved:,} bytes{RESET} ({total_saved / 1024 / 1024:.2f} MiB)")
+    return 0 if errors == 0 else 2
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

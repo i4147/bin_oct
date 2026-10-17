@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts Python 2 source code into Python 3-compatible code. The tool should accept a directory or a set of files as input and process them in parallel using a modest number of worker threads or processes. It should recognize and rewrite common Python 2 idioms and compatibility shims, including: removing legacy `__future__` imports, mapping `six.moves` references to their standard library equivalents, replacing Python 2 built-in names and types (such as `unicode`, `basestring`, `xrange`, and iterator-style dict methods) with Python 3 equivalents, and adjusting string and bytes handling where a safe textual transformation is possible.
-The script should also handle multi-file input in which each file is preceded by a header comment naming its original path, splitting such a combined bundle back into separate files and processing each one. Rewrites should be conservative: the tool must not alter content inside string literals or comments where that would be incorrect, and it should verify that each rewritten file parses successfully as valid Python 3 code, reporting any files that cannot be converted.
-Inputs are file or directory paths and optional flags controlling behavior such as whether to write changes in place, produce a diff or dry-run report, or write output to a separate destination. Outputs are the converted source files, a summary of the number of changes applied per file, and a clear error report for any file that fails to parse or convert. Use deterministic processing so that repeated runs on the same input produce identical results, and provide a command-line interface with helpful usage messages and a non-zero exit status when any file fails.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,6 +7,7 @@ import hashlib
 from pathlib import Path
 import re
 import sys
+
 
 WORKERS: int = 6
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")

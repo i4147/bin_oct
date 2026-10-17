@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that randomly shuffles the lines of a text file and writes the result to an output file, supporting very large files efficiently and offering multiple shuffling strategies.
-The tool should accept an input file path and an output file path (or a sensible default such as writing to a new file alongside the input), along with command-line options to choose the randomness source: a cryptographically secure option for unpredictable results, a standard system-entropy option, and a faster pseudo-random option, with an optional seed for reproducible output when using the pseudo-random mode. It should also support a weighted shuffling mode in which lines can influence their chance of being placed earlier or later in the output.
-Key behaviors:
-- Read the input file as raw bytes so that the original line content, including its exact line endings, is preserved in the output. Handle files with or without a trailing newline correctly, and make sure the final output does not gain or lose lines compared with the input.
-- For small files, loading lines into memory and shuffling them is acceptable. For large files (above roughly 5 MB), the tool should avoid loading the whole file into memory at once and instead index line positions in the file so that lines can be shuffled and written out efficiently.
-- Make sure the output contains exactly the same set of lines as the input, just in a different order, and provide a clear message or error if the input is missing, empty, or unreadable.
-- Support shuffling the lines in place as an alternative to writing a separate output file, if the user requests it.
-- Report progress or a brief summary to the user (such as the number of lines processed and the output location) without cluttering standard output when running quietly.
-- Handle common errors gracefully with clear, user-friendly messages and appropriate non-zero exit codes, including invalid arguments, missing files, permission problems, and interrupted operations.
-- Keep the script self-contained, runnable from the command line, and documented with a help message describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +9,7 @@ import random
 import secrets
 import sys
 from typing import Any
+
 
 MMAP_THRESHOLD_BYTES: int = 5 * 1024 * 1024
 

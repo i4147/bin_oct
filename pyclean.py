@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up Python source files by removing comments and docstrings while keeping the code's behavior intact, with a command-line interface for processing a single file or an entire directory tree.
-The tool should accept a target path (a file or a directory) and recursively discover Python files within a directory, optionally skipping or including specific subpaths. For each file, it should read the source with sensible encoding fallbacks, strip out comments and docstrings, and produce cleaned output. Before writing any change, the tool must verify that the cleaned code is still valid Python, and it must never leave a file in a broken state if processing fails.
-Key behaviors to include:
-- Support an in-place mode that overwrites files, and a dry-run or preview mode that reports what would change without modifying anything. Optionally allow writing output to a separate destination directory.
-- Provide a summary report at the end showing how many files were scanned, modified, skipped, or failed, along with a short preview of changes for a configurable number of top files.
-- Use colored terminal output for readability, with a way to disable colors.
-- Process multiple files in parallel with a configurable number of workers, while keeping the output deterministic and the error handling robust so one failing file does not abort the whole run.
-- Use a higher-fidelity comment and docstring removal approach when an optional advanced syntax-preserving library is available, and fall back to a standard-library-based approach otherwise, with a clear logging message indicating which mode is active.
-- Preserve important structural things like shebangs, encoding declarations, and the overall formatting of the rest of the code as much as possible.
-- Log warnings and errors through a configurable logging level, and return meaningful exit codes indicating success, partial failure, or invalid arguments.
-The script should be a single, self-contained, runnable file with a `main` entry point and a standard `if __name__ == "__main__"` guard, documented with a concise usage help message.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,6 +10,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Optional, Sequence
+
 
 try:
     import libcst as cst

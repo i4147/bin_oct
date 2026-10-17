@@ -1,15 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that concurrently downloads a list of files from web URLs and saves them into a local output folder. The tool should accept a set of URLs (for example, from a list in the script or from a text file with one URL per line), fetch them in parallel using a configurable number of worker processes (default 8), and store each file in a dedicated downloads directory that is created automatically if it does not exist.
-Derive a clean, filesystem-safe filename for each download from its URL, preserving the original base name where possible and incorporating any query-string information so that different URLs pointing to the same path do not collide. Sanitize any characters that are unsafe for file names, and fall back to a generic name when no meaningful name can be derived. If a file with the same name already exists, save the new download under a non-overlapping name (for example by appending a numeric suffix) rather than overwriting the existing file.
-Use a robust HTTP client approach with a configurable overall timeout (default 30 seconds) and a separate connection timeout (default 5 seconds), send a custom browser-like User-Agent header, and follow redirects. Handle failures gracefully: a failed download for one URL should be reported clearly (including the URL and the reason) without stopping the other downloads. Print progress or status messages showing which files completed, which failed, and the final save location, and exit with a summary of successes and failures. The script should be runnable from the command line and should handle keyboard interruption cleanly, terminating outstanding work without leaving corrupted partial files behind.
----"""
 
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import sys
 from urllib.parse import unquote, urlparse
+
 import pycurl
+
 
 WORKERS = 8
 OUTPUT_DIR = Path("downloads")

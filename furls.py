@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree (or a set of archive files) for URLs and git repository references, collects them, and writes the unique results into separate text output files, with each category stored in its own file.
-The tool should accept a root path from the command line, with an optional size limit (defaulting to 15 MB) that caps how large a file may be before it is skipped. It should recurse through the directory structure while ignoring version-control and cache folders such as `.git` and `__pycache__`.
-Key behaviors:
-- Read ordinary text files and extract every HTTP or HTTPS URL, cleaning up trailing punctuation and brackets so only the clean link is kept, and removing duplicates.
-- Detect git-related links (such as clone URLs or repository references) and record them separately from general URLs, appending new entries to a dedicated list file instead of overwriting existing content.
-- Look inside compressed and archive formats (for example zip, tar variants including gzipped, bzip2, and xz tarballs, wheels, and single-file compressed streams such as gzip, zstandard, brotli, and 7z), extracting their contents into a temporary location, scanning the extracted text, and cleaning up afterward.
-- Handle nested archives gracefully, skip binary or unreadable files without crashing, and continue processing when individual files fail.
-- Validate discovered URLs before saving them, keeping only well-formed links.
-- Report a concise summary at the end showing how many files were scanned, archives processed, and links found in each category.
-- Suppress noisy library output where appropriate, and exit cleanly with clear error messages for invalid paths or missing inputs.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,8 +14,10 @@ import tempfile
 from urllib.parse import urlparse
 import zipfile
 from zipfile import ZipFile
+
 from dh import append_text, is_valid_url
 import zstd
+
 
 DEFAULT_MAX_MB = 15
 EXCLUDE_DIRS = {".git", "__pycache__"}

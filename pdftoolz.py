@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans one or more input paths (individual PDF files or directories searched recursively for PDFs) and reports on and optimizes the PDF files found. The tool should accept command-line arguments that let the user specify the input paths, choose an output location or an in-place mode, and control the optimization behavior, such as the level of compression, whether to rewrite or preserve the original files, and whether to process files in parallel across multiple CPU cores.
-For each PDF, the script should compute and display the original size and the resulting size in human-readable units, along with the savings achieved. It should be able to optionally extract and report on the content of the PDFs, such as embedded links or referenced web URLs, which can be gathered from the document text and annotations, with the option to filter, deduplicate, and write those results to a plain-text or CSV report. Where the document structure or external tools are available, the script may use them to perform the compression, but it should degrade gracefully and clearly inform the user when a capability is unavailable, rather than failing silently.
-The script should also compute the total size of a given directory or file set, print a clear summary at the end covering the number of files processed, total original and final sizes, and any errors encountered, and return a non-zero exit code when processing fails for one or more files. Errors on individual files should not abort the whole run; they should be logged and reported. Provide sensible defaults so the tool runs with only an input path, and include helpful help text describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,6 +12,7 @@ import subprocess
 import sys
 from typing import Iterable, Optional
 import urllib.parse
+
 import pymupdf
 
 

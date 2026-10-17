@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a multi-backend text translation tool, reading source text from files or standard input and writing translated output to files or standard output. The tool should support several translation services (such as commercial APIs and free web-based translators), selectable from the command line, and it
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,8 +11,10 @@ import sys
 import threading
 import time
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts a two-column CSV file into a JSON object mapping keys to values. The script should accept a single command-line argument giving the path to the CSV file and print a usage message if the argument is missing or extra arguments are supplied.
-Behavior requirements:
-- Verify that the input file exists; if it does not, report a clear error message and exit with a non-zero status.
-- Read the CSV as UTF-8 text, treating the first row as a header that is skipped. The header must contain at least two columns; otherwise report an error and exit with a non-zero status.
-- For each subsequent row, use the first column as the key and the second column as the value, trimming surrounding whitespace from both. Skip rows that have fewer than two columns and skip rows whose key is empty.
-- Later rows with a duplicate key should overwrite earlier values.
-- Write the resulting mapping to a JSON file placed next to the input CSV, sharing the same base name with a .json extension. The JSON should be human-readable with indentation and must preserve non-ASCII characters without escaping them.
-- Upon success, print a short confirmation message showing the source and destination paths.
-The script should be a standalone command-line tool with a clear entry point, robust error handling for invalid input, and no interactive prompts.
----"""
 
 from __future__ import annotations
 import csv

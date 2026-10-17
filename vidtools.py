@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line video trimming utility. It should accept an input video file path, a start time expressed as hh:mm:ss, and a duration (in seconds or a similar time format), and produce a new video file containing only the requested clip. The tool should allow the user to specify an optional output file path, and should choose a sensible default output name when none is given.
-The script should support multiple subcommands, with the video cutting operation as one of them, and should provide clear help text and usage messages through a standard command-line interface. It should validate the time string format and report a clear error if the input is malformed. It should also check that the input file exists and that any required external dependencies are available, printing a helpful installation hint and exiting with a non-zero status if they are missing.
-The cutting behavior should support two timing modes: an "original" mode that interprets the supplied timestamps directly against the video's own timeline, and a "correct" mode that applies an alternative time conversion scheme to compensate for a mismatch between the displayed timestamps and the actual media timeline. The time conversion should be configurable, with sensible defaults, and the tool should document the difference between the two modes in its help output.
-The script should preserve the video's frame rate and resolution where possible, report progress or a completion message to the user, and return appropriate exit codes for success and failure. It should also optionally invoke an external media processing program when the user asks for it, handling errors from that program gracefully.
----"""
 
 from __future__ import annotations
 import argparse

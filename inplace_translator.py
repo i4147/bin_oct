@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a universal, command-line translation and image-processing utility pow AI services. The tool should accept user-supplied input files or directories and a target language or task, and it should produce translated or transformed output files in a predictable location.
-Core requirements:
-1. **Configuration and credentials**: The tool should load API credentials (for OpenAI and Google Gemini) from environment variables, and optionally from a `.env` file located in the user's home directory. Credentials are read from simple KEY=VALUE lines, ignoring blank lines and comments, with surrounding quotes stripped. The tool must work gracefully when one or both providers are unavailable or their SDKs are not installed, reporting clearly which backends are usable.
-2. **Inputs**: Accept a command-line interface that takes one or more file paths or glob patterns, an optional output directory, the source and target language (or equivalent task parameters), and a choice of backend provider. Support batch processing of multiple files matched by wildcards, and skip or report missing paths without crashing.
-3. **Translation behavior**: For text-based inputs, send content to the selected AI provider with a clear instruction to translate into the target language while preserving formatting, structure, line breaks, and meaning. For image inputs, the tool should be able to extract or translate visible text using a vision-capable model, returning the translated result as text or an annotated output file. Handle large files by chunking content sensibly so requests stay within model limits, then reassemble the result in order.
-4. **Outputs**: Write each result to a new file in the output location, naming outputs clearly so they reflect the original file name and target language, without overwriting originals. Print a concise progress summary and a final report listing successes, failures, and skipped items.
-5. **Robustness**: Validate arguments up front and show helpful usage messages. Retry transient API failures with reasonable backoff, surface authentication and quota errors with actionable messages, and never expose API keys in logs or output. Exit with a non-zero status code if any required job fails.
-6. **Extensibility**: Structure the design so that additional AI providers can be added with minimal changes, and keep the provider-specific logic separated from the file handling and CLI logic.
-The script should be self-contained, runnable from the terminal, and documented with a built-in help message describing all options and environment requirements.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,6 +6,7 @@ import glob
 import os
 from pathlib import Path
 import sys
+
 
 try:
     from openai import OpenAI

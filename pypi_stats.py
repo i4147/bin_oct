@@ -1,18 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line client for a public PyPI download statistics service, letting a user query how often a given Python package has been downloaded over time and view the results in several output formats.
-The tool should:
-- Accept a package name (and optionally a specific version) as input, along with options for the kind of statistic requested (such as overall downloads, downloads broken down by installer or system, or downloads for the most popular packages).
-- Support filtering by a date range and by time granularity, including daily, monthly, and all-time totals, and validate that the chosen granularity is one of the supported options with a clear error otherwise.
-- Retrieve data over HTTP from the statistics service, handling request failures and malformed responses gracefully with informative error messages.
-- Present results in multiple output formats, including a human-readable pretty table, a Markdown table, and a machine-readable JSON form, with an option to toggle colored terminal output on or off.
-- Optionally sort results chronologically or by download count, and aggregate or total the data according to the selected granularity.
-- Allow users to configure defaults (such as preferred output format, color settings, or verbosity) through a user configuration file, with command-line options taking precedence.
-- Provide a verbose mode that logs diagnostic information to standard error without polluting standard output, so results can be piped safely.
-- Expose a version flag and a built-in help message describing all commands and options.
-- Optionally clean up any temporary resources or caches at program exit.
-- Suppress unnecessary library warnings so the output stays clean, and exit with appropriate non-zero status codes on errors.
-The script should be usable both as a standalone command-line program and as an importable module exposing a function that performs the same queries programmatically and returns the results.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,6 +11,7 @@ from pathlib import Path
 import re
 import sys
 import warnings
+
 
 __version__ = version = "1.14.0"
 __version_tuple__ = version_tuple = (1, 14, 0)
@@ -368,8 +355,10 @@ def system(package, os=None, **kwargs):
 
 
 import contextlib
+
 from platformdirs import user_cache_dir
 from slugify import slugify
+
 
 CACHE_DIR = Path(user_cache_dir("pypistats"))
 

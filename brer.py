@@ -1,21 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Unified Brotli compression / decompression tool.
-Merged from: br.py, br2.py, brer.py
-Subcommands
------------
-  compress      Compress files (-> .br) and directories (-> .tar.br)
-  decompress    Decompress .br files and .tar.br archives
-Examples
---------
-  python merged.py compress
-  python merged.py compress --workers 8 --quality 11 --lgwin 24
-  python merged.py compress --executor thread
-  python merged.py compress --force --chunk-threshold 0
-  python merged.py compress --chunk-threshold 524288 --keep-if-larger
-  python merged.py decompress
-  python merged.py decompress --buffer-size 65536 --workers 8
-"""
 
 from __future__ import annotations
 import argparse
@@ -29,7 +12,9 @@ from pathlib import Path
 import shutil
 import tarfile
 from typing import Sequence
+
 import brotli
+
 
 try:
     from loguru import logger

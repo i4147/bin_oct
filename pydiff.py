@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that compares two directory trees of files and organizes duplicate and differing files into newly created group folders. The tool should accept two directory paths as inputs (for example via command-line arguments) and walk through the files in both trees to determine which files are identical by content, which exist only in the first directory, and which exist only in the second.
-Key behaviors:
-- Identify identical files efficiently by comparing content fingerprints rather than reading entire files into memory, handling large files gracefully.
-- Support processing many files in parallel to speed up comparisons on large directory trees.
-- Detect files that share the same relative path but differ in content, and files that appear in only one of the two trees.
-- Optionally normalize text files (such as stripping surrounding whitespace on each line) before comparing their line contents, and report line counts for text files.
-- For each category of result, move the relevant files into automatically numbered group folders created under a specified output or base location, never overwriting existing groups; the next available group number should be chosen automatically.
-- Preserve the original relative structure or clearly record where each moved file came from so the operation is traceable.
-- Provide a clear summary printed to the console showing how many files were identical, unique to each side, or differing, and the location of the created groups.
-- Include a dry-run mode that reports the planned moves without modifying the file system.
-- Handle missing paths, permission errors, and unreadable files gracefully with informative messages, continuing processing where possible.
-- Use colored or clearly formatted console output for status and warnings.
----"""
 
 from __future__ import annotations
 import argparse
@@ -19,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import hashlib
 from pathlib import Path
 import shutil
+
 from dh import cprint, read_lines
 
 

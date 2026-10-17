@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that extracts on-screen subtitles from a video file using optical character recognition and produces a standard SRT subtitle file. The tool should accept a video path, an output path, and an optional time window (start and end times in HH:MM:SS format) so that only a specific segment of the video is processed. It should sample frames from the video at a configurable rate, preprocess each frame to improve text legibility (for example by converting to grayscale and applying thresholding or contrast enhancement), and run OCR on the relevant region of each frame. Recognized text should be cleaned up by normalizing whitespace and discarding empty or noisy results. Consecutive frames showing the same text should be merged into a single subtitle entry with accurate start and end timestamps, formatted in the SRT convention (HH:MM:SS,mmm). The processing of frames should be parallelized across multiple CPU cores to speed up long videos, with a sensible default worker count and a option to override it. The script should provide a command-line interface with clear help text, validate inputs such as time format and file existence, report progress or summary information to the user, and handle errors gracefully with informative messages. Output should be a valid SRT file that can be loaded by standard video players.
----"""
 
 from __future__ import annotations
 import argparse
@@ -9,8 +7,10 @@ import multiprocessing as mp
 from pathlib import Path
 import re
 from typing import TYPE_CHECKING, Optional, Sequence
+
 import cv2
 import pytesseract
+
 
 if TYPE_CHECKING:
     import numpy as np

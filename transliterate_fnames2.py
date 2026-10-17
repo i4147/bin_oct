@@ -1,15 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that converts Persian (Farsi) and Arabic-script file names into clean, portable ASCII file names. The tool should take a target directory as input, along with an option to choose whether to process only the top level or search subfolders recursively, and an option to preview changes without applying them (dry-run mode).
-For each file and folder whose name contains Persian or Arabic-script characters, the tool should produce a romanized, Latin-alphabet equivalent using a sensible transliteration scheme. The transliteration should handle Persian and Arabic letters, Persian and Arabic-Indic digits (converting them to standard Western digits), diacritical marks (which should be removed), zero-width joiners and non-joiners (which should be handled appropriately, such as turning spaces or half-spaces into underscores), and common ligatures. Any remaining characters that are not letters, digits, dots, underscores, or hyphens should be replaced with underscores, and consecutive underscores should be collapsed into one. Leading and trailing underscores, dots, and hyphens should be trimmed. File extensions should be preserved in their original form.
-The tool should apply Unicode normalization before transliteration so that visually identical characters are treated consistently. It must never overwrite an existing file: if a target name already exists, it should append a numeric suffix to create a unique name. Names that would become empty after cleaning should fall back to a sensible default. Renaming of folders must occur after the contents within them have been processed, so paths remain valid during the operation.
-The tool should print a clear, human-readable report showing each planned or completed rename (original name and new name), a count of successful renames, and any errors encountered, such as permission problems, without stopping the entire run for a single failure. It should exit with a non-zero status code if any errors occurred and zero otherwise. Provide helpful command-line help text describing all options.
----"""
 
 from __future__ import annotations
 import argparse
 import pathlib
 import re
 import unicodedata
+
 
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",

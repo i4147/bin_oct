@@ -1,13 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line subtitle downloader for video files. It should accept a video file path (or a directory of videos) and a target language, then search several subtitle provider sites for matching subtitles and save them alongside the video or to a specified output location. The tool should clean up video titles and filenames so that search queries are effective, and it should generate safe, consistent output filenames with a configurable subtitle file extension (defaulting to a standard subtitle format, and normalizing the extension so the user can supply it with or without a leading dot). It should also support a second, title-based mode where the user provides a movie or show name directly instead of a file, and the script should search for and save the best-matching subtitle under a sanitized name.
-Key behaviors:
-- Provide a command-line interface with clear options for the input (file, folder, or title), target language, output directory, preferred subtitle provider list (with sensible defaults such as OpenSubtitles, Podnapisi, Addic7ed, and TVSubtitles), extension, and verbosity/logging level.
-- Reject invalid input early with helpful error messages, such as an empty extension.
-- Skip videos that already have a matching subtitle unless the user forces an overwrite.
-- Use a browser-like user agent when contacting providers, and handle network or provider failures gracefully by logging the problem and moving on to the next provider or file.
-- Report a clear summary at the end showing which files were matched, downloaded, skipped, or failed.
-- Depend on third-party subtitle and language libraries where needed, and fail with a clear install message if those are missing.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +6,7 @@ import logging
 from pathlib import Path
 import re
 from typing import Any, Sequence
+
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]

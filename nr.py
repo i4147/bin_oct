@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that automates publishing a local project folder to a new GitHub repository. The tool should accept a local direct a desired repository name (with optional flags for visibility, description, branch name, and an initial commit message), then perform the full workflow: initialize a local git repository if one does not already exist, stage and commit the project files, create a new remote repository on the user's GitHub account through the GitHub REST API, and push the local branch to that remote.
-The script should read a GitHub personal access token from a standard location such as a user-level environment file or an environment variable, and fall back gracefully with a clear error message if no token is found. It should validate inputs before making any changes: confirm the target directory exists, check that the repository name is valid, and detect whether a remote with the same name already exists on the account, aborting with a helpful message instead of overwriting anything.
-Network operations should be resilient: apply sensible timeouts for both local git commands and remote HTTP requests, retry transient server or rate-limit failures with backoff, and surface GitHub API error responses in readable form. Local git operations should be run safely, capturing output and reporting failures with the relevant command and its stderr.
-The tool should log its progress to the console at a configurable verbosity level (controlled by an environment variable), with concise status messages at each stage. It should be runnable from the command line with clear help text, return a non-zero exit code on any failure, and print the final repository URL on success. Where git is not installed or the user is not authenticated, the script should detect this early and explain what the user needs to do. Keep the design modular so each stage (validation, local git setup, remote creation, push) can be understood and tested independently.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,10 +9,12 @@ import shutil
 import subprocess
 import sys
 from typing import Optional
+
 from loguru import logger
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
 
 ENV_FILE = Path.home() / ".env"
 GITHUB_API_BASE = "https://api.github.com"

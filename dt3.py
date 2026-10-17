@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line translation tool for subtitle files, accepting a subtitle file as input and producing a translated subtitle file as output. The tool should take the source file path, a target language code, and an optional source language (defaulting to automatic detection) from the command line, along with options controlling how many translation requests run in parallel and whether to show progress.
-Core behaviors to implement:
-- Read a subtitle file, parse its timed entries, and preserve each entry's timing and structure while replacing only the text content with the translated text.
-- Support a broad set of common language codes, including regional variants, mapping them to the codes expected by the underlying translation service, and validate user-supplied language codes with clear error messages when unsupported codes are given.
-- Translate subtitle lines concurrently tove throughput, while ensuring the final output keeps the original order of entries.
-- Handle failures gracefully: retry transient translation errors a limited number of times, and if an individual line cannot be translated, fall back to keeping the original text and logging a warning rather than aborting the whole job.
-- Optionally use a fuzzy similarity check to detect and reuse previously translated lines that are nearly identical, reducing redundant translation calls.
-- Write the output to a new file (with a sensible default name derived from the input and target language) and avoid corrupting the original file, using a safe temporary-file write before finalizing the output.
-- Log progress and errors through a structured logging setup, with verbosity controllable from the command line, and report a final summary of translated, reused, and failed entries.
-- Allow an optional custom translator plug-in: if the user supplies a path to a Python module exposing a translation function, use that function instead of the built-in translation backend.
-- Be thread-safe where shared state is involved, and exit with a meaningful nonzero status code on fatal errors such as a missing input file or invalid arguments.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,7 +13,9 @@ from tempfile import NamedTemporaryFile
 import threading
 import time
 from typing import Callable, TypeAlias
+
 from loguru import logger
+
 
 Translator: TypeAlias = Callable[[str], str]
 LANGUAGE_CODES: dict[str, str] = {

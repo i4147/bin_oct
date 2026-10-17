@@ -1,18 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that batch-processes scanned document images to extract their text using OCR. The tool should accept a folder path (defaulting to the current working directory) and automatically discover all supported image files within it, including common formats such as JPEG, PNG, TIFF, BMP, and WebP.
-For each image, the script should apply image preprocessing to improve OCR accuracy before recognition. Preprocessing should include steps such as converting to grayscale, enhancing contrast, reducing noise, applying binarization or thresholding, and correcting skew/rotation of scanned pages. The script should use an advanced image-processing library when it is available and fall back gracefully to a more basic imaging approach when it is not, producing consistent results either way.
-The OCR step should extract the recognized text from each processed image and save the results as plain-text output files, one per source image, written to an output location that is clearly organized relative to the input folder. The script should also support processing multiple images in parallel using a configurable pool of worker processes, so that large batches complete efficiently, while keeping the overall results deterministic and each file's output independent of the others.
-The tool should log its progress and any errors clearly (including which file failed and why), continue processing remaining files when an individual image fails, and print a final summary reporting how many images were processed successfully, how many failed, and where the output files were written. The script should be runnable from the command line and should handle missing dependencies or an invalid input path with clear, user-friendly messages rather than crashing unexpectedly.
----"""
 
 from __future__ import annotations
 import multiprocessing
 from pathlib import Path
 import sys
 from typing import Any, Union
+
 from loguru import logger
 import numpy as np
 import pytesseract
+
 
 try:
     import cv2

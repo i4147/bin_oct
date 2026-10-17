@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory of wheel files (.whl) and identifies "empty" wheels, meaning wheels that contain no actual importable code and therefore carry no useful payload. The script should take a source directory and a destination directory as inputs (with sensible defaults such as a destination folder named "empty_wheels"), and should let the user select a detection strategy from a small set of named options, defaulting to one that treats a wheel as empty when it contains only its metadata directory (the dist-info folder) and no code files. Other strategies should be supported as well, such as one that checks the wheel's RECORD file for a listing of code-bearing files, and one that inspects whether any code-suffixed files (for example .py, .so, or .pyi) exist anywhere in the archive.
-The script should walk the source directory, evaluate each wheel with the chosen detector, and move or copy the empty wheels into the destination directory, leaving non-empty wheels untouched. It should support a dry-run mode that reports what would be moved without changing any files, and a verbose mode that explains the decision for each wheel. It should handle corrupt or unreadable archives gracefully by logging a warning and skipping them rather than crashing. At the end, it should print a summary of how many wheels were scanned, how many were classified as empty, and how many were moved, and optionally write a CSV report listing each wheel's filename, its classification, and the reason for that classification.
-The tool should be runnable from the command line with clear help text, return a nonzero exit status on fatal errors such as a missing source directory, and be structured so that its detection logic can also be imported and called from other Python code through a main entry point.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +11,7 @@ import sysconfig
 import textwrap
 from typing import Callable, Iterable, Optional, Sequence
 import zipfile
+
 
 __all__ = ["main"]
 DEFAULT_DEST = "empty_wheels"

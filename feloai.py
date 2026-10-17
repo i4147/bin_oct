@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a logging wrapper around an external Node.js command-line tool. The script should accept arbitrary command-line arguments from the user, forward them to the external tool, and capture everything the tool produces into a uniquely named log file for later review.
-Key requirements:
-- **Purpose:** Run a separately installed script-based CLI tool (located at a fixed path in a Termux-style Android environment) with the same arguments the user supplied to the wrapper, while recording a complete transcript of the run.
-- **Inputs:** Command-line arguments passed to the wrapper, which are forwarded unchanged to the underlying tool. The wrapper should also work when invoked with no arguments.
-- **Outputs:** A log directory in the user's home area (created automatically if missing) containing one text file per run. Each log file should be named with a timestamp at microsecond precision and must never overwrite an existing file; if a name collision occurs, append an incrementing suffix.
-- **Log contents:** Each log should begin with a clear header block showing the start time, the working directory at invocation, and the exact arguments passed, followed by a visible section marker for the tool's output. After the run, a matching footer should record the end time and the tool's exit code.
-- **Behavior:** The wrapper should stream the tool's standard output and standard error to the user's terminal in real time while also writing them to the log file. It should preserve the tool's exit code so that the wrapper itself exits with the same status, enabling use in shell pipelines and scripts.
-- **Error handling:** If the log directory cannot be created or the log file cannot be written, the wrapper should report a clear message to the user rather than failing silently. If the underlying tool is missing or cannot be launched, the failure should be recorded and reported with a non-zero exit status.
-- **Encoding:** All log text should be written using UTF-8.
-- **Style:** Keep the script self-contained, readable, and runnable directly from the command line with no required third-party dependencies.
----"""
 
 from __future__ import annotations
 import datetime as dt
@@ -17,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+
 
 LOG_DIR = Path.home() / "tmp" / "apps"
 FSA = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"

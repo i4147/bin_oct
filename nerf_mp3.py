@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that batch-converts MP3 audio files in a user-specified directory to a reduced bitrate, using FFmpeg for the conversion work. The tool should accept a folder path and a target bitrate (or percentage of the original bitrate) as command-line arguments, discover all MP3 files in that folder regardless of filename extension casing, and process them in parallel using a fixed pool of worker processes to speed up large batches.
-Key behaviors to include:
-- Verify up front that FFmpeg and its probing utility are installed and available; if they are missing, log a clear error message and exit with a non-zero status.
-- For each MP3 file, read its existing bitrate and duration, then compute the new target bitrate. Skip files whose resulting bitrate would fall below a sensible minimum, and report them as skipped rather than failing.
-- Write converted output to a clearly separated location (for example, a sibling output folder or a suffixed filename) so that original files are never overwritten unless the user explicitly requests it.
-- Show live progress in the terminal while the batch runs, with colored, human-readable status lines indicating each file's state (processing, completed, skipped, or failed), plus a per-file duration/elapsed time.
-- Capture FFmpeg error output for failed conversions and display only a short preview of it alongside the failure message.
-- Handle malformed or unreadable files gracefully so one bad file never stops the rest of the batch.
-- At completion, print a summary reporting total files processed, successes, skips, and failures, the total elapsed time, and the total size saved (before vs. after) in a human-readable format.
-- Log significant events and errors using a structured logging library, and support graceful handling of keyboard interrupts so that in-progress work is stopped cleanly.
-- Provide a clear command-line help message describing all options, with sensible defaults and input validation for the folder path and bitrate values.
----"""
 
 from __future__ import annotations
 import argparse
@@ -21,9 +9,11 @@ from pathlib import Path
 import sys
 import time
 from typing import Final
+
 from dh import fsz
 import ffmpeg
 from loguru import logger
+
 
 NUM_WORKERS: Final[int] = 8
 MIN_BITRATE_KBPS: Final[int] = 8

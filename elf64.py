@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for 64-bit ELF binary files and reports their architecture and type information. The tool should accept a root directory path from the command line, recursively walk all files beneath it, and skip anything that is not a binary or cannot be read due to permission or I/O errors without stopping the run. For each candidate file, it should determine whether the file is a valid ELF binary, keep only 64-bit ELF files, and extract key metadata: the file path, its size in bytes, a human-readable description of the ELF file type (such as executable, shared object, relocatable object, or core dump), and a human-readable name for the target machine architecture (such as x86-64, ARM, AArch64, RISC-V, MIPS, or PowerPC), falling back gracefully to the raw identifier when a mapping is unknown. Analysis should be parallelized across a small fixed pool of worker processes so large trees are processed efficiently. The script should output the collected results in a clear, readable summary listing each matching file with its metadata, along with a total count of matches and files analyzed. Handle malformed or truncated ELF files gracefully by skipping them. Include a command-line help message describing the purpose and arguments, and ensure the script exits with a meaningful status code on invalid input such as a nonexistent or non-directory path.
----"""
 
 from __future__ import annotations
 import argparse
@@ -8,9 +6,11 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Iterator
+
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
+
 
 WORKERS = 8
 ELF_TYPES = {

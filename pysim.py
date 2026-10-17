@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for Python source files and produces a structural fingerprint of each file's top-level definitions, so that code can be compared across versions or projects without relying on exact text matching.
-The tool should accept a root folder path as input and recursively locate all Python files beneath it. For each file, it should parse the source safely and gather the top-level functions, classes, and module-level constant assignments. Each definition should be reduced to a stable digest derived from its normalized structure, so that cosmetic differences such as whitespace or formatting do not change the result, while meaningful logic changes do. If a file cannot be read or parsed (for example due to syntax errors, encoding problems, or permission issues), the tool should record the error for that file and continue processing the rest without crashing.
-The script should process files efficiently, taking advantage of parallel execution where it helps throughput on large codebases, and it should handle the results in a deterministic, reproducible order. The final output should be a machine-readable JSON report mapping each file's relative path to its collected definition digests or its error message, written either to a specified output file or to standard output. The tool should also be usable from the command line, with sensible defaults and clear handling of invalid or missing input paths.
-Keep the implementation clean and robust: the report should be easy to diff between two runs, the tool should never modify the scanned files, and it should exit with a meaningful status code indicating whether any files failed to process.
----"""
 
 from __future__ import annotations
 import ast

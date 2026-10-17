@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a given directory tree for Python source files and automatically repairs invalid escape sequences inside string literals, so that the files can be parsed and compiled without syntax warnings or errors. The tool should accept a root folder path as input, recursively locate all Python files beneath it, and examine each file's string literals while respecting their prefixes and quoting styles. Raw strings and any valid escape sequences must be left untouched, while invalid backslash sequences should be corrected in a way that preserves the intended meaning of the text (for example, by doubling the backslash). Byte-level handling should be robust so that files with unusual encodings or incomplete tokens are skipped safely rather than crashing the run. Only files that actually change should be rewritten, and the script should report which files were modified, how many fixes were applied, and any files it could not process. Validate the result by confirming that each modified file still parses correctly as Python. The output should be a concise, human-readable summary printed to the console, and the script should exit with a clear status code indicating success, partial failure, or invalid input.
----"""
 
 from __future__ import annotations
 import ast

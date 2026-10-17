@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -15,6 +16,7 @@ import site
 import subprocess
 import sys
 from typing import Iterable, Iterator, Sequence
+
 
 BINARY_EXTS: tuple[str, ...] = (".so", ".pyd", ".dll", ".dylib")
 GIT_HOSTS: tuple[str, ...] = (

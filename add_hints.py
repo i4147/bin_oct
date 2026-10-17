@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an automated type-annotation assistant for existing Python source files. It should read one or more target Python files (or a directory of them), analyze each file's functions and their parameters and return values, and add type hints where they can be reliably inferred. Inference should draw on several signals: literal default values in function signatures, common naming conventions for parameters (for example names suggesting strings, integers, booleans, paths, or collections), and simple expressions observable in the function body. The tool must only add annotations where confidence is reasonable, leave existing annotations untouched, and preserve the original formatting, comments, and code behavior as much as possible.
-The script should support a dry-run mode that reports the proposed changes without modifying files, a mode that prints a unified diff of the changes for review, and a mode that writes changes in place. It should automatically add any required typing imports to each modified file, avoid duplicating imports that already exist, and skip files that cannot be parsed, reporting them clearly instead of crashing. Provide a command-line interface with options for the target paths, the mode of operation, and optional verbosity, and print a concise summary at the end listing how many files were scanned, modified, or skipped, and how many annotations were added. Handle errors gracefully, validate that the rewritten code still parses before saving, and create backups or leave originals intact if a write would produce invalid output.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,9 +8,11 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Optional
+
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
+
 
 NAME_HINTS: dict[str, str] = {
     "name": "str",

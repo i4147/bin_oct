@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans Python source files in a given directory (or a single file), finds human-readable text in the code that is not written in English, such as comments, docstrings, and string literals, and translates that text into English while leaving the program's logic and behavior intact.
-The tool should accept a path to a file or folder via command-line arguments, with options to choose the target language (defaulting to English), preview changes without modifying files, and optionally write results to a new output location or overwrite the originals after creating a backup. It should detect non-English content by checking for characters outside the basic ASCII range, skip blank or whitespace-only text, and avoid translating content that would break the code, such as identifiers, keywords, format placeholders, escape sequences, or code that is not human-readable text.
-Translation should use available online translation services with graceful fallbacks: if one translation backend is unavailable or returns an error or warning message, try another, and if none succeed, keep the original text and report the failure without crashing. Repeated translations of the same phrase should be cached to reduce requests and speed up processing.
-The tool must verify that the modified code is still valid Python (for example, by parsing it) before saving, and should refuse to write a file whose result would be syntactically broken, reporting the problem instead. It should preserve indentation, line structure, and the original formatting of untranslated code as much as possible.
-The output should be a clear console report listing each file processed, the text segments found and their translations, counts of changes made, and any errors or skipped items. Handle missing files, unreadable files, encoding issues, and missing translation libraries gracefully with informative messages and a non-zero exit status when errors occur.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 import sys
+
 
 try:
     from translate import Translator

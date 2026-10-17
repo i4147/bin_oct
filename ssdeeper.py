@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for files and finds pairs of files with highly similar content using fuzzy hashing. The tool should accept a root directory path, an optional minimum file size to skip tiny files, and a similarity threshold (0–100) that determines which pairs are reported. It should recursively collect candidate files, skip anything that is not a regular file or cannot be read, compute a fuzzy hash for each qualifying file, and then compare every unique pair of hashes to produce a similarity score. Only pairs meeting or exceeding the threshold should be reported, sorted from most to least similar.
-The output should be a structured report, either as human-readable text or as JSON when requested, listing each matching pair with both file paths (shown relative to the scanned root when possible), the similarity score, and summary statistics such as the number of files scanned, files hashed, and matches found. Support an option to write the report to an output file, and handle errors gracefully so that a single unreadable file never stops the overall scan. Include a command-line interface with clear help text, sensible defaults, and proper exit codes for success, invalid arguments, and missing dependencies.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,6 +7,7 @@ import operator
 from pathlib import Path
 import shutil
 import sys
+
 from dh import get_files
 import ssdeep
 

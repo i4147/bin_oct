@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that compresses a given folder into a tar archive, with optional compression and cleanup behaviors. The tool should accept a directory path from the command line, along with options to choose an output location, select an archive format (plain tar or gzip-compressed tar), control how many workers are used for compression, and decide whether the original folder should be deleted after a successful archive is created. It should validate that the input path exists and is a directory, resolve the archive name automatically from the folder name when no output path is given, and place the archive next to the source folder by default. The script should print clear progress messages indicating where the archive is being created and confirm when the original folder has been removed. Errors during compression should be caught, reported to the user in a readable way, and result in a non-zero exit status, with the original folder left intact whenever archiving fails. The overall design should be a small, self-contained command-line utility that is easy to run and reuse, and it should handle the case where the archive or target path already exists by informing the user or asking for confirmation before overwriting.
----"""
 
 from __future__ import annotations
 import argparse

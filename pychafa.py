@@ -1,7 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import shutil
+
 from pathlib import Path
+import shutil
+import sys
+
 from PIL import Image
 
 

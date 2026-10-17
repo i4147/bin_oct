@@ -1,18 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""ements a terminal-based text with a full-screen interface. The editor should launch optionally with a filename supplied as a command-line argument, and it should display a header, a main editable text area, a status log area that reports actions and messages to the user, and a footer listing available keyboard shortcuts.
-The editor should support these core behaviors:
-- Opening an existing file into the editing area, and creating a new unnamed document when no file is given.
-- Saving the current document back to its file, tracking whether there are unsaved changes so the user is informed of the state.
-- Quitting the application through a keyboard shortcut.
-- Showing feedback in the status area for actions such as opening, saving, errors, and unsaved-change states.
-Include tab-based auto-completion support for Python identifiers and module names within the terminal session, so that typing a partial name and pressing Tab suggests or completes matching names. Ensure the interface is laid out cleanly so the editing area fills most of the screen, with the status area visible beneath it. Handle common errors gracefully, such as missing files, permission problems, or invalid paths, by reporting them in the status area rather than crashing. The script should be self-contained, runnable directly from the command line, and designed with clear structure that is easy to extend with additional editor features.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import readline
 import rlcompleter
 import sys
+
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.log import TextLog

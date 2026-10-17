@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a text file containing one entry per line and identifies groups of near-duplicate or similar entries, then writes the results to an output file.
-The script should accept the input file path, an optional output file path, and a size threshold (in megabytes) that controls how the input is read: small files should be loaded with a standard approach, while files above the threshold should be read with memory-mapped access for efficiency. Report to the user which reading strategy was chosen and the size of the file.
-Each non-empty line should be normalized by trimming surrounding whitespace before comparison. The core behavior is to detect entries that are similar to one another (for example, identical after normalization, or differing only in case, punctuation, or minor variations), group them together, and record which entries belong to each group. Entries that have no similar counterpart should be handled consistently, either omitted or reported separately, and this choice should be documented in the output.
-The output should be a clearly structured text report written to the specified file (or a default location if none is given), listing each similarity group with its member entries and a count of groups and entries processed. The script should also print a concise summary to the console upon completion.
-Handle common error conditions gracefully: a missing or unreadable input file, an empty input file, and an unwritable output location should each produce a clear error message and a non-zero exit status rather than an unhandled exception. The script should be runnable from the command line with helpful usage information.
----"""
 
 from __future__ import annotations
 import argparse

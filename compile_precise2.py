@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that generates a print-ready PDF stylesheet by embedding local font files directly into CSS. The script should look for a set of named font files in the current working directory (a regular, bold, italic, and bold-italic variant of a sans-serif UI font, plus a monospace font for code), read each one that exists, and encode it so it can be inlined as base64 data within `@font-face` rules. For any font file that is missing, the script should print a clear warning to the console and continue gracefully, relying on the default system typography for that style rather than failing. The final output should be a single CSS string that declares only the font faces that were successfully loaded, combined with a sensible base stylesheet for document typography (body text, headings, emphasis, code blocks, and page layout suitable for PDF rendering). The script should print progress messages while it works, and it should be usable as a module (importable to produce the CSS string) as well as runnable directly from the command line.
----"""
 
 from __future__ import annotations
 import base64

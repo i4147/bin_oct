@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a transparent wrapper around the GitHub CLI (`gh`). When invoked, it should locate the real `gh` executable installed on the system, skipping any copy of itself so it never calls itself recursively, and then forward all command-line arguments to that real executable, relaying its standard output, standard error, and exit status back to the caller unchanged.
-Before and while forwarding, the script should record each invocation to a uniquely named log file stored in a dedicated log directory within the user's home folder. Each log file should capture a timestamp of the run, the full command and arguments being executed, the working directory, and the resulting output and exit code. File names must be unique even when several invocations happen within the same second, so the script should handle name collisions gracefully. The log directory should be created automatically if it does not already exist, and logging failures must never prevent the wrapped command from running.
-If the real GitHub CLI cannot be found, the script should print a clear, concise error message to the standard error stream explaining that the tool is unavailable and exit with a non-zero status code. Handle interruptions (such as Ctrl+C) cleanly, forwarding them appropriately and recording the outcome in the log.
-The script should be a single self-contained executable file intended for use on a Unix-like system, including mobile terminal environments, and should behave identically to the original `gh` command from the user's perspective apart from the added logging.
----"""
 
 from __future__ import annotations
 import datetime as dt
@@ -12,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+
 
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 REAL_GH = "/data/data/com.termux/files/usr/bin/gh"

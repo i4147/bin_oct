@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that removes comments from Vim script (.vim) files by parsing each file with a syntax-aware parser, so that only genuine comments are stripped and string literals or other code are left intact. The tool should accept a single file path or a directory of files as input, process them in parallel to take advantage of multiple CPU cores, and overwrite each source file in place with its comment-free version (or write to a separate output location if requested). It should report, for each file, how many comments were removed, how long processing took, and any errors encountered, such as unreadable files or files that fail to parse, without aborting the entire batch. The script should also provide a summary at the end showing total files processed, total comments removed, failures, and overall elapsed time. Include a dry-run mode that reports what would be removed without modifying any files, and a verbose option for detailed output. Ensure that removing comments preserves the remaining code's line structure and validity so the Vim scripts still run correctly, and handle edge cases such as Windows and Unix line endings, Unicode content, and empty files gracefully. Provide a clear command-line interface with helpful usage messages.
----"""
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -8,8 +6,10 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 import time
+
 from tree_sitter import Language, Node, Parser
 import tree_sitter_vim
+
 
 PathLike = str | Path
 

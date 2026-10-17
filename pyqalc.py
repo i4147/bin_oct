@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line unit converter supporting length, mass, and volume measurements. The tool should accept a numeric value, a source unit, and a target unit as inputs, and print the converted result to the user. It should recognize common abbreviations and full unit names (in singular and plural forms where spreting unit names. Only conversions within the same measurement category should be allowed attempting to convert between incompatible categories (for example, length to mass) should produce a clear error message and a non-zero exit status. Unrecognized units or non-numeric values should be handled gracefully with helpful feedback rather than a crash.
-The converter should cover a broad set of metric and imperial units, including small and large scales for length (from nanometers up to light-years and astronomical units), common mass units (from milligrams to tonnes, plus imperial ounces and pounds), and volume units (from milliliters and liters to US fluid ounces and related measures). Results should be displayed with sensible precision, using high-precision decimal arithmetic where appropriate so that very large or very small values remain accurate and readable, and the output should clearly state the original value, the source unit, and the converted value with its target unit.
-Provide a command-line interface with clear help text describing usage, supported unit categories, and examples. Optionally, the tool may include a way to list all supported units grouped by category. The script should be self-contained, well-organized, and easy to extend with additional units in the future.
----"""
 
 from __future__ import annotations
 import argparse
 from decimal import getcontext
 import math
 import re
+
 
 getcontext().prec = 28
 

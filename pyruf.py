@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a thin wrapper around the Ruff linter/formatter command-line tool, extending it so that it also recognizes and processes Python scripts that have no file extension (such as executable scripts with a Python shebang line).
-The tool should accept the same command-line arguments that Ruff accepts and pass them through to Ruff for normal operation, including help and version requests, which should be forwarded directly so the user sees Ruff's native output. When the user invokes a subcommand such as checking or formatting, the script should separate the arguments into a subcommand, file or directory targets, and option flags. If no targets are provided, it should default to the current directory.
-The script should scan the provided targets, including recursing into directories, to identify extensionless files whose first line indicates they are Python files. Those files should be handled alongside regular Python files: the script should invoke Ruff on them so they are linted or formatted just like `.py` files, while still forwarding all user-supplied flags. Files that are not Python, unreadable files, and binary files should be skipped gracefully without crashing the program.
-The script should preserve Ruff's exit status so that it can be used reliably in continuous integration pipelines and pre-commit hooks, returning a non-zero code when Ruff reports problems. It should handle missing Ruff installations and missing paths with clear, user-friendly error messages, and it should avoid processing the same file twice. Output should stay faithful to Ruff's own messages, with the wrapper adding only minimal, clearly labeled information when needed.
----"""
 
 from __future__ import annotations
 from pathlib import Path

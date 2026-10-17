@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import ast
@@ -12,6 +13,7 @@ import sys
 import tokenize
 import traceback
 from typing import Callable, Iterable, NamedTuple, Sequence
+
 
 try:
     import libcst as cst

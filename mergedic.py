@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that reads two JSON dictionary files, each mapping keys to values, and merges them into a single bilingual translation dictionary. The script should accept two input file paths from the command line and produce one output J
-Requ
-- **Input validation:** Each input file must contain a single JSON object. The script should reject files that are not JSON objects, are empty, or are malformed, and report a clear error for each case.
-- **Language detection:** Determine the language direction of each file by examining its keys. A file whose keys are predominantly English-looking (plain Latin-letter phrases with spaces, hyphens, apostrophes, or periods) should be treated as English-keyed; a file whose keys are predominantly non-English should be treated as the other language (Persian/Farsi). If a file's keys are a clear mix of both languages, the script must refuse to merge it and explain why, rather than guess.
-- **Direction handling:** Use the detected direction to pair the two files correctly so that each English key maps to its corresponding translation, regardless of the order in which the files were given on the command line. If both files are detected as the same direction, report an error.
-- **Merging behavior:** Combine the translations into one output dictionary. Handle duplicate keys sensibly and log any conflicts, with a clear policy (for example, the first-seen value wins, or conflicts are reported and excluded).
-- **Logging:** Provide informative log output covering the detected languages, the number of entries processed, any conflicts, and any skipped or rejected entries.
-- **Output:** Write the merged result to a UTF-8 encoded JSON file with readable formatting that preserves non-ASCII characters. The output path should be configurable, with a sensible default.
-- **Error handling:** Exit with a non-zero status and a helpful message on invalid input, missing files, or ambiguous data, rather than producing partial or incorrect output.
-- **Utility:** Include a short usage message describing the expected command-line arguments and the output behavior.
----"""
 
 from __future__ import annotations
 from collections import defaultdict
@@ -17,8 +6,10 @@ import json
 from pathlib import Path
 import re
 import sys
+
 from dh import get_random_filename
 from loguru import logger
+
 
 ENGLISH_RE = re.compile(r"^[A-Za-z][A-Za-z\s\-'.]*$")
 

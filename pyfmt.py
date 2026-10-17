@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line code formatter for web-related source files. It should accept one or more file or directory paths, recursively discover supported web files (HTML, CSS, JavaScript, JSON, and related extensions), and format them in place using a selectable formatting backend such as an HTML-aware parser, a JavaScript beautifier, or an external formatter tool like Prettier. Users should be able to choose the backend, filter files by extension, and limit the maximum file size that will be processed.
-The script should process files concurrently to improve throughput on large directory trees, with a configurable level of parallelism and a choice between thread-based and process-based execution. It should read each file safely, skip files that are too large or unreadable, and only write changes back when the formatted output differs from the original. A dry-run or check mode should report which files would change without modifying anything, and the script should exit with a non-zero status when changes are required in check mode.
-Provide clear, structured logging with adjustable verbosity, and print a concise summary at the end showing how many files were scanned, modified, skipped, or failed, along with total bytes processed. Errors on individual files must not stop the overall run; each failure should be recorded and reported. When an external formatter is requested, the script should verify that the required executable is available before starting and fail with a helpful message if it is missing. Optionally, the script should emit results as machine-readable JSON for integration with other tools.
----"""
 
 from __future__ import annotations
 import argparse
@@ -16,6 +12,7 @@ import shutil
 import subprocess
 import sys
 from typing import TYPE_CHECKING, Optional
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence

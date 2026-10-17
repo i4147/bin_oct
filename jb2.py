@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory (the current working directory by default, or a path supplied by the user) for JSON files and reformats each one in place into a consistently indented, human-readable layout while preserving all non-ASCII characters. For each file, the script should report its name along with a measure of how much the file size changed as a result of the reformatting, showing both the relative change against the new size and against the original size. If a file is empty or the reformatting produces no size difference, the script should clearly indicate that no change was made. If a file is not valid JSON or cannot be processed, the script should report the error for that file without stopping the processing of the remaining files. The output should be concise, one line per file, with colored or visually distinct messages to distinguish successes, unchanged files, and errors. Include a summary of the overall directory size before and after processing. Handle file read and write errors gracefully, use UTF-8 encoding throughout, and design the tool so it can be run directly from the command line.
----"""
 
 from __future__ import annotations
 import json
 from pathlib import Path
 import sys
+
 from dh import cprint, fsz, get_files, gsz, mpf
 
 

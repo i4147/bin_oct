@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a directory tree and converts Windows-style line endings (CRLF) to Unix-style line endings (LF) in text files, modifying files in place. The tool should accept a root directory (defaulting to the current directory) and optional include/exclude filename patterns (glob-style) to control which files are processed. It should automatically skip binary files, detect which files actually contain CRLF sequences before attempting any modification, and leave files without CRLF untouched. Processing should be parallelized across multiple CPU cores to handle large repositories efficiently, with a progress indicator shown to the user during the scan. The script should offer a dry-run mode that reports which files would be converted without changing anything, and a summary at the end stating how many files were scanned, how many were converted, and how many were skipped or failed. Errors on individual files (permission issues, unreadable files, locked files) should be logged as warnings and must not stop the overall run. Include configurable logging verbosity via a command-line option, and make the tool safe to run repeatedly so that already-converted files produce no changes.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,6 +8,7 @@ import mmap
 from multiprocessing import Pool
 import os
 from pathlib import Path
+
 from tqdm import tqdm
 
 

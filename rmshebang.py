@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that processes Python source files in parallel to strip a leading shebang line from each file. The tool should accept an optional list of file paths from the command line; if none are provided, it should automatically discover all Python files in the current working directory. For each target file, if its first line begins with a shebang marker (such as "#!/usr/bin/env python"), remove that line and save the file with the remaining content, using UTF-8 encoding. Files without a shebang line, empty files, and files that cannot be read or written should be left untouched without crashing the overall run. Report each file that was modified by printing its name, and keep the script resilient so that a failure in one file never stops processing of the others. Processing should be distributed across a pool of worker processes using a bounded submission queue so that memory use stays limited when there are many files. The script should also measure and report the total size of the working directory before and after processing, so the user can see how much space the changes saved or affected.
----"""
 
 from __future__ import annotations
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
 import sys
+
 from dh import fsz, get_files, gsz
+
 
 MAX_QUEUE = 16
 

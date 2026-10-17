@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch image-processing and conversion utility. The tool should accept a source directory (or a list of individual files) and a destination directory from the command line, recursively discover supported media files, and convert or normalize them into a consistent output format and size, preserving the original folder structure in the output location.
-It should support a broad range of input types, including common raster formats, modern high-efficiency formats, vector graphics, HTML-style documents, and multi-page PDFs, gracefully handling whichever optional capabilities are installed and clearly reporting which formats are unavailable when a required capability is missing. Where a source contains multiple pages or frames, the tool should be able to export each page as its own image.
-Key behaviors to include:
-- Accept options for target format, maximum dimensions or scaling, quality level, background fill for transparency, and whether to overwrite existing outputs or skip them.
-- Process files in parallel across multiple CPU cores to speed up large batches, with a configurable worker count.
-- Correctly handle EXIF orientation, color modes, and transparency when converting between formats.
-- Validate each file before processing, skip corrupt or unsupported inputs with a logged warning rather than halting the entire batch, and never corrupt existing output on failure (write to a temporary file and move it into place).
-- Provide a summary at the end reporting counts of converted, skipped, and failed files, plus total elapsed time.
-- Support a dry-run mode that lists what would be processed without writing anything.
-- Use structured logging with a verbosity flag, and return a non-zero exit code if any file failed.
-- Include clear command-line help text describing every option and the supported format list.
-Deliver a single, self-contained, well-documented script with a main entry point that can be run directly from the terminal.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +7,7 @@ import logging
 from pathlib import Path
 import sys
 from typing import Iterable, Optional, Sequence
+
 
 try:
     from PIL import Image, UnidentifiedImageError

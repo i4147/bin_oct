@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes source code files to detect structural similarity between Python programs, reporting which files are near-duplicates or closely related, using fuzzy hashing applied to a normalized representation of each file's abstract syntax.
-The tool should accept one or more file or directory paths from the command line. When a directory is given, it should recursively discover Python source files, skipping common non-source or tooling directories such as version control folders, virtual environments, caches, and IDE configuration folders. Each Python file should be parsed into its syntax structure, and the parsed representation should be normalized so that superficial differences do not affect the comparison. Normalization should remove or ignore elements that do not change program behavior, such as documentation strings, type annotations, comments, and variable naming differences, so that two programs written with different identifiers or documentation but the same logical structure are recognized as similar.
-From each normalized representation, the script should generate a fuzzy hash fingerprint that tolerates small edits. It should then compare fingerprints pairwise across all discovered files and produce a similarity score for each pair, expressed as a percentage from 0 to 100. The output should list the file pairs whose similarity meets or exceeds a user-configurable threshold, sorted from most to least similar, with each entry showing both file paths and the score. Files that cannot be parsed due to syntax errors should be reported as warnings to standard error without stopping the overall analysis.
-The command-line interface should allow the user to set the similarity threshold, optionally display results in a colorized terminal format, and optionally write results to an output file in a machine-readable format such as JSON. The script should exit with a clear, non-zero status code when invalid arguments or missing input paths are provided, and should handle interruption gracefully. Keep the output concise, deterministic, and easy to scan, and ensure the program runs reliably on large codebases by processing files efficiently.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,7 +8,9 @@ import hashlib
 from pathlib import Path
 import sys
 from typing import Iterator
+
 import ssdeep
+
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",

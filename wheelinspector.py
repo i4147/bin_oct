@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory of Python wheel files (.whl), identifies which wheels contain no usable code or content, and moves those empty wheels into a separ can be revied.
-The tool should accept command-line arguments that specify the source directory to scan, the destination folder for empty wheels (defaulting to a folder named "empty_wheels"), and the detection method to use (defaulting to a basic mode, with optional stricter modes). Support three detection strategies: a basic check that treats a wheel as empty if it contains no Python source files and no non-metadata content; a record-based check that reads the wheel's metadata listing of installed files and determines emptiness from the recorded entries; and an extension-aware check that also treats compiled or type-stub files (such as native extensions and .pyi stubs) as meaningful code, so a wheel is only considered empty if it holds none of these either.
-The script should be robust to malformed or corrupted archives: when a file cannot be read as a valid zip or raises an error, it should print a clear message identifying the file and continue processing the remaining wheels rather than crashing. It should handle name collisions at the destination by avoiding overwrites, and it should provide a dry-run option that reports which wheels would be moved without changing anything on disk.
-At the end, the script should print a concise summary showing how many wheels were scanned, how many were identified as empty, how many were moved, and how many failed, along with the chosen method and destination. Include clear help text for every option, return a nonzero exit status if the source directory does not exist or no wheels are found, and ensure the tool works on common Python versions across Windows, macOS, and Linux.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +10,7 @@ import sys
 import sysconfig
 from typing import Optional
 import zipfile
+
 
 WheelInfo = dict[str, object]
 PackageInfo = dict[str, str]

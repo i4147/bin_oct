@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an interactive terminal viewer for PDF documents. The tool should accept one or more PDF file paths (or directories containing PDFs) as command-line inputs and extract the text content of each page using an external PDF text-extraction utility available on the system. It should process pages in parallel to keep extraction fast on large documents, then present the extracted text to the user one screen at a time.
-Key behaviors to include:
-- Accept file and directory arguments from the command line, validate that the inputs exist, and gather only PDF files, reporting clearly if none are found.
-- Extract text page by page, handling failures gracefully so that one problematic page or file does not crash the whole session; log warnings for errors.
-- Split each page's text into manageable parts that fit the current terminal width and height, so that long pages can be navigated in sections.
-- Display a header on each screen showing the page number, the part position within the page, and the screen position within the overall document, separated from the content by a visual divider sized to the terminal width.
-- Provide keyboard-driven navigation in raw terminal mode: move forward and backward through screens, jump between pages, and quit cleanly. Restore the original terminal settings on exit, including when interrupted.
-- Clear and redraw the screen on each navigation step, and re-layout the content if the terminal is resized.
-- Check that required external tools are installed before starting, and print a helpful message if they are missing.
-- Provide a concise help message and sensible defaults via the command line, and exit with appropriate status codes for success, invalid input, and missing dependencies.
-- Use a clean, modular structure with clear separation between argument handling, extraction, text layout, and terminal interaction, and keep the code readable and maintainable.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,7 +13,9 @@ import termios
 import textwrap
 import tty
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     import os
@@ -276,6 +266,7 @@ def get_page_count(path: Path, backend: str) -> int:
 
 def extract_pdfminer_page(path: Path, page_number: int) -> str:
     from io import StringIO
+
     from pdfminer.high_level import extract_text_to_fp
     from pdfminer.layout import LAParams
     from pdfminer.pdfpage import PDFPage

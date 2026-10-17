@@ -1,23 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory of text-based files and decodes common HTML character entities in place, so that the files contain the actual characters instead of their escaped forms. The script should accept a target folder (or a single file) as input, process every relevant file it finds, and leave files untouched when no entity replacements are needed.
-Key behaviors:
-- Recognize a fixed set of common HTML entities (such as ampersand, angle brackets, quotes, non-breaking space, currency symbols, copyright and registered marks, dashes, ellipsis, and typographic quotes) and replace each with its corresponding character.
-- Read and write files using UTF-8 encoding, and only rewrite a file when its content actually changes.
-- Handle large sets of files efficiently by distributing the work across multiple worker processes, and make sure the parent process collects results safely.
-- Skip or gracefully report files that cannot be read, decoded, or written, without stopping the entire run.
-- Provide a summary at the end showing how many files were scanned, how many were modified, and any errors encountered.
-- Allow the user to control the number of worker processes, and offer a dry-run option that reports which files would change without modifying them.
-- Include a helper that excludes binary files from processing, so only plain text content is altered.
-- Print clear, concise progress and status messages to the console, and return a non-zero exit status if any errors occurred.
-The script should be a standalone command-line tool, runnable from a terminal with paths supplied as arguments, and should be written so that it is safe to run repeatedly (idempotent) on the same set of files.
----"""
 
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import re
 import sys
+
 from dh import get_nobinary
+
 
 HTML_ENTITIES = {
     "&lt;": "<",

@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a source code repository and produces a summary of the source files it contains, focusing on the code structure of supported languages. The tool should run from the current working directory by default and recursively walk the project tree, skipping common non-source or generated directories such as version control folders, virtual environments, caches, build outputs, dependency folders, and IDE metadata.
-The script should identify source files by their file extensions, supporting a broad set of languages including JavaScript, TypeScript (including declaration and module variants), JSX/TSX, Python, and similar mainstream languages. For each recognized file, it should parse the code to extract its high-level structure, such as top-level definitions, classes, functions, methods, imports, and exports, and record useful metadata like the file path, language, line counts, and positions of the extracted symbols.
-Processing should be parallelized across a small pool of worker processes so that large repositories are handled efficiently, while ensuring that a failure to parse or read one file does not abort the overall run; problematic files should be reported or skipped gracefully with a clear note.
-The script should output a structured, human-readable report (for example, a grouped text or Markdown summary per file and an overall count by language) and optionally a machine-readable format such as JSON, selectable via command-line arguments. It should handle symbolic links and permission errors safely, avoid following links that create cycles, and exit with a non-zero status code on fatal errors such as an invalid root path, while printing concise progress and error messages to standard error.
-Keep the design modular and easy to extend, so that support for additional languages can be added by registering new file-extension mappings and their corresponding parsing grammars without restructuring the core scanning logic.
----"""
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -14,6 +8,7 @@ from pathlib import Path
 import stat
 import sys
 from typing import Any
+
 
 WORKERS = 8
 ROOT = Path.cwd()
@@ -110,6 +105,7 @@ def iter_source_files(root: Path) -> list[Path]:
 
 def get_language(spec: LanguageSpec) -> Any:
     from importlib import import_module
+
     from tree_sitter import Language
 
     module = import_module(spec.module_name)

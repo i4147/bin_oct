@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree of C and C++ source and header files and removes all comments from them while preserving the rest of each file's code exactly as written. The tool should accept a root path (a single file or a directory) as input, recursively discover files with common C and C++ extensions (including .c, .h, .cc, .cpp, .cxx, .hpp, .hh, .hxx, .inl and similar), and process them in parallel using multiple worker processes to speed up large codebases.
-For each file, use a syntax-aware parser for the appropriate language (C or C++, chosen by file extension) so that comments are identified accurately, including correctly ignoring comment-like text inside string and character literals. Remove both line comments and block comments, and handle edge cases such as comments spanning multiple lines, comments at the end of code lines, and adjacent comments. Ensure the output preserves line structure reasonably so that code positions remain sensible, and avoid corrupting string literals, preprocessor directives, or code that happens to contain comment markers inside strings.
-The script should support an option to modify files in place, and an option to write output to a separate destination directory while mirroring the original folder structure. Include a dry-run or summary mode that reports how many files were processed, how many comments were removed, and any files that failed to parse or process, without crashing the whole run if a single file errors. Provide clear command-line usage with helpful help text, and log progress and errors through a logging facility with sensible verbosity levels. Handle unreadable files, encoding issues, and unsupported extensions gracefully, and exit with a non-zero status code when fatal errors occur.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,10 +6,12 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_c
 import tree_sitter_cpp
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

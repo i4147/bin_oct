@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a batch Lua source-code cleaner: it takes a file or directory path (and optional flags such as an output location, in-place modification, dry-run/diff preview, and a worker count) and removes comments from Lua files while leaving the rest of the code intact and valid. The tool should walk a directory tree recursively, skipping common version-control, virtual-environment, dependency, cache, IDE, and build-output folders, and only process files with Lua extensions. Each file should be parsed with a proper Lua grammar so that comment markers inside string literals are never mistakenly stripped, and files that fail to parse cleanly should be left unchanged and reported as skipped rather than corrupted. Empty files should pass through untouched. Processing should run in parallel across available CPU cores for large trees, with a clear progress or summary report at the end showing counts of files processed, modified, skipped, and failed, plus elapsed time. When running in dry-run mode, the script should display a unified diff of the proposed changes for each affected file without writing anything. When writing results, it should preserve the original file encoding and line endings where possible, and it should support creating a backup of the original before overwriting. The tool should exit with a meaningful status code indicating success, partial failure, or invalid arguments, and should provide clear command-line help describing all options.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,8 +9,10 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_lua as ts_lua
+
 
 try:
     import luaparse

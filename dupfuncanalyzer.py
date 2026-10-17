@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree of Python source files, finds function definitions that are duplicated across different files, and produces a single consolidated output file listing those repeated functions so they can be reviewed or refactored into a shared module.
-The tool should accept a root directory to scan (with a sensible default of the current directory) and an optional output file path (defaulting to a file named repeated_functions.py). It should recursively discover all Python files under the root, skipping the output file itself and common non-source locations such as virtual environments, version control folders, and cache directories.
-For each file, parse the source safely, tolerating files that have encoding or syntax problems by reporting and skipping them rather than crashing. Extract top-level function definitions, capture each function's exact source text, and normalize it so that trailing whitespace and surrounding blank lines do not cause false mismatches. Group the functions by name and by normalized body so that identical implementations appearing in multiple files are recognized as repeats, and also flag functions that share a name but have differing implementations, since those are potential conflicts worth reviewing.
-Process files in parallel using a worker pool of a modest fixed size to speed up scanning of large codebases, and make sure the results are combined deterministically so the output is stable across runs.
-The generated output file should be a valid, importable Python module. It should contain a clear header comment describing how it was generated, a list of the repeated functions with the files each one appeared in, and the canonical source of each repeated function written once. Functions with the same name but different bodies should be clearly marked so a human can decide how to resolve them. The output should also include a short summary at the top stating how many files were scanned, how many functions were found, and how many were duplicated.
-The script should print a concise progress and summary report to the console, exit cleanly with a non-zero status if the root directory does not exist, and never modify any of the scanned source files.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,6 +7,7 @@ from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
 
 POOL_SIZE: int = 8
 DEFAULT_OUTPUT_NAME: str = "repeated_functions.py"

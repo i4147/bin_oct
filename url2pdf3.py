@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that takes a single website URL as its argument and saves a PDF snapshot of that web page to the current working directory. If the user runs the tool without providing a URL, it should print a brief usage message to the error output and exit with a non-zero status code. The URL may be supplied with or without a scheme (for example, "example.com" should be treated as "http://example.com"). The output filename should be derived from the site's domain: convert the domain to lowercase, drop any leading "www." prefix, replace every character that is not a letter, digit, hyphen, or underscore with an underscore, and append a ".pdf" extension. On success, the tool should print a confirmation message that includes the saved file's name and exit with a zero status. If the PDF generation fails for any reason, the tool should report a clear error message to the error output and exit with a non-zero status. The tool should be a single, self-contained script that can be run directly from the command line.
----"""
 
 from __future__ import annotations
 import sys

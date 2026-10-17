@@ -1,22 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively walks a directory tree and transliterates non-ASCII file and folder names into safe, ASCII-friendly equivalents, so the tree can be used on systems or tools that do not handle Unicode filenames well.
-The script should accept a root directory path as its main input, along with command-line options that control behavior such as whether to perform a dry run that only reports planned renames, whether to recurse into subdirectories, and whether to include or skip hidden and version-control directories. By default, it should skip common version-control metadata folders and avoid touching them.
-Core behavior:
-- Detect the script family of each character in a name (for example Chinese Han characters, Japanese kana, Cyrillic, Arabic, Hebrew, Greek, Korean, Thai, or Latin letters with diacritics) and convert it to a readable Latin romanization using the best available transliteration method, falling back gracefully when optional language-specific helpers are not installed.
-- Normalize Unicode text (decomposing accented letters and removing combining marks where appropriate) so that accented Latin characters map to their base letters.
-- Replace characters that are invalid or problematic in filenames on common operating systems with safe separators, collapse repeated separators, trim leading and trailing separators or dots, and avoid reserved device names on Windows.
-- Preserve file extensions and the overall structure of the name where possible.
-- Enforce a maximum filename length, truncating while keeping the extension intact and ensuring uniqueness.
-- Resolve name collisions within the same directory by appending a numeric suffix so that no existing file is overwritten.
-- Process deeper directories before their parents when renaming so that paths remain valid during the operation.
-- Leave names that are already pure ASCII and clean unchanged.
-Output and reporting:
-- Print a clear, human-readable log of every planned or completed rename, showing the original path and the new name.
-- Show a summary at the end with counts of files and directories processed, renamed, skipped, and any errors encountered.
-- Handle errors gracefully (permission issues, missing paths, invalid arguments) with informative messages and a non-zero exit status when the run fails.
-- Support a confirmation prompt or an explicit flag to apply changes without prompting, and never perform destructive operations without the user's intent being clear.
-Deliver a single self-contained, well-structured script with a command-line interface, clear documentation in its help text, and sensible defaults.
----"""
 
 from __future__ import annotations
 import argparse
@@ -24,6 +6,7 @@ from pathlib import Path
 import re
 import sys
 import unicodedata
+
 
 try:
     from pypinyin import lazy_pinyin

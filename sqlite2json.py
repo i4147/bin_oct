@@ -1,19 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts the contents of a SQLite database into JSON output, with flexible handling of table data, binary values, and large datasets.
-The tool should accept a path to a SQLite database file and an output destination, and export its tables (all tables by default, or a user-selected subset) into a structured JSON representation. Each table's rows should be serialized with their column names preserved, and the output should be usable by other programs for data inspection, migration, or archiving.
-Key requirements:
-- Provide a command-line interface where the user can specify the input database, the output file or directory, which tables to include or exclude, and an optional row limit or batch size for processing large tables.
-- Handle all common SQLite value types correctly: integers, floating-point numbers (including special values such as infinity and NaN, which must be represented in a JSON-safe way), text, NULLs, and binary BLOB data.
-- For binary data, support several user-selectable encodings (for example base64 or hexadecimal), either wrapped in a labeled object that identifies the encoding or emitted as plain strings, so that the original bytes can be recovered later.
-- Read large tables in batches so that memory usage stays bounded regardless of table size, and stream results to the output rather than holding everything in memory when practical.
-- Optionally process multiple tables in parallel using a pool of worker processes, while keeping the resulting output deterministic and correctly ordered.
-- Write output atomically: create the result in a temporary location and move success, so a failed run never leaves a partially written file behind.
-- Validate inputs clearly: report a helpful error if the database file does not exist, is not a valid SQLite database, or if an unsupported option is supplied, and exit with a non-zero status code on failure.
-- Safely quote table and column names so that unusual identifiers (containing spaces, quotes, or reserved words) work correctly.
-- Optionally support a read-only mode for opening the database so the source file is never modified.
-- Print concise progress or summary information (such as the number of tables and rows exported) to standard error, keeping standard output clean for piping.
-The script should be self-contained, robust, and well-structured, with sensible defaults so that running it with only an input database path produces a complete JSON export.
----"""
 
 from __future__ import annotations
 import argparse
@@ -29,6 +14,7 @@ import sqlite3
 import sys
 import tempfile
 from typing import Any, Callable
+
 
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"

@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line database query runner with date-aware parameter substitution. The tool should accept a SQL query (or a file containing one), a database connection string, and optional named parameters, then execute the query against the target database and return the results in a user-chosen output format.
-Key requirements:
-- **Date placeholders:** Support special date tokens in the SQL text or parameters, such as the current date, first and last day of the current month, and first and last day of the current year. Resolve these tokens at runtime against a configurable time zone, with sensible defaults when none is provided.
-- **Relative date arithmetic:** Allow users to request date offsets (e.g., shifting by a number of days, months, or years) relative to a base date, so that reports can be parameterized without editing the query.
-- **Parameter handling:** Accept user-supplied parameters from the command line, automatically converting values to the appropriate types (integers, decimals, dates, booleans, or strings). Use safe, parameterized query execution to prevent SQL injection rather than naive string interpolation.
-- **Database connectivity:** Connect to any SQLAlchemy-compatible database via a connection URL. Handle connection and query errors gracefully with clear, user-friendly messages.
-- **Output formats:** Support exporting results to standard output as readable tabular text, JSON, and CSV, with an option to write the output to a file. Serialize non-standard types such as decimals and dates correctly in JSON and CSV output.
-- **Command-line interface:** Expose all functionality through a clean, self-documenting CLI with help text, a version flag, and clear argument validation.
-- **Robustness:** Validate inputs early, report unresolved or malformed placeholders and parameters clearly, and exit with appropriate non-zero status codes on failure.
-- **Reporting utility:** Optionally print the resolved query and final parameter values for debugging without executing the query.
----"""
 
 from __future__ import absolute_import, annotations
 import calendar
@@ -22,10 +11,12 @@ import os
 import sys
 from typing import Optional
 from zoneinfo import ZoneInfo
+
 from dateutil.relativedelta import relativedelta
 import fire
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+
 
 __version__ = "0.0.0"
 DATE_FIELDS = [

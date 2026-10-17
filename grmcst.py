@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a source-code cleaner for Python files: it takes one or more Python source files or a directory tree as input, removes comments and docstrings from each file while preserving code behavior and syntax, and writes the cleaned result back (in place or to an output location). The script should preserve special directive comments that tools rely on, such as shebang lines, type annotations comments, and formatter control comments (for example, comments marking code to be left unformatted or toggling formatting on and off). It should process files in parallel using a bounded number of worker processes to handle large projects efficiently. Use a concrete syntax-tree approach so that formatting and layout of the remaining code are kept as intact as possible, and validate that each cleaned output still parses as valid Python; if a file cannot be processed or would become invalid, the script should skip it and report the problem without corrupting the original. Provide a command-line interface that lets the user specify input paths, choose whether to modify files in place or write to a separate destination, perform a dry run that only reports what would change, and optionally include or exclude file patterns. The script should print a concise summary at the end showing how many files were processed, modified, skipped, and any errors encountered, and it should exit with a non-zero status code when errors occur.
----"""
 
 from __future__ import annotations
 import argparse
@@ -9,7 +7,9 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Final
+
 import libcst as cst
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

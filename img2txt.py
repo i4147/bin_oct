@@ -1,16 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a given directory tree for image files and extracts the text visible in each image using optical character recognition, then reports the results. The tool should accept a root folder path as its main input, along with an optional filter for which image file types to include (for example, common formats such as PNG, JPEG, BMP, TIFF, and GIF, with the ability to restrict to a custom subset). It should traverse subdirectories breadth-first, skip version-control, cache, and dependency folders such as ".git", "__pycache__", and "node_modules", and ignore symbolic links to avoid loops or duplicate processing. Gracefully handle permission errors and unreadable or corrupted files by logging a warning and continuing rather than crashing.
-Once the list of matching image files is gathered, the script should process them concurrently using a small, configurable number of parallel workers to speed up OCR on large collections, while keeping the overall memory footprint reasonable. For each image, it should open the file, run text recognition, and capture the extracted string along with the source file path. The output should be a structured result for every file, containing the file path, the recognized text, and an indication of success or failure with an error message where applicable. Results should be presented in a clear, human-readable summary printed to the console and also optionally exportable to a machine-readable format such as JSON or CSV, selected via a command-line option. Include sensible defaults, a helpful command-line interface with a usage message, and clear exit codes that indicate whether the run completed fully, partially, or failed to start (for example, when the target path does not exist).
-Ensure the script is robust, well-documented with docstrings, and easy to extend, such as by allowing a different OCR language to be specified or a minimum confidence or text-length threshold to filter out empty results.
----"""
 
 from __future__ import annotations
 from collections import deque
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
+
 from PIL import Image
 from pytesseract import image_to_string
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

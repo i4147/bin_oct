@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree recursively and produces a disk usage report, including total size, file and folder counts, and a breakdown of storage consumed by file type. The script should accept a target directory path from the command line (defaulting to the current directory) and an optional output file path for saving the summary. It should handle unreadable or inaccessible files gracefully by counting them without failing the entire scan. Files without an extension should be grouped under a clear label, and extension matching should be case-insensitive. The report should present sizes in human-readable units, list the file types ordered by total size consumed from largest to smallest, and clearly indicate the overall totals. The script should print the summary to the console and, when requested, write the same summary to a file. In addition, it should be able to generate a visual chart (such as a bar or pie chart) showing how space is distributed across the most significant file types, with smaller categories combined into an "other" group, and save or display that chart. Design the command-line interface so that users can easily control the target directory, output destination, and whether a chart is produced, and ensure the script provides helpful error messages when the given path does not exist or is not a directory.
----"""
 
 from __future__ import annotations
 import argparse
@@ -8,6 +6,7 @@ from collections import defaultdict
 import operator
 from pathlib import Path
 import sys
+
 from dh import fsz
 import matplotlib.pyplot as plt
 

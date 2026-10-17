@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for stripping comments and docstrings from Python source code across a project. The tool should accept one or more file or directory paths as input, recursively discover Python files while skipping common tooling, cache, version-control, and build-artifact directories, and process each file so that comments and docstrings are removed while the remaining code stays valid and functionally identical.
-The tool should support a dry-run mode that reports, per file, how many bytes, comments, and docstrings would be removed and shows a readable unified diff of the proposed changes, without modifying anything on disk. It should also an in-place mode that rewrites files only when a change is actually made, and an option to write results into a zip archive instead of altering the originals, preserving the original relative directory structure inside the archive.
-Files should be read with a fallback sequence of text encodings, and any file that fails to parse or process should be reported as an error without stopping the overall run. The tool must verify that its output still compiles before writing anything back. Processing of many files should be parallelizable through a configurable worker count, with a choice of execution strategies (including a no-parallelism option) and a clear progress or summary report at the end showing the number of files scanned, changed, skipped, and failed, along with total bytes saved and elapsed time. Output should use colored, human-readable terminal messages, with a flag to disable colors. The tool should be robust, well-structured, and documented with helpful `--help` text.
----"""
 
 from __future__ import annotations
 import argparse
@@ -23,7 +19,9 @@ import time
 import tokenize
 from typing import Callable, Iterable, Iterator
 import zipfile
+
 from loguru import logger
+
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",

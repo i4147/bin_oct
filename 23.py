@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a given directory tree and automatically lint-fixes and formats every Python source file it finds, running the work in parallel across multiple worker processes.
-The script should accept a directory path as its main input. It should identify Python files in two ways: files with a `.py` extension, and extensionless files whose first few bytes indicate a Python shebang line (a `#!` line mentioning "python"). For each discovered file, it should run an external Python code quality toolchain (Ruff) to apply automatic fixes, including unsafe fixes, enforce a maximum line length of 120 characters, and then apply code formatting. Output should be kept quiet and concise: each processed file should be reported with a short status line showing its name, and any errors or failures from the tools should be surfaced clearly without crashing the whole run.
-Key behaviors to include:
-- Process files concurrently with a bounded number of worker processes (around 8), so that a large project is handled efficiently.
-- Ensure console messages from parallel workers do not interleave or garble each other; output should be serialized safely.
-- Handle unreadable files, missing tools, and per-file command failures gracefully, continuing with remaining files.
-- Accept the target directory from the command line, validate that it exists and is a directory, and print a clear usage message and exit with a non-zero status if the input is invalid.
-- Finish with a summary of how many files were processed and how many encountered errors, and exit with an appropriate status code reflecting whether any failures occurred.
-- Use the project's standard subprocess helper for running external commands and capture their return codes and output.
----"""
 
 from __future__ import annotations
 from collections import deque
@@ -16,7 +6,9 @@ from multiprocessing import Lock, Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Any
+
 from dh import runcmd
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

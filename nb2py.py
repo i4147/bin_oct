@@ -1,28 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that converts Jupyter notebook files (.ipynb) into plain Python source files, so the resulting scripts can be run, linted, or version-controlled as ordinary code.
-The tool should accept one or more notebook file paths (or a directory to search recursively) as input, and write a corresponding .py file for each notebook, either alongside the original or into a specified output location. It should process multiple notebooks concurrently using a small pool of worker processes to speed up batch conversions.
-Key behaviors:
-- Only code cells should be carried over into the output. Markdown and raw cells should either be omitted or converted into comments, so the resulting file remains valid Python.
-- Each code cell should be clearly separated in the output with a readable marker or comment indicating the cell boundary, so the user can trace code back to its original position in the notebook.
-- IPython-specific syntax such as line magics (lines starting with `%`), shell escapes (lines starting with `!`), and cell magics (starting with `%%`) must not break the output. These lines should be preserved as comments, clearly tagged so the user knows they were originally magic commands, including multi-line magics that continue with a trailing backslash.
-- Import statements should be gathered and consolidated near the top of the generated file, with duplicates removed, so the script reads cleanly and imports are easy to inspect.
-- Cell outputs, execution counts, and notebook metadata should be discarded; only the source code matters in the result.
-- Empty or whitespace-only code cells should be skipped.
-- The tool should handle malformed or unreadable notebooks gracefully, logging a clear warning or error for each failed file without stopping the whole batch.
-- Provide a summary at the end reporting how many notebooks were converted successfully and how many failed.
-- Include a command-line interface with options for input paths, output directory, and the number of parallel workers, with sensible defaults.
-- Use structured, informative logging so the user can follow progress across parallel conversions.
-- Ensure the output files are written with UTF-8 encoding and end with a trailing newline.
----"""
 
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
 import nbformat
 from nbformat import NotebookNode
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

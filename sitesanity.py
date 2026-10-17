@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that performs a sanity check on the installed Python packages in a Termux environment. The script should inspect every installed distribution, verify that the files the package declares as belonging to it actually exist on disk, and report any that are missing so the user can identify broken or incompletely installed packages.
-The tool should accept command-line options that let the user exclude files from the check, supplying one or more filename patterns (such as wildcard expressions like "*.md") that can be given multiple times. Files matching these patterns, as well as compiled Python bytecode files, should be skipped and not counted as missing.
-For each package, the script should determine which declared files are absent and collect them. Packages that declare no file manifest should be handled gracefully without causing errors. After scanning all packages, the script should present a clear, readable summary to the user: list each package that has missing files along with the specific missing paths, and output a final tally of how many packages and files were found to be missing. If everything is intact, it should clearly report that no problems were detected.
-Logging should be used to communicate progress and results to standard output at an informational level. The script should be robust against errors while reading individual package metadata, continuing to check remaining packages rather than aborting. It should run as a standalone command-line program with a helpful usage description and exit cleanly, returning an appropriate status code that indicates whether any missing files were found.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +7,7 @@ import importlib.metadata
 import logging
 from pathlib import Path
 import sys
+
 
 logging.basicConfig(
     level=logging.INFO,

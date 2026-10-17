@@ -1,22 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line duplicate file finder and cleanup tool for a directory tree. It should scan one or more user-specified root folders, identify files with identical content, and let the user safely review, deduplicate, and reclaim disk space.
-Core behavior:
-- Walk the directory tree recursively, skipping common version-control, cache, virtual-environment, and dependency folders by default, with the option to add or override exclusion patterns.
-- Find duplicates efficiently using a staged approach: first group files by size, then narrow candidates with a quick partial fingerprint of the file head, and only then confirm exact matches with a full-content hash. Use fast hashing when an optional library is available and fall back gracefully to a standard hash otherwise.
-- Process files concurrently with a configurable number of workers, and show progress feedback (using a progress bar when available, plain status messages otherwise).
-- Support an optional fuzzy/similarity mode for near-duplicate detection when a suitable optional library is present, clearly separated from exact duplicate detection.
-Actions and safety:
-- Provide a dry-run mode that reports what would change without modifying anything, and make it the sensible default or clearly flagged.
-- Offer a non-interactive mode and an interactive mode where the user chooses which copy to keep per duplicate group, or selects a keep rule (e.g., oldest, newest, shortest path).
-- Deduplicate by moving redundant copies to a designated stash directory (preserving relative structure and never overwriting existing stashed files) rather than deleting them outright, or by replacing duplicates with symbolic links to the kept file, with a manifest recording every change so the operation can be reversed or restored.
-- Provide a restore/undo capability driven by the manifest, plus a way to inspect and clean the stash.
-- Never touch files outside the specified roots, handle permission errors and broken links gracefully, and log skipped items.
-Inputs and outputs:
-- Accept command-line arguments for root paths, exclusion patterns, worker count, minimum file size, similarity threshold, action mode, dry-run/confirmation flags, stash location, and manifest location, with sensible defaults and helpful help text.
-- Output a human-readable summary: number of files scanned, duplicate groups found, total reclaimable space, and a per-group listing of paths and sizes. Optionally emit results as JSON for scripting.
-- Exit with clear status codes for success, user cancellation, and errors.
-Keep the implementation self-contained, robust to interruption (Ctrl+C should stop cleanly and leave the manifest consistent), and well-documented with a clear usage message.
----"""
 
 from __future__ import annotations
 import argparse
@@ -32,6 +14,7 @@ import subprocess
 import sys
 import time
 from typing import Iterable, Optional, Sequence
+
 
 try:
     import xxhash

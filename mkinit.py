@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a given root directory for Python source modules and subpackages, analyzes each module's structure without executing it, and produces a structured report of its public API.
-The tool should accept a directory path as input and walk through it to discover valid Python modules (non-private `.py` files) and valid subpackages (non-private directories that contain an initialization file). For each discovered module, it should safely read and parse the source, skipping files that cannot be decoded, read, or parsed due to syntax errors without crashing the overall run.
-From each successfully parsed module, the script should identify the public top-level functions (both synchronous and asynchronous), excluding private names and any entry-point function named for program startup. It should also identify public top-level classes and any other notable public top-level definitions or assignments that form the module's exported interface, along with the names of the functions and classes they contain where relevant.
-The output should be a clear, well-organized summary, delivered as either human-readable text or machine-readable structured data (such as JSON), that lists each module and subpackage with its public members. The report should make it easy to understand the package's public surface at a glance, and should note any files that were skipped and why. The tool should be usable from the command line, accept the target directory as an argument, and handle missing or invalid paths gracefully with informative error messages.
-Prioritize robustness, clear reporting, and a clean, maintainable design, and leave all implementation choices to the developer.
----"""
 
 from __future__ import annotations
 import ast

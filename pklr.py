@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that reads a serialized pickle file from a user-specified path and converts its contents into a human-readable JSON representation. The tool should validate that the input file exists before attempting to process it, and should warn the user when the file does not carry the expected pickle extension, while still attempting the conversion when reasonable. It should handle loading errors gracefully by reporting a clear message and exiting with a non-zero status code rather than crashing with a raw traceback.
-Because pickled objects may contain types that JSON cannot represent natively, the tool should recursively normalize the loaded data so that dictionaries, lists, tuples, and sets become JSON-compatible structures, dictionary keys are converted to strings, and any other unsupported values are rendered as their string representations. The output should be valid, consistently formatted JSON that can be written to a file or printed to the console, with the destination chosen by the user through command-line options. Include a verbose mode that provides additional progress or diagnostic information, and design the command-line interface so that it is easy to use, self-documenting, and extensible to additional subcommands in the future.
----"""
 
 from __future__ import annotations
 import argparse

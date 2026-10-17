@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that takes an image file path from the command line and renders the image as colored art directly in the terminal, scaled to fit the current terminal window while preserving the image's aspect ratio. The script should detect the terminal's dimensions automatically and reserve one line of space so output does not overflow the screen. Each character cell should represent two vertical pixels of the image, using a half-block glyph whose foreground and background colors are set to the upper and lower pixel colors respectively, rendered with 24-bit true-color ANSI escape sequences. Convert the image to RGB before rendering, use high-quality resampling when resizing, and handle odd image heights gracefully by ignoring the final unpaired row. Each rendered row should end with a reset of terminal colors, and the full output should be printed to standard output with rows separated by newlines. The script should run as a standalone command-line tool that accepts one image path argument, and it should work for any common raster image format the Python imaging ecosystem can open.
----"""
 
 from __future__ import annotations
 import shutil
 import sys
+
 from PIL import Image
 
 

@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for removing comments from Python source files, safely and at scale across entire directory trees.
-The tool should accept one or more file or directory paths as input. When given a directory, it should recursively discover Python source files (including stub files), while skipping common non-source directories such as version control folders, virtual environments, caches, build outputs, and dependency folders. Files that cannot be parsed or transformed should be reported without aborting the whole run.
-Its core behavior is to strip ordinary comments from code while preserving the program's meaning and structure. It must keep comments that carry functional significance, including shebang lines, encoding declarations, type-checker and linter directives (such as noqa, pylint, ruff, isort, mypy, pyright, pragma, and fmt markers), and type comments. It should also preserve the surrounding formatting as much as possible, so that the code remains readable and unchanged apart from the removed comments, and it should ensure the resulting code is still valid Python.
-Provide options that control the transformation, such as a dry-run mode that reports what would change without writing anything, a check mode that signals whether any file would be modified (suitable for use in continuous integration), and an option to create backup copies before overwriting files. The tool should also support a verbose mode for detailed per-file output, colored terminal output when appropriate, and a summary at the end reporting how many files were scanned, modified, unchanged, or failed.
-For performance, the tool should be able to process many files in parallel using a configurable number of worker processes and chunk sizes, with a sensible default. It should write changes atomically so that a file is never left half-written if the process is interrupted.
-Include a version flag and clear help text describing each option. The exit status should reflect the outcome: success when no errors occur, a distinct non-zero status when check mode finds files that would change, and an error status when failures occur or invalid input is provided.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,7 +15,9 @@ import sys
 import tempfile
 import tokenize
 from typing import Iterable, Iterator, Sequence
+
 import libcst as cst
+
 
 PROGRAM = "strip_comments"
 VERSION = "2.0.0"

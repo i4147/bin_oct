@@ -1,22 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a given directory (recursively) for C and C++ source and header files, checks each one for syntax and compiler warnings using the locally installed Clang compilers, and reports the results.
-The tool should:
-- Accept a directory path (or a list of files) as input and discover all C and C++ files by extension, covering C source files, C++ source files, C header files, and C++ header files. Each category should be checked using an appropriate language standard (for example, C++17 for C++ sources and C11 for C sources).
-- Treat C++ source files and C source files differently in compiler settings, and treat header files specially: since headers cannot be compiled on their own, validate them by wrapping or including them in a temporary translation unit so they can be syntax-checked in isolation.
-- Enable strict warning flags (such as all and extra warnings) and treat warnings as errors where appropriate for C++ sources, so that any diagnostic causes a failure.
-- Run checks in parallel using a configurable pool of worker processes (default around 8) to speed up large codebases, and collect results safely from all workers.
-- Capture both the exit status and the combined compiler output for each file, decoding output tolerantly so that unusual bytes never crash the tool.
-- Gracefully handle a missing compiler executable by reporting a clear "command not found" style error for that file rather than crashing the whole run.
-- Produce a clear, human-readable summary at the end: the number of files checked, number passed, number failed, and the full diagnostic output for each failing file, grouped and sorted by path.
-- Exit with a non-zero status code if any file fails, and zero if all pass, so the tool can be used in continuous integration pipelines.
-- Include a command-line interface that lets the user optionally override the number of workers and choose the compiler or flags, with sensible defaults requiring no arguments beyond the target path.
----"""
 
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import subprocess
 import sys
+
 
 CPP_EXTS = {".cpp", ".cc", ".cxx"}
 C_EXTS = {".c"}

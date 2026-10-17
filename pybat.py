@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a terminal-based syntax-highlighted file viewer, similar to a "cat" replacement with rich output. The tool should accept one or more file paths (or read from standard input when no file is given) and display their contents in the terminal with syntax highlighting chosen automatically from the file name or content, with an option to override the language manually.
-Key requirements:
-- **Command-line interface:** Provide clear options for selecting the language explicitly, choosing a color style/theme, listing available languages or styles, toggling line numbers, adding a decorative header showing the file name and metadata, drawing a grid or frame around the output, and controlling paging behavior. Include a help option describing all flags.
-- **Input handling:** Accept multiple files and display them sequentially, separating each with a visible header. Handle standard input when no files are provided or when a dash is given. Detect whether the output is an interactive terminal; when it is not, output plain text without color codes so the tool remains pipe-friendly.
-- **Syntax highlighting:** Automatically determine the appropriate language from the file extension, falling back to content-based guessing, and to plain text when neither works. Support a range of color depths, choosing an appropriate formatter based on terminal capabilities, and allow the user to select from the available highlighting styles.
-- **Display features:** Render line numbers aligned to the widest number, support highlighting specific line ranges or marking lines added, modified, or removed (e.g., when comparing against a git diff reference), and optionally wrap or truncate long lines to the terminal width. Pad and draw box-drawing borders cleanly, correctly ignoring ANSI escape sequences when measuring visible width.
-- **Paging:** When output exceeds the terminal height and the output is interactive, pipe the result through an external pager if one is available, respecting a configurable pager command with sensible defaults.
-- **Git integration:** When requested, obtain the diff status of each file relative to the repository's index or a given revision and use it to annotate added, modified, and removed lines in the display.
-- **Robustness:** Handle missing files, binary files, unreadable paths, unknown languages or styles, and broken pipes gracefully, reporting clear error messages to standard error and returning appropriate non-zero exit codes. Never crash with an unhandled traceback for common user mistakes.
-- **Output expectations:** The result should look polished in a modern terminal, be fast on large files, and keep the code organized into clearly separated concerns such as argument parsing, content loading, highlighting, layout, and paging.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,11 +11,13 @@ import shutil
 import subprocess
 import sys
 from typing import Optional
+
 from pygments import highlight as pyg_highlight
 from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
 from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer
 from pygments.styles import get_all_styles, get_style_by_name
 from pygments.util import ClassNotFound
+
 
 RESET = "\x1b[0m"
 GRID_COLOR = "\x1b[38;5;238m"

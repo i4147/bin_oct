@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a TOML formatter and tokenizer tool. It should read TOML configuration text (from a file path or a string), lex it into a stream of meaningful tokens covering structural symbols, keys, strings, numbers, booleans, datetimes, comments, and whitespace, and then produce a consistently formatted TOML output based on a configurable style profile.
-The tool should expose a formatting configuration with adjustable options, including indentation width, whether keys are sorted alphabetically, whether spaces surround equals signs and appear inside inline table braces, whether arrays get a trailing comma, whether equals signs in consecutive key-value lines are column-aligned, and a maximum width beyond which inline tables are expanded across multiple lines. Sensible defaults should be provided for every option.
-Key behaviors:
-- Tokenize the input robustly, preserving the distinction between keys, string literals, integers, floats, booleans, and datetime values, and recognizing comments and newlines so that structure is not lost.
-- Report clear, actionable errors with line and column information when the input is malformed, rather than crashing silently.
-- Produce output that is valid TOML and semantically equivalent to the input, while normalizing spacing, indentation, and ordering according to the configured style.
-- Preserve comments in a sensible position relative to the content they describe.
-- Support formatting from a file path to a file path or to standard output, and from raw text to a returned string, so the formatter can be used both as a command-line tool and as an importable library.
-- Log significant steps and warnings using a logging facility, with logging enabled for the main module.
-- Include a simple command-line interface with options that mirror the formatting configuration, and a check mode that reports whether a file is already correctly formatted without modifying it, returning a non-zero exit status when changes would be made.
-- Keep the design modular and extensible so that new token types or formatting rules can be added without rewriting the core pipeline.
----"""
 
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -18,7 +6,9 @@ from enum import Enum, auto
 from io import StringIO
 import re
 from typing import TYPE_CHECKING, Any
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from pathlib import Path

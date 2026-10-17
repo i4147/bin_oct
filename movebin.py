@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the current working directory, identifies all binary files directly within it (ignoring subdirectories), and moves them into a subfolder named "binary" created in that same directory if it does not already exist. For each file moved, the script should report the original filename and its new location. a move fails for any file, it should report the filename and the reason, then continue processing the remaining files. When finished, it should print a summary: either a message indicating that no binary files were found, or the total count of binary files successfully moved. The script should run as a command-line tool and exit cleanly when complete.
----"""
 
 from __future__ import annotations
 from pathlib import Path

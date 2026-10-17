@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -14,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Callable, Optional, Sequence
+
 
 try:
     from rcssmin import cssmin as _rcssmin

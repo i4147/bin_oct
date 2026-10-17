@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for stripping comments and documentation from Rust source files to reduce their size, while keeping the code valid and compilable. The tool should accept one or more file or directory paths as input, recursively discover Rust source files within directories, and process them in parallel to take advantage of multiple CPU cores. For each file, it should remove line comments and block comments while correctly preserving comment-like text that appears inside string literals, raw string literals, and character literals, so that no real code is altered. It should also collapse the leftover blank lines and trailing whitespace that removal creates, without changing the logical structure of the code.
-The tool should support a dry-run mode that reports what would change without modifying any files, and an in-place mode that rewrites files only when the stripped output is different from the original. Users should be able to choose whether to write results back to disk or print summary output. The script should produce a clear, color-coded terminal report showing, for each file, the number of lines removed, the bytes saved, and any errors encountered, followed by an aggregate summary with total files processed, total lines and bytes saved, and a count of failures. Files that cannot be read, decoded, or processed should be reported as errors without stopping the rest of the batch.
-Include sensible command-line options such as a verbose flag for detailed logging, an option to exclude paths matching given patterns, and a way to limit or configure the number of parallel workers. Human-readable file sizes should be shown in the report. Logging should be handled through a standard logging facility with configurable verbosity, and the tool should exit with a nonzero status code if any file failed to process.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,8 +9,10 @@ from pathlib import Path
 import re
 import tokenize
 from typing import TYPE_CHECKING, Final
+
 from dh import fsz
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

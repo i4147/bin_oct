@@ -1,14 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that parses a Markdown document containing multiple file sections and recreates those files on disk. The script should accept a path to a Markdown input file and an output directory as inputs, and treat each level-two heading whose text is a relative file path wrapped in backticks as the start of a new section. Within each section, the script should locate the first fenced code block and extract its contents as the file body, handling both properly closed fences and cases where the closing fence is missing (in which case it should take everything remaining in that section and log a warning). Content that appears outside of fenced blocks under a heading should be ignored, and sections without any code fence should be skipped with a logged warning.
-The script should create any necessary subdirectories under the output directory so that each file lands at its specified relative path, overwrite existing files safely, and avoid writing outside the output directory (guard against absolute paths or path traversal such as "..").
-It should log progress and warnings clearly, print a summary at the end listing how many files were written and how many sections were skipped, and exit with a non-zero status code with a helpful error message if the input file is missing or unreadable. The script should be runnable from the command line with the input and output locations supplied as arguments, and it should preserve the file contents exactly, including indentation, trailing newlines, and line endings where reasonable.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+
 from loguru import logger
+
 
 HEADER_RE: re.Pattern[str] = re.compile(r"^##\s+`([^`]+)`\s*$", re.MULTILINE)
 OPEN_FENCE_RE: re.Pattern[str] = re.compile(r"```[^\n]*\n")

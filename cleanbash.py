@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree (or a set of given paths) for Bash shell scripts and strips out comments from them, rewriting the files in place or writing cleaned copies while preserving the scripts' executable behavior. The tool should identify Bash files either by their file extension (such as .sh or .bash) or by a recognized shell shebang on the first line (covering bash, sh, zsh, and env-based variants). It should use a proper shell-grammar-aware parser so that only genuine comments are removed, while text that merely contains a hash symbol, such as inside quoted strings, here-documents, or parameter expansions, is left untouched. The shebang line itself must be preserved. After removing comments, the tool should collapse excessive runs of consecutive blank lines into a single blank line to keep the output tidy, and it should avoid unnecessary rewrites when a file would not change.
-The script should accept command-line arguments specifying the target paths, support recursive directory traversal, offer a dry-run or check mode that reports which files would change without modifying them, and provide an option to write output to a separate destination instead of overwriting originals. It should process multiple files in parallel to speed up large repositories, report a summary of files scanned, modified, and skipped, handle unreadable or undecodable files gracefully with clear error messages without aborting the whole run, and exit with a non-zero status code when check mode finds files needing changes. Output should be UTF-8 safe and preserve original line endings where possible. Keep the implementation self-contained, cross-platform, and robust to edge cases such as empty files, files with only comments, and files with Windows line endings.
----"""
 
 from __future__ import annotations
 import argparse
@@ -11,8 +8,10 @@ from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING
+
 from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable

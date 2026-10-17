@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 from collections import defaultdict, deque
@@ -20,8 +21,10 @@ import time
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
+
 from bs4 import BeautifulSoup
 import requests
+
 
 DEFAULT_UA = "Mozilla/5.0 (compatible; MergedTools/1.0)"
 _COLORS = {
@@ -210,6 +213,7 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
+
     from loguru import logger
 
     logger.remove()

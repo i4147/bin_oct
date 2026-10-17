@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory of Python source files and reformats the module-level docstring of each file so that it is consistently laid out, one sentence per line. The tool should accept a directory path (or a single file) as input, recursively locate `.py` files, and for each file that has a valid module docstring at the top, rewrite only that docstring: collapse irregular whitespace, split the text into sentences, and place each sentence on its own line, while preserving the original triple-quote style and leaving the rest of the file untouched. Files that cannot be read, that contain syntax errors, that have no module docstring, or where the docstring cannot be located precisely should be skipped without crashing, and the script should report a summary at the end listing how many files were processed, modified, and skipped. The tool should write changes back to disk in place, produce output that remains valid Python, and handle common text encodings gracefully. Include a dry-run option that shows which files would change without modifying them, and provide clear command-line usage with helpful error messages for invalid paths.
----"""
 
 from __future__ import annotations
 import ast

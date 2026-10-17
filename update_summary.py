@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the current working directory and all of its subdirectories for Markdown files, then regenerates a table-of-contents file named SUMMARY.md in the same directory. The script should preserve the existing header section of SUMMARY.md (the leading non-empty lines that appear before the first list entry) and rewrite everything after it with a fresh, alphabetically sorted list of links to every discovered Markdown file. Each link should use a human-readable title derived from the file name (replacing underscores and path separators with spaces and applying title case) and a relative path starting from the current directory. The script should read and write all files using UTF-8 encoding, handle the case where the existing SUMMARY.md has no header lines, and print a short confirmation message to the console stating how many chapters were written. It should run as a standalone command-line tool when executed directly.
----"""
 
 from __future__ import annotations
 from pathlib import Path

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 from collections import defaultdict
 import contextlib
@@ -6,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+
 
 HOME = Path.home()
 ZSHRC = HOME / ".zshrc"

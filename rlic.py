@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory and produces a consolidated, human-readable report of its codebase to help a reviewer or AI assistant understand the project quickly. The tool should be a command-line utility that accepts a root directory path and optional filters (such as file extensions to include or exclude, maximum file size, and whether to include or skip hidden and binary files) and writes its output to standard output or to a specified file.
-Its core behavior should be to walk the directory tree while respecting common ignore patterns (version control folders, virtual environments, caches, build artifacts), classify each file by type, and only read files that are considered text-based. For Python source files, it should analyze the code structurally to extract useful metadata such as the module docstring, top-level classes and functions with their signatures, and imports, while gracefully handling files that fail to parse. For other text files, it should capture the content, optionally stripping or condensing comments and blank lines according to a user option, and it should enforce a configurable size limit with clear truncation markers.
-The report should include a summary section (total files scanned, counts by file type, total lines and approximate size), a directory tree view of the included files, and then per-file sections containing the extracted metadata or content, each clearly delimited with its relative path. File reading and analysis should be performed concurrently to keep large repositories fast, and the tool must handle encoding errors, permission issues, and unreadable files without crashing, reporting them as warnings instead. Provide helpful error messages for invalid arguments and a non-zero exit code on fatal failures. The output format should be plain text or Markdown, selectable by a flag, and should be deterministic so that repeated runs on the same tree produce identical results.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import sys
 from typing import Optional, Sequence
+
 
 DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",

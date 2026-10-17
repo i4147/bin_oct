@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for Rust source code: it recursively scans one or more given paths for Rust (.rs) files, parses each file with a Rust-aware syntax parser, and identifies comments in the source. Its main purpose is to reformat or clean up comments in Rust code, rewriting them so that they are normalized (for example, consistent spacing or style after comment markers), while leaving the actual code, string literals, and doc content untouched.
-The tool should accept command-line arguments that let the user choose the target directory or files, optionally run in a check-only mode that reports which files would changeified diff of pro changes are applied, it should write the updated content back to the original files and report a summary of how many files were examined, how many were modified, and any files that failed to parse or process.
-Processing should be parallelized across multiple worker processes to handle large codebases efficiently, with a configurable number of workers that defaults to a reasonable value. Each file should be handled independently so that an error in one file does not stop the others. The tool should skip hidden files and directories, and should ignore symbolic links and directories themselves, handling only regular Rust source files.
-Logging should provide clear progress and error messages, and the tool should exit with a non-zero status code when check-only mode finds files needing changes or when errors occur, and zero otherwise.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,9 +8,11 @@ from pathlib import Path
 import shutil
 import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_rust
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans invisible and hidden Unicode characters from text files. The tool should accept one or more file paths as command-line arguments; if no paths are given, it should automatically discover the relevant text files in the current working directory, excluding binary files. For each file, it should read the content as UTF-8 (tolerating malformed bytes), remove zero-width characters, non-breaking and soft hyphens, byte-order marks, and bidirectional control characters while preserving newlines and all visible text, and then write the cleaned content back to the same file only if anything was actually removed. The script should report to the user, per file, how many invisible characters were removed or that none were found, and it should handle missing or unreadable files gracefully without stopping the entire run. Keep the implementation simple, dependency-light, and suitable for running from the command line on any operating system.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 from dh import get_nobinary
+
 
 INVISIBLE_CHARS = {
     "\u200b",

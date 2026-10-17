@@ -1,25 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree of Python source files in parallel and collects module-level constant definitions from each file, then writes them into a single consolidated output module while logging any errors encountered.
-The script should:
-- Accept a root directory to scan (for example, the current project folder) and recursively discover all Python source files within it.
-- Process files concurrently to keep scanning fast on large codebases, while remaining robust if individual files fail.
-- For each file, parse its contents safely without executing them, and identify top-level or otherwise simple assignments where the target is a plain name and the assigned value is a literal constant (numbers, strings, booleans, and similar static values). Skip complex expressions, function calls, and dynamic values.
-- Track which file each constant came from so that the output records its origin.
-- Detect duplicate constant names across files and handle them sensibly, for example by keeping the first occurrence and noting conflicts in the log or as comments in the output.
-- Compute a fast content fingerprint for each scanned file so that unchanged files can be recognized and skipped on subsequent runs, avoiding unnecessary re-parsing.
-- Write the collected constants into a single generated Python module inside an output folder, organized clearly with comments indicating the source file for each group, and ensure the output directory is created automatically if it does not exist.
-- Log all parsing, file reading, and unexpected errors to an error log file in the output folder, without interrupting the overall run. Files with syntax errors or encoding problems should be skipped and reported.
-- Provide a summary at the end of the run, such as the number of files scanned, constants extracted, files skipped, and errors encountered.
-- Be runnable as a standalone command-line tool with sensible defaults, and include clear docstrings or comments explaining its behavior.
----"""
 
 from __future__ import annotations
 import ast
 import logging
 import operator
 from pathlib import Path
+
 from joblib import Parallel, delayed
 from xxhash import xxh64
+
 
 OUTPUT_DIR = Path("output")
 OUTPUT_FILE = OUTPUT_DIR / "const.py"

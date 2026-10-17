@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree of Python source files and automatically migrates deprecated `pkg_resources` API usages to their modern standard-library equivalents, based on a set of regex-driven replacement rules. The tool should accept a target path (a single file or a directory) as its main input, walk through all Python files beneath it while skipping common non-source or virtual-environment folders (such as version control, cache, virtual environment, build, and distribution directories), and process files in parallel to speed up large codebases. For each file, it should detect the relevant legacy calls, rewrite them into the corresponding modern forms, and ensure the necessary standard-library imports are added to the file when they are needed and not already present. The script should support a dry-run or preview mode that reports which files would change and what the changes would be without modifying anything, and a normal mode that writes the updated files in place. It should print a clear summary at the end covering how many files were scanned, how many were modified, and how many replacements were made, and it should handle encoding errors, unreadable files, and invalid paths gracefully with informative messages rather than crashing. Provide a command-line interface with sensible flags and help text so users can choose the target path and toggle preview mode, and make the tool safe by preserving the original file content whenever a rewrite cannot be performed confidently.
----"""
 
 from __future__ import annotations
 import argparse
@@ -8,6 +6,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any
+
 
 SKIPPED_DIRS: frozenset[str] = frozenset({
     ".git",

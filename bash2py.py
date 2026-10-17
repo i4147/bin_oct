@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that extracts embedded Python code from shell or bash scripts. The tool should read a bash script (from a file path or standard input), locate every heredoc block that is fed to a Python interpreter (such as `python`, `python3`, or `py`, including variants with options before the heredoc operator), and collect the body of each such block. It should support both plain and tab-stripped heredoc terminators, honor quoted and unquoted delimiter styles, and correctly handle nested or repeated heredocs without confusing unrelated lines of shell code.
-For each extracted block, the script should validate that the content is syntactically valid Python before reporting it, so that malformed or incomplete snippets are flagged rather than silently accepted. Output should be a clear, structured result listing each extracted snippet with its position in the source file (line numbers), the interpreter command that invoked it, and the Python code itself, with the option to write each snippet to a separate `.py` file in a specified output directory or print everything to the console.
-The script should be robust to edge cases such as unterminated heredocs (reporting them as errors with their starting line), empty heredoc bodies, Windows and Unix line endings, and files with no Python heredocs at all (exiting cleanly with an informative message). It should provide a command-line interface with sensible defaults, helpful usage messages, and meaningful exit codes that distinguish success, invalid input, and syntax errors found in extracted code.
----"""
 
 from __future__ import annotations
 import io
@@ -10,6 +6,7 @@ from pathlib import Path
 import re
 import sys
 import tokenize
+
 
 HEREDOC_START_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^;\n]*?)"

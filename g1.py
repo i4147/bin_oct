@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for cloning GitHub repositories (and their submodules) to a local directory, with a pluggable set of backends for performing the actual clone operations. The tool should accept a GitHub repository reference in several common forms (SSH URL, HTTPS URL, or an "owner/name" shorthand), an optional branch, an optional clone depth, a destination path, and a choice of backend, and should default to a sensible backend when none is specified.
-Key behaviors:
-- Normalize the various repository reference formats into a single canonical form before cloning.
-- Resolve the repository's default branch through the GitHub API when no branch is given, falling back to a sensible default such as "master" if the lookup fails or the repository cannot be found.
-- Perform a shallow clone by default (depth of 1), with the depth configurable from the command line.
-- Detect whether a repository is "large" based on its reported size (threshold around 5 MB) and adjust cloning behavior accordingly, such as warning the user or switching to a faster strategy.
-- Recursively initialize and update submodules after cloning, based on the presence of a submodules configuration file, and handle the case where submodules are absent gracefully.
-- Support multiple interchangeable clone backends (for example, the GitHub CLI, the system git executable, and several Python git libraries), all conforming to a common interface so the user can select one via a command-line option. Verify that the chosen backend is available and report a clear error if it is not.
-- Use a consistent, structured logging approach that reports progress, warnings, and errors to the user.
-- Clean up partially created target directories on failure, and exit with a non-zero status code and a clear message when an unrecoverable error occurs.
-- Provide helpful command-line help text describing all arguments, and validate arguments before performing any network or filesystem operations.
-- Handle GitHub API errors (authentication issues, rate limits, nonexistent repositories) with informative messages rather than raw stack traces, and allow an authentication token to be supplied via environment or option.
----"""
 
 from __future__ import annotations
 import argparse
@@ -19,9 +6,11 @@ from pathlib import Path
 import shutil
 import subprocess
 from typing import TYPE_CHECKING, Final, Optional, Protocol
+
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from github.Repository import Repository

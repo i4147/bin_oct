@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes a collection of local files or archives (such as zip or tar files) and produces a consolidated, deduplicated summary of their contents. The tool should accept one or more input paths (files or directories), optionally recurse into directories, and automatically extract sup a temporary workspace before processing. For each text-based file, it should detect character encoding robustly (falling back gracefully when detection is unavailable), normalize the content, and compute a stable content fingerprint so that identical files appearing in different locations or archives are recognized as duplicates. The script should group duplicates together, track every original location where each unique content appears, and skip or flag binary, unreadable, or oversized files with clear warnings rather than crashing. Processing of many files should be parallelized across multiple worker processes to keep runtime reasonable on large inputs, with a progress indicator shown to the user. Logging should use an informative console output that works whether or not optional logging or progress libraries are installed. The final output should be a structured report written to a user-specified file (for example in JSON or CSV form, selectable by the user) listing unique content entries, their duplicate locations, file sizes, detected encodings, and any errors encountered, followed by a short human-readable summary printed to the terminal. The tool should be driven by a command-line interface with clear help text, sensible defaults, and proper exit codes for success, partial failure, and invalid arguments, and it should clean up any temporary extraction directories even when errors occur.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +13,7 @@ import tarfile
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import unquote, urlparse
 import zipfile
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

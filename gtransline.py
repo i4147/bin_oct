@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory for source files and translates any Chinese text found in them into English, while leaving the rest of the code intact. The tool should accept a target directory (and optionally a list of directories or file types to skip) from the command line, and it should ignore common non-source folders such as version control, cache, and virtual or lazily-loaded directories.
-The script should detect whether a given piece of text is predominantly Chinese, using a configurable ratio threshold, so that mixed or mostly-English strings are left alone. Only the Chinese portions of a text should be translated, and the original structure of each file (indentation, quoting, comments, and surrounding code) must be preserved so the result remains valid and runnable.
-Translation should rely on an available third-party translation library, with graceful fallback between alternatives. If no supported translation backend is installed, the script should print a clear installation message and exit with an error code instead of crashing.
-To keep processing fast on large projects, the work should be parallelized across multiple processes, with each worker handling a batch of files and reporting progress or errors back to the main process. The tool should log which files were changed, how many strings were translated, and any failures, using standard logging at an informational level.
-Provide a dry-run option that reports what would be translated without writing any changes, and a backup or safe-write mechanism so that original content is never lost if translation or writing fails partway through. The script should be robust against encoding issues, unreadable files, and API rate limits or network errors, retrying where appropriate and skipping files that cannot be processed while continuing with the rest.
----"""
 
 from __future__ import annotations
 import argparse
@@ -14,6 +8,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Final
+
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)

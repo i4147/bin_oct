@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a project directory for Python source files and checks, and optionally repairs, whether each file contains a proper program entry point. The t directory path as its primary input, along with options to control which directories are skipped (with a sensible default list of common non-source folders such as version control, virtual environment, cache, and build directories), whether to apply fixes, and how many worker processes to use for parallel processing.
-For each Python file found, the script should determine whether the file already has a conventional main guard (the `if __name__ == "__main__":` idiom) and a `main()` function. It should use both a lightweight text-based detection method and a more robust syntax-tree-based analysis, and should handle files that fail to parse gracefully by reporting the error rather than crashing. When a file is missing these elements and fixing is enabled, the script should append a standard, clean template consisting of a `main()` function with a placeholder body and a guarded call that exits with the function's return value, taking care not to duplicate existing elements and to preserve the file's original content and trailing newline conventions.
-The tool should run its analysis concurrently across files for performance, collect per-file results including status, a human-readable message, and processing duration, and then present a summary report. The report should be available in both a readable console format and a machine-readable JSON format selectable via a command-line flag. The script should exit with a non-zero status code when any file fails validation or an error occurs, and zero when all files pass, so it can be integrated into continuous integration pipelines. Include clear help text for all command-line options and robust error handling for unreadable files, encoding issues, and invalid input paths.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +8,7 @@ import multiprocessing as mp
 from pathlib import Path
 import re
 from typing import Literal, Optional, Sequence
+
 
 DEFAULT_EXCLUDES = (
     ".git",

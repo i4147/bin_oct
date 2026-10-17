@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+
 from PIL import Image
 from pyzbar import pyzbar
 

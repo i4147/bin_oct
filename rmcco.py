@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that cleans up Python source files by stripping out comments and docstrings, either across a directory tree or inside wheel (.whl) archives, and reports what it changed.
-The tool should accept a target path (a single file, a folder, or a wheel file) and walk through all Python files it contains, skipping common non-source directories such as version control folders, caches, virtual environments, and dependency folders. Each file should be processed independently and in parallel using a small worker pool to speed up large projects.
-For each file, the script should remove standalone and inline comments and module, class, and function docstrings while preserving the code's valid syntax and behavior. It must verify that the cleaned output still parses as valid Python, and if a transformation would break a file, it should leave that file unchanged and record the error rather than corrupting it.
-When processing a wheel, the script should extract the archive to a temporary location, clean only the Python files inside, repackage the archive with the same structure and file names, and clean up its temporary files afterward. Original files should only be overwritten after successful processing, and the tool should never leave partial output behind.
-Provide a command-line interface with options for the target path, an optional dry-run mode that reports what would change without writing anything, and a verbosity setting for logging. Use structured logging for progress and warnings.
-At the end of a run, print a summary that includes the total number of Python files examined, how many were modified, the counts of removed comments and docstrings, and the number of errors encountered, along with per-file details for any file that changed or failed. The script should exit with a non-zero status code if any errors occurred.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,7 +11,9 @@ import shutil
 import tempfile
 from typing import Final
 import zipfile
+
 from loguru import logger
+
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",

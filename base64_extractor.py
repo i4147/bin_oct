@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import base64 as _b64
@@ -11,6 +12,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator, Optional
+
 
 MIME2EXT: dict[str, str] = {
     "image/png": ".png",

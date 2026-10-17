@@ -1,15 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that loads a word list from a text source, translates each entry into a target language using an external translation service, and saves the results into a JSON dictionary file, while supporting resumption from prior runs.
-The tool should accept a path to an existing JSON translation file and a path to a file recording previously failed words. On startup, it should load any existing translations (rejecting malformed data gracefully with a logged warning rather than crashing) and load the list of previously failed words so those can be retried or skipped as appropriate. Missing or unreadable files should be treated as empty state, not fatal errors.
-For each word that has not already been translated, the script should request a translation, store successful results as key-value pairs mapping the source word to its translation, and record any words that could not be translated into the failed-words file. Progress should be saved periodically so that an interruption does not lose completed work, and the output JSON should be written with UTF-8 encoding and readable indentation, including non-ASCII characters without escaping.
-The script should log its progress and warnings clearly, report a final summary of how many words were translated, skipped, and failed, and handle network or service errors with reasonable retries and backoff before marking a word as failed. It should be safe to rerun at any time, producing no duplicate work and never overwriting good existing translations with empty or error values.
----"""
 
 from __future__ import annotations
 import json
 import logging
 import os
 from pathlib import Path
+
 
 logging.basicConfig(
     level=logging.INFO,

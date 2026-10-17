@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import codecs
@@ -16,6 +17,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import xml.dom.minidom
+
 
 if sys.version_info < (3, 4):
     msg = "PyOCR requires Python 3.4+"

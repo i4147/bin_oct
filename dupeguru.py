@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans one or more directory trees supplied by the user and reports groups of duplicate files, so the user can reclaim disk space. The tool should accept one or more root directories on the command line, plus options to control behavior such as minimum file size, whether to skip common non-content directories (version control folders, dependency caches, build outputs, IDE metadata, and OS trash or system folders), and how many worker processes to use for parallel hashing.
-The script should walk the given directories without following symbolic links, ignoring unreadable entries gracefully and continuing rather than crashing. It should first group candidate files by size, since files of different sizes cannot be identical, and only then compare contents. To keep the process efficient on large datasets, it should use a staged comparison: a quick check on the first portion of each candidate file, followed by a full-content hash only for files that still match. Content hashing should read files in fixed-size chunks so large files never need to fit in memory, and it should run in parallel across available CPU cores where practical.
-The output should list each set of identical files together, showing the file paths, individual sizes in human-readable units (such as KiB, MiB, GiB), and the total reclaimable space that would be freed by keeping one copy per group. Results should be presented in a clear, readable text report, sorted so the largest wasted space appears first. The script should also support an option to write the results to a file in a machine-readable format, and it should exit with a meaningful status code indicating whether duplicates were found, and report errors or permission issues to standard error without interrupting the overall scan. The script should be cross-platform, run from the command line, and handle interruption (such as Ctrl+C) cleanly by reporting partial results or exiting without a traceback.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,6 +9,7 @@ import os
 from pathlib import Path
 import sys
 from typing import Iterable, Iterator
+
 
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16

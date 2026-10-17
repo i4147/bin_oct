@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as an automated multi-layer decoding and cipher-breaking tool for obfuscated or encoded text. The script should accept input either directly as a string argument, from a file, or from a remote URL, and should attempt to recognize and reverse common encoding schemes (such as Base64, hexadecimal, URL encoding, and similar text encodings) as well as common compression formats (such as zlib, gzip, bzip2, and LZMA). Because encodings and compressions can be nested, the tool should repeatedly peel layers until no further valid decoding is detected or a sensible depth limit is reached, recording each step taken.
-For classical substitution ciphers, the tool should attempt brute-force recovery, such as trying all Caesar shifts and ranking candidates by how closely their letter distribution matches typical English letter frequencies, returning the most plausible plaintext alongside a confidence-style score. The script should present results clearly, showing the decoding chain used, the intermediate outputs when requested, and the final best-guess plaintext, with an option to display ranked alternatives. It should handle invalid or non-decodable input gracefully by reporting failure rather than crashing, and should support a verbose logging mode for debugging. Optionally, it should be able to export results to a structured file format such as JSON or CSV. Design the command-line interface so that users can select specific decoders, limit recursion depth, and control output format, whileementation self-contained and robust against malformed input.
----"""
 
 from __future__ import annotations
 import argparse
@@ -19,6 +16,7 @@ from typing import Callable
 import urllib.parse
 import urllib.request
 import zlib
+
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("decoder")

@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line PDF utility for batch processing and analyzing PDF files. The tool should accept one or more input paths, where each path may be a single PDF file or a directory that is searched recursively for PDF files, and should gather all matching PDFs into a single working set before processing.
-The script should provide human-readable file size reporting (automatically scaling units from bytes up to larger units, with sensible decimal formatting and proper handling of negative values), and should be able to report the total size of files or directories, including nested contents.
-It should support running external command-line tools as subprocesses, optionally displaying the executed command and its output, and should be able to run such tools in parallel across multiple files to speed up processing of large PDF collections, with safe handling of errors and failed jobs.
-Key behaviors to include:
-- Recognize and process only valid PDF files, skipping unrelated files silently or with a clear note.
-- Provide a clear command-line interface with arguments for input paths, output location or destination, and options controlling verbosity, parallelism, and any optional processing mode.
-- Read PDF contents and metadata using a PDF-handling library, including page counts, document information, and the ability to extract or transform pages where relevant.
-- Sanitize and safely handle file names, paths, and URL-encoded or special-character names when reading or writing output.
-- Produce a clear summary report at the end showing the number of files processed, successes, failures, total and per-file sizes, and any errors encountered.
-- Handle missing files, permission problems, corrupted or encrypted PDFs gracefully with informative messages rather than crashing.
-- Ensure the tool is robust, cross-platform, and returns meaningful exit codes indicating overall success or failure.
----"""
 
 from __future__ import annotations
 import argparse
@@ -24,6 +12,7 @@ import subprocess
 import sys
 from typing import Iterable, Optional
 import urllib.parse
+
 import pypdf
 import pypdf.generic
 

@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory (recursively) for compressed tar archives and verifies that each archive is intact, reporting the results in a clear summary.
-The tool should:
-- Accept a directory path from the command line and locate all archives whose names end in common tar-based compressed formats, including gzip (.tar.gz and .tgz), xz (.tar.xz), zstandard (.tar.zst), and brotli (.tar.br).
-- For each archive, determine its compression type from the file name and verify integrity by fully decompressing the data stream without extracting files to disk, detecting truncation, corruption, or invalid compression headers.
-- Where the format permits, also validate the tar structure inside the archive so that malformed or incomplete tar contents are flagged as well.
-- Process multiple archives concurrently using a bounded number of worker processes, so large collections are checked efficiently without overwhelming the system.
-- Handle missing external decompression tools or unsupported formats gracefully, reporting them as warnings or skipped items rather than crashing.
-- Report progress and a final summary showing the total number of archives checked, how many passed, how many failed (with the reason for each failure), and any skipped files, with a non-zero exit status if any archive fails verification.
-- Keep memory usage low by streaming data in chunks rather than loading whole archives into memory.
----"""
 
 from __future__ import annotations
 import gzip
@@ -18,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tarfile
+
 
 MAX_WORKERS = 8
 SUPPORTED_EXTENSIONS = {".tar.gz", ".tar.xz", ".tar.zst", ".tar.br", ".tgz"}

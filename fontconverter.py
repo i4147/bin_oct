@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line font conversion utility for batch-processing font files. The tool should accept one or more file or directory paths as input, recursively discover font files of supported formats within those directories (defaulting to the current working directory when no paths are given), and convert them between common web and desktop font formats such as TrueType, OpenType, WOFF, and WOFF2. It should skip or report files that are unsupported or already in the target format, and it should never overwrite existing output files by default, instead generating non-conflicting filenames automatically.
-The script should support command-line options that let the user specify the target format, choose an output directory (or write alongside the source files), and control whether subdirectory structure is preserved in the output. It should be able to process multiple files efficiently, optionally in parallel across available CPU cores, and should display clear progress and a final summary of successes, failures, and skipped files with reasons.
-Where advanced conversion relies on an optional font-manipulation library, the script should detect whether that dependency is installed, degrade gracefully with a helpful message if it is missing, and provide guidance on how to install it. It should also handle errors robustly, such as corrupted fonts, permission problems, or unsupported glyph structures, without crashing the entire batch run. Include a dry-run mode that reports what would be converted without writing any files, and a verbose mode that logs detailed information about each step.
-Finally, the script should exit with a meaningful status code reflecting whether all conversions succeeded, some failed, or the run was aborted, and it should provide built-in help documentation describing all options and usage examples.
----"""
 
 from __future__ import annotations
 import argparse
@@ -12,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 from typing import Callable, Sequence
+
 
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen

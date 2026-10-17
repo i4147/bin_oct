@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line code formatter and linter-style tool for Python source files: it takes one or more file or directory paths as input, recursively discovers Python files (skipping hidden and virtual-environment directories), and applies automated, behavior-preserving source transformations to clean up and standardize the code. The tool should support a dry-run/check mode that reports which files would change without modifying them, a write mode that updates files in place (preserving original encoding, byte-order mark, line endings, and file permissions), and a diff output option that shows unified diffs of the proposed changes. It should process files in parallel for speed, handle files that fail to parse by reporting them without aborting the whole run, and never corrupt a file: changes must be validated so the Python, and writes should be atomic. The tool should expose configurable transformation options (such as line length, string quote normalization, trailing comma handling, and whether to leave comment directives and magic comments untouched), accept these via command-line flags, and produce a summary of results (modified, unchanged, would-modify, skipped, and failed counts) with a non-zero exit code when check mode finds files needing changes or when failures occur. Optionally, it should support machine-readable JSON output of per-file results and a version flag. Log progress and errors clearly, and make the design modular so individual transformation rules can be added or toggled independently.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,9 +16,11 @@ import sys
 import tempfile
 import textwrap
 from typing import ClassVar, Iterable, Iterator, Literal, Sequence
+
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
+
 
 VERSION = "1.0.0"
 UTF8_BOM = b"\xef\xbb\xbf"

@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree (and optionally the contents of archive files such as zip, wheel, tar, and compressed tar variants) for Python source files, detects duplicate code within them, and reports the results. The tool should be a command-line utility that accepts one or more root paths, options for recursion, file filtering, and archive handling, and an output mode selector.
-Core behavior:
-- Discover all Python source files under the given locations, including those packed inside supported archive formats, and read archive contents without requiring extraction to disk.
-- Normalize and fingerprint code so that duplicates are detected even when superficial differences exist, such as whitespace, comments, formatting, or variable naming, while still preserving the structural meaning of the code. Use a parse-based approach where feasible, and fall back gracefully for files that fail to parse.
-- Group files or code blocks that are identical or equivalent under the normalized form, and report each duplicate group with the locations of every member, along with counts and sizes where useful.
-- Support a minimum size or line threshold so that trivial snippets are ignored, and allow the user to exclude paths by pattern.
-- Process files in parallel across multiple CPU cores when the input set is large, while keeping memory use reasonable.
-- Handle compressed or archive inputs robustly: skip corrupt or unreadable entries with a warning instead of aborting the whole run, and never crash on malformed or non-UTF-8 source files.
-- Produce output in human-readable text by default, with an option for machine-readable JSON. Optionally allow writing results to a file, and return a non-zero exit code when duplicates are found if a strict mode is requested.
-- Log progress and warnings clearly, with a verbose option for additional detail. Gracefully degrade if optional logging or compression libraries are unavailable, and report which optional capabilities are active.
-- Keep the implementation self-contained, provide clear help text for all command-line options, and includeals (files scanned, archives processed, duplicate groups found) at the end of each run.
----"""
 
 from __future__ import annotations
 import argparse
@@ -27,6 +15,7 @@ import sys
 import tarfile
 from typing import Iterable, Iterator, Optional
 import zipfile
+
 
 try:
     from loguru import logger

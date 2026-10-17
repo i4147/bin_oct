@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that lists entries in the current working directory whose names contain a user-supplied search text, printing each match as a sorted, bulleted list. The script should accept a single search term as a command-line argument and an optional flag that changes how symbolic links are handled: by default, symbolic links are excluded from the results, but when the flag is provided they are included. Each included symbolic link should be displayed along with the path it points to (fully resolved), while regular files and directories are displayed by name only. If no search term is provided, the script should handle that case gracefully with a brief usage message. The script should only inspect the top level of the current directory (no recursion) and should exit cleanly with a status code when finished.
----"""
 
 from __future__ import annotations
 from pathlib import Path

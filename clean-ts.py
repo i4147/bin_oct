@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a TypeScript/TSX comment stripper and minifier for source files. The tool should accept a directory (or single file) as input, recursively find TypeScript and TSX source files while skipping common dependency, cache, version-control, and build-output folders, and process the files in parallel across available CPU cores to keep runtime low on large codebases.
-For each file, the script should parse the source with a robust syntax-aware parser so that only true comments are removed, while string literals, template literals, regular expressions, and JSX text are left intact. If the parser reports syntax errors in a file, the file must be left unchanged and reported as skipped rather than corrupted. Empty files should pass through untouched.
-After comment removal, the script should optionally minify the remaining JavaScript-style content in a safe manner, using an available minification library when one is installed and falling back gracefully to plain comment removal when it is not. Whitespace and blank-line cleanup should preserve the semantics of the code.
-The tool should support a dry-run mode that reports which files would change along with a unified diff preview, and a normal mode that rewrites files in place. Optionally, it should allow writing output to a separate destination directory while preserving the relative folder structure. Include an option to create backups of original files before overwriting them.
-Provide a clear command-line interface with arguments for the target path, output location, dry-run, backup, worker count, and verbosity. At the end, print a concise summary including the number of files processed, changed, skipped due to errors, total bytes saved, and elapsed time. Handle file encoding errors, permission issues, and interruptions (such as Ctrl+C) gracefully without leaving partially written files behind.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,8 +9,10 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_typescript as ts_ts
+
 
 try:
     import rjsmin

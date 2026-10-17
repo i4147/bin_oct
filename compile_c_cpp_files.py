@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans the current working directory for C and C++ source files (.c and .cpp), compiles each one in parallel using an external compiler command, and reports the outcome of every compilation.
-The script should:
-- Discover all C source files and all C++ source files throughout the directory tree beneath the starting location, and display the directory being scanned before processing begins.
-- Choose an appropriate compiler for each source file type (a C compiler for .c files and a C++ compiler for .cpp files), and produce an executable output placed alongside its source file, named after the source file without its extension.
-- Run compilations concurrently across multiple worker processes to take advantage of multiple CPU cores.
-- Enforce a per-file time limit so that a hanging compilation is terminated and reported as a timeout rather than blocking the whole run.
-- Capture compiler output and error messages, and treat any non-zero exit status as a failure whose error details are shown to the user.
-- Handle unexpected exceptions for individual files gracefully so that one failing file never stops the others from being processed.
-- Print a clear, human-readable status line for each file as results arrive, using distinct markers for success, compilation failure, timeout, and other errors.
-- After all tasks finish, print a concise summary showing the total number of files processed, how many compiled successfully, and how many failed.
-- Run its main logic only when executed directly as a program, and ensure it behaves correctly on all major operating systems.
-The output should be a self-contained, robust command-line tool that requires no arguments and works out of the box in any project directory.
----"""
 
 from __future__ import annotations
 from multiprocessing import Pool

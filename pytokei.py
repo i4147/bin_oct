@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree (or a single file) and produces a summary report of source code composition and documentation coverage. The tool should accept a target path and optional arguments to control output, including a list of directories or patterns to exclude by default (such as version-control folders) and user-supplied exclusions. It should walk through the files, skip binary files by detecting them from their content, and identify each file's programming language based on its extension, covering common languages such as Python, JavaScript, Java, C, C++, HTML, CSS, Ruby, PHP, and Bash/shell.
-For each recognized language, the script should count total lines, blank lines, comment lines, and code lines, using language-appropriate comment markers to classify lines. It should also detect whether a file begins with a recognized shebang line for scripting languages and report that information. Aggregate the results per language and overall, including file counts, line totals, and percentages of the codebase.
-The script should support multiple output formats selectable from the command line, such as a human-readable table in the terminal and a structured machine-readable format written to a file or standard output. It should handle errors gracefully, such as unreadable files, permission issues, or nonexistent paths, by reporting them without crashing and continuing the scan. Include a clear command-line help message describing every option, and provide a non-zero exit status when the target path is invalid. The output should be deterministic, with languages and files sorted consistently, so repeated runs on the same input produce identical reports.
----"""
 
 from __future__ import annotations
 import argparse
 from pathlib import Path
 import re
 from typing import Any, Sequence
+
 
 LANGUAGE_EXTENSIONS: dict[str, list[str]] = {
     "python": [".py", ".pyi"],

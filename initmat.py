@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scaffolds a new Rust-backed Python extension project using the maturin build tool and PyO3 bindings. The script should accept an optional command-line argument for the project name; if none is given, it should default to the name of the current working directory. It must sanitize the chosen name so that every non-alphanumeric character (other than underscores) is replaced with an underscore, and it must verify that the result is a valid Python identifier, exiting with a clear error message if it is not.
-Once the name is resolved, the script should generate the initial file layout in the current directory: a Rust package manifest configured as a dynamic library with Python-extension support and a dependency on the PyO3 crate, plus a starter Rust source file that exposes a simple example function to Python. Additional scaffolding files that a typical maturin project needs (such as a Python packaging configuration, a Python package directory with an initializer that re-exports the compiled module, and any type stub or ignore files) should also be created, following conventional maturin layout.
-Behavior requirements:
-- Print a header line stating the project name and the target directory, then print a confirmation line for each file written, showing its path relative to the current directory.
-- Create any missing parent directories automatically.
-- Write files as UTF-8 text.
-- Keep the generated content syntactically valid for its target language (Cargo/TOML, Rust, Python, and so on) and consistent with the sanitized project name throughout.
-- Provide a clean, user-friendly experience: no stack traces for expected errors, and a non-zero exit status on invalid input.
-- Include a brief usage explanation in the script's help or docstring describing how to run it and what it produces.
----"""
 
 from __future__ import annotations
 from pathlib import Path

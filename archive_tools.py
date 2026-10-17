@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a general-purpose archive extraction and decompression tool. It should accept one or more archive file paths (or a directory to scan recursively) and a destination directory as inputs, detect each archive's format from its file name and/or content, and extract or decompress its contents safely into the destination. Support a wide range of common formats, including zip, tar and compressed tar variants (gzip, bzip2, xz, and similar), single-file compressed streams (gz, bz2, xz, zstd, brotli, lz4), and optionally 7z and rar archives when the required external tools or libraries are available; when a backend is missing, the tool should fall back gracefully or report a clear message rather than crashing.
-The tool should process multiple archives concurrently using a configurable number of worker processes, enforce a configurable per-archive timeout, and display clear progress and a final summary reporting successes, failures, skipped files, and elapsed time. Include a command-line interface with options for the source paths, output directory, job count, timeout, overwrite behavior, whether to delete the original archive after successful extraction, and a dry-run mode that only lists what would be done. Handle errors robustly: skip corrupted or unsupported archives with a logged reason, protect against path traversal and unsafe absolute paths inside archives, create temporary staging directories that are cleaned up reliably, and return a non-zero exit status if any archive failed. Keep the design modular, well-documented, and suitable for use in automated batch-processing pipelines.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +17,7 @@ import tempfile
 import time
 from typing import Iterable, Iterator, Optional, Sequence
 import zipfile
+
 
 try:
     import py7zr

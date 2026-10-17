@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for scanning Python source files and reporting on or safely rewriting their code, operating on a single file, a directory tree, or a zipped archive of Python sources. The tool should walk the target location, skipping common non-source and cache directories (such as version control folders, build caches, and virtual environment or egg-info artifacts), and process each Python file it finds, optionally in parallel across multiple worker processes to keep large codebases fast.
-The core behavior should be a pluggable analysis or transformation engine that can use several parsing backends (for example, a concrete-syntax-tree library, an incremental tree-sitter parser, and the standard library's abstract syntax tree module), trying them in a configurable order and falling back gracefully when an optional backend is not installed, with clear, actionable installation hints for missing dependencies. The tool should read source files robustly, respecting text encodings declared in file headers and tolerating files that are unusually large or unparseable, skipping them with a logged warning rather than crashing.
-Inputs should come from command-line arguments: target paths, the choice of backend(s), the number of workers, and options controlling whether changes are applied in place or only previewed, along with a dry-run or check mode suitable for continuous integration that exits with a non-zero status when issues are found. Outputs should include structured, human-readable progress and results logged through a logging library, a summary of files processed, changed, or flagged, and, when rewriting is enabled, updated source files that preserve original formatting, comments, and line endings wherever possible. Errors in individual files must be isolated so that one failure never aborts the entire run, and the tool should return meaningful exit codes reflecting overall success, detected issues, or fatal errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -25,7 +21,9 @@ import tokenize
 from typing import TYPE_CHECKING
 import warnings
 import zipfile
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     import libcst as cst
@@ -37,6 +35,13 @@ SKIP_DIRS: frozenset[str] = frozenset({
     ".ruff_cache",
     ".pytest_cache",
     "lazy",
+    "pip",
+    "setuptools",
+    "numpy",
+    "scipy",
+    "pandas",
+    "packaging",
+    "numba",
     ".tox",
 })
 SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.egg-info",)

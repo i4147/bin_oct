@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that analyzes the source code of other Python files and reports on import statements that are placed inside nested scopes rather than at the module's top level. The tool should accept one or more file or directory paths as input (recursively scanning directories for Python files), parse each file safely without executing it, and identify every import statement (both standard and "from ... import" forms) that appears within a function, async function, class body, or control-flow block such as loops or conditionals. For each finding, it should report the file path, the line number, the import statement as written, and the enclosing context where it occurs. Handle files that cannot be parsed due to syntax errors gracefully by reporting them without stopping the overall run. The output should be a clear, human-readable summary grouped by file, with a total count at the end, and the tool should exit with a non-zero status code when any non-top-level imports are found so it can be used in automated checks. Include a simple option to output results in a machine-readable format, and make sure the tool handles missing paths and unreadable files with informative error messages.
----"""
 
 from __future__ import annotations
 import ast
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

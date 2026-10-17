@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 import argparse
 from collections import defaultdict
 import json
 import operator
 from pathlib import Path
+
 from dh import get_files
 import ssdeep
 
@@ -45,7 +47,7 @@ def Z(ag, ai=70):
             ab = t[v]
             try:
                 R = ssdeep.compare(aa, ab)
-                if R >= ai:
+                if ai <= R:
                     D.append({
                         "file1": str(Path(u).relative_to(cwd)),
                         "file2": str(Path(v).relative_to(cwd)),

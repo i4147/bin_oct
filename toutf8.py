@@ -1,18 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans a directory tree and converts all text files to UTF-8 encoding in place, using parallel processing to speed up the work across many files.
-The script should accept a target directory path as a command-line argument and walk through all files beneath it. For each file, it should first determine whether the file is binary or unsupported; such files must be skipped and reported as skipped. For text files, it should sample the beginning of the file to automatically detect its character encoding, falling back to UTF-8 when detection is inconclusive or fails. Files already in UTF-8 should be left untouched and reported as such. Files in any other detected encoding should be decoded using that encoding and rewritten as UTF-8, replacing the original content.
-Processing should run concurrently with a bounded number of worker processes (around eight). Each file's outcome should be collected and returned as a result containing the file path, whether a conversion succeeded or was needed, and a human-readable status message describing what happened, including any errors encountered. Errors on individual files must not stop the overall run.
-At the end, the script should log progress and a summary to the console, reporting counts of converted, already-UTF-8, skipped, and failed files, and optionally list the failures in detail. Logging should use a structured logging library, and the script should exit with a clear status code reflecting whether any failures occurred. Include a clear usage message and handle invalid or missing directory arguments gracefully with informative error messages.
----"""
 
 from __future__ import annotations
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
+
 import chardet
 from dh import get_nobinary, is_binary
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

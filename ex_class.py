@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that recursively scans the current working directory for Python source files, skipping hidden directories, any path containing a "site-packages" segment, and an existing output directory. For each file, it should parse the source with a concrete syntax tree parser and extract the full text of all top-level class definitions. Group the extracted class definitions by the folder that contains each file, preserving the relative folder path. The script should create an output directory if it does not already exist, and be designed so that results can be written out per folder (for example, one consolidated text or Python file per folder containing its collected class definitions). Ensure that folders with no class definitions produce no output, that the original source files are never modified, and that files which cannot be read or parsed are handled gracefully without stopping the whole run. Keep the tool self-contained, deterministic in its output ordering, and clear in its console reporting of how many files and classes were processed and where results were saved.
----"""
 
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
+
 from tree_sitter import Language, Parser, Tree
 import tree_sitter_python as tsp
+
 
 parser = Parser()
 parser.language = Language(tsp.language())

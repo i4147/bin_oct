@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a network diagnostics and public-IP reporting utility. The tool should determine the machine's public IP address by querying several independent external IP-lookup services in sequence, falling back to the next service whenever one is unreachable, times out, or returns an unexpected response, and should stop as soon as a valid address is obtained. It should accept command-line options that control behavior such as the output format (plain text or JSON), request timeouts, and whether to include additional network information like the local/private IP addresses, hostname, and connectivity checks to well-known hosts or ports.
-The script should also be capable of running several checks concurrently to keep total runtime low, and should report the latency of each lookup attempt. Where a required external package is not installed, it should still function using only standard-library capabilities, degrading gracefully rather than crashing. Colored terminal output should be used for clear success and failure indication when color support is available, with a plain-text fallback otherwise.
-Inputs are command-line arguments and an optional configuration of endpoints and timeouts. Outputs are a human-readable summary printed to the console, or a structured JSON document when requested, and an optional file export of results with timestamps. The script should return a meaningful exit code reflecting whether the public IP was determined successfully, and it should handle keyboard interrupts and network errors cleanly with clear, user-friendly messages.
----"""
 
 from __future__ import annotations
 import argparse
@@ -20,6 +16,7 @@ import subprocess
 import time
 from typing import Optional, Sequence
 from urllib import request as urlrequest
+
 
 try:
     from colorama import (

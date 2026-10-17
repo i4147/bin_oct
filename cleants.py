@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a multi-language source code comment remover. It should take one or more source file paths or directories as input (with options to recurse into subdirectories, select specific languages, and choose whether to modify files in place or write results to a separate output location), detect each file's programming language from its extension, and parse the code with a syntax-aware parser so that only true comments are removed while string literals, character data, and code structure remain untouched. Support a broad set of languages, including shell scripts, C, C++, CSS, Go, HTML, Java, JavaScript, Python, and similar mainstream languages, with a clear mapping of which comment node types each language uses. The tool should preserve line structure and the surrounding formatting as much as possible, avoid corrupting files, and skip files whose language is unsupported or that fail to parse cleanly. It should process files in parallel across multiple CPU cores when handling many files, and provide a summary report of how many files were processed, modified, skipped, or failed. Include a dry-run mode that shows a unified diff of the proposed changes without writing anything, an optional backup of original files before modification, and clear command-line help with sensible defaults. Handle encoding issues gracefully, report errors per file without stopping the whole run, and exit with a meaningful status code reflecting success, partial failure, or invalid usage.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,6 +15,7 @@ import shlex
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Node, Parser, Tree
 
 

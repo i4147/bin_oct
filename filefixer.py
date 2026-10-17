@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import concurrent.futures
@@ -16,6 +17,7 @@ import tarfile
 import tokenize
 from typing import TYPE_CHECKING, Any, Callable
 import zipfile
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

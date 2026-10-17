@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line wrapper around an external AI agent CLI. The tool accepts a free-form natural-language request from the user, along with an optional timeout setting (defaulting to five minutes), and forwards the request to the agent for processing. It should display a clear status message showing the command being run before execution begins.
-Once the agent responds, the script should scan the returned text for fenced code blocks, preferring blocks explicitly marked as Python but falling back to unlabeled blocks if none are found. It should strip surrounding whitespace from each extracted block and save the code into a dedicated output directory in the user's home folder, creating that directory if it does not exist. Each saved file should receive a unique, timestamped filename so that repeated runs never overwrite earlier results. The script should report the path of each saved file to the user and handle cases where the agent returns no code blocks or fails, providing informative error messages and appropriate exit codes. It should also gracefully handle timeouts and missing external tooling, and display any errors or diagnostic output from the agent in a readable way.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+
 
 SAVE_DIR = os.path.expanduser("~/tmp/apps")
 

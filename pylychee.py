@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree of Markdown and HTML documents, finds every external image and link reference that points to a remote web resource, downloads those resources, and rewrites the documents so they reference local copies instead, producing a self-contained offline version of the documentation.
-The tool should accept a root directory (or a single file) as input and process all Markdown (.md) and HTML (.html, .htm) files found within it. It should recognize image references in Markdown image syntax and in HTML `src` attributes, as well as link references in Markdown link syntax and HTML `href` attributes, and ignore local paths, anchors, and non-HTTP schemes. For each remote URL, it should fetch the content with a configurable network timeout, skip or report failures gracefully without aborting the whole run, and avoid downloading the same URL more than once. Downloaded assets should be saved into a sensible local assets folder next to each document (or a shared folder), with file names derived from the URL and an extension inferred from the URL path or the response's content type, and sanitized to be filesystem-safe and collision-free.
-Downloads should run concurrently using a bounded number of workers to speed up processing of large document sets. The script should preserve the original formatting and surrounding text of each document, replacing only the matched URLs with correct relative paths to the local copies, and should handle URL-encoded characters, query strings, and fragments appropriately. It should support a dry-run mode that reports what would be downloaded and rewritten without modifying any files, a command-line option to limit which asset types are fetched (for example images only), and a summary report at the end listing files processed, assets downloaded, links rewritten, and any errors encountered. Logging should be informative and use a clear verbosity setting. The script should be robust to encoding differences, malformed URLs, and missing files, and should exit with a meaningful status code reflecting whether any errors occurred.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,7 +11,9 @@ from typing import TYPE_CHECKING, Final
 import urllib.error
 from urllib.parse import unquote, urldefrag
 import urllib.request
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

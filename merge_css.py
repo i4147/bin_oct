@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans one or more user-supplied file or directory paths for CSS stylesheets and identifies external web font dependencies, so that those fonts can be processed or reviewed.
-The tool should accept a list of paths on the command line. Each path may be a single CSS file or a directory; when a directory is given, it should recursively discover all CSS files within it in a consistent, sorted order. Duplicate files reached through different paths should be processed only once. Paths that do not exist or are neither files nor directories should be skipped with a clear warning written to the error output, without stopping the run.
-For every collected stylesheet, the script should detect two kinds of remote font references:
-1. Google Fonts style imports declared at the top of a stylesheet (the import-style declarations that point to the Google Fonts API), including variations in spacing and quoting, matched case-insensitively.
-2. Direct font file URLs (WOFF2, WOFF, TTF, OTF, and EOT formats) pointing to http or https locations, whether or not they are quoted.
-The script should report the findings in a readable summary that lists each stylesheet and the font references found in it, along with the count of matches. It should also offer an option to remove the detected Google Fonts import lines from the files in place, and an option to run a dry-run mode that shows what would change without modifying anything. Any external process the tool invokes should be handled safely, with errors reported to the user rather than crashing silently.
-The output should be a command-line tool with helpful usage text, sensible exit codes (zero for success, non-zero when errors occur or no CSS files are found), and clear, concise messages directed to standard output for results and standard error for warnings and failures.
----"""
 
 from __future__ import annotations
 import argparse
@@ -15,6 +7,7 @@ import re
 import subprocess
 import sys
 from typing import Optional
+
 
 GOOGLE_FONTS_RE = re.compile(r"@import\s+url\([^)]+fonts\.googleapis[^)]+\);?", re.IGNORECASE)
 FONT_URL_RE = re.compile(r'url\((["\']?)(https?://[^)]+?\.(?:woff2?|ttf|otf|eot))\1\)', re.IGNORECASE)

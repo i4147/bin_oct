@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that batch-renames SVG font files based on the font identifier declared inside each file. The tool should accept one or more file paths (or a directory of SVG files) as input, and for each SVG file, locate the first font element's identifier attribute within the file contents, then rename the file so that its name matches that identifier with a .svg extension.
-Key behaviors to include:
-- Read each SVG file safely as text, tolerating encoding problems rather than crashing.
-- Search for the font identifier case-insensitively and use the first match; skip files where no such identifier exists, with a clear message explaining why.
-- Sanitize the identifier so it is a valid filename on common operating systems, replacing characters such as angle brackets, colons, quotes, slashes, backslashes, pipes, question marks, and asterisks with underscores, and print a warning whenever sanitization changes the name.
-- Skip entries that are not regular files, reporting them without stopping the run.
-- Handle errors per file so that one failure never aborts processing of the remaining files.
-- Avoid overwriting existing files: if the target name already exists, report the conflict and leave the original file untouched (or apply a clearly reported unique suffix).
-- Print a concise status message for every file processed, renamed, skipped, or failed, plus a final summary of counts.
-- Provide a command-line interface that prints usage guidance when arguments are missing and returns a nonzero exit status if any operation failed.
----"""
 
 from __future__ import annotations
 from pathlib import Path

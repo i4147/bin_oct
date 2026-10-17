@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree and identifies files that should be excluded from some downstream processing (such as code analysis, linting, or indexing), using a configurable set of rules. The script should walk the directory structure starting from a root path provided by the user, skipping well-known tooling, dependency, cache, and version-control directories (for example, git metadata, virtual environments, build outputs, editor settings, and package caches). Within the remaining files, it should classify each file by its extension and filename: certain extensions and specific filenames (such as configuration files, markup and documentation formats, data files, and many language sources that are not the target of processing) must be filtered out, while files whose names or extensions are on an explicit processing list (for example, build files like Makefiles) must be kept or flagged for processing.
-The script should take a root directory and optional settings from the command line, and produce a clear result: a list of the files selected for processing, with an option to output them to the console or to a file, and a summary of how many files were scanned, selected, and skipped. It should handle large directory trees efficiently by taking advantage of parallel processing where it helps, gracefully handle unreadable paths, permission errors, and symbolic links without crashing, and report errors in a concise way. Extension and name matching should be case-insensitive where appropriate, and the set of skipped directories, skipped extensions, skipped filenames, and processed filenames should be easy to extend or override without modifying the core logic. The script should exit with a meaningful status code: zero on success, a non-zero code on invalid input or fatal errors.
----"""
-
 from __future__ import annotations
 import os
 from pathlib import Path
 import sys
+
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -159,12 +156,14 @@ def is_processable(p: Path) -> bool:
 
 
 def is_allowed(p: Path, explicit: bool) -> bool:
+    # Explicit CLI arguments are always allowed regardless of name/ext.
+    # Binary / unreadable files are rejected later inside process_file().
+    if explicit:
+        return True
     if p.suffix.lower() in SKIP_EXTS:
         return False
     if p.name in SKIP_NAMES:
         return False
-    if explicit:
-        return True
     return is_processable(p)
 
 
@@ -207,9 +206,12 @@ def strip_comment(body: str) -> str:
 def process_file(path_str: str) -> tuple[str, int] | None:
     p = Path(path_str)
     try:
+        if not p.is_file():
+            return None
         data = p.read_bytes()
     except OSError:
         return None
+    # Reject binary content (NUL byte is a strong signal).
     if b"\x00" in data:
         return None
     original_size = len(data)
@@ -277,14 +279,15 @@ def collect_files(roots: list[Path]) -> tuple[list[Path], set[str]]:
 
     for root in roots:
         try:
+            # is_file() follows symlinks, so an explicit symlink-to-file works.
+            if root.is_file():
+                add(root, True)
+                continue
             if root.is_symlink():
                 continue
+            if not root.is_dir():
+                continue
         except OSError:
-            continue
-        if root.is_file():
-            add(root, True)
-            continue
-        if not root.is_dir():
             continue
         for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
             kept: list[str] = []
@@ -322,10 +325,31 @@ def main(argv: list[str]) -> int:
         key = os.path.realpath(f)
         if is_allowed(f, key in explicit):
             targets.append(f)
+
     use_color = sys.stdout.isatty()
     green = "\033[32m" if use_color else ""
     reset = "\033[0m" if use_color else ""
     cwd = Path.cwd()
-    results: list[tuple[str, int]] = []
-    if len(targets) == 1:
-        r = process_file(str(targets[0]))
+
+    total = 0
+    for t in targets:
+        r = process_file(str(t))
+        if r is None:
+            continue
+        name, saved = r
+        try:
+            display = str(Path(name).relative_to(cwd))
+        except ValueError:
+            display = name
+        if saved > 0:
+            print(f"{green}{display}{reset}: saved {saved} bytes")
+            total += saved
+        else:
+            print(f"{display}: unchanged")
+    if total:
+        print(f"total saved: {total} bytes")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

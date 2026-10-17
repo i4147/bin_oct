@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line text search-and-replace tool for files in a directory tree. The user supplies a literal search string (not a regular expression), and optionally a replacement string or a flag indicating that matches should be removed entirely. The tool should walk through a specified starting directory (recursively, with an option to limit depth or include/exclude certain file types), skip binary files, and process only text files that contain the search string.
-Key behaviors:
-- Accept command-line arguments for the target directory, the search text, the replacement text (defaulting to an empty string), a removal mode, and a dry-run mode that reports matches without modifying anything.
-- In dry-run mode, report for each affected file the total number of matches and show a short preview of the surrounding context for the first few matches, with newlines collapsed for readability.
-- In normal mode, perform the replacement and write the updated content back to each modified file, reporting which files were changed and how many replacements were made.
-- Handle file reading errors (such as encoding problems or permission issues) gracefully by reporting the problem and continuing with the remaining files rather than crashing.
-- Provide a summary at the end showing the total number of files scanned, files modified (or that would be modified in dry-run), and total matches found.
-- Validate inputs up front: the search text must not be empty, the target path must exist and be a directory, and conflicting options (such as specifying both a replacement and removal mode) should produce a clear error message and a non-zero exit status.
-- Use clear, user-friendly console output with informative messages, and include built-in help text describing each option.
-- Exit with status code 0 on success and a non-zero code on errors or invalid arguments.
----"""
 
 from __future__ import annotations
 import argparse
@@ -17,7 +6,9 @@ import os
 from pathlib import Path
 import re
 import sys
+
 from dh import is_binary
+
 
 MAX_CONTEXT_DISPLAY = 3
 

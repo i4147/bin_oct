@@ -1,611 +1,156 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a command-line tool for discovering and processing SVG image files within a project directory tree, running work in parallel and reporting the results.
-The tool should recursively scan a starting directory (defaulting to the current working directory, with an option to specify another path) and collect all SVG files, while automatically skipping common non-source or generated directories such as version control folders, virtual environments, dependency caches, build outputs, and tooling caches. Traversal should be efficient for large trees.
-For each discovered SVG file, the tool should run an external processing step (for example, an SVG optimization or validation command supplied or configured by the user) and use a configurable number of worker processes to handle files concurrently. Each external run should respect a configurable timeout so that hung processes do not stall the whole job.
-The tool should support a check or verification mode in which it determines whether each file's content would change if processed, without modifying files on disk; it should compare outputs in a memory-efficient, chunked manner and report which files are out of date. A write mode should apply the processed output back to the original files safely, using a temporary file and an atomic replace so that no file is left partially written, and it should preserve the original file permissions.
-The tool should also validate that each SVG is well-formed XML before and/or after processing, reporting parse errors clearly.
-Inputs are command-line arguments: the target directory, mode selection (check or write), worker count, timeout, and the external command to use. Outputs are human-readable progress and summary messages on standard output, per-file error messages on standard error, and a meaningful exit status: zero when all files are clean or successfully processed, and a non-zero status when any file is out of date (in check mode), failed processing, or is malformed. The script should handle keyboard interruption gracefully and clean up any temporary files it created.
----"""
-
 from __future__ import annotations
+
 import argparse
-import contextlib
-from functools import partial
-from multiprocessing import Pool
+import multiprocessing as mp
 import os
-from pathlib import Path
-import stat
+import shutil
 import subprocess
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Final, NamedTuple
-import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterator
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
-cwd = Path.cwd().resolve()
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    "lazy",
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    "__pycache__",
-    "node_modules",
-    ".cache",
-    ".idea",
-    ".vscode",
-    "build",
-    "dist",
-    "target",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
-SVG_SUFFIXES: Final[frozenset[str]] = frozenset({".svg"})
-WALK_CHUNK: Final[int] = 512
-DEFAULT_WORKERS: Final[int] = 8
-IMAP_CHUNKSIZE: Final[int] = 4
-DEFAULT_TIMEOUT: Final[float] = 300.0
-COMPARE_CHUNK: Final[int] = 1 << 16
+SVG_EXTS = {".svg"}
+SKIP_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv", "dist", "build"}
+GREEN = "\033[32m"
+DIM = "\033[2m"
+RESET = "\033[0m"
 
 
-class ProcessResult(NamedTuple):
+@dataclass
+class Result:
     path: Path
-    original_size: int
-    new_size: int
-    stdout: str
-    stderr: str
-    skipped: bool
-    no_change: bool
-    error: str | None
+    before: int
+    after: int
+    status: str
+    detail: str = ""
+
+    @property
+    def saved(self) -> int:
+        return max(self.before - self.after, 0)
 
 
-def walk_files(directory: Path) -> Iterator[Path]:
-    for root, dirs, files in directory.walk():
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for name in files:
-            yield root / name
+def walk_svgs(root: Path) -> Iterator[Path]:
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for name in filenames:
+            p = Path(dirpath) / name
+            if p.suffix.lower() in SVG_EXTS and not p.is_symlink() and p.is_file():
+                yield p
 
 
-def format_bytes(n: int) -> str:
-    sign = "-" if n < 0 else ""
-    value = float(abs(n))
-    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
-        if value < 1024.0 or unit == "TiB":
-            if unit == "B":
-                return f"{sign}{int(value)} B"
-            return f"{sign}{value:.2f} {unit}"
-        value /= 1024.0
-    return f"{sign}{value:.2f} TiB"
-
-
-def _dedupe(path: Path, seen: set[Path]) -> bool:
-    try:
-        key = path.resolve()
-    except OSError:
-        key = path
-    if key in seen:
-        return False
-    seen.add(key)
-    return True
-
-
-def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
-    try:
-        found = list(walk_files(root))
-    except Exception as exc:
-        print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
-        return
-    for start in range(0, len(found), WALK_CHUNK):
-        for path in found[start : start + WALK_CHUNK]:
-            if path.suffix.lower() not in SVG_SUFFIXES:
-                continue
-            try:
-                rel = path.relative_to(root)
-            except ValueError:
-                rel = path
-            if any(part in SKIP_DIRS for part in rel.parts[:-1]):
-                continue
-            try:
-                if path.is_symlink():
-                    continue
-            except OSError:
-                continue
-            if not _dedupe(path, seen):
-                continue
-            yield path
-
-
-def iter_svg_files(roots: Sequence[Path]) -> Iterator[Path]:
-    seen: set[Path] = set()
-    for raw_root in roots:
-        try:
-            if not raw_root.exists():
-                print(
-                    f"warning: path does not exist: {raw_root}",
-                    file=sys.stderr,
-                )
-                continue
-            if raw_root.is_file():
-                if raw_root.is_symlink():
-                    print(
-                        f"warning: skipping symlink: {raw_root}",
-                        file=sys.stderr,
-                    )
-                    continue
-                if raw_root.suffix.lower() in SVG_SUFFIXES and _dedupe(raw_root, seen):
-                    yield raw_root
-                continue
-            if raw_root.is_dir():
-                try:
-                    root = raw_root.resolve()
-                except OSError as exc:
-                    print(
-                        f"warning: cannot resolve {raw_root}: {exc}",
-                        file=sys.stderr,
-                    )
-                    continue
-                yield from _iter_directory(root, seen)
-                continue
-            print(
-                f"warning: not a file or directory: {raw_root}",
-                file=sys.stderr,
-            )
-        except OSError as exc:
-            print(
-                f"warning: cannot inspect {raw_root}: {exc}",
-                file=sys.stderr,
-            )
-
-
-def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
-    if a_size != b_size:
-        return False
-    with a.open("rb") as fa, b.open("rb") as fb:
-        while True:
-            chunk_a = fa.read(COMPARE_CHUNK)
-            chunk_b = fb.read(COMPARE_CHUNK)
-            if chunk_a != chunk_b:
-                return False
-            if not chunk_a:
-                return True
-
-
-def process_file(
+def run_svgo(
     path: Path,
-    *,
-    svgo: str,
-    extra_args: Sequence[str],
+    output: Path,
     multipass: bool,
-    pretty: bool,
-    timeout: float,
-    dry_run: bool,
-) -> ProcessResult:
+    precision: int | None,
+    config: str | None,
+) -> tuple[int, str]:
+    cmd = ["svgo", "-q", "-i", str(path), "-o", str(output)]
+    if multipass:
+        cmd.append("--multipass")
+    if precision is not None:
+        cmd.extend(["--precision", str(precision)])
+    if config:
+        cmd.extend(["--config", config])
     try:
-        target = path.resolve(strict=True)
-    except OSError as exc:
-        return ProcessResult(path, 0, 0, "", "", False, False, f"cannot resolve: {exc}")
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        return -1, "svgo not found"
+    err = (proc.stderr or proc.stdout).strip()[:200]
+    return proc.returncode, err
+
+
+def optimize_one(args: tuple[Path, bool, int | None, str | None, bool]) -> Result:
+    path, multipass, precision, config, dry_run = args
+    tmp_out: Path | None = None
     try:
-        st = target.stat()
-    except OSError as exc:
-        return ProcessResult(path, 0, 0, "", "", False, False, f"cannot stat: {exc}")
-    original_size = st.st_size
-    original_mode = stat.S_IMODE(st.st_mode)
-    tmp_path: Path | None = None
-    try:
-        try:
-            tmp_dir = os.environ.get("TMPDIR")
-            fd, tmp_name = tempfile.mkstemp(
-                prefix=target.stem + ".",
-                suffix=target.suffix + ".tmp",
-                dir=str(tmp_dir),
-            )
-            with contextlib.suppress(OSError):
-                os.close(fd)
-            tmp_path = Path(tmp_name)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"cannot create temp file: {exc}",
-            )
-        cmd: list[str] = [svgo]
-        if multipass:
-            cmd.append("--multipass")
-        if pretty:
-            cmd.append("--pretty")
-        cmd.extend(extra_args)
-        cmd.extend(["-i", str(target), "-o", str(tmp_path)])
-        try:
-            completed = subprocess.run(
-                cmd,
-                capture_output=True,
-                timeout=timeout,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"svgo timed out after {timeout:g}s",
-            )
-        except FileNotFoundError:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"svgo executable not found: {svgo!r}",
-            )
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                "",
-                "",
-                False,
-                False,
-                f"failed to run svgo: {exc}",
-            )
-        stdout = completed.stdout.decode("utf-8", errors="replace")
-        stderr = completed.stderr.decode("utf-8", errors="replace")
-        if completed.returncode != 0:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"svgo exited with status {completed.returncode}",
-            )
-        try:
-            new_size = tmp_path.stat().st_size
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"svgo produced no output: {exc}",
-            )
-        if new_size == 0:
-            return ProcessResult(
-                path,
-                original_size,
-                0,
-                stdout,
-                stderr,
-                False,
-                False,
-                "svgo produced an empty file",
-            )
-        try:
-            ET.parse(tmp_path)
-        except ET.ParseError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"output is not well-formed XML: {exc}",
-            )
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"cannot read output: {exc}",
-            )
-        try:
-            identical = _files_identical(target, tmp_path, original_size, new_size)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"cannot compare files: {exc}",
-            )
-        if identical:
-            return ProcessResult(
-                path,
-                original_size,
-                original_size,
-                stdout,
-                stderr,
-                False,
-                True,
-                None,
-            )
-        if new_size > original_size:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                True,
-                False,
-                None,
-            )
-        if new_size == original_size:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                True,
-                False,
-                None,
-            )
-        if dry_run:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                None,
-            )
-        try:
-            os.chmod(tmp_path, original_mode)
-            os.replace(tmp_path, target)
-        except OSError as exc:
-            return ProcessResult(
-                path,
-                original_size,
-                new_size,
-                stdout,
-                stderr,
-                False,
-                False,
-                f"failed to replace original: {exc}",
-            )
-        tmp_path = None
-        return ProcessResult(
-            path,
-            original_size,
-            new_size,
-            stdout,
-            stderr,
-            False,
-            False,
-            None,
-        )
+        before = path.stat().st_size
+        with tempfile.NamedTemporaryFile(suffix=path.suffix, dir=path.parent, delete=False) as tmp:
+            tmp_out = Path(tmp.name)
+
+        rc, err = run_svgo(path, tmp_out, multipass, precision, config)
+        if rc == -1:
+            return Result(path, before, before, "error", err)
+        if rc != 0:
+            return Result(path, before, before, "error", err or f"exit {rc}")
+
+        after = tmp_out.stat().st_size
+        if after >= before:
+            return Result(path, before, after, "unchanged")
+
+        if not dry_run:
+            shutil.copymode(path, tmp_out)
+            os.replace(tmp_out, path)
+            tmp_out = None
+        return Result(path, before, after, "optimized")
+    except Exception as e:
+        return Result(path, 0, 0, "error", f"{type(e).__name__}: {e}")
     finally:
-        if tmp_path is not None:
-            with contextlib.suppress(OSError):
-                tmp_path.unlink()
+        if tmp_out is not None:
+            try:
+                tmp_out.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
-def _classify(result: ProcessResult, dry_run: bool) -> str:
-    if result.error is not None:
-        return "ERROR"
-    if result.no_change:
-        return "NOCHG"
-    if result.skipped:
-        return "SAME" if result.new_size == result.original_size else "SKIP"
-    if dry_run:
-        return "DRY-RUN"
-    return "OK"
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("-n", "--dry-run", action="store_true")
+    ap.add_argument("--root", default=".")
+    ap.add_argument("--config", default=None, help="path to svgo.config.js")
+    ap.add_argument("--precision", type=int, default=None)
+    ap.add_argument("--no-multipass", action="store_true")
+    args = ap.parse_args()
 
+    if not shutil.which("svgo"):
+        print("Error: svgo not found in PATH. Install with: npm i -g svgo", file=sys.stderr)
+        return 1
 
-def _emit_svgo_output(result: ProcessResult) -> None:
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-        if not result.stdout.endswith("\n"):
-            sys.stdout.write("\n")
-        sys.stdout.flush()
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-        if not result.stderr.endswith("\n"):
-            sys.stderr.write("\n")
-        sys.stderr.flush()
+    root = Path(args.root).resolve()
+    files = list(walk_svgs(root))
+    if not files:
+        print(f"No SVGs found under {root}")
+        return 0
 
+    multipass = not args.no_multipass
+    print(f"Root: {root}")
+    print(
+        f"Files: {len(files)} | multipass: {multipass} | "
+        f"precision: {args.precision or 'default'} | "
+        f"config: {args.config or 'default'} | "
+        f"jobs: {args.jobs} | dry-run: {args.dry_run}"
+    )
+    print("-" * 60)
 
-def _print_status(result: ProcessResult, tag: str) -> None:
-    path = result.path
-    orig = result.original_size
-    new = result.new_size
-    if tag == "OK":
-        saved = orig - new
-        pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[OK]      {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(-{format_bytes(saved)}, -{pct:.1f}%)"
-        )
-    elif tag == "DRY-RUN":
-        saved = orig - new
-        pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[DRY-RUN] {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(would save {format_bytes(saved)}, {pct:.1f}%)"
-        )
-    elif tag == "NOCHG":
-        print(f"[NOCHG]   {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (byte-identical)")
-    elif tag == "SAME":
-        print(f"[SAME]    {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (same size, different bytes)")
-    elif tag == "SKIP":
-        growth = new - orig
-        print(
-            f"[SKIP]    {path.resolve().relative_to(cwd)}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(larger by {format_bytes(growth)})"
-        )
+    tasks = [(p, multipass, args.precision, args.config, args.dry_run) for p in files]
+    total_saved = 0
+    optimized = unchanged = errors = 0
+
+    with mp.Pool(processes=args.jobs) as pool:
+        for r in pool.imap_unordered(optimize_one, tasks):
+            if r.status == "optimized":
+                optimized += 1
+                total_saved += r.saved
+                print(f"{r.path.name} {GREEN}{r.saved}{RESET}")
+            elif r.status == "unchanged":
+                unchanged += 1
+                print(f"{r.path.name} {DIM}unchanged{RESET}")
+            else:
+                errors += 1
+                print(f"{r.path.name} {DIM}error: {r.detail}{RESET}", file=sys.stderr)
+
+    print("-" * 60)
+    if args.dry_run:
+        print(f"Dry run complete. {len(files)} files scanned.")
     else:
-        print(
-            f"[ERROR]   {path.resolve().relative_to(cwd)}  {result.error}",
-            file=sys.stderr,
-        )
-
-
-def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
-    total = sum(counters.values())
-    skipped = counters["SAME"] + counters["SKIP"]
-    print()
-    print("-" * 66)
-    print("Summary")
-    print("-" * 66)
-    print(f"  Processed : {total}")
-    print(f"  Changed   : {counters['OK']}")
-    if counters["DRY-RUN"]:
-        print(f"  Dry-run   : {counters['DRY-RUN']}")
-    print(f"  Unchanged : {counters['NOCHG']}")
-    print(f"  Skipped   : {skipped}")
-    if skipped:
-        print(f"      same-size-different-bytes : {counters['SAME']}")
-        print(f"      larger-output             : {counters['SKIP']}")
-    print(f"  Errored   : {counters['ERROR']}")
-    if total_before:
-        saved = total_before - total_after
-        pct = (saved / total_before * 100.0) if total_before else 0.0
-        print()
-        print(
-            f"  Bytes     : {format_bytes(total_before)} -> "
-            f"{format_bytes(total_after)}  "
-            f"(saved {format_bytes(saved)}, {pct:.1f}%)"
-        )
-    else:
-        print()
-        print("  Bytes     : no size changes")
-
-
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="svgo-optimize",
-        description=(
-            "Optimize SVG files in place using svgo. With no paths, the current directory is walked recursively."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        metavar="PATH",
-        help="Files or directories to process (default: current directory).",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Do not print svgo's own stdout/stderr; only summary lines.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Run and validate, but do not modify any files.",
-    )
-    parser.add_argument(
-        "--multipass",
-        action="store_true",
-        help="Pass --multipass to svgo.",
-    )
-    parser.add_argument(
-        "--pretty",
-        action="store_true",
-        help="Pass --pretty to svgo.",
-    )
-    parser.add_argument(
-        "--svgo",
-        default="svgo",
-        metavar="PATH",
-        help="Path to the svgo executable (default: search PATH).",
-    )
-    parser.add_argument(
-        "--svgo-arg",
-        action="append",
-        default=[],
-        metavar="ARG",
-        help="Extra argument to pass to svgo; may be repeated.",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=DEFAULT_TIMEOUT,
-        metavar="SECONDS",
-        help=f"Per-file svgo timeout (default: {DEFAULT_TIMEOUT:g}s).",
-    )
-    return parser
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
-    roots = [Path(p) for p in args.paths] if args.paths else [Path()]
-    worker = partial(
-        process_file,
-        svgo=args.svgo,
-        extra_args=tuple(args.svgo_arg),
-        multipass=args.multipass,
-        pretty=args.pretty,
-        timeout=args.timeout,
-        dry_run=args.dry_run,
-    )
-    counters: dict[str, int] = {
-        "OK": 0,
-        "DRY-RUN": 0,
-        "NOCHG": 0,
-        "SAME": 0,
-        "SKIP": 0,
-        "ERROR": 0,
-    }
-    total_before = 0
-    total_after = 0
-    files = iter_svg_files(roots)
-    try:
-        with Pool(processes=DEFAULT_WORKERS) as pool:
-            for result in pool.imap_unordered(worker, files, chunksize=IMAP_CHUNKSIZE):
-                if not args.quiet:
-                    _emit_svgo_output(result)
-                tag = _classify(result, args.dry_run)
-                counters[tag] += 1
-                if tag in ("OK", "DRY-RUN"):
-                    total_before += result.original_size
-                    total_after += result.new_size
-                _print_status(result, tag)
-    except KeyboardInterrupt:
-        print("\nInterrupted.", file=sys.stderr)
-        return 130
-    _print_summary(counters, total_before, total_after)
-    return 1 if counters["ERROR"] else 0
+        print(f"Optimized: {optimized} | Unchanged: {unchanged} | Errors: {errors}")
+        print(f"Space freed: {GREEN}{total_saved:,} bytes{RESET} ({total_saved / 1024 / 1024:.2f} MiB)")
+    return 0 if errors == 0 else 2
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

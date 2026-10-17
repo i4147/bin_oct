@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a codebase or archive of Python source files and reports functions and methods that appear to be unused, i.e., candidates for dead code removal. The tool should accept a path to a project directory, a single Python file, or a compressed archive (such as a zip or tar file) and locate all Python source files within it, reading archive contents directly without requiring full extraction to disk.
-The script should parse each Python file into its syntactic structure to collect every function and method definition, along with its location (file and line number). It should then determine which of those definitions are referenced anywhere else in the analyzed code, treating names used in calls, attribute access, and other references as usages. The tool must maintain a built-in exclusion list of conventional entry-point and dunder/magic method names (such as common main/run/start names and Python protocol methods) so that these are never flagged as unused.
-Processing should be efficient for large projects: the work of parsing files should be distributed across multiple worker processes when there are many files, with a visible progress indicator showing completed files, elapsed time, and estimated remaining time in the terminal. Files that fail to parse (syntax errors, encoding issues) should be skipped gracefully with a warning rather than halting the run.
-The output should present a clear, human-readable report listing each potentially unused function or method with its file path and line number, grouped by file and sorted sensibly, along with a summary count of definitions analyzed and flagged. The tool should also support a machine-readable output option (such as JSON) for integration with other tools, and an option to include or exclude specific file patterns or names from analysis. Exit with a status code indicating whether any unused definitions were found, so the tool can be used in continuous integration pipelines.
----"""
 
 from __future__ import annotations
 import ast
@@ -15,8 +10,10 @@ import sys
 import tarfile
 from typing import Iterator
 import zipfile
+
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+
 
 SKIP_NAMES: set[str] = {
     "main",

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that minifies HTML files in a directory tree, producing compact output while preserving the page's behavior and rendering. The tool should accept a source path (a single file or a directory) and an optional output location, walk the directory recursively, and skip common non-source folders such as version control, virtual environment, dependency, cache, IDE, and build directories.
-For each HTML file, the script should parse the document structurally so that inline `<script>` and `<style>` blocks are minified with the appropriate JavaScript and CSS minification rules, HTML comments are removed (while preserving conditional comments if applicable), and redundant whitespace between tags and within text is collapsed, without altering content inside whitespace-sensitive elements such as `<pre>`, `<textarea>`, and similar. Empty files should pass through unchanged. If a file cannot be parsed or minified, the script should fall back to a safe alternative or keep the original content and report the issue rather than crashing.
-Use parallel processing to handle many files efficiently, scaling to the number of available CPU cores, and show progress or a summary at the end. The script should report total files processed, original versus minified sizes, the percentage of savings, and any errors encountered. It should support a dry-run or preview mode that shows what would change, optionally a diff view for a single file, and an in-place mode that overwrites originals while otherwise writing minified copies to the output location, preserving the original directory structure. Optional HTML-level minification via a secondary library should be used when available and gracefully skipped otherwise. Provide clear command-line options, helpful usage messages, and meaningful exit codes for success, partial failure, and invalid input.
----"""
 
 from __future__ import annotations
 import argparse
@@ -13,10 +9,12 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_css as ts_css
 import tree_sitter_html as ts_html
 import tree_sitter_javascript as ts_js
+
 
 try:
     import htmlmin

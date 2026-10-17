@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that generates a large collection of dummy files with randomly chosen extensions inside a target directory, so that the directory can be used to test or stress-test file-handling tools, scanners, or indexers. The script should take a directory path and a file count from the user (with sensible defaults if omitted), create the directory if it does not exist, and produce each file with a unique, random base name. Each file's extension should be drawn at random from a predefined, extensive list of file extensions covering many categories such as source code, archives, audio, video, images, documents, databases, and miscellaneous formats. Files should contain minimal placeholder content, and the script should report how many files were created and where, handling errors such as permission problems or invalid paths gracefully without crashing. Keep the script simple, self-contained, and safe: it should only write within the specified directory and never overwrite existing files.
----"""
 
 from __future__ import annotations
 from pathlib import Path
 from random import choice as random_choice
+
 
 extensions = [
     ".Z",

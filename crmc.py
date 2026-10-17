@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a parallel, in-place source-code modernizer and formatter for Python projects. The tool should accept one or more file or directory paths on the command line, recursively discover Python source files (such as .py, .pyw, and .pyi), and skip common version-control, cache, and virtual-environment directories by default, with the option to add custom exclusion patterns.
-For each discovered file, the script should parse the source into a concrete syntax tree that preserves comments and formatting, apply a set of automated rewrites that upgrade code to a target modern Python version (around Python 3.12), such as adopting newer syntax and idioms where they are safe to do so, and then write the result back only when the content has actually changed. It should support a dry-run mode that prints a unified diff of the proposed changes without modifying files, a check mode that exits with a non-zero status if any file would be changed, and a summary report listing how many files were scanned, changed, skipped, or failed.
-Processing should run across a fixed-size pool of worker processes, with bounded in-flight work to keep memory use under control, and it should handle files with unusual encodings, byte-order marks, or syntax errors gracefully by reporting them without aborting the whole run. Writes should be atomic so that a crash or interruption never leaves a partially written file, and the script should stop cleanly and report progress when interrupted by the user. Logging should be configurable in verbosity, and the tool should return meaningful exit codes for success, changes-detected-in-check-mode, and errors.
----"""
 
 from __future__ import annotations
 import argparse
@@ -24,8 +20,10 @@ import sys
 import tempfile
 import tokenize
 from typing import TYPE_CHECKING, Final, Literal, get_args
+
 import libcst as cst
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

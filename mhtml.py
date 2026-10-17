@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python command-line tool that converts MHTML (MIME HTML web archive) files into standalone HTML documents. The tool should accept one or more input paths, which may be individual .mht/.mhtml files, directories to scan, or glob patterns, and produce HTML output either alongside each source file or in a user-specified output location. It should parse the multipart archive, identify the main HTML document and its embedded resources such as images, stylesheets, scripts, and fonts, and rewrite references within the HTML so that resources are either inlined as data URIs or saved as external files next to the output, with the user choosing between these modes via command-line options. Relative URLs should be resolved against the original page address recorded in the archive, and encoded or quoted-printable content must be decoded correctly, including proper handling of character encodings declared in the archive or the HTML itself. The tool should optionally be able to fetch missing resources from the network when a referenced asset is not present in the archive, with a configurable timeout and a clear opt-in flag, and it should sanitize or skip unwanted elements such as scripts or tracking content when a removal option is requested. Support parallel processing of multiple files with a configurable number of workers, and make the tool robust by logging progress and warnings through a structured logger, continuing past individual file failures while reporting a summary of successes and errors, and returning a non-zero exit code if any conversion failed. Provide a `--version` flag, a verbose/quiet logging control, and a dry-run mode that reports what would be converted without writing files. The tool should also expose its core conversion as an importable function so other Python programs can convert a single file or an in-memory byte string to an HTML string without using the command line.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,8 +20,10 @@ import sys
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Sequence
 from urllib.parse import unquote, urljoin
 from urllib.request import Request, urlopen
+
 from loguru import logger
 from lxml import html as lh
+
 
 if TYPE_CHECKING:
     import os

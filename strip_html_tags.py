@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that splits a large HTML file into chunks and extracts its visible text content in parallel, producing a single clean plain-text output.
-The tool should accept the path to an HTML file (and optionally a number of worker processes and an output destination) from the command line. It should divide the file into roughly equal segments, choosing split points that never fall inside a tag, a comment, or a raw-text region such as script or style blocks, so that each segment can be parsed independently and safely. Each worker should process its segment concurrently, skipping non-visible content such as scripts, styles, templates, noscript sections, and the document head, while preserving readable structure by inserting line breaks around block-level elements like paragraphs, headings, list items, table cells, and dividers. Whitespace should be normalized so the output is tidy, with excessive blank lines collapsed.
-The results from all segments must be reassembled in their original order into one coherent text stream. The final output should be written to a file (using a safe temporary-file-then-replace approach so partial results never overwrite a good output on failure) or to standard output if no destination is given. The tool should handle edge cases gracefully: empty files, files smaller than the requested number of segments, malformed or unclosed HTML, and very large inputs that must not be loaded entirely into memory at once. Provide clear error messages for missing files or invalid arguments, and exit with a non-zero status on failure. Include a brief progress or summary report on completion, such as the number of segments processed and the output size.
----"""
 
 from __future__ import annotations
 from html.parser import HTMLParser
@@ -11,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
+
 
 SKIP_CONTENT_TAGS = {"script", "style", "noscript", "template", "head"}
 BLOCK_TAGS = {

@@ -1,21 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""unflatten.py - restore flattened shell/heredoc/Python transcripts.
-
-Usage:
-    python unflatten.py flattened.txt -o restored.sh
-    python unflatten.py flattened.txt -o restored.sh --extract out_dir
-    cat flattened.txt | python unflatten.py > restored.sh
-"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+from dataclasses import dataclass, field
 import keyword
+from pathlib import Path
 import re
 import sys
-from dataclasses import dataclass, field
-from pathlib import Path
+
 
 # ----------------------------------------------------------------- lexer ---
 _S = (

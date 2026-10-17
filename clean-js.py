@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that acts as a high-performance JavaScript minifier and comment stripper for entire project directories. The tool should accept a root directory (or a single file) as input, recursively find all JavaScript source files, and produce minified output while preserving the original project structure in a separate destination directory.
-Core behavior:
-- Parse each JavaScript file with a robust syntax-aware approach so that comments are removed safely without corrupting string literals, template literals, or regular expressions. If a file contains syntax errors, it must not be silently corrupted; the tool should skip or report such files rather than emit broken output.
-- Remove all comments, collapse unnecessary whitespace, and produce compact output while keeping the code semantically identical.
-- Skip common non-source directories (such as version control folders, virtual environments, dependency folders, IDE settings, and build output folders) by default.
-- Process files in parallel across available CPU cores to handle large codebases efficiently.
-- Optionally use an external minification library if one is installed, falling back gracefully to the built-in approach when it is not available.
-- Copy non-JavaScript files unchanged into the output directory, preserving their relative paths, and skip files that are empty.
-- Support a dry-run or diff-style mode that shows what would change without writing output, and a summary report at the end listing processed, skipped, and failed files along with total size reduction and elapsed time.
-- Accept command-line arguments for input path, output path, worker count, exclusion patterns, and mode selection, with clear help text and sensible defaults.
-- Handle errors per file so that one failure never aborts the entire run, and print progress information to the console.
-- Ensure the output directory is created as needed and that the tool never overwrites the original source files.
----"""
 
 from __future__ import annotations
 import argparse
@@ -22,8 +9,10 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterator
+
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_javascript as ts_js
+
 
 try:
     import rjsmin

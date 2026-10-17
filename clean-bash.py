@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a directory tree for Bash shell scripts (files with a `.sh` extension, or extensionless files whose first line is a shebang referencing bash or sh) and reformats or lints them in place using a Bash-aware syntax parser. The tool should accept a target path (file or directory) from the command line, along with options to control behavior such as a check-only mode that reports which files would change without modifying them, and a diff mode that shows the proposed changes as unified diffs. It should skip hidden files, directories, and symbolic links, and it should process multiple files concurrently using a configurable number of worker processes, with a sensible default. Parsing and formatting should preserve the semantic meaning of each script, leave files unchanged when they are already correctly formatted, and report parse errors for individual files without aborting the entire run. The tool should print a clear summary at the end listing how many files were checked, changed, unchanged, and failed, and it should return a non-zero exit status when check mode finds files needing changes or when any file cannot be processed. Use structured, leveled logging for progress and errors, and handle missing paths and invalid arguments gracefully with helpful messages.
----"""
 
 from __future__ import annotations
 import argparse
@@ -10,9 +8,11 @@ from pathlib import Path
 import shutil
 import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

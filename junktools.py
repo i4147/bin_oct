@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans a user-specified directory tree and identifies files and folders that are considered clutter, junk, or unnecessary, then reports or removes them based on configurable rules. The tool should be a command-line utility that accepts a target path and options controlling what gets matched, whether to perform a dry run, and how aggressively to clean.
-Key requirements:
-- **Purpose:** Help users reclaim disk space and tidy directories by detecting platform-specific junk files (such as Windows system and executable artifacts, macOS metadata like hidden service files and resource forks), common build or cache artifacts (compiled bytecode, linter and type-checker caches, logs, backup files), and temporary or dump-like files in certain system-style folders.
-- **Inputs:** A root directory path plus command-line flags, such as selecting which categories to target (Windows, macOS, cache, or all), excluding specific paths or patterns, enabling a dry-run or preview mode, requiring confirmation before deletion, and optionally limiting scan depth or enabling verbose output.
-- **Outputs:** A human-readable report listing matched files and directories, grouped by category, with total counts and cumulative sizes formatted in readable units (bytes, KB, MB, GB, TB). When not in dry-run mode, the matched items are deleted, and the tool reports how much space was freed and any items that could not be removed.
-- **Behavior:** Walk the directory tree efficiently, handle permission errors and missing paths gracefully without crashing, skip symbolic links safely to avoid loops or escaping the target root, and never touch items outside the specified root. Protect against accidental destructive runs by defaulting to preview mode or requiring explicit confirmation. Optionally parallelize the scan for large trees and use terminal-friendly output with clear progress indication. Exit with meaningful status codes indicating success, partial failure, or invalid input.
-- **Robustness:** Validate inputs up front, produce clear error messages for invalid paths or conflicting options, and ensure the tool works across Windows, macOS, and Linux.
----"""
 
 from __future__ import annotations
 import argparse
@@ -18,6 +10,7 @@ import select
 import shutil
 import sys
 from typing import Iterator, Optional, Sequence
+
 
 _WIN_EXTS = {".exe", ".dll", ".bat", ".com", ".msi", ".vbs", ".ps1"}
 _MAC_EXTS = {".dmg", ".app", ".ds_store", ".plist", ".pkg"}

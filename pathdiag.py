@@ -1,19 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that scans the directories listed in the system's executable search path (the PATH environment variable), identifies executable files, and reports duplicate executables, meaning programs with the same name that appear in more than one location. The tool should work from the command line and be designed for read-only inspection by default.
-Requirements:
-- Read the search path from the environment, ignore empty or invalid entries, and skip directories that do not exist or cannot be read.
-- For each directory, detect regular files that have execute permission for the current user, and group them by their base name.
-- Identify names that occur more than once across the search path, and for each duplicate group show every location where it was found in search-path order, so the user can see which copy would be run first.
-- Compute a content fingerprint (a cryptographic hash) for each candidate file so that identical copies can be distinguished from genuinely different binaries. Handle empty files, unreadable files, and large files gracefully without loading entire files into memory.
-- Distinguish between duplicates that are byte-identical and those whose contents differ, and clearly label each group accordingly.
-- Resolve symbolic links sensibly, avoid double-counting the same physical file reached through different paths, and avoid following symlink loops.
-- Accept command-line options to: set a custom list of directories instead of using PATH, filter results by a name pattern, show only conflicting names (or show all executables), choose between human-readable and machine-readable (e.g., JSON) output, and enable a verbose mode that reports skipped directories and errors.
-- Print a concise summary at the end: total directories scanned, total executables found, number of duplicate names, and number of identical versus differing duplicates.
-- Never modify, move, or delete any files. Return a meaningful exit status: zero when no conflicts are found, non-zero when conflicts exist, and a distinct error code for invalid arguments or fatal failures.
-- Write clear error messages to standard error and keep standard output reserved for the report, so the output can be piped into other tools.
-- Include a help message describing every option and a short usage example.
-- Keep the implementation self-contained, portable across Unix-like systems, and robust against permission errors, broken symlinks, and unexpected file system conditions.
----"""
 
 from __future__ import annotations
 import argparse

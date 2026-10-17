@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Write a Python script that merges partial translation results into a single persistent English-to-Persian dictionary file, while tracking words that failed to translate.
-The tool should work inside a configurable base directory and accept configurable file names for the dictionary output and the failed-words list. On each run, it should first load any existing dictionary and failed-words record that are already present, handling missing files, corrupted JSON, and unreadable files gracefully by warning the user and starting fresh where appropriate. Report clearly how many existing entries were loaded and how many prior failures were found.
-Its main job is to combine newly produced translation results (gathered from separate translation batch outputs in the same folder) with the existing dictionary, so that no previously saved translation is lost and duplicate or conflicting entries are resolved in a consistent, documented way. Newly translated words that were previously marked as failed should be removed from the failed list, and words that still fail should be recorded so they can be retried later. The final merged dictionary should be saved as clean, human-readable UTF-8 JSON that preserves Persian text correctly, and the failed-words list should be saved as a plain text file with one word per line, without duplicates and in a stable order.
-The script should print friendly, emoji-enhanced progress messages summarizing what was loaded, merged, added, updated, and remaining as failures, and it should finish with a concise final summary. It should be robust to interruptions, avoid writing partial or corrupted output files (for example, by writing to a temporary file and then replacing the original), and be runnable directly from the command line with sensible defaults.
----"""
 
 from __future__ import annotations
 import json
