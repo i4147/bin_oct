@@ -7,7 +7,6 @@ import sys
 import tempfile
 from typing import Final, Sequence
 import unicodedata
-
 MAX_LEN: Final[int] = 120
 BREAK_PUNCTS: Final[list[str]] = [",", ";", ":", "?"]
 WS_PATTERN: Final[re.Pattern[str]] = re.compile(r"[\u00A0\u2000-\u200F\u2028\u2029\u202F\u205F\u3000\uFEFF]")
@@ -15,8 +14,6 @@ ZW_PATTERN: Final[re.Pattern[str]] = re.compile(r"[\u200B-\u200D\uFEFF]")
 SENT_PATTERN: Final[re.Pattern[str]] = re.compile(r"[^.!]+[.!]", re.MULTILINE | re.DOTALL)
 PARA_SPLIT: Final[re.Pattern[str]] = re.compile(r"\n\s*\n", re.MULTILINE)
 SENT_SPLIT: Final[re.Pattern[str]] = re.compile(r"(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|!)\s+")
-
-
 def _clean_file(filename: Path) -> None:
     try:
         text = filename.read_text(encoding="utf-8")
@@ -27,13 +24,9 @@ def _clean_file(filename: Path) -> None:
         print(f"Error: The file '{filename}' was not found.")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-
 def cmd_clean(args: argparse.Namespace) -> int:
     _clean_file(Path(args.filename))
     return 0
-
-
 def _normalize_line(line: str) -> str:
     text = unicodedata.normalize("NFKC", line)
     text = "".join(ch for ch in text if ch.isprintable())
@@ -41,8 +34,6 @@ def _normalize_line(line: str) -> str:
     text = text.casefold()
     text = "_".join(text.split())
     return text
-
-
 def _normalize_file_in_place(path: Path) -> None:
     with (
         path.open("r", encoding="utf-8", newline="") as source,
@@ -61,8 +52,6 @@ def _normalize_file_in_place(path: Path) -> None:
             content = line.rstrip("\n")
             temporary.write(_normalize_line(content) + "\n")
     temporary_path.replace(path)
-
-
 def cmd_normalize_lines(args: argparse.Namespace) -> int:
     input_path = Path(args.filename)
     if not input_path.is_file():
@@ -74,15 +63,11 @@ def cmd_normalize_lines(args: argparse.Namespace) -> int:
         print(f"Error: {input_path} is not valid UTF-8.", file=sys.stderr)
         return 1
     return 0
-
-
 def _normalize_white_space(input_path: Path) -> None:
     text = input_path.read_text(encoding="utf-8", errors="ignore")
     cleaned = WS_PATTERN.sub(" ", text)
     cleaned = ZW_PATTERN.sub("", cleaned)
     input_path.write_text(cleaned, encoding="utf-8")
-
-
 def cmd_norm_white(args: argparse.Namespace) -> int:
     path = Path(args.filename)
     if not path.is_file():
@@ -90,13 +75,9 @@ def cmd_norm_white(args: argparse.Namespace) -> int:
         return 1
     _normalize_white_space(path)
     return 0
-
-
 def _split_sentences(text: str) -> list[str]:
     sentences = SENT_PATTERN.findall(text)
     return [s.strip() for s in sentences if s.strip()]
-
-
 def _break_long_sentence(sentence: str, max_len: int = MAX_LEN) -> list[str]:
     parts: list[str] = []
     while len(sentence) > max_len:
@@ -112,16 +93,12 @@ def _break_long_sentence(sentence: str, max_len: int = MAX_LEN) -> list[str]:
     if sentence:
         parts.append(sentence.strip())
     return parts
-
-
 def _restructure_paragraph(paragraph: str) -> str:
     sentences = _split_sentences(paragraph)
     lines: list[str] = []
     for s in sentences:
         lines.extend(_break_long_sentence(s, MAX_LEN))
     return "\n".join(lines)
-
-
 def _restructure_file(path: Path) -> None:
     backup = path.with_suffix(path.suffix + ".bak")
     text = path.read_text(encoding="utf-8", errors="ignore")
@@ -130,8 +107,6 @@ def _restructure_file(path: Path) -> None:
     new_paragraphs = [_restructure_paragraph(p) for p in paragraphs]
     new_text = "\n\n".join(new_paragraphs) + "\n"
     path.write_text(new_text, encoding="utf-8")
-
-
 def cmd_reformat_text(args: argparse.Namespace) -> int:
     file_arg = Path(args.filename)
     if not file_arg.exists():
@@ -139,8 +114,6 @@ def cmd_reformat_text(args: argparse.Namespace) -> int:
         return 1
     _restructure_file(file_arg)
     return 0
-
-
 def _restructure_text_file(path: Path) -> None:
     if not path.is_file():
         print(f"Error: File not found at {path}")
@@ -197,14 +170,10 @@ def _restructure_text_file(path: Path) -> None:
         print(f"File successfully restructured: {path}")
     except Exception as e:
         print(f"Error writing to file {path}: {e}")
-
-
 def cmd_reformatext(args: argparse.Namespace) -> int:
     path = Path(args.filename)
     _restructure_text_file(path)
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texttools")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -224,8 +193,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_rex.add_argument("filename")
     p_rex.set_defaults(func=cmd_reformatext)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -234,7 +201,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

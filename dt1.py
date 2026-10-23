@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
@@ -13,7 +12,6 @@ import threading
 import time
 from typing import Callable
 from loguru import logger
-
 Translator = Callable[[str], str]
 FALLBACK_BACKENDS = (
     "deepl",
@@ -35,18 +33,13 @@ LANGUAGE_ALIASES: dict[str, str] = {
     "pt-br": "pt",
     "pt_br": "pt",
 }
-
-
 class TranslationError(RuntimeError):
     pass
-
-
 class RequestLimiter:
     def __init__(self, delay: float) -> None:
         self.delay = max(0.0, delay)
         self._lock = threading.Lock()
         self._next_request_time = 0.0
-
     def wait(self) -> None:
         with self._lock:
             now = time.monotonic()
@@ -54,31 +47,22 @@ class RequestLimiter:
             if wait_for > 0:
                 time.sleep(wait_for)
             self._next_request_time = time.monotonic() + self.delay
-
-
 class SerializedTranslator:
     def __init__(self, translator: Translator) -> None:
         self._translator = translator
         self._lock = threading.Lock()
-
     def __call__(self, text: str) -> str:
         with self._lock:
             return self._translator(text)
-
-
 def normalize_language(language: str) -> str:
     cleaned = language.strip()
     return LANGUAGE_ALIASES.get(cleaned.lower(), cleaned)
-
-
 def _deep_translator_language(language: str) -> str:
     code = normalize_language(language)
     return {
         "zh-CN": "zh-CN",
         "zh-TW": "zh-TW",
     }.get(code, code)
-
-
 def _deepl_language(language: str) -> str:
     code = normalize_language(language).upper()
     return {
@@ -87,65 +71,44 @@ def _deepl_language(language: str) -> str:
         "ZH-CN": "ZH-HANS",
         "ZH-TW": "ZH-HANT",
     }.get(code, code)
-
-
 def _google_language(language: str) -> str:
     return normalize_language(language).lower().replace("_", "-")
-
-
 def _make_deep_translator(source: str, target: str) -> Translator:
     from deep_translator import GoogleTranslator
-
     source_code = _deep_translator_language(source)
     target_code = _deep_translator_language(target)
-
     def translate(text: str) -> str:
         client = GoogleTranslator(source=source_code, target=target_code)
         return str(client.translate(text))
-
     return translate
-
-
 def _make_deepl(source: str, target: str) -> Translator:
     import deepl
-
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
         msg = "DEEPL_API_KEY is not set"
         raise RuntimeError(msg)
     client = deepl.DeepLClient(api_key)
     target_code = _deepl_language(target)
-
     def translate(text: str) -> str:
         del source
         result = client.translate_text(text, target_lang=target_code)
         return str(result.text if hasattr(result, "text") else result)
-
     return translate
-
-
 def _make_translate(source: str, target: str) -> Translator:
     from translate import Translator as TranslateClient
-
     source_code = normalize_language(source)
     target_code = normalize_language(target)
-
     def translate_text(text: str) -> str:
         client = TranslateClient(
             from_lang=source_code,
             to_lang=target_code,
         )
         return str(client.translate(text))
-
     return translate_text
-
-
 def _make_translators_bing(source: str, target: str) -> Translator:
     import translators
-
     source_code = _google_language(source)
     target_code = _google_language(target)
-
     def translate_text(text: str) -> str:
         result = translators.translate_text(
             query=text,
@@ -154,38 +117,25 @@ def _make_translators_bing(source: str, target: str) -> Translator:
             to_language=target_code,
         )
         return str(result)
-
     return translate_text
-
-
 def _make_googletrans(source: str, target: str) -> Translator:
     from googletrans import Translator as GoogleTransClient
-
     source_code = _google_language(source)
     target_code = _google_language(target)
-
     def translate_text(text: str) -> str:
         client = GoogleTransClient()
         result = client.translate(text, src=source_code, dest=target_code)
         return str(result.text)
-
     return SerializedTranslator(translate_text)
-
-
 def _make_pygoogletranslation(source: str, target: str) -> Translator:
     from pygoogletranslation import Translator as PyGoogleTranslator
-
     source_code = _google_language(source)
     target_code = _google_language(target)
-
     def translate_text(text: str) -> str:
         client = PyGoogleTranslator()
         result = client.translate(text, src=source_code, dest=target_code)
         return str(getattr(result, "text", result))
-
     return SerializedTranslator(translate_text)
-
-
 BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "deep_translator": _make_deep_translator,
     "deepl": _make_deepl,
@@ -194,8 +144,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "googletrans": _make_googletrans,
     "pygoogletranslation": _make_pygoogletranslation,
 }
-
-
 def configure_logging() -> None:
     logger.remove()
     logger.add(
@@ -214,8 +162,6 @@ def configure_logging() -> None:
         backtrace=False,
         diagnose=False,
     )
-
-
 def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         msg = "chunk size must be greater than zero"
@@ -245,8 +191,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
             chunks.append(candidate)
         remaining = remaining.lstrip()
     return chunks
-
-
 def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
     if not continue_run or not path.exists():
         return {}
@@ -260,8 +204,6 @@ def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
         msg = f"existing output {path} must contain a JSON object"
         raise RuntimeError(msg)
     return {str(index): str(value) for index, value in data.items() if isinstance(value, str)}
-
-
 def atomic_save(path: Path, translations: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_name: str | None = None
@@ -291,18 +233,12 @@ def atomic_save(path: Path, translations: dict[str, str]) -> None:
         if temporary_name is not None:
             with contextlib.suppress(FileNotFoundError):
                 os.unlink(temporary_name)
-
-
 def append_failed(path: Path, chunk_index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as file:
         file.write(f"{chunk_index}\n")
-
-
 def is_identity_translation(source: str, translated: str) -> bool:
     return source.strip().casefold() == translated.strip().casefold()
-
-
 def choose_backend(requested: str | None) -> str:
     if requested:
         if requested == "auto":
@@ -339,8 +275,6 @@ def choose_backend(requested: str | None) -> str:
     packages = ", ".join(FALLBACK_BACKENDS)
     msg = f"no translation backend is installed; install one of: {packages}"
     raise RuntimeError(msg)
-
-
 def translate_one(
     index: int,
     text: str,
@@ -378,8 +312,6 @@ def translate_one(
                 time.sleep(2 ** (attempt - 1))
     msg = f"chunk {index} failed after {attempts} attempts: {last_error}"
     raise TranslationError(msg)
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Translate a text file in resumable chunks.")
     parser.add_argument(
@@ -450,8 +382,6 @@ def parse_args() -> argparse.Namespace:
         help="Ignore an existing output file and start from scratch.",
     )
     return parser.parse_args()
-
-
 def validate_args(args: argparse.Namespace) -> None:
     if not 1 <= args.workers <= 2:
         msg = "--workers must be between 1 and 2"
@@ -465,16 +395,12 @@ def validate_args(args: argparse.Namespace) -> None:
     if args.save_every <= 0:
         msg = "--save-every must be greater than zero"
         raise ValueError(msg)
-
-
 def read_input(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except OSError as exc:
         msg = f"cannot read input file {path}: {exc}"
         raise RuntimeError(msg) from exc
-
-
 def run(args: argparse.Namespace) -> int:
     validate_args(args)
     input_path = Path(args.input)
@@ -557,8 +483,6 @@ def run(args: argparse.Namespace) -> int:
         return 1
     logger.debug("All {} chunks translated successfully", len(chunks))
     return 0
-
-
 def main() -> int:
     configure_logging()
     try:
@@ -570,7 +494,5 @@ def main() -> int:
     except Exception as exc:
         logger.error("Fatal error: {}", exc)
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

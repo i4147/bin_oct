@@ -5,8 +5,6 @@ import sys
 from dh import get_files, mpf
 from docutils.core import publish_parts
 from markdownify import markdownify
-
-
 def rst_to_html(content: str) -> str:
     try:
         parts = publish_parts(
@@ -23,8 +21,6 @@ def rst_to_html(content: str) -> str:
     except Exception as e:
         print(f"Conversion error details: {e}")
         raise
-
-
 def process_file(path):
     path = Path(path)
     content = path.read_text(encoding="utf-8")
@@ -33,8 +29,6 @@ def process_file(path):
     md_path = path.with_suffix(".md")
     md_path.write_text(md_content, encoding="utf-8")
     path.unlink()
-
-
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -43,7 +37,5 @@ def main() -> None:
         process_file(files[0])
         sys.exit(1)
     mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

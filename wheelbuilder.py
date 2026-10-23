@@ -10,39 +10,28 @@ import sys
 import tarfile
 import tempfile
 from typing import Optional
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 LOCAL_WHEELS = Path("/sdcard/whl")
-
-
 def normalize(name: str) -> str:
     return name.lower().replace("-", "_").replace(".", "_")
-
-
 def source_pkg_name(source_name: str) -> str:
     stem = source_name
     stem = stem.removesuffix(".tar.gz")
     if "-" in stem:
         return stem.rsplit("-", 1)[0]
     return stem
-
-
 def is_already_built(wheels_dir: Path, source_name: str) -> bool:
     if not wheels_dir.exists():
         return False
     target = normalize(source_pkg_name(source_name))
     return any(normalize(whl.name.split("-")[0]) == target for whl in wheels_dir.glob("*.whl"))
-
-
 def has_rust_backend(pkg_dir: Path) -> bool:
     cargo_toml = pkg_dir / "Cargo.toml"
     if cargo_toml.exists():
         logger.info(f"  -> Rust backend detected in {pkg_dir.name}")
         return True
     return False
-
-
 def cleanup_build_artifacts(pkg_dir: Path) -> None:
     dirs_to_remove = [
         pkg_dir / "build",
@@ -66,8 +55,6 @@ def cleanup_build_artifacts(pkg_dir: Path) -> None:
                 logger.debug(f"  -> Removed {pattern.name}")
             except Exception as e:
                 logger.warning(f"  ! Failed to remove {pattern.name}: {e}")
-
-
 def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
     cmd = [
         sys.executable,
@@ -84,8 +71,6 @@ def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
         str(target),
     ]
     return cmd
-
-
 def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {pkg_dir.name}")
     wheels_dir = Path.cwd() / "wheels"
@@ -123,8 +108,6 @@ def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
         return pkg_dir, "Build timeout (>300s)"
     except Exception as e:
         return pkg_dir, f"Error: {e!s}"
-
-
 def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {tar_gz_file.name}")
     wheels_dir = Path.cwd() / "wheels"
@@ -164,8 +147,6 @@ def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
             return tar_gz_file, "Build timeout (>300s)"
         except Exception as e:
             return tar_gz_file, f"Error: {e!s}"
-
-
 def is_valid_package_dir(path: Path) -> bool:
     if not path.is_dir():
         return False
@@ -176,8 +157,6 @@ def is_valid_package_dir(path: Path) -> bool:
         (path / "PKG-INFO").exists(),
     ])
     return has_metadata
-
-
 def build_from_directories() -> None:
     current_dir = Path.cwd()
     pkg_dirs = sorted([d for d in current_dir.iterdir() if is_valid_package_dir(d)])
@@ -227,8 +206,6 @@ def build_from_directories() -> None:
             logger.info(f"  - {wheel.name} ({size_mb:.2f} MB)")
     else:
         logger.warning("No wheels were built")
-
-
 def build_from_tar_gz() -> None:
     current_dir = Path.cwd()
     tar_gz_files = sorted(current_dir.glob("*.tar.gz"))
@@ -277,8 +254,6 @@ def build_from_tar_gz() -> None:
             logger.info(f"  - {wheel.name} ({size_mb:.2f} MB)")
     else:
         logger.warning("No wheels were built")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build Python wheels from package sources",
@@ -305,7 +280,5 @@ Examples:
         logger.info("Mode: Building from extracted subdirectories")
         logger.info("=" * 70 + "\n")
         build_from_directories()
-
-
 if __name__ == "__main__":
     main()

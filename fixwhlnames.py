@@ -9,7 +9,6 @@ import shutil
 from typing import Any, Final
 import zipfile
 from loguru import logger
-
 WHEEL_SUFFIX: Final[str] = ".whl"
 METADATA_SUFFIX: Final[str] = ".dist-info/METADATA"
 WHEEL_METADATA_SUFFIX: Final[str] = ".dist-info/WHEEL"
@@ -30,8 +29,6 @@ CP3_PATTERN: Final[re.Pattern[str]] = re.compile(r"cp3[0-9]")
 TAG_LINE_PATTERN: Final[re.Pattern[str]] = re.compile(r"Tag: (.*?)-(.*?)-")
 Metadata = dict[str, str]
 Tags = tuple[str, str, str]
-
-
 def extract_metadata_from_wheel(wheel_path: Path) -> Metadata | None:
     try:
         with zipfile.ZipFile(wheel_path, "r") as zf:
@@ -55,8 +52,6 @@ def extract_metadata_from_wheel(wheel_path: Path) -> Metadata | None:
     except Exception as e:
         logger.error("Error reading {}: {}", wheel_path.name, e)
         return None
-
-
 def extract_wheel_tags(filename: str) -> Tags | None:
     for pattern in TAG_PATTERNS:
         match = re.search(pattern, filename)
@@ -67,8 +62,6 @@ def extract_wheel_tags(filename: str) -> Tags | None:
         if py_match:
             return py_match.group(0), "none", "any"
     return None
-
-
 def reconstruct_wheel_name(wheel_path: Path, metadata: Metadata, original_filename: str) -> str | None:
     name = metadata["name"]
     version = metadata["version"]
@@ -95,8 +88,6 @@ def reconstruct_wheel_name(wheel_path: Path, metadata: Metadata, original_filena
         wheel_path.name,
     )
     return f"{name}-{version}-py3-none-any.whl"
-
-
 def _process_single_file(path: Path, dry_run: bool, backup_dir: Path | None) -> tuple[bool, str | None]:
     print("[{}] Processing", path.name)
     metadata = extract_metadata_from_wheel(path)
@@ -123,8 +114,6 @@ def _process_single_file(path: Path, dry_run: bool, backup_dir: Path | None) -> 
     except OSError as e:
         logger.error("Error renaming {}: {}", path.name, e)
         return False, path.name
-
-
 def fix_whl_files_by_metadata(directory: str = ".", dry_run: bool = True, backup: bool = True) -> tuple[int, list[str]]:
     path = Path(directory)
     whl_files = sorted(path.glob(f"*{WHEEL_SUFFIX}"))
@@ -160,16 +149,12 @@ def fix_whl_files_by_metadata(directory: str = ".", dry_run: bool = True, backup
     if dry_run and renamed_count > 0:
         print("Dry run complete. Run with --apply to apply changes.")
     return renamed_count, failed_files
-
-
 def _extract_info_worker(wheel_path: Path) -> tuple[str, Metadata | None, str | None]:
     metadata = extract_metadata_from_wheel(wheel_path)
     if not metadata:
         return wheel_path.name, None, None
     proper_name = reconstruct_wheel_name(wheel_path, metadata, wheel_path.name)
     return wheel_path.name, metadata, proper_name
-
-
 def batch_fix_with_parallel(directory: str = ".") -> None:
     path = Path(directory)
     whl_files = sorted(path.glob(f"*{WHEEL_SUFFIX}"))
@@ -197,8 +182,6 @@ def batch_fix_with_parallel(directory: str = ".") -> None:
                 metadata["version"],
                 proper_name,
             )
-
-
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=("Fix batch-renamed .whl files by reading METADATA from inside each wheel"),
@@ -230,8 +213,6 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="Only show extracted info without renaming",
     )
     return parser
-
-
 def main() -> int:
     parser = _build_arg_parser()
     args = parser.parse_args()
@@ -245,7 +226,5 @@ def main() -> int:
             backup=not args.no_backup,
         )
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -27,60 +26,44 @@ from textual.widgets import (
     RadioSet,
     Static,
 )
-
-
 @dataclass
 class FileEntry:
     path: Path
     size: int
     hash: str | None = None
     filename_normalized: str = ""
-
     def __post_init__(self) -> None:
         self.filename_normalized = self.path.name.lower()
-
-
 @dataclass
 class DuplicateGroup:
     files: list[FileEntry] = field(default_factory=list)
     match_score: float = 100.0
     reason: str = "exact"
-
     @property
     def total_size(self) -> int:
         if not self.files:
             return 0
         return self.files[0].size * (len(self.files) - 1)
-
     @property
     def size_str(self) -> str:
         return format_size(self.total_size)
-
-
 def format_size(size_bytes: int) -> str:
     for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024.0:
             return f"{size_bytes:.2f} {unit}"
         size_bytes /= 1024.0
     return f"{size_bytes:.2f} PB"
-
-
 def compute_file_hash(path: Path, chunk_size: int = 8192) -> str:
     sha256 = hashlib.sha256()
     with path.open("rb") as f:
         while chunk := f.read(chunk_size):
             sha256.update(chunk)
     return sha256.hexdigest()
-
-
 def normalize_filename(filename: str) -> list[str]:
     import re
-
     name = Path(filename).stem.lower()
     words = re.split(r"[\s\-_.]+", name)
     return [w for w in words if w]
-
-
 def fuzzy_match_score(words1: list[str], words2: list[str], similarity_threshold: float = 0.8) -> float:
     if not words1 or not words2:
         return 0.0
@@ -94,8 +77,6 @@ def fuzzy_match_score(words1: list[str], words2: list[str], similarity_threshold
     if total == 0:
         return 0.0
     return (2 * matches / total) * 100
-
-
 class DuplicateFinder:
     def __init__(
         self,
@@ -109,7 +90,6 @@ class DuplicateFinder:
         self.files: list[FileEntry] = []
         self.duplicates: list[DuplicateGroup] = []
         self.progress_callback = None
-
     def scan_directory(self, root: Path, progress_callback=None) -> None:
         self.progress_callback = progress_callback
         self.files = []
@@ -133,7 +113,6 @@ class DuplicateFinder:
                 )
             except (OSError, PermissionError):
                 continue
-
     def find_duplicates(self, progress_callback=None) -> list[DuplicateGroup]:
         self.duplicates = []
         if self.scan_mode == "filename":
@@ -141,7 +120,6 @@ class DuplicateFinder:
         else:
             self._find_by_contents(progress_callback)
         return self.duplicates
-
     def _find_by_filename(self, progress_callback=None) -> None:
         groups: dict[str, list[FileEntry]] = defaultdict(list)
         for file in self.files:
@@ -176,7 +154,6 @@ class DuplicateFinder:
                                 reason="filename_fuzzy",
                             )
                         )
-
     def _find_by_contents(self, progress_callback=None) -> None:
         by_size: dict[int, list[FileEntry]] = defaultdict(list)
         for file in self.files:
@@ -198,8 +175,6 @@ class DuplicateFinder:
             for files in hash_groups.values():
                 if len(files) > 1:
                     self.duplicates.append(DuplicateGroup(files=files, match_score=100.0, reason="contents"))
-
-
 class ScanSettings(Widget):
     DEFAULT_CSS = """
     ScanSettings {
@@ -223,7 +198,6 @@ class ScanSettings(Widget):
     scan_mode: str = "contents"
     fuzzy_threshold: float = 80.0
     min_size: int = 0
-
     def compose(self) -> ComposeResult:
         with Horizontal(classes="setting-row"):
             yield Label("Scan Mode:", id="mode-label")
@@ -238,26 +212,21 @@ class ScanSettings(Widget):
         with Horizontal(classes="setting-row"):
             yield Label("Min File Size (bytes):", id="minsize-label")
             yield Input(value="0", id="minsize-input", type="integer")
-
     @on(RadioSet.Changed, "#scan-mode")
     def on_mode_changed(self, event: RadioSet.Changed) -> None:
         self.scan_mode = "contents" if event.value == 0 else "filename"
-
     @on(Input.Changed, "#fuzzy-input")
     def on_fuzzy_changed(self, event: Input.Changed) -> None:
         try:
             self.fuzzy_threshold = float(event.value)
         except ValueError:
             self.fuzzy_threshold = 80.0
-
     @on(Input.Changed, "#minsize-input")
     def on_minsize_changed(self, event: Input.Changed) -> None:
         try:
             self.min_size = int(event.value)
         except ValueError:
             self.min_size = 0
-
-
 class ResultsTable(Widget):
     DEFAULT_CSS = """
     ResultsTable {
@@ -269,14 +238,12 @@ class ResultsTable(Widget):
         height: 100%;
     }
     """
-
     def compose(self) -> ComposeResult:
         table = DataTable(id="results-table")
         table.cursor_type = "row"
         table.zebra_stripes = True
         table.show_header = True
         yield table
-
     def update_results(self, duplicates: list[DuplicateGroup]) -> None:
         table = self.query_one("#results-table", DataTable)
         table.clear()
@@ -302,8 +269,6 @@ class ResultsTable(Widget):
                 (str(sample.path)[:58] + "…" if len(str(sample.path)) > 60 else str(sample.path)),
                 key=f"group-{i}",
             )
-
-
 class ScanProgress(ModalScreen):
     DEFAULT_CSS = """
     ScanProgress {
@@ -326,13 +291,11 @@ class ScanProgress(ModalScreen):
         margin: 1 0;
     }
     """
-
     def compose(self) -> ComposeResult:
         with Container():
             yield Label("Scanning...", id="status")
             yield ProgressBar(id="progress", show_eta=False)
             yield Button("Cancel", id="cancel-btn", variant="error")
-
     def update_progress(self, current: int, total: int, message: str = "") -> None:
         progress = self.query_one("#progress", ProgressBar)
         status = self.query_one("#status", Label)
@@ -344,12 +307,9 @@ class ScanProgress(ModalScreen):
             if len(message) > 50:
                 message = "…" + message[-47:]
             status.update(f"[bold]{current}/{total}[/bold] {message}")
-
     @on(Button.Pressed, "#cancel-btn")
     def on_cancel(self) -> None:
         self.app.pop_screen()
-
-
 class DupeGuruApp(App):
     TITLE = "dupeguru-ng"
     SUB_TITLE = "Duplicate File Finder"
@@ -406,12 +366,10 @@ class DupeGuruApp(App):
         Binding("r", "refresh", "Refresh", show=True),
         Binding("c", "clear", "Clear", show=True),
     ]
-
     def __init__(self) -> None:
         super().__init__()
         self.finder = DuplicateFinder()
         self.selected_path: Path | None = None
-
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal(id="main-container"):
@@ -432,35 +390,29 @@ class DupeGuruApp(App):
                 with Container(id="results-container"):
                     yield ResultsTable(id="results")
         yield Footer()
-
     @on(DirectoryTree.FileSelected)
     def on_file_selected(self, event: DirectoryTree.FileSelected) -> None:
         self.selected_path = event.path.parent
         self._update_path_display()
-
     @on(DirectoryTree.DirectorySelected)
     def on_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
         self.selected_path = event.path
         self._update_path_display()
-
     def _update_path_display(self) -> None:
         if self.selected_path:
             path_str = str(self.selected_path)
             if len(path_str) > 70:
                 path_str = "…" + path_str[-67:]
             self.query_one("#path-display", Static).update(f"[bold]Path:[/bold] {path_str}")
-
     @on(Button.Pressed, "#scan-btn")
     def on_scan_pressed(self) -> None:
         if not self.selected_path:
             self.notify("Please select a directory first", severity="warning")
             return
         self.action_scan()
-
     @on(Button.Pressed, "#clear-btn")
     def on_clear_pressed(self) -> None:
         self.action_clear()
-
     def action_scan(self) -> None:
         if not self.selected_path:
             return
@@ -472,17 +424,14 @@ class DupeGuruApp(App):
         )
         progress_screen = ScanProgress()
         self.push_screen(progress_screen)
-
         def progress_cb(current: int, total: int, message: str = "") -> None:
             self.call_after_refresh(progress_screen.update_progress, current, total, message)
-
         try:
             self.finder.scan_directory(self.selected_path, progress_cb)
             self.finder.find_duplicates(progress_cb)
             self.call_after_refresh(self._display_results)
         finally:
             self.call_after_refresh(self.pop_screen)
-
     def _display_results(self) -> None:
         results = self.query_one("#results", ResultsTable)
         results.update_results(self.finder.duplicates)
@@ -493,7 +442,6 @@ class DupeGuruApp(App):
         self.query_one("#stat-dupes", Label).update(f"Duplicate groups: {total_dupes}")
         self.query_one("#stat-space", Label).update(f"Wasted space: {format_size(wasted)}")
         self.notify(f"Found {total_dupes} duplicate groups", severity="information")
-
     def action_clear(self) -> None:
         results = self.query_one("#results", ResultsTable)
         results.update_results([])
@@ -501,17 +449,13 @@ class DupeGuruApp(App):
         self.query_one("#stat-dupes", Label).update("")
         self.query_one("#stat-space", Label).update("")
         self.notify("Results cleared", severity="information")
-
     def action_refresh(self) -> None:
         if self.finder.duplicates:
             self._display_results()
         else:
             self.notify("No results to refresh", severity="warning")
-
-
 def main() -> None:
     import argparse
-
     parser = argparse.ArgumentParser(
         description="dupeguru-ng: Find duplicate files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -537,7 +481,5 @@ Examples:
         sys.exit(1)
     app = DupeGuruApp()
     app.run()
-
-
 if __name__ == "__main__":
     main()

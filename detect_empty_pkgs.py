@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -8,7 +7,6 @@ from pathlib import Path
 import shutil
 import tarfile
 import zipfile
-
 WORKERS = 4
 MIN_ARCHIVE_BYTES = 300
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
@@ -54,21 +52,15 @@ NON_CODE_PREFIXES = (
     "benchmarks/",
     "benchmark/",
 )
-
-
 class _Member:
     __slots__ = ("_read", "name", "size")
-
     def __init__(self, name, size, read):
         self.name = name
         self.size = size
         self._read = read
-
     def read(self) -> bytes:
         data = self._read()
         return data if data is not None else b""
-
-
 class Archive:
     def __init__(self, path: Path):
         self.path = path
@@ -81,19 +73,16 @@ class Archive:
             msg = f"unsupported archive: {path}"
             raise ValueError(msg)
         self._fh = None
-
     def __enter__(self):
         if self.kind == "tar":
             self._fh = tarfile.open(self.path, "r:gz")
         else:
             self._fh = zipfile.ZipFile(self.path, "r")
         return self
-
     def __exit__(self, *exc):
         if self._fh is not None:
             self._fh.close()
             self._fh = None
-
     def files(self):
         fh = self._fh
         if self.kind == "tar":
@@ -114,35 +103,23 @@ class Archive:
                     info.file_size,
                     lambda n=info.filename, fh=fh: fh.read(n),
                 )
-
-
 def _is_py(member: _Member) -> bool:
     return member.name.endswith(".py")
-
-
 def _basename(member: _Member) -> str:
     return member.name.replace("\\", "/").rsplit("/", 1)[-1]
-
-
 def _check_no_files(members):
     if not members:
         return "no files in archive"
     return None
-
-
 def _check_no_py(members):
     if not any(_is_py(m) for m in members):
         return "no .py files"
     return None
-
-
 def _check_only_setup_py(members):
     py = [m for m in members if _is_py(m)]
     if len(py) == 1 and _basename(py[0]) == "setup.py":
         return "only setup.py"
     return None
-
-
 def _check_all_non_setup_empty(members):
     py = [m for m in members if _is_py(m)]
     non_setup = [m for m in py if _basename(m) != "setup.py"]
@@ -152,8 +129,6 @@ def _check_all_non_setup_empty(members):
         if m.read().strip():
             return None
     return "all non-setup .py files are empty"
-
-
 def _check_only_metadata(members):
     if not members:
         return None
@@ -165,8 +140,6 @@ def _check_only_metadata(members):
             continue
         return None
     return "only metadata files"
-
-
 def _check_only_pyc(members):
     if any(_is_py(m) for m in members):
         return None
@@ -174,8 +147,6 @@ def _check_only_pyc(members):
     if has_compiled and all(m.name.endswith((".pyc", ".pyo")) or "__pycache__" in m.name for m in members):
         return "only compiled Python files"
     return None
-
-
 def _check_only_docs_tests(members):
     if not members:
         return None
@@ -188,8 +159,6 @@ def _check_only_docs_tests(members):
             continue
         return None
     return "only docs/tests/examples"
-
-
 def _py_is_trivial(src: str) -> bool:
     try:
         tree = ast.parse(src)
@@ -202,8 +171,6 @@ def _py_is_trivial(src: str) -> bool:
             continue
         return False
     return True
-
-
 def _check_imports_only(members):
     py = [m for m in members if _is_py(m)]
     if not py:
@@ -221,15 +188,11 @@ def _check_imports_only(members):
     if saw_non_empty:
         return "all .py files contain only imports/docstrings"
     return None
-
-
 def _check_tiny(members):
     total = sum(m.size for m in members)
     if total < MIN_ARCHIVE_BYTES:
         return f"archive content too small ({total} bytes)"
     return None
-
-
 _CHECKS = (
     _check_no_files,
     _check_no_py,
@@ -241,8 +204,6 @@ _CHECKS = (
     _check_imports_only,
     _check_tiny,
 )
-
-
 def analyze(path: Path):
     try:
         with Archive(path) as ar:
@@ -254,8 +215,6 @@ def analyze(path: Path):
             return path, None
     except (tarfile.TarError, zipfile.BadZipFile, OSError, EOFError, ValueError) as e:
         return path, f"invalid archive ({type(e).__name__})"
-
-
 def _split_archive_name(name: str):
     lower = name.lower()
     for compound in (".tar.gz",):
@@ -263,8 +222,6 @@ def _split_archive_name(name: str):
             return name[: -len(compound)], name[-len(compound) :]
     p = Path(name)
     return p.stem, p.suffix
-
-
 def _unique_dest(directory: Path, name: str) -> Path:
     dest = directory / name
     if not dest.exists():
@@ -276,8 +233,6 @@ def _unique_dest(directory: Path, name: str) -> Path:
         if not dest.exists():
             return dest
         i += 1
-
-
 def parse_args():
     ap = argparse.ArgumentParser(
         description=(
@@ -291,8 +246,6 @@ def parse_args():
         help="actually move the archives (default is dry-run)",
     )
     return ap.parse_args()
-
-
 def main():
     args = parse_args()
     cwd = Path.cwd()
@@ -328,7 +281,5 @@ def main():
         print(f"Moved {moved} of {len(targets)} archives into {empty_dir}")
     else:
         print(f"Dry run: {matched} of {len(targets)} archives would be moved. Re-run with -a / --apply to do it.")
-
-
 if __name__ == "__main__":
     main()

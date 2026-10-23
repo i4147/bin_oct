@@ -4,8 +4,6 @@ import argparse
 from pathlib import Path
 import sys
 from dh import SKIP_DIRS, unique_path
-
-
 def remove_string_from_names(
     string_to_remove: str,
     dry_run: bool = False,
@@ -41,8 +39,6 @@ def remove_string_from_names(
         if recursive and item.is_dir():
             renamed_count += remove_string_from_names(string_to_remove, dry_run, recursive, item)
     return renamed_count
-
-
 def replace_string_in_names(
     str1: str,
     str2: str,
@@ -79,15 +75,11 @@ def replace_string_in_names(
         if recursive and item.is_dir():
             renamed_count += replace_string_in_names(str1, str2, dry_run, recursive, item)
     return renamed_count
-
-
 def should_skip(path):
     path = Path(path)
     if path.is_symlink():
         return True
     return any(part in SKIP_DIRS for part in path.parts)
-
-
 def rename_by_template(
     template: str,
     dry_run: bool = False,
@@ -138,8 +130,6 @@ def rename_by_template(
         except PermissionError:
             print(f"Permission denied accessing subdirectory in {current_path}")
     return renamed_count
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Rename files and directories using pathlib",
@@ -199,7 +189,5 @@ def main() -> None:
     except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
@@ -7,8 +6,6 @@ import multiprocessing as mp
 from pathlib import Path
 import re
 from typing import Optional
-
-
 @dataclass
 class FileStats:
     path: Path
@@ -18,8 +15,6 @@ class FileStats:
     lines_before: int = 0
     lines_after: int = 0
     error: Optional[str] = None
-
-
 MD_IMAGE_PATTERN = re.compile(r"!\[.*?\]\(.*?\)")
 HTML_BADGE_PATTERN = re.compile(
     r"<p\b[^>]*>[\s\S]*?<img\b[\s\S]*?</p>|"
@@ -53,16 +48,10 @@ IMG_TAG_RE = re.compile(r'<img\b[^>]*\bsrc\s*=\s*["\']([^"\']) ["\'][^>]*>', re.
 MD_INLINE_IMG_RE = re.compile(r"!\[.*?\]\((.*?)\)", re.IGNORECASE)
 MD_REF_DEF_RE = re.compile(r"^\s*\[(.*?)\]:\s*(\S+)", re.MULTILINE)
 RST_IMG_RE = re.compile(r"^\s*\.\.\ \|[^|]+\|\ image::\ https?://[^\s]+.*$", re.MULTILINE)
-
-
 def has_badge_domain(line: str) -> bool:
     return any(re.search(domain, line, re.IGNORECASE) for domain in BADGE_DOMAINS)
-
-
 def is_image_ext(line: str) -> bool:
     return bool(re.search(r"\.(?:png|jpg|jpeg|gif|svg|ico|webp|bmp)(?:\?|#|$|\))", line, re.IGNORECASE))
-
-
 def clean_file_fast(path: Path) -> FileStats:
     try:
         content = path.read_text(encoding="utf-8", errors="ignore")
@@ -74,8 +63,6 @@ def clean_file_fast(path: Path) -> FileStats:
         return FileStats(path, 1 if changed else 0)
     except Exception as e:
         return FileStats(path, 0, error=str(e))
-
-
 def clean_file_smart(path: Path) -> FileStats:
     try:
         content = path.read_text(encoding="utf-8")
@@ -119,8 +106,6 @@ def clean_file_smart(path: Path) -> FileStats:
         return FileStats(path, removed, size_before, size_after, lines_before, lines_after)
     except Exception as e:
         return FileStats(path, 0, error=str(e))
-
-
 def clean_file_markdown(path: Path) -> FileStats:
     try:
         content = path.read_text(encoding="utf-8")
@@ -137,15 +122,12 @@ def clean_file_markdown(path: Path) -> FileStats:
         return FileStats(path, removed, len(original.encode("utf-8")), len(content.encode("utf-8")))
     except Exception as e:
         return FileStats(path, 0, error=str(e))
-
-
 def clean_file_remote(path: Path) -> FileStats:
     try:
         original = path.read_text(encoding="utf-8", errors="ignore")
         modified = original
         removed = 0
         if path.suffix.lower() in {".html", ".htm"}:
-
             def repl(m):
                 nonlocal removed
                 src = m.group(1)
@@ -153,10 +135,8 @@ def clean_file_remote(path: Path) -> FileStats:
                     removed += 1
                     return ""
                 return m.group(0)
-
             modified = IMG_TAG_RE.sub(repl, modified)
         elif path.suffix.lower() == ".md":
-
             def inline_repl(m):
                 nonlocal removed
                 url = m.group(1)
@@ -164,23 +144,18 @@ def clean_file_remote(path: Path) -> FileStats:
                     removed += 1
                     return ""
                 return m.group(0)
-
             modified = MD_INLINE_IMG_RE.sub(inline_repl, modified)
         elif path.suffix.lower() in {".rst", ".txt"}:
-
             def rst_repl(m):
                 nonlocal removed
                 removed += 1
                 return ""
-
             modified = RST_IMG_RE.sub(rst_repl, modified)
         if modified != original:
             path.write_text(modified, encoding="utf-8")
         return FileStats(path, removed, len(original.encode("utf-8")), len(modified.encode("utf-8")))
     except Exception as e:
         return FileStats(path, 0, error=str(e))
-
-
 def find_files(paths: list[str], extensions: tuple[str, ...]) -> list[Path]:
     files = []
     search_paths = [Path(p) for p in paths] if paths else [Path.cwd()]
@@ -191,8 +166,6 @@ def find_files(paths: list[str], extensions: tuple[str, ...]) -> list[Path]:
             for ext in extensions:
                 files.extend(sp.rglob(f"*{ext}"))
     return sorted(set(files))
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Remove images from documentation")
     subparsers = parser.add_subparsers(dest="mode", required=True)
@@ -258,7 +231,5 @@ def main() -> int:
         print(f"Processed {len(results)} files")
         return 0
     return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

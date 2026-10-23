@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import sys
 from dh import get_files, mpf, runcmd
-
-
 def process_file(path) -> tuple[Path, bool]:
     path = Path(path)
     if path.suffix.lower() in {".html", ".htm"}:
@@ -20,8 +17,6 @@ def process_file(path) -> tuple[Path, bool]:
     except Exception as e:
         print(f"✗ Unexpected error converting {path}: {e}", file=sys.stderr)
         return (path, False)
-
-
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -36,7 +31,5 @@ def main() -> None:
     else:
         files = get_files(cwd)
     mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

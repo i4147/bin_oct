@@ -5,11 +5,8 @@ from multiprocessing import get_context
 from pathlib import Path
 import sys
 from dh import cprint, get_files
-
 c_files = {".c", ".h", ".inc"}
 cpp_files = {".cpp", ".cc", ".cxx", ".hpp", ".hpp11", ".hh", ".hxx"}
-
-
 def validate_cpp(path: Path) -> tuple[bool, str]:
     cmd = ""
     if path.suffix in c_files:
@@ -18,8 +15,6 @@ def validate_cpp(path: Path) -> tuple[bool, str]:
         cmd = "clang++ -fsyntax-only str(path)"
     ret, txt, err = run_command(cmd)
     return (path, ret, txt, err)
-
-
 if __name__ == "__main__":
     args = sys.argv[1:]
     cwd = Path.cwd()

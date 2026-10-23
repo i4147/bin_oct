@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from collections import deque
@@ -18,12 +16,9 @@ import sys
 import tempfile
 import tokenize
 from typing import Any, Callable, Iterable, Optional, Sequence
-
 import libcst as cst
 from libcst.helpers import get_full_name_for_node
 from loguru import logger
-
-
 SUPPORTED_EXTENSIONS = frozenset({".py", ".pyw"})
 IGNORE_FILENAME = ".ignore"
 DEFAULT_IGNORES = frozenset({"__pycache__", ".git"})
@@ -31,8 +26,6 @@ TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 PYTHON_VERSION = (3, 12)
 COMMENT_REGEX = re.compile(r"^#(?:!|\s*(?:type|fmt):)")
 BLOCK_COMMENT_FIELDS = ("leading_lines", "lines_after_decorators", "footer", "header", "empty_lines")
-
-
 @dataclass(frozen=True, slots=True)
 class Config:
     strip_comments: bool
@@ -40,7 +33,6 @@ class Config:
     strip_type_hints: bool
     preserve_special_comments: bool
     detect_commented_code: bool
-
     @classmethod
     def from_flags(
         cls, *, strip_comments: bool, strip_docstrings: bool, strip_type_hints: bool, everything: bool
@@ -48,15 +40,11 @@ class Config:
         if everything:
             return cls(True, True, True, False, False)
         return cls(strip_comments, strip_docstrings, strip_type_hints, True, True)
-
-
 @dataclass(frozen=True, slots=True)
 class RunOptions:
     backup: bool
     dry_run: bool
     want_diff: bool
-
-
 @dataclass(frozen=True, slots=True)
 class FileResult:
     path: str
@@ -67,14 +55,10 @@ class FileResult:
     bytes_saved: int = 0
     message: str = ""
     diff: str = ""
-
-
 def is_simple_expr(node: cst.CSTNode) -> bool:
     if isinstance(node, cst.Expr):
         return isinstance(node.value, (cst.Name, cst.Constant, cst.Attribute))
     return isinstance(node, cst.AnnAssign) and node.value is None
-
-
 def has_commented_out_code(comment_lines: list[str]) -> bool:
     if len(comment_lines) < 2:
         return False
@@ -87,8 +71,6 @@ def has_commented_out_code(comment_lines: list[str]) -> bool:
     except (SyntaxError, ValueError, MemoryError, RecursionError):
         return False
     return any(not is_simple_expr(stmt) for stmt in parsed.body)
-
-
 class BaseTransformer(cst.CSTTransformer):
     def leave_SimpleStatementSuite(
         self, original_node: cst.SimpleStatementSuite, updated_node: cst.SimpleStatementSuite
@@ -96,13 +78,10 @@ class BaseTransformer(cst.CSTTransformer):
         if updated_node.body:
             return updated_node
         return updated_node.with_changes(body=[cst.Pass()])
-
     def leave_IndentedBlock(self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock) -> cst.CSTNode:
         if updated_node.body:
             return updated_node
         return updated_node.with_changes(body=[cst.SimpleStatementLine(body=[cst.Pass()])])
-
-
 class CodeCleaner(BaseTransformer):
     def __init__(self, config: Config):
         super().__init__()
@@ -110,10 +89,8 @@ class CodeCleaner(BaseTransformer):
         self.comments_removed = 0
         self.docstrings_removed = 0
         self.hints_removed = 0
-
     def _is_protected(self, comment_text: str) -> bool:
         return self.config.preserve_special_comments and COMMENT_REGEX.match(comment_text) is not None
-
     def leave_TrailingWhitespace(
         self, original_node: cst.TrailingWhitespace, updated_node: cst.TrailingWhitespace
     ) -> cst.TrailingWhitespace:
@@ -124,7 +101,6 @@ class CodeCleaner(BaseTransformer):
             return updated_node
         self.comments_removed += 1
         return updated_node.with_changes(comment=None)
-
     def _filter_comment_lines(self, comment_nodes: Sequence[cst.CSTNode]) -> list[cst.CSTNode]:
         result = []
         buffer = []
@@ -146,7 +122,6 @@ class CodeCleaner(BaseTransformer):
             if item is not None:
                 result.append(item)
         return result
-
     def on_leave(self, original_node: cst.CSTNode, updated_node: cst.CSTNode) -> cst.CSTNode:
         res = super().on_leave(original_node, updated_node)
         if self.config.strip_comments and isinstance(res, cst.CSTNode):
@@ -160,7 +135,6 @@ class CodeCleaner(BaseTransformer):
             if changes:
                 return res.with_changes(**changes)
         return res
-
     @staticmethod
     def _is_docstring_expr(node: cst.CSTNode) -> bool:
         if not isinstance(node, cst.Expr):
@@ -169,7 +143,6 @@ class CodeCleaner(BaseTransformer):
         if not isinstance(val, (cst.SimpleString, cst.ConcatenatedString)):
             return False
         return isinstance(val.evaluated_value, str)
-
     def _remove_first_docstring(
         self, body: Sequence[cst.BaseStatement], *, keep_if_empty: bool
     ) -> list[cst.BaseStatement]:
@@ -194,13 +167,11 @@ class CodeCleaner(BaseTransformer):
         elif not remaining and keep_if_empty:
             remaining = [cst.SimpleStatementLine(body=[cst.Pass()], leading_lines=bg)]
         return remaining
-
     def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         if not self.config.strip_docstrings:
             return updated_node
         new_body = self._remove_first_docstring(updated_node.body, keep_if_empty=True)
         return updated_node.with_changes(body=new_body)
-
     def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         if not self.config.strip_docstrings:
             return updated_node
@@ -213,7 +184,6 @@ class CodeCleaner(BaseTransformer):
             new_body_list = list(body.body[1:]) or [cst.Pass()]
             return updated_node.with_changes(body=body.with_changes(body=new_body_list))
         return updated_node
-
     def _strip_def_docstring(self, node: cst.FunctionDef | cst.ClassDef) -> cst.FunctionDef | cst.ClassDef:
         body = (
             self._remove_first_docstring(node.body.body, keep_if_empty=True)
@@ -225,7 +195,6 @@ class CodeCleaner(BaseTransformer):
             if isinstance(node.body, cst.IndentedBlock)
             else node
         )
-
     def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
         res = updated_node
         if self.config.strip_type_hints and res.returns is not None:
@@ -234,13 +203,11 @@ class CodeCleaner(BaseTransformer):
         if self.config.strip_docstrings:
             res = self._strip_def_docstring(res)
         return res
-
     def leave_Param(self, original_node: cst.Param, updated_node: cst.Param) -> cst.Param:
         if self.config.strip_type_hints and updated_node.annotation is not None:
             self.hints_removed += 1
             return updated_node.with_changes(annotation=None)
         return updated_node
-
     def leave_AnnAssign(self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign) -> cst.CSTNode:
         if not self.config.strip_type_hints or updated_node.value is None:
             return updated_node
@@ -250,7 +217,6 @@ class CodeCleaner(BaseTransformer):
             value=updated_node.value,
             semicolon=updated_node.semicolon,
         )
-
     def leave_SimpleStatementLine(
         self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine
     ) -> cst.CSTNode:
@@ -264,41 +230,31 @@ class CodeCleaner(BaseTransformer):
                     return cst.RemoveFromParent()
                 return updated_node.with_changes(body=filtered)
         return updated_node
-
-
 class UsageVisitor(cst.CSTVisitor):
     def __init__(self):
         super().__init__()
         self.used: set[str] = set()
-
     def visit_Name(self, node: cst.Name) -> bool:
         self.used.add(node.value)
         return False
-
     def visit_Attribute(self, node: cst.Attribute) -> bool:
         return True
-
     def visit_SimpleString(self, node: cst.SimpleString) -> bool:
         return False
-
-
 class TypingImportCleaner(BaseTransformer):
     def __init__(self, used_names: set[str]):
         super().__init__()
         self.used = used_names
-
     @staticmethod
     def _bound_name(alias: cst.ImportAlias) -> str:
         if alias.asname is not None and isinstance(alias.asname.name, cst.Name):
             return alias.asname.name.value
         return get_full_name_for_node(alias.name) or ""
-
     @staticmethod
     def _fix_last_comma(aliases: list[cst.ImportAlias]) -> list[cst.ImportAlias]:
         if aliases:
             aliases[-1] = aliases[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
         return aliases
-
     def leave_ImportFrom(
         self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
     ) -> cst.CSTNode | cst.RemovalSentinel:
@@ -317,7 +273,6 @@ class TypingImportCleaner(BaseTransformer):
         if not filtered:
             return cst.RemoveFromParent()
         return updated_node.with_changes(names=self._fix_last_comma(filtered))
-
     def leave_Import(self, original_node: cst.Import, updated_node: cst.Import) -> cst.CSTNode | cst.RemovalSentinel:
         filtered = []
         for alias in updated_node.names:
@@ -330,22 +285,18 @@ class TypingImportCleaner(BaseTransformer):
         if not filtered:
             return cst.RemoveFromParent()
         return updated_node.with_changes(names=self._fix_last_comma(filtered))
-
     def leave_SimpleStatementLine(
         self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine
     ) -> cst.CSTNode:
         if not updated_node.body:
             return cst.RemoveFromParent()
         return updated_node
-
-
 @dataclass(frozen=True, slots=True)
 class CleanedModule:
     code: str
     comments_removed: int
     docstrings_removed: int
     hints_removed: int
-
     @classmethod
     def run(cls, source_code: str, config: Config) -> "CleanedModule":
         tree = cst.parse_module(source_code)
@@ -356,19 +307,14 @@ class CleanedModule:
             tree.visit(visitor)
             tree = tree.visit(TypingImportCleaner(frozenset(visitor.used)))
         return cls(tree.code, cleaner.comments_removed, cleaner.docstrings_removed, cleaner.hints_removed)
-
-
 @dataclass(frozen=True, slots=True)
 class DecodedFile:
     text: str
     encoding: str
     bom: bool
-
     def encode(self, code: str) -> bytes:
         data = code.encode(self.encoding)
         return b"\xef\xbb\xbf" + data if self.bom else data
-
-
 def decode_file(raw_bytes: bytes) -> DecodedFile:
     has_bom = raw_bytes.startswith(b"\xef\xbb\xbf")
     content = raw_bytes[len(b"\xef\xbb\xbf") :] if has_bom else raw_bytes
@@ -387,8 +333,6 @@ def decode_file(raw_bytes: bytes) -> DecodedFile:
             continue
     msg = "could not decode file as utf-8, its declared encoding, or cp1252"
     raise ValueError(msg)
-
-
 def is_python_file(path: Path) -> bool:
     if path.suffix in SUPPORTED_EXTENSIONS:
         return True
@@ -400,8 +344,6 @@ def is_python_file(path: Path) -> bool:
     except OSError:
         return False
     return header.startswith(b"#!") and b"python" in header
-
-
 def atomic_write(path: Path, data: bytes) -> None:
     resolved_path = path.resolve()
     fd, temp_path_str = tempfile.mkstemp(dir=resolved_path.parent, prefix=f".{resolved_path.name}.", suffix=".tmp")
@@ -414,8 +356,6 @@ def atomic_write(path: Path, data: bytes) -> None:
     except BaseException:
         temp_path.unlink(missing_ok=True)
         raise
-
-
 def get_diff(path: str, original: str, modified: str) -> str:
     return "".join(
         difflib.unified_diff(
@@ -425,23 +365,15 @@ def get_diff(path: str, original: str, modified: str) -> str:
             tofile=f"b/{path}",
         )
     )
-
-
 class WorkerContext:
     def __init__(self, config: Config, run_options: RunOptions):
         self.config = config
         self.run = run_options
-
-
 _worker_context: Optional[WorkerContext] = None
-
-
 def init_worker(config: Config, run_options: RunOptions) -> None:
     global _worker_context
     _worker_context = WorkerContext(config, run_options)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
 def process_file(path_str: str) -> FileResult:
     ctx = _worker_context
     if ctx is None:
@@ -499,15 +431,11 @@ def process_file(path_str: str) -> FileResult:
         message="; ".join(warnings),
         diff=diff_text,
     )
-
-
 class IgnoreRule:
     def __init__(self, pattern: str, dir_only: bool, anchored: bool):
         self.pattern = pattern
         self.dir_only = dir_only
         self.anchored = anchored
-
-
 class IgnoreMatcher:
     def __init__(self, lines: Iterable[str]):
         self._rules: list[IgnoreRule] = []
@@ -521,7 +449,6 @@ class IgnoreMatcher:
             text = text.lstrip("/")
             if text:
                 self._rules.append(IgnoreRule(text, dir_only, anchored))
-
     def matches(self, parts: tuple[str, ...], is_dir: bool) -> bool:
         for rule in self._rules:
             for depth in range(1, len(parts) + 1):
@@ -531,8 +458,6 @@ class IgnoreMatcher:
                 if fnmatch.fnmatchcase(target, rule.pattern):
                     return True
         return False
-
-
 def read_ignore_file(path: Path) -> list[str]:
     try:
         return path.read_text(encoding="utf-8").splitlines()
@@ -541,18 +466,14 @@ def read_ignore_file(path: Path) -> list[str]:
     except (OSError, UnicodeDecodeError) as exc:
         logger.warning(f"cannot read ignore file {path}: {exc}")
         return []
-
-
 def find_files(paths: Sequence[Path], extra_ignore: Sequence[str], ignore_file_path: Optional[Path]) -> list[str]:
     seen: set[Path] = set()
     collected: list[str] = []
-
     def add_path(p: Path):
         resolved = p.resolve()
         if resolved not in seen:
             seen.add(resolved)
             collected.append(str(p))
-
     for base_path in paths:
         if base_path.is_file():
             if is_python_file(base_path):
@@ -577,14 +498,11 @@ def find_files(paths: Sequence[Path], extra_ignore: Sequence[str], ignore_file_p
                 if is_python_file(file_path):
                     add_path(file_path)
     return collected
-
-
 class PoolExecutor:
     def __init__(self, method: str, config: Config, run_options: RunOptions):
         self.method = method
         self.config = config
         self.run = run_options
-
     def execute(self, paths: list[str], callback: Callable[[FileResult], None]) -> None:
         cpu_count = max(1, min(64, len(paths) // 32 or 1))
         context = multiprocessing.get_context()
@@ -610,8 +528,6 @@ class PoolExecutor:
                         callback(queue.popleft().get())
                 while queue:
                     callback(queue.popleft().get())
-
-
 @dataclass
 class StatsTracker:
     scanned: int = 0
@@ -623,7 +539,6 @@ class StatsTracker:
     hints: int = 0
     bytes_saved: int = 0
     rows: list[FileResult] = field(default_factory=list)
-
     def add(self, res: FileResult) -> None:
         self.scanned += 1
         if res.status == "error":
@@ -637,24 +552,16 @@ class StatsTracker:
             self.hints += res.hints_removed
             self.bytes_saved += res.bytes_saved
             self.rows.append(res)
-
-
 def supports_color() -> bool:
     return sys.stderr.isatty() and "NO_COLOR" not in os.environ
-
-
 def blue(text: Any) -> str:
     if supports_color():
         return f"\033[34m{text}\033[0m"
     return str(text)
-
-
 def green(text: Any) -> str:
     if supports_color():
         return f"\033[32m{text}\033[0m"
     return str(text)
-
-
 def colorize_diff(diff_text: str) -> str:
     mapping = {"+++": "1", "---": "1", "@@": "36", "+": "32", "-": "31"}
     lines = []
@@ -662,8 +569,6 @@ def colorize_diff(diff_text: str) -> str:
         code = next((c for prefix, c in mapping.items() if line.startswith(prefix)), None)
         lines.append(f"\033[{code}m{line}\033[0m" if code else line)
     return "\n".join(lines)
-
-
 def print_stats(tracker: StatsTracker, dry_run: bool) -> None:
     header = f"{'file':<60} {'comments':>9} {'docstrings':>11} {'hints':>6} {'bytes saved':>12}"
     print("\n" + header)
@@ -679,8 +584,6 @@ def print_stats(tracker: StatsTracker, dry_run: bool) -> None:
     print(f"{'TOTAL':<60} {tracker.comments:>9} {tracker.docstrings:>11} {tracker.hints:>6} {total_saved:>12}")
     if dry_run:
         print("(dry run: nothing was written; numbers are what would change)")
-
-
 def parse_args(args: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="pyclean",
@@ -721,8 +624,6 @@ def parse_args(args: Optional[Sequence[str]] = None) -> argparse.Namespace:
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     return parser.parse_args(args)
-
-
 def setup_logger(verbose: bool) -> None:
     logger.remove()
     logger.add(
@@ -731,8 +632,6 @@ def setup_logger(verbose: bool) -> None:
         colorize=sys.stderr.isatty(),
         format="<level>{level:<8}</level>{message}",
     )
-
-
 def main(args: Optional[Sequence[str]] = None) -> int:
     if sys.version_info < PYTHON_VERSION:
         print("pyclean requires Python 3.12 or newer", file=sys.stderr)
@@ -759,7 +658,6 @@ def main(args: Optional[Sequence[str]] = None) -> int:
     stats = StatsTracker()
     use_color = supports_color()
     show_diff = parsed_args.diff or parsed_args.dry_run
-
     def on_result(res: FileResult) -> None:
         stats.add(res)
         if res.status == "error":
@@ -773,7 +671,6 @@ def main(args: Optional[Sequence[str]] = None) -> int:
             logger.info(f"{rel_path}: {action} {green(f'{res.bytes_saved}')} bytes")
             if show_diff and res.diff:
                 print(colorize_diff(res.diff) if use_color else res.diff, file=sys.stderr)
-
     try:
         PoolExecutor(parsed_args.pool_method, config, run_options).execute(file_paths, on_result)
     except KeyboardInterrupt:
@@ -787,7 +684,5 @@ def main(args: Optional[Sequence[str]] = None) -> int:
     if parsed_args.stats:
         print_stats(stats, run_options.dry_run)
     return 1 if stats.errors else 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

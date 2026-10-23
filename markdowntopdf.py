@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -11,7 +10,6 @@ import sys
 from time import time
 from markdown import markdown
 from weasyprint import CSS, HTML
-
 MARKDOWN_BASE_EXTENSIONS = [
     "markdown.extensions.tables",
     "pymdownx.magiclink",
@@ -20,12 +18,8 @@ MARKDOWN_BASE_EXTENSIONS = [
 ]
 DEFAULT_CSS = Path("/sdcard/_static/css/markdown.css.xz")
 logger = logging.getLogger(__name__)
-
-
 class ValidationError(Exception):
     pass
-
-
 def md2pdf(pdf, raw=None, md=None, css=None, base_url=None, extras=None, extras_config=None):
     extras_config = extras_config or {}
     extras = extras if extras and len(extras) else []
@@ -50,8 +44,6 @@ def md2pdf(pdf, raw=None, md=None, css=None, base_url=None, extras=None, extras_
         else:
             styles.append(CSS(filename=str(css_path)))
     html.write_pdf(pdf, stylesheets=styles)
-
-
 def parse_config(config):
     try:
         parsed = json.loads(config)
@@ -59,8 +51,6 @@ def parse_config(config):
         msg = "Invalid input configuration string (should be valid JSON)"
         raise ValidationError(msg) from err
     return parsed
-
-
 def _convert_one(md_path, pdf_path, css=None, extras=None, extras_config=None):
     md2pdf(
         pdf_path,
@@ -70,8 +60,6 @@ def _convert_one(md_path, pdf_path, css=None, extras=None, extras_config=None):
         extras=extras or None,
         extras_config=extras_config,
     )
-
-
 def convert_batch(workers, md_files, pdf=None, css=None, extras=None, extras_config=None):
     started_at = time()
     with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -82,8 +70,6 @@ def convert_batch(workers, md_files, pdf=None, css=None, extras=None, extras_con
         for f in futures:
             f.result()
     print(f"🚀 Output files generated in {(time() - started_at):.3f}s")
-
-
 def main():
     parser = argparse.ArgumentParser(prog="md2pdf", usage="python md2pdf.py readme.md")
     parser.add_argument("md", nargs="*", help="Markdown input file(s)")
@@ -115,7 +101,5 @@ def main():
         extras_config = parse_config(args.config)
         print(f"🔧 Configuration: {extras_config}")
     convert_batch(args.workers, md_files, pdf, css, extras, extras_config)
-
-
 if __name__ == "__main__":
     main()

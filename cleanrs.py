@@ -1,15 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import sys
 import time
-
 try:
     from tree_sitter import Language, Parser
     import tree_sitter_rust
-
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
@@ -18,13 +15,10 @@ except ImportError:
     sys.exit(1)
 NUM_WORKERS = 8
 RUST_EXTENSIONS = {".rs"}
-
-
 class RustCommentStripper:
     def __init__(self):
         self.language = Language(tree_sitter_rust.language())
         self.parser = Parser(self.language)
-
     def strip_comments(self, source_code: str) -> str:
         tree = self.parser.parse(source_code.encode("utf-8"))
         comments = []
@@ -49,14 +43,11 @@ class RustCommentStripper:
                 last_end = end_byte
         result.append(source_code[last_end:])
         return "".join(result)
-
     def _collect_comments(self, node, comments: list):
         if node.type in ("line_comment", "block_comment"):
             comments.append(node)
         for child in node.children:
             self._collect_comments(child, comments)
-
-
 def find_rust_files(paths: list[str]) -> set[Path]:
     rust_files = set()
     if not paths:
@@ -73,8 +64,6 @@ def find_rust_files(paths: list[str]) -> set[Path]:
         else:
             print(f"Warning: Path '{path_str}' does not exist", file=sys.stderr)
     return rust_files
-
-
 def process_file(path: Path) -> tuple[Path, bool, str]:
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -91,8 +80,6 @@ def process_file(path: Path) -> tuple[Path, bool, str]:
         return (path, True, "")
     except Exception as e:
         return (path, False, str(e))
-
-
 def process_files_parallel(files: set[Path]):
     files_list = list(files)
     total_files = len(files_list)
@@ -130,8 +117,6 @@ def process_files_parallel(files: set[Path]):
     print(f"  Successful: {success_count}")
     print(f"  Failed: {error_count}")
     print(f"  Time elapsed: {elapsed_time:.2f} seconds")
-
-
 def main():
     input_paths = sys.argv[1:]
     try:
@@ -147,7 +132,5 @@ def main():
     except Exception as e:
         print(f"Error during processing: {e}", file=sys.stderr)
         sys.exit(1)
-
-
 if __name__ == "__main__":
     main()

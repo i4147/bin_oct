@@ -13,16 +13,11 @@ import sqlite3
 import sys
 import tempfile
 from typing import Any, Callable
-
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"
 BATCH_SIZE = 5000
-
-
 def quote_identifier(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
-
-
 def make_blob_encoder(blob_encoding: str) -> Callable[[bytes], Any]:
     encoders: dict[str, Callable[[bytes], Any]] = {
         "base64": lambda d: {BLOB_BASE64: base64.b64encode(d).decode("ascii")},
@@ -35,8 +30,6 @@ def make_blob_encoder(blob_encoding: str) -> Callable[[bytes], Any]:
     except KeyError:
         msg = f"Unsupported blob encoding: {blob_encoding}"
         raise ValueError(msg) from None
-
-
 def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:
     if value is None or isinstance(value, (int, str)):
         return value
@@ -45,23 +38,17 @@ def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:
     if isinstance(value, (bytes, bytearray, memoryview)):
         return blob_fn(bytes(value))
     return str(value)
-
-
 def open_readonly(db_path: str, text_errors: str) -> sqlite3.Connection:
     uri = Path(db_path).resolve().as_uri() + "?mode=ro"
     conn = sqlite3.connect(uri, uri=True)
     conn.text_factory = lambda b: b.decode("utf-8", errors=text_errors)
     return conn
-
-
 def get_tables(conn: sqlite3.Connection, include_internal: bool = False) -> list[str]:
     sql = "SELECT name FROM sqlite_master WHERE type = 'table'"
     if not include_internal:
         sql += r" AND name NOT LIKE 'sqlite\_%' ESCAPE '\'"
     sql += " ORDER BY name"
     return [row[0] for row in conn.execute(sql)]
-
-
 def write_table_array(
     conn: sqlite3.Connection,
     table: str,
@@ -94,8 +81,6 @@ def write_table_array(
             fp.write(("[" if first else ",") + nl + pad2 + text)
             first = False
     fp.write("[]" if first else nl + pad1 + "]")
-
-
 def export_table(args: tuple) -> tuple[str, str | None]:
     db_path, table, frag_path, blob_encoding, text_errors, indent, ensure_ascii = args
     try:
@@ -110,8 +95,6 @@ def export_table(args: tuple) -> tuple[str, str | None]:
         with open(frag_path, "w", encoding="utf-8", newline="\n") as fp:
             fp.write("[]")
         return table, f"Error processing table {table!r}: {exc}"
-
-
 def convert_sqlite_to_json(
     db_path: Path,
     output_path: Path,
@@ -188,8 +171,6 @@ def convert_sqlite_to_json(
             out.write("\n")
         os.replace(final_tmp, output_path)
     return [warnings[t] for t in tables if t in warnings]
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Convert a SQLite database to JSON.")
     parser.add_argument("database", type=Path, help="SQLite database file")
@@ -270,7 +251,5 @@ def main(argv: list[str] | None = None) -> int:
         for warning in warnings:
             print(f"  - {warning}", file=sys.stderr)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

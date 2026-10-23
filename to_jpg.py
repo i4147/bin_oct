@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import fnmatch
@@ -16,13 +14,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
-
 VERSION = "2.0.0"
-
-
-# ---------------------------------------------------------------------------
-# Conversion options
-# ---------------------------------------------------------------------------
 @dataclass
 class ConvertOptions:
     quality: int = 85
@@ -38,11 +30,6 @@ class ConvertOptions:
     progressive: bool = False
     target_size: Optional[int] = None
     min_quality: int = 30
-
-
-# ---------------------------------------------------------------------------
-# Backend registry
-# ---------------------------------------------------------------------------
 @dataclass
 class Backend:
     name: str
@@ -51,11 +38,7 @@ class Backend:
     write: Set[str]
     fn: Callable[[Path, Path, str, int, ConvertOptions], bool]
     available: bool = False
-
-
 _REGISTRY: List[Backend] = []
-
-
 def _register(
     name: str,
     priority: int,
@@ -70,34 +53,21 @@ def _register(
         ok = False
     _REGISTRY.append(Backend(name, priority, {e.lower() for e in read}, {e.lower() for e in write}, fn, ok))
     _REGISTRY.sort(key=lambda b: b.priority)
-
-
 def available_backends() -> List[Backend]:
     return [b for b in _REGISTRY if b.available]
-
-
 def backend_by_name(name: str) -> Optional[Backend]:
     for b in _REGISTRY:
         if b.name == name:
             return b
     return None
-
-
 def all_known_targets() -> Set[str]:
     out: Set[str] = set()
     for b in available_backends():
         out |= b.write
     return out
-
-
 def backends_for(src_ext: str, to_ext: str) -> List[Backend]:
     src_ext, to_ext = src_ext.lower(), to_ext.lower()
     return [b for b in available_backends() if src_ext in b.read and to_ext in b.write]
-
-
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
 _NAMED = {
     "white": (255, 255, 255, 255),
     "black": (0, 0, 0, 255),
@@ -108,8 +78,6 @@ _NAMED = {
     "grey": (128, 128, 128, 255),
     "transparent": (0, 0, 0, 0),
 }
-
-
 def _parse_color(s: str) -> Tuple[int, int, int, int]:
     s = (s or "white").strip().lower()
     if s in _NAMED:
@@ -123,8 +91,6 @@ def _parse_color(s: str) -> Tuple[int, int, int, int]:
         if len(h) == 8:
             return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), int(h[6:8], 16))
     return (255, 255, 255, 255)
-
-
 def _parse_size(s: Union[str, int]) -> int:
     if isinstance(s, int):
         return s
@@ -145,8 +111,6 @@ def _parse_size(s: Union[str, int]) -> int:
     elif t.endswith("B"):
         t = t[:-1]
     return int(float(t) * mult)
-
-
 def _geometry(s: str) -> Tuple[Optional[int], Optional[int], str]:
     s = s.strip().lower()
     fit_hint = ""
@@ -162,8 +126,6 @@ def _geometry(s: str) -> Tuple[Optional[int], Optional[int], str]:
     if s:
         return (int(s), None, fit_hint)
     return (None, None, fit_hint)
-
-
 def _human_size(nbytes: int) -> str:
     sign = "-" if nbytes < 0 else ""
     nbytes = abs(nbytes)
@@ -173,8 +135,6 @@ def _human_size(nbytes: int) -> str:
             return f"{sign}{int(size)}{u}" if u == "B" else f"{sign}{size:.1f}{u}"
         size /= 1024.0
     return f"{sign}{size:.1f}TB"
-
-
 def _unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -185,8 +145,6 @@ def _unique_path(path: Path) -> Path:
         if not cand.exists():
             return cand
         n += 1
-
-
 def _normalize_to(to: str) -> str:
     to = to.lower().lstrip(".")
     if to in ("jpg", "jpeg"):
@@ -196,13 +154,10 @@ def _normalize_to(to: str) -> str:
     if to in ("heif", "heic"):
         return ".heic"
     return f".{to}"
-
-
 def _remove_original(path: Path, use_trash: bool) -> None:
     if use_trash:
         try:
             from send2trash import send2trash
-
             send2trash(str(path))
             return
         except Exception:
@@ -211,11 +166,6 @@ def _remove_original(path: Path, use_trash: bool) -> None:
         path.unlink()
     except OSError:
         pass
-
-
-# ---------------------------------------------------------------------------
-# Resize math
-# ---------------------------------------------------------------------------
 def _target_size(w: int, h: int, opts: ConvertOptions) -> Tuple[int, int]:
     if opts.scale is not None:
         return (max(1, int(round(w * opts.scale))), max(1, int(round(h * opts.scale))))
@@ -242,8 +192,6 @@ def _target_size(w: int, h: int, opts: ConvertOptions) -> Tuple[int, int]:
     else:
         scale = min(scales)
     return (max(1, int(round(w * scale))), max(1, int(round(h * scale))))
-
-
 def _gravity_offset(sw: int, sh: int, cw: int, ch: int, gravity: str) -> Tuple[int, int]:
     g = gravity.lower()
     left, top = (sw - cw) // 2, (sh - ch) // 2
@@ -264,20 +212,12 @@ def _gravity_offset(sw: int, sh: int, cw: int, ch: int, gravity: str) -> Tuple[i
     if g in ("southeast", "se"):
         left, top = sw - cw, sh - ch
     return (max(0, left), max(0, top))
-
-
-# ---------------------------------------------------------------------------
-# Backend: Pillow
-# ---------------------------------------------------------------------------
 def _pil_probe() -> bool:
     try:
         import PIL  # noqa
-
         return True
     except ImportError:
         return False
-
-
 def _pil_exts() -> Set[str]:
     base = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif", ".ico", ".ppm", ".pgm", ".pbm", ".pnm"}
     for mod, exts in (
@@ -291,11 +231,8 @@ def _pil_exts() -> Set[str]:
         except ImportError:
             pass
     return base
-
-
 def _pil_resize(img, opts: ConvertOptions):
     from PIL import Image
-
     if opts.scale is None and opts.max_width is None and opts.max_height is None:
         return img
     w, h = img.size
@@ -312,11 +249,8 @@ def _pil_resize(img, opts: ConvertOptions):
         left, top = _gravity_offset(sw, sh, cw, ch, opts.gravity)
         return img.crop((left, top, left + cw, top + ch))
     return img.resize((nw, nh), Image.LANCZOS)
-
-
 def _pil_flatten(img, background: Tuple[int, int, int, int]):
     from PIL import Image
-
     if img.mode in ("RGBA", "LA"):
         if img.mode == "LA":
             img = img.convert("RGBA")
@@ -329,8 +263,6 @@ def _pil_flatten(img, background: Tuple[int, int, int, int]):
         bg.paste(img, mask=img.split()[-1])
         return bg
     return img.convert("RGB")
-
-
 def _pil_target_mode(img, to_ext: str) -> str:
     if to_ext in (".jpg", ".jpeg", ".bmp"):
         return "RGB"
@@ -339,8 +271,6 @@ def _pil_target_mode(img, to_ext: str) -> str:
             return "RGBA"
         return "RGB"
     return img.mode
-
-
 def _pil_save_kwargs(to_ext: str, quality: int, opts: ConvertOptions) -> Dict[str, Any]:
     if to_ext in (".jpg", ".jpeg"):
         return {"quality": quality, "optimize": True, "progressive": opts.progressive}
@@ -357,8 +287,6 @@ def _pil_save_kwargs(to_ext: str, quality: int, opts: ConvertOptions) -> Dict[st
     if to_ext == ".jxl":
         return {"quality": 100 if opts.lossless else quality}
     return {}
-
-
 _META_FORMATS = {".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".avif", ".heic", ".heif", ".jxl"}
 _PIL_FMT = {
     ".jpg": "JPEG",
@@ -376,11 +304,8 @@ _PIL_FMT = {
     ".jxl": "JXL",
     ".ppm": "PPM",
 }
-
-
 def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     from PIL import Image, ImageOps, ImageFile
-
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     with Image.open(str(src)) as img:
         if opts.auto_orient:
@@ -388,8 +313,6 @@ def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
                 img = ImageOps.exif_transpose(img)
             except Exception:
                 pass
-
-        # animated path
         if getattr(img, "n_frames", 1) > 1 and to_ext in (".gif", ".webp", ".png"):
             frames, durations = [], []
             for i in range(img.n_frames):
@@ -408,7 +331,6 @@ def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
                 **kw,
             )
             return dst.is_file()
-
         img = _pil_resize(img, opts)
         target_mode = _pil_target_mode(img, to_ext)
         if img.mode != target_mode:
@@ -416,7 +338,6 @@ def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
                 img = _pil_flatten(img, _parse_color(opts.background))
             else:
                 img = img.convert(target_mode)
-
         kw = _pil_save_kwargs(to_ext, quality, opts)
         if to_ext in _META_FORMATS:
             if opts.strip_metadata:
@@ -427,7 +348,6 @@ def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
                     kw["icc_profile"] = img.info["icc_profile"]
                 if img.info.get("exif"):
                     kw["exif"] = img.info["exif"]
-
         fmt = _PIL_FMT.get(to_ext, to_ext[1:].upper())
         try:
             img.save(str(dst), format=fmt, **kw)
@@ -435,23 +355,13 @@ def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
             safe = {k: v for k, v in kw.items() if k in ("quality", "lossless", "method", "optimize")}
             img.save(str(dst), format=fmt, **safe)
     return dst.is_file()
-
-
 _register("pillow", 20, _pil_exts(), _pil_exts(), _pil_convert, _pil_probe)
-
-
-# ---------------------------------------------------------------------------
-# Backend: cv2
-# ---------------------------------------------------------------------------
 try:
     import cv2 as _cv2
     import numpy as _np
-
     _HAS_CV2 = True
 except ImportError:
     _cv2, _np, _HAS_CV2 = None, None, False
-
-
 def _cv2_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     if not _HAS_CV2:
         return False
@@ -487,8 +397,6 @@ def _cv2_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
     elif to_ext == ".webp":
         params = [int(_cv2.IMWRITE_WEBP_QUALITY), quality]
     return bool(_cv2.imwrite(str(dst), img, params))
-
-
 _register(
     "cv2",
     30,
@@ -497,20 +405,12 @@ _register(
     _cv2_convert,
     lambda: _HAS_CV2,
 )
-
-
-# ---------------------------------------------------------------------------
-# Backend: skimage
-# ---------------------------------------------------------------------------
 try:
     from skimage import io as _ski_io, color as _ski_color
-
     _HAS_SKI = True
 except ImportError:
     _ski_io = _ski_color = None
     _HAS_SKI = False
-
-
 def _ski_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     if not _HAS_SKI:
         return False
@@ -519,7 +419,6 @@ def _ski_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
         return False
     if opts.max_width or opts.max_height or opts.scale:
         from skimage.transform import resize as _skresize
-
         h, w = img.shape[:2]
         nw, nh = _target_size(w, h, opts)
         if (nw, nh) != (w, h):
@@ -534,8 +433,6 @@ def _ski_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
     kw = {"quality": quality} if to_ext in (".jpg", ".jpeg") else {}
     _ski_io.imsave(str(dst), img, **kw)
     return dst.is_file()
-
-
 _register(
     "skimage",
     50,
@@ -544,23 +441,14 @@ _register(
     _ski_convert,
     lambda: _HAS_SKI,
 )
-
-
-# ---------------------------------------------------------------------------
-# Backend: pyvips
-# ---------------------------------------------------------------------------
 def _probe_vips() -> bool:
     try:
         import pyvips  # noqa
-
         return True
     except Exception:
         return False
-
-
 def _vips_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     import pyvips
-
     img = pyvips.Image.new_from_file(str(src), access="sequential", fail_on="error")
     if opts.auto_orient and to_ext not in (".png", ".tiff", ".tif"):
         try:
@@ -611,8 +499,6 @@ def _vips_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Convert
     else:
         img.write_to_file(str(dst), Q=quality)
     return dst.is_file()
-
-
 _register(
     "vips",
     10,
@@ -641,24 +527,15 @@ _register(
     _vips_convert,
     _probe_vips,
 )
-
-
-# ---------------------------------------------------------------------------
-# Backend: Wand (ImageMagick bindings)
-# ---------------------------------------------------------------------------
 def _probe_wand() -> bool:
     try:
         from wand.image import Image as _WI  # noqa
-
         return True
     except Exception:
         return False
-
-
 def _wand_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     from wand.image import Image as WImage
     from wand.color import Color
-
     with WImage(filename=str(src)) as img:
         if opts.auto_orient:
             try:
@@ -704,8 +581,6 @@ def _wand_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Convert
                 pass
         img.save(filename=str(dst))
     return dst.is_file()
-
-
 _register(
     "wand",
     40,
@@ -758,15 +633,8 @@ _register(
     _wand_convert,
     _probe_wand,
 )
-
-
-# ---------------------------------------------------------------------------
-# Backend: ImageMagick (subprocess)
-# ---------------------------------------------------------------------------
 def _probe_magick() -> bool:
     return bool(shutil.which("magick") or shutil.which("convert"))
-
-
 def _magick_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     cmd = shutil.which("magick") or shutil.which("convert")
     if not cmd:
@@ -796,8 +664,6 @@ def _magick_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Conve
         return dst.is_file()
     except Exception:
         return False
-
-
 _register(
     "imagemagick",
     45,
@@ -851,15 +717,8 @@ _register(
     _magick_convert,
     _probe_magick,
 )
-
-
-# ---------------------------------------------------------------------------
-# Backend: ffmpeg
-# ---------------------------------------------------------------------------
 def _probe_ffmpeg() -> bool:
     return bool(shutil.which("ffmpeg"))
-
-
 def _ffmpeg_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     cmd = shutil.which("ffmpeg")
     if not cmd:
@@ -882,8 +741,6 @@ def _ffmpeg_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Conve
         return dst.is_file()
     except Exception:
         return False
-
-
 _register(
     "ffmpeg",
     60,
@@ -915,24 +772,15 @@ _register(
     _ffmpeg_convert,
     _probe_ffmpeg,
 )
-
-
-# ---------------------------------------------------------------------------
-# Backend: pymupdf (PDF → image)
-# ---------------------------------------------------------------------------
 def _probe_pymupdf() -> bool:
     try:
         import fitz  # noqa
-
         return True
     except ImportError:
         return False
-
-
 def _pymupdf_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     import fitz
     from PIL import Image
-
     doc = fitz.open(str(src))
     try:
         if doc.page_count == 0:
@@ -955,8 +803,6 @@ def _pymupdf_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Conv
     finally:
         doc.close()
     return dst.is_file()
-
-
 _register(
     "pymupdf",
     5,
@@ -965,11 +811,6 @@ _register(
     _pymupdf_convert,
     _probe_pymupdf,
 )
-
-
-# ---------------------------------------------------------------------------
-# THE FALLBACK ENGINE
-# ---------------------------------------------------------------------------
 def _try_backends_to_file(
     src: Path,
     dst: Path,
@@ -978,25 +819,16 @@ def _try_backends_to_file(
     opts: ConvertOptions,
     preferred: Optional[str] = None,
 ) -> Tuple[bool, Optional[str], str]:
-    """Try every viable backend until one succeeds.
-
-    Never raises. Never touches the source. Writes each attempt to a
-    unique `.part.<backend>` sibling of `dst`, only moving it into
-    place once a non-empty output is confirmed.
-    """
     src_ext = src.suffix.lower()
     candidates = backends_for(src_ext, to_ext)
-
     if preferred:
         pref = backend_by_name(preferred)
         if pref and pref.available and pref in candidates:
             candidates = [pref] + [b for b in candidates if b.name != pref.name]
         elif pref and pref.available:
             candidates = candidates + [pref]
-
     if not candidates:
         candidates = available_backends()
-
     errors: List[str] = []
     for b in candidates:
         tmp = dst.with_name(f"{dst.name}.part.{b.name}")
@@ -1015,7 +847,6 @@ def _try_backends_to_file(
             except OSError:
                 pass
             continue
-
         if ok and tmp.is_file() and tmp.stat().st_size > 0:
             try:
                 if dst.exists():
@@ -1037,10 +868,7 @@ def _try_backends_to_file(
                     tmp.unlink()
             except OSError:
                 pass
-
     return (False, None, "; ".join(errors) or "no backend could convert this file")
-
-
 def _encode_with_target_size(
     src: Path,
     dst: Path,
@@ -1051,7 +879,6 @@ def _encode_with_target_size(
 ) -> Tuple[bool, Optional[str], str]:
     if not opts.target_size:
         return _try_backends_to_file(src, dst, to_ext, base_quality, opts, preferred)
-
     tmp_hi = dst.with_name(dst.name + ".hi")
     ok, backend, err = _try_backends_to_file(src, tmp_hi, to_ext, base_quality, opts, preferred)
     if not ok:
@@ -1068,7 +895,6 @@ def _encode_with_target_size(
         tmp_hi.unlink()
     except OSError:
         pass
-
     lo = max(1, opts.min_quality)
     hi = max(lo, base_quality - 1)
     best: Optional[Path] = None
@@ -1094,7 +920,6 @@ def _encode_with_target_size(
             except OSError:
                 pass
             hi = mid - 1
-
     if best is None:
         tmp = dst.with_name(dst.name + ".min")
         ok, u, err = _try_backends_to_file(src, tmp, to_ext, max(1, opts.min_quality), opts, used_backend)
@@ -1102,7 +927,6 @@ def _encode_with_target_size(
             return (False, None, f"min-q: {err}")
         best = tmp
         used_backend = u or used_backend
-
     try:
         if dst.exists():
             dst.unlink()
@@ -1110,30 +934,21 @@ def _encode_with_target_size(
     except OSError as exc:
         return (False, None, f"move failed: {exc}")
     return (True, used_backend, "")
-
-
-# ---------------------------------------------------------------------------
-# Per-file processing
-# ---------------------------------------------------------------------------
 @dataclass
 class FileResult:
     src: Path
     out: Optional[Path]
-    status: str  # ok | skip | error | predict
+    status: str
     backend: Optional[str] = None
     before: Optional[int] = None
     after: Optional[int] = None
     message: str = ""
-
-
 def _would_change(src: Path, to_ext: str, opts: ConvertOptions) -> bool:
     if src.suffix.lower() != to_ext:
         return True
     if opts.max_width or opts.max_height or opts.scale or opts.target_size:
         return True
     return False
-
-
 def _determine_dst(src: Path, to_ext: str, out_dir: Optional[Path], preserve_tree: bool) -> Path:
     if out_dir is None:
         return src.with_suffix(to_ext)
@@ -1144,8 +959,6 @@ def _determine_dst(src: Path, to_ext: str, out_dir: Optional[Path], preserve_tre
             rel = Path(src.name)
         return out_dir / rel.with_suffix(to_ext)
     return out_dir / (src.stem + to_ext)
-
-
 def process_file(
     src: Path,
     to_ext: str,
@@ -1163,10 +976,8 @@ def process_file(
     src = Path(src)
     if not src.is_file():
         return FileResult(src, None, "skip", message="not a file")
-
     if not force and not _would_change(src, to_ext, opts):
         return FileResult(src, None, "skip", message="already target format; use --force to re-encode")
-
     before = src.stat().st_size
     dst = _determine_dst(src, to_ext, out_dir, preserve_tree)
     try:
@@ -1175,7 +986,6 @@ def process_file(
         pass
     if dst.exists() and no_clobber and not force:
         dst = _unique_path(dst)
-
     if predict:
         tmp = dst.with_name(dst.name + ".predict")
         ok, used, err = _encode_with_target_size(src, tmp, to_ext, opts.quality, opts, preferred_backend)
@@ -1189,14 +999,10 @@ def process_file(
         return FileResult(
             src, dst, "predict", used, before, size, message=f"{_human_size(before)} → {_human_size(size)} (predicted)"
         )
-
     ok, used, err = _encode_with_target_size(src, dst, to_ext, opts.quality, opts, preferred_backend)
     if not ok:
-        # FALLBACK CONTRACT: source untouched, run continues.
         return FileResult(src, None, "error", message=err)
-
     after = dst.stat().st_size if dst.is_file() else 0
-
     if not keep:
         if backup:
             bak = src.with_name(src.name + ".bak")
@@ -1206,13 +1012,7 @@ def process_file(
             except OSError:
                 pass
         _remove_original(src, trash)
-
     return FileResult(src, dst, "ok", used, before, after, message=f"{_human_size(before)} → {_human_size(after)}")
-
-
-# ---------------------------------------------------------------------------
-# Discovery
-# ---------------------------------------------------------------------------
 def collect_images(
     paths: Sequence[Path],
     exts: Sequence[str],
@@ -1224,7 +1024,6 @@ def collect_images(
 ) -> List[Path]:
     ext_set = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in exts}
     found: List[Path] = []
-
     def accept(p: Path) -> bool:
         if p.suffix.lower() not in ext_set:
             return False
@@ -1242,7 +1041,6 @@ def collect_images(
         if max_size is not None and sz > max_size:
             return False
         return True
-
     for p in paths:
         try:
             p = p.resolve()
@@ -1269,11 +1067,6 @@ def collect_images(
                 except OSError:
                     pass
     return found
-
-
-# ---------------------------------------------------------------------------
-# Presets
-# ---------------------------------------------------------------------------
 _PRESETS: Dict[str, Dict[str, Any]] = {
     "web": {
         "to": "webp",
@@ -1303,8 +1096,6 @@ _PRESETS: Dict[str, Dict[str, Any]] = {
     "archive": {"to": "png", "lossless": True, "strip_metadata": False},
     "print": {"to": "tiff", "quality": 95, "strip_metadata": False},
 }
-
-
 def _apply_preset(args: argparse.Namespace) -> None:
     if not args.preset:
         return
@@ -1318,11 +1109,6 @@ def _apply_preset(args: argparse.Namespace) -> None:
         elif k in ("max_width", "max_height", "fit", "quality", "lossless", "strip_metadata"):
             if getattr(args, k, None) is None:
                 setattr(args, k, v)
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     installed = " ".join(b.name for b in available_backends()) or "(none)"
     p = argparse.ArgumentParser(
@@ -1386,8 +1172,6 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p.add_argument("--preset", default=None, choices=list(_PRESETS.keys()))
     p.add_argument("-V", "--version", action="version", version=f"%(prog)s {VERSION}")
     return p.parse_args(argv)
-
-
 def _resolve_defaults(args: argparse.Namespace) -> None:
     _apply_preset(args)
     if args.to is None:
@@ -1432,8 +1216,6 @@ def _resolve_defaults(args: argparse.Namespace) -> None:
                 args.fit = "inside"
             elif hint == "<":
                 args.fit = "outside"
-
-
 def _build_opts(args: argparse.Namespace) -> ConvertOptions:
     return ConvertOptions(
         quality=max(1, min(100, args.quality)),
@@ -1450,11 +1232,6 @@ def _build_opts(args: argparse.Namespace) -> ConvertOptions:
         target_size=_parse_size(args.target_size) if args.target_size else None,
         min_quality=max(1, min(100, args.min_quality)),
     )
-
-
-# ---------------------------------------------------------------------------
-# Benchmark
-# ---------------------------------------------------------------------------
 def _benchmark(files: List[Path], to_ext: str, opts: ConvertOptions) -> None:
     if not files:
         print("no files to benchmark")
@@ -1476,11 +1253,6 @@ def _benchmark(files: List[Path], to_ext: str, opts: ConvertOptions) -> None:
                 print(f"{b.name:<14}{'ok':<10}{_human_size(tmp.stat().st_size):>10}{dt:>9.3f}s")
             else:
                 print(f"{b.name:<14}{'failed':<10}")
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 _DEFAULT_INPUT_EXTS = [
     ".jpg",
     ".jpeg",
@@ -1508,33 +1280,25 @@ _DEFAULT_INPUT_EXTS = [
     ".dds",
     ".psd",
 ]
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
-
     if args.list_backends:
         print("backends:")
         for b in _REGISTRY:
             print(f"  {b.name:<14} available={'yes' if b.available else 'no':<3} priority={b.priority}")
         return 0
-
     _resolve_defaults(args)
     to_ext = _normalize_to(args.to)
     opts = _build_opts(args)
-
     if args.list_targets:
         print(f"target extensions: {' '.join(sorted(all_known_targets())) or '(none)'}")
         return 0
-
     jobs = args.jobs or (os.cpu_count() or 1)
     jobs = max(1, jobs)
-
     exts = list(_DEFAULT_INPUT_EXTS)
     if args.ext:
         exts.extend(e.lower() if e.startswith(".") else f".{e.lower()}" for e in args.ext)
     exts = list(dict.fromkeys(exts))
-
     search_paths = args.paths if args.paths else [Path.cwd()]
     files = collect_images(
         search_paths,
@@ -1545,21 +1309,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         min_size=_parse_size(args.min_size) if args.min_size else None,
         max_size=_parse_size(args.max_size) if args.max_size else None,
     )
-
     if args.benchmark:
         _benchmark(files, to_ext, opts)
         return 0
-
     if not files:
         print("no images found")
         return 0
-
     if args.dry_run and not args.predict:
         for f in files:
             print(f)
         print(f"\n{len(files)} file(s) would be processed → {to_ext}")
         return 0
-
     preferred = args.backend
     if not preferred and args.backends:
         for name in args.backends.split(","):
@@ -1567,7 +1327,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if b and b.available:
                 preferred = b.name
                 break
-
     def worker(f: Path) -> FileResult:
         try:
             return process_file(
@@ -1586,17 +1345,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         except Exception as exc:
             return FileResult(f, None, "error", message=f"unhandled: {exc}")
-
     results: List[FileResult] = []
     progress = None
     if args.progress:
         try:
             from tqdm import tqdm
-
             progress = tqdm(total=len(files), unit="file")
         except ImportError:
             progress = None
-
     if jobs == 1:
         for f in files:
             r = worker(f)
@@ -1635,17 +1391,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 results.append(r)
                 if progress:
                     progress.update(1)
-
     if progress:
         progress.close()
-
     ok = sum(1 for r in results if r.status == "ok")
     err = sum(1 for r in results if r.status == "error")
     skip = sum(1 for r in results if r.status == "skip")
     pred = sum(1 for r in results if r.status == "predict")
-
     total_saved = sum((r.before - r.after) for r in results if r.before is not None and r.after is not None)
-
     if args.json:
         payload = {
             "summary": {"ok": ok, "errors": err, "skipped": skip, "predicted": pred, "space_change": total_saved},
@@ -1664,20 +1416,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         }
         print(json.dumps(payload, indent=2))
         return 1 if err else 0
-
     if not args.verbose and not args.quiet:
         for r in results:
             if r.status == "error":
                 print(f"error: {r.src.name} ({r.message})", file=sys.stderr)
-
     print(f"to={to_ext}  processed={ok}  errors={err}  skipped={skip}" + (f"  predicted={pred}" if pred else ""))
     if total_saved:
         label = "predicted space change" if pred else "space change"
         print(f"{label}: {_human_size(total_saved)}")
-
-    # Per-file failures do not stop the run; exit code reflects totals.
     return 1 if err else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

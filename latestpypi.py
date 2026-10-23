@@ -1,14 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import urllib.request
 import xml.etree.ElementTree as ET
-
 RSS_URL = "https://pypi.org/rss/packages.xml"
 OUTPUT_FILE = Path("latest_pypi_packages.txt")
-
-
 def fetch_latest_packages(url: str = RSS_URL) -> list[str]:
     req = urllib.request.Request(url, headers={"User-Agent": "pypi-latest-fetcher/1.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -26,15 +22,11 @@ def fetch_latest_packages(url: str = RSS_URL) -> list[str]:
         if name:
             names.append(name)
     return names
-
-
 def main() -> None:
     packages = fetch_latest_packages()
     OUTPUT_FILE.write_text("\n".join(packages) + "\n", encoding="utf-8")
     print(f"Saved {len(packages)} package names to {OUTPUT_FILE.resolve()}")
     for name in packages:
         print(f"  - {name}")
-
-
 if __name__ == "__main__":
     main()

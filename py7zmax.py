@@ -4,8 +4,6 @@ import sys
 from pathlib import Path
 import lzma
 import py7zr
-
-
 def main() -> int:
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <file>", file=sys.stderr)
@@ -38,7 +36,5 @@ def main() -> int:
     src.unlink()
     print(f"OK: '{src}' -> '{dst}' (original removed)")
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

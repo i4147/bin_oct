@@ -8,7 +8,6 @@ from pathlib import Path
 import re
 import time
 from typing import Iterable, Optional
-
 _ANSI = {
     "red": "\033[31m",
     "green": "\033[32m",
@@ -17,8 +16,6 @@ _ANSI = {
     "bold": "\033[1m",
     "reset": "\033[0m",
 }
-
-
 def colored(text: str, color: Optional[str] = None, attrs: Optional[Iterable[str]] = None) -> str:
     prefix = ""
     if color:
@@ -29,19 +26,13 @@ def colored(text: str, color: Optional[str] = None, attrs: Optional[Iterable[str
     if not prefix:
         return text
     return f"{prefix}{text}{_ANSI['reset']}"
-
-
 SRT_EXT = {".srt"}
 TIMESTAMP_RE = re.compile(r"\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}")
 TAG_RE = re.compile(r"<[^>]+>|{\w+}")
-
-
 def iter_srt(directory: Path, recursive: bool = False) -> list[Path]:
     if recursive:
         return [p for p in directory.rglob("*") if p.suffix.lower() in SRT_EXT]
     return [p for p in directory.iterdir() if p.is_file() and p.suffix.lower() in SRT_EXT]
-
-
 def read_srt_dialogue(path: Path) -> tuple[list[str], int]:
     with open(path, "r", encoding="utf-8") as f:
         raw = f.readlines()
@@ -54,31 +45,23 @@ def read_srt_dialogue(path: Path) -> tuple[list[str], int]:
             continue
         lines.append(s)
     return lines, skipped
-
-
 _EPISODE_PATTERNS = [
     re.compile(r"S\d{2}E(\d{2})", re.IGNORECASE),
     re.compile(r"(\d{1,2})x(\d{2})", re.IGNORECASE),
 ]
 _PREFIX_RE = re.compile(r"^\s*[\d\s\.-]{6,}", re.IGNORECASE)
-
-
 def _extract_episode(name: str) -> Optional[str]:
     for pattern in _EPISODE_PATTERNS:
         m = pattern.search(name)
         if m:
             return m.group(m.lastindex)
     return None
-
-
 def _new_subtitle_name(name: str) -> Optional[str]:
     stripped = _PREFIX_RE.sub("", name)
     ep = _extract_episode(stripped)
     if not ep:
         return None
     return f"E{ep.zfill(2)}"
-
-
 def cmd_rename(args: argparse.Namespace) -> int:
     root = Path(args.directory)
     files = iter_srt(root, args.recursive)
@@ -102,18 +85,11 @@ def cmd_rename(args: argparse.Namespace) -> int:
     if not args.write:
         print(colored("\nDry-run only. Use -w to apply.", "yellow"))
     return 0
-
-
 _LINGUA_DETECTOR = None
-
-
 def _lingua_init() -> None:
     from lingua import LanguageDetectorBuilder
-
     global _LINGUA_DETECTOR
     _LINGUA_DETECTOR = LanguageDetectorBuilder.from_all_languages().build()
-
-
 def _lingua_detect_batch(texts: list[str]) -> list[tuple[str, Optional[str], Optional[str]]]:
     out: list[tuple[str, Optional[str], Optional[str]]] = []
     for text in texts:
@@ -126,8 +102,6 @@ def _lingua_detect_batch(texts: list[str]) -> list[tuple[str, Optional[str], Opt
         except Exception:
             out.append((text, None, None))
     return out
-
-
 def _folderize_lingua(path: Path, pool, batch_size: int) -> Optional[tuple[str, str]]:
     try:
         lines, skipped = read_srt_dialogue(path)
@@ -160,11 +134,8 @@ def _folderize_lingua(path: Path, pool, batch_size: int) -> Optional[tuple[str, 
     except Exception as e:
         print(f"  ⚠ Error reading {path.name}: {e}")
     return None
-
-
 def _folderize_cld2(path: Path) -> Optional[tuple[str, str]]:
     import pycld2 as cld2
-
     try:
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -182,8 +153,6 @@ def _folderize_cld2(path: Path) -> Optional[tuple[str, str]]:
     except Exception as e:
         print(f"  ⚠ Error reading {path.name}: {e}")
     return None
-
-
 def cmd_folderize(args: argparse.Namespace) -> int:
     directory = Path(args.directory)
     print(f"🔍 Scanning directory: {directory.absolute()}\n")
@@ -234,8 +203,6 @@ def cmd_folderize(args: argparse.Namespace) -> int:
             moved += 1
     print(f"\n✅ Complete! Moved {moved} file(s) into {len(buckets)} language folder(s).")
     return 0
-
-
 def _srt_to_text(path: Path) -> str:
     lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
     out: list[str] = []
@@ -250,16 +217,12 @@ def _srt_to_text(path: Path) -> str:
         line = TAG_RE.sub("", line)
         out.append(line)
     return "\n".join(out)
-
-
 def cmd_srt2txt(args: argparse.Namespace) -> int:
     src = Path(args.input)
     dst = Path(args.output) if args.output else src.with_suffix(".txt")
     dst.write_text(_srt_to_text(src), encoding="utf-8")
     print(f"✔ Converted: {src} → {dst}")
     return 0
-
-
 def _vtt_to_srt(content: str) -> str:
     lines = content.splitlines()
     out: list[str] = []
@@ -283,8 +246,6 @@ def _vtt_to_srt(content: str) -> str:
         else:
             i += 1
     return "\n".join(out)
-
-
 def cmd_vtt2srt(args: argparse.Namespace) -> int:
     src = Path(args.input)
     dst = Path(args.output) if args.output else src.with_suffix(".srt")
@@ -292,12 +253,9 @@ def cmd_vtt2srt(args: argparse.Namespace) -> int:
     dst.write_text(_vtt_to_srt(content), encoding="utf-8")
     print("File saved.")
     return 0
-
-
 def _translate_srt(input_path: Path, source: str, target: str, max_batch_chars: int, delay: float) -> None:
     from deep_translator import GoogleTranslator
     import pysrt
-
     subs = pysrt.open(str(input_path), encoding="utf-8")
     translator = GoogleTranslator(source=source, target=target)
     batches: list[list] = []
@@ -327,13 +285,9 @@ def _translate_srt(input_path: Path, source: str, target: str, max_batch_chars: 
     out = f"translated_{input_path.name}"
     subs.save(out, encoding="utf-8")
     print(f"Translation complete! Saved to {out}")
-
-
 def cmd_translate(args: argparse.Namespace) -> int:
     _translate_srt(Path(args.input), args.source, args.target, args.max_batch_chars, args.delay)
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
@@ -373,13 +327,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_tr.add_argument("--delay", type=float, default=1.0, help="seconds to sleep between batches (default: 1.0)")
     p_tr.set_defaults(func=cmd_translate)
     return parser
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

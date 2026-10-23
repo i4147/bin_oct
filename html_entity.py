@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import re
 import sys
 from dh import get_nobinary
-
 HTML_ENTITIES = {
     "&lt;": "<",
     "&gt;": ">",
@@ -33,15 +31,10 @@ HTML_ENTITIES = {
     "&rdquo;": '"',
 }
 ENTITY_PATTERN = re.compile("|".join(re.escape(k) for k in HTML_ENTITIES))
-
-
 def replace_entities(text: str) -> str:
     def replacer(match) -> str:
         return HTML_ENTITIES[match.group(0)]
-
     return ENTITY_PATTERN.sub(replacer, text)
-
-
 def process_file(path: Path) -> tuple[Path, bool, str]:
     try:
         with open(path, encoding="utf-8") as f:
@@ -54,8 +47,6 @@ def process_file(path: Path) -> tuple[Path, bool, str]:
         return (path, changed, "")
     except Exception as e:
         return (path, False, str(e))
-
-
 def main() -> None:
     cwd = Path.cwd().resolve()
     args = sys.argv[1:]
@@ -86,7 +77,5 @@ def main() -> None:
             print(f"  - {p.relative_to(cwd)}: {err}")
     print(f"   Modified: {len(changed_files)}")
     print(f"   Errors: {len(error_files)}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, cast
 import astor
 from loguru import logger
-
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
 REPEATED_JSON_PATH: Final[Path] = Path("repeated.json")
@@ -19,18 +18,12 @@ DefinitionsMap = collections.defaultdict[DefinitionKey, list[str]]
 SourceMap = dict[DefinitionKey, str | None]
 FileMap = dict[str, list[str]]
 Task = tuple[Path, list[str]]
-
-
 def get_source(node: ast.AST, content: str) -> str | None:
     return ast.get_source_segment(content, node)
-
-
 def normalize_source(source: str | None) -> str:
     if not source:
         return ""
     return "\n".join(line.rstrip() for line in source.strip().splitlines())
-
-
 def _iter_target_py_files(root: Path) -> list[Path]:
     files: list[Path] = []
     for path in root.rglob("*.py"):
@@ -38,8 +31,6 @@ def _iter_target_py_files(root: Path) -> list[Path]:
             continue
         files.append(path)
     return files
-
-
 def _collect_definitions(
     file_path: Path,
     definitions: DefinitionsMap,
@@ -67,8 +58,6 @@ def _collect_definitions(
                     definitions[key].append(str(file_path))
                     if key not in source_map:
                         source_map[key] = source
-
-
 def analyze_files() -> list[dict[str, Any]]:
     cwd: Path = Path.cwd()
     definitions: DefinitionsMap = collections.defaultdict(list)
@@ -87,14 +76,10 @@ def analyze_files() -> list[dict[str, Any]]:
                 "files": unique_paths,
             })
     return repeated
-
-
 def write_repeated_json(repeated: list[dict[str, Any]]) -> None:
     repeated.sort(key=lambda item: item["count"], reverse=True)
     REPEATED_JSON_PATH.write_text(json.dumps(repeated, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Wrote {len(repeated)} entries to {REPEATED_JSON_PATH}")
-
-
 def load_refactoring_maps() -> FileMap:
     with REPEATED_JSON_PATH.open("r", encoding="utf-8") as f:
         data: list[dict[str, Any]] = json.load(f)
@@ -105,40 +90,32 @@ def load_refactoring_maps() -> FileMap:
             p: Path = Path(file_path_str)
             file_to_objects[p.name].append(obj_name)
     return dict(file_to_objects)
-
-
 class ASTStripper(ast.NodeTransformer):
     def __init__(self, target_names: list[str]) -> None:
         super().__init__()
         self.target_names: set[str] = set(target_names)
         self.removed_something: bool = False
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef | None:
         if node.name in self.target_names:
             self.removed_something = True
             return None
         return cast("ast.FunctionDef", self.generic_visit(node))
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef | None:
         if node.name in self.target_names:
             self.removed_something = True
             return None
         return cast("ast.AsyncFunctionDef", self.generic_visit(node))
-
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef | None:
         if node.name in self.target_names:
             self.removed_something = True
             return None
         return cast("ast.ClassDef", self.generic_visit(node))
-
     def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
         for target in node.targets:
             if isinstance(target, ast.Name) and target.id in self.target_names:
                 self.removed_something = True
                 return None
         return cast("ast.Assign", self.generic_visit(node))
-
-
 def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
     try:
         source_code: str = file_path.read_text(encoding="utf-8")
@@ -175,8 +152,6 @@ def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
     except Exception as exc:
         logger.error(f"❌ Error writing updates back to {file_path.name}: {exc}")
         return False
-
-
 def main() -> None:
     print("🔎 Analyzing Python files for duplicated definitions...")
     repeated: list[dict[str, Any]] = analyze_files()
@@ -204,7 +179,5 @@ def main() -> None:
             except Exception as exc:
                 logger.error(f"❌ Worker raised: {exc}")
     print("🎉 Structural refactoring complete! All duplicate bodies stripped.")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

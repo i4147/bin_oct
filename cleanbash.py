@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import multiprocessing as mp
@@ -10,7 +9,6 @@ import sys
 from typing import TYPE_CHECKING
 from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
-
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
 BASH_LANGUAGE: Language = Language(tree_sitter_bash.language())
@@ -26,8 +24,6 @@ SHEBANG_PREFIXES: tuple[bytes, ...] = (
     b"#!/bin/zsh",
 )
 _BLANK_RUN_RE = re.compile(rb"(?:[ \t]*\n){3,}")
-
-
 def is_bash_file(path: Path) -> bool:
     if path.suffix.lower() in (".sh", ".bash"):
         return True
@@ -37,12 +33,9 @@ def is_bash_file(path: Path) -> bool:
     except OSError:
         return False
     return any(first_line.startswith(p) for p in SHEBANG_PREFIXES)
-
-
 def find_comment_ranges(source: bytes) -> list[tuple[int, int, bool]]:
     tree = PARSER.parse(source)
     out: list[tuple[int, int, bool]] = []
-
     def walk(node: Node) -> None:
         if node.type == "comment":
             start, end = node.start_byte, node.end_byte
@@ -53,12 +46,9 @@ def find_comment_ranges(source: bytes) -> list[tuple[int, int, bool]]:
                 out.append((start, end, is_inline))
         for child in node.children:
             walk(child)
-
     walk(tree.root_node)
     out.sort(key=lambda r: r[0])
     return out
-
-
 def strip_comments(source: bytes) -> tuple[bytes, int]:
     ranges = find_comment_ranges(source)
     if not ranges:
@@ -73,23 +63,15 @@ def strip_comments(source: bytes) -> tuple[bytes, int]:
         last = end
     out.extend(source[last:])
     return bytes(out), len(ranges)
-
-
 def normalize_blank_lines(source: bytes) -> bytes:
     return _BLANK_RUN_RE.sub(b"\n\n", source)
-
-
 def validate_bash_source(source: bytes) -> bool:
     tree = PARSER.parse(source)
-
     def has_error(node: Node) -> bool:
         if node.type == "ERROR" or node.is_missing:
             return True
         return any(has_error(child) for child in node.children)
-
     return not has_error(tree.root_node)
-
-
 def process_file(path: Path) -> tuple[str, int, str]:
     rel = os.path.relpath(path)
     try:
@@ -107,8 +89,6 @@ def process_file(path: Path) -> tuple[str, int, str]:
     except OSError as e:
         return rel, 0, f"write error: {e}"
     return rel, count, ""
-
-
 def iter_targets(targets: Iterable[Path]) -> Generator[Path, None, None]:
     seen: set[Path] = set()
     for target in targets:
@@ -125,8 +105,6 @@ def iter_targets(targets: Iterable[Path]) -> Generator[Path, None, None]:
                 if p.is_file() and is_bash_file(p) and p not in seen:
                     seen.add(p)
                     yield p
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Remove comments from bash scripts in place (tree-sitter powered).",
@@ -162,8 +140,6 @@ def main() -> int:
         f"\nDone: {files_touched}/{len(files)} file(s) modified, {total_removed} comment(s) removed, {errors} error(s)."
     )
     return 0 if errors == 0 else 2
-
-
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     raise SystemExit(main())

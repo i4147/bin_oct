@@ -9,7 +9,6 @@ import tty
 from typing import Final
 from dh import fsz
 from loguru import logger
-
 POOL_SIZE: Final[int] = 8
 BAR_WIDTH: Final[int] = 10
 RESET: Final[str] = "\x1b[0m"
@@ -24,8 +23,6 @@ KEY_DOWN: Final[str] = "\x1b[B"
 KEY_RIGHT: Final[str] = "\x1b[C"
 KEY_LEFT: Final[str] = "\x1b[D"
 KEY_ESC: Final[str] = "\x1b"
-
-
 @dataclass
 class FSItem:
     path: Path
@@ -35,8 +32,6 @@ class FSItem:
     children: list[FSItem] = field(default_factory=list)
     parent: FSItem | None = None
     flag: str = " "
-
-
 def _scan_recursive(path_str: str) -> FSItem:
     path = Path(path_str)
     try:
@@ -67,12 +62,9 @@ def _scan_recursive(path_str: str) -> FSItem:
         return dir_item
     except OSError:
         return FSItem(path=path, name=path.name, is_dir=False, size=0, flag="!")
-
-
 class DiskAnalyzer:
     def __init__(self, root_path: Path) -> None:
         self.root_path: Path = root_path.resolve()
-
     def scan(self) -> FSItem:
         root_item = FSItem(path=self.root_path, name=str(self.root_path), is_dir=True)
         try:
@@ -94,8 +86,6 @@ class DiskAnalyzer:
             root_item.size += child.size
         root_item.children.sort(key=lambda x: x.size, reverse=True)
         return root_item
-
-
 def get_progress_bar(item_size: int, max_size: int) -> str:
     if max_size == 0:
         return f"[{' ' * BAR_WIDTH}]"
@@ -103,8 +93,6 @@ def get_progress_bar(item_size: int, max_size: int) -> str:
     filled = int(ratio * BAR_WIDTH)
     filled = max(0, min(BAR_WIDTH, filled))
     return f"[{'#' * filled}{' ' * (BAR_WIDTH - filled)}]"
-
-
 def get_key() -> str:
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -116,13 +104,9 @@ def get_key() -> str:
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
-
-
 def clear_screen() -> None:
     sys.stdout.write("\x1b[2J\x1b[H")
     sys.stdout.flush()
-
-
 def draw_interface(current_node: FSItem, selected_idx: int) -> None:
     lines: list[str] = []
     lines.append(f"{BOLD}Directory: {current_node.path}{RESET}\n")
@@ -145,8 +129,6 @@ def draw_interface(current_node: FSItem, selected_idx: int) -> None:
     clear_screen()
     sys.stdout.write("\n".join(lines) + "\n")
     sys.stdout.flush()
-
-
 def main() -> int:
     target_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path()
     if not target_dir.is_dir():
@@ -182,7 +164,5 @@ def main() -> int:
             except ValueError:
                 selected_idx = 0
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

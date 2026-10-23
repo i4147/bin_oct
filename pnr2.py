@@ -10,14 +10,11 @@ import re
 from typing import Any, Generator
 import unicodedata
 import uuid
-
-
 class PathRenamer:
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
         self.paths = [Path(p) for p in args.paths] if hasattr(args, "paths") and args.paths else [Path.cwd()]
         self.log_entries: list[dict] = []
-
     def should_skip(self, path: Path, root: Path) -> bool:
         if not self.args.follow_symlinks and path.is_symlink():
             return True
@@ -46,7 +43,6 @@ class PathRenamer:
             if path.suffix.lstrip(".").lower() not in exts:
                 return True
         return False
-
     def walk_files(self) -> Generator[Path, None, None]:
         max_depth = self.args.max_depth if hasattr(self.args, "max_depth") and self.args.max_depth is not None else None
         for root_path in self.paths:
@@ -79,10 +75,8 @@ class PathRenamer:
                         d_path = base_p / d
                         if not self.should_skip(d_path, root_path):
                             yield d_path
-
     def clean_unique_stem(self, stem: str) -> str:
         return re.sub(r"(_\d+)+$", "", stem)
-
     def get_unique_path(self, target_path: Path) -> Path:
         if not target_path.exists():
             return target_path
@@ -96,14 +90,12 @@ class PathRenamer:
             if not new_path.exists():
                 return new_path
             counter += 1
-
     def transliterate_text(self, text: str) -> str:
         norm = unicodedata.normalize("NFKD", text)
         ascii_text = norm.encode("ascii", "ignore").decode("ascii")
         if not ascii_text.strip():
             return text
         return ascii_text
-
     def transform_name(self, name: str, original_path: Path, index: int = 0) -> str:
         stem, ext = Path(name).stem, Path(name).suffix
         if self.args.remove:
@@ -187,7 +179,6 @@ class PathRenamer:
         if not stem.strip():
             stem = "file"
         return f"{stem}{ext if original_path.is_file() else ''}"
-
     def run(self) -> int:
         if hasattr(self.args, "undo") and self.args.undo:
             return self.perform_undo()
@@ -205,10 +196,8 @@ class PathRenamer:
         elif sort_by == "random":
             random.shuffle(files)
         elif sort_by == "natural":
-
             def natural_key(path: Path) -> list[Any]:
                 return [int(text) if text.isdigit() else text.lower() for text in re.split(r"(\d+)", path.name)]
-
             files.sort(key=natural_key, reverse=reverse)
         else:
             files.sort(key=lambda p: p.name.lower(), reverse=reverse)
@@ -258,7 +247,6 @@ class PathRenamer:
         if not self.args.quiet:
             print(f"\nOperation completed. {renamed_count} items processed.")
         return 0
-
     def perform_undo(self) -> int:
         undo_file = self.args.undo
         if not Path(undo_file).exists():
@@ -284,8 +272,6 @@ class PathRenamer:
                     print(f"Failed to restore {new_p}: {e}")
         print(f"Undo completed. Restored {restored_count} items.")
         return 0
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Advanced File Renamer")
     parser.add_argument("paths", nargs="*", default=["."], help="Target paths")
@@ -351,7 +337,5 @@ def main() -> int:
     except Exception as e:
         print(f"Error: {e}")
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

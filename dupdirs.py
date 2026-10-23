@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -8,21 +7,16 @@ import os
 from pathlib import Path
 import sys
 import xxhash
-
 NUM_WORKERS = 8
 SKIP_DIR_NAMES = {".git"}
 HASH_CHUNK_SIZE = 1 << 20
 MAX_DEPTH = 64
-
-
 def _file_hash(path: Path) -> str:
     h = xxhash.xxh64()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(HASH_CHUNK_SIZE), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
 def _collect_files(root: Path):
     result = []
     root = root.resolve()
@@ -49,8 +43,6 @@ def _collect_files(root: Path):
             except OSError:
                 continue
     return result
-
-
 def _collect_subdirs(root: Path):
     result = []
     root = root.resolve()
@@ -76,8 +68,6 @@ def _collect_subdirs(root: Path):
             except OSError:
                 continue
     return result
-
-
 def folder_signature(args):
     path_str, mode = args
     root = Path(path_str).resolve()
@@ -114,8 +104,6 @@ def folder_signature(args):
     else:
         content_key = ""
     return (struct_key, content_key, str(root))
-
-
 def find_all_folders(start: Path):
     start = start.resolve()
     folders = []
@@ -140,8 +128,6 @@ def find_all_folders(start: Path):
             except OSError:
                 continue
     return folders
-
-
 def parse_args():
     p = argparse.ArgumentParser(description="Find duplicate folders in the current directory tree.")
     p.add_argument(
@@ -151,8 +137,6 @@ def parse_args():
         help="Report folders with the same tree structure (same filenames & subfolders) even if contents differ.",
     )
     return p.parse_args()
-
-
 def main():
     args = parse_args()
     mode = "structure" if args.structure else "content"
@@ -191,7 +175,5 @@ def main():
         for p in sorted(paths):
             print(f"  {p}")
         print()
-
-
 if __name__ == "__main__":
     main()

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import base64
@@ -9,21 +7,13 @@ from pathlib import Path
 import re
 import sys
 from typing import Any, Iterable, Optional, Sequence
-
-
 def die(msg: str, code: int = 1) -> "None":
     print(f"Error: {msg}", file=sys.stderr)
     sys.exit(code)
-
-
 def warn(msg: str) -> None:
     print(f"Warning: {msg}", file=sys.stderr)
-
-
 def info(msg: str) -> None:
     print(msg)
-
-
 def require_input(path: str | Path, *, check_suffix: Optional[str] = None) -> Path:
     p = Path(path)
     if not p.exists():
@@ -31,16 +21,10 @@ def require_input(path: str | Path, *, check_suffix: Optional[str] = None) -> Pa
     if check_suffix and p.suffix.lower() != check_suffix:
         die(f"input file '{p}' is not {check_suffix}")
     return p
-
-
 def default_pdf_path(input_path: Path) -> Path:
     return input_path.with_suffix(".pdf")
-
-
 def resolve_output(input_path: Path, output: Optional[str | Path]) -> Path:
     return Path(output) if output else default_pdf_path(Path(input_path))
-
-
 def render_pdf_from_html(
     html_text: str,
     output: Path,
@@ -50,7 +34,6 @@ def render_pdf_from_html(
     base_url: Optional[str] = None,
 ) -> None:
     from weasyprint import CSS, HTML
-
     sheets: list[Any] = []
     for f in css_files:
         sheets.append(CSS(filename=str(f)))
@@ -58,8 +41,6 @@ def render_pdf_from_html(
         sheets.append(CSS(string=s))
     doc = HTML(string=html_text, base_url=base_url)
     doc.write_pdf(str(output), stylesheets=sheets)
-
-
 _INLINE_CSS_TEMPLATE = """
 @page {
     size: A4;
@@ -146,8 +127,6 @@ _LOCAL_FONT_FACES = """\
     font-weight: normal; font-style: normal;
 }
 """
-
-
 def inline_css(mode: str) -> str:
     if mode == "local-fonts":
         return _LOCAL_FONT_FACES + _INLINE_CSS_TEMPLATE.format(
@@ -158,8 +137,6 @@ def inline_css(mode: str) -> str:
         font_sans='"Helvetica Neue",Helvetica,Arial,sans-serif',
         font_mono='"Courier New",Courier,monospace',
     )
-
-
 def cmd_svg(args: argparse.Namespace) -> int:
     inp = require_input(args.input, check_suffix=".svg")
     out = resolve_output(inp, args.output)
@@ -173,20 +150,15 @@ def cmd_svg(args: argparse.Namespace) -> int:
         die(f"cairosvg failed: {exc}")
     info(f"PDF created: {out}")
     return 0
-
-
 class _CHMHtmlExtractor(HTMLParser):
     SKIP_TAGS = {"script", "style", "meta", "link", "iframe"}
-
     def __init__(self) -> None:
         super().__init__()
         self.content: list[str] = []
         self.in_body = False
         self.current_skip_tag: Optional[str] = None
-
     def _attrs(self, attrs: Sequence[tuple[str, Optional[str]]]) -> str:
         return "".join(f' {k}="{v}"' for k, v in attrs if k not in ("href", "src"))
-
     def handle_starttag(self, tag: str, attrs: Any) -> None:
         if tag in self.SKIP_TAGS:
             self.current_skip_tag = tag
@@ -194,7 +166,6 @@ class _CHMHtmlExtractor(HTMLParser):
             self.in_body = True
         elif not self.current_skip_tag and self.in_body:
             self.content.append(f"<{tag}{self._attrs(attrs)}>")
-
     def handle_endtag(self, tag: str) -> None:
         if tag == self.current_skip_tag:
             self.current_skip_tag = None
@@ -202,19 +173,14 @@ class _CHMHtmlExtractor(HTMLParser):
             self.in_body = False
         elif not self.current_skip_tag and self.in_body:
             self.content.append(f"</{tag}>")
-
     def handle_data(self, data: str) -> None:
         if not self.current_skip_tag and self.in_body:
             self.content.append(data)
-
     def handle_startendtag(self, tag: str, attrs: Any) -> None:
         if tag not in self.SKIP_TAGS and self.in_body:
             self.content.append(f"<{tag}{self._attrs(attrs)}/>")
-
     def get_content(self) -> str:
         return "".join(self.content)
-
-
 _CHM_STYLE_HEADER = (
     '<!DOCTYPE html><html><head><meta charset="utf-8">'
     "<style>"
@@ -225,8 +191,6 @@ _CHM_STYLE_HEADER = (
     "code { background-color:#f5f5f5; padding:0.2em 0.4em; border-radius:3px; }"
     "</style></head><body>"
 )
-
-
 def _clean_topic_html(raw: str) -> str:
     if not raw:
         return ""
@@ -241,8 +205,6 @@ def _clean_topic_html(raw: str) -> str:
     except Exception as exc:
         warn(f"HTML parsing failed: {exc}")
         return raw
-
-
 def _chm_weasyprint_extract(chm_path: Path) -> str:
     try:
         import chm.chm as pychm
@@ -265,7 +227,6 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
             msg = "no HTML content found in CHM file"
             raise RuntimeError(msg)
         parts = [_CHM_STYLE_HEADER]
-
         def walk(node: Any, depth: int = 0) -> None:
             if hasattr(node, "GetTitle") and hasattr(node, "GetLocal"):
                 title = node.GetTitle()
@@ -286,7 +247,6 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
             if hasattr(node, "GetChildren"):
                 for child in node.GetChildren():
                     walk(child, depth + 1)
-
         if isinstance(tree, list):
             for node in tree:
                 walk(node)
@@ -296,8 +256,6 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
         return "".join(parts)
     finally:
         cf.CloseCHM()
-
-
 def _render_one_topic(cf: Any, topic: str) -> str:
     try:
         raw = cf.RetrieveObject(cf.ResolveObject(topic))
@@ -307,8 +265,6 @@ def _render_one_topic(cf: Any, topic: str) -> str:
     except Exception as exc:
         warn(f"could not extract topic {topic}: {exc}")
         return ""
-
-
 def _render_multiple_topics(cf: Any, topics: Iterable[str]) -> str:
     parts = [_CHM_STYLE_HEADER]
     for t in topics:
@@ -324,14 +280,9 @@ def _render_multiple_topics(cf: Any, topics: Iterable[str]) -> str:
             warn(f"could not extract topic {t}: {exc}")
     parts.append("</body></html>")
     return "".join(parts)
-
-
 def _escape(s: str) -> str:
     from html import escape
-
     return escape(s)
-
-
 def _strip_html_to_text(raw_html: str) -> str:
     if not raw_html:
         return ""
@@ -349,8 +300,6 @@ def _strip_html_to_text(raw_html: str) -> str:
     s = re.sub(r"<[^>]+>", "", s)
     s = re.sub(r"\n\s*\n", "\n\n", s)
     return s.strip()
-
-
 def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     try:
         import chm
@@ -437,8 +386,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     )
     doc.build(story)
     info(f"PDF created: {output}")
-
-
 def _flatten_toc(toc: Any) -> list[str]:
     out: list[str] = []
     if isinstance(toc, list):
@@ -451,8 +398,6 @@ def _flatten_toc(toc: Any) -> list[str]:
             elif isinstance(item, str):
                 out.append(item)
     return out
-
-
 def cmd_chm(args: argparse.Namespace) -> int:
     inp = require_input(args.input, check_suffix=".chm")
     out = resolve_output(inp, args.output)
@@ -497,8 +442,6 @@ def cmd_chm(args: argparse.Namespace) -> int:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
-
-
 def cmd_html(args: argparse.Namespace) -> int:
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
@@ -515,8 +458,6 @@ def cmd_html(args: argparse.Namespace) -> int:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
-
-
 _MARKDOWN2_SIMPLE_EXTRAS = ["cuddled-lists", "tables"]
 _MARKDOWN2_FULL_EXTRAS = [
     "header-ids",
@@ -529,8 +470,6 @@ _PYGMENTS_RE = re.compile(
     re.DOTALL,
 )
 _TOC_NAV = '\n<nav class="toc">\n<h1>Contents</h1>\n<ul></ul>\n</nav>\n'
-
-
 def _convert_markdown2(
     text: str,
     *,
@@ -539,7 +478,6 @@ def _convert_markdown2(
     toc: bool,
 ) -> str:
     from markdown2 import markdown
-
     extras = _MARKDOWN2_FULL_EXTRAS if full_extras else _MARKDOWN2_SIMPLE_EXTRAS
     html_text = markdown(text, extras=extras)
     if pygments:
@@ -552,7 +490,6 @@ def _convert_markdown2(
             pygments = False
     if pygments:
         formatter = HtmlFormatter(cssclass="highlight")
-
         def repl(m: re.Match[str]) -> str:
             lang, code = m.group(1), m.group(2)
             code = code.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
@@ -561,29 +498,22 @@ def _convert_markdown2(
             except Exception:
                 lexer = TextLexer()
             return highlight(code, lexer, formatter)
-
         html_text = _PYGMENTS_RE.sub(repl, html_text)
     if toc:
         html_text = _TOC_NAV + html_text
     return html_text
-
-
 def _convert_markdown(text: str) -> str:
     try:
         import markdown
     except ImportError:
         die("the 'markdown' package is required for --converter markdown")
     return markdown.markdown(text, extensions=["extra", "codehilite"])
-
-
 def _wrap_md_html(body_html: str, title: str) -> str:
     return (
         '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n'
         f"<title>{_escape(title)}</title>\n</head>\n<body>\n"
         f"{body_html}\n</body>\n</html>"
     )
-
-
 def cmd_markdown(args: argparse.Namespace) -> int:
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
@@ -618,13 +548,9 @@ def cmd_markdown(args: argparse.Namespace) -> int:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
-
-
 _DICT_TAG_RX = re.compile(r"</?[a-zA-Z][^>]*>")
 _DICT_X_RX = re.compile(r"<x [^>]*>")
 _DICT_M_RX = re.compile(r"<[A-Z]\s+M=\"[^\"]+\"\s*/?>")
-
-
 def _format_dictionary_entry(line: str) -> Optional[str]:
     try:
         word, definition = line.strip().split("\t", 1)
@@ -641,8 +567,6 @@ def _format_dictionary_entry(line: str) -> Optional[str]:
         f'<div class="definition">{definition}</div>\n'
         "</div>\n</body>\n</html>\n"
     )
-
-
 def cmd_dict(args: argparse.Namespace) -> int:
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
@@ -679,8 +603,6 @@ def cmd_dict(args: argparse.Namespace) -> int:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
-
-
 _PRECISE_FONTS = [
     ("Inter", "normal", 400, "Inter-Regular.ttf"),
     ("Inter", "normal", 700, "Inter-Bold.ttf"),
@@ -688,8 +610,6 @@ _PRECISE_FONTS = [
     ("Inter", "italic", 700, "Inter-BoldItalic.ttf"),
     ("JetBrains Mono", "normal", 400, "JetBrainsMono-Regular.ttf"),
 ]
-
-
 def _font_face(font_dir: Path, family: str, style: str, weight: int, filename: str) -> str:
     p = font_dir / filename
     if not p.exists():
@@ -705,8 +625,6 @@ def _font_face(font_dir: Path, family: str, style: str, weight: int, filename: s
         f"{data}) format('truetype');\n"
         "}"
     )
-
-
 _PRECISE_CSS_BODY = """
 /* Global Reset & Base Typography */
 html, body {
@@ -768,8 +686,6 @@ th { background-color: #f0f0f0; color: #111; font-weight: 700;
 td { padding: 8pt 10pt; border-bottom: 1px solid #eee;
      font-size: 9.5pt; vertical-align: top; }
 """
-
-
 def cmd_compile_css(args: argparse.Namespace) -> int:
     font_dir = Path(args.font_dir)
     faces = [
@@ -787,8 +703,6 @@ def cmd_compile_css(args: argparse.Namespace) -> int:
     out.write_text(css, encoding="utf-8")
     info(f"CSS written to: {out}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pdfkit.py",
@@ -864,8 +778,6 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--font-dir", default=".", help="Directory holding the TTF files (default: .).")
     f.set_defaults(func=cmd_compile_css)
     return p
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -874,7 +786,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("Interrupted.", file=sys.stderr)
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

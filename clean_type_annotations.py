@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import contextlib
 import io
@@ -10,19 +9,15 @@ import sys
 import tokenize
 from typing import TYPE_CHECKING
 import libcst as cst
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 WORKERS = 8
 SKIP_DIR_NAMES = frozenset({"__pycache__"})
-
-
 class TypeAnnotationRemover(cst.CSTTransformer):
     def leave_Param(self, original_node, updated_node):
         if updated_node.annotation is None:
             return updated_node
         return updated_node.with_changes(annotation=None)
-
     def leave_FunctionDef(self, original_node, updated_node):
         changes = {}
         if updated_node.returns is not None:
@@ -32,12 +27,10 @@ class TypeAnnotationRemover(cst.CSTTransformer):
         if not changes:
             return updated_node
         return updated_node.with_changes(**changes)
-
     def leave_ClassDef(self, original_node, updated_node):
         if getattr(updated_node, "type_parameters", None) is not None:
             return updated_node.with_changes(type_parameters=None)
         return updated_node
-
     def leave_AnnAssign(self, original_node, updated_node):
         if updated_node.value is None:
             return cst.RemoveFromParent()
@@ -46,29 +39,22 @@ class TypeAnnotationRemover(cst.CSTTransformer):
             value=updated_node.value,
             semicolon=updated_node.semicolon,
         )
-
     def leave_SimpleStatementLine(self, original_node, updated_node):
         if not updated_node.body:
             return cst.RemoveFromParent()
         return updated_node
-
     def leave_SimpleStatementSuite(self, original_node, updated_node):
         if not updated_node.body:
             return updated_node.with_changes(body=[cst.Pass()])
         return updated_node
-
     def leave_IndentedBlock(self, original_node, updated_node):
         if not updated_node.body:
             return updated_node.with_changes(body=[cst.SimpleStatementLine(body=[cst.Pass()])])
         return updated_node
-
-
 def _read_source(path: Path) -> tuple[str, str]:
     raw = path.read_bytes()
     encoding, _ = tokenize.detect_encoding(io.BytesIO(raw).readline)
     return raw.decode(encoding), encoding
-
-
 def _atomic_write(path: Path, text: str, encoding: str) -> None:
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
@@ -80,8 +66,6 @@ def _atomic_write(path: Path, text: str, encoding: str) -> None:
         if tmp.exists():
             with contextlib.suppress(OSError):
                 tmp.unlink()
-
-
 def process_file(path_str: str) -> tuple[str, str | None, bool]:
     path = Path(path_str)
     try:
@@ -109,8 +93,6 @@ def process_file(path_str: str) -> tuple[str, str | None, bool]:
     except OSError as exc:
         return path_str, f"write failed: {exc}", False
     return path_str, None, True
-
-
 def _iter_python_files(root: Path) -> Iterable[Path]:
     for candidate in root.rglob("*.py"):
         if not candidate.is_file():
@@ -118,8 +100,6 @@ def _iter_python_files(root: Path) -> Iterable[Path]:
         if any(part in SKIP_DIR_NAMES for part in candidate.parts):
             continue
         yield candidate
-
-
 def collect_files(inputs: Sequence[str]) -> list[Path]:
     roots: list[Path] = [Path(p) for p in inputs] if inputs else [Path.cwd()]
     seen: set[Path] = set()
@@ -146,8 +126,6 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
             files.append(path)
     files.sort(key=str)
     return files
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     files = collect_files(args)
@@ -178,7 +156,5 @@ def main(argv: Sequence[str] | None = None) -> int:
         file=sys.stderr,
     )
     return 1 if errors else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

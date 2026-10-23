@@ -4,7 +4,6 @@ import csv
 from pathlib import Path
 import subprocess
 import sys
-
 OUTPUT_DIR = Path("/sdcard/backups")
 TSV_FILE = OUTPUT_DIR / "installed.tsv"
 CSV_FILE = OUTPUT_DIR / "installed.csv"
@@ -27,8 +26,6 @@ FIELDS = [
 ]
 FORMAT = """${binary:Package}	${Version}	${Architecture}	${Status}	${Priority}	${Section}	${Installed-Size}	${Maintainer}	${Homepage}	${binary:Summary}	${Source}	${Essential}	${Multi-Arch}	${Origin}	${Bugs}
 """
-
-
 def query_packages() -> list[list[str]]:
     try:
         proc = subprocess.run(
@@ -52,22 +49,16 @@ def query_packages() -> list[list[str]]:
         rows.append(cols)
     rows.sort(key=lambda r: int(r[6] or 0), reverse=True)
     return rows
-
-
 def save_tsv(rows: list[list[str]]) -> None:
     with TSV_FILE.open("w", encoding="utf-8") as f:
         f.write("\t".join(FIELDS) + "\n")
         for row in rows:
             f.write("\t".join(row) + "\n")
-
-
 def save_csv(rows: list[list[str]]) -> None:
     with CSV_FILE.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(FIELDS)
         writer.writerows(rows)
-
-
 def main() -> None:
     rows = query_packages()
     save_tsv(rows)
@@ -75,7 +66,5 @@ def main() -> None:
     print(f"Saved {len(rows)} packages")
     print(f"TSV: {TSV_FILE}")
     print(f"CSV: {CSV_FILE}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

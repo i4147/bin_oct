@@ -1,21 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 import ast
 import difflib
 import opcode
 import pprint
 import types
 import sys
-
-
 def diff_bytecode_of_files(filename_a, filename_b):
     with open_with_encoding(filename_a) as file_a:
         source_a = file_a.read()
     with open_with_encoding(filename_b) as file_b:
         source_b = file_b.read()
     return diff_bytecode(source_a, source_b, filename_a, filename_b)
-
-
 def diff_bytecode(source_a, source_b, filename_a="", filename_b=""):
     if dump_ast(source_a, filename_a) == dump_ast(source_b, filename_b):
         return ""
@@ -29,16 +24,10 @@ def diff_bytecode(source_a, source_b, filename_a="", filename_b=""):
             filename_b,
         )
     )
-
-
 def disassemble(source, filename=None):
     return tree(compile(source, filename or "<string>", "exec", dont_inherit=True))
-
-
 def dump_ast(source, filename=None):
     return ast.dump(ast.parse(source, filename or "<string>", "exec"))
-
-
 def tree(code):
     dictionary = {"co_consts": [], "co_code": []}
     for name in dir(code):
@@ -63,38 +52,27 @@ def tree(code):
             pass
         dictionary["co_code"].append(opcode.opname[op])
     return dictionary
-
-
 def open_with_encoding(filename, encoding=None, mode="r"):
     if not encoding:
         encoding = detect_encoding(filename)
     import io
-
     return io.open(filename, mode=mode, encoding=encoding, newline="")
-
-
 def detect_encoding(filename):
     try:
         with open(filename, "rb") as input_file:
             import tokenize
-
             encoding = tokenize.detect_encoding(input_file.readline)[0]
         with open_with_encoding(filename, encoding) as test_file:
             test_file.read()
         return encoding
     except (LookupError, SyntaxError, UnicodeDecodeError):
         return "latin-1"
-
-
 def parse_args(argv):
     import argparse
-
     parser = argparse.ArgumentParser(description=__doc__, prog="pydiff")
     parser.add_argument("files", nargs=2, help="files to compare")
     args = parser.parse_args(argv[1:])
     return args
-
-
 def main(argv, standard_out, standard_error):
     args = parse_args(argv)
     try:
@@ -105,7 +83,5 @@ def main(argv, standard_out, standard_error):
         standard_error.write("{0}:{1} invalid syntax\n".format(exception.filename, exception.lineno))
         standard_error.write(str(exception.text))
         standard_error.write((exception.offset * " ")[:-1] + "^\n")
-
-
 if __name__ == "__main__":
     main(sys.argv, sys.stdout, sys.stderr)

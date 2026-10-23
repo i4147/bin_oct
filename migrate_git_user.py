@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import contextlib
 import os
 from pathlib import Path
 import re
 import subprocess
-
 OLD_USERNAME = "iho147"
 OLD_EMAIL = "isaacaunegh@gmail.com"
 NEW_USERNAME = "i4147"
@@ -41,8 +39,6 @@ EXCLUDE_DIRS = {
     ".npm",
     ".cargo",
 }
-
-
 def run(cmd, check=True, capture_output=False, input_text=None):
     return subprocess.run(
         cmd,
@@ -52,21 +48,15 @@ def run(cmd, check=True, capture_output=False, input_text=None):
         text=True,
         input=input_text,
     )
-
-
 def update_git_global_config():
     run(["git", "config", "--global", "user.name", NEW_USERNAME])
     run(["git", "config", "--global", "user.email", NEW_EMAIL])
-
-
 def remove_old_ssh_keys():
     if SSH_DIR.exists():
         for f in SSH_DIR.iterdir():
             if f.name.startswith("id_") or f.name == "known_hosts":
                 with contextlib.suppress(Exception):
                     f.unlink()
-
-
 def generate_new_ssh_key():
     SSH_DIR.mkdir(mode=0o700, exist_ok=True)
     run([
@@ -82,8 +72,6 @@ def generate_new_ssh_key():
     ])
     os.chmod(SSH_KEY_PATH, 0o600)
     os.chmod(f"{SSH_KEY_PATH}.pub", 0o644)
-
-
 def configure_ssh_agent():
     run(["eval", "$(ssh-agent -s)"], check=False)
     agent_out = run(["ssh-agent", "-s"], capture_output=True)
@@ -92,8 +80,6 @@ def configure_ssh_agent():
             key, val = line.split(";")[0].split("=")
             os.environ[key] = val
     run(["ssh-add", str(SSH_KEY_PATH)], check=False)
-
-
 def write_ssh_config():
     ssh_config_path = SSH_DIR / "config"
     config_block = f"""Host github.com
@@ -105,13 +91,9 @@ def write_ssh_config():
     with open(ssh_config_path, "w") as f:
         f.write(config_block)
     os.chmod(ssh_config_path, 0o600)
-
-
 def should_skip_dir(dirpath):
     parts = Path(dirpath).parts
     return any(p in EXCLUDE_DIRS for p in parts)
-
-
 def find_target_files():
     matched = set()
     for root, dirs, files in os.walk(HOME):
@@ -123,8 +105,6 @@ def find_target_files():
                 if Path(f).match(pattern):
                     matched.add(os.path.join(root, f))
     return matched
-
-
 def replace_in_file(filepath):
     try:
         with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
@@ -140,14 +120,10 @@ def replace_in_file(filepath):
                 f.write(content)
         except Exception:
             pass
-
-
 def scan_and_replace_all():
     files = find_target_files()
     for filepath in files:
         replace_in_file(filepath)
-
-
 def update_git_remotes_in_repos():
     for root, dirs, files in os.walk(HOME):
         dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
@@ -194,8 +170,6 @@ def update_git_remotes_in_repos():
                 )
             except Exception:
                 pass
-
-
 def fix_git_config_files():
     for root, dirs, files in os.walk(HOME):
         dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
@@ -205,8 +179,6 @@ def fix_git_config_files():
             cfg_path = os.path.join(root, ".git", "config")
             if os.path.isfile(cfg_path):
                 replace_in_file(cfg_path)
-
-
 def clear_git_credential():
     credential_paths = [
         HOME / ".git-credentials",
@@ -228,8 +200,6 @@ def clear_git_credential():
     for helper in ("store", "cache"):
         with contextlib.suppress(Exception):
             run(["git", "credential-" + helper, "erase"], check=False, input_text="\n")
-
-
 def purge_gitconfig_old_identity():
     if not GIT_CONFIG.exists():
         return
@@ -246,8 +216,6 @@ def purge_gitconfig_old_identity():
                 f.write(new_content)
         except Exception:
             pass
-
-
 def main():
     print("[1/8] Updating git global config ...")
     update_git_global_config()
@@ -275,7 +243,5 @@ def main():
     print("\nAdd the following public key to GitHub:")
     with contextlib.suppress(Exception):
         print((SSH_KEY_PATH.parent / (SSH_KEY_NAME + ".pub")).read_text())
-
-
 if __name__ == "__main__":
     main()

@@ -14,7 +14,6 @@ import tempfile
 import time
 from typing import Callable, Iterator, Optional, Sequence
 import brotli
-
 try:
     from rich import box
     from rich.console import Console
@@ -22,7 +21,6 @@ try:
     from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
     from rich.table import Table
     from rich.text import Text
-
     RICH_AVAILABLE: bool = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -118,11 +116,8 @@ EXCLUDED_DIRS: set[str] = {
     "venv",
     ".env",
 }
-
-
 class ParallelBrotliCompressor:
     MAGIC: bytes = b"PBRT0001"
-
     def __init__(
         self,
         quality: int = 1,
@@ -140,7 +135,6 @@ class ParallelBrotliCompressor:
         self.workers: int = workers or cpu_count()
         self.mode: int = mode
         self.progress_callback: Optional[Callable[[int, int], None]] = progress_callback
-
     def compress_file(self, input_path: str, output_path: str) -> None:
         in_path: Path = Path(input_path)
         out_path: Path = Path(output_path)
@@ -169,7 +163,6 @@ class ParallelBrotliCompressor:
             f_out.seek(count_pos)
             f_out.write(struct.pack("<I", chunk_count))
             f_out.seek(end_pos)
-
     @staticmethod
     def decompress_file(input_path: str, output_path: str) -> None:
         with open(input_path, "rb") as f_in, open(output_path, "wb") as f_out:
@@ -184,7 +177,6 @@ class ParallelBrotliCompressor:
                 if len(payload) != comp_len:
                     raise IOError("Truncated chunk payload")
                 f_out.write(brotli.decompress(payload))
-
     def compress_bytes(self, data: bytes) -> bytes:
         with tempfile.NamedTemporaryFile(delete=False) as tmp_in:
             tmp_in.write(data)
@@ -198,7 +190,6 @@ class ParallelBrotliCompressor:
         finally:
             os.unlink(tmp_in_path)
             os.unlink(tmp_out_path)
-
     def _iter_chunk_tasks(self, input_path: Path) -> Iterator[tuple[int, bytes, int, int]]:
         index: int = 0
         with open(input_path, "rb") as f:
@@ -208,14 +199,10 @@ class ParallelBrotliCompressor:
                     break
                 yield (index, chunk, self.quality, self.mode)
                 index += 1
-
-
 def _compress_worker(task: tuple[int, bytes, int, int]) -> tuple[int, bytes, int]:
     index, chunk, quality, mode = task
     compressed: bytes = brotli.compress(chunk, quality=quality, mode=mode)
     return index, compressed, len(chunk)
-
-
 @dataclass
 class CompressionResult:
     file_path: Path
@@ -228,8 +215,6 @@ class CompressionResult:
     operation: str = "compress"
     was_tarred: bool = False
     verified: bool = False
-
-
 def format_size(size_bytes: float) -> str:
     size: float = float(size_bytes)
     for unit in ["B", "KB", "MB", "GB", "TB"]:
@@ -237,41 +222,29 @@ def format_size(size_bytes: float) -> str:
             return f"{size:.2f} {unit}"
         size /= 1024.0
     return f"{size:.2f} PB"
-
-
 def directory_size(directory: Path) -> int:
     total: int = 0
     for item in directory.rglob("*"):
         if item.is_file() and not item.is_symlink():
             total += item.stat().st_size
     return total
-
-
 def compressed_output_path(path: Path) -> Path:
     return path.with_name(path.name + ".br")
-
-
 def decompressed_output_path(path: Path) -> Path:
     if path.name.endswith(".br") and len(path.name) > 3:
         return path.with_name(path.name[:-3])
     return path.with_name(path.name + ".out")
-
-
 def relative_display(path: Path, directory: Path) -> str:
     try:
         return str(path.relative_to(directory))
     except ValueError:
         return str(path)
-
-
 def _hash_file(path: Path) -> str:
     hasher = hashlib.sha256()
     with open(path, "rb") as f:
         for block in iter(lambda: f.read(1024 * 1024), b""):
             hasher.update(block)
     return hasher.hexdigest()
-
-
 def compress_with_parallel(
     input_path: Path,
     output_path: Path,
@@ -291,8 +264,6 @@ def compress_with_parallel(
     if hash_input:
         source_digest = _hash_file(input_path)
     return written, source_digest
-
-
 def decompress_with_parallel(
     input_path: Path,
     output_path: Optional[Path],
@@ -322,8 +293,6 @@ def decompress_with_parallel(
     finally:
         if tmp_path is not None and tmp_path.exists():
             tmp_path.unlink()
-
-
 def tar_directory(directory: Path, output_path: Path, delete_original: bool = False) -> tuple[int, bool]:
     try:
         with tarfile.open(output_path, "w") as tar:
@@ -336,8 +305,6 @@ def tar_directory(directory: Path, output_path: Path, delete_original: bool = Fa
         if output_path.exists():
             output_path.unlink()
         raise
-
-
 def compress_file_streaming(
     input_path: Path,
     output_path: Path,
@@ -398,8 +365,6 @@ def compress_file_streaming(
             operation="compress",
             was_tarred=was_tarred,
         )
-
-
 def decompress_file_streaming(
     input_path: Path,
     output_path: Path,
@@ -447,8 +412,6 @@ def decompress_file_streaming(
             duration=time.time() - start_time,
             operation="decompress",
         )
-
-
 def untar_file(tar_path: Path, extract_dir: Path, delete_tar: bool = False) -> bool:
     try:
         with tarfile.open(tar_path, "r") as tar:
@@ -462,8 +425,6 @@ def untar_file(tar_path: Path, extract_dir: Path, delete_tar: bool = False) -> b
     except Exception as e:
         print(f"  ❌ Error extracting tar {tar_path.name}: {e}")
         return False
-
-
 def find_subdirs_to_tar(directories: Sequence[Path], exclude_patterns: Optional[list[str]] = None) -> list[Path]:
     patterns: list[str] = exclude_patterns or []
     subdirs: list[Path] = []
@@ -479,8 +440,6 @@ def find_subdirs_to_tar(directories: Sequence[Path], exclude_patterns: Optional[
                 continue
             subdirs.append(d)
     return sorted(set(subdirs))
-
-
 def report_tar_result(result: CompressionResult, index: int, total: int) -> None:
     if result.success:
         ratio: float = (1 - result.processed_size / result.original_size) * 100 if result.original_size else 0.0
@@ -491,8 +450,6 @@ def report_tar_result(result: CompressionResult, index: int, total: int) -> None
         )
     else:
         print(f"  ❌ [{index}/{total}] {result.file_path.name}: {result.error}")
-
-
 def process_subdirs_with_tar(
     subdirs: list[Path],
     quality: int = 11,
@@ -555,8 +512,6 @@ def process_subdirs_with_tar(
         for subdir, error in tar_errors:
             print(f"  • {subdir.name}: {error}")
     return results
-
-
 def should_compress_file(file_path: Path, exclude_extensions: set[str], exclude_patterns: list[str]) -> bool:
     if file_path.is_symlink():
         return False
@@ -573,8 +528,6 @@ def should_compress_file(file_path: Path, exclude_extensions: set[str], exclude_
         if any(pattern in path_str for pattern in exclude_patterns):
             return False
     return True
-
-
 def find_files_to_compress(
     directory: Path,
     exclude_extensions: Optional[set[str]] = None,
@@ -600,8 +553,6 @@ def find_files_to_compress(
                     continue
                 files.append(file_path)
     return sorted(set(files))
-
-
 def find_files_to_decompress(directory: Path, exclude_patterns: Optional[list[str]] = None) -> list[Path]:
     patterns: list[str] = exclude_patterns or []
     files: list[Path] = []
@@ -614,8 +565,6 @@ def find_files_to_decompress(directory: Path, exclude_patterns: Optional[list[st
             continue
         files.append(file_path)
     return sorted(set(files))
-
-
 def collect_compress_targets(
     input_paths: Sequence[Path],
     exclude_extensions: set[str],
@@ -652,8 +601,6 @@ def collect_compress_targets(
                     )
                 )
     return sorted(set(files)), sorted(set(subdirs))
-
-
 def collect_decompress_targets(input_paths: Sequence[Path], exclude_patterns: list[str]) -> list[Path]:
     files: list[Path] = []
     for p in input_paths:
@@ -664,16 +611,12 @@ def collect_decompress_targets(input_paths: Sequence[Path], exclude_patterns: li
         elif p.is_dir():
             files.extend(find_files_to_decompress(p, exclude_patterns))
     return sorted(set(files))
-
-
 def get_file_type_stats(files: list[Path]) -> dict[str, int]:
     type_stats: dict[str, int] = {}
     for file_path in files:
         ext: str = file_path.suffix.lower() or "[no extension]"
         type_stats[ext] = type_stats.get(ext, 0) + 1
     return dict(sorted(type_stats.items(), key=lambda x: x[1], reverse=True))
-
-
 def run_jobs(
     jobs: list[tuple[Path, Path]],
     operation: str,
@@ -705,8 +648,6 @@ def run_jobs(
                 allow_truncated=allow_truncated,
                 workers=workers,
             )
-
-
 def process_files(
     files: list[Path],
     base_dir: Path,
@@ -773,8 +714,6 @@ def process_files(
             )
             print(f"  {status} [{i}/{len(jobs)}] {relative_display(result.file_path, base_dir)}: {detail}")
     return results
-
-
 def extract_decompressed_tars(results: list[CompressionResult], keep_tar: bool) -> tuple[int, int, int]:
     extracted: int = 0
     failed: int = 0
@@ -794,8 +733,6 @@ def extract_decompressed_tars(results: list[CompressionResult], keep_tar: bool) 
         else:
             failed += 1
     return extracted, failed, processed
-
-
 def print_results_rich(results: list[CompressionResult], base_dir: Path, operation: str) -> None:
     console = Console()
     successful: list[CompressionResult] = [r for r in results if r.success]
@@ -916,8 +853,6 @@ def print_results_rich(results: list[CompressionResult], base_dir: Path, operati
     if results:
         summary_text.append(f"(avg {total_duration / len(results):.2f}s per file)", style="dim")
     console.print(Panel(summary_text, border_style="cyan"))
-
-
 def print_results_basic(results: list[CompressionResult], base_dir: Path, operation: str) -> None:
     successful: list[CompressionResult] = [r for r in results if r.success]
     failed: list[CompressionResult] = [r for r in results if not r.success]
@@ -996,8 +931,6 @@ def print_results_basic(results: list[CompressionResult], base_dir: Path, operat
     if results:
         print(f"⏱️  Total time: {total_duration:.2f}s (avg {total_duration / len(results):.2f}s per file)")
     print("=" * 80 + "\n")
-
-
 def print_dry_run(
     files: list[Path],
     base_dir: Path,
@@ -1035,8 +968,6 @@ def print_dry_run(
         if len(files) > 20:
             print(f"  ... and {len(files) - 20} more files")
     print("=" * 80 + "\n")
-
-
 def print_header(
     operation: str,
     input_paths: Sequence[Path],
@@ -1069,8 +1000,6 @@ def print_header(
         print(header)
         print(details)
         print("=" * 80)
-
-
 def swallowed_directory(args: argparse.Namespace) -> Optional[str]:
     if args.paths:
         return None
@@ -1081,8 +1010,6 @@ def swallowed_directory(args: argparse.Namespace) -> Optional[str]:
         if ("/" in candidate or candidate in (".", "..")) and Path(candidate).expanduser().is_dir():
             return candidate
     return None
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -1344,8 +1271,6 @@ Examples:
     print(f"⏲️  Wall clock: {time.time() - wall_start:.2f}s")
     successful: int = sum(1 for r in results if r.success)
     return 0 if successful else 1
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     sys.exit(main())

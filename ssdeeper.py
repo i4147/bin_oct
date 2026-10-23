@@ -8,15 +8,11 @@ import shutil
 import sys
 from dh import get_files
 import ssdeep
-
-
 def relative(path, base):
     try:
         return str(path.relative_to(base))
     except ValueError:
         return str(path)
-
-
 def compute_hashes(files, min_size):
     hashes = []
     for path in files:
@@ -32,8 +28,6 @@ def compute_hashes(files, min_size):
         if digest:
             hashes.append((p, digest))
     return hashes
-
-
 def compare_hashes(hashes, threshold, base):
     results = []
     for i in range(len(hashes)):
@@ -52,8 +46,6 @@ def compare_hashes(hashes, threshold, base):
                 })
     results.sort(key=operator.itemgetter("score"), reverse=True)
     return results
-
-
 def group_files(results, base):
     for index, item in enumerate(results, 1):
         group = base / "group{:03d}".format(index)
@@ -69,8 +61,6 @@ def group_files(results, base):
                 shutil.move(source, dest)
             except Exception:
                 continue
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Find similar files using ssdeep.")
     parser.add_argument("path", nargs="?", default=".", help="directory to scan")
@@ -91,7 +81,5 @@ def main(argv=None):
     else:
         Path(args.output).write_text(text)
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

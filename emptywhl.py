@@ -3,8 +3,6 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 import zipfile
-
-
 def is_empty_wheel(wheel_path: str) -> bool:
     print(f"checking {wheel_path}")
     try:
@@ -34,8 +32,6 @@ def is_empty_wheel(wheel_path: str) -> bool:
             return True
     except (zipfile.BadZipFile, KeyError, UnicodeDecodeError):
         return False
-
-
 def main() -> None:
     current_dir = Path()
     wheel_files = list(current_dir.glob("*.whl"))
@@ -46,7 +42,5 @@ def main() -> None:
         print("No empty wheel files found")
         return
     print("\n".join(empty_wheels))
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

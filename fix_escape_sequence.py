@@ -7,7 +7,6 @@ from pathlib import Path
 import sys
 import tokenize
 import warnings
-
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")
 SKIP_DIRS: frozenset[str] = frozenset({
@@ -34,8 +33,6 @@ SKIP_DIRS: frozenset[str] = frozenset({
 SELF_PATH: Path = Path(__file__).resolve()
 Fix = tuple[tuple[int, int], tuple[int, int], str]
 Result = tuple[str, str, int, int]
-
-
 def _fix_body(body: str) -> str | None:
     out: list[str] = []
     changed = False
@@ -56,8 +53,6 @@ def _fix_body(body: str) -> str | None:
             out.append(c)
             i += 1
     return "".join(out) if changed else None
-
-
 def _fix_string_literal(tok_src: str) -> str | None:
     i = 0
     while i < len(tok_src) and tok_src[i].isalpha():
@@ -76,8 +71,6 @@ def _fix_string_literal(tok_src: str) -> str | None:
     if new_body is None:
         return None
     return prefix + quote + new_body + quote
-
-
 def fix_source(src: str) -> str:
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(src).readline))
@@ -113,8 +106,6 @@ def fix_source(src: str) -> str:
             last = lines[er - 1][ec:]
             lines[sr - 1 : er] = [first + new + last]
     return "".join(lines)
-
-
 def syntax_warnings(src: str, filename: str) -> list[str] | None:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -123,15 +114,11 @@ def syntax_warnings(src: str, filename: str) -> list[str] | None:
         except SyntaxError:
             return None
         return [str(w.message) for w in caught if issubclass(w.category, SyntaxWarning)]
-
-
 def _is_self(p: Path) -> bool:
     try:
         return p.resolve() == SELF_PATH
     except OSError:
         return False
-
-
 def iter_py_files(root: Path) -> list[Path]:
     root = root.resolve()
     out: list[Path] = []
@@ -148,8 +135,6 @@ def iter_py_files(root: Path) -> list[Path]:
             continue
         out.append(p)
     return out
-
-
 def process_file(path_str: str, dry_run: bool, quiet: bool) -> Result:
     p = Path(path_str)
     if p.is_symlink() or _is_self(p):
@@ -176,8 +161,6 @@ def process_file(path_str: str, dry_run: bool, quiet: bool) -> Result:
             return (path_str, "error", len(warns), len(warns))
     status = "fixed" if not remaining else "partial"
     return (path_str, status, len(warns), len(remaining))
-
-
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("paths", nargs="+", type=Path)
@@ -217,7 +200,5 @@ def main(argv: list[str] | None = None) -> int:
     print("summary: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())))
     bad = counts.get("error", 0) + counts.get("partial", 0) + counts.get("unfixable", 0)
     return 1 if bad else 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

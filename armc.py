@@ -9,7 +9,6 @@ from typing import NamedTuple
 from loguru import logger
 from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
-
 logger.remove()
 logger.add(
     sys.stderr,
@@ -17,26 +16,19 @@ logger.add(
     level="INFO",
 )
 PY_LANGUAGE = Language(tspython.language())
-
-
 class ProcessResult(NamedTuple):
     path: Path
     removed_count: int
     unremoved_count: int
     modified: bool
     error: str | None = None
-
-
 def is_shebang(byte_content: bytes, node) -> bool:
     return node.start_point[0] == 0 and byte_content.startswith(b"#!")
-
-
 def remove_comments_from_code(source_bytes: bytes) -> tuple[bytes, int]:
     parser = Parser(PY_LANGUAGE)
     tree = parser.parse(source_bytes)
     comment_nodes = []
     cursor = tree.walk()
-
     def visit_node():
         if cursor.node.type == "comment":
             if not is_shebang(source_bytes, cursor.node):
@@ -48,7 +40,6 @@ def remove_comments_from_code(source_bytes: bytes) -> tuple[bytes, int]:
                 if not cursor.goto_next_sibling():
                     break
             cursor.goto_parent()
-
     visit_node()
     if not comment_nodes:
         return source_bytes, 0
@@ -57,14 +48,11 @@ def remove_comments_from_code(source_bytes: bytes) -> tuple[bytes, int]:
     for node in comment_nodes:
         del buffer[node.start_byte : node.end_byte]
     return bytes(buffer), len(comment_nodes)
-
-
 def check_remaining_comments(source_bytes: bytes) -> int:
     parser = Parser(PY_LANGUAGE)
     tree = parser.parse(source_bytes)
     remaining = 0
     cursor = tree.walk()
-
     def count_comments():
         nonlocal remaining
         if cursor.node.type == "comment":
@@ -77,11 +65,8 @@ def check_remaining_comments(source_bytes: bytes) -> int:
                 if not cursor.goto_next_sibling():
                     break
             cursor.goto_parent()
-
     count_comments()
     return remaining
-
-
 def process_single_file(path: Path) -> ProcessResult:
     try:
         source_bytes = path.read_bytes()
@@ -103,8 +88,6 @@ def process_single_file(path: Path) -> ProcessResult:
         return ProcessResult(path, removed_count, unremoved_count, True)
     except Exception as exc:
         return ProcessResult(path, 0, 0, False, error=str(exc))
-
-
 def collect_python_files(inputs: list[str]) -> list[Path]:
     files: set[Path] = set()
     if not inputs:
@@ -118,8 +101,6 @@ def collect_python_files(inputs: list[str]) -> list[Path]:
         else:
             logger.warning(f"Skipping invalid target or non-Python path: {item}")
     return list(files)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Recursively strip comments from Python files in-place using Tree-sitter."
@@ -159,7 +140,5 @@ def main() -> None:
     print(f"Total files scanned:  {len(targets)}")
     print(f"Files modified:        {total_modified}")
     print(f"Comments stripped:     {total_removed}")
-
-
 if __name__ == "__main__":
     main()

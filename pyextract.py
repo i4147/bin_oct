@@ -16,23 +16,19 @@ import sqlite3
 import tarfile
 from typing import Iterable, Iterator, Optional
 import zipfile
-
 try:
     import tree_sitter
     import tree_sitter_python
-
     HAS_TS = True
 except Exception:
     HAS_TS = False
 try:
     import libcst as cst
-
     HAS_LIBCST = True
 except Exception:
     HAS_LIBCST = False
 try:
     import zstandard as zstd
-
     HAS_ZSTD = True
 except Exception:
     HAS_ZSTD = False
@@ -61,8 +57,6 @@ DEFAULT_SKIP_DIRS = {
     "output",
 }
 DEFAULT_SKIP_TESTS = {"test", "tests", "examples"}
-
-
 @dataclass
 class Entity:
     name: str
@@ -76,15 +70,11 @@ class Entity:
     docstring: str = ""
     parent: str = ""
     decorators: list[str] = field(default_factory=list)
-
-
 def _content_looks_python(text: str) -> bool:
     head = text[:512]
     if head.startswith("#!") and "python" in head.split("\n", 1)[0].lower():
         return True
     return any(kw in head for kw in ("import ", "def ", "class ", "if __name__"))
-
-
 def _path_looks_python(path: Path) -> bool:
     try:
         with path.open("rb") as f:
@@ -95,13 +85,9 @@ def _path_looks_python(path: Path) -> bool:
     if first.startswith(b"#!") and b"python" in first.lower():
         return True
     return any(kw in head for kw in (b"import ", b"def ", b"class ", b"if __name__"))
-
-
 def is_archive(path: Path) -> bool:
     n = path.name.lower()
     return any(n.endswith(e) for e in ARCHIVE_EXTS)
-
-
 def discover(
     root: Path, skip_dirs: set[str], skip_tests: bool, include_archives: bool
 ) -> tuple[list[Path], list[Path]]:
@@ -123,8 +109,6 @@ def discover(
             elif include_archives and is_archive(p):
                 archives.append(p)
     return sorted(py_files), sorted(archives)
-
-
 def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
     n = archive.name.lower()
     if n.endswith((".whl", ".zip")):
@@ -167,8 +151,6 @@ def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
                 yield member.name, f.read().decode("utf-8", "replace")
             except Exception:
                 continue
-
-
 def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
     start = node.lineno - 1
     decs = getattr(node, "decorator_list", None) or []
@@ -185,8 +167,6 @@ def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
     if first_col and len(lines[0]) > first_col:
         lines[0] = lines[0][first_col:]
     return "".join(lines)
-
-
 class _ASTExtractor(ast.NodeVisitor):
     def __init__(self, source: str, path: str, include_nested: bool, constants_only: bool) -> None:
         self.source_lines = source.splitlines(keepends=True)
@@ -197,10 +177,8 @@ class _ASTExtractor(ast.NodeVisitor):
         self.imports: list[str] = []
         self._class_stack: list[str] = []
         self._scope_stack: list[str] = []
-
     def _slice(self, node: ast.AST) -> str:
         return _slice_ast_node(node, self.source_lines)
-
     def _record_import(self, node: ast.AST) -> None:
         try:
             src = ast.unparse(node)
@@ -208,13 +186,10 @@ class _ASTExtractor(ast.NodeVisitor):
             return
         if src not in self.imports:
             self.imports.append(src)
-
     def visit_Import(self, node: ast.Import) -> None:
         self._record_import(node)
-
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         self._record_import(node)
-
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         parent = "_".join(self._class_stack)
         full = "_".join(self._class_stack + [node.name])
@@ -235,13 +210,10 @@ class _ASTExtractor(ast.NodeVisitor):
         self._class_stack.append(node.name)
         self.generic_visit(node)
         self._class_stack.pop()
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._handle_function(node)
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self._handle_function(node)
-
     def _handle_function(self, node: ast.AST) -> None:
         parent = "_".join(self._class_stack)
         full = "_".join(self._class_stack + self._scope_stack + [node.name])
@@ -263,7 +235,6 @@ class _ASTExtractor(ast.NodeVisitor):
         self._scope_stack.append(node.name)
         self.generic_visit(node)
         self._scope_stack.pop()
-
     def visit_Assign(self, node: ast.Assign) -> None:
         top = not self._class_stack and not self._scope_stack
         if top or self.include_nested:
@@ -281,7 +252,6 @@ class _ASTExtractor(ast.NodeVisitor):
                         )
                     )
         self.generic_visit(node)
-
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         top = not self._class_stack and not self._scope_stack
         if (
@@ -302,8 +272,6 @@ class _ASTExtractor(ast.NodeVisitor):
                 )
             )
         self.generic_visit(node)
-
-
 def extract_ast(
     source: str, path: str, include_nested: bool = False, constants_only: bool = False
 ) -> tuple[list[Entity], list[str]]:
@@ -318,8 +286,6 @@ def extract_ast(
         if not e.parent:
             e.imports = list(ex.imports)
     return ex.entities, ex.imports
-
-
 def _extract_libcst_impl(
     source: str, path: str, include_nested: bool, constants_only: bool
 ) -> tuple[list[Entity], list[str]]:
@@ -330,27 +296,22 @@ def _extract_libcst_impl(
         return [], []
     entities: list[Entity] = []
     imports: list[str] = []
-
     def _code(node) -> str:
         return cst.Module(body=[node]).code.strip()
-
     class V(cst.CSTVisitor):
         def __init__(self) -> None:
             self.class_stack: list[str] = []
             self.scope_stack: list[str] = []
-
         def visit_Import(self, node) -> None:
             if not self.class_stack and not self.scope_stack:
                 c = _code(node)
                 if c not in imports:
                     imports.append(c)
-
         def visit_ImportFrom(self, node) -> None:
             if not self.class_stack and not self.scope_stack:
                 c = _code(node)
                 if c not in imports:
                     imports.append(c)
-
         def visit_ClassDef(self, node) -> None:
             parent = "_".join(self.class_stack)
             full = "_".join(self.class_stack + [node.name.value])
@@ -367,10 +328,8 @@ def _extract_libcst_impl(
                     )
                 )
             self.class_stack.append(node.name.value)
-
         def leave_ClassDef(self, node) -> None:
             self.class_stack.pop()
-
         def visit_FunctionDef(self, node) -> None:
             parent = "_".join(self.class_stack)
             full = "_".join(self.class_stack + self.scope_stack + [node.name.value])
@@ -388,10 +347,8 @@ def _extract_libcst_impl(
                     )
                 )
             self.scope_stack.append(node.name.value)
-
         def leave_FunctionDef(self, node) -> None:
             self.scope_stack.pop()
-
         def visit_Assign(self, node) -> None:
             top = not self.class_stack and not self.scope_stack
             if not (top or include_nested):
@@ -408,14 +365,11 @@ def _extract_libcst_impl(
                             path=path,
                         )
                     )
-
     module.visit(V())
     for e in entities:
         if not e.parent:
             e.imports = list(imports)
     return entities, imports
-
-
 def extract_libcst(
     source: str, path: str, include_nested: bool = False, constants_only: bool = False
 ) -> tuple[list[Entity], list[str]]:
@@ -423,11 +377,7 @@ def extract_libcst(
         log.error("libcst is not installed — cannot use --parser libcst")
         return [], []
     return _extract_libcst_impl(source, path, include_nested, constants_only)
-
-
 _TS_PARSER = None
-
-
 def _get_ts_parser():
     global _TS_PARSER
     if _TS_PARSER is not None:
@@ -440,8 +390,6 @@ def _get_ts_parser():
         p.set_language(lang)
         _TS_PARSER = p
     return _TS_PARSER
-
-
 def extract_treesitter(
     source: str, path: str, include_nested: bool = False, constants_only: bool = False
 ) -> tuple[list[Entity], list[str]]:
@@ -453,14 +401,11 @@ def extract_treesitter(
     tree = parser.parse(data)
     entities: list[Entity] = []
     imports: list[str] = []
-
     def text(n) -> str:
         return data[n.start_byte : n.end_byte].decode("utf-8", "replace")
-
     def name_of(n) -> Optional[str]:
         f = n.child_by_field_name("name")
         return text(f) if f else None
-
     def walk(node, class_stack: list[str], func_stack: list[str]) -> None:
         for child in node.children:
             t = child.type
@@ -533,14 +478,11 @@ def extract_treesitter(
                                 )
                 continue
             walk(child, class_stack, func_stack)
-
     walk(tree.root_node, [], [])
     for e in entities:
         if not e.parent:
             e.imports = list(imports)
     return entities, imports
-
-
 def _extract(
     source: str, path: str, parser_name: str, include_nested: bool, constants_only: bool
 ) -> tuple[list[Entity], list[str]]:
@@ -552,8 +494,6 @@ def _extract(
         return extract_treesitter(source, path, include_nested, constants_only)
     msg = f"unknown parser: {parser_name}"
     raise ValueError(msg)
-
-
 def _dedupe_entities(entities: list[Entity]) -> list[Entity]:
     seen: set[tuple[str, str, str]] = set()
     out: list[Entity] = []
@@ -564,12 +504,8 @@ def _dedupe_entities(entities: list[Entity]) -> list[Entity]:
         seen.add(key)
         out.append(e)
     return out
-
-
 def _safe_name(s: str) -> str:
     return re.sub(r"[^\w\-.]", "_", s) or "unnamed"
-
-
 def _unique_path(directory: Path, stem: str, suffix: str) -> Path:
     p = directory / f"{stem}{suffix}"
     i = 1
@@ -577,8 +513,6 @@ def _unique_path(directory: Path, stem: str, suffix: str) -> Path:
         p = directory / f"{stem}_{i}{suffix}"
         i += 1
     return p
-
-
 def write_per_entity(entities: list[Entity], out_dir: Path, write_metadata: bool = False) -> dict[str, int]:
     out_dir.mkdir(parents=True, exist_ok=True)
     counts: dict[str, int] = defaultdict(int)
@@ -613,17 +547,13 @@ def write_per_entity(entities: list[Entity], out_dir: Path, write_metadata: bool
             }
             (sub / (fp.stem + ".json")).write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     return counts
-
-
 def write_by_type(entities: list[Entity], out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-
     def _dump(fname: str, es: list[Entity]) -> None:
         body = "\n\n".join(e.source.rstrip() for e in es)
         if body and not body.endswith("\n"):
             body += "\n"
         (out_dir / fname).write_text(body, encoding="utf-8")
-
     _dump("classes.py", [e for e in entities if e.type == "class" and not e.parent])
     _dump("nested_classes.py", [e for e in entities if e.type == "class" and e.parent])
     _dump("functions.py", [e for e in entities if e.type == "function" and not e.parent])
@@ -632,8 +562,6 @@ def write_by_type(entities: list[Entity], out_dir: Path) -> None:
         [e for e in entities if e.type == "function" and e.parent],
     )
     _dump("const.py", [e for e in entities if e.type == "constant"])
-
-
 def write_per_folder(entities: list[Entity], out_dir: Path, toc: bool = False) -> None:
     cwd = Path.cwd().resolve()
     groups: dict[Path, list[Entity]] = defaultdict(list)
@@ -668,8 +596,6 @@ def write_per_folder(entities: list[Entity], out_dir: Path, toc: bool = False) -
                 e.source,
             ]
         (target_dir / "definitions.py").write_text("\n".join(parts), encoding="utf-8")
-
-
 def write_lists(entities: list[Entity], out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     by_type: dict[str, dict[str, list[Entity]]] = defaultdict(lambda: defaultdict(list))
@@ -687,8 +613,6 @@ def write_lists(entities: list[Entity], out_dir: Path) -> None:
             )
             unique.update(e.name for e in es)
         (sub / "unique.txt").write_text("\n".join(sorted(unique)) + "\n", encoding="utf-8")
-
-
 def write_sqlite(entities: list[Entity], db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
@@ -718,14 +642,10 @@ def write_sqlite(entities: list[Entity], db_path: Path) -> None:
         )
     conn.commit()
     conn.close()
-
-
 def write_imports_file(imports: Iterable[str], out_dir: Path) -> None:
     unique = sorted(set(imports))
     body = "# Global imports collected from all processed files\n\n" + "\n".join(unique) + "\n"
     (out_dir / "global_imports.py").write_text(body, encoding="utf-8")
-
-
 def _worker(item: tuple) -> tuple:
     path_str, parser_name, include_nested, constants_only, is_archive = item
     p = Path(path_str)
@@ -747,8 +667,6 @@ def _worker(item: tuple) -> tuple:
     except Exception as e:
         err = f"{type(e).__name__}: {e}"
     return path_str, entities, imports, err
-
-
 def cmd_extract(args: argparse.Namespace) -> int:
     if args.parser == "treesitter" and not HAS_TS:
         log.error("--parser treesitter requires tree-sitter & tree-sitter-python")
@@ -838,8 +756,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
     print(f"  {'total':<12}: {len(all_entities)}")
     print(f"  output       : {out_dir}")
     return 0
-
-
 NODE_KINDS: dict[str, set[str]] = {
     "class": {"class_definition"},
     "func": {"function_definition"},
@@ -847,8 +763,6 @@ NODE_KINDS: dict[str, set[str]] = {
     "comments": {"comment", "expression_statement"},
 }
 NODE_KINDS["all"] = set().union(*NODE_KINDS.values())
-
-
 def cmd_nodes(args: argparse.Namespace) -> int:
     if not HAS_TS:
         log.error("`nodes` requires tree-sitter & tree-sitter-python")
@@ -899,16 +813,12 @@ def cmd_nodes(args: argparse.Namespace) -> int:
         target.write_text("\n\n".join(chunks), encoding="utf-8")
     print(f"✨ Wrote {len(grouped)} folder file(s) under {out}")
     return 0
-
-
 def _node_to_sexpr(node, data: bytes) -> str:
     if node.child_count == 0:
         txt = data[node.start_byte : node.end_byte].decode("utf-8", "replace")
         return f'({node.type} "{txt}")'
     inner = " ".join(_node_to_sexpr(c, data) for c in node.children)
     return f"({node.type} {inner})"
-
-
 def cmd_sexpr(args: argparse.Namespace) -> int:
     if not HAS_TS:
         log.error("`sexpr` requires tree-sitter & tree-sitter-python")
@@ -918,8 +828,6 @@ def cmd_sexpr(args: argparse.Namespace) -> int:
     tree = _get_ts_parser().parse(data)
     print(_node_to_sexpr(tree.root_node, data))
     return 0
-
-
 def cmd_funcnames(args: argparse.Namespace) -> int:
     p = Path(args.file)
     try:
@@ -936,8 +844,6 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
     for n in names:
         print(n)
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pyextract",
@@ -1061,13 +967,9 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--skip-main", action="store_true", help="Skip the function named `main`.")
     f.set_defaults(func=cmd_funcnames)
     return p
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args) or 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

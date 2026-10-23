@@ -1,8 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
-
 import argparse
 import ast
 import concurrent.futures as cf
@@ -29,22 +26,14 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Protocol, cast
-
 if TYPE_CHECKING:
     from libcst import CSTTransformer
     from rich.progress import Progress, TaskID
-
     _CSTTypes = tuple[type[CSTTransformer], type[CSTTransformer]]
-
 from loguru import logger
-
 _Edit = tuple[int, int, bytes]
-
-
 class SkipFile(Exception):
     pass
-
-
 @dataclass
 class StripFileResult:
     path: Path
@@ -57,15 +46,11 @@ class StripFileResult:
     traceback: str = ""
     skipped: bool = False
     skip_reason: str = ""
-
-
 def parse_source(source: str) -> ast.Module:
     try:
         return ast.parse(source)
     except (SyntaxError, ValueError) as exc:
         raise SkipFile(f"{type(exc).__name__}: {exc}") from None
-
-
 class ASTStripper:
     _DIRECTIVE_RE = re.compile(
         r"^#\s*(?:type|fmt|mypy|pylint|ruff|pyright|basedpyright|noqa|"
@@ -75,7 +60,6 @@ class ASTStripper:
         re.I,
     )
     _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
-
     def __init__(
         self,
         strip_comments: bool,
@@ -87,16 +71,13 @@ class ASTStripper:
         self.strip_docstrings = strip_docstrings or strip_all
         self.strip_all = strip_all
         self.remove_blank_lines = remove_blank_lines
-
     @staticmethod
     def _line_start(src: bytes, pos: int) -> int:
         return src.rfind(b"\n", 0, pos) + 1
-
     @staticmethod
     def _line_end(src: bytes, pos: int) -> int:
         end = src.find(b"\n", pos)
         return len(src) if end < 0 else end + 1
-
     def _keep_comment(self, text: str, row: int) -> bool:
         if self.strip_all:
             return False
@@ -105,7 +86,6 @@ class ASTStripper:
             or (row < 2 and self._COOKIE_RE.search(text.encode("utf-8")))
             or self._DIRECTIVE_RE.match(text)
         )
-
     def _collect_comments(self, src: bytes) -> list[_Edit]:
         source = src.decode("utf-8")
         lines = io.StringIO(source).readlines()
@@ -130,7 +110,6 @@ class ASTStripper:
                     start -= 1
                 edits.append((start, end, b""))
         return edits
-
     def _collect_docstrings(self, src: bytes, tree: ast.AST) -> list[_Edit]:
         lines = io.BytesIO(src).readlines()
         offsets = [0]
@@ -179,7 +158,6 @@ class ASTStripper:
             else:
                 edits.append((start, end, b"pass"))
         return edits
-
     def strip(self, source: str) -> str:
         tree = parse_source(source)
         src = source.encode("utf-8")
@@ -193,7 +171,6 @@ class ASTStripper:
         elif result != source:
             ast.parse(result)
         return result
-
     @staticmethod
     def _apply(src: bytes, edits: list[_Edit]) -> bytes:
         out = bytearray()
@@ -206,7 +183,6 @@ class ASTStripper:
             cursor = end
         out.extend(src[cursor:])
         return bytes(out)
-
     @staticmethod
     def _atomic_write(path: Path, data: bytes, original: bytes) -> None:
         mode = stat.S_IMODE(path.stat().st_mode)
@@ -223,7 +199,6 @@ class ASTStripper:
             temp.replace(path)
         finally:
             temp.unlink(missing_ok=True)
-
     def strip_file(
         self,
         path: Path,
@@ -272,8 +247,6 @@ class ASTStripper:
             result.modified = False
         result.elapsed = perf_counter() - started
         return result
-
-
 def make_diff(before: str, after: str, name: str) -> str:
     output: list[str] = []
     for line in difflib.unified_diff(
@@ -286,8 +259,6 @@ def make_diff(before: str, after: str, name: str) -> str:
         if not line.endswith("\n"):
             output.append("\n\\ No newline at end of file\n")
     return "".join(output)
-
-
 def create_backup(path: Path, original: bytes) -> Path:
     backup = path.with_name(path.name + ".bak")
     with backup.open("xb") as stream:
@@ -300,8 +271,6 @@ def create_backup(path: Path, original: bytes) -> Path:
             backup.unlink(missing_ok=True)
             raise
     return backup
-
-
 def remove_blank_lines(source: str) -> str:
     protected: set[int] = set()
     for token in tokenize.generate_tokens(io.StringIO(source).readline):
@@ -319,8 +288,6 @@ def remove_blank_lines(source: str) -> str:
     if before != after:
         raise ValueError("Blank-line removal would change the AST; not written")
     return result
-
-
 class TSStripper(ASTStripper):
     def __init__(
         self,
@@ -332,9 +299,7 @@ class TSStripper(ASTStripper):
         super().__init__(strip_comments, strip_docstrings, remove_blank_lines, strip_all)
         import tree_sitter
         import tree_sitter_python
-
         self._parser = tree_sitter.Parser(tree_sitter.Language(tree_sitter_python.language()))
-
     def _collect_comments(self, src: bytes) -> list[_Edit]:
         edits: list[_Edit] = []
         cursor = self._parser.parse(src).walk()
@@ -358,11 +323,8 @@ class TSStripper(ASTStripper):
             while not cursor.goto_next_sibling():
                 if not cursor.goto_parent():
                     return edits
-
-
 def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
     import libcst as cst
-
     thread = threading.current_thread()
     existing = cast("dict[bool, _CSTTypes] | None", getattr(thread, "_strip_python_cst_types_v1", None))
     cache: dict[bool, _CSTTypes] = existing if existing is not None else {}
@@ -370,12 +332,10 @@ def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
         setattr(thread, "_strip_python_cst_types_v1", cache)
     if strip_all in cache:
         return cache[strip_all]
-
     class _CommentRemover(cst.CSTTransformer):
         def __init__(self) -> None:
             super().__init__()
             self._header_comments: set[int] = set()
-
         def visit_Module(self, node: cst.Module) -> bool:
             if not strip_all:
                 for row, line in enumerate(node.header[:2]):
@@ -386,19 +346,16 @@ def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
                     ):
                         self._header_comments.add(id(comment))
             return True
-
         def _keep(self, comment: cst.Comment) -> bool:
             return not strip_all and bool(
                 id(comment) in self._header_comments or ASTStripper._DIRECTIVE_RE.match(comment.value)
             )
-
         def leave_EmptyLine(
             self, original_node: cst.EmptyLine, updated_node: cst.EmptyLine
         ) -> cst.EmptyLine | cst.RemovalSentinel:
             if original_node.comment is not None and not self._keep(original_node.comment):
                 return cst.RemoveFromParent()
             return updated_node
-
         def leave_TrailingWhitespace(
             self,
             original_node: cst.TrailingWhitespace,
@@ -407,7 +364,6 @@ def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
             if original_node.comment is not None and not self._keep(original_node.comment):
                 return updated_node.with_changes(comment=None, whitespace=cst.SimpleWhitespace(""))
             return updated_node
-
     class _DocstringRemover(cst.CSTTransformer):
         @staticmethod
         def _is_docstring(expr: cst.CSTNode) -> bool:
@@ -420,7 +376,6 @@ def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
             except (ValueError, SyntaxError):
                 return False
             return isinstance(value, str)
-
         def _strip_suite(self, suite: cst.BaseSuite) -> cst.BaseSuite:
             if isinstance(suite, cst.SimpleStatementSuite):
                 if suite.body and self._is_docstring(suite.body[0]):
@@ -449,7 +404,6 @@ def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
                 return suite.with_changes(body=rest)
             replacement = first.with_changes(body=[cst.Pass(semicolon=first.body[0].semicolon), *first.body[1:]])
             return suite.with_changes(body=[replacement, *suite.body[1:]])
-
         def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
             if not strip_all or not updated_node.body:
                 return updated_node
@@ -475,21 +429,15 @@ def _cst_transformer_types(strip_all: bool) -> _CSTTypes:
                 replacement = first.with_changes(body=[cst.Pass()])
                 return updated_node.with_changes(body=[replacement, *updated_node.body[1:]])
             return updated_node.with_changes(body=updated_node.body[1:])
-
         def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
             return updated_node.with_changes(body=self._strip_suite(updated_node.body))
-
         def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
             return updated_node.with_changes(body=self._strip_suite(updated_node.body))
-
     result: _CSTTypes = (_CommentRemover, _DocstringRemover)
     cache[strip_all] = result
     return result
-
-
 def _libcst_strip(source: str, comments: bool, docstrings: bool, strip_all: bool = False) -> str:
     import libcst as cst
-
     comment_remover, docstring_remover = _cst_transformer_types(strip_all)
     parse_source(source)
     module = cst.parse_module(source)
@@ -500,14 +448,10 @@ def _libcst_strip(source: str, comments: bool, docstrings: bool, strip_all: bool
     result = module.code
     ast.parse(result)
     return result
-
-
 class CSTStripper(ASTStripper):
     def strip(self, source: str) -> str:
         result = _libcst_strip(source, self.strip_comments, self.strip_docstrings, self.strip_all)
         return remove_blank_lines(result) if self.remove_blank_lines else result
-
-
 @dataclass(frozen=True)
 class FileOptions:
     comments: bool = False
@@ -518,26 +462,18 @@ class FileOptions:
     dryrun: bool = False
     backup: bool = False
     diff: bool = False
-
-
 @dataclass(frozen=True)
 class Task:
     path: Path
     options: FileOptions
-
-
 class _WorkerState:
     def __init__(self) -> None:
         self.strippers: dict[tuple[str, bool, bool, bool, bool], ASTStripper] = {}
-
-
 _STRIPPER_TYPES: dict[str, type[ASTStripper]] = {
     "tree-sitter": TSStripper,
     "libcst": CSTStripper,
     "ast": ASTStripper,
 }
-
-
 def get_worker_stripper(options: FileOptions) -> ASTStripper:
     thread = threading.current_thread()
     state = cast("_WorkerState | None", getattr(thread, "_strip_python_worker_state_v1", None))
@@ -552,8 +488,6 @@ def get_worker_stripper(options: FileOptions) -> ASTStripper:
         )
         state.strippers[key] = cached
     return cached
-
-
 def process_file(task: Task) -> StripFileResult:
     started = perf_counter()
     path, options = task.path, task.options
@@ -564,16 +498,12 @@ def process_file(task: Task) -> StripFileResult:
         result = StripFileResult(path, error=f"{type(exc).__name__}: {exc}", traceback=traceback.format_exc())
     result.elapsed = perf_counter() - started
     return result
-
-
 def check_interpreter_backend(backend: str) -> str:
     try:
         get_worker_stripper(FileOptions(backend=backend, comments=True)).strip("x = 1 # probe\n")
     except Exception as exc:
         return f"{type(exc).__name__}: {exc}"
     return ""
-
-
 def result_to_wire(result: StripFileResult) -> dict[str, Any]:
     return {
         "path": str(result.path),
@@ -587,8 +517,6 @@ def result_to_wire(result: StripFileResult) -> dict[str, Any]:
         "skipped": result.skipped,
         "skip_reason": result.skip_reason,
     }
-
-
 def result_from_wire(payload: bytes) -> StripFileResult:
     data = cast("dict[str, Any]", json.loads(payload))
     return StripFileResult(
@@ -603,14 +531,10 @@ def result_from_wire(payload: bytes) -> StripFileResult:
         skipped=bool(data["skipped"]),
         skip_reason=data["skip_reason"],
     )
-
-
 def process_file_wire(payload: bytes) -> bytes:
     data = cast("dict[str, Any]", json.loads(payload))
     result = process_file(Task(Path(data["path"]), FileOptions(**data["options"])))
     return json.dumps(result_to_wire(result), ensure_ascii=False).encode("utf-8")
-
-
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
     "__pycache__",
@@ -630,29 +554,19 @@ SKIP_DIRS: frozenset[str] = frozenset({
     "lazy",
     "numba",
 })
-
-
 class WalkFiles(Protocol):
     def __call__(self, root: str | Path, /) -> list[Path]: ...
-
-
 @dataclass(frozen=True)
 class DiscoveryIssue:
     path: Path
     error: str
-
-
 def record_discovery_error(path: Path, exc: Exception, issues: list[DiscoveryIssue] | None) -> None:
     error = f"{type(exc).__name__}: {exc}"
     if issues is not None:
         issues.append(DiscoveryIssue(path, error))
     logger.bind(traceback=traceback.format_exc(), file_path=str(path)).error("Discovery {}: {}", path.name, error)
-
-
 def is_skip_dir(path: Path) -> bool:
     return path.name in SKIP_DIRS or path.name.endswith(".egg-info")
-
-
 def is_python_file(path: Path, issues: list[DiscoveryIssue] | None = None) -> bool:
     if path.suffix.lower() == ".py":
         return True
@@ -682,8 +596,6 @@ def is_python_file(path: Path, issues: list[DiscoveryIssue] | None = None) -> bo
             return False
         interpreter = Path(next((word for word in candidates if not word.startswith("-") and "=" not in word), "")).name
     return re.fullmatch(r"(?:python|pypy)(?:[23](?:\.\d+)*)?", interpreter) is not None
-
-
 def is_excluded(path: Path, root: Path, patterns: tuple[str, ...]) -> bool:
     if not patterns:
         return False
@@ -694,8 +606,6 @@ def is_excluded(path: Path, root: Path, patterns: tuple[str, ...]) -> bool:
     return any(
         fnmatch.fnmatchcase(path.name, pattern) or fnmatch.fnmatchcase(relative, pattern) for pattern in patterns
     )
-
-
 def pathlib_walk_files(
     root_dir: Path,
     *,
@@ -730,8 +640,6 @@ def pathlib_walk_files(
                     record_discovery_error(path, exc, issues)
         except OSError as exc:
             record_discovery_error(directory, exc, issues)
-
-
 def _fastwalk_parent_ok(parent: Path, root: Path, exclude_dirs: frozenset[str], excludes: tuple[str, ...]) -> bool:
     current = parent
     while current != root and current != current.parent:
@@ -744,8 +652,6 @@ def _fastwalk_parent_ok(parent: Path, root: Path, exclude_dirs: frozenset[str], 
             return False
         current = current.parent
     return True
-
-
 def iter_python_files(
     root_dir: Path,
     *,
@@ -785,8 +691,6 @@ def iter_python_files(
         for path in pathlib_walk_files(root_dir, exclude_dirs=exclude_dirs, excludes=excludes, issues=issues):
             if is_python_file(path, issues):
                 yield path
-
-
 def iter_input_files(
     inputs: Iterable[Path],
     *,
@@ -810,8 +714,6 @@ def iter_input_files(
                     yield path
         except (OSError, ValueError) as exc:
             record_discovery_error(input_path, exc, issues)
-
-
 METHODS = (
     "mp.map",
     "mp.imap",
@@ -834,8 +736,6 @@ METHODS = (
     "cf.interpreter",
     "joblib",
 )
-
-
 def run_tasks(tasks: list[Task], method: str, workers: int, chunksize: int | None = None) -> Iterator[StripFileResult]:
     if not tasks:
         return
@@ -897,8 +797,6 @@ def run_tasks(tasks: list[Task], method: str, workers: int, chunksize: int | Non
         yield from Parallel(n_jobs=workers, backend="loky", return_as="generator")(
             delayed(process_file)(task) for task in tasks
         )
-
-
 def write_json_report(path: Path, report: dict[str, object]) -> None:
     data = (json.dumps(report, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
     fd, name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
@@ -911,8 +809,6 @@ def write_json_report(path: Path, report: dict[str, object]) -> None:
         temporary.replace(path)
     finally:
         temporary.unlink(missing_ok=True)
-
-
 def colorize_diff(diff: str, color: bool) -> str:
     if not color:
         return diff
@@ -930,15 +826,12 @@ def colorize_diff(diff: str, color: bool) -> str:
             code = ""
         output.append(f"\033[{code}m{line}\033[0m" if code else line)
     return "".join(output)
-
-
 def make_rich_ui(color_mode: str) -> tuple[Progress, Callable[[str], None]]:
     from rich.console import Console
     from rich.progress import BarColumn
     from rich.progress import Progress as RichProgress
     from rich.progress import TaskProgressColumn, TextColumn, TimeElapsedColumn
     from rich.text import Text
-
     force_terminal = True if color_mode == "always" else False if color_mode == "never" else None
     console = Console(stderr=True, force_terminal=force_terminal, no_color=color_mode == "never")
     progress = RichProgress(
@@ -949,13 +842,9 @@ def make_rich_ui(color_mode: str) -> tuple[Progress, Callable[[str], None]]:
         TimeElapsedColumn(),
         console=console,
     )
-
     def emit(message: str) -> None:
         console.print(Text.from_ansi(message.rstrip("\n")))
-
     return progress, emit
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Strip comments and docstrings from Python files safely.")
     parser.add_argument(
@@ -1026,8 +915,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Console log level (default: WARNING)",
     )
     return parser
-
-
 def configure_logging(args: argparse.Namespace, emit: Callable[[str], None] | None) -> bool:
     logger.remove()
     logger.configure(extra={"traceback": "", "file_path": ""})
@@ -1060,8 +947,6 @@ def configure_logging(args: argparse.Namespace, emit: Callable[[str], None] | No
         logger.exception("Cannot configure log output: {}", exc)
         return False
     return True
-
-
 def main() -> int:
     parser = build_parser()
     args = parser.parse_intermixed_args()
@@ -1089,7 +974,6 @@ def main() -> int:
     missing = [package for module, package in dependencies.items() if importlib.util.find_spec(module) is None]
     if missing:
         parser.error("install dependencies: python -m pip install " + " ".join(missing))
-
     color = args.color == "always" or (args.color == "auto" and sys.stdout.isatty() and "NO_COLOR" not in os.environ)
     progress: Progress | None = None
     emit: Callable[[str], None] | None = None
@@ -1097,7 +981,6 @@ def main() -> int:
         progress, emit = make_rich_ui(args.color)
     if not configure_logging(args, emit):
         return 1
-
     started = perf_counter()
     discovery_issues: list[DiscoveryIssue] = []
     try:
@@ -1130,7 +1013,6 @@ def main() -> int:
     except Exception as exc:
         logger.exception("File discovery failed: {}", exc)
         return 1
-
     options = FileOptions(
         comments=args.c,
         docstrings=args.d,
@@ -1152,11 +1034,9 @@ def main() -> int:
     )
     if args.all:
         logger.warning("--all removes executable shebangs, encoding comments and tool directives too.")
-
     def green(number: int) -> str:
         text = f"{number:,}"
         return f"\033[32m{text}\033[0m" if color else text
-
     total = changed = processed = skipped = 0
     errors = len(discovery_issues)
     report_rows: list[dict[str, object]] = []
@@ -1219,7 +1099,6 @@ def main() -> int:
             if isinstance(exc, cf.process.BrokenProcessPool):
                 logger.error("A worker process died (crash or out-of-memory). Try -j 1 or -b ast.")
             logger.exception("Execution backend failed: {}", exc)
-
     if args.report_json is not None:
         try:
             write_json_report(
@@ -1246,7 +1125,6 @@ def main() -> int:
         except Exception as exc:
             errors += 1
             logger.exception("Cannot write JSON report {}: {}", args.report_json, exc)
-
     if args.dryrun:
         label = "Potential source bytes reduced"
     elif args.backup:
@@ -1275,8 +1153,6 @@ def main() -> int:
     if errors:
         return 1
     return 1 if args.check and changed else 0
-
-
 def entrypoint() -> int:
     try:
         return main()
@@ -1286,8 +1162,6 @@ def entrypoint() -> int:
     except Exception:
         logger.exception("Fatal unhandled error")
         return 1
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(entrypoint())

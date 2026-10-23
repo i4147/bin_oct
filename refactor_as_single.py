@@ -6,7 +6,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable
-
 WORKERS: int = 6
 FILENAME_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP = {
@@ -47,12 +46,8 @@ AMBIGUOUS_PATH_MARKERS = [
     re.compile(r"\bos\.path\.join\("),
     re.compile(r"\bos\.path\.split\("),
 ]
-
-
 def find_source_files(root: Path) -> list[Path]:
     return sorted(p for p in root.rglob("*.py") if p.is_file())
-
-
 def parse_merged_file(merged_path: Path) -> dict[str, str]:
     files: dict[str, list[str]] = {}
     current: str | None = None
@@ -65,8 +60,6 @@ def parse_merged_file(merged_path: Path) -> dict[str, str]:
         if current is not None:
             files[current].append(line)
     return {name: "\n".join(lines) for name, lines in files.items()}
-
-
 def load_sources(args: argparse.Namespace) -> dict[str, str]:
     if args.file:
         merged_path = Path(args.file).expanduser().resolve()
@@ -81,8 +74,6 @@ def load_sources(args: argparse.Namespace) -> dict[str, str]:
     if not py_files:
         sys.exit(f"error: no .py files found under {root}")
     return {str(p.relative_to(root)): p.read_text(encoding="utf-8") for p in py_files}
-
-
 def strip_six_and_py2(text: str) -> str:
     for pattern, repl in SIMPLE_TEXT_REWRITES:
         text = pattern.sub(repl, text)
@@ -98,8 +89,6 @@ def strip_six_and_py2(text: str) -> str:
     text = re.sub(r"^\s*def _pickle_method\b.*(?:\n(?:    .*)?)*\n?", "", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*@implements_to_string\s*\n", "", text, flags=re.MULTILINE)
     return text
-
-
 def flag_ambiguous_paths(text: str) -> str:
     lines = text.splitlines()
     out = []
@@ -112,14 +101,10 @@ def flag_ambiguous_paths(text: str) -> str:
         else:
             out.append(line)
     return "\n".join(out)
-
-
 def rewrite_os_path(text: str) -> str:
     for pattern, repl in OS_PATH_REWRITES:
         text = pattern.sub(repl, text)
     return flag_ambiguous_paths(text)
-
-
 def rewrite_parallelism(text: str) -> str:
     text = re.sub(
         r"from concurrent\.futures import[^\n]*\n",
@@ -140,8 +125,6 @@ def rewrite_parallelism(text: str) -> str:
     text = re.sub(r"^.*['\"]-w['\"].*\n", "", text, flags=re.MULTILINE)
     text = re.sub(r"workers\s*=\s*\w+,?\s*", "", text)
     return text
-
-
 def rewrite_logging(text: str) -> str:
     text = re.sub(r"^import logging\n", "from loguru import logger\n", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*logger\s*=\s*logging\.getLogger\([^)]*\)\n", "", text, flags=re.MULTILINE)
@@ -152,8 +135,6 @@ def rewrite_logging(text: str) -> str:
         text,
     )
     return text
-
-
 def strip_comments_and_docstrings(tree: ast.Module) -> ast.Module:
     for node in ast.walk(tree):
         if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -168,8 +149,6 @@ def strip_comments_and_docstrings(tree: ast.Module) -> ast.Module:
                 if not body:
                     body.append(ast.Pass())
     return tree
-
-
 def merge_sources(sources: dict[str, str]) -> str:
     order = sorted(sources.keys(), key=lambda n: (n.count("/"), n != "__init__.py", n))
     chunks = []
@@ -183,8 +162,6 @@ def merge_sources(sources: dict[str, str]) -> str:
         text = re.sub(r"^\s*import \.+\S*\n", "", text, flags=re.MULTILINE)
         chunks.append(f"# --- merged from: {name} ---\n{text}")
     return "\n\n".join(chunks)
-
-
 def collect_and_dedup_imports(tree: ast.Module) -> tuple[list[str], list[ast.stmt]]:
     import_lines: list[str] = []
     seen: set[str] = set()
@@ -200,8 +177,6 @@ def collect_and_dedup_imports(tree: ast.Module) -> tuple[list[str], list[ast.stm
     tree.body = remaining_body
     stdlib_like = sorted(l for l in import_lines if not l.startswith("from ."))
     return stdlib_like, remaining_body
-
-
 def build_output(tree: ast.Module, workers_needed: bool, needs_pathlib: bool, needs_loguru: bool) -> str:
     import_lines, _ = collect_and_dedup_imports(tree)
     body_src = ast.unparse(tree)
@@ -222,8 +197,6 @@ def build_output(tree: ast.Module, workers_needed: bool, needs_pathlib: bool, ne
     )
     workers_const = "\nWORKERS: int = 6\n" if workers_needed else ""
     return module_doc + "\n" + "\n".join(all_imports) + "\n" + workers_const + "\n\n" + body_src + "\n"
-
-
 def determine_output_path(requested: str | None) -> Path:
     candidate = Path(requested) if requested else Path("out.py")
     if not candidate.exists():
@@ -238,8 +211,6 @@ def determine_output_path(requested: str | None) -> Path:
             )
             return alt
         n += 1
-
-
 def main(argv: Iterable[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-f", "--file", help="merged input file with '# filename: relpath' sentinels")
@@ -264,7 +235,5 @@ def main(argv: Iterable[str] | None = None) -> None:
             "note: manual-review TODOs were inserted for ambiguous os.path usages and the module docstring",
             file=sys.stderr,
         )
-
-
 if __name__ == "__main__":
     main()

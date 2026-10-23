@@ -7,12 +7,9 @@ from pathlib import Path
 import sys
 from typing import Any
 from dh import runcmd
-
 PROGRESS_SUFFIX: str = ".progress"
 APT_ARCHIVES: Path = Path("/data/data/com.termux/cache/apt/archives")
 APT_ENV: dict[str, str] = {**os.environ, "APT_CONFIG": os.environ.get("APT_CONFIG", "")}
-
-
 def read_packages(filepath: Path) -> list[str]:
     pkgs: list[str] = []
     with filepath.open("r") as f:
@@ -22,8 +19,6 @@ def read_packages(filepath: Path) -> list[str]:
                 continue
             pkgs.append(line)
     return pkgs
-
-
 def load_progress(progress_file: Path) -> dict[str, Any]:
     if not progress_file.exists():
         return {"completed": [], "failed": [], "current": None}
@@ -37,15 +32,11 @@ def load_progress(progress_file: Path) -> dict[str, Any]:
     except (json.JSONDecodeError, OSError) as e:
         print(f"Warning: could not read progress file ({e}), starting fresh")
         return {"completed": [], "failed": [], "current": None}
-
-
 def save_progress(progress_file: Path, progress: dict[str, Any]) -> None:
     tmp: Path = progress_file.with_suffix(progress_file.suffix + ".tmp")
     with tmp.open("w") as f:
         json.dump(progress, f, indent=2)
     tmp.replace(progress_file)
-
-
 def cleanup_deb(pkg: str) -> list[Path]:
     patterns: list[str] = [
         f"{pkg}_*.deb",
@@ -64,8 +55,6 @@ def cleanup_deb(pkg: str) -> list[Path]:
     if removed:
         print(f"  Freed: {', '.join(p.name for p in removed)}")
     return removed
-
-
 def reinstall(pkg: str) -> None:
     cmd: list[str] = [
         "apt",
@@ -76,8 +65,6 @@ def reinstall(pkg: str) -> None:
         pkg,
     ]
     runcmd(cmd, show_output=True)
-
-
 def main() -> None:
     args: list[str] = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags: set[str] = {a for a in sys.argv[1:] if a.startswith("--")}
@@ -125,7 +112,5 @@ def main() -> None:
     print(f"  Failed:    {len(progress['failed'])}")
     if progress["failed"]:
         print(f"  Failed packages: {', '.join(progress['failed'])}")
-
-
 if __name__ == "__main__":
     main()

@@ -6,19 +6,12 @@ import json
 from pathlib import Path
 import subprocess
 import sys
-
 SRT_CODEC_NAMES: frozenset[str] = frozenset({"subrip", "srt"})
 PROBE_ENTRIES: str = "stream=index,codec_name:stream_tags=language,title:stream_disposition=forced"
-
-
 class ToolError(RuntimeError):
     pass
-
-
 class MissingToolError(RuntimeError):
     pass
-
-
 @dataclass(frozen=True)
 class SubtitleStream:
     stream_index: int
@@ -27,16 +20,12 @@ class SubtitleStream:
     language: str
     title: str | None
     forced: bool
-
-
 def require_ffmpeg() -> None:
     try:
         subprocess.run(["ffmpeg", "-version"], check=True, capture_output=True)
     except FileNotFoundError:
         msg = "ffmpeg is required but not installed."
         raise MissingToolError(msg) from None
-
-
 def probe_subtitles(video: Path) -> list[dict]:
     cmd: list[str] = [
         "ffprobe",
@@ -58,8 +47,6 @@ def probe_subtitles(video: Path) -> list[dict]:
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or f"ffprobe failed on {video}")
     return json.loads(proc.stdout).get("streams", [])
-
-
 def parse_stream(raw: dict, relative_index: int) -> SubtitleStream:
     tags: dict = raw.get("tags") or {}
     disposition: dict = raw.get("disposition") or {}
@@ -71,8 +58,6 @@ def parse_stream(raw: dict, relative_index: int) -> SubtitleStream:
         title=tags.get("title") or None,
         forced=bool(disposition.get("forced", 0)),
     )
-
-
 def run_ffmpeg(args: list[str]) -> None:
     try:
         proc: subprocess.CompletedProcess[str] = subprocess.run(["ffmpeg", *args], capture_output=True, text=True)
@@ -81,20 +66,14 @@ def run_ffmpeg(args: list[str]) -> None:
         raise MissingToolError(msg) from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or "ffmpeg failed")
-
-
 def extract_one(video: Path, subtitle_index: int, dest: Path, overwrite: bool) -> None:
     args: list[str] = []
     if overwrite:
         args.append("-y")
     args += ["-i", str(video), "-map", f"0:s:{subtitle_index}", str(dest)]
     run_ffmpeg(args)
-
-
 def sanitize_rich_title(title: str) -> str:
     return "".join(ch if ch.isalnum() else "_" for ch in title)
-
-
 def build_output_path(info: SubtitleStream, naming: str, video: Path, out_dir: Path) -> Path:
     stem: str = video.stem
     if naming == "indexed":
@@ -115,13 +94,9 @@ def build_output_path(info: SubtitleStream, naming: str, video: Path, out_dir: P
             name += f".{info.title.replace(' ', '_')}"
         name += f".{ext}"
     return out_dir / name
-
-
 def load_streams(video: Path) -> tuple[list[dict], list[SubtitleStream]]:
     raw: list[dict] = probe_subtitles(video)
     return raw, [parse_stream(item, i) for i, item in enumerate(raw)]
-
-
 def cmd_extract(args: argparse.Namespace) -> int:
     video: Path = Path(args.video)
     if not video.exists():
@@ -180,8 +155,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
         print(f"{failures} of {len(streams)} subtitle stream(s) failed.")
     print("Done.")
     return 0
-
-
 def cmd_first(args: argparse.Namespace) -> int:
     video: Path = Path(args.video)
     if not video.exists():
@@ -199,8 +172,6 @@ def cmd_first(args: argparse.Namespace) -> int:
         print(f"Error:{exc}")
         return 1
     return 0
-
-
 def cmd_list(args: argparse.Namespace) -> int:
     video: Path = Path(args.video)
     if not video.exists():
@@ -224,8 +195,6 @@ def cmd_list(args: argparse.Namespace) -> int:
     if not streams:
         print("No subtitle streams found.")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog="extract_subs.py",
@@ -284,8 +253,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_list.add_argument("video", help="video file containing subtitle streams")
     p_list.add_argument("--verbose", action="store_true", help="also print raw ffprobe stream records")
     return parser
-
-
 def main(argv: list[str] | None = None) -> int:
     parser: argparse.ArgumentParser = build_parser()
     if argv is None and len(sys.argv) == 1:
@@ -297,7 +264,5 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "first":
         return cmd_first(args)
     return cmd_list(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

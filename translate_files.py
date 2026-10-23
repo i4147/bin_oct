@@ -14,10 +14,8 @@ import sys
 import time
 from typing import Final, Iterable, Sequence
 from deep_translator import GoogleTranslator
-
 try:
     from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
-
     _HAS_TENACITY = True
 except ImportError:
     _HAS_TENACITY = False
@@ -27,28 +25,18 @@ CYRILLIC_RE: Final = re.compile(r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640
 NON_ASCII_RE: Final = re.compile(r"[^\x00-\x7F]")
 logger = logging.getLogger("translate_files")
 logging.basicConfig(level=logging.WARNING)
-
-
 class RateLimitError(Exception):
     pass
-
-
 class TransientError(Exception):
     pass
-
-
 class InterruptFlag:
     def __init__(self) -> None:
         self.set: bool = False
-
     def __bool__(self) -> bool:
         return self.set
-
     def trigger(self, *_args) -> None:
         print("\n⚠️  Ctrl+C — finishing current chunk then stopping.")
         self.set = True
-
-
 def read_text_auto(path: Path) -> str:
     for enc in ENCODINGS:
         try:
@@ -56,8 +44,6 @@ def read_text_auto(path: Path) -> str:
         except (UnicodeDecodeError, LookupError):
             continue
     return path.read_bytes().decode("utf-8", errors="replace")
-
-
 def is_text_file(path: Path) -> bool:
     try:
         with path.open("rb") as fh:
@@ -65,8 +51,6 @@ def is_text_file(path: Path) -> bool:
         return b"\x00" not in head
     except OSError:
         return False
-
-
 def chunk_smart(text: str, max_chars: int) -> list[str]:
     if len(text) <= max_chars:
         return [text]
@@ -86,12 +70,8 @@ def chunk_smart(text: str, max_chars: int) -> list[str]:
     if remaining:
         chunks.append(remaining)
     return chunks
-
-
 def chunk_fixed(text: str, size: int) -> list[str]:
     return [text[i : i + size] for i in range(0, len(text), size)]
-
-
 def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
     chunks: list[list[str]] = []
     current: list[str] = []
@@ -112,8 +92,6 @@ def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
     if current:
         chunks.append(current)
     return chunks
-
-
 def dedupe_preserve_order(items: Iterable[str]) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
@@ -122,15 +100,11 @@ def dedupe_preserve_order(items: Iterable[str]) -> list[str]:
             seen.add(it)
             out.append(it)
     return out
-
-
 def _classify_error(exc: Exception) -> type[Exception]:
     msg = str(exc).lower()
     if any(k in msg for k in ("429", "rate limit", "too many", "quota")):
         return RateLimitError
     return TransientError
-
-
 def translate_with_retry(
     text: str,
     *,
@@ -161,8 +135,6 @@ def translate_with_retry(
                 time.sleep(delay)
     assert last_exc is not None
     raise last_exc
-
-
 def translate_single_shot(text: str, *, source: str, target: str) -> str:
     try:
         result = GoogleTranslator(source=source, target=target).translate(text)
@@ -170,18 +142,12 @@ def translate_single_shot(text: str, *, source: str, target: str) -> str:
     except Exception as exc:
         print(f"Chunk translation error: {exc}")
         return text
-
-
 def make_progress_path(src: Path) -> Path:
     return src.with_suffix(src.suffix + ".viprogress")
-
-
 def make_output_path(src: Path, style: str) -> Path:
     if style == "suffix":
         return src.with_suffix(src.suffix + ".en")
     return src.with_name(f"{src.stem}_eng{src.suffix}")
-
-
 def _save_vi_progress(src: Path, chunk_map: dict[int, str], total: int) -> None:
     payload = {
         "source": str(src),
@@ -193,8 +159,6 @@ def _save_vi_progress(src: Path, chunk_map: dict[int, str], total: int) -> None:
         make_progress_path(src).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception as exc:
         print(f"   ⚠️  Could not save progress: {exc}")
-
-
 def _load_vi_progress(src: Path) -> dict[int, str]:
     p = make_progress_path(src)
     if not p.exists():
@@ -208,12 +172,8 @@ def _load_vi_progress(src: Path) -> dict[int, str]:
         return chunks
     except Exception:
         return {}
-
-
 def _clear_vi_progress(src: Path) -> None:
     make_progress_path(src).unlink(missing_ok=True)
-
-
 def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptFlag) -> bool:
     out = make_output_path(src, "suffix")
     print(f"\n📄 {src.name}  →  {out.name}")
@@ -273,8 +233,6 @@ def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptF
     except Exception as exc:
         print(f"   ❌ Failed to write output: {exc}")
         return False
-
-
 def run_vi(args: argparse.Namespace) -> int:
     files = [p for p in Path.cwd().glob("*.txt") if p.is_file() and p.name not in DEFAULT_SKIP_DIRS]
     if not files:
@@ -290,8 +248,6 @@ def run_vi(args: argparse.Namespace) -> int:
     finally:
         signal.signal(signal.SIGINT, previous)
     return 0
-
-
 def run_ko(args: argparse.Namespace) -> int:
     src = Path(args.input_path)
     if not src.exists():
@@ -321,8 +277,6 @@ def run_ko(args: argparse.Namespace) -> int:
         return 1
     print(f"Saved translated file → {out}")
     return 0
-
-
 def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     try:
         text = path.read_text(encoding="utf-8")
@@ -332,10 +286,8 @@ def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     if not NON_ASCII_RE.search(text):
         return
     chunks = chunk_fixed(text, args.chunk_size)
-
     def _worker(chunk: str) -> str:
         return translate_single_shot(chunk, source=args.source, target=args.target)
-
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         pieces = list(ex.map(_worker, chunks))
     translated = "".join(pieces)
@@ -345,8 +297,6 @@ def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
         print(f"Translated → {out.name}")
     except Exception as exc:
         print(f"Error writing {out}: {exc}")
-
-
 def run_zh(args: argparse.Namespace) -> int:
     root = Path(args.root)
     if not root.exists():
@@ -363,8 +313,6 @@ def run_zh(args: argparse.Namespace) -> int:
             except Exception as exc:
                 print(f"Error processing {path}: {exc}")
     return 0
-
-
 def _ru_translate_chunk(line_group: list[str], args: argparse.Namespace):
     joined = "\n".join(line_group)
     translator = GoogleTranslator(source=args.source, target=args.target)
@@ -387,8 +335,6 @@ def _ru_translate_chunk(line_group: list[str], args: argparse.Namespace):
             if attempt < args.attempts:
                 time.sleep(delay)
     return line_group, None
-
-
 def _ru_per_line(lines: Iterable[str], args: argparse.Namespace) -> dict[str, str]:
     out: dict[str, str] = {}
     for line in lines:
@@ -399,8 +345,6 @@ def _ru_per_line(lines: Iterable[str], args: argparse.Namespace) -> dict[str, st
             logger.error("Per-line fallback failed for %r: %s", line[:50], exc)
             out[line] = line
     return out
-
-
 def _ru_store_chunk(
     line_group: list[str],
     translated: str | None,
@@ -435,8 +379,6 @@ def _ru_store_chunk(
             mapping.get(sample, "")[:60],
         )
     )
-
-
 def run_ru(args: argparse.Namespace) -> int:
     src = Path(args.input_path)
     if not src.exists():
@@ -506,13 +448,9 @@ def run_ru(args: argparse.Namespace) -> int:
     except Exception as exc:
         logger.error("Error updating input file: %s", exc)
     return 0
-
-
 def _add_common_translation_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--source", default=None, help="Source language code (mode-specific default).")
     p.add_argument("--target", default="en", help="Target language code (default: en).")
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="translate_files.py",
@@ -613,8 +551,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_translation_args(p_ru)
     p_ru.set_defaults(source="ru", _handler=run_ru)
     return parser
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -623,7 +559,5 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\n👋 Process stopped by user.")
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

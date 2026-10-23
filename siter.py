@@ -10,8 +10,6 @@ import shutil
 import sys
 import tempfile
 import zipfile
-
-
 class WheelBuilder:
     def __init__(
         self,
@@ -31,7 +29,6 @@ class WheelBuilder:
         self.bin_dir = self._find_bin_dir()
         self.share_dir = self.venv_root / "share" if self.venv_root else None
         self.processed_packages = set()
-
     def _find_venv_root(self):
         current = self.site_packages
         for _ in range(5):
@@ -43,7 +40,6 @@ class WheelBuilder:
                 return current
             current = current.parent
         return None
-
     def _find_bin_dir(self):
         if not self.venv_root:
             return None
@@ -52,7 +48,6 @@ class WheelBuilder:
             if d.exists() and d.is_dir():
                 return d
         return None
-
     def _compute_hash(self, path):
         h = hashlib.sha256()
         with path.open("rb") as f:
@@ -60,7 +55,6 @@ class WheelBuilder:
                 h.update(chunk)
         digest = h.digest()
         return f"sha256={base64.urlsafe_b64encode(digest).decode().rstrip('=')} "
-
     def _read_record(self, dist_info):
         record_file = dist_info / "RECORD"
         if not record_file.exists():
@@ -77,7 +71,6 @@ class WheelBuilder:
                     "size": row[2] if len(row) > 2 else "",
                 }
         return records
-
     def _find_scripts_for_package(self, records):
         if not self.bin_dir or not self.bin_dir.exists():
             return []
@@ -107,7 +100,6 @@ class WheelBuilder:
                         scripts.append(script_path)
                         break
         return scripts
-
     def _find_data_for_package(self, package_name):
         if not self.share_dir or not self.share_dir.exists():
             return []
@@ -123,16 +115,13 @@ class WheelBuilder:
                 except ValueError:
                     pass
         return data_files
-
     def _get_wheel_tags(self):
         try:
             from packaging.tags import sys_tags
-
             tag = next(sys_tags())
             return (tag.interpreter, tag.abi, tag.platform)
         except ImportError:
             import platform
-
             py_ver = sys.version_info
             python_tag = f"cp{py_ver.major}{py_ver.minor}"
             abi_tag = python_tag
@@ -140,10 +129,8 @@ class WheelBuilder:
             machine = platform.machine().lower()
             platform_tag = f"{plat}_{machine}"
             return (python_tag, abi_tag, platform_tag)
-
     def _detect_purity(self, records):
         return all(not path.endswith((".so", ".pyd", ".dll")) for path in records)
-
     def build_wheel(self, dist_info_dir):
         if not dist_info_dir.is_dir():
             return None
@@ -253,7 +240,6 @@ class WheelBuilder:
         except Exception as e:
             print(f"  ❌ Failed to build {pkg_name}: {e}")
             return None
-
     def _build_wheel_worker(self, dist_info):
         try:
             result = self.build_wheel(dist_info)
@@ -261,7 +247,6 @@ class WheelBuilder:
         except Exception as e:
             print(f"❌ Worker failed for {dist_info.name}: {e}")
             return (dist_info.name, None)
-
     def build_all(self):
         dist_infos = sorted(self.site_packages.glob("*.dist-info"))
         if not dist_infos:
@@ -277,7 +262,6 @@ class WheelBuilder:
             if len(dist_infos) > 1:
                 print("📝 Using serial processing")
             return self._build_serial(dist_infos)
-
     def _build_serial(self, dist_infos):
         built = 0
         for dist_info in dist_infos:
@@ -288,11 +272,9 @@ class WheelBuilder:
                 print(f"  ❌ Failed to build {dist_info.name}: {e}")
         print(f"\n✅ Built {built}/{len(dist_infos)} wheels in {self.output_dir}")
         return built
-
     def _build_parallel(self, dist_infos):
         self.processed_packages.clear()
         from multiprocessing import get_context
-
         ctx = get_context("spawn")
         build_func = self._build_wheel_worker
         with ctx.Pool(processes=self.max_workers) as pool:
@@ -300,8 +282,6 @@ class WheelBuilder:
         built = sum((1 for _, result in results if result is not None))
         print(f"\n✅ Built {built}/{len(dist_infos)} wheels in {self.output_dir}")
         return built
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Build proper wheel files from installed packages (run from site-packages)",
@@ -382,10 +362,7 @@ def main():
         return 0 if built > 0 else 1
     built = builder.build_all()
     return 0 if built > 0 else 1
-
-
 if __name__ == "__main__":
     from multiprocessing import freeze_support
-
     freeze_support()
     raise SystemExit(main())

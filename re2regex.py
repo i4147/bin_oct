@@ -6,7 +6,6 @@ from pathlib import Path
 import re
 from typing import TYPE_CHECKING, Final, TypeAlias
 from loguru import logger
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
 POOL_WORKERS: Final[int] = 8
@@ -20,12 +19,8 @@ NORMAL_IMPORT: Final[str] = r"^import re\b"
 REGEX_IMPORT: Final[str] = r"^import regex as re\b"
 FileResult: TypeAlias = str | None
 UpdateTask: TypeAlias = tuple[Path, bool]
-
-
 def get_pyfiles(root: Path) -> list[Path]:
     return [p for p in root.rglob("*.py") if p.is_file()]
-
-
 def update_file(file_path: Path, reverse: bool = False) -> FileResult:
     try:
         lines = file_path.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -48,13 +43,9 @@ def update_file(file_path: Path, reverse: bool = False) -> FileResult:
     except OSError as exc:
         return f"Error processing {file_path}: {exc}"
     return f"Updated: {file_path}"
-
-
 def _update_file_tuple(task: UpdateTask) -> FileResult:
     path, reverse = task
     return update_file(path, reverse)
-
-
 def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
@@ -70,8 +61,6 @@ def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
             return [result.get() for result in async_results]
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Recursively swap 'import re' with 'import regex as re'")
     parser.add_argument(
@@ -87,8 +76,6 @@ def parse_args() -> argparse.Namespace:
         help="Multiprocessing pool method to use for updates.",
     )
     return parser.parse_args()
-
-
 def main() -> int:
     args: argparse.Namespace = parse_args()
     reverse: bool = bool(args.reverse)
@@ -106,7 +93,5 @@ def main() -> int:
         logger.info(msg)
     logger.info(f"Task complete. Files modified: {len(updates)}")
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

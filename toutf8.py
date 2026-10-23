@@ -7,15 +7,12 @@ from typing import TYPE_CHECKING, Final
 import chardet
 from dh import get_nobinary, is_binary
 from loguru import logger
-
 if TYPE_CHECKING:
     from collections.abc import Generator
     from multiprocessing.pool import AsyncResult
 MAX_WORKERS: Final[int] = 8
 SAMPLE_SIZE: Final[int] = 100_000
 ConvertResult = tuple[Path, bool, str]
-
-
 def detect_encoding(file_path: Path) -> str:
     try:
         with file_path.open("rb") as f:
@@ -27,8 +24,6 @@ def detect_encoding(file_path: Path) -> str:
         return "utf-8"
     except Exception:
         return "utf-8"
-
-
 def convert_file(file_path: Path) -> ConvertResult:
     try:
         if is_binary(file_path):
@@ -43,8 +38,6 @@ def convert_file(file_path: Path) -> ConvertResult:
         return file_path, True, f"Converted from {encoding}"
     except Exception as exc:
         return file_path, False, f"Error: {exc!s}"
-
-
 def collect_files(paths: list[str]) -> Generator[Path, None, None]:
     for path_str in paths:
         path: Path = Path(path_str).resolve()
@@ -56,8 +49,6 @@ def collect_files(paths: list[str]) -> Generator[Path, None, None]:
                     yield child
         else:
             logger.warning(f"⚠ {path} not found")
-
-
 def main() -> int:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Convert non-UTF8 files to UTF8 encoding (in-place)",
@@ -119,7 +110,5 @@ def main() -> int:
     print(f"  Errors:    {errors}")
     print("=" * 40)
     return 0 if errors == 0 else 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

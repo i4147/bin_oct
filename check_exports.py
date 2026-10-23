@@ -1,15 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import ast
 from collections.abc import Iterator
 from pathlib import Path
-
 from loguru import logger
-
-
 SKIP_DIRS: set[str] = {
     ".git",
     ".hg",
@@ -31,10 +26,7 @@ SKIP_DIRS: set[str] = {
     ".idea",
     ".vscode",
 }
-
 ICONS = {"functions": "🔧", "classes": "🏛️ ", "constants": "📌"}
-
-
 def extract_definitions(path: Path) -> dict[str, list[str]]:
     defs: dict[str, list[str]] = {"functions": [], "classes": [], "constants": []}
     try:
@@ -62,8 +54,6 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
             if n.isupper() and not n.startswith("_"):
                 defs["constants"].append(n)
     return defs
-
-
 def extract_exports(init_path: Path) -> set[str]:
     exported: set[str] = set()
     try:
@@ -93,11 +83,8 @@ def extract_exports(init_path: Path) -> set[str]:
             for a in node.names:
                 exported.add(a.asname or a.name.split(".")[0])
     return exported
-
-
 def iter_py_files(target: Path) -> Iterator[Path]:
     """Yield .py files under `target`.
-
     A file target is yielded as-is (even if it is a symlink — the user
     explicitly asked for it). Discovered symlinks inside directories are
     skipped, as are entries in SKIP_DIRS.
@@ -126,8 +113,6 @@ def iter_py_files(target: Path) -> Iterator[Path]:
             if entry.name in SKIP_DIRS or entry.name.endswith(".dist-info"):
                 continue
             yield from iter_py_files(entry)
-
-
 def collect_files(paths: list[Path]) -> list[Path]:
     files: list[Path] = []
     seen: set[Path] = set()
@@ -141,8 +126,6 @@ def collect_files(paths: list[Path]) -> list[Path]:
                 seen.add(rp)
                 files.append(f)
     return sorted(files)
-
-
 def autofix_init(
     init_path: Path,
     missing: dict[str, list[str]],
@@ -160,7 +143,6 @@ def autofix_init(
     except SyntaxError as e:
         logger.error(f"Cannot autofix, {init_path} has a syntax error: {e}")
         return False
-
     all_node = None
     for node in tree.body:
         if isinstance(node, ast.Assign):
@@ -170,7 +152,6 @@ def autofix_init(
                     break
         if all_node:
             break
-
     # Group new names by originating module for import generation.
     by_module: dict[str, list[str]] = {}
     for cat in ("functions", "classes", "constants"):
@@ -193,16 +174,13 @@ def autofix_init(
         ]
         if hits:
             module_names[mod] = sorted(set(hits))
-
     import_lines: list[str] = []
     for mod, names in module_names.items():
         if len(names) == 1:
             import_lines.append(f"from .{mod} import {names[0]}")
         else:
             import_lines.append(f"from .{mod} import ({', '.join(names)})")
-
     new_names = sorted({n for names in missing.values() for n in names})
-
     if all_node is not None:
         existing: set[str] = set()
         if isinstance(all_node.value, (ast.List, ast.Tuple)):
@@ -225,7 +203,6 @@ def autofix_init(
         if import_lines:
             updated += "\n" + "\n".join(import_lines) + "\n"
         updated += "\n__all__ = [\n" + "".join(f'    "{n}",\n' for n in new_names) + "]\n"
-
     if dry_run:
         print("\n" + "=" * 70)
         print(f"DRY RUN — would write to {init_path}:")
@@ -235,7 +212,6 @@ def autofix_init(
             print()
         print("__all__ entries added:", new_names)
         return True
-
     try:
         init_path.write_text(updated, encoding="utf-8")
         logger.success(f"Updated {init_path} with {len(new_names)} new export(s)")
@@ -243,8 +219,6 @@ def autofix_init(
     except OSError as e:
         logger.error(f"Failed to write {init_path}: {e}")
         return False
-
-
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
@@ -272,8 +246,6 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     return p.parse_args()
-
-
 def main() -> int:
     args = parse_args()
     logger.remove()
@@ -283,23 +255,17 @@ def main() -> int:
         level="DEBUG" if args.verbose else "INFO",
         colorize=True,
     )
-
     paths = args.paths or [Path(".")]
-
     files = collect_files(paths)
     if not files:
         logger.error("No Python files found")
         return 1
-
     print(f"Scanning {len(files)} file(s):\n")
-
     missing_by_init: dict[Path, dict[str, list[str]]] = {}
     total_missing = 0
-
     for f in files:
         defs = extract_definitions(f)
         print(f"📄 {f}")
-
         any_def = False
         for cat in ("functions", "classes", "constants"):
             if defs[cat]:
@@ -309,7 +275,6 @@ def main() -> int:
                     print(f"      - {n}")
         if not any_def:
             print("  (no public top-level definitions)")
-
         # Export check (skip for __init__.py — that IS the export file).
         if f.name != "__init__.py":
             init_path = f.parent / "__init__.py"
@@ -330,13 +295,10 @@ def main() -> int:
                     for cat, names in missing.items():
                         bucket[cat].extend(names)
         print()
-
     if total_missing == 0:
         logger.success("All public definitions are exported")
         return 0
-
     logger.warning(f"Total definitions not exported: {total_missing}")
-
     if args.autofix:
         print()
         print("Dry-run mode — no files will be modified" if args.dry_run else "Autofix — updating __init__.py files")
@@ -346,10 +308,7 @@ def main() -> int:
             if not autofix_init(init_path, deduped, dry_run=args.dry_run):
                 ok = False
         return 0 if ok else 1
-
     print("Run with -a to add missing exports to __init__.py")
     return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

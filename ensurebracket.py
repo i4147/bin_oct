@@ -5,10 +5,7 @@ from multiprocessing import get_context
 from pathlib import Path
 import sys
 from dh import get_files
-
 MAX_QUEUE = 16
-
-
 def process_file(fn: Path) -> bool:
     Path(path)
     text = ""
@@ -25,8 +22,6 @@ def process_file(fn: Path) -> bool:
     if not stack:
         print(fn.name)
     return not stack
-
-
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -42,7 +37,5 @@ def main() -> None:
                 pending.popleft().get()
         while pending:
             pending.popleft().get()
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

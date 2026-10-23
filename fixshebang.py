@@ -4,17 +4,11 @@ from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any, Final
-
 SHEBANG_PATTERN: Final[re.Pattern[str]] = re.compile(r"^#!.*python[23]?(?:\.\d+)?(?:[ \t]+.*)?$", re.MULTILINE)
 PY_SHEBANG: Final[str] = "#!/data/data/com.termux/files/usr/bin/python"
-
-
 def find_python_files(directory: Path) -> list[Path]:
     from dh import get_pyfiles
-
     return get_pyfiles(directory)
-
-
 def process_file(path: Path, root_dir: Path) -> tuple[Path, bool, str | None, str, str]:
     rel_path = str(path.relative_to(root_dir))
     if path.is_symlink():
@@ -37,14 +31,10 @@ def process_file(path: Path, root_dir: Path) -> tuple[Path, bool, str | None, st
         return (path, True, None, rel_path, "updated")
     except Exception as e:
         return (path, False, str(e), rel_path, "error")
-
-
 def _process_file_star(
     args: tuple[Path, Path],
 ) -> tuple[Path, bool, str | None, str, str]:
     return process_file(*args)
-
-
 def main() -> int:
     current_dir = Path.cwd()
     print(f"📁 Scanning directory: {current_dir}")
@@ -116,7 +106,5 @@ def main() -> int:
             print(f"  - {rel_path}: {error}")
         return 1
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

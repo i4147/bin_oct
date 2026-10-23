@@ -11,20 +11,17 @@ import sys
 from typing import Any
 import unicodedata
 from loguru import logger
-
 try:
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
 try:
     from unidecode import unidecode
-
     UNIDECODE_AVAILABLE = True
 except ImportError:
     UNIDECODE_AVAILABLE = False
 try:
     import regex
-
     REGEX_AVAILABLE = True
 except ImportError:
     REGEX_AVAILABLE = False
@@ -274,8 +271,6 @@ TRANSLITERATION_MAPS: list[dict[str, str]] = [
     GREEK_MAP,
     CHINESE_MAP,
 ]
-
-
 @dataclass
 class HtmlFile:
     path: Path
@@ -283,8 +278,6 @@ class HtmlFile:
     new_name: str | None = None
     renamed: bool = False
     error: str | None = None
-
-
 @dataclass
 class ProcessingResult:
     path: Path
@@ -294,8 +287,6 @@ class ProcessingResult:
     success: bool
     error: str | None = None
     duration: float = 0.0
-
-
 class LanguageTransliterator:
     @staticmethod
     @lru_cache(maxsize=1024)
@@ -329,7 +320,6 @@ class LanguageTransliterator:
         if primary_count / total > 0.5:
             return primary_script
         return "mixed"
-
     @staticmethod
     def transliterate(text: str) -> str:
         if not text:
@@ -343,7 +333,6 @@ class LanguageTransliterator:
         result = unicodedata.normalize("NFKD", result)
         result = "".join(c for c in result if unicodedata.category(c) != "Mn")
         return result
-
     @staticmethod
     def transliterate_smart(text: str) -> str:
         if not text:
@@ -352,12 +341,9 @@ class LanguageTransliterator:
         if script == "english":
             return text
         return LanguageTransliterator.transliterate(text)
-
-
 class HtmlTitleExtractor:
     def __init__(self) -> None:
         self.parser: TreeSitterParser | None = TreeSitterParser() if TREE_SITTER_AVAILABLE else None
-
     def extract_title(self, path: Path) -> str | None:
         try:
             with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -370,7 +356,6 @@ class HtmlTitleExtractor:
             if title:
                 return title
         return self._extract_with_regex(content)
-
     def _extract_with_tree_sitter(self, html_content: str) -> str | None:
         try:
             if self.parser and hasattr(self.parser, "parse"):
@@ -380,10 +365,8 @@ class HtmlTitleExtractor:
         except Exception as e:
             logger.debug(f"Tree-sitter extraction failed: {e}")
         return None
-
     def _query_tree_for_title(self, tree: Any) -> str | None:
         try:
-
             def traverse(node: Any) -> str | None:
                 if hasattr(node, "type") and node.type == "tag_name":
                     if hasattr(node, "text") and b"title" in node.text:
@@ -403,12 +386,10 @@ class HtmlTitleExtractor:
                         if result:
                             return result
                 return None
-
             return traverse(tree.root_node) if hasattr(tree, "root_node") else None
         except Exception as e:
             logger.debug(f"Tree query failed: {e}")
             return None
-
     @staticmethod
     def _extract_with_regex(html_content: str) -> str | None:
         patterns: list[str] = [
@@ -425,14 +406,10 @@ class HtmlTitleExtractor:
                 if title and len(title) >= MIN_TITLE_LENGTH:
                     return title
         return None
-
     @staticmethod
     def _decode_html_entities(text: str) -> str:
         import html
-
         return html.unescape(text)
-
-
 class TreeSitterParser:
     def __init__(self) -> None:
         self.available: bool = TREE_SITTER_AVAILABLE
@@ -443,20 +420,16 @@ class TreeSitterParser:
             except Exception as e:
                 logger.warning(f"Tree-sitter init failed: {e}")
                 self.available = False
-
     def _init_parser(self) -> None:
         try:
             pass
         except Exception as e:
             logger.debug(f"Could not initialize tree-sitter parser: {e}")
             self.available = False
-
     def parse(self, content: bytes) -> Any | None:
         if self.parser:
             return self.parser.parse(content)
         return None
-
-
 class FilenameNormalizer:
     PUNCTUATION_PATTERN: re.Pattern = re.compile(r"[^\w\s-]", re.UNICODE)
     SPACE_PATTERN: re.Pattern = re.compile(r"\s+")
@@ -487,7 +460,6 @@ class FilenameNormalizer:
         "lpt8",
         "lpt9",
     }
-
     @staticmethod
     def normalize(title: str, extension: str = ".html") -> str:
         if not title:
@@ -510,7 +482,6 @@ class FilenameNormalizer:
         if not text:
             text = "page"
         return f"{text}{extension}"
-
     @staticmethod
     def ensure_unique(filename: Path, existing_files: set[Path]) -> Path:
         if filename not in existing_files:
@@ -523,13 +494,10 @@ class FilenameNormalizer:
             if new_filename not in existing_files:
                 return new_filename
             counter += 1
-
-
 class HtmlFileProcessor:
     def __init__(self) -> None:
         self.title_extractor: HtmlTitleExtractor = HtmlTitleExtractor()
         self.existing_names: set[str] = set()
-
     def process_file(self, path: Path) -> ProcessingResult:
         start_time: datetime = datetime.now()
         original_name: str = path.name
@@ -621,15 +589,12 @@ class HtmlFileProcessor:
                 error=str(e),
                 duration=(datetime.now() - start_time).total_seconds(),
             )
-
-
 class FileDiscovery:
     SKIP_DIRS: set[str] = {
         ".git",
         "__pycache__",
         ".mypy_cache",
     }
-
     @staticmethod
     def discover_files(paths: list[str]) -> list[Path]:
         discovered: list[Path] = []
@@ -657,7 +622,6 @@ class FileDiscovery:
                 unique_files.append(f)
                 seen.add(f)
         return sorted(unique_files)
-
     @staticmethod
     def _discover_in_directory(directory: Path) -> list[Path]:
         files: list[Path] = []
@@ -672,18 +636,13 @@ class FileDiscovery:
         except Exception as e:
             logger.error(f"Error discovering files in {directory}: {e}")
         return files
-
-
 def process_file_task(path: Path) -> ProcessingResult:
     processor: HtmlFileProcessor = HtmlFileProcessor()
     return processor.process_file(path)
-
-
 class HtmlRenamerApp:
     def __init__(self, paths: list[str] | None = None) -> None:
         self.paths: list[str] = paths or ["."]
         self.results: list[ProcessingResult] = []
-
     def run(self) -> None:
         print("=" * 70)
         print("HTML File Renamer (by Title Tag)")
@@ -709,7 +668,6 @@ class HtmlRenamerApp:
                 except Exception as e:
                     logger.error(f"Error retrieving result: {e}")
         self._print_summary()
-
     def _print_summary(self) -> None:
         print("=" * 70)
         print("SUMMARY")
@@ -739,13 +697,9 @@ class HtmlRenamerApp:
                 if not result.success:
                     print(f"  {result.original_name}: {result.error}")
         print("=" * 70)
-
-
 def main() -> None:
     paths: list[str] = sys.argv[1:] if len(sys.argv) > 1 else ["."]
     app: HtmlRenamerApp = HtmlRenamerApp(paths)
     app.run()
-
-
 if __name__ == "__main__":
     main()

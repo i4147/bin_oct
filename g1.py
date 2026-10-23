@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from pathlib import Path
@@ -9,7 +8,6 @@ from typing import TYPE_CHECKING, Final, Optional, Protocol
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
 from loguru import logger
-
 if TYPE_CHECKING:
     from github.Repository import Repository
 LARGE_REPO_THRESHOLD_MB: Final[float] = 5.0
@@ -34,11 +32,8 @@ KNOWN_BACKENDS: Final[tuple[str, ...]] = (
     BACKEND_TYPER,
 )
 DEFAULT_BACKEND: Final[str] = BACKEND_GH
-
-
 class CloneBackend(Protocol):
     name: str
-
     def clone(
         self,
         clone_url: str,
@@ -47,8 +42,6 @@ class CloneBackend(Protocol):
         depth: Optional[int],
     ) -> None: ...
     def update_submodules(self, repo_root: Path) -> None: ...
-
-
 def _run_subprocess(
     cmd: list[str],
     cwd: Optional[Path] = None,
@@ -62,22 +55,14 @@ def _run_subprocess(
         capture_output=True,
         text=True,
     )
-
-
 def _git_available() -> bool:
     return shutil.which("git") is not None
-
-
 def _gh_available() -> bool:
     return shutil.which("gh") is not None
-
-
 class SubprocessBackend:
     name: str = BACKEND_GH
-
     def __init__(self, prefer_gh: bool = True) -> None:
         self.prefer_gh = prefer_gh and _gh_available()
-
     def clone(
         self,
         clone_url: str,
@@ -114,7 +99,6 @@ class SubprocessBackend:
         if depth is not None:
             git_cmd.extend(["--depth", str(depth)])
         _run_subprocess(git_cmd)
-
     def update_submodules(self, repo_root: Path) -> None:
         if not _git_available():
             msg = "'git' is not available on PATH."
@@ -123,11 +107,8 @@ class SubprocessBackend:
             ["git", "submodule", "update", "--init", "--recursive"],
             cwd=repo_root,
         )
-
-
 class DulwichBackend:
     name: str = BACKEND_DULWICH
-
     def clone(
         self,
         clone_url: str,
@@ -136,23 +117,17 @@ class DulwichBackend:
         depth: Optional[int],
     ) -> None:
         from dulwich import porcelain
-
         porcelain.clone(
             source=clone_url,
             target=str(target),
             branch=branch.encode("utf-8"),
             depth=depth,
         )
-
     def update_submodules(self, repo_root: Path) -> None:
         from dulwich import porcelain
-
         porcelain.submodule_update(root=str(repo_root), recursive=True)
-
-
 class GitPythonBackend:
     name: str = BACKEND_GITPYTHON
-
     def clone(
         self,
         clone_url: str,
@@ -161,24 +136,18 @@ class GitPythonBackend:
         depth: Optional[int],
     ) -> None:
         from git import Repo
-
         kwargs: dict[str, object] = {"branch": branch}
         if depth is not None:
             kwargs["depth"] = depth
             kwargs["single_branch"] = True
         Repo.clone_from(clone_url, str(target), **kwargs)
-
     def update_submodules(self, repo_root: Path) -> None:
         from git import Repo
-
         repo = Repo(str(repo_root))
         for submodule in repo.submodules:
             submodule.update(init=True, recursive=True)
-
-
 class Libgit2Backend:
     name: str = BACKEND_LIBGIT2
-
     def clone(
         self,
         clone_url: str,
@@ -190,20 +159,14 @@ class Libgit2Backend:
             msg = "pygit2/libgit2 does not support shallow clones; falling back to subprocess git."
             raise NotImplementedError(msg)
         import pygit2
-
         pygit2.clone_repository(clone_url, str(target), checkout_branch=branch)
-
     def update_submodules(self, repo_root: Path) -> None:
         msg = "pygit2 does not expose recursive submodule update; falling back to subprocess git."
         raise NotImplementedError(msg)
-
-
 class TyperBackend:
     name: str = BACKEND_TYPER
-
     def __init__(self) -> None:
         self._fallback = SubprocessBackend(prefer_gh=False)
-
     def clone(
         self,
         clone_url: str,
@@ -212,11 +175,8 @@ class TyperBackend:
         depth: Optional[int],
     ) -> None:
         self._fallback.clone(clone_url, target, branch, depth)
-
     def update_submodules(self, repo_root: Path) -> None:
         self._fallback.update_submodules(repo_root)
-
-
 def create_backend(name: str) -> CloneBackend:
     name = name.lower()
     if name == BACKEND_GH:
@@ -233,14 +193,10 @@ def create_backend(name: str) -> CloneBackend:
         return TyperBackend()
     msg = f"Unknown backend: {name}"
     raise ValueError(msg)
-
-
 def get_github_client(token: Optional[str] = None) -> Github:
     if token:
         return Github(token)
     return Github()
-
-
 def parse_repo_url(txt: str) -> tuple[str, str]:
     txt = txt.strip()
     txt = txt.removesuffix(".git")
@@ -253,8 +209,6 @@ def parse_repo_url(txt: str) -> tuple[str, str]:
         return parts[-2], parts[-1]
     msg = f"Invalid repository format: {txt}"
     raise ValueError(msg)
-
-
 def get_repo(repo_url: str, github_client: Github) -> Repository:
     try:
         owner, repo_name = parse_repo_url(repo_url)
@@ -269,8 +223,6 @@ def get_repo(repo_url: str, github_client: Github) -> Repository:
     except GithubException as e:
         msg = f"GitHub API error: {e.status} {e.data}"
         raise Exception(msg)
-
-
 def get_repo_size(repo: Repository) -> float:
     try:
         size_kb = repo.size
@@ -280,8 +232,6 @@ def get_repo_size(repo: Repository) -> float:
     except Exception as e:
         logger.error(f"Could not fetch repo size: {e}")
         return 0.0
-
-
 def get_default_branch(repo: Repository) -> str:
     try:
         default_branch = repo.default_branch
@@ -290,17 +240,11 @@ def get_default_branch(repo: Repository) -> str:
     except Exception as e:
         logger.warning(f"Could not determine default branch: {e}")
         return "main"
-
-
 def build_clone_url(repo: Repository) -> str:
     return repo.clone_url
-
-
 def resolve_clone_target(clone_url: str) -> Path:
     name = Path(clone_url.rstrip("/").removesuffix(".git")).name
     return Path.cwd() / name
-
-
 def clone_repo(
     clone_url: str,
     branch: str,
@@ -330,8 +274,6 @@ def clone_repo(
     except Exception as e:
         msg = f"[ERROR] Clone failed: {e}"
         raise Exception(msg)
-
-
 def has_submodules(repo_path: Path) -> bool:
     if (repo_path / GITMODULES_FILENAME).is_file():
         return True
@@ -342,8 +284,6 @@ def has_submodules(repo_path: Path) -> bool:
     except OSError as e:
         logger.warning(f"Error scanning for submodules: {e}")
     return False
-
-
 def _subprocess_update_submodules(repo_root: Path) -> None:
     if not _git_available():
         msg = "'git' is not available for submodule update."
@@ -356,8 +296,6 @@ def _subprocess_update_submodules(repo_root: Path) -> None:
     except subprocess.CalledProcessError as e:
         msg = f"Submodule update failed in {repo_root}: {e.stderr or e}"
         raise Exception(msg)
-
-
 def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None:
     processed: set[Path] = set()
     pending: list[Path] = [repo_root]
@@ -391,8 +329,6 @@ def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None
                 continue
             if has_submodules(sub):
                 pending.append(sub)
-
-
 def init_submodules(repo_path: Path, backend: CloneBackend) -> None:
     if not has_submodules(repo_path):
         print("No submodules found.")
@@ -406,15 +342,11 @@ def init_submodules(repo_path: Path, backend: CloneBackend) -> None:
     except Exception as e:
         msg = f"Submodule update failed: {e}"
         raise Exception(msg)
-
-
 def confirm_large_repo(size_mb: float) -> bool:
     if size_mb > LARGE_REPO_THRESHOLD_MB:
         logger.warning(f"Repository size is {size_mb:.2f} MB. Continue? (y/n)")
         return input().lower() == "y"
     return True
-
-
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="script.py",
@@ -455,8 +387,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help=(f"Clone backend to use. Choices: {', '.join(KNOWN_BACKENDS)}. Default: {DEFAULT_BACKEND}."),
     )
     return parser
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
@@ -507,7 +437,5 @@ def main(argv: Optional[list[str]] = None) -> int:
     except Exception as e:
         logger.warning(f"Submodule handling failed: {e}")
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

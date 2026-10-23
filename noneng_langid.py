@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import math
 from pathlib import Path
 import sys
 import py3langid as langid
-
 ROOT = Path.cwd()
 SKIP_DIRS = {
     ".git",
@@ -50,8 +48,6 @@ RESET = "\033[0m"
 BOLD = "\033[1m"
 YELLOW = "\033[33m"
 MAGENTA = "\033[35m"
-
-
 def walk_files(root: Path):
     for path in root.iterdir():
         if path.is_dir():
@@ -62,8 +58,6 @@ def walk_files(root: Path):
             if path.suffix.lower() in SKIP_EXTS:
                 continue
             yield path
-
-
 def decode_text(path: Path):
     try:
         data = path.read_bytes()
@@ -77,15 +71,11 @@ def decode_text(path: Path):
         except UnicodeDecodeError:
             continue
     return None
-
-
 def iter_lines(text: str):
     for lineno, line in enumerate(text.splitlines(), 1):
         line = line.strip()
         if len(line) >= MIN_LEN and any(ch.isalpha() for ch in line):
             yield lineno, line
-
-
 def detect(text: str):
     results = langid.rank(text)
     if not results:
@@ -100,8 +90,6 @@ def detect(text: str):
     else:
         conf = 1.0
     return top_lang, conf
-
-
 def main():
     print(f"{BOLD}Scanning: {ROOT}{RESET}")
     for path in walk_files(ROOT):
@@ -114,7 +102,5 @@ def main():
             if lang and lang != "en" and conf >= MIN_CONF:
                 print(f"{YELLOW}{rel}:{lineno}{RESET} {MAGENTA}[{lang} {conf:.2f}]{RESET} {line}")
                 sys.stdout.flush()
-
-
 if __name__ == "__main__":
     main()

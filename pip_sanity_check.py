@@ -2,6 +2,7 @@
 import sys
 import importlib
 import importlib.metadata
+from dh import PKG_MAPPING as pkg_mapping
 
 # ANSI Escape Sequences for Colorization
 GREEN = "\033[32m"
@@ -29,6 +30,7 @@ def sanity_check_packages():
             top_level_text = dist.read_text("top_level.txt")
             if top_level_text:
                 top_levels = [line.strip() for line in top_level_text.splitlines() if line.strip()]
+                print(f"{pkg_name}: {top_levels}")
         except Exception:
             pass
 
@@ -38,10 +40,16 @@ def sanity_check_packages():
 
         pkg_ok = True
         error_details = ""
-
-        # 2. Try importing each associated module using importlib
+        if pkg_name in pkg_mapping.keys():
+            mod_name = pkg_mapping.get(pkg_name)
+            try:
+                importlib.import_module(mod_name)
+                continue
+            except:
+                pass
         for mod_name in top_levels:
             try:
+                importlib.import_module(mod_name)
                 importlib.import_module(mod_name)
             except Exception as e:
                 pkg_ok = False

@@ -12,7 +12,6 @@ import re
 import sys
 import tempfile
 from typing import Iterator, Sequence
-
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -47,80 +46,54 @@ ML_BASIC_STOP_RE = re.compile(r'[\\"]')
 ML_LITERAL_STOP_RE = re.compile(r"'")
 DATETIME_SPACE_RE = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:[Zz]|[+-]\d{2}:\d{2})?")
 ATOM_RE = re.compile(r"[^\s,\]\[{}#\"']+")
-
-
 class ParseError(Exception):
     pass
-
-
 class FormatError(Exception):
     pass
-
-
 @dataclass(slots=True)
 class Scalar:
     raw: str
-
-
 @dataclass(slots=True)
 class Elem:
     value: "Value"
     leading: list
     trailing: str | None = None
-
-
 @dataclass(slots=True)
 class Array:
     elems: list
     open_comment: str | None
     dangling: list
-
-
 @dataclass(slots=True)
 class Inline:
     entries: list
-
-
 Value = Scalar | Array | Inline
-
-
 @dataclass(slots=True)
 class Comment:
     text: str
-
-
 @dataclass(slots=True)
 class Header:
     key: str
     double: bool
     comment: str | None
-
-
 @dataclass(slots=True)
 class Entry:
     key: str
     value: Value
     comment: str | None
-
-
 class Parser:
     def __init__(self, source: str) -> None:
         self.s = source
         self.n = len(source)
         self.i = 0
         self.comments: list[str] = []
-
     def error(self, message: str):
         line = self.s.count("\n", 0, self.i) + 1
         msg = f"line {line}: {message}"
         raise ParseError(msg)
-
     def peek(self) -> str:
         return self.s[self.i] if self.i < self.n else ""
-
     def skip_ws(self) -> None:
         self.i = WS_RE.match(self.s, self.i).end()
-
     def read_comment(self) -> str:
         end = self.s.find("\n", self.i)
         if end < 0:
@@ -129,7 +102,6 @@ class Parser:
         self.i = end
         self.comments.append(text)
         return text
-
     def finish_line(self) -> str | None:
         self.skip_ws()
         comment = None
@@ -140,7 +112,6 @@ class Parser:
                 self.error("unexpected characters after value")
             self.i += 1
         return comment
-
     def parse(self) -> list:
         items: list = []
         while True:
@@ -158,7 +129,6 @@ class Parser:
                 items.append(self.parse_header())
             else:
                 items.append(self.parse_entry())
-
     def parse_header(self) -> Header:
         double = self.s.startswith("[[", self.i)
         self.i += 2 if double else 1
@@ -168,7 +138,6 @@ class Parser:
             self.error(f"expected {closer!r}")
         self.i += len(closer)
         return Header(key, double, self.finish_line())
-
     def parse_entry(self) -> Entry:
         key = self.parse_key()
         if self.peek() != "=":
@@ -177,7 +146,6 @@ class Parser:
         self.skip_ws()
         value = self.parse_value()
         return Entry(key, value, self.finish_line())
-
     def parse_key(self) -> str:
         parts: list[str] = []
         while True:
@@ -196,7 +164,6 @@ class Parser:
                 self.i += 1
                 continue
             return ".".join(parts)
-
     def scan_string(self) -> str:
         s, start = self.s, self.i
         quote = s[start]
@@ -209,7 +176,6 @@ class Parser:
             end = match.end()
         self.i = end
         return s[start:end]
-
     def scan_multiline(self, start: int, quote: str) -> int:
         s, n = self.s, self.n
         stop = ML_BASIC_STOP_RE if quote == '"' else ML_LITERAL_STOP_RE
@@ -230,7 +196,6 @@ class Parser:
                     extra += 1
                 return end
             j = p + 1
-
     def parse_value(self) -> Value:
         c = self.peek()
         if c == "":
@@ -246,7 +211,6 @@ class Parser:
             self.error("invalid value")
         self.i = match.end()
         return Scalar(match.group())
-
     def parse_array(self) -> Array:
         s = self.s
         self.i += 1
@@ -289,7 +253,6 @@ class Parser:
                 trivia = []
                 slot = "elem"
                 line_has_content = True
-
     def parse_inline(self) -> Inline:
         self.i += 1
         entries: list = []
@@ -313,15 +276,11 @@ class Parser:
                 self.i += 1
             elif c != "}":
                 self.error("expected ',' or '}' in inline table")
-
-
 @dataclass(slots=True)
 class Line:
     text: str
     comment: str | None = None
     scope: int = 0
-
-
 def flat_text(value: Value) -> str | None:
     if isinstance(value, Scalar):
         return None if "\n" in value.raw else value.raw
@@ -344,16 +303,12 @@ def flat_text(value: Value) -> str | None:
             return None
         parts.append(f"{key} = {text}")
     return "{ " + ", ".join(parts) + " }" if parts else "{}"
-
-
 class Printer:
     def __init__(self) -> None:
         self.scopes = 0
-
     def new_scope(self) -> int:
         self.scopes += 1
         return self.scopes
-
     @staticmethod
     def trivia_lines(items: list, pad: str, keep_trailing_blank: bool) -> list[Line]:
         out: list[Line] = []
@@ -368,14 +323,12 @@ class Printer:
         if keep_trailing_blank:
             out.extend(Line("") for _ in range(min(blanks, ALLOWED_BLANK_LINES)))
         return out
-
     def value(self, value: Value, depth: int, col: int, tail: int, expand: bool) -> list[Line]:
         if isinstance(value, Scalar):
             return [Line(value.raw)]
         if isinstance(value, Array):
             return self.array(value, depth, col, tail, expand)
         return self.inline(value, depth)
-
     def array(self, arr: Array, depth: int, col: int, tail: int, expand: bool) -> list[Line]:
         flat = flat_text(arr)
         if flat is not None and (not expand or col + len(flat) + tail <= COLUMN_WIDTH):
@@ -398,7 +351,6 @@ class Printer:
         lines.extend(self.trivia_lines(arr.dangling, pad, False))
         lines.append(Line(INDENT * depth + "]"))
         return lines
-
     def inline(self, table: Inline, depth: int) -> list[Line]:
         if not table.entries:
             return [Line("{}")]
@@ -414,11 +366,9 @@ class Printer:
                 acc[-1].text += ", "
         acc[-1].text += " }"
         return acc
-
     def header(self, header: Header) -> Line:
         text = f"[[{header.key}]]" if header.double else f"[{header.key}]"
         return Line(text, header.comment, self.new_scope())
-
     def entry(self, entry: Entry) -> list[Line]:
         prefix = f"{entry.key} = "
         lines = self.value(entry.value, 0, len(prefix), 0, True)
@@ -426,12 +376,8 @@ class Printer:
         if entry.comment is not None:
             lines[-1].comment = entry.comment
         return lines
-
-
 def last_physical_width(text: str) -> int:
     return len(text.rsplit("\n", 1)[-1])
-
-
 def align_comments(lines: list[Line]) -> list[str]:
     out: list[str] = []
     i, n = 0, len(lines)
@@ -449,8 +395,6 @@ def align_comments(lines: list[Line]) -> list[str]:
             out.append(f"{line.text}{' ' * padding} {line.comment}")
         i = j
     return out
-
-
 def render(items: list) -> str:
     printer = Printer()
     lines: list[Line] = []
@@ -469,8 +413,6 @@ def render(items: list) -> str:
         else:
             lines.extend(printer.entry(item))
     return "\n".join(align_comments(lines)) + "\n"
-
-
 def same_data(a, b) -> bool:
     if type(a) is not type(b):
         return False
@@ -481,8 +423,6 @@ def same_data(a, b) -> bool:
     if isinstance(a, float) and a != a:
         return b != b
     return a == b
-
-
 def format_text(text: str) -> str:
     try:
         original = tomllib.loads(text)
@@ -514,15 +454,11 @@ def format_text(text: str) -> str:
         msg = "formatter would lose or alter comments, file left untouched"
         raise FormatError(msg)
     return output
-
-
 @dataclass(frozen=True, slots=True)
 class Result:
     path: str
     status: str
     message: str = ""
-
-
 def atomic_write(path: Path, data: bytes, mode: int) -> None:
     descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
@@ -535,8 +471,6 @@ def atomic_write(path: Path, data: bytes, mode: int) -> None:
         with contextlib.suppress(OSError):
             os.unlink(temporary)
         raise
-
-
 def _process_file(path_str: str, check: bool) -> Result:
     path = Path(path_str)
     try:
@@ -579,15 +513,11 @@ def _process_file(path_str: str, check: bool) -> Result:
     except OSError as exc:
         return Result(path_str, "error", f"write error: {exc}")
     return Result(path_str, "changed")
-
-
 def process_file(path_str: str, check: bool) -> Result:
     try:
         return _process_file(path_str, check)
     except Exception as exc:
         return Result(path_str, "error", f"unexpected error: {type(exc).__name__}: {exc}")
-
-
 def walk_toml(root: str) -> Iterator[str]:
     stack = [root]
     while stack:
@@ -609,8 +539,6 @@ def walk_toml(root: str) -> Iterator[str]:
                     yield entry.path
             except OSError as exc:
                 print(f"warning: cannot inspect {entry.path}: {exc}", file=sys.stderr)
-
-
 def collect_files(paths: Sequence[Path]) -> list[str]:
     seen: set[str] = set()
     found: list[str] = []
@@ -628,15 +556,11 @@ def collect_files(paths: Sequence[Path]) -> list[str]:
                 seen.add(key)
                 found.append(candidate)
     return sorted(found)
-
-
 def display_path(path: str) -> str:
     try:
         return os.path.relpath(path)
     except ValueError:
         return path
-
-
 def iter_results(files: list[str], check: bool) -> Iterator[Result]:
     worker = functools.partial(process_file, check=check)
     if len(files) == 1:
@@ -645,8 +569,6 @@ def iter_results(files: list[str], check: bool) -> Iterator[Result]:
     chunk = max(1, min(CHUNK_MAX, len(files) // (WORKERS * 4)))
     with mp.Pool(processes=WORKERS) as pool:
         yield from pool.imap_unordered(worker, files, chunksize=chunk)
-
-
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tomlfmt",
@@ -660,8 +582,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-q", "--quiet", action="store_true", help="print only errors and the summary")
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
     paths = args.paths or [Path.cwd()]
@@ -689,8 +609,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if errors:
         return 2
     return 3 if args.check and changed else 0
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(main())

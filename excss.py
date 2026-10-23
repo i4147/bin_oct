@@ -5,11 +5,8 @@ import sys
 from typing import TYPE_CHECKING
 from bs4 import BeautifulSoup
 from dh import cprint, get_files, get_random_filename, mpf
-
 if TYPE_CHECKING:
     from bs4.element import PageElement
-
-
 def save_style(str1: list[PageElement]) -> None:
     if not str1 or len(str(str1)) < 2:
         return
@@ -23,8 +20,6 @@ def save_style(str1: list[PageElement]) -> None:
     path.write_text("\n".join(list(str1)), encoding="utf-8")
     cprint(f"{[fn]} created.", "cyan")
     return
-
-
 def process_file(path) -> bool:
     path = Path(path)
     html_content = path.read_text(encoding="utf-8")
@@ -36,8 +31,6 @@ def process_file(path) -> bool:
         for style in styles:
             save_style(style.contents)
     return True
-
-
 def main() -> None:
     outpath = Path("css")
     if not outpath.exists():
@@ -46,7 +39,5 @@ def main() -> None:
     args = sys.argv[1:]
     files = [Path(arg) for arg in args] if args else get_files(cwd, ext=[".html", ".htm"])
     mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

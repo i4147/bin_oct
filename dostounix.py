@@ -1,15 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import sys
 from dh import is_binary, should_skip
-
 WORKERS = 8
 CHUNK_SIZE = 64
-
-
 def _iter_files(paths):
     for raw in paths:
         p = Path(raw).expanduser().resolve()
@@ -17,14 +13,10 @@ def _iter_files(paths):
             yield from (f for f in p.rglob("*") if f.is_file() and not is_binary(f) and not should_skip(f))
         elif p.is_file() and not is_binary(p) and not should_skip(p):
             yield p
-
-
 def _collect_files(args: list[str]) -> list[Path]:
     if not args:
         return list(_iter_files([Path.cwd()]))
     return list(_iter_files(args))
-
-
 def _convert_file(path_str: str) -> tuple[Path, bool, str]:
     path = Path(path_str)
     try:
@@ -38,8 +30,6 @@ def _convert_file(path_str: str) -> tuple[Path, bool, str]:
         return (path, True, "")
     except (OSError, PermissionError) as e:
         return (path, False, f"{e}")
-
-
 def _run_parallel(files: list[Path]) -> tuple[int, int, list[str]]:
     changed = 0
     errors: list[str] = []
@@ -55,11 +45,8 @@ def _run_parallel(files: list[Path]) -> tuple[int, int, list[str]]:
             except Exception as e:
                 errors.append(f"Unexpected error: {e}")
     return (changed, len(files) - changed - len(errors), errors)
-
-
 def main(argv: list[str] | None = None) -> int:
     import argparse
-
     parser = argparse.ArgumentParser(
         description="Convert DOS/Windows (CRLF) files to Unix (LF) format in-place.",
         epilog="If no paths are given, processes all files in the current directory recursively.",
@@ -105,7 +92,5 @@ def main(argv: list[str] | None = None) -> int:
         if len(errors) > 10:
             print(f"  ... and {len(errors) - 10} more", file=sys.stderr)
     return 1 if errors else 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

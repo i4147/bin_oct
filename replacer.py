@@ -6,10 +6,7 @@ from pathlib import Path
 import re
 import sys
 from dh import is_binary
-
 MAX_CONTEXT_DISPLAY = 3
-
-
 def process_file(
     path: Path,
     search_text: str,
@@ -49,8 +46,6 @@ def process_file(
     except OSError as e:
         print(f"Error processing {path}: {e}", file=sys.stderr)
         return False
-
-
 def replace_in_files(
     search_text: str,
     replace_text: str = "",
@@ -81,8 +76,6 @@ def replace_in_files(
             if files_processed % 100 == 0:
                 print(f"Processed {files_processed} files...", end="\r")
     return files_processed, files_changed
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Recursively replace or remove text in files.",
@@ -137,7 +130,5 @@ def main() -> None:
         dry_run=args.dry_run,
     )
     print(f"\n--- Complete: Processed {files_processed} files, modified {files_changed} files ---")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

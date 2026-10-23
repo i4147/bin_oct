@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ctypes
@@ -15,7 +14,6 @@ import sys
 import time
 from typing import Final, Sequence
 from tqdm import tqdm
-
 SECONDS_PER_MINUTE: Final[float] = 60.0
 SECONDS_24H: Final[float] = 24 * 60 * 60
 EXCLUDE_DIRS: Final[frozenset[str]] = frozenset({".git"})
@@ -30,20 +28,14 @@ _ANSI: Final[dict[str, str]] = {
     "red": "\033[91m",
     "reset": "\033[0m",
 }
-
-
 def _cprint(text: str, color: str = "yellow") -> None:
     print(f"{_ANSI.get(color, '')}{text}{_ANSI['reset']}")
-
-
 def _iter_files(root: Path) -> list[Path]:
     files: list[Path] = []
     for dirpath, dirnames, filenames in root.walk(follow_symlinks=False):
         dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
         files.extend(dirpath / fname for fname in filenames)
     return files
-
-
 def _ctime_if_recent(path: Path, now: float, seconds: float) -> tuple[float, Path] | None:
     try:
         ctime = path.stat().st_ctime
@@ -52,8 +44,6 @@ def _ctime_if_recent(path: Path, now: float, seconds: float) -> tuple[float, Pat
     if now - ctime <= seconds:
         return ctime, path
     return None
-
-
 def cmd_scan_ctime(args: argparse.Namespace) -> int:
     root = Path.cwd()
     files = _iter_files(root)
@@ -71,8 +61,6 @@ def cmd_scan_ctime(args: argparse.Namespace) -> int:
     for _, path in recent:
         print(path.relative_to(root))
     return 0
-
-
 def cmd_filter(args: argparse.Namespace) -> int:
     minutes: float = args.minutes
     cutoff = time.time() - minutes * SECONDS_PER_MINUTE
@@ -96,8 +84,6 @@ def cmd_filter(args: argparse.Namespace) -> int:
         ctime_str = datetime.fromtimestamp(ct).strftime("%Y/%m/%d-%H:%M:%S")
         print(f"\033[05;96m{Path(pth).name[:19]:<{max_path_string}} \033[05;93m{ctime_str}\033[0m")
     return 0
-
-
 def cmd_filter_recursive(args: argparse.Namespace) -> int:
     minutes: float = args.minutes
     cutoff = time.time() - minutes * SECONDS_PER_MINUTE
@@ -120,8 +106,6 @@ def cmd_filter_recursive(args: argparse.Namespace) -> int:
         print(f"{path_str:<{max_path_len}}", end=" ")
         _cprint(ctime_str, "yellow")
     return 0
-
-
 def _check_file_age(path: Path, n_minutes: float) -> tuple[str, datetime] | None:
     try:
         mod_time = path.stat().st_mtime
@@ -132,8 +116,6 @@ def _check_file_age(path: Path, n_minutes: float) -> tuple[str, datetime] | None
     except (OSError, PermissionError):
         pass
     return None
-
-
 def cmd_recent_modified(args: argparse.Namespace) -> int:
     n_minutes: int = args.minutes
     if n_minutes < 0:
@@ -157,8 +139,6 @@ def cmd_recent_modified(args: argparse.Namespace) -> int:
     else:
         print(f"No files modified in the last {n_minutes} minute(s)")
     return 0
-
-
 def _get_file_creation_time(path: Path) -> datetime | None:
     try:
         stat = path.stat()
@@ -168,8 +148,6 @@ def _get_file_creation_time(path: Path) -> datetime | None:
     except Exception as e:
         print(f"Error: {e}")
         return None
-
-
 def cmd_same_day(args: argparse.Namespace) -> int:
     filename: str = args.filename
     target = Path(filename)
@@ -200,12 +178,8 @@ def cmd_same_day(args: argparse.Namespace) -> int:
         for file_time, name in found_files:
             print(f"{file_time.strftime('%H:%M:%S')} - {name}")
     return 0
-
-
 def _file_age(path: Path) -> float:
     return time.time() - path.stat().st_ctime
-
-
 def _unique_filename(dest_dir: Path, filename: str) -> Path:
     dest_path = dest_dir / filename
     if not dest_path.exists():
@@ -218,8 +192,6 @@ def _unique_filename(dest_dir: Path, filename: str) -> Path:
         if not new_path.exists():
             return new_path
         counter += 1
-
-
 def _move_file(path: Path, start_dir: Path, target_dir: Path) -> Path:
     rel_path = path.parent.relative_to(start_dir)
     dest_dir = target_dir / rel_path if str(rel_path) != "." else target_dir
@@ -227,8 +199,6 @@ def _move_file(path: Path, start_dir: Path, target_dir: Path) -> Path:
     dest_path = _unique_filename(dest_dir, path.name)
     shutil.move(str(path), str(dest_path))
     return dest_path
-
-
 def cmd_move(args: argparse.Namespace) -> int:
     start_dir = Path(args.dir).resolve()
     if not start_dir.is_dir():
@@ -277,8 +247,6 @@ def cmd_move(args: argparse.Namespace) -> int:
     print(f"Errors: {errors}")
     print("-" * 40)
     return 0
-
-
 def _collect_files(cwd: Path, recursive: bool) -> list[Path]:
     files: list[Path] = []
     if recursive:
@@ -294,12 +262,8 @@ def _collect_files(cwd: Path, recursive: bool) -> list[Path]:
             if p.is_file() or p.is_dir():
                 files.append(p)
     return files
-
-
 def _format_time(ts: float) -> str:
     return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
-
-
 def cmd_newest(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     files = _collect_files(cwd, args.recursive)
@@ -308,8 +272,6 @@ def cmd_newest(args: argparse.Namespace) -> int:
     for f in files[: args.count]:
         print(f"{_format_time(f.stat().st_ctime)}  -  {f.relative_to(cwd)}")
     return 0
-
-
 def cmd_oldest(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     files = _collect_files(cwd, args.recursive)
@@ -318,16 +280,12 @@ def cmd_oldest(args: argparse.Namespace) -> int:
     for f in files[: args.count]:
         print(f"{_format_time(f.stat().st_mtime)}  -  {f.relative_to(cwd)}")
     return 0
-
-
 class _StatxTimestamp(ctypes.Structure):
     _fields_ = [
         ("tv_sec", ctypes.c_int64),
         ("tv_nsec", ctypes.c_uint32),
         ("__reserved", ctypes.c_int32),
     ]
-
-
 class _Statx(ctypes.Structure):
     _fields_ = [
         ("stx_mask", ctypes.c_uint32),
@@ -352,8 +310,6 @@ class _Statx(ctypes.Structure):
         ("stx_dev_minor", ctypes.c_uint32),
         ("__spare2", ctypes.c_uint64 * 14),
     ]
-
-
 def _get_creation_time_statx(path: str) -> datetime | None:
     if sys.platform != "linux":
         return None
@@ -366,14 +322,10 @@ def _get_creation_time_statx(path: str) -> datetime | None:
     if result == 0 and (statx_buf.stx_mask & STATX_BTIME):
         return datetime.fromtimestamp(statx_buf.stx_btime.tv_sec, tz=UTC)
     return None
-
-
 def cmd_btime(args: argparse.Namespace) -> int:
     result = _get_creation_time_statx(args.path)
     print(f"Creation time: {result}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="filetools")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -412,8 +364,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_btime.add_argument("path")
     p_btime.set_defaults(func=cmd_btime)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -422,7 +372,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

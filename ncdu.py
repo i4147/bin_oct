@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import curses
@@ -14,13 +13,10 @@ import stat
 import sys
 import time
 from typing import Any, Iterator
-
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"
 WORKERS: int = 8
 LOG = logging.getLogger("ncdu2")
-
-
 def setup_logging(verbosity: int, logfile: Path | None) -> None:
     level = {0: logging.WARNING, 1: logging.INFO}.get(verbosity, logging.DEBUG)
     fmt = "%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s"
@@ -39,8 +35,6 @@ def setup_logging(verbosity: int, logfile: Path | None) -> None:
         sys.version.split()[0],
     )
     LOG.debug("logging destination: %s", logfile or "<stderr>")
-
-
 def redirect_logging_to_file(path: Path) -> None:
     root = logging.getLogger()
     for h in list(root.handlers):
@@ -55,8 +49,6 @@ def redirect_logging_to_file(path: Path) -> None:
     )
     root.addHandler(fh)
     LOG.info("--- logging redirected to %s (curses UI active) ---", path)
-
-
 def fmt_size(n: int, si: bool = False) -> str:
     base = 1000.0 if si else 1024.0
     units = (
@@ -70,12 +62,8 @@ def fmt_size(n: int, si: bool = False) -> str:
             return f"{f:5.1f} {u}"
         f /= base
     return f"{f:5.1f} {units[-1]}"
-
-
 def fmt_count(n: int) -> str:
     return f"{n:,}"
-
-
 def _stat_to_node(p: Path, st: os.stat_result, is_dir: bool) -> dict[str, Any]:
     return {
         "n": p.name or str(p),
@@ -89,8 +77,6 @@ def _stat_to_node(p: Path, st: os.stat_result, is_dir: bool) -> dict[str, Any]:
         "m": float(st.st_mtime),
         "c": [] if is_dir else None,
     }
-
-
 def scan_subtree(
     path_str: str,
     root_dev: int,
@@ -104,7 +90,6 @@ def scan_subtree(
     root = Path(path_str)
     t0 = time.perf_counter()
     counter = {"files": 0, "dirs": 0, "errors": 0}
-
     def walk(p: Path) -> dict[str, Any]:
         try:
             st = p.lstat()
@@ -158,7 +143,6 @@ def scan_subtree(
             children.append(walk(child))
         node["c"] = children
         return node
-
     result = walk(root)
     dt = time.perf_counter() - t0
     log.info(
@@ -171,8 +155,6 @@ def scan_subtree(
     )
     result["_stats"] = counter | {"seconds": dt, "root": str(root)}
     return result
-
-
 @dataclass(slots=True)
 class Node:
     name: str
@@ -190,7 +172,6 @@ class Node:
     nlink: int = 1
     dup: bool = False
     mtime: float = 0.0
-
     @property
     def path(self) -> Path:
         parts: list[str] = []
@@ -199,16 +180,12 @@ class Node:
             parts.append(n.name)
             n = n.parent
         return Path(*reversed(parts))
-
     def iter_all(self) -> Iterator["Node"]:
         yield self
         for c in self.children:
             yield from c.iter_all()
-
     def __repr__(self) -> str:
         return f"<Node {self.name!r} dir={self.is_dir} size={self.size}>"
-
-
 def build_tree(d: dict[str, Any], parent: Node | None = None) -> Node:
     n = Node(
         name=d["n"],
@@ -225,8 +202,6 @@ def build_tree(d: dict[str, Any], parent: Node | None = None) -> Node:
     for cd in d.get("c") or ():
         n.children.append(build_tree(cd, n))
     return n
-
-
 def dedup_hardlinks(root: Node) -> int:
     seen: set[tuple[int, int]] = set()
     dups = 0
@@ -241,8 +216,6 @@ def dedup_hardlinks(root: Node) -> int:
             seen.add(key)
     LOG.info("hard-link de-duplication: %d duplicate entries neutralised", dups)
     return dups
-
-
 def aggregate(node: Node) -> tuple[int, int, int]:
     if node.is_dir:
         s = d = 0
@@ -260,8 +233,6 @@ def aggregate(node: Node) -> tuple[int, int, int]:
             node.size, node.dsize = node.own_size, node.own_dsize
         node.items = 1
     return node.size, node.dsize, node.items
-
-
 def parallel_scan(
     root: Path,
     *,
@@ -372,11 +343,8 @@ def parallel_scan(
     )
     LOG.info("=" * 72)
     return root_node
-
-
 def export_json(root: Node, out: Path) -> None:
     LOG.info("exporting JSON v2 to %s", out)
-
     def enc(n: Node) -> Any:
         d: dict[str, Any] = {
             "name": n.name,
@@ -394,7 +362,6 @@ def export_json(root: Node, out: Path) -> None:
         if not n.is_dir:
             return d
         return [d, *(enc(c) for c in n.children)]
-
     payload = [
         1,
         2,
@@ -403,8 +370,6 @@ def export_json(root: Node, out: Path) -> None:
     ]
     out.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
     LOG.info("export finished: %s (%s)", out, fmt_size(out.stat().st_size))
-
-
 def import_json(path: Path) -> Node:
     LOG.info("importing JSON from %s", path)
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -412,7 +377,6 @@ def import_json(path: Path) -> Node:
         msg = f"{PROGNAME}: {path}: not an ncdu export"
         raise SystemExit(msg)
     LOG.info("export header: major=%s minor=%s meta=%s", data[0], data[1], data[2])
-
     def dec(item: Any, parent: Node | None) -> Node:
         if isinstance(item, list):
             info = item[0]
@@ -421,7 +385,6 @@ def import_json(path: Path) -> Node:
                 n.children.append(dec(sub, n))
             return n
         return _mk(item, False, parent)
-
     def _mk(info: dict[str, Any], is_dir: bool, parent: Node | None) -> Node:
         return Node(
             name=info.get("name", "?"),
@@ -436,16 +399,11 @@ def import_json(path: Path) -> Node:
             mtime=float(info.get("mtime", 0)),
             parent=parent,
         )
-
     root = dec(data[3], None)
     aggregate(root)
     LOG.info("import done: %s items, %s", fmt_count(root.items), fmt_size(root.dsize))
     return root
-
-
 SORT_MODES = ("size", "name", "items", "mtime")
-
-
 class Browser:
     def __init__(self, root: Node, *, apparent: bool = False, si: bool = False):
         self.root = root
@@ -461,10 +419,8 @@ class Browser:
         self.message = ""
         self.stack: list[tuple[Node, int, int]] = []
         LOG.info("browser initialised at %s", root.path)
-
     def val(self, n: Node) -> int:
         return n.size if self.apparent else n.dsize
-
     def listing(self) -> list[Node]:
         key = {
             "size": self.val,
@@ -474,7 +430,6 @@ class Browser:
         }[self.sort]
         rev = self.reverse if self.sort != "name" else not self.reverse
         return sorted(self.cur.children, key=key, reverse=rev)
-
     def run(self, scr: "curses._CursesWindow") -> None:
         curses.curs_set(0)
         scr.keypad(True)
@@ -494,7 +449,6 @@ class Browser:
             if not self.handle(scr, ch, items):
                 LOG.info("quitting browser")
                 return
-
     def draw(self, scr, items: list[Node]) -> None:
         scr.erase()
         h, w = scr.getmaxyx()
@@ -550,7 +504,6 @@ class Browser:
         scr.addnstr(h - 1, 0, foot.ljust(w)[:w], w, curses.color_pair(1))
         self.message = ""
         scr.refresh()
-
     def handle(self, scr, ch: int, items: list[Node]) -> bool:
         h, _ = scr.getmaxyx()
         body = max(h - 3, 1)
@@ -619,7 +572,6 @@ class Browser:
         if ch == ord("g") and self.sort:
             pass
         return True
-
     def popup(self, scr, title: str, lines: list[str]) -> None:
         h, w = scr.getmaxyx()
         ph = min(len(lines) + 4, h - 2)
@@ -635,7 +587,6 @@ class Browser:
         del win
         scr.touchwin()
         scr.refresh()
-
     def help_popup(self, scr) -> None:
         self.popup(
             scr,
@@ -655,7 +606,6 @@ class Browser:
                 "q                quit",
             ],
         )
-
     def info_popup(self, scr, n: Node) -> None:
         self.popup(
             scr,
@@ -672,7 +622,6 @@ class Browser:
                 f"flags      : {'read-error ' if n.err else ''}{'hardlink-dup' if n.dup else ''}",
             ],
         )
-
     def confirm(self, scr, question: str) -> bool:
         h, w = scr.getmaxyx()
         scr.addnstr(
@@ -684,7 +633,6 @@ class Browser:
         )
         scr.refresh()
         return scr.getch() in (ord("y"), ord("Y"))
-
     def do_delete(self, scr, n: Node) -> None:
         target = n.path
         if not self.confirm(scr, f"Delete {target}?"):
@@ -712,7 +660,6 @@ class Browser:
             n.parent.children.remove(n)
         LOG.info("deleted %s (freed %s)", target, fmt_size(d))
         self.message = f" deleted {target.name} ({fmt_size(d).strip()} freed) "
-
     def do_export(self, scr) -> None:
         out = Path.cwd() / f"ncdu2-export-{int(time.time())}.json"
         try:
@@ -721,7 +668,6 @@ class Browser:
         except OSError as exc:
             LOG.error("export failed: %s", exc)
             self.message = f" export failed: {exc} "
-
     def rescan(self, scr) -> None:
         target = self.cur.path
         h, w = scr.getmaxyx()
@@ -756,8 +702,6 @@ class Browser:
         self.cursor = self.offset = 0
         aggregate(self.root)
         self.message = " rescan complete "
-
-
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         prog=PROGNAME,
@@ -827,8 +771,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("-V", "--version", action="version", version=f"{PROGNAME} {__version__}")
     return ap.parse_args(argv)
-
-
 def print_summary(root: Node, top: int, apparent: bool, si: bool) -> None:
     val = (lambda n: n.size) if apparent else (lambda n: n.dsize)
     print(f"\n=== {root.path} ===")
@@ -837,8 +779,6 @@ def print_summary(root: Node, top: int, apparent: bool, si: bool) -> None:
     biggest = sorted((n for n in root.iter_all() if n is not root), key=val, reverse=True)[:top]
     for n in biggest:
         print(f"{fmt_size(val(n), si):>12}  {'d' if n.is_dir else '-'}  {n.path}")
-
-
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     verbosity = 0 if args.quiet else args.verbose
@@ -869,8 +809,6 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         LOG.info("%s exiting", PROGNAME)
     return 0
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -17,10 +16,8 @@ import urllib.parse
 import urllib.request
 import requests
 from tqdm import tqdm
-
 try:
     import pycurl
-
     _HAS_PYCURL = True
 except ImportError:
     pycurl = None
@@ -28,21 +25,16 @@ except ImportError:
 try:
     from loguru import logger as _logger
 except ImportError:
-
     class _LoggerShim:
         def __getattr__(self, _):
             def _p(msg, *a, **k):
                 print(msg, *a)
-
             return _p
-
     _logger = _LoggerShim()
 logger = _logger
 _DEFAULT_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
-
-
 def human_size(num: float) -> str:
     try:
         num = float(num)
@@ -53,8 +45,6 @@ def human_size(num: float) -> str:
             return f"{num:.2f} {unit}"
         num /= 1024.0
     return f"{num:.2f} PB"
-
-
 def read_url_list(path: Path) -> list[str]:
     try:
         return [
@@ -64,24 +54,16 @@ def read_url_list(path: Path) -> list[str]:
         ]
     except FileNotFoundError:
         return []
-
-
 _FILENAME_BAD = re.compile(r'[<>:"|?*]')
-
-
 def safe_filename(name: str) -> str:
     name = urllib.parse.unquote(name)
     name = _FILENAME_BAD.sub("_", name)
     return name[:255].strip() or "downloaded_file"
-
-
 def filename_from_url(url: str) -> str:
     q = urllib.parse.urlparse(url)
     name = Path(urllib.parse.unquote(q.path)).name
     name = name.split("?")[0].split("#")[0]
     return safe_filename(name) if name else "downloaded_file"
-
-
 def filename_from_headers(url: str, headers: dict) -> str:
     cd = ""
     for k in ("Content-Disposition", "content-disposition"):
@@ -93,8 +75,6 @@ def filename_from_headers(url: str, headers: dict) -> str:
         if m:
             return safe_filename(m.group(1))
     return filename_from_url(url)
-
-
 def unique_path(p: Path) -> Path:
     if not p.exists():
         return p
@@ -105,8 +85,6 @@ def unique_path(p: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
-
-
 def remote_size_urllib(url: str, timeout: float = 10.0, ua: str = _DEFAULT_UA) -> Optional[int]:
     try:
         req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": ua})
@@ -129,8 +107,6 @@ def remote_size_urllib(url: str, timeout: float = 10.0, ua: str = _DEFAULT_UA) -
             return int(cl) if cl else None
     except Exception:
         return None
-
-
 def remote_size_requests(url: str, timeout: float = 15.0) -> Optional[int]:
     try:
         r = requests.head(url, allow_redirects=True, timeout=timeout)
@@ -139,8 +115,6 @@ def remote_size_requests(url: str, timeout: float = 15.0) -> Optional[int]:
         return int(cl) if cl else None
     except Exception:
         return None
-
-
 def remote_size_pycurl(url: str, timeout: float = 15.0) -> Optional[int]:
     if not _HAS_PYCURL:
         return None
@@ -158,8 +132,6 @@ def remote_size_pycurl(url: str, timeout: float = 15.0) -> Optional[int]:
         return None
     finally:
         c.close()
-
-
 def _download_urllib(
     url: str,
     dest: Path,
@@ -203,8 +175,6 @@ def _download_urllib(
     if not quiet:
         print(f"\n✅ Saved to: {dest}")
     return dest
-
-
 def _download_requests(
     url: str,
     dest: Path,
@@ -225,8 +195,6 @@ def _download_requests(
                 if chunk:
                     f.write(chunk)
     return dest
-
-
 def _download_pycurl(
     url: str,
     dest: Path,
@@ -260,8 +228,6 @@ def _download_pycurl(
     finally:
         c.close()
     return dest
-
-
 def cmd_wget(args: argparse.Namespace) -> int:
     url = args.url
     out: Optional[Path] = Path(args.output) if args.output else None
@@ -282,8 +248,6 @@ def cmd_wget(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"❌ Download failed: {e}", file=sys.stderr)
         return 1
-
-
 def cmd_check(args: argparse.Namespace) -> int:
     url = args.url
     print(f"Checking remote link: {url}")
@@ -310,7 +274,6 @@ def cmd_check(args: argparse.Namespace) -> int:
     out = unique_path(out)
     downloaded = 0
     t0 = time.time()
-
     def _write(data: bytes) -> None:
         nonlocal downloaded
         with out.open("ab") as f:
@@ -327,7 +290,6 @@ def cmd_check(args: argparse.Namespace) -> int:
             pct, eta_s, info = 0.0, "Unknown", f"{human_size(downloaded)}/Unknown"
         sys.stdout.write(f"\r[{pct:5.1f}%] {info} | Speed: {human_size(speed)}/s | ETA: {eta_s}   ")
         sys.stdout.flush()
-
     c = pycurl.Curl()
     try:
         c.setopt(c.URL, url)
@@ -347,8 +309,6 @@ def cmd_check(args: argparse.Namespace) -> int:
         c.close()
     print(f"\n\nDownload complete! Saved to: {out}")
     return 0
-
-
 def _process_size_url(url: str, download_small: bool, dest_dir: Path, max_size: int, timeout: float) -> str:
     size = remote_size_urllib(url, timeout=timeout)
     if size is None:
@@ -374,8 +334,6 @@ def _process_size_url(url: str, download_small: bool, dest_dir: Path, max_size: 
     elif download_small:
         print(f"File too large (> {human_size(max_size)}); skipping download.")
     return f"{url}\t{label}"
-
-
 def cmd_size(args: argparse.Namespace) -> int:
     inp = Path(args.input)
     dest_dir = Path(args.download).expanduser() if args.download else Path.home() / "Downloads"
@@ -395,8 +353,6 @@ def cmd_size(args: argparse.Namespace) -> int:
     else:
         print(_process_size_url(args.input, args.download_small, dest_dir, max_size, args.timeout))
     return 0
-
-
 def _parse_size(s: str) -> int:
     s = s.strip().upper()
     m = re.match(r"^(\d+(?:\.\d+)?)\s*([KMGT]?)(?:B)?$", s)
@@ -405,8 +361,6 @@ def _parse_size(s: str) -> int:
     n = float(m.group(1))
     mult = {"": 1, "K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}[m.group(2)]
     return int(n * mult)
-
-
 _EXT_WHITELIST = [
     r"\.ttf$",
     r"\.woff$",
@@ -427,14 +381,10 @@ _EXT_WHITELIST = [
     r"\.7z$",
 ]
 _EXT_RE = re.compile("|".join(_EXT_WHITELIST), re.IGNORECASE)
-
-
 def _passes_ext_filter(url: str) -> bool:
     path = urllib.parse.urlparse(url).path
     tail = path.split("/")[-1].split("?")[0].split("#")[0]
     return bool(_EXT_RE.search(tail))
-
-
 def _batch_worker(url: str, dest_dir: str, engine: str, resume: bool, timeout: float, ua: str) -> tuple[str, bool, str]:
     dest = Path(dest_dir)
     dest.mkdir(parents=True, exist_ok=True)
@@ -463,12 +413,8 @@ def _batch_worker(url: str, dest_dir: str, engine: str, resume: bool, timeout: f
             if fpath.exists() and fpath.stat().st_size == 0:
                 fpath.unlink()
         return (url, False, str(e))
-
-
 def _sig_ignore(_signum, _frame):
     return None
-
-
 def cmd_batch(args: argparse.Namespace) -> int:
     urls_path = Path(args.urls)
     urls = read_url_list(urls_path)
@@ -533,8 +479,6 @@ def cmd_batch(args: argparse.Namespace) -> int:
     print(f"\nDone. Success: {len(succeeded)}, Failed: {len(failed)}")
     print(f"Files saved in: {dest.resolve()}")
     return 0 if not failed else 1
-
-
 def _threaded_worker(
     url: str,
     start: int,
@@ -555,8 +499,6 @@ def _threaded_worker(
                 if chunk:
                     f.write(chunk)
     return part, start
-
-
 def cmd_threaded(args: argparse.Namespace) -> int:
     url = args.url
     headers = {
@@ -633,8 +575,6 @@ def cmd_threaded(args: argparse.Namespace) -> int:
             Path(pf).unlink()
     logger.success(f"Download complete and assembled: {out}")
     return 0
-
-
 def _download_chunk(url: str, dest: Path, start: int, end: int, timeout: float, ua: str) -> None:
     headers = {"Range": f"bytes={start}-{end}", "User-Agent": ua}
     with requests.get(url, headers=headers, stream=True, timeout=timeout) as r:
@@ -644,16 +584,12 @@ def _download_chunk(url: str, dest: Path, start: int, end: int, timeout: float, 
             for chunk in r.iter_content(chunk_size=65536):
                 if chunk:
                     f.write(chunk)
-
-
 def _chunk_worker(url: str, dest_str: str, idx: int, start: int, end: int, timeout: float, ua: str) -> tuple[int, bool]:
     try:
         _download_chunk(url, Path(dest_str), start, end, timeout, ua)
         return (idx, True)
     except Exception:
         return (idx, False)
-
-
 def cmd_chunked(args: argparse.Namespace) -> int:
     try:
         from rich.console import Console
@@ -757,8 +693,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     state_file.unlink(missing_ok=True)
     logger.success(f"Download complete: {dest}")
     return 0
-
-
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="dl.py",
@@ -840,13 +774,9 @@ def _build_parser() -> argparse.ArgumentParser:
     pk.add_argument("--user-agent", default=_DEFAULT_UA)
     pk.set_defaults(func=cmd_chunked)
     return p
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     return args.func(args) or 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -9,7 +9,6 @@ from typing import Optional
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 import requests
-
 DEFAULT_MIME_TYPES: dict[str, str] = {
     ".css": "text/css",
     ".js": "application/javascript",
@@ -26,8 +25,6 @@ DEFAULT_MIME_TYPES: dict[str, str] = {
 }
 DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Monolith/1.0"
 CSS_URL_RE = re.compile(r"""url\(\s*['"]?([^)'"]+?)['"]?\s*\)""")
-
-
 class Monolith:
     def __init__(
         self,
@@ -57,7 +54,6 @@ class Monolith:
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": user_agent})
         self._cache: dict[str, bytes] = {}
-
     def fetch(self, url: str) -> bytes:
         if url in self._cache:
             return self._cache[url]
@@ -76,17 +72,14 @@ class Monolith:
                 raise
             print(f"⚠ Skipping unreachable resource: {url} ({exc})", file=sys.stderr)
             return b""
-
     def to_data_uri(self, data: bytes, mime: str = "application/octet-stream") -> str:
         if not data:
             return ""
         b64 = base64.b64encode(data).decode("ascii")
         return f"data:{mime};base64,{b64}"
-
     def guess_mime(self, url: str, default: str = "application/octet-stream") -> str:
         ext = Path(urlparse(url).path).suffix.lower()
         return self.mime_types.get(ext, default)
-
     def resolve_url(self, url: str) -> str:
         if url.startswith(("data:", "#")):
             return url
@@ -94,7 +87,6 @@ class Monolith:
             scheme = urlparse(self.base_url).scheme or "http"
             return f"{scheme}:{url}"
         return urljoin(self.base_url, url)
-
     def replace_css_urls(self, css: str, base_url: str) -> str:
         def repl(match: "re.Match[str]") -> str:
             raw = match.group(1).strip()
@@ -112,9 +104,7 @@ class Monolith:
                 if not self.ignore_errors:
                     raise
                 return match.group(0)
-
         return CSS_URL_RE.sub(repl, css)
-
     def inline_stylesheets(self, soup: BeautifulSoup) -> None:
         for link in soup.find_all("link", rel="stylesheet"):
             href = link.get("href")
@@ -140,7 +130,6 @@ class Monolith:
                 if not self.ignore_errors:
                     raise
                 print(f"⚠ Skipping CSS: {url} ({exc})", file=sys.stderr)
-
     def inline_scripts(self, soup: BeautifulSoup) -> None:
         for script in soup.find_all("script", src=True):
             src = script.get("src")
@@ -157,7 +146,6 @@ class Monolith:
                 if not self.ignore_errors:
                     raise
                 print(f"⚠ Skipping script: {url} ({exc})", file=sys.stderr)
-
     def inline_images(self, soup: BeautifulSoup) -> None:
         if self.no_images:
             for img in soup.find_all("img"):
@@ -207,13 +195,11 @@ class Monolith:
                 entries.append(item)
             if entries:
                 tag["srcset"] = ", ".join(entries)
-
     def process_style_tags(self, soup: BeautifulSoup) -> None:
         for style in soup.find_all("style"):
             if not style.string:
                 continue
             style.string = self.replace_css_urls(style.string, self.base_url)
-
     def ensure_meta_charset(self, soup: BeautifulSoup) -> None:
         meta = soup.find("meta", charset=True)
         if meta is not None:
@@ -229,7 +215,6 @@ class Monolith:
             html = soup.find("html")
             if html is not None:
                 html.insert(0, new_head)
-
     def process_html(self, html: str, base_url: str) -> str:
         self.base_url = base_url
         soup = BeautifulSoup(html, "html.parser")
@@ -240,7 +225,6 @@ class Monolith:
         self.inline_images(soup)
         self.process_style_tags(soup)
         return soup.prettify() if self.prettify else str(soup)
-
     def from_url(self, url: str) -> str:
         print(f"📥 Fetching {url}...", file=sys.stderr)
         resp = self.session.get(url, timeout=self.timeout)
@@ -248,14 +232,11 @@ class Monolith:
         if not resp.encoding:
             resp.encoding = self.encoding
         return self.process_html(resp.text, url)
-
     def from_file(self, path: str) -> str:
         resolved = Path(path).resolve()
         print(f"📂 Loading {resolved}...", file=sys.stderr)
         html = resolved.read_text(encoding=self.encoding, errors="ignore")
         return self.process_html(html, resolved.as_uri())
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="monolith",
@@ -316,8 +297,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="User-Agent header to send with requests",
     )
     return parser
-
-
 def main(argv: Optional[list] = None) -> int:
     args = build_parser().parse_args(argv)
     archiver = Monolith(
@@ -352,7 +331,5 @@ def main(argv: Optional[list] = None) -> int:
     except Exception as exc:
         print(f"❌ Error: {exc}", file=sys.stderr)
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

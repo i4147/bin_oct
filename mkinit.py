@@ -1,26 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import ast
 from pathlib import Path
-
-
 def is_valid_module_file(path: Path) -> bool:
     if not path.is_file():
         return False
     if path.suffix != ".py":
         return False
     return not path.name.startswith("_")
-
-
 def is_valid_subpackage(path: Path) -> bool:
     if not path.is_dir():
         return False
     if path.name.startswith("_"):
         return False
     return (path / "__init__.py").is_file()
-
-
 def parse_module(path: Path) -> ast.Module | None:
     try:
         source = path.read_text(encoding="utf-8")
@@ -30,8 +23,6 @@ def parse_module(path: Path) -> ast.Module | None:
         return ast.parse(source, filename=str(path))
     except SyntaxError:
         return None
-
-
 def get_public_functions(tree: ast.Module) -> list[str]:
     names: list[str] = []
     for node in tree.body:
@@ -42,16 +33,12 @@ def get_public_functions(tree: ast.Module) -> list[str]:
                 continue
             names.append(node.name)
     return names
-
-
 def get_public_classes(tree: ast.Module) -> list[str]:
     names: list[str] = []
     for node in tree.body:
         if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
             names.append(node.name)
     return names
-
-
 def has_only_main(tree: ast.Module) -> bool:
     has_main = False
     for node in tree.body:
@@ -67,8 +54,6 @@ def has_only_main(tree: ast.Module) -> bool:
                 continue
             return False
     return has_main
-
-
 def build_init_content(project_dir: Path) -> str:
     import_lines: list[str] = []
     exported_names: list[str] = []
@@ -111,8 +96,6 @@ def build_init_content(project_dir: Path) -> str:
         all_block.append("]")
         parts.append("\n".join(all_block))
     return "\n\n".join(parts) + "\n" if parts else ""
-
-
 def clean_content(text: str) -> str:
     lines = text.splitlines(keepends=True)
     result = []
@@ -123,8 +106,6 @@ def clean_content(text: str) -> str:
         else:
             result.append(line)
     return "".join(result)
-
-
 def create_init_file(project_dir: Path | None = None) -> Path:
     if project_dir is None:
         project_dir = Path.cwd()
@@ -137,7 +118,5 @@ def create_init_file(project_dir: Path | None = None) -> Path:
     content = clean_content(content)
     init_path.write_text(content, encoding="utf-8")
     return init_path
-
-
 if __name__ == "__main__":
     create_init_file()

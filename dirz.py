@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
 from typing import Iterator, Optional
-
-
 def format_size(num_bytes: int) -> str:
     value = float(num_bytes)
     for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
@@ -16,8 +13,6 @@ def format_size(num_bytes: int) -> str:
             return f"{value:.1f}{unit}"
         value /= 1024
     return None
-
-
 def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
     stack: list[tuple[str, Optional[str]]] = [(str(root), None)]
     while stack:
@@ -36,8 +31,6 @@ def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
                         stack.append((entry.path, child_top_level))
         except OSError:
             continue
-
-
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="List top-level directories of the CWD, optionally with total sizes.",
@@ -49,8 +42,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="show total size per directory",
     )
     return parser.parse_args(argv)
-
-
 def print_directory_listing(
     dirs: list[str],
     sizes: dict[str, int],
@@ -69,8 +60,6 @@ def print_directory_listing(
     total_line = f"total:{len(dirs)} dirs"
     if show_size:
         total_line += f"  {format_size(sum(sizes.values()))}"
-
-
 def main(argv: Optional[list[str]] = None) -> None:
     args = parse_args(argv)
     root = Path.cwd()
@@ -98,7 +87,5 @@ def main(argv: Optional[list[str]] = None) -> None:
                 continue
             dir_sizes[top_level] = dir_sizes.get(top_level, 0) + file_size
     print_directory_listing(dir_names, dir_sizes, args.size)
-
-
 if __name__ == "__main__":
     main()

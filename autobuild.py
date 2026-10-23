@@ -4,18 +4,13 @@ from multiprocessing import Pool
 from pathlib import Path
 import subprocess
 import sys
-
 NUM_WORKERS = 8
 CURRENT_DIR = Path.cwd()
 OUTPUT_DIR = CURRENT_DIR / "wheels"
-
-
 def is_package_dir(path: Path) -> bool:
     if not path.is_dir():
         return False
     return (path / "setup.py").exists() or (path / "pyproject.toml").exists() or (path / "setup.cfg").exists()
-
-
 def build_wheel(pkg_dir: Path) -> tuple[str, bool, str]:
     try:
         result = subprocess.run(
@@ -37,8 +32,6 @@ def build_wheel(pkg_dir: Path) -> tuple[str, bool, str]:
             return (pkg_dir.name, False, result.stderr.strip()[-500:])
     except Exception as e:
         return (pkg_dir.name, False, f"Exception: {e}")
-
-
 def main() -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
     pkg_dirs = sorted(p for p in CURRENT_DIR.iterdir() if is_package_dir(p) and p != OUTPUT_DIR)
@@ -61,7 +54,5 @@ def main() -> None:
     success = sum(1 for _, ok in results if ok)
     failed = len(results) - success
     print(f"\nDone. Success: {success}, Failed: {failed}")
-
-
 if __name__ == "__main__":
     main()

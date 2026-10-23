@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import ast
 import importlib.metadata
@@ -7,7 +6,6 @@ import importlib.util
 from pathlib import Path
 import sys
 from dh import is_python_file
-
 PACKAGE_MAPPING = {
     "cv2": "opencv-python",
     "PIL": "Pillow",
@@ -24,8 +22,6 @@ PACKAGE_MAPPING = {
     "jwt": "PyJWT",
     "OpenGL": "PyOpenGL",
 }
-
-
 def get_imports_from_file(path: Path):
     imports = set()
     try:
@@ -39,8 +35,6 @@ def get_imports_from_file(path: Path):
     except (SyntaxError, UnicodeDecodeError):
         pass
     return imports
-
-
 def check_status(module_name) -> bool:
     try:
         importlib.metadata.distribution(module_name)
@@ -48,8 +42,6 @@ def check_status(module_name) -> bool:
     except importlib.metadata.PackageNotFoundError:
         spec = importlib.util.find_spec(module_name)
         return spec is not None
-
-
 def main() -> None:
     cwd = Path()
     output_file = cwd / "importz.txt"
@@ -87,7 +79,5 @@ def main() -> None:
             print("✨ Environment is fully satisfied!")
     else:
         print("ℹ️ No 3rd-party imports found.")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

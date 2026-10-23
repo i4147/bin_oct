@@ -12,7 +12,6 @@ from typing import Callable, Iterable, Optional, Sequence
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm
-
 FARSI_RE: re.Pattern[str] = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]")
 TOFA_MARKERS: tuple[str, ...] = (
     "\n",
@@ -34,8 +33,6 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".ruff_cache",
     ".pytest_cache",
 )
-
-
 def read_text_any_encoding(path: Path) -> str:
     for enc in ("utf-8", "latin-1", "cp1252", "iso-8859-1"):
         try:
@@ -44,16 +41,10 @@ def read_text_any_encoding(path: Path) -> str:
             continue
     msg = f"Could not read file {path} with any encoding"
     raise OSError(msg)
-
-
 def contains_farsi(text: str) -> bool:
     return bool(FARSI_RE.search(text))
-
-
 def derive_output_path(src: Path, suffix: str) -> Path:
     return src.parent / f"{src.stem}_{suffix}{src.suffix}"
-
-
 def translate_with_retry(
     text: str,
     source: str = "auto",
@@ -78,8 +69,6 @@ def translate_with_retry(
             time.sleep(base_delay + attempt)
     msg = f"Translation failed after {retries} attempts: {last_error}"
     raise RuntimeError(msg)
-
-
 def chunk_by_markers(
     text: str,
     max_chars: int,
@@ -108,8 +97,6 @@ def chunk_by_markers(
         chunks.append(remaining[:cut])
         pos += cut
     return chunks
-
-
 def chunk_by_regex(
     text: str,
     max_chars: int,
@@ -131,8 +118,6 @@ def chunk_by_regex(
         chunks.append(text[pos:cut])
         pos = cut
     return chunks
-
-
 def collect_files(
     root: Path,
     suffixes: Iterable[str],
@@ -147,8 +132,6 @@ def collect_files(
         if p.is_file() and p.suffix.lower() in suffix_set:
             found.append(p)
     return sorted(found)
-
-
 def _worker_line_to_en(line: str) -> Optional[tuple[str, str]]:
     stripped = line.strip()
     if not stripped or not contains_farsi(stripped):
@@ -159,8 +142,6 @@ def _worker_line_to_en(line: str) -> Optional[tuple[str, str]]:
     except Exception as exc:
         logger.debug(f"Translation error for '{stripped[:20]}': {exc}")
         return None
-
-
 def _worker_chunk_to_en(payload: tuple[str, float]) -> str:
     chunk, sleep_sec = payload
     if not contains_farsi(chunk):
@@ -175,8 +156,6 @@ def _worker_chunk_to_en(payload: tuple[str, float]) -> str:
     except Exception as exc:
         logger.error(f"Chunk translation error: {exc}")
     return chunk
-
-
 def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
     try:
         content = path.read_text(encoding="utf-8").strip()
@@ -206,8 +185,6 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
     except Exception as exc:
         logger.error(f"❌ Error processing {path.name}: {exc}")
         return (path, {})
-
-
 def cmd_to_fa(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -245,8 +222,6 @@ def cmd_to_fa(args: argparse.Namespace) -> int:
     print(f"[INFO] Output file: {dst}")
     print(f"[INFO] Output size: {len(translated)} characters")
     return 0
-
-
 def _translate_file_to_target(
     content: str,
     source: str,
@@ -277,8 +252,6 @@ def _translate_file_to_target(
     finally:
         progress.close()
     return "".join(results)
-
-
 def cmd_lines_to_en(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -309,8 +282,6 @@ def cmd_lines_to_en(args: argparse.Namespace) -> int:
         return 1
     print(f"✓ Translated output saved to {dst}")
     return 0
-
-
 def cmd_inplace_to_en(args: argparse.Namespace) -> int:
     root = Path(args.path)
     if not root.exists():
@@ -330,8 +301,6 @@ def cmd_inplace_to_en(args: argparse.Namespace) -> int:
             final_sleep=args.final_sleep,
         )
     return 0
-
-
 def _inplace_translate_one(
     path: Path,
     workers: int,
@@ -360,8 +329,6 @@ def _inplace_translate_one(
     except Exception as exc:
         logger.error(f"Error writing to {path}: {exc}")
     time.sleep(final_sleep)
-
-
 def cmd_batch_json(args: argparse.Namespace) -> int:
     directory = Path(args.directory)
     files = sorted(directory.glob(args.glob))
@@ -396,8 +363,6 @@ def cmd_batch_json(args: argparse.Namespace) -> int:
     print(f"   ⏱️  Time elapsed: {elapsed:.2f} seconds")
     print(f"   📁 Output directory: {Path(args.out_dir).absolute()}")
     return 0
-
-
 def _save_translations(
     src: Path,
     mapping: dict[str, str],
@@ -412,8 +377,6 @@ def _save_translations(
     )
     print(f"💾 Saved: {target.name}")
     return target
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="translator.py",
@@ -542,14 +505,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_batch_json)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     func: Callable[[argparse.Namespace], int] = args.func
     return func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

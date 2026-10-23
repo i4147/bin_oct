@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from datetime import date
 import os
@@ -8,21 +7,14 @@ import sys
 from typing import Final
 import click
 import ecstasy
-
-
 class LicenseError(Exception):
     ERROR: Final[str] = ecstasy.beautify("<Error>: ", ecstasy.Color.Red)
-
     def __init__(self, message: str) -> None:
         self.message: str = self.ERROR + message
         super().__init__(self.message)
-
-
 CACHE_PATH: Final[str] = os.path.join(os.environ["HOME"], ".license")
 HIT_MESSAGE: Final[str] = ecstasy.beautify("Cache-<Hit> for {0}: '{1}'.", ecstasy.Color.Green)
 MISS_MESSAGE: Final[str] = ecstasy.beautify("Cache-<Miss> for {0}.", ecstasy.Color.Red)
-
-
 def get_license_kinds() -> set[str]:
     kinds: set[str] = set()
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
@@ -30,11 +22,7 @@ def get_license_kinds() -> set[str]:
         name = os.path.splitext(os.path.basename(license_path))[0]
         kinds.add(name)
     return kinds
-
-
 LICENSE_KINDS: Final[set[str]] = get_license_kinds()
-
-
 def read_cache() -> str:
     try:
         with open(CACHE_PATH, "rt") as source:
@@ -42,8 +30,6 @@ def read_cache() -> str:
     except OSError:
         msg = "Could not read from cache."
         raise LicenseError(msg)
-
-
 def read_author(cache: str) -> str:
     match = re.search(r"\s*author\s*=\s*([a-zA-Z -]+)", cache)
     if match is None:
@@ -51,8 +37,6 @@ def read_author(cache: str) -> str:
     author = match.group(1)
     click.echo(HIT_MESSAGE.format("author", author), file=sys.stderr)
     return author
-
-
 def read_kind(cache: str) -> str:
     match = re.search(r"\s*kind\s*=\s*(\w+)", cache)
     if match is None:
@@ -60,8 +44,6 @@ def read_kind(cache: str) -> str:
     kind = match.group(1)
     click.echo(HIT_MESSAGE.format("kind", kind), file=sys.stderr)
     return kind
-
-
 def read(author: str | None, kind: str | None) -> tuple[str, str]:
     if not os.path.exists(CACHE_PATH):
         msg = "No cache found. You must supply at least -a and -k."
@@ -72,27 +54,19 @@ def read(author: str | None, kind: str | None) -> tuple[str, str]:
     if kind is None:
         kind = read_kind(cache_data)
     return author, kind
-
-
 def write(author: str, kind: str) -> None:
     assert all(i is not None for i in [author, kind])
     template = "author={0}\nkind={1}"
     with open(CACHE_PATH, "wt") as destination:
         destination.write(template.format(author, kind))
-
-
 def fetch(kind: str) -> str:
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, f"files/{kind}.txt")
     with open(path, "rt") as source:
         return source.read()
-
-
 def insert(template: str, author: str, year: str) -> str:
     template = re.sub(r"<author>", author, template)
     template = re.sub(r"<year>", year, template)
     return template
-
-
 def validate(author: str, year: str, kind: str) -> None:
     author_pattern = r"^[a-zA-Z -]+$"
     year_pattern = r"^\d{4}$"
@@ -104,8 +78,6 @@ def validate(author: str, year: str, kind: str) -> None:
         raise LicenseError(msg)
     if kind not in LICENSE_KINDS:
         raise LicenseError(f"Invalid license kind: {kind}. Must be one of: " + ", ".join(LICENSE_KINDS))
-
-
 def get(author: str | None, year: str, kind: str | None) -> str:
     assert year is not None, "Year should have been defaulted by click"
     if not author or not kind:
@@ -115,8 +87,6 @@ def get(author: str | None, year: str, kind: str | None) -> str:
     text = insert(template, author, year)
     write(author, kind)
     return text
-
-
 @click.command(help="A license fetcher.")
 @click.option("-a", "--author", nargs=1, help="The name of the author.")
 @click.option(
@@ -139,11 +109,7 @@ def li(author: str | None, year: str, kind: str | None) -> None:
         click.echo(result, nl=False)
     except LicenseError as e:
         click.echo(e.message)
-
-
 def main() -> None:
     li()
-
-
 if __name__ == "__main__":
     main()

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -10,7 +9,6 @@ import importlib
 from pathlib import Path
 import sys
 from typing import Any, Sequence
-
 DEFAULT_PACKAGE = "dh"
 DEFAULT_DIR = Path.home() / "bin"
 DEFAULT_OUTPUT = Path.home() / "dh_usage.txt"
@@ -86,8 +84,6 @@ STDLIB_FALLBACK: set[str] = {
     "tkinter",
     "turtle",
 }
-
-
 def collect_stdlib_modules() -> set[str]:
     modules: set[str] = set()
     for info in importlib.machinery.all_suffixes():
@@ -98,7 +94,6 @@ def collect_stdlib_modules() -> set[str]:
     except Exception:
         pass
     import pkgutil
-
     for info in pkgutil.iter_modules():
         name = info.name
         if name.startswith("_"):
@@ -106,8 +101,6 @@ def collect_stdlib_modules() -> set[str]:
         modules.add(name)
     modules.update(STDLIB_FALLBACK)
     return modules
-
-
 def extract_imports(path: Path) -> dict[str, list[str]]:
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -129,8 +122,6 @@ def extract_imports(path: Path) -> dict[str, list[str]]:
                 name = alias.name if alias.asname is None else alias.asname
                 imports[module].append(name)
     return dict(imports)
-
-
 def _collect_package_aliases(
     tree: ast.AST,
     package: str,
@@ -142,8 +133,6 @@ def _collect_package_aliases(
                 if alias.name == package or alias.name.startswith(package + "."):
                     aliases.add(alias.asname or alias.name)
     return aliases
-
-
 def _record_package_attribute_calls(
     tree: ast.AST,
     aliases: set[str],
@@ -163,8 +152,6 @@ def _record_package_attribute_calls(
                 inner = inner.value
             if isinstance(inner, ast.Name) and inner.id in aliases:
                 imports[package].append(func.attr)
-
-
 def count_calls(
     path: Path,
     imports: dict[str, list[str]],
@@ -192,8 +179,6 @@ def count_calls(
                 if module == base or module.endswith("." + base):
                     counts[module][func.attr] += 1
     return dict(counts.items())
-
-
 def _extract_imports_full(
     path: Path,
     package: str,
@@ -208,8 +193,6 @@ def _extract_imports_full(
         imports.setdefault(package, [])
         _record_package_attribute_calls(tree, aliases, imports, package)
     return imports
-
-
 def analyze_directory(
     directory: Path,
     package: str,
@@ -266,8 +249,6 @@ def analyze_directory(
         thirdparty_filecounts,
         package_filecounts,
     )
-
-
 def build_report(
     per_file: list[tuple[str, dict[str, Counter[str]]]],
     stdlib_totals: Counter[str],
@@ -344,7 +325,6 @@ def build_report(
                 stdlib_block[module] = attrs
             else:
                 thirdparty_block[module] = attrs
-
         def _emit(block: dict[str, Counter[str]], title: str) -> None:
             if not block:
                 return
@@ -356,7 +336,6 @@ def build_report(
                 for attr, c in sorted(attrs.items(), key=lambda x: -x[1]):
                     if c > 0:
                         lines.append(f"        {attr:<28} {c} time(s)")
-
         _emit(stdlib_block, "stdlib")
         _emit(thirdparty_block, "third-party")
         _emit(package_block, package)
@@ -365,21 +344,15 @@ def build_report(
     lines.append("  END OF REPORT")
     lines.append("=" * 40)
     return "\n".join(lines)
-
-
 def _load_matplotlib():
     try:
         import matplotlib as mpl
-
         mpl.use("Agg")
         import matplotlib.pyplot as plt
-
         return plt
     except ImportError as exc:
         msg = "matplotlib is required for the 'charts' subcommand. Install it with: pip install matplotlib"
         raise SystemExit(msg) from exc
-
-
 def generate_charts(
     stdlib_totals: Counter[str],
     thirdparty_totals: Counter[str],
@@ -474,8 +447,6 @@ def generate_charts(
         plt.savefig(out, dpi=100, bbox_inches="tight")
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
-
-
 def _run_analysis(args: argparse.Namespace) -> tuple[Any, str]:
     directory: Path = Path(args.dir).expanduser()
     if not directory.is_dir():
@@ -520,8 +491,6 @@ def _run_analysis(args: argparse.Namespace) -> tuple[Any, str]:
         (stdlib_totals, thirdparty_totals, package_totals),
         report,
     )
-
-
 def cmd_report(args: argparse.Namespace) -> int:
     _, report = _run_analysis(args)
     output_path = Path(args.output).expanduser()
@@ -529,8 +498,6 @@ def cmd_report(args: argparse.Namespace) -> int:
     print(report)
     print(f"\n✅ Report saved to {output_path}")
     return 0
-
-
 def cmd_charts(args: argparse.Namespace) -> int:
     data, report = _run_analysis(args)
     stdlib_totals, thirdparty_totals, package_totals = data
@@ -548,8 +515,6 @@ def cmd_charts(args: argparse.Namespace) -> int:
         args.package,
     )
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="module_usage.py",
@@ -603,13 +568,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_charts.set_defaults(func=cmd_charts)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

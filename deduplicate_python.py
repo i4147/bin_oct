@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -15,11 +14,9 @@ import tarfile
 import tempfile
 import zipfile
 from loguru import logger
-
 try:
     from tree_sitter import Parser
     import tree_sitter_python
-
     TREE_SITTER_AVAILABLE = True
 except Exception:
     TREE_SITTER_AVAILABLE = False
@@ -46,20 +43,14 @@ SUPPORTED_ARCHIVES = (
     ".zst",
     ".br",
 )
-
-
 def sha256(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
-
-
 def safe_read_text(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8")
     except Exception as e:
         logger.error(f"Failed reading {path}: {e}")
         return None
-
-
 def safe_write_text(path: Path, content: str) -> bool:
     try:
         path.write_text(content, encoding="utf-8")
@@ -67,12 +58,8 @@ def safe_write_text(path: Path, content: str) -> bool:
     except Exception as e:
         logger.error(f"Failed writing {path}: {e}")
         return False
-
-
 def normalize_newlines(s: str) -> str:
     return s.replace("\r\n", "\n").replace("\r", "\n")
-
-
 def extract_with_tree_sitter(code: str):
     objects = []
     try:
@@ -116,8 +103,6 @@ def extract_with_tree_sitter(code: str):
         logger.warning(f"Tree-sitter failed; falling back to ast: {e}")
         return extract_with_ast(code)
     return objects
-
-
 def extract_with_ast(code: str):
     objects = []
     try:
@@ -166,19 +151,13 @@ def extract_with_ast(code: str):
     except Exception as e:
         logger.error(f"AST parsing failed: {e}")
     return objects
-
-
 def extract_objects(code: str):
     if TREE_SITTER_AVAILABLE:
         return extract_with_tree_sitter(code)
     return extract_with_ast(code)
-
-
 def is_supported_archive(path: Path) -> bool:
     s = str(path).lower()
     return any(s.endswith(ext) for ext in SUPPORTED_ARCHIVES)
-
-
 def extract_archive(path: Path) -> str:
     temp_dir = tempfile.mkdtemp(prefix="dedup_py_")
     lower = str(path).lower()
@@ -223,8 +202,6 @@ def extract_archive(path: Path) -> str:
     except Exception as e:
         logger.error(f"Failed extracting archive {path}: {e}")
     return temp_dir
-
-
 def should_skip_dir(path: Path) -> bool:
     skip_names = {
         ".git",
@@ -242,11 +219,8 @@ def should_skip_dir(path: Path) -> bool:
         "site-packages",
     }
     return path.name in skip_names
-
-
 def collect_python_files(base: Path):
     files = []
-
     def walk(p: Path):
         if should_skip_dir(p):
             return
@@ -263,11 +237,8 @@ def collect_python_files(base: Path):
                             files.append(py_file)
         except PermissionError:
             logger.warning(f"Permission denied: {p}")
-
     walk(base)
     return files
-
-
 def process_file(path_str: str):
     path = Path(path_str)
     code = safe_read_text(path)
@@ -292,8 +263,6 @@ def process_file(path_str: str):
             "end_lineno": obj.get("end_lineno"),
         })
     return result
-
-
 def get_utils_path(base: Path) -> Path:
     default_path = base / "utils.py"
     if not default_path.exists():
@@ -304,13 +273,9 @@ def get_utils_path(base: Path) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
-
-
 def build_import_line(utils_module_name: str, names) -> str:
     names = sorted(set(names))
     return f"from {utils_module_name} import ({', '.join(names)})\n"
-
-
 def write_utils_file(path: Path, objects) -> bool:
     content = "\n\n".join(obj["snippet"].rstrip() for obj in objects).rstrip() + "\n"
     try:
@@ -319,8 +284,6 @@ def write_utils_file(path: Path, objects) -> bool:
         logger.error(f"Refusing to write {path}: generated code has syntax error: {e}")
         return False
     return safe_write_text(path, content)
-
-
 def insert_import_after_shebang(code: str, import_line: str) -> str:
     lines = code.splitlines(keepends=True)
     if not lines:
@@ -333,8 +296,6 @@ def insert_import_after_shebang(code: str, import_line: str) -> str:
         return joined
     lines.insert(insert_at, import_line)
     return "".join(lines)
-
-
 def remove_snippets_from_code(code: str, objects) -> str:
     if not objects:
         return code
@@ -356,8 +317,6 @@ def remove_snippets_from_code(code: str, objects) -> str:
     for start, end in sorted(ranges, reverse=True):
         del lines[start:end]
     return "".join(lines)
-
-
 def update_file_for_move(path: Path, objects_to_remove, utils_module_name: str) -> bool:
     code = safe_read_text(path)
     if code is None:
@@ -378,8 +337,6 @@ def update_file_for_move(path: Path, objects_to_remove, utils_module_name: str) 
         logger.error(f"Skipping {path}: code after adding import is invalid: {e}")
         return False
     return safe_write_text(path, new_code)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Find repeated top-level Python objects and optionally move/copy them to utils.py"
@@ -469,7 +426,5 @@ def main() -> None:
             print(f"Updated {path}")
         else:
             logger.error(f"Failed to update {path}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -14,7 +13,6 @@ import sysconfig
 import token
 import tokenize
 from dh import append_text, runcmd
-
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8
 PROTECTED_NAMES = {
@@ -60,8 +58,6 @@ SHORT_NAMES = [
     *list("abcdefghijklmnopqrstuvwxyz"),
     *list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
 ]
-
-
 def strip_comments_and_shebang(source: str) -> str:
     lines = source.splitlines()
     if lines and lines[0].startswith("#!"):
@@ -77,8 +73,6 @@ def strip_comments_and_shebang(source: str) -> str:
         return tokenize.untokenize(result)
     except tokenize.TokenError:
         return source
-
-
 def get_stdlib_modules() -> set[str]:
     modules = set(getattr(sys, "stdlib_module_names", set()))
     if not modules:
@@ -93,22 +87,14 @@ def get_stdlib_modules() -> set[str]:
                 elif item.is_dir() and (item / "__init__.py").exists():
                     modules.add(item.name)
     return modules
-
-
 STDLIB_MODULES = get_stdlib_modules()
-
-
 def is_stdlib_import(module_name: str | None) -> bool:
     if not module_name:
         return False
     root = module_name.split(".", 1)[0]
     return root in STDLIB_MODULES
-
-
 def is_docstring_expr(node: ast.stmt) -> bool:
     return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
-
-
 def is_terminating_statement(node: ast.stmt) -> bool:
     if isinstance(node, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
         return True
@@ -120,14 +106,10 @@ def is_terminating_statement(node: ast.stmt) -> bool:
             branches.append(node.orelse)
         return bool(branches) and all(block_terminates(branch) for branch in branches)
     return False
-
-
 def block_terminates(statements: list[ast.stmt]) -> bool:
     if not statements:
         return False
     return any(is_terminating_statement(statement) for statement in statements)
-
-
 def make_short_name(index: int) -> str:
     alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     base = len(alphabet)
@@ -138,8 +120,6 @@ def make_short_name(index: int) -> str:
         result = alphabet[index % base] + result
         index = index // base - 1
     return result
-
-
 class AnnotationStripper(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         self.generic_visit(node)
@@ -147,14 +127,12 @@ class AnnotationStripper(ast.NodeTransformer):
         self._strip_arguments(node.args)
         node.type_comment = None
         return node
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
         self.generic_visit(node)
         node.returns = None
         self._strip_arguments(node.args)
         node.type_comment = None
         return node
-
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
         self.generic_visit(node)
         if node.value is None:
@@ -167,7 +145,6 @@ class AnnotationStripper(ast.NodeTransformer):
             ),
             node,
         )
-
     @staticmethod
     def _strip_arguments(arguments: ast.arguments) -> None:
         for argument in [
@@ -183,21 +160,17 @@ class AnnotationStripper(ast.NodeTransformer):
         if arguments.kwarg:
             arguments.kwarg.annotation = None
             arguments.kwarg.type_comment = None
-
-
 class ImportCleaner(ast.NodeTransformer):
     def visit_Module(self, node: ast.Module) -> ast.AST:
         self.generic_visit(node)
         node.body = self._clean_block(node.body)
         return node
-
     def visit_Import(self, node: ast.Import) -> ast.AST | None:
         kept = [alias for alias in node.names if not is_stdlib_import(alias.name)]
         if not kept:
             return None
         node.names = kept
         return node
-
     def visit_ImportFrom(self, node: ast.ImportFrom) -> ast.AST | None:
         if node.module == "__future__":
             return None
@@ -206,7 +179,6 @@ class ImportCleaner(ast.NodeTransformer):
         if is_stdlib_import(node.module):
             return None
         return node
-
     @staticmethod
     def _clean_block(statements: list[ast.stmt]) -> list[ast.stmt]:
         cleaned: list[ast.stmt] = []
@@ -223,29 +195,23 @@ class ImportCleaner(ast.NodeTransformer):
             if is_terminating_statement(statement):
                 terminated = True
         return cleaned
-
-
 class Simplifier(ast.NodeTransformer):
     def visit_Module(self, node: ast.Module) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         return node
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         return node
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         return node
-
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         return node
-
     def visit_If(self, node: ast.If) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
@@ -255,36 +221,30 @@ class Simplifier(ast.NodeTransformer):
         if bool_return is not None:
             return ast.copy_location(bool_return, node)
         return node
-
     def visit_While(self, node: ast.While) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         node.orelse = self._simplify_block(node.orelse)
         node.test = self._shorten_boolean_constant(node.test)
         return node
-
     def visit_For(self, node: ast.For) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         node.orelse = self._simplify_block(node.orelse)
         return node
-
     def visit_AsyncFor(self, node: ast.AsyncFor) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         node.orelse = self._simplify_block(node.orelse)
         return node
-
     def visit_With(self, node: ast.With) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         return node
-
     def visit_AsyncWith(self, node: ast.AsyncWith) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
         return node
-
     def visit_Try(self, node: ast.Try) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
@@ -293,7 +253,6 @@ class Simplifier(ast.NodeTransformer):
         for handler in node.handlers:
             handler.body = self._simplify_block(handler.body)
         return node
-
     def visit_Assign(self, node: ast.Assign) -> ast.AST:
         self.generic_visit(node)
         if (
@@ -312,15 +271,12 @@ class Simplifier(ast.NodeTransformer):
                 node,
             )
         return node
-
     def visit_BinOp(self, node: ast.BinOp) -> ast.AST:
         self.generic_visit(node)
         return self._fold_expression_if_shorter(node)
-
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.AST:
         self.generic_visit(node)
         return self._fold_expression_if_shorter(node)
-
     def _simplify_block(self, statements: list[ast.stmt]) -> list[ast.stmt]:
         output: list[ast.stmt] = []
         terminated = False
@@ -352,7 +308,6 @@ class Simplifier(ast.NodeTransformer):
             if is_terminating_statement(statement):
                 terminated = True
         return output
-
     @staticmethod
     def _shorten_boolean_constant(expression: ast.expr) -> ast.expr:
         if isinstance(expression, ast.Constant) and expression.value is True:
@@ -360,7 +315,6 @@ class Simplifier(ast.NodeTransformer):
         if isinstance(expression, ast.Constant) and expression.value is False:
             return ast.copy_location(ast.Constant(value=0), expression)
         return expression
-
     @staticmethod
     def _convert_boolean_return_pattern(node: ast.If) -> ast.Return | None:
         if len(node.body) != 1 or len(node.orelse) != 1:
@@ -393,7 +347,6 @@ class Simplifier(ast.NodeTransformer):
                 )
             )
         return None
-
     @staticmethod
     def _fold_expression_if_shorter(node: ast.expr) -> ast.expr:
         if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
@@ -421,50 +374,39 @@ class Simplifier(ast.NodeTransformer):
         if len(after) < len(before):
             return ast.copy_location(folded, node)
         return node
-
-
 class NameCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.names: set[str] = set()
         self.imported_names: set[str] = set()
-
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
             name = alias.asname or alias.name.split(".", 1)[0]
             self.imported_names.add(name)
-
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         for alias in node.names:
             if alias.name == "*":
                 continue
             name = alias.asname or alias.name
             self.imported_names.add(name)
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._add_name(node.name)
         self._collect_arguments(node.args)
         self.generic_visit(node)
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self._add_name(node.name)
         self._collect_arguments(node.args)
         self.generic_visit(node)
-
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._add_name(node.name)
         self.generic_visit(node)
-
     def visit_Name(self, node: ast.Name) -> None:
         self._add_name(node.id)
-
     def visit_Global(self, node: ast.Global) -> None:
         for name in node.names:
             self._add_name(name)
-
     def visit_Nonlocal(self, node: ast.Nonlocal) -> None:
         for name in node.names:
             self._add_name(name)
-
     def _collect_arguments(self, arguments: ast.arguments) -> None:
         all_arguments = [
             *arguments.posonlyargs,
@@ -477,11 +419,9 @@ class NameCollector(ast.NodeVisitor):
             all_arguments.append(arguments.kwarg)
         for argument in all_arguments:
             self._add_name(argument.arg)
-
     def _add_name(self, name: str) -> None:
         if self._can_rename(name):
             self.names.add(name)
-
     def _can_rename(self, name: str) -> bool:
         return (
             name not in PROTECTED_NAMES
@@ -490,51 +430,41 @@ class NameCollector(ast.NodeVisitor):
             and not name.startswith("__")
             and name not in self.imported_names
         )
-
-
 class NameRenamer(ast.NodeTransformer):
     def __init__(self, mapping: dict[str, str]) -> None:
         self.mapping = mapping
-
     def visit_Name(self, node: ast.Name) -> ast.AST:
         if node.id in self.mapping:
             node.id = self.mapping[node.id]
         return node
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
         self._rename_arguments(node.args)
         self.generic_visit(node)
         return node
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
         self._rename_arguments(node.args)
         self.generic_visit(node)
         return node
-
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
         self.generic_visit(node)
         return node
-
     def visit_Global(self, node: ast.Global) -> ast.AST:
         node.names = [self.mapping.get(name, name) for name in node.names]
         return node
-
     def visit_Nonlocal(self, node: ast.Nonlocal) -> ast.AST:
         node.names = [self.mapping.get(name, name) for name in node.names]
         return node
-
     def visit_keyword(self, node: ast.keyword) -> ast.AST:
         self.generic_visit(node)
         if node.arg is not None and node.arg in self.mapping:
             node.arg = self.mapping[node.arg]
         return node
-
     def _rename_arguments(self, arguments: ast.arguments) -> None:
         all_arguments = [
             *arguments.posonlyargs,
@@ -548,8 +478,6 @@ class NameRenamer(ast.NodeTransformer):
         for argument in all_arguments:
             if argument.arg in self.mapping:
                 argument.arg = self.mapping[argument.arg]
-
-
 def build_name_mapping(tree: ast.AST) -> dict[str, str]:
     collector = NameCollector()
     collector.visit(tree)
@@ -567,21 +495,16 @@ def build_name_mapping(tree: ast.AST) -> dict[str, str]:
             mapping[old_name] = new_name
             reserved.add(new_name)
     return mapping
-
-
 def join_simple_lines(source: str) -> str:
     lines = [line.rstrip() for line in source.splitlines() if line.strip()]
     output: list[str] = []
-
     def indentation(line: str) -> str:
         return line[: len(line) - len(line.lstrip())]
-
     def is_simple_statement(line: str) -> bool:
         stripped = line.strip()
         if not stripped:
             return False
         return not stripped.endswith(":")
-
     index = 0
     while index < len(lines):
         current = lines[index]
@@ -602,8 +525,6 @@ def join_simple_lines(source: str) -> str:
             index += 1
         output.append(f"{current_indent}{';'.join(group)}")
     return "\n".join(output)
-
-
 def compact_spacing(source: str) -> str:
     source = re.sub(r",\s+", ",", source)
     source = re.sub(r":\s+", ":", source)
@@ -642,8 +563,6 @@ def compact_spacing(source: str) -> str:
     for operator in operators:
         source = re.sub(rf"\s*({operator})\s*", r"\1", source)
     return source
-
-
 def compress_source(source: str, filename: str = "<input>") -> str:
     source = strip_comments_and_shebang(source)
     tree = ast.parse(source, filename=filename)
@@ -660,8 +579,6 @@ def compress_source(source: str, filename: str = "<input>") -> str:
     result = join_simple_lines(result)
     result = compact_spacing(result)
     return "\n".join(line for line in result.splitlines() if line.strip())
-
-
 def discover_python_files(inputs: list[str]) -> list[Path]:
     roots = [Path(item) for item in inputs] if inputs else [Path.cwd()]
     found: set[Path] = set()
@@ -677,8 +594,6 @@ def discover_python_files(inputs: list[str]) -> list[Path]:
                 if path.is_file():
                     found.add(path.resolve())
     return sorted(found, key=str)
-
-
 def process_file(path_string: str) -> tuple[str, str, str | None]:
     path = Path(path_string)
     try:
@@ -697,8 +612,6 @@ def process_file(path_string: str) -> tuple[str, str, str | None]:
         return str(path), "", f"Syntax error in {path}: {error}"
     except Exception as error:
         return str(path), "", f"Failed to compress {path}: {error}"
-
-
 def format_output(results: list[tuple[str, str, str | None]]) -> str:
     successful = [(name, content) for name, content, error in results if error is None and content.strip()]
     if not successful:
@@ -712,8 +625,6 @@ def format_output(results: list[tuple[str, str, str | None]]) -> str:
         lines.extend(line for line in content.splitlines() if line.strip())
         sections.append("\n".join(lines))
     return "\n".join(sections)
-
-
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compress Python files for LLM input.")
     parser.add_argument(
@@ -722,8 +633,6 @@ def parse_arguments() -> argparse.Namespace:
         help="Python files and/or directories. Defaults to the current directory.",
     )
     return parser.parse_args()
-
-
 def main() -> int:
     args = parse_arguments()
     files = discover_python_files(args.inputs)
@@ -754,7 +663,5 @@ def main() -> int:
     runcmd(cmd, show_output=True)
     print(f"Wrote to {OUTPUT_FILE}")
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -7,14 +7,11 @@ from os.path import (
     join as jn,
 )
 from pathlib import Path
-
-
 class DirectoryWalker:
     def __init__(self, directory) -> None:
         self.stack = [directory]
         self.files = []
         self.index = 0
-
     def __getitem__(self, index):
         while 1:
             try:
@@ -30,8 +27,6 @@ class DirectoryWalker:
                     self.stack.append(fullname)
                 return fullname
         return None
-
-
 if __name__ == "__main__":
     cwd = Path.cwd()
     for file in DirectoryWalker(str(cwd)):

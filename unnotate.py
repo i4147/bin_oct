@@ -10,15 +10,12 @@ import stat
 import sys
 import tempfile
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from collections.abc import Iterable
 try:
     from tree_sitter import Parser
-
     try:
         from tree_sitter_languages import get_language
-
         PY_LANGUAGE = get_language("python")
     except Exception as exc:
         msg = (
@@ -30,31 +27,23 @@ except Exception as exc:
     msg = "tree-sitter is required. Install with: pip install tree_sitter tree_sitter_languages"
     raise RuntimeError(msg) from exc
 TYPE_COMMENT_RE = re.compile(r"\s*#\s*type\s*:\s*([^\n]*)$", flags=re.IGNORECASE)
-
-
 @dataclass
 class Result:
     path: Path
     changed: bool
     warnings: list[str]
     error: str | None
-
-
 def _prev_nonspace(buf: bytes, i: int) -> int:
     j = i - 1
     while j >= 0 and buf[j] in b" \t\r":
         j -= 1
     return j
-
-
 def _next_nonspace(buf: bytes, i: int) -> int:
     n = len(buf)
     j = i
     while j < n and buf[j] in b" \t\r":
         j += 1
     return min(n, j)
-
-
 def _collect_annotation_nodes(root) -> list:
     stack = [root]
     ann_nodes = []
@@ -65,8 +54,6 @@ def _collect_annotation_nodes(root) -> list:
         for c in node.children:
             stack.append(c)
     return ann_nodes
-
-
 def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> bytes:
     if not ranges:
         return src
@@ -84,8 +71,6 @@ def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> byte
     for s, e in reversed(merged):
         del out[s:e]
     return bytes(out)
-
-
 def process_file(path_str: str) -> Result:
     p = Path(path_str)
     warnings: list[str] = []
@@ -171,8 +156,6 @@ def process_file(path_str: str) -> Result:
         except Exception:
             pass
         return Result(p, False, warnings, f"write error: {e}")
-
-
 def gather_py_files(paths: Iterable[str]) -> list[Path]:
     out: list[Path] = []
     provided = list(paths)
@@ -193,8 +176,6 @@ def gather_py_files(paths: Iterable[str]) -> list[Path]:
                     out.append(f.resolve())
     unique = sorted(set(out))
     return unique
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Remove Python type annotations from .py files (in-place).")
     parser.add_argument("paths", nargs="*", help="Files or directories to process (default: .)")
@@ -212,10 +193,8 @@ def main(argv: list[str] | None = None) -> int:
     pool = mp.Pool(processes=pool_size)
     results = []
     pending = []
-
     def _collect_result(res: Result):
         results.append(res)
-
     for f in files:
         a = pool.apply_async(process_file, args=(str(f),), callback=_collect_result)
         pending.append(a)
@@ -247,7 +226,5 @@ def main(argv: list[str] | None = None) -> int:
         f"\nSummary: processed={len(results)} updated={len(changed)} no-change={len(skipped)} errors={len(failed)} warnings={len(warnings)}"
     )
     return 0 if not failed else 2
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

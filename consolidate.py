@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 import argparse
 import ast
 from dataclasses import dataclass, field
@@ -10,7 +9,6 @@ import time
 from typing import NoReturn, Optional, Union
 import warnings
 from loguru import logger
-
 WORKERS: int = 8
 LOGURU_LOGFORMAT: str = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
 MERGED_FILE_HEADER_RE: re.Pattern[str] = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
@@ -70,8 +68,6 @@ OSPATH_METHOD_MAP: dict[str, str] = {
 }
 OSPATH_MAKEDIRS: str = "makedirs"
 OSPATH_GETSIZE: str = "getsize"
-
-
 @dataclass
 class ModuleInfo:
     key: ModuleKey
@@ -82,19 +78,14 @@ class ModuleInfo:
     modules: dict[str, ModuleKey] = field(default_factory=dict)
     defined: set[str] = field(default_factory=set)
     external: set[str] = field(default_factory=set)
-
-
 class LoadNames(ast.NodeVisitor):
     def __init__(self) -> None:
         self.names: set[str] = set()
-
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, ast.Load):
             self.names.add(node.id)
-
     def visit_Lambda(self, node: ast.Lambda) -> None:
         self.scan_defaults(node.args)
-
     def visit_FunctionDef(self, node: FuncNode) -> None:
         for decorator in node.decorator_list:
             self.visit(decorator)
@@ -105,29 +96,23 @@ class LoadNames(ast.NodeVisitor):
                 self.visit(arg.annotation)
         if node.returns is not None:
             self.visit(node.returns)
-
     visit_AsyncFunctionDef = visit_FunctionDef
-
     def scan_defaults(self, args: ast.arguments) -> None:
         for default in [*args.defaults, *args.kw_defaults]:
             if default is not None:
                 self.visit(default)
-
-
 class LocalImportResolver(ast.NodeTransformer):
     def __init__(self, info: ModuleInfo, index: dict[ModuleKey, ModuleInfo], root_name: str) -> None:
         super().__init__()
         self.info = info
         self.index = index
         self.root_name = root_name
-
     def locate(self, parts: ModuleKey, relative: bool) -> Optional[ModuleKey]:
         if parts in self.index:
             return parts
         if not relative and self.root_name and parts[:1] == (self.root_name,) and parts[1:] in self.index:
             return parts[1:]
         return None
-
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Optional[ast.AST]:
         tail: ModuleKey = tuple(node.module.split(".")) if node.module else ()
         relative = bool(node.level)
@@ -156,7 +141,6 @@ class LocalImportResolver(ast.NodeTransformer):
             else:
                 logger.warning("{}: unresolved local import {}", self.info.label, ast.unparse(node))
         return None
-
     def visit_Import(self, node: ast.Import) -> Optional[ast.AST]:
         kept: list[ast.alias] = []
         for alias in node.names:
@@ -175,8 +159,6 @@ class LocalImportResolver(ast.NodeTransformer):
             return None
         node.names = kept
         return node
-
-
 class NameRewriter(ast.NodeTransformer):
     def __init__(
         self,
@@ -190,13 +172,11 @@ class NameRewriter(ast.NodeTransformer):
         self.infos = infos
         self.final = final
         self.rewrite = rewrite
-
     def visit_Name(self, node: ast.Name) -> ast.AST:
         new = self.rewrite.get(node.id)
         if new is not None:
             node.id = new
         return node
-
     def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
         value = node.value
         if isinstance(value, ast.Name) and value.id in self.info.modules and isinstance(node.ctx, ast.Load):
@@ -206,8 +186,6 @@ class NameRewriter(ast.NodeTransformer):
             logger.warning("{}: cannot resolve {}.{}", self.info.label, value.id, node.attr)
         self.generic_visit(node)
         return node
-
-
 class SixImportRewriter(ast.NodeTransformer):
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Optional[ast.AST]:
         self.generic_visit(node)
@@ -221,7 +199,6 @@ class SixImportRewriter(ast.NodeTransformer):
         if m == "six":
             return None
         return node
-
     def visit_Import(self, node: ast.Import) -> Optional[ast.AST]:
         self.generic_visit(node)
         kept = [a for a in node.names if a.name != "six"]
@@ -229,8 +206,6 @@ class SixImportRewriter(ast.NodeTransformer):
             return None
         node.names = kept
         return node
-
-
 class SixTransformer(ast.NodeTransformer):
     def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
         self.generic_visit(node)
@@ -242,7 +217,6 @@ class SixTransformer(ast.NodeTransformer):
             if node.attr in SIX_ATTR_MAP:
                 return ast.Name(id=SIX_ATTR_MAP[node.attr], ctx=node.ctx)
         return node
-
     def visit_Call(self, node: ast.Call) -> ast.AST:
         self.generic_visit(node)
         func = node.func
@@ -261,13 +235,10 @@ class SixTransformer(ast.NodeTransformer):
         if method == "string_types" and not node.args:
             return ast.Name(id="str", ctx=ast.Load())
         return node
-
-
 class OsPathTransformer(ast.NodeTransformer):
     def __init__(self, bare_path: bool = False) -> None:
         super().__init__()
         self.bare_path = bare_path
-
     def _is_ospath(self, node: ast.expr) -> bool:
         if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
             if node.value.id == "os" and node.attr == "path":
@@ -275,7 +246,6 @@ class OsPathTransformer(ast.NodeTransformer):
             if self.bare_path and node.value.id == "path":
                 return True
         return False
-
     def visit_Call(self, node: ast.Call) -> ast.AST:
         self.generic_visit(node)
         func = node.func
@@ -322,7 +292,6 @@ class OsPathTransformer(ast.NodeTransformer):
             )
             return ast.Attribute(value=stat_call, attr="st_size", ctx=ast.Load())
         return node
-
     def visit_Subscript(self, node: ast.Subscript) -> ast.AST:
         self.generic_visit(node)
         slice_ = node.slice
@@ -340,13 +309,10 @@ class OsPathTransformer(ast.NodeTransformer):
             attr="suffix",
             ctx=ast.Load(),
         )
-
-
 class _ExecutorMethodRenamer(ast.NodeTransformer):
     def __init__(self, var: str) -> None:
         super().__init__()
         self.var = var
-
     def visit_Call(self, node: ast.Call) -> ast.AST:
         self.generic_visit(node)
         f = node.func
@@ -359,8 +325,6 @@ class _ExecutorMethodRenamer(ast.NodeTransformer):
             f.attr = "imap_unordered"
             f.value = ast.Name(id="_pool", ctx=ast.Load())
         return node
-
-
 class ExecutorTransformer(ast.NodeTransformer):
     def visit_With(self, node: ast.With) -> ast.AST | list[ast.stmt]:
         self.generic_visit(node)
@@ -409,8 +373,6 @@ class ExecutorTransformer(ast.NodeTransformer):
         ]
         try_node = ast.Try(body=new_body, handlers=[], orelse=[], finalbody=cleanup)
         return [pool_assign, try_node]
-
-
 class LoggingTransformer(ast.NodeTransformer):
     def visit_Assign(self, node: ast.Assign) -> Optional[ast.AST]:
         self.generic_visit(node)
@@ -424,13 +386,11 @@ class LoggingTransformer(ast.NodeTransformer):
         ):
             return None
         return node
-
     def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
         self.generic_visit(node)
         if isinstance(node.value, ast.Name) and node.value.id == "logging" and node.attr.isupper():
             return ast.Constant(value=node.attr)
         return node
-
     def visit_Expr(self, node: ast.Expr) -> ast.AST | list[ast.stmt]:
         self.generic_visit(node)
         call = node.value
@@ -503,13 +463,9 @@ class LoggingTransformer(ast.NodeTransformer):
                 )
             )
         return node
-
-
 def fail(msg: str) -> NoReturn:
     logger.error(msg)
     raise SystemExit(msg)
-
-
 def unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -519,8 +475,6 @@ def unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
-
-
 def parse_source(src: str, filename: str) -> ast.Module:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -531,16 +485,12 @@ def parse_source(src: str, filename: str) -> ast.Module:
     for item in caught:
         logger.warning("{}:{} {}", filename, item.lineno, item.message)
     return tree
-
-
 def make_info(rel: Path, tree: ast.Module) -> ModuleInfo:
     parts = tuple(p for p in rel.with_suffix("").parts if p not in (".", "..", "/", "\\"))
     is_init = bool(parts) and parts[-1] == "__init__"
     key: ModuleKey = parts[:-1] if is_init else parts
     package: ModuleKey = key if is_init else key[:-1]
     return ModuleInfo(key=key, label=rel.as_posix(), package=package, tree=tree)
-
-
 def collect_python_files(root: Path) -> list[Path]:
     if root.is_file():
         if root.suffix != ".py":
@@ -554,8 +504,6 @@ def collect_python_files(root: Path) -> list[Path]:
     if not files:
         fail(f"No .py files found under {root}")
     return sorted(files)
-
-
 def load_directory(root: Path) -> list[ModuleInfo]:
     base = root if root.is_dir() else root.parent
     infos: list[ModuleInfo] = []
@@ -563,8 +511,6 @@ def load_directory(root: Path) -> list[ModuleInfo]:
         tree = parse_source(path.read_text(encoding="utf-8"), str(path))
         infos.append(make_info(path.relative_to(base), tree))
     return infos
-
-
 def load_merged(path: Path) -> list[ModuleInfo]:
     text = path.read_text(encoding="utf-8")
     matches = list(MERGED_FILE_HEADER_RE.finditer(text))
@@ -581,12 +527,8 @@ def load_merged(path: Path) -> list[ModuleInfo]:
             body = body[1:]
         infos.append(make_info(Path(header), parse_source(body, f"{path}:{header}")))
     return infos
-
-
 def is_future_import(node: ast.AST) -> bool:
     return isinstance(node, ast.ImportFrom) and node.module == "__future__"
-
-
 def is_six_import(node: ast.AST) -> bool:
     if isinstance(node, ast.Import):
         return any(a.name == "six" or a.name.startswith("six.") for a in node.names)
@@ -594,8 +536,6 @@ def is_six_import(node: ast.AST) -> bool:
         m = node.module or ""
         return m == "six" or m.startswith("six.")
     return False
-
-
 def is_logging_import(node: ast.AST) -> bool:
     if isinstance(node, ast.Import):
         return any(a.name == "logging" for a in node.names)
@@ -603,12 +543,8 @@ def is_logging_import(node: ast.AST) -> bool:
         m = node.module or ""
         return m == "logging" or m.startswith("logging.")
     return False
-
-
 def is_string_expr(node: ast.AST) -> bool:
     return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
-
-
 def _is_named_assign(node: ast.AST, name: str) -> bool:
     return (
         isinstance(node, ast.Assign)
@@ -616,24 +552,16 @@ def _is_named_assign(node: ast.AST, name: str) -> bool:
         and isinstance(node.targets[0], ast.Name)
         and node.targets[0].id == name
     )
-
-
 def _make_assign(name: str, value: ast.expr) -> ast.Assign:
     return ast.Assign(targets=[ast.Name(id=name, ctx=ast.Store())], value=value)
-
-
 def _wrap_path(arg: ast.expr) -> ast.Call:
     return ast.Call(func=ast.Name(id="Path", ctx=ast.Load()), args=[arg], keywords=[])
-
-
 def _is_executor_ref(node: ast.expr) -> bool:
     if isinstance(node, ast.Name):
         return node.id in _EXECUTOR_NAMES
     if isinstance(node, ast.Attribute):
         return node.attr in _EXECUTOR_NAMES
     return False
-
-
 def _module_imports_path_bare(module: ast.Module) -> bool:
     for node in module.body:
         if isinstance(node, ast.ImportFrom) and node.module == "os":
@@ -641,8 +569,6 @@ def _module_imports_path_bare(module: ast.Module) -> bool:
                 if a.name == "path":
                     return True
     return False
-
-
 def strip_docstrings(tree: ast.AST) -> None:
     for node in ast.walk(tree):
         if isinstance(node, _DEF_NODES):
@@ -652,16 +578,12 @@ def strip_docstrings(tree: ast.AST) -> None:
             first = body[0]
             if is_string_expr(first):
                 node.body = body[1:] or [ast.Pass()]
-
-
 def inject_standard_imports(module: ast.Module) -> ast.Module:
     prefix: list[ast.stmt] = []
     for line in _STANDARD_HEADER:
         prefix.extend(ast.parse(line).body)
     module.body = prefix + module.body
     return module
-
-
 def fix_empty_bodies(tree: ast.AST) -> None:
     for node in ast.walk(tree):
         if isinstance(node, ast.Module):
@@ -669,8 +591,6 @@ def fix_empty_bodies(tree: ast.AST) -> None:
         body = getattr(node, "body", None)
         if isinstance(body, list) and not body:
             body.append(ast.Pass())
-
-
 def defined_names(node: ast.stmt) -> list[str]:
     if isinstance(node, DEFINITION_NODES):
         return [node.name]
@@ -679,15 +599,11 @@ def defined_names(node: ast.stmt) -> list[str]:
         if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store):
             names.append(child.id)
     return names
-
-
 def top_level_names(tree: ast.Module) -> set[str]:
     names: set[str] = set()
     for node in tree.body:
         names.update(defined_names(node))
     return names
-
-
 def bound_import_names(tree: ast.Module) -> set[str]:
     names: set[str] = set()
     for node in tree.body:
@@ -698,8 +614,6 @@ def bound_import_names(tree: ast.Module) -> set[str]:
             for alias in node.names:
                 names.add(alias.asname or alias.name)
     return names
-
-
 def unique_name(base: str, taken: set[str]) -> str:
     candidate = base
     counter = 2
@@ -708,13 +622,9 @@ def unique_name(base: str, taken: set[str]) -> str:
         counter += 1
     taken.add(candidate)
     return candidate
-
-
 def module_prefix(info: ModuleInfo) -> str:
     raw = info.key[-1] if info.key else "root"
     return re.sub(r"\W+", "_", raw).strip("_") or "mod"
-
-
 def plan_renames(modules: list[ModuleInfo]) -> Renames:
     groups: dict[str, list[tuple[ModuleInfo, ast.stmt]]] = {}
     taken: set[str] = set()
@@ -737,8 +647,6 @@ def plan_renames(modules: list[ModuleInfo]) -> Renames:
             final[(info.key, name)] = new_name
             logger.info("Renamed {}: {} -> {}", info.label, name, new_name)
     return final
-
-
 def resolve_name(
     infos: dict[ModuleKey, ModuleInfo],
     key: ModuleKey,
@@ -762,8 +670,6 @@ def resolve_name(
     if target is None:
         return None
     return resolve_name(infos, target[0], target[1], final, visited)
-
-
 def apply_renames(info: ModuleInfo, infos: dict[ModuleKey, ModuleInfo], final: Renames) -> None:
     rewrite: dict[str, str] = {}
     for node in info.tree.body:
@@ -780,15 +686,11 @@ def apply_renames(info: ModuleInfo, infos: dict[ModuleKey, ModuleInfo], final: R
             rewrite[alias] = resolved
     if rewrite or info.modules:
         info.tree = apply_transformer(NameRewriter(info, infos, final, rewrite), info.tree)
-
-
 def apply_transformer(transformer: ast.NodeTransformer, module: ast.Module) -> ast.Module:
     result = transformer.visit(module)
     if not isinstance(result, ast.Module):
         fail(f"{type(transformer).__name__} did not return a module")
     return result
-
-
 def merge_modules(modules: list[ModuleInfo]) -> list[ast.stmt]:
     merged: list[ast.stmt] = []
     for info in modules:
@@ -803,14 +705,10 @@ def merge_modules(modules: list[ModuleInfo]) -> list[ast.stmt]:
                 continue
             merged.append(node)
     return merged
-
-
 def dependencies(node: ast.stmt) -> set[str]:
     visitor = LoadNames()
     visitor.visit(node)
     return visitor.names
-
-
 def constant_name(node: ast.stmt) -> Optional[str]:
     if isinstance(node, ast.Assign):
         if node.targets and all(isinstance(t, ast.Name) and t.id.isupper() for t in node.targets):
@@ -820,8 +718,6 @@ def constant_name(node: ast.stmt) -> Optional[str]:
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
         return node.target.id
     return None
-
-
 def is_main_guard(node: ast.stmt) -> bool:
     return (
         isinstance(node, ast.If)
@@ -834,8 +730,6 @@ def is_main_guard(node: ast.stmt) -> bool:
         and isinstance(node.test.comparators[0], ast.Constant)
         and node.test.comparators[0].value == "__main__"
     )
-
-
 def is_import_block(node: ast.stmt) -> bool:
     if isinstance(node, ast.Try):
         return bool(node.body) and all(isinstance(n, (ast.Import, ast.ImportFrom)) for n in node.body)
@@ -847,12 +741,8 @@ def is_import_block(node: ast.stmt) -> bool:
             and "TYPE_CHECKING" in ast.dump(node.test)
         )
     return False
-
-
 def is_stdlib(module: str) -> bool:
     return module.split(".")[0] in STDLIB_MODULES
-
-
 def unique_nodes(body: list[ast.stmt]) -> list[ast.stmt]:
     seen: set[str] = set()
     result: list[ast.stmt] = []
@@ -863,8 +753,6 @@ def unique_nodes(body: list[ast.stmt]) -> list[ast.stmt]:
         seen.add(signature)
         result.append(node)
     return result
-
-
 def merge_imports(nodes: list[ast.stmt]) -> list[list[ast.stmt]]:
     plain: dict[str, set[Optional[str]]] = {}
     froms: dict[str, set[tuple[str, Optional[str]]]] = {}
@@ -895,8 +783,6 @@ def merge_imports(nodes: list[ast.stmt]) -> list[list[ast.stmt]]:
         if group:
             groups.append(group)
     return groups
-
-
 def order_by_dependencies(items: list[ast.stmt]) -> list[ast.stmt]:
     owners: dict[str, ast.stmt] = {}
     for item in items:
@@ -906,7 +792,6 @@ def order_by_dependencies(items: list[ast.stmt]) -> list[ast.stmt]:
     done: set[int] = set()
     active: set[int] = set()
     ordered: list[ast.stmt] = []
-
     def emit(item: ast.stmt) -> None:
         if id(item) in done or id(item) in active:
             return
@@ -918,12 +803,9 @@ def order_by_dependencies(items: list[ast.stmt]) -> list[ast.stmt]:
         active.discard(id(item))
         done.add(id(item))
         ordered.append(item)
-
     for item in items:
         emit(item)
     return ordered
-
-
 def render_module(body: list[ast.stmt]) -> str:
     unique = unique_nodes(body)
     import_nodes = [n for n in unique if isinstance(n, (ast.Import, ast.ImportFrom))]
@@ -968,8 +850,6 @@ def render_module(body: list[ast.stmt]) -> str:
         out += separator + text
         previous = kind
     return out + "\n"
-
-
 def refactor(modules: list[ModuleInfo], output: Path, root_name: str) -> None:
     started = time.perf_counter()
     logger.info("Merging {} module(s) into {}", len(modules), output)
@@ -1012,8 +892,6 @@ def refactor(modules: list[ModuleInfo], output: Path, root_name: str) -> None:
         output.stat().st_size,
         time.perf_counter() - started,
     )
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Consolidate a multi-file Python package into one module.")
     parser.add_argument(
@@ -1072,7 +950,5 @@ def main(argv: Optional[list[str]] = None) -> int:
             root_name = input_path.resolve().name
     refactor(modules, output, root_name)
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

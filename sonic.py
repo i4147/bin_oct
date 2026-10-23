@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
 import argparse
 from collections import Counter
 from datetime import UTC, datetime
@@ -13,27 +12,19 @@ import tempfile
 import time
 from typing import TYPE_CHECKING
 from dh import fsz
-
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-
 class LineProcessor:
     def __init__(self, verbose: bool = False) -> None:
         self.verbose = verbose
-
     def log(self, message: str) -> None:
         if self.verbose:
             print(f"[INFO] {message}")
-
     def get_file_size(self, path: Path) -> int:
         return path.stat().st_size
-
-
 class MmapReader(LineProcessor):
     def __init__(self, verbose: bool = False) -> None:
         super().__init__(verbose=verbose)
-
     def read_lines_mmap(
         self, path: Path, encoding: str = "utf-8", skip_empty: bool = False
     ) -> Generator[str, None, None]:
@@ -68,7 +59,6 @@ class MmapReader(LineProcessor):
         except Exception:
             msg = "error"
             raise OSError(msg)
-
     def read_lines_regular(
         self, path: Path, encoding: str = "utf-8", skip_empty: bool = False
     ) -> Generator[str, None, None]:
@@ -82,7 +72,6 @@ class MmapReader(LineProcessor):
         except Exception:
             msg = "error"
             raise OSError(msg)
-
     def read_lines(
         self,
         path: Path,
@@ -94,18 +83,14 @@ class MmapReader(LineProcessor):
             yield from self.read_lines_mmap(path, encoding, skip_empty)
         else:
             yield from self.read_lines_regular(path, encoding, skip_empty)
-
-
 class LineSorter(LineProcessor):
     def __init__(self, verbose: bool = False) -> None:
         super().__init__(verbose=verbose)
-
     def sort_in_memory(self, lines: list[str], reverse: bool = False, case_insensitive: bool = False) -> list[str]:
         self.log(f"Sorting {len(lines)} lines in memory")
         if case_insensitive:
-            return sorted(lines, key=str.lower, reverse=reverse)
+            return sorted(lines, key=lambda s: (s.lower(), s), reverse=reverse)
         return sorted(lines, reverse=reverse)
-
     def sort_with_temp_files(
         self,
         path: Path,
@@ -144,12 +129,9 @@ class LineSorter(LineProcessor):
                 if temp_file.exists():
                     temp_file.unlink()
             raise
-
-
 class LineDeduplicator(LineProcessor):
     def __init__(self, verbose: bool = False) -> None:
         super().__init__(verbose=verbose)
-
     def deduplicate_list(self, lines: list[str], preserve_order: bool = False) -> list[str]:
         if preserve_order:
             self.log(f"Deduplicating {len(lines)} lines (preserving order)")
@@ -162,7 +144,6 @@ class LineDeduplicator(LineProcessor):
             return unique
         self.log(f"Deduplicating {len(lines)} lines")
         return list(dict.fromkeys(lines))
-
     def deduplicate_generator(self, lines: Generator[str, None, None]) -> Generator[str, None, None]:
         seen = set()
         count = 0
@@ -172,8 +153,6 @@ class LineDeduplicator(LineProcessor):
                 yield line
                 count += 1
         self.log(f"Found {count} unique lines")
-
-
 class FileSorter(LineProcessor):
     def __init__(self, verbose: bool = False, dry_run: bool = False) -> None:
         super().__init__(verbose=verbose)
@@ -181,7 +160,6 @@ class FileSorter(LineProcessor):
         self.reader = MmapReader(verbose=verbose)
         self.sorter = LineSorter(verbose=verbose)
         self.deduplicator = LineDeduplicator(verbose=verbose)
-
     def process_file(
         self,
         path: str,
@@ -202,32 +180,26 @@ class FileSorter(LineProcessor):
             output_path_obj = input_path
         else:
             output_path_obj = Path(output_path)
-        print("\n╔════════════════════════════════════════════════════════════╗")
-        print("║              File Line Sorter & Deduplicator               ║")
-        print("╚════════════════════════════════════════════════════════════╝\n")
-        print(f"Input file: {input_path}")
-        print(f"Output file: {output_path_obj}")
-        print(f"Mode: {('DRY RUN' if self.dry_run else 'NORMAL')}")
-        print("-" * 40)
         start_time = time.time()
         try:
             original_size = self.get_file_size(input_path)
-            original_lines = sum(1 for _ in self.reader.read_lines(input_path, encoding, skip_empty))
-            self.log(f"Original file: {original_lines} lines, {fsz(original_size)}")
             lines = list(self.reader.read_lines(input_path, encoding, skip_empty))
+            original_lines = len(lines)
+            self.log(f"Original file: {original_lines} lines, {fsz(original_size)}")
             if sort:
                 lines = self.sorter.sort_in_memory(lines, reverse, case_insensitive)
                 self.log("Lines sorted")
-            unique_count = len(lines)
+            duplicate_count = 0
             if unique:
+                before = len(lines)
                 lines = self.deduplicator.deduplicate_list(lines, preserve_order=not sort)
-                unique_count = original_lines - len(lines)
-                self.log(f"Removed {unique_count} duplicate lines")
+                duplicate_count = before - len(lines)
+                self.log(f"Removed {duplicate_count} duplicate lines")
             if not self.dry_run:
-                if backup and output_path_obj == input_path:
-                    backup_path = input_path.with_suffix(input_path.suffix + ".bak")
-                    shutil.copy2(input_path, backup_path)
-                    self.log(f"Backup created: {backup_path}")
+                #                if output_path_obj == input_path:
+                #                    backup_path = input_path.with_suffix(input_path.suffix + ".bak")
+                #                    shutil.copy2(input_path, backup_path)
+                #                    self.log(f"Backup created: {backup_path}")
                 output_path_obj.parent.mkdir(parents=True, exist_ok=True)
                 with output_path_obj.open("w", encoding=encoding) as f:
                     f.writelines(line + "\n" for line in lines)
@@ -248,35 +220,22 @@ class FileSorter(LineProcessor):
                 "final_lines": len(lines),
                 "after_bytes": after,
                 "after": fsz(after),
-                "duplicate_lines": unique_count if unique else 0,
+                "duplicate_lines": duplicate_count,
                 "size_reduction": original_size - after if original_size > 0 else 0,
-                "size_reduction_pct": ((original_size - after) / original_size * 40 if original_size > 0 else 0),
+                "size_reduction_pct": ((original_size - after) / original_size * 100 if original_size > 0 else 0),
                 "processing_time": elapsed_time,
                 "lines_per_second": (original_lines / elapsed_time if elapsed_time > 0 else 0),
             }
         except Exception:
             msg = "error"
             raise RuntimeError(msg)
-
     def print_stats(self, stats: dict) -> None:
-        print("\n" + "=" * 40)
-        print("STATISTICS")
-        print("-" * 40)
-        print(f"Original lines: {stats['original_lines']:,}")
-        print(f"Final lines: {stats['final_lines']:,}")
-        if stats["duplicate_lines"] > 0:
-            dup_pct = stats["duplicate_lines"] / stats["original_lines"] * 40 if stats["original_lines"] > 0 else 0
-            print(f"Duplicate lines removed: {stats['duplicate_lines']:,} ({dup_pct:.1f}%)")
-        print()
-        print(f"Original size: {stats['original_size']}")
-        print(f"Final size: {stats['after']}")
-        if stats["size_reduction"] > 0:
-            print(f"Size reduction: {fsz(stats['size_reduction'])} ({stats['size_reduction_pct']:.1f}%)")
-        print()
-        print(f"Processing time: {stats['processing_time']:.2f} seconds")
-        print(f"Speed: {stats['lines_per_second']:,.0f} lines/second")
-        print("-" * 40)
-
+        dup = stats["duplicate_lines"]
+        if dup > 0:
+            prefix = "would remove" if self.dry_run else "removed"
+            print(f"{prefix} {dup} duplicate lines")
+        else:
+            print("no duplicate line")
     def save_report(self, stats: dict, report_file: str | None = None) -> None:
         if report_file is None:
             report_file = "sort_report.json"
@@ -284,16 +243,13 @@ class FileSorter(LineProcessor):
         try:
             with Path(report_file).open("w", encoding="utf-8") as f:
                 json.dump(report, f, indent=2)
-            print(f"\n✓ Report saved: {report_file}")
+            print(f"Report saved: {report_file}")
         except Exception as e:
-            print(f"\n✗ Error saving report: {e!s}")
-
-
+            print(f"Error saving report: {e!s}")
 class FileAnalyzer(LineProcessor):
     def __init__(self, verbose: bool = False) -> None:
         super().__init__(verbose=verbose)
         self.reader = MmapReader(verbose=verbose)
-
     def analyze_file(self, path: Path, encoding: str = "utf-8") -> dict:
         get_size = self.get_file_size(path)
         lines = list(self.reader.read_lines(path, encoding))
@@ -309,12 +265,11 @@ class FileAnalyzer(LineProcessor):
             "total_lines": len(lines),
             "unique_lines": len(line_counts),
             "duplicate_lines": duplicate_count,
-            "duplicate_percentage": duplicate_count / len(lines) * 40 if lines else 0,
+            "duplicate_percentage": duplicate_count / len(lines) * 100 if lines else 0,
             "max_line_length": max_length,
             "avg_line_length": avg_length,
             "most_common_lines": most_common,
         }
-
     def print_analysis(self, path: Path, encoding: str = "utf-8") -> None:
         analysis = self.analyze_file(path, encoding)
         print(f"\n{'=' * 40}")
@@ -334,13 +289,11 @@ class FileAnalyzer(LineProcessor):
                 display_line = line[:47] + "..." if len(line) > 50 else line
                 print(f"  ({count}x) {display_line}")
         print(f"{'=' * 40}\n")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Sort lines in a file and remove duplicates (uses mmap for large files)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="\nExamples:\n  python sort_unique_lines.py input.txt\n  python sort_unique_lines.py input.txt --no-unique\n  python sort_unique_lines.py input.txt --no-sort\n  python sort_unique_lines.py input.txt --output sorted_output.txt\n  python sort_unique_lines.py input.txt --reverse\n  python sort_unique_lines.py input.txt --case-insensitive\n  python sort_unique_lines.py input.txt --skip-empty\n  python sort_unique_lines.py input.txt --dry-run -v\n  python sort_unique_lines.py input.txt --analyze\n  python sort_unique_lines.py input.txt --report stats.json\n  python sort_unique_lines.py input.txt -v\n        ",
+        epilog="\nExamples:\n  python sort_unique_lines.py input.txt\n  python sort_unique_lines.py input.txt --no-unique\n  python sort_unique_lines.py input.txt --no-sort\n  python sort_unique_lines.py input.txt --output sorted_output.txt\n  python sort_unique_lines.py input.txt --reverse\n  python sort_unique_lines.py input.txt -i\n  python sort_unique_lines.py input.txt --skip-empty\n  python sort_unique_lines.py input.txt --dry-run -v\n  python sort_unique_lines.py input.txt --analyze\n  python sort_unique_lines.py input.txt --report stats.json\n  python sort_unique_lines.py input.txt -v\n        ",
     )
     parser.add_argument("filename", help="Input filename")
     parser.add_argument("--output", "-o", help="Output filename (default: overwrite input)")
@@ -375,7 +328,7 @@ def main() -> None:
     )
     parser.add_argument("--analyze", action="store_true", help="Analyze file before processing")
     parser.add_argument("--report", "-R", metavar="FILE", help="Save report to JSON file")
-    parser.add_argument("-v", "--verbose", default=True, action="store_true", help="Verbose output")
+    parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose output")
     parser.add_argument("--encoding", default="utf-8", help="File encoding (default: utf-8)")
     args = parser.parse_args()
     try:
@@ -405,7 +358,5 @@ def main() -> None:
     except Exception as e:
         print(f"Error: {e!s}", file=sys.stderr)
         sys.exit(1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

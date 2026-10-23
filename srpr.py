@@ -7,7 +7,7 @@ from dh import runcmd
 
 
 if __name__ == "__main__":
-    from string import ascii_lowercase,ascii_uppercase
+    from string import ascii_lowercase, ascii_uppercase
 
     for char in ascii_lowercase:
         cmd = ["srp", char]

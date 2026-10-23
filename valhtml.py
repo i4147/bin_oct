@@ -5,7 +5,6 @@ from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 from loguru import logger
-
 VOID_ELEMENTS = {
     "area",
     "base",
@@ -22,26 +21,20 @@ VOID_ELEMENTS = {
     "track",
     "wbr",
 }
-
-
 class _TagChecker(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack = []
         self.errors = []
-
     def _pos(self):
         line, col = self.getpos()
         return f"line {line}, col {col}"
-
     def handle_starttag(self, tag, attrs):
         if tag in VOID_ELEMENTS:
             return
         self.stack.append((tag, self._pos()))
-
     def handle_startendtag(self, tag, attrs):
         return
-
     def handle_endtag(self, tag):
         if tag in VOID_ELEMENTS:
             self.errors.append(f"{self._pos()}: closing tag </{tag}> for void element")
@@ -54,14 +47,11 @@ class _TagChecker(HTMLParser):
                 self.stack.pop()
                 return
         self.errors.append(f"{self._pos()}: stray closing tag </{tag}>")
-
     def finish(self):
         super().close()
         for tag, pos in self.stack:
             self.errors.append(f"unclosed <{tag}> opened at {pos}")
         return self.errors
-
-
 def check_tags(raw):
     checker = _TagChecker()
     try:
@@ -69,34 +59,27 @@ def check_tags(raw):
         return checker.finish()
     except Exception as e:
         return [f"tokenizer error: {e}"]
-
-
 class _StackParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=False)
         self.stack = []
         self.errors = []
         self.output = []
-
     def _pos(self):
         line, col = self.getpos()
         return f"line {line}, col {col}"
-
     @staticmethod
     def _attrs(attrs):
         out = []
         for k, v in attrs:
             out.append(f" {k}" if v is None else f' {k}="{escape(v, quote=True)}"')
         return "".join(out)
-
     def handle_starttag(self, tag, attrs):
         self.output.append(f"<{tag}{self._attrs(attrs)}>")
         if tag not in VOID_ELEMENTS:
             self.stack.append((tag, self._pos()))
-
     def handle_startendtag(self, tag, attrs):
         self.output.append(f"<{tag}{self._attrs(attrs)}/>")
-
     def handle_endtag(self, tag):
         if tag in VOID_ELEMENTS:
             self.errors.append(f"{self._pos()}: closing </{tag}> for void element; removed")
@@ -115,25 +98,18 @@ class _StackParser(HTMLParser):
             self.output.append(f"</{t}>")
         self.stack.pop()
         self.output.append(f"</{tag}>")
-
     def handle_data(self, data):
         self.output.append(data)
-
     def handle_entityref(self, name):
         self.output.append(f"&{name};")
-
     def handle_charref(self, name):
         self.output.append(f"&#{name};")
-
     def handle_comment(self, data):
         self.output.append(f"<!--{data}-->")
-
     def handle_decl(self, decl):
         self.output.append(f"<!{decl}>")
-
     def handle_pi(self, data):
         self.output.append(f"<?{data}>")
-
     def finish(self):
         super().close()
         while self.stack:
@@ -141,20 +117,15 @@ class _StackParser(HTMLParser):
             self.errors.append(f"EOF: unclosed <{tag}> at {pos}; inserted </{tag}>")
             self.output.append(f"</{tag}>")
         return "".join(self.output), self.errors
-
-
 def backend_html_parser(raw):
     p = _StackParser()
     p.feed(raw)
     return p.finish()
-
-
 def backend_lxml(raw):
     from lxml import (
         etree,
         html as lxml_html,
     )
-
     errors = []
     try:
         doc = lxml_html.fromstring(raw)
@@ -164,12 +135,9 @@ def backend_lxml(raw):
     if fixed.strip() != raw.strip():
         errors.append("lxml: document was re-serialized (structure changed)")
     return fixed, errors
-
-
 def backend_html5lib(raw):
     from xml.etree import ElementTree as ET
     import html5lib
-
     errors = []
     try:
         tree = html5lib.parse(raw, treebuilder="etree", namespaceHTMLElements=False)
@@ -180,11 +148,8 @@ def backend_html5lib(raw):
     if fixed.strip() != raw.strip():
         errors.append("html5lib: browser-equivalent tree differs from source")
     return fixed, errors
-
-
 def backend_beautifulsoup(raw):
     from bs4 import BeautifulSoup
-
     errors = []
     try:
         soup = BeautifulSoup(raw, "html.parser")
@@ -194,11 +159,8 @@ def backend_beautifulsoup(raw):
     if fixed != raw:
         errors.append("bs4: re-serialized output differs from source")
     return fixed, errors
-
-
 def backend_tidy(raw):
     from tidylib import tidy_document
-
     options = {
         "output-xhtml": 0,
         "output-html": 1,
@@ -215,8 +177,6 @@ def backend_tidy(raw):
         return raw, [f"tidy: {e}"]
     errors = [f"tidy: {m.strip()}" for m in msgs.splitlines() if m.strip()]
     return fixed, errors
-
-
 BACKENDS = {
     "html.parser": backend_html_parser,
     "lxml": backend_lxml,
@@ -224,8 +184,6 @@ BACKENDS = {
     "bs4": backend_beautifulsoup,
     "tidy": backend_tidy,
 }
-
-
 def process_file(path, backend_fn):
     try:
         raw = path.read_text(encoding="utf-8")
@@ -267,8 +225,6 @@ def process_file(path, backend_fn):
         return "error"
     logger.success(f"{path}: repaired")
     return "fixed"
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-b", "--backend", choices=sorted(BACKENDS), default="html.parser")
@@ -285,7 +241,5 @@ def main():
     for f in files:
         counts[process_file(f, backend_fn)] += 1
     logger.info(f"Summary -> OK: {counts['ok']}, Fixed: {counts['fixed']}, Errors: {counts['error']}")
-
-
 if __name__ == "__main__":
     main()

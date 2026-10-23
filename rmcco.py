@@ -11,7 +11,6 @@ import tempfile
 from typing import Final
 import zipfile
 from loguru import logger
-
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",
     "__pycache__",
@@ -25,8 +24,6 @@ SKIP_DIRS: Final[frozenset[str]] = frozenset({
     "node_modules",
 })
 POOL_SIZE: Final[int] = 8
-
-
 @dataclass
 class FileResult:
     path: str
@@ -35,8 +32,6 @@ class FileResult:
     comments_removed: int = 0
     docstrings_removed: int = 0
     is_wheel_member: bool = False
-
-
 @dataclass
 class ProcessingStats:
     total_files: int = 0
@@ -45,14 +40,11 @@ class ProcessingStats:
     docstrings_removed: int = 0
     errors: int = 0
     results: list[FileResult] = field(default_factory=list)
-
-
 class CommentRemover:
     def __init__(self, source: str) -> None:
         self.source: str = source
         self.lines: list[str] = source.split("\n")
         self.comments_removed: int = 0
-
     def remove_comments(self) -> str:
         result_lines: list[str] = []
         for line in self.lines:
@@ -60,7 +52,6 @@ class CommentRemover:
             result_lines.append(processed_line)
             self.comments_removed += removed
         return "\n".join(result_lines)
-
     def _process_line(self, line: str) -> tuple[str, int]:
         if self._is_shebang(line):
             return (line, 0)
@@ -73,19 +64,15 @@ class CommentRemover:
         if removed and (not processed.strip()):
             return ("", 1)
         return (processed, removed)
-
     @staticmethod
     def _is_shebang(line: str) -> bool:
         return line.startswith("#!")
-
     @staticmethod
     def _is_encoding_declaration(line: str) -> bool:
         return re.match(r"#.*?coding[:=]\s*([-\w.]+)", line) is not None
-
     @staticmethod
     def _is_type_comment(line: str) -> bool:
         return "# type:" in line or "# noqa" in line or "# pragma" in line or ("# pylint" in line)
-
     @staticmethod
     def _strip_inline_comment(line: str) -> str:
         result: list[str] = []
@@ -125,13 +112,10 @@ class CommentRemover:
             result.append(char)
             i += 1
         return "".join(result).rstrip()
-
-
 class DocstringRemover(ast.NodeTransformer):
     def __init__(self, remove_module_docstring: bool = False) -> None:
         self.remove_module_docstring: bool = remove_module_docstring
         self.docstrings_removed: int = 0
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         if (
             self._has_docstring(node)
@@ -148,7 +132,6 @@ class DocstringRemover(ast.NodeTransformer):
                 node.body = [ast.Pass()]
         self.generic_visit(node)
         return node
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
         if (
             self._has_docstring(node)
@@ -162,7 +145,6 @@ class DocstringRemover(ast.NodeTransformer):
                 node.body = [ast.Pass()]
         self.generic_visit(node)
         return node
-
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         if (
             self._has_docstring(node)
@@ -176,7 +158,6 @@ class DocstringRemover(ast.NodeTransformer):
                 node.body = [ast.Pass()]
         self.generic_visit(node)
         return node
-
     def visit_Module(self, node: ast.Module) -> ast.Module:
         if (
             self.remove_module_docstring
@@ -191,7 +172,6 @@ class DocstringRemover(ast.NodeTransformer):
             node.body = node.body[1:]
         self.generic_visit(node)
         return node
-
     @staticmethod
     def _has_docstring(node: ast.AST) -> bool:
         return (
@@ -200,19 +180,15 @@ class DocstringRemover(ast.NodeTransformer):
             and isinstance(node.body[0].value, ast.Constant)
             and isinstance(node.body[0].value.value, str)
         )
-
     @staticmethod
     def _is_module_level(node: ast.AST) -> bool:
         return False
-
-
 def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -> tuple[str, int]:
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return source, 0
     docstring_lines: set[int] = set()
-
     def _collect_docstring_lines(node: ast.AST) -> None:
         body = getattr(node, "body", None)
         if not body:
@@ -223,7 +199,6 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
             end = getattr(first, "end_lineno", start)
             for line_no in range(start, end + 1):
                 docstring_lines.add(line_no)
-
     if remove_module_docstring:
         _collect_docstring_lines(tree)
     for node in ast.walk(tree):
@@ -270,8 +245,6 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
     for line_no, text in sorted(insertions, reverse=True):
         lines.insert(line_no, text)
     return "\n".join(lines), removed_count
-
-
 def process_single_file(path: Path, remove_module_docstring: bool = False, dry_run: bool = False) -> FileResult:
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -307,8 +280,6 @@ def process_single_file(path: Path, remove_module_docstring: bool = False, dry_r
         )
     except Exception as e:
         return FileResult(path=str(path), is_error=True, error_message=str(e))
-
-
 def process_wheel_file(
     wheel_path: Path, remove_module_docstring: bool = False, dry_run: bool = False
 ) -> list[FileResult]:
@@ -346,13 +317,9 @@ def process_wheel_file(
                 )
             )
     return results
-
-
 def _worker_process_file(args: tuple[Path, bool, bool]) -> FileResult:
     path, remove_module_docstring, dry_run = args
     return process_single_file(path, remove_module_docstring, dry_run)
-
-
 def discover_files(start_path: str) -> tuple[list[Path], list[Path]]:
     start = Path(start_path).resolve()
     if not start.exists():
@@ -376,12 +343,8 @@ def discover_files(start_path: str) -> tuple[list[Path], list[Path]]:
             elif path.suffix == ".whl":
                 wheel_files.append(path)
     return (python_files, wheel_files)
-
-
 def print_header(python_count: int, wheel_count: int) -> None:
     print(f"Found: {python_count} Python files, {wheel_count} wheel files")
-
-
 def print_results(stats: ProcessingStats, base_dir: Path) -> None:
     results = sorted(stats.results, key=lambda r: r.path)
     for result in results:
@@ -399,8 +362,6 @@ def print_results(stats: ProcessingStats, base_dir: Path) -> None:
                     f"{result.docstrings_removed} docstring{('s' if result.docstrings_removed != 1 else '')}"
                 )
             print(f"✓ {result.path} ({', '.join(changes)} removed)")
-
-
 def print_summary(stats: ProcessingStats) -> None:
     print("=" * 40)
     print("Summary:")
@@ -411,8 +372,6 @@ def print_summary(stats: ProcessingStats) -> None:
     if stats.errors > 0:
         print(f"  Errors: {stats.errors}")
     print("=" * 40)
-
-
 def _accumulate_result(stats: ProcessingStats, result: FileResult) -> None:
     stats.results.append(result)
     if result.is_error:
@@ -421,8 +380,6 @@ def _accumulate_result(stats: ProcessingStats, result: FileResult) -> None:
         stats.changed_files += 1
         stats.comments_removed += result.comments_removed
         stats.docstrings_removed += result.docstrings_removed
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Strip comments and docstrings from Python source files",
@@ -478,7 +435,5 @@ def main() -> int:
     print_results(stats, base_dir)
     print_summary(stats)
     return 0 if stats.errors == 0 else 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

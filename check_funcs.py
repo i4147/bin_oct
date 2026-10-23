@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import ast
 from pathlib import Path
 from loguru import logger
-
-
 def extract_definitions(path: Path) -> dict[str, list[str]]:
     definitions = {"functions": [], "classes": [], "constants": []}
     try:
@@ -35,8 +32,6 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
             if name.isupper() and not name.startswith("_"):
                 definitions["constants"].append(name)
     return definitions
-
-
 def extract_exports_from_init(init_path: Path) -> set[str]:
     exported = set()
     try:
@@ -68,8 +63,6 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
                 name = alias.asname or alias.name.split(".")[0]
                 exported.add(name)
     return exported
-
-
 def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[str]]]:
     if directory is None:
         directory = Path.cwd()
@@ -97,8 +90,6 @@ def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[s
         if any(file_missing.values()):
             missing[py_file.name] = file_missing
     return missing
-
-
 def main():
     logger.remove()
     logger.add(
@@ -131,7 +122,5 @@ def main():
     print("=" * 70)
     logger.warning(f"Total missing definitions: {total}")
     return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

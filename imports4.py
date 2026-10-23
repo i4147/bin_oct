@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -18,7 +17,6 @@ from dh import PKG_MAPPING, STDLIB
 import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
-
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
 CACHE_DIR = Path.home() / ".cache" / "piplist"
 CACHE_TTL = 86400
@@ -44,22 +42,14 @@ DEFAULT_EXCLUDE_DIRS = {
 OPTIONAL_EXC = ("ImportError", "ModuleNotFoundError")
 log = logging.getLogger("piplist")
 _MISSING = object()
-
-
 def normalize(name):
     return re.sub(r"[-_.]+", "-", name).lower()
-
-
 IMPORT_TO_PKG = {}
 for _pkg, _imp in PKG_MAPPING.items():
     IMPORT_TO_PKG.setdefault(_imp, _pkg)
 STDLIB_SET = set(STDLIB) if not isinstance(STDLIB, set) else STDLIB
-
-
 def cache_key(module):
     return hashlib.sha256(module.encode("utf-8")).hexdigest()[:16]
-
-
 def read_cache(module):
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     p = CACHE_DIR / (cache_key(module) + ".json")
@@ -72,15 +62,11 @@ def read_cache(module):
     if time.time() - data.get("ts", 0) > CACHE_TTL:
         return _MISSING
     return data.get("value", _MISSING)
-
-
 def write_cache(module, value):
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     p = CACHE_DIR / (cache_key(module) + ".json")
     with contextlib.suppress(Exception):
         p.write_text(json.dumps({"ts": time.time(), "value": value}))
-
-
 def load_pypi_index(path=PYPI_INDEX_PATH):
     try:
         data = json.loads(Path(path).read_text())
@@ -89,8 +75,6 @@ def load_pypi_index(path=PYPI_INDEX_PATH):
         return set()
     keys = data.keys() if isinstance(data, dict) else data
     return {normalize(k) for k in keys}
-
-
 def get_installed_packages(python=None):
     python = python or sys.executable
     cmd = [python, "-m", "pip", "freeze"]
@@ -107,8 +91,6 @@ def get_installed_packages(python=None):
             name, version = line, None
         result[normalize(name)] = (name, version)
     return result
-
-
 def get_imports_info(module, pypi_server="https://pypi.python.org/pypi/", proxy=None):
     try:
         response = requests.get("{0}{1}/json".format(pypi_server, module), proxies=proxy, timeout=15)
@@ -125,8 +107,6 @@ def get_imports_info(module, pypi_server="https://pypi.python.org/pypi/", proxy=
         log.debug("network error for %s: %s", module, e)
         return None
     return str(module) + "==" + str(data.latest_release_id)
-
-
 def get_imports_info_cached(module, proxy=None):
     cached = read_cache(module)
     if cached is not _MISSING:
@@ -134,8 +114,6 @@ def get_imports_info_cached(module, proxy=None):
     result = get_imports_info(module, proxy=proxy)
     write_cache(module, result)
     return result
-
-
 def extract_imports_from_source(source, include_optional=False):
     try:
         tree = ast.parse(source)
@@ -169,8 +147,6 @@ def extract_imports_from_source(source, include_optional=False):
         for child in ast.iter_child_nodes(node):
             stack.append((child, in_optional))
     return found
-
-
 def extract_imports_from_notebook(path, include_optional=False):
     try:
         nb = json.loads(Path(path).read_text(encoding="utf-8", errors="ignore"))
@@ -185,8 +161,6 @@ def extract_imports_from_notebook(path, include_optional=False):
             continue
         found.extend(extract_imports_from_source(src, include_optional))
     return found
-
-
 def get_project_imports(directory, ignore_dirs, include_optional=False):
     results = []
     ignore = set(ignore_dirs)
@@ -205,8 +179,6 @@ def get_project_imports(directory, ignore_dirs, include_optional=False):
                 for m in extract_imports_from_notebook(full, include_optional):
                     results.append((m, full))
     return results
-
-
 def is_local_module(name, source_file):
     d = os.path.dirname(os.path.abspath(source_file))
     if os.path.exists(os.path.join(d, name + ".py")):
@@ -222,8 +194,6 @@ def is_local_module(name, source_file):
             return True
         cur = parent
     return False
-
-
 def apply_pin(name, version, style):
     if style == "none" or not version:
         return name
@@ -234,14 +204,10 @@ def apply_pin(name, version, style):
     if style == "minimal":
         return name + ">=" + version
     return name
-
-
 def resolve_online(pkg, index, proxy):
     if index and normalize(pkg) not in index:
         return None
     return get_imports_info_cached(pkg, proxy=proxy)
-
-
 def read_ignores(path):
     out = set()
     try:
@@ -252,8 +218,6 @@ def read_ignores(path):
     except Exception as e:
         log.warning("could not read ignore file %s: %s", path, e)
     return out
-
-
 def init(args):
     level = logging.WARNING if args["quiet"] else (logging.DEBUG if args["verbose"] else logging.INFO)
     logging.basicConfig(level=level, format="%(message)s")
@@ -332,8 +296,6 @@ def init(args):
     Path(target).write_text("\n".join(lines) + ("\n" if lines else ""))
     log.info("wrote %d entries to %s", len(lines), target)
     return 0
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-p", "--path", type=str, help="Path to target directory")
@@ -361,7 +323,5 @@ def main():
         sys.exit(init(args))
     except KeyboardInterrupt:
         sys.exit(0)
-
-
 if __name__ == "__main__":
     main()

@@ -7,10 +7,7 @@ from pathlib import Path
 import re
 import sqlite3
 import sys
-
 LINE_RE = re.compile(r"^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(.*?):\s?(.*)$")
-
-
 def parse_chat(text: str) -> list[dict[str, str]]:
     messages: list[dict[str, str]] = []
     for line in text.splitlines():
@@ -21,8 +18,6 @@ def parse_chat(text: str) -> list[dict[str, str]]:
         elif messages and line.strip():
             messages[-1]["msg"] += "\n" + line
     return messages
-
-
 def group_by_user(messages: list[dict[str, str]]) -> list[dict[str, object]]:
     users: dict[str, list[str]] = {}
     order: list[str] = []
@@ -34,12 +29,8 @@ def group_by_user(messages: list[dict[str, str]]) -> list[dict[str, object]]:
         if m["msg"] not in users[u]:
             users[u].append(m["msg"])
     return [{"user": u, "msg": users[u]} for u in order]
-
-
 def write_json(records: list[dict[str, object]], dst: Path) -> None:
     dst.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
 def write_csv(records: list[dict[str, object]], dst: Path, fields: list[str]) -> None:
     with dst.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
@@ -49,8 +40,6 @@ def write_csv(records: list[dict[str, object]], dst: Path, fields: list[str]) ->
             if isinstance(row.get("msg"), list):
                 row["msg"] = json.dumps(row["msg"], ensure_ascii=False)
             writer.writerow(row)
-
-
 def write_db(records: list[dict[str, object]], dst: Path, fields: list[str]) -> None:
     conn = sqlite3.connect(dst)
     cur = conn.cursor()
@@ -66,8 +55,6 @@ def write_db(records: list[dict[str, object]], dst: Path, fields: list[str]) -> 
     cur.executemany(f"INSERT INTO messages ({', '.join(fields)}) VALUES ({placeholders})", rows)
     conn.commit()
     conn.close()
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("input", nargs="*", type=Path)
@@ -109,7 +96,5 @@ def main() -> None:
         if args.remove:
             src.unlink()
             print(f"Removed original file: {src}")
-
-
 if __name__ == "__main__":
     main()

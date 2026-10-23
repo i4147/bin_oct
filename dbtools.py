@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -21,7 +20,6 @@ import sys
 import tempfile
 import traceback
 from typing import TYPE_CHECKING, Any
-
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 try:
@@ -33,24 +31,16 @@ try:
 except ImportError:
     pyodbc = None
 log = logging.getLogger("merged")
-
-
 def _setup_logging(verbose: bool = False) -> None:
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
-
-
 DEFAULT_TEXT_ENCODINGS: tuple[str, ...] = ("utf-8", "latin-1", "cp1252", "iso-8859-1")
 DEFAULT_TEXT_CHAR_LIMIT = 1024 * 1024
-
-
 def _table_exists(cursor: sqlite3.Cursor, table: str) -> bool:
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
     return cursor.fetchone() is not None
-
-
 def _init_files_table(cursor: sqlite3.Cursor, table: str) -> None:
     cursor.execute(
         f'CREATE TABLE IF NOT EXISTS "{table}" ('
@@ -61,8 +51,6 @@ def _init_files_table(cursor: sqlite3.Cursor, table: str) -> None:
         "original_size INTEGER DEFAULT 0, "
         "compressed_size INTEGER DEFAULT 0)"
     )
-
-
 def _compress_blob(data: bytes) -> str | None:
     if py7zr is None:
         msg = "py7zr is required for --compress. Install with: pip install py7zr"
@@ -75,8 +63,6 @@ def _compress_blob(data: bytes) -> str | None:
     except Exception as exc:
         print(f"    Compression error: {exc}")
         return None
-
-
 def _read_file(
     path: Path,
     encodings: Sequence[str],
@@ -94,8 +80,6 @@ def _read_file(
         except Exception as exc:
             return f"[Error reading file: {exc!s}]", False
     return None, True
-
-
 def _collect_cwd_files(
     folder: Path,
     encodings: Sequence[str],
@@ -163,8 +147,6 @@ def _collect_cwd_files(
                 "compressed_size": 0,
             })
     return items
-
-
 def cmd_add_files(args: argparse.Namespace) -> int:
     folder = Path.cwd()
     default_table = folder.name
@@ -225,8 +207,6 @@ def cmd_add_files(args: argparse.Namespace) -> int:
         saved = (1 - total_comp / total_orig) * 100 if total_orig else 0
         print(f"   Compressed payload: {total_comp / 1024 / 1024:.2f}MB ({saved:.1f}% saved)")
     return 0
-
-
 def _serialize_value(value: Any, blob_format: str) -> Any:
     if value is None:
         return None
@@ -250,14 +230,10 @@ def _serialize_value(value: Any, blob_format: str) -> Any:
     if isinstance(value, dict):
         return {str(k): _serialize_value(v, blob_format) for k, v in value.items()}
     return str(value)
-
-
 def _list_tables(conn: sqlite3.Connection) -> list[str]:
     cur = conn.cursor()
     cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
     return [row[0] for row in cur.fetchall()]
-
-
 def _dump_single(
     db_path: Path,
     output: Path,
@@ -277,8 +253,6 @@ def _dump_single(
         encoding="utf-8",
     )
     return len(tables), sum(len(v) for v in result.values())
-
-
 def _dump_per_table(
     db_path: Path,
     outdir: Path,
@@ -307,8 +281,6 @@ def _dump_per_table(
                 if verbose:
                     print(f"  ❌ Error converting table '{tbl}': {exc}")
     return len(tables), total_rows
-
-
 def cmd_sqlite_to_json(args: argparse.Namespace) -> int:
     db: Path = args.database
     if not db.is_file():
@@ -335,20 +307,14 @@ def cmd_sqlite_to_json(args: argparse.Namespace) -> int:
         print(f"File I/O error: {exc}", file=sys.stderr)
         return 1
     return 0
-
-
 _MD_RULE_RE = re.compile(
     r"^#\s+(.*?)\s+\((.*?)\)\s*\n(.*?)(?=\n#\s+|\Z)",
     re.DOTALL | re.MULTILINE,
 )
-
-
 def _md_extract_section(body: str, label: str) -> str | None:
     pattern = rf"##\s+{label}\s*\n(.*?)(?=\n##\s+|\Z)"
     match = re.search(pattern, body, re.DOTALL | re.IGNORECASE)
     return match.group(1).strip() if match else None
-
-
 def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
     md_path: Path = args.md
     db_path: Path = args.db
@@ -392,8 +358,6 @@ def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
         conn.commit()
     print(f"Success! Saved {count} rules into '{db_path}'.")
     return 0
-
-
 def cmd_search_rule(args: argparse.Namespace) -> int:
     db_path = Path(args.db)
     if not db_path.is_file():
@@ -422,13 +386,9 @@ def cmd_search_rule(args: argparse.Namespace) -> int:
         print(f"\n🔗 REFERENCES:\n{row['references_list']}")
     print("-" * 40)
     return 0
-
-
 MDB_EXTS = {".mdb", ".accdb"}
 MDB_FETCH = 1000
 MDB_DEFAULT_WORKERS = 8
-
-
 def _mdb_serialize(v: Any) -> Any:
     if v is None:
         return None
@@ -448,8 +408,6 @@ def _mdb_serialize(v: Any) -> Any:
     if isinstance(v, dict):
         return {str(k): _mdb_serialize(x) for k, x in v.items()}
     return str(v)
-
-
 def _mdb_connect(path: Path):
     if pyodbc is None:
         msg = "pyodbc is required for mdb-to-json. Install with: pip install pyodbc"
@@ -468,8 +426,6 @@ def _mdb_connect(path: Path):
             last = exc
     msg = f"Could not connect to {path} with any known ODBC driver. Last error: {last}"
     raise RuntimeError(msg)
-
-
 def _mdb_convert(
     src: str,
     dst: str | None = None,
@@ -533,12 +489,9 @@ def _mdb_convert(
     except Exception as exc:
         log.debug("Failure on %s:\n%s", src_path, traceback.format_exc(limit=3))
         return str(src_path), False, f"{type(exc).__name__}: {exc}"
-
-
 def _mdb_collect(paths: Sequence[str]) -> list[Path]:
     seen: set[Path] = set()
     out: list[Path] = []
-
     def add(p: Path) -> None:
         try:
             rp = p.resolve()
@@ -548,7 +501,6 @@ def _mdb_collect(paths: Sequence[str]) -> list[Path]:
             return
         seen.add(rp)
         out.append(rp)
-
     for raw in paths:
         p = Path(raw).expanduser()
         if p.is_file():
@@ -567,8 +519,6 @@ def _mdb_collect(paths: Sequence[str]) -> list[Path]:
         else:
             log.warning("Path does not exist: %s", p)
     return out
-
-
 def cmd_mdb_to_json(args: argparse.Namespace) -> int:
     _setup_logging(args.verbose)
     inputs = args.inputs or ["."]
@@ -610,8 +560,6 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
         return 130
     print(f"Done. Successes: {ok}, Failures: {fail}, Total: {total}")
     return 0 if fail == 0 else 1
-
-
 SQL_DEFAULT_WORKERS = 8
 SQL_CHUNK = 1024 * 1024
 SQL_DEFAULT_ENCODING = "utf-8"
@@ -652,23 +600,17 @@ _SQL_IDENT_RE = re.compile(
 )
 _SQL_INT_RE = re.compile(r"^[+-]?\d+$")
 _SQL_FLOAT_RE = re.compile(r"^[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$")
-
-
 @dataclass(frozen=True)
 class SqlJob:
     source: Path
     destination: Path
     overwrite: bool
-
-
 @dataclass(frozen=True)
 class SqlResult:
     source: Path
     destination: Path
     rows: int = 0
     error: str | None = None
-
-
 def _sql_unquote_ident(s: str) -> str:
     s = s.strip()
     m = _SQL_IDENT_RE.match(s)
@@ -682,8 +624,6 @@ def _sql_unquote_ident(s: str) -> str:
     if g["bracket"] is not None:
         return g["bracket"]
     return g["plain"] or s
-
-
 def _split_top_level(s: str, sep: str = ",") -> list[str]:
     out: list[str] = []
     start = 0
@@ -715,16 +655,12 @@ def _split_top_level(s: str, sep: str = ",") -> list[str]:
         i += 1
     out.append(s[start:].strip())
     return out
-
-
 def _parse_column_list(cols: str | None) -> list[str] | None:
     if cols is None:
         return None
     inner = cols.strip()[1:-1]
     names = [_sql_unquote_ident(c) for c in _split_top_level(inner) if c.strip()]
     return names or None
-
-
 def _unescape_sql_string(s: str) -> str:
     inner = s[1:-1].replace("''", "'")
     repl = {
@@ -741,8 +677,6 @@ def _unescape_sql_string(s: str) -> str:
     for k, v in repl.items():
         inner = inner.replace(k, v)
     return inner
-
-
 def _parse_sql_literal(tok: str) -> Any:
     t = tok.strip()
     up = t.upper()
@@ -765,8 +699,6 @@ def _parse_sql_literal(tok: str) -> Any:
         except ValueError:
             return t
     return t
-
-
 def _iter_insert_statements(path: Path, encoding: str) -> Iterator[str]:
     decoder = codecs.getincrementaldecoder(encoding)(errors="replace")
     buf: list[str] = []
@@ -797,8 +729,6 @@ def _iter_insert_statements(path: Path, encoding: str) -> Iterator[str]:
     remaining = "".join(buf)
     if _SQL_INSERT_RE.search(remaining):
         yield remaining
-
-
 def _iter_tuple_bodies(body: str) -> Iterator[str]:
     depth = 0
     quote: str | None = None
@@ -829,8 +759,6 @@ def _iter_tuple_bodies(body: str) -> Iterator[str]:
                 yield body[start:i]
                 start = None
         i += 1
-
-
 def _parse_insert_rows(stmt: str) -> Iterator[dict[str, Any]]:
     m = _SQL_INSERT_RE.search(stmt)
     if m is None:
@@ -848,8 +776,6 @@ def _parse_insert_rows(stmt: str) -> Iterator[dict[str, Any]]:
             if len(values) > len(cols):
                 row["_extra_values"] = values[len(cols) :]
             yield row
-
-
 def _convert_sql_file(job: SqlJob, encoding: str, strict: bool) -> SqlResult:
     src, dst = job.source, job.destination
     try:
@@ -886,12 +812,8 @@ def _convert_sql_file(job: SqlJob, encoding: str, strict: bool) -> SqlResult:
         return SqlResult(src, dst, rows=count)
     except Exception as exc:
         return SqlResult(src, dst, error=f"{type(exc).__name__}: {exc}")
-
-
 def _convert_sql_file_star(args_tuple: tuple[SqlJob, str, bool]) -> SqlResult:
     return _convert_sql_file(*args_tuple)
-
-
 def _collect_sql_inputs(paths: Sequence[Path]) -> list[Path]:
     roots = list(paths) if paths else [Path.cwd()]
     seen: set[Path] = set()
@@ -914,15 +836,11 @@ def _collect_sql_inputs(paths: Sequence[Path]) -> list[Path]:
         except OSError as exc:
             log.warning("Cannot inspect input %s: %s", root, exc)
     return sorted(seen)
-
-
 def _sql_output_path(src: Path, outdir: Path | None) -> Path:
     if outdir is None:
         return src.with_name(f"{src.stem}.jsonl")
     unique = f"{src.stem}_{abs(hash(str(src.parent))) & 0xFFFFFFFF:08x}.jsonl"
     return outdir / unique
-
-
 def cmd_sql_to_json(args: argparse.Namespace) -> int:
     _setup_logging(False)
     files = _collect_sql_inputs(args.inputs)
@@ -952,8 +870,6 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
                 print(f"{res.source} -> {res.destination} ({res.rows} rows)")
     print(f"Completed: {len(files)} file(s), {total_rows} row(s), {fails} failure(s).")
     return 1 if fails else 0
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
@@ -1045,15 +961,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     qp.set_defaults(func=cmd_sql_to_json)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     _setup_logging(False)
     return args.func(args)
-
-
 if __name__ == "__main__":
     freeze_support()
     raise SystemExit(main())

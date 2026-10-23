@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import os
 from pathlib import Path
 import subprocess
 import sys
 from dh import runcmd
-
-
 def convert_m4a_to_mp3(input_file, bitrate="64k"):
     if not os.path.exists(input_file):
         print(f"Error: Input file '{input_file}' not found.")
@@ -50,8 +47,6 @@ def convert_m4a_to_mp3(input_file, bitrate="64k"):
         print("macOS: brew install ffmpeg")
         print("Windows: Download from https://ffmpeg.org/download.html")
         sys.exit(1)
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python script.py <input_file.m4a>")

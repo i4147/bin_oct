@@ -5,12 +5,9 @@ import heapq
 from pathlib import Path
 import sqlite3
 import sys
-
 DB_PATH = Path("/sdcard/data/pip.db")
 DEFAULT_LIMIT = 20
 TRIGRAM_MIN = 3
-
-
 def get_table_info(con: sqlite3.Connection):
     cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
     tables = [row[0] for row in cur.fetchall()]
@@ -39,8 +36,6 @@ def get_table_info(con: sqlite3.Connection):
     row = cur.fetchone()
     is_fts5 = bool(row and row[0] and "fts5" in row[0].lower())
     return table, name_col, dl_col, is_fts5
-
-
 def search(
     con: sqlite3.Connection,
     table: str,
@@ -54,12 +49,10 @@ def search(
     q_table = f'"{table}"'
     q_name = f'"{name_col}"'
     q_dl = f'"{dl_col}"'
-
     def run_like():
         escaped = kw.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
         sql = f"SELECT {q_name}, {q_dl} FROM {q_table} WHERE {q_name} LIKE ? ESCAPE '\\'"
         return con.execute(sql, (f"%{escaped}%",))
-
     cur = None
     if is_fts5 and len(kw) >= TRIGRAM_MIN:
         fts_query = '"' + kw.replace('"', '""') + '"'
@@ -71,8 +64,6 @@ def search(
     else:
         cur = run_like()
     return heapq.nlargest(limit, cur, key=lambda r: r[1])
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Search PyPI packages by substring (SQLite FTS5 trigram).",
@@ -105,7 +96,5 @@ def main() -> None:
         return
     for name, dl in rows:
         print(f"{name}  {dl}")
-
-
 if __name__ == "__main__":
     main()

@@ -12,7 +12,6 @@ import tarfile
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import unquote, urlparse
 import zipfile
-
 if TYPE_CHECKING:
     from collections.abc import Iterable
 try:
@@ -22,38 +21,27 @@ except ImportError:
 try:
     from tqdm import tqdm as _tqdm
 except ImportError:
-
     def _tqdm(it, **_kw):
         return it
-
-
 try:
     import chardet
 except ImportError:
     chardet = None
-
-
 def log_info(msg: str) -> None:
     if _loguru_logger:
         _loguru_logger.info(msg)
     else:
         print(msg, file=sys.stderr)
-
-
 def log_warning(msg: str) -> None:
     if _loguru_logger:
         _loguru_logger.warning(msg)
     else:
         print(f"WARNING: {msg}", file=sys.stderr)
-
-
 def log_error(msg: str) -> None:
     if _loguru_logger:
         _loguru_logger.error(msg)
     else:
         print(f"ERROR: {msg}", file=sys.stderr)
-
-
 URL_RE = re.compile(r'https?://[^\s<>"\'\)\]\}]+', re.IGNORECASE)
 GITHUB_RE = re.compile(
     r'https?://(?:www\.)?github\.com/[^\s<>"\'\)\]\}]+',
@@ -175,8 +163,6 @@ BY_EXT_KNOWN = [
     "dmg",
     "apk",
 ]
-
-
 def _write_urls(path: Path, urls: Iterable[str], append: bool = False) -> None:
     mode = "a" if append else "w"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -184,8 +170,6 @@ def _write_urls(path: Path, urls: Iterable[str], append: bool = False) -> None:
         if append and path.stat().st_size > 0:
             f.write("\n")
         f.writelines(f"{u}\n" for u in urls)
-
-
 def _archive_kind(path: Path) -> Optional[str]:
     name = path.name.lower()
     if name.endswith(ZIP_SUFFIXES):
@@ -195,8 +179,6 @@ def _archive_kind(path: Path) -> Optional[str]:
     if any(name.endswith(s) for s in TAR_SUFFIXES):
         return "tar"
     return None
-
-
 def _decode_bytes(data: bytes) -> str:
     try:
         return data.decode("utf-8")
@@ -211,8 +193,6 @@ def _decode_bytes(data: bytes) -> str:
             except Exception:
                 pass
     return data.decode("latin-1", errors="ignore")
-
-
 def _read_text_file(path: Path) -> Optional[str]:
     for enc in ("utf-8", "latin-1", "iso-8859-1", "cp1252"):
         try:
@@ -228,12 +208,8 @@ def _read_text_file(path: Path) -> Optional[str]:
         log_error(f"Failed to read {path}: {exc}")
         return None
     return _decode_bytes(raw)
-
-
 def _extract_urls(text: str) -> set[str]:
     return set(URL_RE.findall(text))
-
-
 def _extract_from_tar(path: Path) -> set[str]:
     urls: set[str] = set()
     try:
@@ -251,8 +227,6 @@ def _extract_from_tar(path: Path) -> set[str]:
     except Exception as exc:
         log_error(f"tar open {path}: {exc}")
     return urls
-
-
 def _extract_from_zip(path: Path) -> set[str]:
     urls: set[str] = set()
     try:
@@ -268,8 +242,6 @@ def _extract_from_zip(path: Path) -> set[str]:
     except Exception as exc:
         log_error(f"zip open {path}: {exc}")
     return urls
-
-
 def _extract_from_7z(path: Path) -> set[str]:
     try:
         import py7zr
@@ -287,8 +259,6 @@ def _extract_from_7z(path: Path) -> set[str]:
     except Exception as exc:
         log_error(f"7z open {path}: {exc}")
     return urls
-
-
 def _iter_files(root: Path, skip_dirs: set[str]) -> Iterable[Path]:
     if root.is_file():
         yield root
@@ -299,13 +269,9 @@ def _iter_files(root: Path, skip_dirs: set[str]) -> Iterable[Path]:
         if any(part in skip_dirs for part in p.parts):
             continue
         yield p
-
-
 def _classify_git(url: str, git_hosts: tuple[str, ...]) -> bool:
     lower = url.lower()
     return any(h in lower for h in git_hosts)
-
-
 def _scan_worker(task: tuple) -> set[str]:
     path_str, max_size, archives_only, files_only = task
     path = Path(path_str)
@@ -332,8 +298,6 @@ def _scan_worker(task: tuple) -> set[str]:
         if txt:
             urls |= _extract_urls(txt)
     return urls
-
-
 def cmd_clean(args: argparse.Namespace) -> int:
     domains: set[str] = set()
     git_urls: list[str] = []
@@ -360,8 +324,6 @@ def cmd_clean(args: argparse.Namespace) -> int:
     log_info(f"Wrote {len(domains)} domains -> {args.domains_out}")
     log_info(f"Appended {len(git_urls)} github URLs -> {args.git_out}")
     return 0
-
-
 def cmd_scan(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     skip_dirs = {s for s in args.skip_dirs.split(",") if s}
@@ -397,8 +359,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
     log_info(f"Wrote {len(main_urls)} URLs -> {args.output}")
     log_info(f"Wrote {len(git_urls)} git URLs -> {args.git_output}")
     return 0
-
-
 def _split_grouped(args: argparse.Namespace) -> int:
     group_map = {
         "html": (".html", ".htm"),
@@ -444,8 +404,6 @@ def _split_grouped(args: argparse.Namespace) -> int:
         )
         log_info(f"{args.output}: {len(other)} URLs")
     return 0
-
-
 def _split_by_ext(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -473,15 +431,11 @@ def _split_by_ext(args: argparse.Namespace) -> int:
         p.write_text("\n".join(urls) + "\n", encoding="utf-8")
         log_info(f"{p.name}: {len(urls)} URLs")
     return 0
-
-
 def cmd_split(args: argparse.Namespace) -> int:
     args.file_exts = tuple(e if e.startswith(".") else "." + e for e in args.file_exts.split(",") if e)
     if args.mode == "grouped":
         return _split_grouped(args)
     return _split_by_ext(args)
-
-
 def cmd_filter_jscss(args: argparse.Namespace) -> int:
     pattern = re.compile(r"\.(min\.)?(js|css)$", re.IGNORECASE)
     src = Path(args.input)
@@ -501,8 +455,6 @@ def cmd_filter_jscss(args: argparse.Namespace) -> int:
     Path(args.output).write_text("\n".join(kept), encoding="utf-8")
     log_info(f"Kept {len(kept)} URLs -> {args.output}")
     return 0
-
-
 def _normalize_url(url: str) -> str:
     url = url.strip()
     if not url:
@@ -519,8 +471,6 @@ def _normalize_url(url: str) -> str:
     if path != "/" and path.endswith("/"):
         path = path[:-1]
     return f"{scheme}://{netloc}{path}"
-
-
 def _url_root(url: str) -> str:
     p = urlparse(url)
     netloc = p.netloc.lower()
@@ -534,8 +484,6 @@ def _url_root(url: str) -> str:
     if not parts:
         return f"https://{netloc}/"
     return f"https://{netloc}/{parts[0]}"
-
-
 def _prune_normal(urls: list[str]) -> list[str]:
     norm = {}
     for u in urls:
@@ -566,8 +514,6 @@ def _prune_normal(urls: list[str]) -> list[str]:
             result.append(u)
     result.sort()
     return result
-
-
 def _prune_aggressive(urls: list[str]) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
@@ -586,8 +532,6 @@ def _prune_aggressive(urls: list[str]) -> list[str]:
             seen.add(root)
             out.append(root)
     return sorted(out)
-
-
 def cmd_prune(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -599,8 +543,6 @@ def cmd_prune(args: argparse.Namespace) -> int:
     src.write_text("\n".join(pruned) + ("\n" if pruned else ""), encoding="utf-8")
     log_info(f"Pruned {len(urls)} -> {len(pruned)} URLs in {src}")
     return 0
-
-
 def cmd_move_gitlinks(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -622,8 +564,6 @@ def cmd_move_gitlinks(args: argparse.Namespace) -> int:
             f.write(f"{ln}\n")
     log_info(f"Moved {len(moved)} github lines -> {out}")
     return 0
-
-
 def cmd_save_page(args: argparse.Namespace) -> int:
     try:
         from pywebcopy import save_webpage
@@ -641,20 +581,14 @@ def cmd_save_page(args: argparse.Namespace) -> int:
         threaded=False,
     )
     return 0
-
-
 def _strip_url_punct(url: str) -> str:
     return url.strip().strip("\"'<>(),;")
-
-
 def _has_fetch_ext(url: str) -> bool:
     try:
         path = unquote(urlparse(url).path).lower()
         return any(path.endswith(e) for e in FETCH_EXTS)
     except ValueError:
         return False
-
-
 def _download_filename(url: str) -> str:
     p = urlparse(url)
     name = os.path.basename(unquote(p.path)) or "downloaded_file"
@@ -662,8 +596,6 @@ def _download_filename(url: str) -> str:
     digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:10]
     safe_stem = re.sub(r"[^A-Za-z0-9._-]", "_", stem)
     return f"{safe_stem}_{digest}{ext}"
-
-
 def _download_one(task: tuple) -> tuple[str, bool, str]:
     try:
         import requests
@@ -683,8 +615,6 @@ def _download_one(task: tuple) -> tuple[str, bool, str]:
         return url, True, str(dest)
     except Exception as exc:
         return url, False, str(exc)
-
-
 def cmd_fetch_files(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -713,8 +643,6 @@ def cmd_fetch_files(args: argparse.Namespace) -> int:
                 url, ok, info = _download_one(t)
                 print(f"[{'OK' if ok else 'FAIL'}] {url} -> {info}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="urlkit",
@@ -835,15 +763,11 @@ def build_parser() -> argparse.ArgumentParser:
     pf.add_argument("-w", "--workers", type=int, default=os.cpu_count() or 4)
     pf.set_defaults(func=cmd_fetch_files)
     return p
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if getattr(args, "workers", 1) is not None and getattr(args, "workers", 1) < 1:
         parser.error("--workers must be at least 1")
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

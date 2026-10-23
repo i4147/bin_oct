@@ -6,41 +6,29 @@ import hashlib
 from pathlib import Path
 import shutil
 from dh import cprint, read_lines
-
-
 def count_lines(path: Path) -> int:
     return path.read_bytes().count(b"\n") + 1
-
-
 def file_hash(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
 def read_file_task(path: Path, use_mmap: bool, strip: bool) -> tuple[Path, list[str]]:
     lines = read_lines(path, ke=False)
     if strip:
         lines = [line.strip() for line in lines]
     return path, lines
-
-
 def filter_diff_chunk(chunk: list[str], exclude_set: frozenset[str], mode: str) -> list[str]:
     if mode == "only_in_first":
         return [p for p in chunk if p not in exclude_set]
     else:
         return [p for p in chunk if p in exclude_set]
-
-
 def next_group_dir(base: Path) -> Path:
     n = 1
     while (base / f"group_{n}").exists():
         n += 1
     return base / f"group_{n}"
-
-
 def move_files_to_group(path1: Path, path2: Path) -> None:
     base = Path.cwd()
     target = next_group_dir(base)
@@ -48,8 +36,6 @@ def move_files_to_group(path1: Path, path2: Path) -> None:
     shutil.move(str(path1.resolve()), str(target / path1.name))
     shutil.move(str(path2.resolve()), str(target / path2.name))
     cprint(f"moved to {target.name}/", "magenta")
-
-
 def report_diff_lines(
     path1: Path,
     path2: Path,
@@ -105,8 +91,6 @@ def report_diff_lines(
         f"only in {path2.name}: {len(only_in_second)}",
         "blue",
     )
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(prog="pydiff", description="Diff two files line by line")
     parser.add_argument("file1", type=Path)
@@ -132,7 +116,5 @@ def main() -> None:
         move=args.move,
         num_workers=args.workers,
     )
-
-
 if __name__ == "__main__":
     main()

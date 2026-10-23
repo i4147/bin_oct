@@ -9,40 +9,27 @@ from dh import gsz, rrs
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_python as tsp
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from multiprocessing.pool import AsyncResult
 PY_EXTS: set[str] = {".py"}
 MAX_WORKERS: int = 8
 _PARSER: Parser | None = None
-
-
 def get_parser() -> Parser:
     global _PARSER
     if _PARSER is None:
         language: Language = Language(tsp.language())
         _PARSER = Parser(language)
     return _PARSER
-
-
 def line_start(content: bytes, offset: int) -> int:
     return content.rfind(b"\n", 0, offset) + 1
-
-
 def line_end(content: bytes, offset: int) -> int:
     newline: int = content.find(b"\n", offset)
     return len(content) if newline == -1 else newline + 1
-
-
 def node_line_start(content: bytes, node: Node) -> int:
     return line_start(content, node.start_byte)
-
-
 def node_line_end(content: bytes, node: Node) -> int:
     return line_end(content, node.end_byte)
-
-
 def is_keep_comment(comment: bytes, start_byte: int) -> bool:
     if start_byte == 0 and comment.startswith(b"#!"):
         return True
@@ -53,15 +40,11 @@ def is_keep_comment(comment: bytes, start_byte: int) -> bool:
     if text.startswith((b"type:", b"fmt:")):
         return True
     return bool(b"coding" in text and b":" in text)
-
-
 def first_named_child(node: Node) -> Node | None:
     for child in node.children:
         if child.is_named:
             return child
     return None
-
-
 def is_string_expression(node: Node) -> bool:
     if node.type in {"string", "concatenated_string"}:
         return True
@@ -69,15 +52,11 @@ def is_string_expression(node: Node) -> bool:
         return False
     child: Node | None = first_named_child(node)
     return child is not None and child.type in {"string", "concatenated_string"}
-
-
 def first_real_statement(container: Node) -> Node | None:
     for child in container.children:
         if child.is_named and child.type != "comment":
             return child
     return None
-
-
 def is_docstring(node: Node) -> bool:
     if not is_string_expression(node):
         return False
@@ -94,8 +73,6 @@ def is_docstring(node: Node) -> bool:
     if owner.type not in {"function_definition", "class_definition"}:
         return False
     return first_real_statement(parent) == node
-
-
 def indent_for_block(block: Node, content: bytes) -> bytes:
     for child in block.children:
         if not child.is_named:
@@ -111,14 +88,10 @@ def indent_for_block(block: Node, content: bytes) -> bytes:
         if not parent_indent.strip():
             return parent_indent + b"    "
     return b"    "
-
-
 def block_named_children(block: Node) -> Iterator[Node]:
     for child in block.children:
         if child.is_named:
             yield child
-
-
 def collect_actions(root: Node, content: bytes) -> list[tuple[int, int, bytes]]:
     removals: dict[int, tuple[int, int, bytes]] = {}
     blocks: list[Node] = []
@@ -183,8 +156,6 @@ def collect_actions(root: Node, content: bytes) -> list[tuple[int, int, bytes]]:
         filtered.append((start, end, replacement))
         previous_end = end
     return filtered
-
-
 def apply_actions(content: bytes, actions: list[tuple[int, int, bytes]]) -> bytes:
     output: bytearray = bytearray()
     last_end: int = 0
@@ -194,8 +165,6 @@ def apply_actions(content: bytes, actions: list[tuple[int, int, bytes]]) -> byte
         last_end = end
     output.extend(content[last_end:])
     return bytes(output)
-
-
 def strip_comments_and_docstrings(content: bytes) -> tuple[bytes, int]:
     parser: Parser = get_parser()
     tree = parser.parse(content)
@@ -209,8 +178,6 @@ def strip_comments_and_docstrings(content: bytes) -> tuple[bytes, int]:
         msg = f"Generated invalid Python source: {exc}"
         raise ValueError(msg) from exc
     return new_content, len(actions)
-
-
 def process_file(path: Path, base: Path) -> tuple[str, int, str]:
     try:
         content: bytes = path.read_bytes()
@@ -224,8 +191,6 @@ def process_file(path: Path, base: Path) -> tuple[str, int, str]:
         return relative_path, removed_count, ""
     except Exception as exc:
         return str(path), 0, str(exc)
-
-
 def iter_py_files(paths: list[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for path in paths:
@@ -250,8 +215,6 @@ def iter_py_files(paths: list[Path]) -> Iterator[Path]:
                 yield path
         except OSError as exc:
             logger.error(f"{path}: ERROR walking directory: {exc}")
-
-
 def _walker(root_dir: Path) -> Iterator[Path]:
     for r, _, files in root_dir.walk():
         rp: Path = Path(r)
@@ -261,8 +224,6 @@ def _walker(root_dir: Path) -> Iterator[Path]:
                 continue
             if path.is_file() and path.suffix == ".py":
                 yield path
-
-
 def main() -> int:
     cwd: Path = Path.cwd()
     before: int = gsz(cwd)
@@ -286,7 +247,6 @@ def main() -> int:
     with Pool(processes=MAX_WORKERS) as pool:
         pending: dict[AsyncResult[tuple[str, int, str]], Path] = {}
         exhausted: bool = False
-
         def submit_until_full() -> bool:
             nonlocal exhausted
             while len(pending) < MAX_WORKERS:
@@ -298,7 +258,6 @@ def main() -> int:
                 result: AsyncResult[tuple[str, int, str]] = pool.apply_async(process_file, (path, base))
                 pending[result] = path
             return exhausted
-
         exhausted = submit_until_full()
         while pending:
             result = next(iter(pending))
@@ -331,7 +290,5 @@ def main() -> int:
     print("_" * 40)
     rrs(cwd, before, after)
     return 1 if errors else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

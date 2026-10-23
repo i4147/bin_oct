@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -9,13 +8,9 @@ from pathlib import Path
 import re
 import shutil
 import sys
-
-
 def get_path_entries() -> list[str]:
     path_env: str = os.environ.get("PATH", "")
     return [p for p in path_env.split(":") if p]
-
-
 def get_file_hash(path: Path) -> str:
     if not path.exists() or path.stat().st_size == 0:
         return ""
@@ -27,8 +22,6 @@ def get_file_hash(path: Path) -> str:
         return h.hexdigest()
     except OSError:
         return ""
-
-
 def scan_executables(
     dirs: list[Path],
 ) -> tuple[dict[str, list[tuple[Path, str]]], dict[str, list[str]]]:
@@ -47,8 +40,6 @@ def scan_executables(
             continue
     conflicting = {cmd: locs for cmd, locs in duplicates.items() if len(locs) > 1}
     return dict(executables), conflicting
-
-
 def extract_aliases(alias_file: Path) -> set[str]:
     aliases: set[str] = set()
     pattern = re.compile(r"^\s*alias\s+([a-zA-Z_][a-zA-Z0-9_-]*)\s*=", re.MULTILINE)
@@ -62,8 +53,6 @@ def extract_aliases(alias_file: Path) -> set[str]:
     except Exception:
         pass
     return aliases
-
-
 def extract_functions(func_file: Path) -> set[str]:
     functions: set[str] = set()
     patterns = [
@@ -86,8 +75,6 @@ def extract_functions(func_file: Path) -> set[str]:
     except Exception:
         pass
     return functions
-
-
 def deduplicate_paths(entries: list[str]) -> list[str]:
     seen: set[str] = set()
     unique: list[str] = []
@@ -96,8 +83,6 @@ def deduplicate_paths(entries: list[str]) -> list[str]:
             seen.add(entry)
             unique.append(entry)
     return unique
-
-
 def update_rc_file(rc_path: Path, new_path_str: str) -> bool:
     if not rc_path.exists():
         return False
@@ -121,8 +106,6 @@ def update_rc_file(rc_path: Path, new_path_str: str) -> bool:
         return True
     except Exception:
         return False
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -186,7 +169,5 @@ def main() -> int:
     if conflicts or alias_conflicts or func_conflicts:
         return 1
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

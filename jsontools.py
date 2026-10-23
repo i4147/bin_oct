@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -12,14 +11,9 @@ import re
 import sys
 import tempfile
 from typing import Any, Iterator, Optional, Sequence
-
 _CUSTOM_RULE_RE = re.compile(r"^(?:(\d+?)>)?(\d+)=")
-
-
 def _custom_hex(b: bytes) -> str:
     return b.hex().upper()
-
-
 def _custom_parse_rule(line: str) -> Optional[dict[str, Any]]:
     m = _CUSTOM_RULE_RE.match(line)
     if not m:
@@ -38,8 +32,6 @@ def _custom_parse_rule(line: str) -> Optional[dict[str, Any]]:
         "hex": _custom_hex(raw),
     }
     return result
-
-
 def _custom_load(path: Path) -> dict[str, list[dict[str, Any]]]:
     out: dict[str, list[dict[str, Any]]] = {}
     section: Optional[str] = None
@@ -70,8 +62,6 @@ def _custom_load(path: Path) -> dict[str, list[dict[str, Any]]]:
         else:
             print(f"Warning: Failed to parse rule: {line!r}", file=sys.stderr)
     return out
-
-
 def cmd_custom2json(args: argparse.Namespace) -> int:
     data = _custom_load(Path(args.file))
     text = json.dumps(data, indent=2, ensure_ascii=False)
@@ -81,8 +71,6 @@ def cmd_custom2json(args: argparse.Namespace) -> int:
     else:
         print(text)
     return 0
-
-
 def cmd_freeze2json(args: argparse.Namespace) -> int:
     src = Path(args.input)
     dst = Path(args.output)
@@ -97,8 +85,6 @@ def cmd_freeze2json(args: argparse.Namespace) -> int:
         json.dump(result, f, indent=4)
     print(f"Saved {len(result)} packages to {dst}")
     return 0
-
-
 def _jsonl_load_list(path: Path) -> list[Any]:
     out: list[Any] = []
     with path.open(encoding="utf-8") as f:
@@ -108,8 +94,6 @@ def _jsonl_load_list(path: Path) -> list[Any]:
             except json.JSONDecodeError as exc:
                 print(f"Skipping line due to JSON decode error: {exc}")
     return out
-
-
 def _jsonl_load_dict(path: Path, key: str) -> dict[Any, Any]:
     out: dict[Any, Any] = {}
     with path.open(encoding="utf-8") as f:
@@ -123,8 +107,6 @@ def _jsonl_load_dict(path: Path, key: str) -> dict[Any, Any]:
             except json.JSONDecodeError as exc:
                 print(f"Skipping line due to JSON decode error: {exc}")
     return out
-
-
 def cmd_jsonl2dict(args: argparse.Namespace) -> int:
     src = Path(args.file)
     if args.key:
@@ -139,15 +121,9 @@ def cmd_jsonl2dict(args: argparse.Namespace) -> int:
     with dst.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return 0
-
-
 _JSONL_SUFFIXES = {".jsonl", ".ndjson"}
-
-
 def _is_jsonl(path: Path) -> bool:
     return path.is_file() and path.suffix.lower() in _JSONL_SUFFIXES
-
-
 def _discover_jsonl(inputs: Sequence[Path]) -> Iterator[Path]:
     seen: set = set()
     for p in inputs:
@@ -180,8 +156,6 @@ def _discover_jsonl(inputs: Sequence[Path]) -> Iterator[Path]:
             f"warning: skipping unsupported input (expected file or directory): {path}",
             file=sys.stderr,
         )
-
-
 def _jsonl2json_destination(
     source: Path,
     output_dir: Optional[Path],
@@ -203,8 +177,6 @@ def _jsonl2json_destination(
         rel = source.relative_to(deepest).parent
         return output_dir / rel / name
     return output_dir / name
-
-
 def _jsonl_dumps(obj: Any, indent: Optional[int], ensure_ascii: bool) -> str:
     return json.dumps(
         obj,
@@ -212,8 +184,6 @@ def _jsonl_dumps(obj: Any, indent: Optional[int], ensure_ascii: bool) -> str:
         ensure_ascii=ensure_ascii,
         separators=None if indent is not None else (",", ":"),
     )
-
-
 def _convert_one(job: argparse.Namespace) -> dict[str, Any]:
     source: Path = job.source
     destination: Path = job.destination
@@ -289,8 +259,6 @@ def _convert_one(job: argparse.Namespace) -> dict[str, Any]:
         if tmp_path is not None:
             with contextlib.suppress(OSError):
                 tmp_path.unlink(missing_ok=True)
-
-
 def cmd_jsonl2json(args: argparse.Namespace) -> int:
     if args.indent is not None and args.indent < 0:
         print("error: --indent must be zero or greater", file=sys.stderr)
@@ -301,7 +269,6 @@ def cmd_jsonl2json(args: argparse.Namespace) -> int:
         with contextlib.suppress(FileNotFoundError, OSError):
             roots.append(p.resolve(strict=True))
     output_dir = Path(args.output_dir) if args.output_dir else None
-
     def _jobs() -> Iterator[argparse.Namespace]:
         seen_dest: set = set()
         for src in _discover_jsonl(inputs):
@@ -322,7 +289,6 @@ def cmd_jsonl2json(args: argparse.Namespace) -> int:
                 overwrite=args.overwrite,
             )
             yield ns
-
     total = 0
     written = 0
     invalid = 0
@@ -346,8 +312,6 @@ def cmd_jsonl2json(args: argparse.Namespace) -> int:
         file=sys.stderr,
     )
     return 1 if failures else 0
-
-
 def cmd_lowerkeys(args: argparse.Namespace) -> int:
     path = Path(args.file)
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -358,8 +322,6 @@ def cmd_lowerkeys(args: argparse.Namespace) -> int:
     )
     print(f"Successfully updated {path}")
     return 0
-
-
 def _unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -370,8 +332,6 @@ def _unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
-
-
 def _load_json_as_list(path: Path) -> list[Any]:
     try:
         obj = json.loads(path.read_text(encoding="utf-8"))
@@ -382,8 +342,6 @@ def _load_json_as_list(path: Path) -> list[Any]:
     if isinstance(obj, list):
         return obj
     return [obj]
-
-
 def _collect_json_files(paths: Sequence[str]) -> list[Path]:
     files: list[Path] = []
     for entry in paths:
@@ -395,8 +353,6 @@ def _collect_json_files(paths: Sequence[str]) -> list[Path]:
         else:
             print(f"no json file: {entry}")
     return files
-
-
 def cmd_merge_json(args: argparse.Namespace) -> int:
     paths = args.inputs or ["."]
     files = _collect_json_files(paths)
@@ -423,8 +379,6 @@ def cmd_merge_json(args: argparse.Namespace) -> int:
     else:
         print("There is no data to write to the output file.")
     return 0
-
-
 def _deep_merge(left: Any, right: Any) -> Any:
     if left is None:
         return right
@@ -437,8 +391,6 @@ def _deep_merge(left: Any, right: Any) -> Any:
         else:
             merged[k] = v
     return merged
-
-
 def cmd_mergejson(args: argparse.Namespace) -> int:
     inputs = args.inputs
     if len(inputs) < 2:
@@ -482,8 +434,6 @@ def cmd_mergejson(args: argparse.Namespace) -> int:
         print(f"Error writing to output file: {exc}")
         return 1
     return 0
-
-
 def _mime_extract(node: Any) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     if isinstance(node, dict):
@@ -510,8 +460,6 @@ def _mime_extract(node: Any) -> list[tuple[str, str]]:
         for item in node:
             out.extend(_mime_extract(item))
     return out
-
-
 def cmd_mime2json(args: argparse.Namespace) -> int:
     root = Path(args.directory)
     output = Path(args.output)
@@ -532,8 +480,6 @@ def cmd_mime2json(args: argparse.Namespace) -> int:
     )
     print(f"Saved {len(result)} MIME entries to {output}")
     return 0
-
-
 def _sortdict_key(line: str) -> str:
     if ":" in line:
         value = line.split(":", 1)[1].strip()
@@ -544,8 +490,6 @@ def _sortdict_key(line: str) -> str:
         print(value)
         return value
     return line
-
-
 def cmd_sortdict(args: argparse.Namespace) -> int:
     path = Path(args.file)
     with path.open(encoding="utf-8", errors="replace") as f:
@@ -555,19 +499,14 @@ def cmd_sortdict(args: argparse.Namespace) -> int:
     with path.open("w", encoding="utf-8") as f:
         f.writelines(filtered)
     return 0
-
-
 def cmd_ss2json(args: argparse.Namespace) -> int:
     import pandas as pd
-
     src = Path(args.csv)
     df = pd.read_csv(str(src))
     sorted_df = df.sort_values(by=args.score_column, ascending=False)
     dst = src.with_suffix(".json")
     sorted_df.to_json(str(dst))
     return 0
-
-
 def _tojson_parse(path: Path, delimiter: str) -> dict[str, int]:
     result: dict[str, int] = {}
     seen_keys: set = set()
@@ -599,8 +538,6 @@ def _tojson_parse(path: Path, delimiter: str) -> dict[str, int]:
             seen_values.add(value)
             result[key] = value
     return result
-
-
 def cmd_tojson(args: argparse.Namespace) -> int:
     src = Path(args.file)
     if not src.is_file():
@@ -619,8 +556,6 @@ def cmd_tojson(args: argparse.Namespace) -> int:
     with dst.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2, sort_keys=True)
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Merged JSON/text conversion toolkit",
@@ -677,14 +612,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--words", default="words")
     p.set_defaults(func=cmd_tojson)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     raise SystemExit(main())

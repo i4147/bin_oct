@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -16,7 +15,6 @@ import site
 import subprocess
 import sys
 from typing import Iterable, Iterator, Sequence
-
 BINARY_EXTS: tuple[str, ...] = (".so", ".pyd", ".dll", ".dylib")
 GIT_HOSTS: tuple[str, ...] = (
     "github.com",
@@ -25,20 +23,14 @@ GIT_HOSTS: tuple[str, ...] = (
     "sourcehut.org",
     "codeberg.org",
 )
-
-
 def system_site_dirs() -> list[Path]:
     return [Path(p) for p in site.getsitepackages() if Path(p).exists()]
-
-
 def user_site_dir() -> Path | None:
     with contextlib.suppress(Exception):
         p = Path(site.getusersitepackages())
         if p.exists():
             return p
     return None
-
-
 def all_site_dirs(include_user: bool = True) -> list[Path]:
     dirs = system_site_dirs()
     if include_user:
@@ -56,8 +48,6 @@ def all_site_dirs(include_user: bool = True) -> list[Path]:
             seen.add(key)
             out.append(d)
     return out
-
-
 def pick_scan_dirs(user_only: bool, system_only: bool) -> list[Path]:
     if user_only:
         u = user_site_dir()
@@ -65,13 +55,9 @@ def pick_scan_dirs(user_only: bool, system_only: bool) -> list[Path]:
     if system_only:
         return system_site_dirs()
     return all_site_dirs()
-
-
 def parse_dist_name(name: str) -> tuple[str | None, str | None]:
     m = re.match(r"^(.+?)-(\d+.*?)(\.dist-info|\.egg-info)$", name)
     return (m.group(1).lower(), m.group(2)) if m else (None, None)
-
-
 def strip_dist_suffix(name: str) -> str:
     for suf in (".dist-info", ".egg-info"):
         if name.endswith(suf):
@@ -80,8 +66,6 @@ def strip_dist_suffix(name: str) -> str:
     for pat in (r"-\d+\.\d+\.\d+.*$", r"-\d+\.\d+.*$", r"-py\d+\.\d+$", r"-py\d+$"):
         name = re.sub(pat, "", name)
     return name
-
-
 def read_metadata_version(path: Path) -> str | None:
     for fname in ("METADATA", "PKG-INFO"):
         f = path / fname
@@ -91,8 +75,6 @@ def read_metadata_version(path: Path) -> str | None:
                     if line.startswith("Version:"):
                         return line.split(":", 1)[1].strip()
     return None
-
-
 def has_binary_ext(pkg_dir: Path, exts: Sequence[str] = BINARY_EXTS) -> bool:
     try:
         for f in pkg_dir.rglob("*"):
@@ -101,8 +83,6 @@ def has_binary_ext(pkg_dir: Path, exts: Sequence[str] = BINARY_EXTS) -> bool:
     except (PermissionError, OSError):
         pass
     return False
-
-
 def parse_entry_points(path: Path) -> dict[str, list[str]]:
     out: dict[str, list[str]] = {"console_scripts": [], "gui_scripts": [], "other": []}
     if not path or not path.exists():
@@ -139,8 +119,6 @@ def parse_entry_points(path: Path) -> dict[str, list[str]]:
                 else:
                     out["other"].append(f"{cur}:{key}")
     return out
-
-
 def find_bin_dir() -> Path | None:
     for cand in (
         Path(sys.prefix) / "bin",
@@ -151,8 +129,6 @@ def find_bin_dir() -> Path | None:
         if cand.exists():
             return cand
     return None
-
-
 def iter_dist_infos(dirs: Iterable[Path]) -> Iterator[Path]:
     for d in dirs:
         if not d.is_dir():
@@ -163,12 +139,8 @@ def iter_dist_infos(dirs: Iterable[Path]) -> Iterator[Path]:
                     yield entry
         except (PermissionError, OSError):
             continue
-
-
 def _is_within(needle: str, haystack: Sequence[str]) -> bool:
     return any(needle.startswith(h) for h in haystack)
-
-
 def _iter_metadata_in_dirs(dirs: Sequence[Path]):
     dir_strs = [str(d.resolve()) for d in dirs]
     for dist in metadata.distributions():
@@ -181,8 +153,6 @@ def _iter_metadata_in_dirs(dirs: Sequence[Path]):
                 yield dist, Path(dpath)
         except Exception:
             continue
-
-
 def _distinfo_packages(dirs: Sequence[Path]) -> dict[str, str]:
     out: dict[str, str] = {}
     for d in dirs:
@@ -202,8 +172,6 @@ def _distinfo_packages(dirs: Sequence[Path]) -> dict[str, str]:
         except PermissionError:
             continue
     return out
-
-
 def _metadata_packages(dirs: Sequence[Path]) -> dict[str, str]:
     out: dict[str, str] = {}
     for dist, _ in _iter_metadata_in_dirs(dirs):
@@ -215,8 +183,6 @@ def _metadata_packages(dirs: Sequence[Path]) -> dict[str, str]:
         except Exception:
             continue
     return out
-
-
 def cmd_duplicates(args: argparse.Namespace) -> int:
     system = system_site_dirs()
     user = user_site_dir()
@@ -241,8 +207,6 @@ def cmd_duplicates(args: argparse.Namespace) -> int:
             note = "  [version mismatch]"
         print(f"  {name}: system={sv}, user={uv}{note}")
     return 0
-
-
 def cmd_multi_version(_: argparse.Namespace) -> int:
     versions: dict[str, set[str]] = defaultdict(set)
     for di in iter_dist_infos(all_site_dirs()):
@@ -259,8 +223,6 @@ def cmd_multi_version(_: argparse.Namespace) -> int:
     if not found:
         print("No packages with multiple versions found.")
     return 0
-
-
 def cmd_missing_scripts(args: argparse.Namespace) -> int:
     bin_dir = find_bin_dir()
     if not bin_dir:
@@ -305,8 +267,6 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
         report.write_text("\n".join(lines) + "\n", encoding="utf-8")
         print(f"\nReport written to: {report}")
     return 1 if broken else 0
-
-
 def _entrypoints_pip_show(_: argparse.Namespace) -> int:
     try:
         r = subprocess.run(
@@ -348,8 +308,6 @@ def _entrypoints_pip_show(_: argparse.Namespace) -> int:
         print(n)
     print(f"\nTotal packages with bin/ scripts: {len(hits)}")
     return 0
-
-
 def _find_entry_points_file(entry: Path, site_dir: Path, name: str) -> Path | None:
     direct = entry / "entry_points.txt"
     if direct.exists():
@@ -367,8 +325,6 @@ def _find_entry_points_file(entry: Path, site_dir: Path, name: str) -> Path | No
                 if ep.exists():
                     return ep
     return None
-
-
 def cmd_entrypoints(args: argparse.Namespace) -> int:
     if args.mode == "pip-show":
         return _entrypoints_pip_show(args)
@@ -434,8 +390,6 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
         Path("ep_nopure.txt").write_text("\n".join(sorted(nonpure_ep)), encoding="utf-8")
         print("Wrote classification files: noep_pure.txt, noep_nopure.txt, ep_pure.txt, ep_nopure.txt")
     return 0
-
-
 def cmd_binary(args: argparse.Namespace) -> int:
     dirs = pick_scan_dirs(args.user_only, args.system_only)
     pure: set[str] = set()
@@ -465,11 +419,7 @@ def cmd_binary(args: argparse.Namespace) -> int:
     if args.output:
         print(f"\nList written to: {args.output}")
     return 0
-
-
 _IGNORABLE_SUFFIXES = {".pyc", ".pyo", ".pyd", ".egg-link", ".pth"}
-
-
 def _is_ignorable(p: Path) -> bool:
     s = str(p).lower()
     if any(x in s for x in ("__pycache__", ".dist-info", ".egg-info")):
@@ -477,8 +427,6 @@ def _is_ignorable(p: Path) -> bool:
     if p.suffix in _IGNORABLE_SUFFIXES:
         return True
     return p.name in ("easy-install.pth", "site.py")
-
-
 def cmd_orphans(args: argparse.Namespace) -> int:
     site_dirs = system_site_dirs()
     if not site_dirs:
@@ -545,8 +493,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
         )
         print(f"\nOrphan file list exported to: {out}")
     return 0
-
-
 def cmd_small(args: argparse.Namespace) -> int:
     results: list[tuple[str, int]] = []
     for dist, _ in _iter_metadata_in_dirs(all_site_dirs()):
@@ -576,8 +522,6 @@ def cmd_small(args: argparse.Namespace) -> int:
         print(f"\nWrote {len(results)} names to {out}")
     print(f"\nTotal: {len(results)} package(s) under {args.threshold} bytes")
     return 0
-
-
 def cmd_zpkg_list(args: argparse.Namespace) -> int:
     user_lib = (Path.home() / ".local" / "lib").resolve()
     results: list[str] = []
@@ -618,8 +562,6 @@ def cmd_zpkg_list(args: argparse.Namespace) -> int:
     out.write_text("\n".join(results) + "\n", encoding="utf-8")
     print(f"Saved {len(results)} package names to {out}")
     return 0
-
-
 def cmd_git_urls(args: argparse.Namespace) -> int:
     try:
         r = subprocess.run(
@@ -695,8 +637,6 @@ def cmd_git_urls(args: argparse.Namespace) -> int:
     print(f"{with_url}/{len(result)} packages have a git URL.")
     print(f"Results saved to: {out}")
     return 0
-
-
 def cmd_save_deb(args: argparse.Namespace) -> int:
     try:
         r = subprocess.run(
@@ -716,8 +656,6 @@ def cmd_save_deb(args: argparse.Namespace) -> int:
     out.write_text("\n".join(pkgs) + "\n", encoding="utf-8")
     print(f"Saved {len(pkgs)} packages to {out}")
     return 0
-
-
 def cmd_save_keys(args: argparse.Namespace) -> int:
     try:
         data = json.loads(Path(args.input).read_text(encoding="utf-8"))
@@ -750,15 +688,11 @@ def cmd_save_keys(args: argparse.Namespace) -> int:
     out.write_text("\n".join(keys) + "\n", encoding="utf-8")
     print(f"Wrote {len(keys)} pkgname values to {out}")
     return 0
-
-
 def cmd_rename_node(args: argparse.Namespace) -> int:
     root = Path(args.root).expanduser().resolve() if args.root else Path.cwd()
-
     def safe_name(name: str) -> str:
         name = name.lstrip("@").replace("/", "__")
         return re.sub(r"[^\w.-]", "_", name)
-
     for pkg_json in root.rglob("package.json"):
         parent = pkg_json.parent
         if parent.name != "package":
@@ -783,8 +717,6 @@ def cmd_rename_node(args: argparse.Namespace) -> int:
             print(f"[RENAME] {parent} -> {target}")
             parent.rename(target)
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pkg_inspector.py",
@@ -901,8 +833,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_rename_node)
     return p
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -911,7 +841,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\nInterrupted.", file=sys.stderr)
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

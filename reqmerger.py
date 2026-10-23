@@ -2,8 +2,6 @@
 from __future__ import annotations
 import argparse
 from pathlib import Path
-
-
 def merge_requirements(root: Path, remove_originals: bool = False) -> Path:
     output = root / "requirements.txt"
     sources = sorted(p for p in root.iterdir() if p.is_dir() and (p / "requirements.txt").is_file())
@@ -33,8 +31,6 @@ def merge_requirements(root: Path, remove_originals: bool = False) -> Path:
             (subdir / "requirements.txt").unlink()
             print(f"Removed {subdir / 'requirements.txt'}")
     return output
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Merge requirements.txt from top-level subdirs.")
     parser.add_argument(
@@ -45,7 +41,5 @@ def main() -> None:
     )
     args = parser.parse_args()
     merge_requirements(Path.cwd(), remove_originals=args.remove)
-
-
 if __name__ == "__main__":
     main()

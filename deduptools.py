@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -12,31 +11,21 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterator, Sequence
-
-
 def iter_py_files(root: Path, *, exclude_names: set[str] | None = None) -> Iterator[Path]:
     excl = exclude_names or set()
     for p in root.rglob("*.py"):
         if p.name in excl:
             continue
         yield p
-
-
 def read_text_safe(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return None
-
-
 def sha256_hex(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
 def slice_lines(lines: Sequence[str], start: int, end: int) -> str:
     return "".join(lines[start - 1 : end])
-
-
 @dataclass
 class Declaration:
     kind: str
@@ -45,37 +34,26 @@ class Declaration:
     end_lineno: int
     source: str
     content_hash: str
-
-
 class _NameStripper(ast.NodeTransformer):
     def _rename(self, node: ast.AST) -> ast.AST:
         node.name = "__NAME__"
         self.generic_visit(node)
         return node
-
     visit_FunctionDef = _rename
     visit_AsyncFunctionDef = _rename
     visit_ClassDef = _rename
-
-
 def ast_hash(node: ast.AST) -> str:
     clone = copy.deepcopy(node)
     clone = _NameStripper().visit(clone)
     ast.fix_missing_locations(clone)
     dumped = ast.dump(clone, annotate_fields=True, include_attributes=False)
     return sha256_hex(dumped)
-
-
 def is_simple_assign(node: ast.AST) -> bool:
     if not isinstance(node, ast.Assign):
         return False
     return all(isinstance(t, ast.Name) for t in node.targets)
-
-
 def assign_names(node: ast.Assign) -> list[str]:
     return [t.id for t in node.targets if isinstance(t, ast.Name)]
-
-
 def collect_ast_declarations(tree: ast.Module, lines: Sequence[str]) -> list[Declaration]:
     out: list[Declaration] = []
     for node in tree.body:
@@ -107,8 +85,6 @@ def collect_ast_declarations(tree: ast.Module, lines: Sequence[str]) -> list[Dec
                 )
             )
     return out
-
-
 def cmd_const(args: argparse.Namespace) -> int:
     target: Path = args.file
     if not target.exists():
@@ -143,8 +119,6 @@ def cmd_const(args: argparse.Namespace) -> int:
     print(f"Moved {len(dup_lines)} duplicate declarations to {out_path}")
     print(f"Updated {target} in place.")
     return 0
-
-
 def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
     path_str, suffix = job
     path = Path(path_str)
@@ -193,8 +167,6 @@ def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
     with out_path.open("a", encoding="utf-8") as f:
         f.write("".join(buf))
     return path_str, len(dup_ranges), None
-
-
 def cmd_ast(args: argparse.Namespace) -> int:
     targets: list[Path] = []
     if args.paths:
@@ -238,21 +210,14 @@ def cmd_ast(args: argparse.Namespace) -> int:
     else:
         print(f"Total duplicate block(s) moved: {moved_total}")
     return 0
-
-
 def _ts_make_parser():
     from tree_sitter import Language, Parser
     import tree_sitter_python as tsp
-
     parser = Parser()
     parser.language = Language(tsp.language())
     return parser
-
-
 def _ts_node_text(src_bytes: bytes, node) -> str:
     return src_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
-
-
 def _ts_collect(path: Path, parser) -> list[Declaration]:
     text = read_text_safe(path)
     if text is None:
@@ -303,8 +268,6 @@ def _ts_collect(path: Path, parser) -> list[Declaration]:
                 )
             )
     return out
-
-
 def _ts_write_output(representatives: dict[str, Declaration], out_path: Path) -> None:
     parts = [
         "# Auto-generated file",
@@ -322,8 +285,6 @@ def _ts_write_output(representatives: dict[str, Declaration], out_path: Path) ->
         parts.append(d.source)
         parts.append("")
     out_path.write_text("\n".join(parts), encoding="utf-8")
-
-
 def cmd_ts(args: argparse.Namespace) -> int:
     try:
         parser = _ts_make_parser()
@@ -355,13 +316,9 @@ def cmd_ts(args: argparse.Namespace) -> int:
     print(f"Found {len(dups)} duplicate items.")
     print(f"Wrote them to: {output_path}")
     return 0
-
-
 def _append(path: Path, text: str) -> None:
     with path.open("a", encoding="utf-8") as f:
         f.write(text + "\n\n")
-
-
 def cmd_refactor(args: argparse.Namespace) -> int:
     input_dir: Path = args.input_dir.resolve()
     out_dir: Path = args.output_dir
@@ -402,8 +359,6 @@ def cmd_refactor(args: argparse.Namespace) -> int:
         f.write("from .const import *\n")
     print(f"Wrote refactor output to {out_dir}/")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dedup_tool",
@@ -475,13 +430,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ref.set_defaults(func=cmd_refactor)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

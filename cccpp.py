@@ -9,7 +9,6 @@ from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_c
 import tree_sitter_cpp
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 CPP_EXTS: frozenset[str] = frozenset({
@@ -27,8 +26,6 @@ C_EXTS: frozenset[str] = frozenset({".c", ".h"})
 ALL_EXTS: frozenset[str] = C_EXTS | CPP_EXTS
 WORKERS: int = 8
 _PARSERS: dict[str, Parser] = {}
-
-
 def get_parser(ext: str) -> Parser:
     if ext not in _PARSERS:
         if ext in C_EXTS:
@@ -42,8 +39,6 @@ def get_parser(ext: str) -> Parser:
         parser.language = lang
         _PARSERS[ext] = parser
     return _PARSERS[ext]
-
-
 def collect_comment_ranges(root: Node) -> list[tuple[int, int]]:
     ranges: list[tuple[int, int]] = []
     stack: list[Node] = [root]
@@ -55,8 +50,6 @@ def collect_comment_ranges(root: Node) -> list[tuple[int, int]]:
         for child in reversed(node.children):
             stack.append(child)
     return ranges
-
-
 def get_comment_info(content: bytes, ext: str) -> list[dict[str, object]]:
     parser: Parser = get_parser(ext)
     tree = parser.parse(content)
@@ -87,8 +80,6 @@ def get_comment_info(content: bytes, ext: str) -> list[dict[str, object]]:
             "context": context,
         })
     return comment_info
-
-
 def strip_comments(
     content: bytes,
     ext: str,
@@ -110,8 +101,6 @@ def strip_comments(
         last = end
     out.extend(content[last:])
     return bytes(out), len(ranges)
-
-
 def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
     try:
         path = Path(path).resolve()
@@ -165,8 +154,6 @@ def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
         return rel, 0, ""
     except Exception as exc:
         return str(path), 0, str(exc)
-
-
 def process_file(path: Path, base: Path) -> tuple[str, int, str]:
     try:
         content: bytes = path.read_bytes()
@@ -181,8 +168,6 @@ def process_file(path: Path, base: Path) -> tuple[str, int, str]:
         return rel, count, ""
     except Exception as exc:
         return str(path), 0, str(exc)
-
-
 def iter_cc_files(paths: Iterable[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for p in paths:
@@ -198,8 +183,6 @@ def iter_cc_files(paths: Iterable[Path]) -> Iterator[Path]:
                     if rp not in seen:
                         seen.add(rp)
                         yield f
-
-
 def _run_batch(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
     total_comments: int = 0
     files_changed: int = 0
@@ -217,8 +200,6 @@ def _run_batch(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
                 files_changed += 1
             print(f"{rel}: {count} comment(s) removed")
     return total_comments, files_changed, errors
-
-
 def _run_interactive(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
     total_comments: int = 0
     files_changed: int = 0
@@ -237,8 +218,6 @@ def _run_interactive(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
         else:
             print(f"\n{rel}: no comments removed")
     return total_comments, files_changed, errors
-
-
 def main() -> int:
     ap: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Remove comments from C/C++ files in place (tree-sitter powered)."
@@ -271,7 +250,5 @@ def main() -> int:
         f"{total_comments} comment(s) removed, {errors} error(s)."
     )
     return 1 if errors else 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

@@ -10,26 +10,19 @@ from pathlib import Path
 import re
 import sys
 import warnings
-
 __version__ = version = "1.14.0"
 __version_tuple__ = version_tuple = (1, 14, 0)
 BASE_URL = "https://pypistats.org/api/"
 USER_AGENT = f"pypistats/{__version__}"
 _verbose = False
-
-
 def _print_verbose(*args, **kwargs):
     if _verbose:
         print(*args, file=sys.stderr, **kwargs)
-
-
 def _validate_total(total):
     supported_granularities = ("daily", "monthly", "all")
     if total not in supported_granularities:
         msg = f"total must be one of {supported_granularities}"
         raise ValueError(msg)
-
-
 def pypi_stats_api(
     endpoint,
     params=None,
@@ -61,7 +54,6 @@ def pypi_stats_api(
         res = _cache_load(cache_file)
     if res == {}:
         import urllib3
-
         r = urllib3.request("GET", url, headers={"User-Agent": USER_AGENT})
         _print_verbose("HTTP status code:", r.status)
         if r.status >= 400:
@@ -116,8 +108,6 @@ def pypi_stats_api(
         return f"{output}\nDate range: {first} - {last}\n"
     else:
         return output
-
-
 def _filter(data, start_date=None, end_date=None):
     temp_data = []
     if start_date:
@@ -132,8 +122,6 @@ def _filter(data, start_date=None, end_date=None):
                 temp_data.append(row)
         data = temp_data
     return data
-
-
 def _sort(data, sort=True):
     if isinstance(data, dict):
         return data
@@ -149,8 +137,6 @@ def _sort(data, sort=True):
     else:
         data = sorted(data, key=lambda k: k[sort], reverse=reverse)
     return data
-
-
 def _monthly_total(data):
     totalled = {}
     for row in data:
@@ -169,8 +155,6 @@ def _monthly_total(data):
         for month, downloads in month_downloads.items():
             data.append({"category": category, "date": month, "downloads": downloads})
     return data
-
-
 def _total(data):
     if isinstance(data, dict):
         return data
@@ -184,8 +168,6 @@ def _total(data):
     for k, v in totalled.items():
         data.append({"category": k, "downloads": v})
     return data
-
-
 def _date_range(data):
     if isinstance(data, dict):
         return None, None
@@ -194,8 +176,6 @@ def _date_range(data):
     except KeyError:
         return None, None
     return min(dates), max(dates)
-
-
 def _grand_total_value(data):
     if data[0]["category"] in ["with_mirrors", "without_mirrors"]:
         count_with_mirrors = sum(row["downloads"] for row in data if row["category"] == "with_mirrors")
@@ -204,8 +184,6 @@ def _grand_total_value(data):
     else:
         grand_total = sum(row["downloads"] for row in data)
     return grand_total
-
-
 def _grand_total(data):
     if isinstance(data, dict):
         return data
@@ -215,8 +193,6 @@ def _grand_total(data):
     new_row = {"category": "Total", "downloads": grand_total}
     data.append(new_row)
     return data
-
-
 def _percent(data):
     if isinstance(data, dict):
         return data
@@ -226,14 +202,11 @@ def _percent(data):
     for row in data:
         row["percent"] = "{:.2%}".format(row["downloads"] / grand_total)
     return data
-
-
 def _colourify(data):
     for row in data:
         if "percent" not in row:
             continue
         from termcolor import colored
-
         percent = float(row["percent"].rstrip("%"))
         if percent <= 5:
             colour = "red"
@@ -243,8 +216,6 @@ def _colourify(data):
             colour = "green"
         row["percent"] = colored(row["percent"], colour)
     return data
-
-
 def _tabulate(data, format_="markdown", color="yes"):
     if isinstance(data, dict):
         headers = list(data.keys())
@@ -256,11 +227,8 @@ def _tabulate(data, format_="markdown", color="yes"):
         return _dataframe(headers, data, format_)
     else:
         return _prettytable(headers, data, format_, color)
-
-
 def _prettytable(headers, data, format_, color="yes"):
     from prettytable import PrettyTable, TableStyle
-
     table = PrettyTable()
     if format_ == "html":
         table.border = False
@@ -272,14 +240,11 @@ def _prettytable(headers, data, format_, color="yes"):
         table.set_style(TableStyle.SINGLE_BORDER)
     if isinstance(data, dict):
         data = [data]
-
     def h(header):
         if color != "no" and format_ == "pretty":
             from termcolor import colored
-
             return colored(header, attrs=["bold"])
         return header
-
     for header in headers:
         col_data = [row.get(header, "") for row in data]
         table.add_column(h(header), col_data)
@@ -299,72 +264,49 @@ def _prettytable(headers, data, format_, color="yes"):
         return table.get_csv_string(delimiter="\t", lineterminator="\n")
     else:
         return table.get_string() + "\n"
-
-
 def _dataframe(headers, data, format_):
     if isinstance(data, dict):
         data = [data]
     rows = [[row.get(header, "") for header in headers] for row in data]
     if format_ == "numpy":
         import numpy as np
-
         return np.array(rows, dtype=object)
     import pandas as pd
-
     return pd.DataFrame(rows, columns=headers)
-
-
 def _paramify(param_name, param_value):
     if isinstance(param_value, bool):
         param_value = str(param_value).lower()
     if param_value:
         return "&" + param_name + "=" + str(param_value)
     return ""
-
-
 def recent(package, period=None, **kwargs):
     endpoint = f"packages/{package}/recent"
     params = _paramify("period", period)
     return pypi_stats_api(endpoint, params, **kwargs)
-
-
 def overall(package, mirrors=None, **kwargs):
     endpoint = f"packages/{package}/overall"
     params = _paramify("mirrors", mirrors)
     return pypi_stats_api(endpoint, params, **kwargs)
-
-
 def python_major(package, version=None, **kwargs):
     endpoint = f"packages/{package}/python_major"
     params = _paramify("version", version)
     return pypi_stats_api(endpoint, params, **kwargs)
-
-
 def python_minor(package, version=None, **kwargs):
     endpoint = f"packages/{package}/python_minor"
     params = _paramify("version", version)
     return pypi_stats_api(endpoint, params, **kwargs)
-
-
 def system(package, os=None, **kwargs):
     endpoint = f"packages/{package}/system"
     params = _paramify("os", os)
     return pypi_stats_api(endpoint, params, **kwargs)
-
-
 import contextlib
 from platformdirs import user_cache_dir
 from slugify import slugify
-
 CACHE_DIR = Path(user_cache_dir("pypistats"))
-
-
 def _cache_filename(url):
     today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
     slug = slugify(url)
     return CACHE_DIR / f"{today}-{slug}.json"
-
-
 def _cache_load(cache_file):
     if not cache_file.exists():
         return {}
@@ -374,8 +316,6 @@ def _cache_load(cache_file):
         except json.decoder.JSONDecodeError:
             return {}
     return data
-
-
 def _cache_save(cache_file, data):
     try:
         if not CACHE_DIR.exists():
@@ -384,29 +324,20 @@ def _cache_save(cache_file, data):
             json.dump(data, f)
     except OSError:
         pass
-
-
 def _cache_clear():
     cache_files = CACHE_DIR.glob("**/*.json")
     this_month = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m")
     for cache_file in cache_files:
         if not cache_file.name.startswith(this_month):
             cache_file.unlink()
-
-
 atexit.register(_cache_clear)
 cli = argparse.ArgumentParser()
 subparsers = cli.add_subparsers(dest="subcommand")
-
-
 def argument(*name_or_flags, **kwargs):
     return list(name_or_flags), kwargs
-
-
 def subcommand(args=None, parent=subparsers):
     if args is None:
         args = []
-
     def decorator(func):
         func2 = globals()[func.__name__]
         parser = parent.add_parser(
@@ -417,10 +348,7 @@ def subcommand(args=None, parent=subparsers):
         for arg in args:
             parser.add_argument(*arg[0], **arg[1])
         parser.set_defaults(func=func)
-
     return decorator
-
-
 def _package(value):
     directory = Path(value)
     if not directory.is_dir():
@@ -451,8 +379,6 @@ def _package(value):
     if msg == "pyproject.toml not found and setup.cfg not found":
         msg = "pyproject.toml and setup.cfg not found"
     raise argparse.ArgumentTypeError(msg)
-
-
 def _month_name_to_yyyy_mm(date_string, date_format):
     today = dt.date.today()
     new = dt.datetime.strptime(f"{date_string} {today.year}", f"{date_format} %Y").date()
@@ -460,8 +386,6 @@ def _month_name_to_yyyy_mm(date_string, date_format):
         return new.isoformat()[:7]
     new = dt.datetime.strptime(f"{date_string} {today.year - 1}", f"{date_format} %Y").date()
     return new.isoformat()[:7]
-
-
 def _valid_date(date_string, date_format):
     try:
         dt.datetime.strptime(date_string, date_format)
@@ -469,49 +393,35 @@ def _valid_date(date_string, date_format):
     except ValueError:
         msg = f"Not a valid date: '{date_string}'."
         raise argparse.ArgumentTypeError(msg)
-
-
 def _valid_yyyy_mm_dd(date_string):
     return _valid_date(date_string, "%Y-%m-%d")
-
-
 def _valid_yyyy_mm(date_string):
     with contextlib.suppress(ValueError):
         date_string = _month_name_to_yyyy_mm(date_string, "%b")
     with contextlib.suppress(ValueError):
         date_string = _month_name_to_yyyy_mm(date_string, "%B")
     return _valid_date(date_string, "%Y-%m")
-
-
 def _valid_yyyy_mm_optional_dd(date_string):
     try:
         return _valid_yyyy_mm_dd(date_string)
     except argparse.ArgumentTypeError:
         return _valid_yyyy_mm(date_string)
-
-
 def _define_format(args):
     if args.json:
         return "json"
     return args.format
-
-
 def _python_major_version(value):
     pattern = r"^\d+$"
     if not re.match(pattern, value):
         msg = "Invalid major version format. Expected a positive integer value."
         raise argparse.ArgumentTypeError(msg)
     return value
-
-
 def _python_minor_version(value):
     pattern = r"^\d+\.\d+$"
     if not re.match(pattern, value):
         msg = "Invalid minor version format. Expected a positive float value in x.x pattern."
         raise argparse.ArgumentTypeError(msg)
     return value
-
-
 FORMATS = ("html", "json", "pretty", "md", "markdown", "rst", "tsv")
 arg_start_date = argument(
     "-sd",
@@ -596,8 +506,6 @@ common_arguments = [
     arg_color,
     arg_verbose,
 ]
-
-
 @subcommand([
     package_argument,
     argument("-p", "--period", choices=("day", "week", "month")),
@@ -607,8 +515,6 @@ common_arguments = [
 ])
 def recent(args):
     print(recent(args.package, period=args.period, format=args.format))
-
-
 @subcommand([
     package_argument,
     argument("--mirrors", choices=("true", "false", "with", "without")),
@@ -629,8 +535,6 @@ def overall(args):
             color="no",
         )
     )
-
-
 @subcommand([
     package_argument,
     argument("-V", "--version", help="eg. 2 or 3", type=_python_major_version),
@@ -649,8 +553,6 @@ def python_major(args):
             color=args.color,
         )
     )
-
-
 @subcommand([
     package_argument,
     argument("-V", "--version", help="eg. 2.7 or 3.6", type=_python_minor_version),
@@ -669,8 +571,6 @@ def python_minor(args):
             color=args.color,
         )
     )
-
-
 @subcommand([
     package_argument,
     argument("-o", "--os", help="eg. windows, linux, darwin or other"),
@@ -689,16 +589,12 @@ def system(args):
             color=args.color,
         )
     )
-
-
 def _month(yyyy_mm):
     year, month = list(map(int, yyyy_mm.split("-")))
     first = dt.date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
     last = dt.date(year, month, last_day)
     return str(first), str(last)
-
-
 def _last_month():
     today = dt.date.today()
     if today.month == 1:
@@ -706,13 +602,9 @@ def _last_month():
     else:
         year, month = today.year, today.month - 1
     return _month(f"{year}-{month:02d}")
-
-
 def _this_month():
     today = dt.date.today()
     return _month(today.isoformat()[:7])[0]
-
-
 def main():
     cli.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     args = cli.parse_args()
@@ -734,7 +626,5 @@ def main():
         args.format = _define_format(args)
         globals()["_verbose"] = args.verbose
         args.func(args)
-
-
 if __name__ == "__main__":
     main()

@@ -6,7 +6,6 @@ import operator
 from pathlib import Path
 from joblib import Parallel, delayed
 from xxhash import xxh64
-
 OUTPUT_DIR = Path("output")
 OUTPUT_FILE = OUTPUT_DIR / "const.py"
 LOG_FILE = OUTPUT_DIR / "error.log"
@@ -16,16 +15,12 @@ logging.basicConfig(
     level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
-
-
 def get_file_hash(path):
     hasher = xxh64()
     with Path(path).open("rb") as f:
         while chunk := f.read(CHUNK_SIZE):
             hasher.update(chunk)
     return hasher.hexdigest()
-
-
 def extract_constants(path):
     constants = []
     try:
@@ -55,15 +50,11 @@ def extract_constants(path):
     except Exception as e:
         logging.error(f"Error processing {path}: {e}")
     return constants
-
-
 def process_file(path):
     file_hash = get_file_hash(path)
     Path(path)
     constants = extract_constants(path)
     return file_hash, constants
-
-
 def main():
     cwd = Path.cwd()
     python_files = list(get_pyfiles(cwd))
@@ -107,7 +98,5 @@ def main():
     print(f"Successfully extracted {len(written_consts)} unique constants to {OUTPUT_FILE}")
     if LOG_FILE.exists():
         print(f"Errors logged to {LOG_FILE}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -8,7 +8,6 @@ import sys
 import threading
 import time
 from loguru import logger
-
 logger.remove()
 logger.add(
     "translate_words.log",
@@ -25,12 +24,8 @@ logger.add(
 )
 FALLBACK_ORDER = ("translate", "deep_translator", "googletrans")
 MAX_RETRIES = 3
-
-
 class BackendError(Exception):
     pass
-
-
 def _make_translate(source, target, script_path):
     try:
         import translate
@@ -46,31 +41,21 @@ def _make_translate(source, target, script_path):
         msg = "'translate' module exposes neither 'Translator' nor 'GoogleTranslator'"
         raise BackendError(msg)
     if cls.__name__ == "Translator":
-
         def call(text, cls=cls, source=source, target=target):
             return cls(from_lang=source, to_lang=target).translate(text)
-
     else:
-
         def call(text, cls=cls, source=source, target=target):
             return cls(source=source, target=target).translate(text)
-
     return call
-
-
 def _make_deep_translator(source, target, _script_path):
     try:
         from deep_translator import GoogleTranslator
     except ImportError as e:
         msg = f"cannot import 'deep_translator': {e}"
         raise BackendError(msg)
-
     def call(text, cls=GoogleTranslator, source=source, target=target):
         return cls(source=source, target=target).translate(text)
-
     return call
-
-
 def _make_googletrans(source, target, _script_path):
     try:
         from googletrans import Translator
@@ -79,21 +64,15 @@ def _make_googletrans(source, target, _script_path):
         raise BackendError(msg)
     lock = threading.Lock()
     inst = Translator()
-
     def call(text, inst=inst, lock=lock, source=source, target=target):
         with lock:
             return inst.translate(text, src=source, dest=target).text
-
     return call
-
-
 _BACKEND_FACTORIES = {
     "translate": _make_translate,
     "deep_translator": _make_deep_translator,
     "googletrans": _make_googletrans,
 }
-
-
 class TranslatorWrapper:
     def __init__(self, preferred, source, target, script_path):
         self.source = source
@@ -127,11 +106,8 @@ class TranslatorWrapper:
         print("  pip install deep_translator", file=sys.stderr)
         print("  pip install googletrans==4.0.0rc1", file=sys.stderr)
         sys.exit(1)
-
     def translate(self, text):
         return self._call(text)
-
-
 def load_progress(out_path):
     if not os.path.exists(out_path):
         return {}
@@ -143,21 +119,15 @@ def load_progress(out_path):
     except (json.JSONDecodeError, IOError) as e:
         logger.warning("Could not read existing output file {}: {}", out_path, e)
     return {}
-
-
 def save_output(out_path, data, lock):
     with lock:
         tmp_path = out_path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         os.replace(tmp_path, out_path)
-
-
 def append_failed(failed_path, word, lock):
     with lock, open(failed_path, "a", encoding="utf-8") as f:
         f.write(word + "\n")
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Translate a word list file line by line to JSON.")
     parser.add_argument(
@@ -212,8 +182,6 @@ def parse_args():
         help="Do not resume from a previous job; start from scratch",
     )
     return parser.parse_args()
-
-
 def main():
     args = parse_args()
     input_path = args.input
@@ -251,7 +219,6 @@ def main():
     failed_lock = threading.Lock()
     completed_count = [0]
     total_pending = len(pending)
-
     def translate_word(word):
         for attempt in range(1, MAX_RETRIES + 1):
             try:
@@ -279,7 +246,6 @@ def main():
                     time.sleep(args.delay * (attempt + 1))
         logger.error("All {} attempts failed for {!r}", MAX_RETRIES, word)
         return word, None
-
     try:
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
             futures = {executor.submit(translate_word, w): w for w in pending}
@@ -313,7 +279,5 @@ def main():
         with open(failed_path, "r", encoding="utf-8") as f:
             failed_count = sum(1 for _ in f if _.strip())
         print(f"Failed words ({failed_count}): {failed_path}")
-
-
 if __name__ == "__main__":
     main()

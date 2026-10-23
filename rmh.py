@@ -7,8 +7,6 @@ import re
 import sys
 from loguru import logger
 from tqdm import tqdm
-
-
 @dataclass
 class ProcessResult:
     path: Path
@@ -20,44 +18,34 @@ class ProcessResult:
     final_size: int
     backup_size: int
     error: str | None = None
-
     @property
     def space_freed(self) -> int:
         return max(0, self.original_size - self.final_size)
-
     @property
     def total_space_used(self) -> int:
         return self.final_size + self.backup_size
-
-
 class CommentRemover:
     STRING_PATTERN = r"(?:\"(?:\.|[^\"\])*\"|'(?:\.|[^'\])*')"
     SINGLE_COMMENT_PATTERN = r"//.*?(?=\n|$)"
     MULTI_COMMENT_PATTERN = r"/\*.*?\*/"
-
     def __init__(self):
         self.string_regex = re.compile(self.STRING_PATTERN)
         self.single_comment_regex = re.compile(self.SINGLE_COMMENT_PATTERN)
         self.multi_comment_regex = re.compile(self.MULTI_COMMENT_PATTERN, re.DOTALL)
-
     def _protect_strings(self, text: str) -> tuple[str, dict]:
         protected_strings = {}
         placeholder_counter = [0]
-
         def replace_string(match):
             placeholder = f"__STRING_PLACEHOLDER_{placeholder_counter[0]}__"
             protected_strings[placeholder] = match.group(0)
             placeholder_counter[0] += 1
             return placeholder
-
         protected_text = self.string_regex.sub(replace_string, text)
         return (protected_text, protected_strings)
-
     def _restore_strings(self, text: str, protected_strings: dict) -> str:
         for placeholder, original in protected_strings.items():
             text = text.replace(placeholder, original)
         return text
-
     def remove_comments(self, text: str) -> tuple[str, int]:
         protected_text, protected_strings = self._protect_strings(text)
         single_count = len(self.single_comment_regex.findall(protected_text))
@@ -83,7 +71,6 @@ class CommentRemover:
         protected_text = "\n".join(final_lines)
         cleaned_text = self._restore_strings(protected_text, protected_strings)
         return (cleaned_text, total_comments)
-
     def process_file(self, path: Path) -> ProcessResult:
         try:
             path = path.resolve()
@@ -129,8 +116,6 @@ class CommentRemover:
                 backup_size=0,
                 error=f"Processing error: {e}",
             )
-
-
 def find_source_files(root_dir: Path) -> list[Path]:
     extensions = {".h", ".hpp", ".c", ".cpp", ".cc", ".cxx", ".hxx"}
     files = []
@@ -141,8 +126,6 @@ def find_source_files(root_dir: Path) -> list[Path]:
         for ext in extensions:
             files.extend(root_dir.rglob(f"*{ext}"))
     return sorted(files)
-
-
 def collect_source_files(targets: list[str]) -> list[Path]:
     all_files = set()
     for target in targets:
@@ -153,8 +136,6 @@ def collect_source_files(targets: list[str]) -> list[Path]:
         found_files = find_source_files(path)
         all_files.update(found_files)
     return sorted(all_files)
-
-
 def process_files_parallel(paths: list[Path], num_workers: int | None = None) -> list[ProcessResult]:
     num_workers = num_workers or cpu_count()
     remover = CommentRemover()
@@ -168,16 +149,12 @@ def process_files_parallel(paths: list[Path], num_workers: int | None = None) ->
             )
         )
     return results
-
-
 def _format_bytes(bytes_val: int) -> str:
     for unit in ["B", "KB", "MB", "GB"]:
         if bytes_val < 1024:
             return f"{bytes_val:.2f} {unit}"
         bytes_val /= 1024
     return f"{bytes_val:.2f} TB"
-
-
 def print_summary(results: list[ProcessResult], targets: list[Path]) -> None:
     successful = [r for r in results if r.success]
     failed = [r for r in results if not r.success]
@@ -213,8 +190,6 @@ def print_summary(results: list[ProcessResult], targets: list[Path]) -> None:
         logger.warning("Failed files:")
         for result in failed:
             logger.warning(f"  {result.path.name}: {result.error}")
-
-
 def main(
     targets: list[str] | None = None,
     num_workers: int | None = None,
@@ -272,11 +247,8 @@ def main(
         print(f"Removed {backup_count} backup files")
     failed = [r for r in results if not r.success]
     return 1 if failed else 0
-
-
 if __name__ == "__main__":
     import argparse
-
     parser = argparse.ArgumentParser(
         description="Remove comments from C/C++ files recursively",
         epilog="Examples:\n  %(prog)s                           # Process current directory\n  %(prog)s src/ include/             # Process multiple directories\n  %(prog)s file.cpp                  # Process single file\n  %(prog)s src/ file.h               # Process directory and file\n",

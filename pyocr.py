@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import codecs
@@ -18,8 +16,6 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import xml.dom.minidom
-
-
 if sys.version_info < (3, 4):
     msg = "PyOCR requires Python 3.4+"
     raise ImportError(msg)
@@ -34,41 +30,30 @@ _XHTML_HEADER = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 \t<title>OCR output</title>
 </head>
 """
-
-
 class PyocrException(Exception):
     pass
-
-
 class TesseractError(PyocrException):
     def __init__(self, status, message):
         PyocrException.__init__(self, message)
         self.status = status
         self.message = message
         self.args = (status, message)
-
-
 class CuneiformError(PyocrException):
     def __init__(self, status, message):
         PyocrException.__init__(self, message)
         self.status = status
         self.message = message
         self.args = (status, message)
-
-
 def digits_only(string):
     match = re.match(r"\D*(?P<digits>\d+)", string)
     if match:
         return int(match.group("digits"))
     return 0
-
-
 class Box:
     def __init__(self, content, position, confidence=0):
         self.content = content
         self.position = position
         self.confidence = confidence
-
     def get_xml_tag(self, parent_doc):
         span_tag = parent_doc.createElement("span")
         span_tag.setAttribute("class", "ocrx_word")
@@ -87,7 +72,6 @@ class Box:
         txt.data = self.content
         span_tag.appendChild(txt)
         return span_tag
-
     def __str__(self):
         return "{} {} {} {} {}".format(
             self.content,
@@ -96,7 +80,6 @@ class Box:
             self.position[1][0],
             self.position[1][1],
         )
-
     def __box_cmp(self, other):
         if other is None or getattr(other, "position", None) is None:
             return -1
@@ -111,25 +94,18 @@ class Box:
             elif x > y:
                 return 1
         return 0
-
     def __lt__(self, other):
         return self.__box_cmp(other) < 0
-
     def __gt__(self, other):
         return self.__box_cmp(other) > 0
-
     def __eq__(self, other):
         return self.__box_cmp(other) == 0
-
     def __le__(self, other):
         return self.__box_cmp(other) <= 0
-
     def __ge__(self, other):
         return self.__box_cmp(other) >= 0
-
     def __ne__(self, other):
         return self.__box_cmp(other) != 0
-
     def __hash__(self):
         position_hash = 0
         position_hash += (self.position[0][0] & 0xFF) << 0
@@ -137,20 +113,16 @@ class Box:
         position_hash += (self.position[1][0] & 0xFF) << 16
         position_hash += (self.position[1][1] & 0xFF) << 24
         return position_hash ^ hash(self.content) ^ hash(self.content)
-
-
 class LineBox:
     def __init__(self, word_boxes, position):
         self.word_boxes = word_boxes
         self.position = position
-
     @property
     def content(self):
         txt = ""
         for box in self.word_boxes:
             txt += box.content + " "
         return txt.strip()
-
     def get_xml_tag(self, parent_doc):
         span_tag = parent_doc.createElement("span")
         span_tag.setAttribute("class", "ocr_line")
@@ -171,7 +143,6 @@ class LineBox:
                 span_tag.appendChild(space)
             span_tag.appendChild(box.get_xml_tag(parent_doc))
         return span_tag
-
     def __str__(self):
         txt = "[\n"
         for box in self.word_boxes:
@@ -189,13 +160,10 @@ class LineBox:
             self.position[1][0],
             self.position[1][1],
         )
-
     def __repr__(self):
         return f"LineBox({self!s})"
-
     def __contains__(self, text):
         return text in self.content
-
     def __box_cmp(self, other):
         if other is None or getattr(other, "position", None) is None:
             return -1
@@ -210,25 +178,18 @@ class LineBox:
             elif x > y:
                 return 1
         return 0
-
     def __lt__(self, other):
         return self.__box_cmp(other) < 0
-
     def __gt__(self, other):
         return self.__box_cmp(other) > 0
-
     def __eq__(self, other):
         return self.__box_cmp(other) == 0
-
     def __le__(self, other):
         return self.__box_cmp(other) <= 0
-
     def __ge__(self, other):
         return self.__box_cmp(other) >= 0
-
     def __ne__(self, other):
         return self.__box_cmp(other) != 0
-
     def __hash__(self):
         content = self.content
         position_hash = 0
@@ -237,40 +198,30 @@ class LineBox:
         position_hash += (self.position[1][0] & 0xFF) << 16
         position_hash += (self.position[1][1] & 0xFF) << 24
         return position_hash ^ hash(content)
-
-
 class BaseBuilder:
     def __init__(self, file_extensions, tesseract_flags, tesseract_configs, cuneiform_args):
         self.file_extensions = file_extensions
         self.tesseract_flags = tesseract_flags
         self.tesseract_configs = tesseract_configs
         self.cuneiform_args = cuneiform_args
-
     def read_file(self, file_descriptor):
         msg = "Implement in subclasses"
         raise NotImplementedError(msg)
-
     def write_file(self, file_descriptor, output):
         msg = "Implement in subclasses"
         raise NotImplementedError(msg)
-
     def start_line(self, box):
         msg = "Implement in subclasses"
         raise NotImplementedError(msg)
-
     def add_word(self, word, box, confidence=0):
         msg = "Implement in subclasses"
         raise NotImplementedError(msg)
-
     def end_line(self):
         msg = "Implement in subclasses"
         raise NotImplementedError(msg)
-
     def get_output(self):
         msg = "Implement in subclasses"
         raise NotImplementedError(msg)
-
-
 class TextBuilder(BaseBuilder):
     def __init__(
         self,
@@ -292,46 +243,33 @@ class TextBuilder(BaseBuilder):
         super(TextBuilder, self).__init__(file_ext, tess_flags, [], cun_args)
         self.tesseract_layout = tesseract_layout
         self.built_text = []
-
     @staticmethod
     def read_file(file_descriptor):
         return file_descriptor.read().strip()
-
     @staticmethod
     def write_file(file_descriptor, text):
         file_descriptor.write(text)
-
     def start_line(self, box):
         self.built_text.append("")
-
     def add_word(self, word, box, confidence=0):
         if self.built_text[-1] != "":
             self.built_text[-1] += " "
         self.built_text[-1] += word
-
     def end_line(self):
         pass
-
     def get_output(self):
         return "\n".join(self.built_text)
-
     def __str__(self):
         return "Raw text"
-
-
 class DigitBuilder(TextBuilder):
     def __init__(self, tesseract_layout=3):
         super(DigitBuilder, self).__init__(tesseract_layout)
         self.tesseract_configs.append("digits")
-
     def __str__(self):
         return "Digits raw text"
-
-
 class _WordHTMLParser(HTMLParser):
     WORD_TAG_TYPES = {"ocr_word", "ocrx_word"}
     LINE_TAG_TYPES = {"ocr_header", "ocr_footer", "ocr_line"}
-
     def __init__(self):
         HTMLParser.__init__(self)
         self.__tag_types = []
@@ -342,7 +280,6 @@ class _WordHTMLParser(HTMLParser):
         self.__current_line_position = None
         self.__current_line_content = []
         self.lines = []
-
     @staticmethod
     def __parse_confidence(title):
         for piece in title.split("; "):
@@ -352,7 +289,6 @@ class _WordHTMLParser(HTMLParser):
             return int(piece.split(" ")[1])
         logger.debug("OCR confidence measure not found. Assuming 0.")
         return 0
-
     @staticmethod
     def __parse_position(title):
         for piece in title.split("; "):
@@ -362,7 +298,6 @@ class _WordHTMLParser(HTMLParser):
             piece = piece.split(" ")
             return ((int(piece[1]), int(piece[2])), (int(piece[3]), int(piece[4])))
         raise Exception("Invalid hocr position: %s" % title)
-
     def handle_starttag(self, tag, attrs):
         if tag != "span":
             return
@@ -389,12 +324,10 @@ class _WordHTMLParser(HTMLParser):
             self.__current_line_position = self.__parse_position(position)
             self.__current_line_content = []
         self.__tag_types.append(tag_type)
-
     def handle_data(self, data):
         if self.__current_box_text is None:
             return
         self.__current_box_text += data
-
     def handle_endtag(self, tag):
         if tag != "span":
             return
@@ -416,21 +349,16 @@ class _WordHTMLParser(HTMLParser):
             self.lines.append(line)
             self.__current_line_content = []
             return
-
     def __str__(self):
         return "WordHTMLParser"
-
-
 class _LineHTMLParser(HTMLParser):
     TAG_TYPE_CONTENT = 0
     TAG_TYPE_POSITIONS = 1
-
     def __init__(self):
         HTMLParser.__init__(self)
         self.boxes = []
         self.__line_text = None
         self.__char_positions = None
-
     def handle_starttag(self, tag, attrs):
         if tag != "span":
             return
@@ -457,12 +385,10 @@ class _LineHTMLParser(HTMLParser):
                     self.__char_positions.remove("-1")
             except ValueError:
                 pass
-
     def handle_data(self, data):
         if self.__line_text is None:
             return
         self.__line_text += data
-
     def handle_endtag(self, tag):
         if self.__line_text is None or self.__char_positions == []:
             return
@@ -478,18 +404,14 @@ class _LineHTMLParser(HTMLParser):
             bottom_pos = max([int(positions[x]) for x in range(3, 4 * len(word), 4)])
             self.boxes.append(Box(word, ((left_pos, top_pos), (right_pos, bottom_pos))))
         self.__line_text = None
-
     def __str__(self):
         return "LineHTMLParser"
-
-
 class WordBoxBuilder(BaseBuilder):
     def __init__(self, tesseract_layout=1):
         tess_flags = [psm_parameter(), str(tesseract_layout)]
         super(WordBoxBuilder, self).__init__(["html", "hocr"], tess_flags, ["hocr"], ["-f", "hocr"])
         self.word_boxes = []
         self.tesseract_layout = tesseract_layout
-
     def read_file(self, file_descriptor):
         parsers = [_WordHTMLParser(), _LineHTMLParser()]
         html_str = file_descriptor.read()
@@ -500,7 +422,6 @@ class WordBoxBuilder(BaseBuilder):
                     p.boxes.pop(-1)
                 return p.boxes
         return []
-
     @staticmethod
     def write_file(file_descriptor, boxes):
         impl = xml.dom.minidom.getDOMImplementation()
@@ -510,30 +431,22 @@ class WordBoxBuilder(BaseBuilder):
         for box in boxes:
             file_descriptor.write("<p>" + box.get_xml_tag(newdoc).toxml() + "</p>\n")
         file_descriptor.write("</body>\n</html>\n")
-
     def start_line(self, box):
         pass
-
     def add_word(self, word, box, confidence=0):
         self.word_boxes.append(Box(word, box, confidence))
-
     def end_line(self):
         pass
-
     def get_output(self):
         return self.word_boxes
-
     def __str__(self):
         return "Word boxes"
-
-
 class LineBoxBuilder(BaseBuilder):
     def __init__(self, tesseract_layout=1):
         tess_flags = [psm_parameter(), str(tesseract_layout)]
         super(LineBoxBuilder, self).__init__(["html", "hocr"], tess_flags, ["hocr"], ["-f", "hocr"])
         self.lines = []
         self.tesseract_layout = tesseract_layout
-
     def read_file(self, file_descriptor):
         parsers = [
             (_WordHTMLParser(), lambda parser: parser.lines),
@@ -550,7 +463,6 @@ class LineBoxBuilder(BaseBuilder):
                     parser.boxes.pop(-1)
                 return convertion(parser)
         return []
-
     @staticmethod
     def write_file(file_descriptor, boxes):
         impl = xml.dom.minidom.getDOMImplementation()
@@ -560,39 +472,28 @@ class LineBoxBuilder(BaseBuilder):
         for box in boxes:
             file_descriptor.write("<p>" + box.get_xml_tag(newdoc).toxml() + "</p>\n")
         file_descriptor.write("</body>\n</html>\n")
-
     def start_line(self, box):
         if len(self.lines) > 0 and self.lines[-1].content == "":
             return
         self.lines.append(LineBox([], box))
-
     def add_word(self, word, box, confidence=0):
         self.lines[-1].word_boxes.append(Box(word, box, confidence))
-
     def end_line(self):
         pass
-
     def get_output(self):
         return self.lines
-
     def __str__(self):
         return "Line boxes"
-
-
 class DigitLineBoxBuilder(LineBoxBuilder):
     def __init__(self, tesseract_layout=1):
         super(DigitLineBoxBuilder, self).__init__(tesseract_layout)
         self.tesseract_configs.append("digits")
-
     def __str__(self):
         return "Digit line boxes"
-
-
 class CharBoxBuilder(BaseBuilder):
     def __init__(self):
         super(CharBoxBuilder, self).__init__(["box"], [], ["batch.nochop", "makebox"], [])
         self.tesseract_layout = 1
-
     @staticmethod
     def read_file(file_descriptor):
         boxes = []
@@ -609,23 +510,17 @@ class CharBoxBuilder(BaseBuilder):
             )
             boxes.append(Box(elements[0], position))
         return boxes
-
     @staticmethod
     def write_file(file_descriptor, boxes):
         for box in boxes:
             file_descriptor.write(str(box) + " 0\n")
-
     def __str__(self):
         return "Character boxes"
-
-
 TESSERACT_CMD = "tesseract.exe" if os.name == "nt" else "tesseract"
 TESSDATA_EXTENSION = ".traineddata"
 g_subprocess_startup_info = None
 g_creation_flags = 0
 g_version = None
-
-
 def _set_environment():
     global g_subprocess_startup_info
     global g_creation_flags
@@ -653,8 +548,6 @@ def _set_environment():
                 tessprefix = os.path.join(tessprefix, "tessdata")
             logger.info("TESSDATA_PREFIX set to [{}]".format(tessprefix))
             os.environ["TESSDATA_PREFIX"] = tessprefix
-
-
 def psm_parameter():
     try:
         version = tess_get_version()
@@ -665,14 +558,10 @@ def psm_parameter():
             exc_info=exc,
         )
         return "--psm"
-
-
 def tess_can_detect_orientation():
     version = tess_get_version()
     langs = tess_get_available_languages()
     return (version[0] > 3 or (version[0] == 3 and version[1] >= 3)) and "osd" in langs
-
-
 def tess_detect_orientation(image, lang=None):
     _set_environment()
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -715,12 +604,8 @@ def tess_detect_orientation(image, lang=None):
             }
         except Exception as ex:
             raise TesseractError(-1, "No script found in image (%s - %s)" % (str(ex), original_output))
-
-
 def tess_get_name():
     return "Tesseract (sh)"
-
-
 def tess_get_available_builders():
     return [
         LineBoxBuilder,
@@ -730,8 +615,6 @@ def tess_get_available_builders():
         DigitBuilder,
         DigitLineBoxBuilder,
     ]
-
-
 def tess_run_tesseract(input_filename, output_filename_base, cwd=None, lang=None, flags=None, configs=None):
     _set_environment()
     command = [TESSERACT_CMD, input_filename, output_filename_base]
@@ -753,31 +636,22 @@ def tess_run_tesseract(input_filename, output_filename_base, cwd=None, lang=None
         errors = proc.stdout.read()
         ret = proc.wait()
     return (ret, errors)
-
-
 def tess_cleanup(filename):
     with contextlib.suppress(OSError):
         os.remove(filename)
-
-
 class ReOpenableTempfile:
     def __init__(self, suffix):
         self.name = None
         with tempfile.NamedTemporaryFile(prefix="tess_", suffix=suffix, delete=False) as fp:
             self.name = fp.name
-
     def __enter__(self):
         return self
-
     def __exit__(self, type, value, traceback):
         self.close()
-
     def close(self):
         if self.name is not None:
             os.remove(self.name)
             self.name = None
-
-
 def tess_image_to_string(image, lang=None, builder=None):
     if builder is None:
         builder = TextBuilder()
@@ -810,13 +684,9 @@ def tess_image_to_string(image, lang=None, builder=None):
             finally:
                 tess_cleanup(output_file_name)
         raise TesseractError(-1, "Unable to find output file (tested {})".format(tested_files))
-
-
 def tess_is_available():
     _set_environment()
     return shutil.which(TESSERACT_CMD) is not None
-
-
 def tess_get_available_languages():
     _set_environment()
     proc = subprocess.Popen(
@@ -832,8 +702,6 @@ def tess_get_available_languages():
         if ret != 0:
             raise TesseractError(ret, "unable to get languages")
     return [lang for lang in langs if lang and lang[-1] != ":"]
-
-
 def tess_get_version(set_env=True):
     global g_version
     if g_version is not None:
@@ -872,8 +740,6 @@ def tess_get_version(set_env=True):
             ret,
             ("Unable to parse Tesseract version (spliting failed): [%s]" % ver_string),
         )
-
-
 TESSDATA_PREFIX = os.getenv("TESSDATA_PREFIX", None)
 DPI_DEFAULT = 70
 libnames = []
@@ -917,8 +783,6 @@ for libname in libnames:
             lib_load_errors.append((libname, ex.message))
         else:
             lib_load_errors.append((libname, str(ex)))
-
-
 class PageSegMode:
     OSD_ONLY = 0
     AUTO_OSD = 1
@@ -935,23 +799,17 @@ class PageSegMode:
     SPARSE_TEXT_OSD = 12
     PSM_RAW_LINE = 13
     COUNT = 14
-
-
 class Orientation:
     PAGE_UP = 0
     PAGE_RIGHT = 1
     PAGE_DOWN = 2
     PAGE_LEFT = 3
-
-
 class PageIteratorLevel:
     BLOCK = 0
     PARA = 1
     TEXTLINE = 2
     WORD = 3
     SYMBOL = 4
-
-
 class PolyBlockType:
     UNKNOWN = 0
     FLOWING_TEXT = 1
@@ -967,8 +825,6 @@ class PolyBlockType:
     VERT_LINE = 11
     NOISE = 12
     COUNT = 13
-
-
 class OSResults(ctypes.Structure):
     _fields_ = [
         ("orientations", ctypes.c_float * 4),
@@ -980,8 +836,6 @@ class OSResults(ctypes.Structure):
         ("best_oconfidence", ctypes.c_float),
         ("padding", ctypes.c_char * 512),
     ]
-
-
 if g_libtesseract:
     g_libtesseract.TessVersion.argtypes = []
     g_libtesseract.TessVersion.restype = ctypes.c_char_p
@@ -1123,8 +977,6 @@ if g_libtesseract:
             ctypes.POINTER(OSResults),
         ]
         g_libtesseract.TessBaseAPIDetectOS.restype = ctypes.c_bool
-
-
 def raw_init(lang=None):
     assert g_libtesseract
     if raw_get_version() == "4.0.0":
@@ -1142,22 +994,14 @@ def raw_init(lang=None):
         g_libtesseract.TessBaseAPIDelete(ctypes.c_void_p(handle))
         raise
     return handle
-
-
 def raw_cleanup(handle):
     assert g_libtesseract is not None
     g_libtesseract.TessBaseAPIDelete(ctypes.c_void_p(handle))
-
-
 def raw_is_available():
     return g_libtesseract is not None
-
-
 def raw_get_version():
     assert g_libtesseract is not None
     return g_libtesseract.TessVersion().decode("utf-8")
-
-
 def raw_get_available_languages(handle):
     assert g_libtesseract is not None
     langs = []
@@ -1167,31 +1011,21 @@ def raw_get_available_languages(handle):
         langs.append(c_langs[i].decode("utf-8"))
         i += 1
     return langs
-
-
 def raw_set_is_numeric(handle, mode):
     assert g_libtesseract is not None
     wl = b"0123456789." if mode else b""
     g_libtesseract.TessBaseAPISetVariable(ctypes.c_void_p(handle), b"tessedit_char_whitelist", wl)
-
-
 def raw_set_debug_file(handle, filename):
     assert g_libtesseract is not None
     if not isinstance(filename, bytes):
         filename = filename.encode("utf-8")
     g_libtesseract.TessBaseAPISetVariable(ctypes.c_void_p(handle), b"debug_file", filename)
-
-
 def raw_set_page_seg_mode(handle, mode):
     assert g_libtesseract is not None
     g_libtesseract.TessBaseAPISetPageSegMode(ctypes.c_void_p(handle), ctypes.c_int(mode))
-
-
 def raw_init_for_analyse_page(handle):
     assert g_libtesseract is not None
     g_libtesseract.TessBaseAPIInitForAnalysePage(ctypes.c_void_p(handle))
-
-
 def raw_set_image(handle, image):
     assert g_libtesseract is not None
     image = image.convert("RGB")
@@ -1207,51 +1041,33 @@ def raw_set_image(handle, image):
     )
     dpi = image.info.get("dpi", [DPI_DEFAULT])[0]
     g_libtesseract.TessBaseAPISetSourceResolution(ctypes.c_void_p(handle), dpi)
-
-
 def raw_recognize(handle):
     assert g_libtesseract is not None
     return g_libtesseract.TessBaseAPIRecognize(ctypes.c_void_p(handle), ctypes.c_void_p(None))
-
-
 def raw_analyse_layout(handle):
     assert g_libtesseract is not None
     return g_libtesseract.TessBaseAPIAnalyseLayout(ctypes.c_void_p(handle))
-
-
 def raw_get_utf8_text(handle):
     assert g_libtesseract is not None
     ptr = g_libtesseract.TessBaseAPIGetUTF8Text(ctypes.c_void_p(handle))
     val = ctypes.cast(ptr, ctypes.c_char_p).value.decode("utf-8")
     g_libtesseract.TessDeleteText(ptr)
     return val
-
-
 def raw_page_iterator_delete(iterator):
     assert g_libtesseract is not None
     return g_libtesseract.TessPageIteratorDelete(ctypes.c_void_p(iterator))
-
-
 def raw_page_iterator_next(iterator, level):
     assert g_libtesseract is not None
     return g_libtesseract.TessPageIteratorNext(ctypes.c_void_p(iterator), level)
-
-
 def raw_page_iterator_is_at_beginning_of(iterator, level):
     assert g_libtesseract is not None
     return g_libtesseract.TessPageIteratorIsAtBeginningOf(ctypes.c_void_p(iterator), level)
-
-
 def raw_page_iterator_is_at_final_element(iterator, level, element):
     assert g_libtesseract is not None
     return g_libtesseract.TessPageIteratorIsAtFinalElement(ctypes.c_void_p(iterator), level, element)
-
-
 def raw_page_iterator_block_type(iterator):
     assert g_libtesseract is not None
     return g_libtesseract.TessPageIteratorBlockType(ctypes.c_void_p(iterator))
-
-
 def raw_page_iterator_bounding_box(iterator, level):
     assert g_libtesseract is not None
     left = ctypes.c_int(0)
@@ -1269,8 +1085,6 @@ def raw_page_iterator_bounding_box(iterator, level):
     if not r:
         return (False, (0, 0, 0, 0))
     return (True, (left.value, top.value, right.value, bottom.value))
-
-
 def raw_page_iterator_orientation(iterator):
     assert g_libtesseract is not None
     orientation = ctypes.c_int(0)
@@ -1290,18 +1104,12 @@ def raw_page_iterator_orientation(iterator):
         "textline_order": textline_order.value,
         "deskew_angle": deskew_angle.value,
     }
-
-
 def raw_get_iterator(handle):
     assert g_libtesseract is not None
     return g_libtesseract.TessBaseAPIGetIterator(ctypes.c_void_p(handle))
-
-
 def raw_result_iterator_get_page_iterator(res_iterator):
     assert g_libtesseract is not None
     return g_libtesseract.TessResultIteratorGetPageIterator(ctypes.c_void_p(res_iterator))
-
-
 def raw_result_iterator_get_utf8_text(iterator, level):
     assert g_libtesseract is not None
     ptr = g_libtesseract.TessResultIteratorGetUTF8Text(ctypes.c_void_p(iterator), level)
@@ -1310,16 +1118,12 @@ def raw_result_iterator_get_utf8_text(iterator, level):
     val = ctypes.cast(ptr, ctypes.c_char_p).value.decode("utf-8")
     g_libtesseract.TessDeleteText(ptr)
     return val
-
-
 def raw_result_iterator_get_confidence(iterator, level):
     assert g_libtesseract is not None
     ptr = g_libtesseract.TessResultIteratorConfidence(ctypes.c_void_p(iterator), level)
     if ptr is None:
         return None
     return ctypes.c_float(ptr).value
-
-
 def raw_detect_os(handle):
     assert g_libtesseract is not None
     if hasattr(g_libtesseract, "TessBaseAPIDetectOrientationScript"):
@@ -1352,38 +1156,24 @@ def raw_detect_os(handle):
             "orientation": results.best_orientation_id,
             "confidence": results.best_oconfidence,
         }
-
-
 def raw_set_input_name(handle, input_file):
     assert g_libtesseract is not None
     g_libtesseract.TessBaseAPISetInputName(ctypes.c_void_p(handle), input_file.encode())
-
-
 def raw_init_pdf_renderer(handle, output_file, textonly):
     assert g_libtesseract is not None
     tessdata_dir = g_libtesseract.TessBaseAPIGetDatapath(handle)
     return g_libtesseract.TessPDFRendererCreate(output_file.encode(), tessdata_dir, ctypes.c_bool(textonly))
-
-
 def raw_begin_document(renderer, doc_name):
     assert g_libtesseract is not None
     g_libtesseract.TessResultRendererBeginDocument(ctypes.c_void_p(renderer), doc_name.encode())
-
-
 def raw_add_renderer_image(handle, renderer):
     assert g_libtesseract is not None
     g_libtesseract.TessResultRendererAddImage(ctypes.c_void_p(renderer), ctypes.c_void_p(handle))
-
-
 def raw_end_document(renderer):
     assert g_libtesseract is not None
     g_libtesseract.TessResultRendererEndDocument(ctypes.c_void_p(renderer))
-
-
 def libtess_can_detect_orientation():
     return "osd" in libtess_get_available_languages()
-
-
 def libtess_detect_orientation(image, lang=None):
     handle = raw_init(lang="osd")
     try:
@@ -1402,12 +1192,8 @@ def libtess_detect_orientation(image, lang=None):
         return {"angle": orientation, "confidence": os_result["confidence"]}
     finally:
         raw_cleanup(handle)
-
-
 def libtess_get_name():
     return "Tesseract (C-API)"
-
-
 def libtess_get_available_builders():
     return [
         TextBuilder,
@@ -1416,12 +1202,8 @@ def libtess_get_available_builders():
         LineBoxBuilder,
         DigitLineBoxBuilder,
     ]
-
-
 def _tess_box_to_pyocr_box(box):
     return ((box[0], box[1]), (box[2], box[3]))
-
-
 def libtess_image_to_string(image, lang=None, builder=None):
     if builder is None:
         builder = TextBuilder()
@@ -1464,37 +1246,28 @@ def libtess_image_to_string(image, lang=None, builder=None):
     finally:
         raw_cleanup(handle)
     return builder.get_output()
-
-
 def libtess_image_to_pdf(image, output_file, lang=None, input_file="stdin", textonly=False):
     LibtesseractPdfBuilder().set_lang(lang).set_output_file(output_file).set_text_only(textonly).add_image(
         image
     ).build()
-
-
 class LibtesseractPdfBuilder:
     def __init__(self):
         self.images = []
         self.output_file = None
         self.lang = None
         self.text_only = False
-
     def set_lang(self, lang):
         self.lang = lang
         return self
-
     def set_output_file(self, output_file):
         self.output_file = output_file
         return self
-
     def set_text_only(self, text_only):
         self.text_only = text_only
         return self
-
     def add_image(self, img):
         self.images.append(img)
         return self
-
     def __validate(self):
         if len(self.images) < 1:
             msg = "At least one image is required to build the pdf!"
@@ -1502,7 +1275,6 @@ class LibtesseractPdfBuilder:
         if self.output_file is None:
             msg = "An output-file is required to build the pdf!"
             raise ValueError(msg)
-
     def build(self):
         self.__validate()
         handle = raw_init(lang=self.lang)
@@ -1521,8 +1293,6 @@ class LibtesseractPdfBuilder:
             raw_cleanup(handle)
             if renderer:
                 raw_cleanup(renderer)
-
-
 def libtess_is_available():
     if not raw_is_available():
         return False
@@ -1531,16 +1301,12 @@ def libtess_is_available():
         logger.warning("Unsupported version [%s]" % ".".join([str(r) for r in version]))
         return False
     return True
-
-
 def libtess_get_available_languages():
     handle = raw_init()
     try:
         return raw_get_available_languages(handle)
     finally:
         raw_cleanup(handle)
-
-
 def libtess_get_version():
     version = raw_get_version()
     version = version.split(" ", 1)[0]
@@ -1554,30 +1320,18 @@ def libtess_get_version():
     if len(version) >= 3:
         upd = digits_only(version[2])
     return (major, minor, upd)
-
-
 CUNEIFORM_CMD = "cuneiform"
 LANGUAGES_LINE_PREFIX = "Supported languages: "
 LANGUAGES_SPLIT_RE = re.compile("[^a-z]")
 VERSION_LINE_RE = re.compile(r"Cuneiform for \w+ (\d+).(\d+).(\d+)")
-
-
 def cun_can_detect_orientation():
     return False
-
-
 def cun_get_name():
     return "Cuneiform (sh)"
-
-
 def cun_get_available_builders():
     return [TextBuilder, WordBoxBuilder, LineBoxBuilder]
-
-
 def _cun_temp_file(suffix):
     return tempfile.NamedTemporaryFile(prefix="cuneiform_", suffix=suffix)
-
-
 def cun_image_to_string(image, lang=None, builder=None):
     if builder is None:
         builder = TextBuilder()
@@ -1604,12 +1358,8 @@ def cun_image_to_string(image, lang=None, builder=None):
             raise CuneiformError(retcode, output)
         with codecs.open(output_file.name, "r", encoding="utf-8", errors="replace") as file_desc:
             return builder.read_file(file_desc)
-
-
 def cun_is_available():
     return shutil.which(CUNEIFORM_CMD) is not None
-
-
 def cun_get_available_languages():
     proc = subprocess.Popen([CUNEIFORM_CMD, "-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = proc.stdout.read().decode("utf-8")
@@ -1624,8 +1374,6 @@ def cun_get_available_languages():
                 continue
             languages.append(language)
     return languages
-
-
 def cun_get_version():
     proc = subprocess.Popen([CUNEIFORM_CMD], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = proc.stdout.read().decode("utf-8")
@@ -1636,8 +1384,6 @@ def cun_get_version():
             g = m.groups()
             return (int(g[0]), int(g[1]), int(g[2]))
     return None
-
-
 tesseract_ns = SimpleNamespace(
     can_detect_orientation=tess_can_detect_orientation,
     detect_orientation=tess_detect_orientation,
@@ -1672,12 +1418,8 @@ cuneiform_ns = SimpleNamespace(
     CuneiformError=CuneiformError,
 )
 TOOLS = [tesseract_ns, libtesseract_ns, cuneiform_ns]
-
-
 def get_available_tools():
     return [tool for tool in TOOLS if tool.is_available()]
-
-
 _BUILDERS = {
     "text": TextBuilder,
     "digit": DigitBuilder,
@@ -1691,8 +1433,6 @@ _TOOLS_BY_NAME = {
     "libtesseract": libtesseract_ns,
     "cuneiform": cuneiform_ns,
 }
-
-
 def _load_image(path):
     try:
         from PIL import Image
@@ -1700,8 +1440,6 @@ def _load_image(path):
         msg = "Pillow is required: pip install Pillow"
         raise SystemExit(msg)
     return Image.open(path)
-
-
 def _print_result(result):
     if isinstance(result, str):
         sys.stdout.write(result)
@@ -1710,8 +1448,6 @@ def _print_result(result):
         return
     for item in result:
         sys.stdout.write(str(item) + "\n")
-
-
 def _cmd_tools(args):
     for tool in TOOLS:
         status = "available" if tool.is_available() else "unavailable"
@@ -1722,8 +1458,6 @@ def _cmd_tools(args):
         name = tool.get_name()
         ver = ".".join(str(v) for v in version) if version else "-"
         print(f"{name}\t{status}\t{ver}")
-
-
 def _cmd_langs(args):
     tool = _TOOLS_BY_NAME[args.tool]
     if not tool.is_available():
@@ -1731,8 +1465,6 @@ def _cmd_langs(args):
         raise SystemExit(msg)
     for lang in tool.get_available_languages():
         print(lang)
-
-
 def _cmd_orientation(args):
     tool = _TOOLS_BY_NAME[args.tool]
     if not tool.is_available():
@@ -1745,8 +1477,6 @@ def _cmd_orientation(args):
     result = tool.detect_orientation(image, lang=args.lang)
     print(f"angle: {result['angle']}")
     print(f"confidence: {result['confidence']}")
-
-
 def _cmd_ocr(args):
     tool = _TOOLS_BY_NAME[args.tool]
     if not tool.is_available():
@@ -1756,8 +1486,6 @@ def _cmd_ocr(args):
     image = _load_image(args.image)
     result = tool.image_to_string(image, lang=args.lang, builder=builder)
     _print_result(result)
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="pyocr", description="OCR CLI")
     parser.add_argument("-v", "--version", action="version", version="pyocr " + __version__)
@@ -1794,7 +1522,5 @@ def main(argv=None):
         print(f"error: {ex}", file=sys.stderr)
         return 2
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

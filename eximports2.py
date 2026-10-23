@@ -4,26 +4,19 @@ from collections import defaultdict
 from pathlib import Path
 from tree_sitter import Language, Parser, Tree
 import tree_sitter_python as tsp
-
 parser = Parser()
 parser.language = Language(tsp.language())
 OUT_DIR = Path("output")
 OUT_DIR.mkdir(exist_ok=True)
 VALID = {"import_statement", "import_from_statement"}
-
-
 def extract_file(src: bytes, tree: Tree) -> list[str]:
     root = tree.root_node
     return [src[node.start_byte : node.end_byte].decode() for node in root.children if node.type in VALID]
-
-
 def get_relative_path(path: Path, base_path: Path) -> Path:
     try:
         return path.relative_to(base_path)
     except ValueError:
         return path
-
-
 folder_imports = defaultdict(list)
 processed_files_count = 0
 folders_found = set()

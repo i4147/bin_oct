@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import re
 import subprocess
 import sys
-
-
 def get_pkgname() -> str:
     raw = sys.argv[1] if len(sys.argv) > 1 else Path.cwd().name
     pkgname = re.sub(r"[^0-9A-Za-z_]", "_", raw)
@@ -14,14 +11,10 @@ def get_pkgname() -> str:
         msg = f"Invalid package name derived: {pkgname!r}"
         raise SystemExit(msg)
     return pkgname
-
-
 def write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
     print(f"  wrote {path.relative_to(Path.cwd())}")
-
-
 def main() -> None:
     pkgname = get_pkgname()
     root = Path.cwd()
@@ -134,7 +127,5 @@ if __name__ == "__main__":
         )
         raise SystemExit(msg)
     print(f"\nDone. Project '{pkgname}' initialized.")
-
-
 if __name__ == "__main__":
     main()

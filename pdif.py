@@ -1,10 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import sys
-
-
 def compare_files(file1: str, file2: str) -> None:
     try:
         with (
@@ -39,8 +36,6 @@ def compare_files(file1: str, file2: str) -> None:
     print(f"Number of different lines in File 2: {len(diff_lines_2)}")
     if diff_lines_2:
         print(f"Line numbers: {diff_lines_2}")
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python script.py <file1> <file2>")

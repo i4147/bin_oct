@@ -14,14 +14,11 @@ from urllib.parse import urljoin
 from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
 import upyun
-
 SYSTEM = platform.system()
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".upimg_config.pkl")
 CONFIG_FIELDS = ["service", "username", "password", "upload_path", "url_base"]
 CONFIG_DEFAULTS = ["", "", "", "/", "https://test.upimg.com"]
 ConfigTuple = namedtuple("ConfigTuple", CONFIG_FIELDS)
-
-
 def send_notify(title="UpImg", message=""):
     try:
         if SYSTEM == "Darwin":
@@ -33,8 +30,6 @@ def send_notify(title="UpImg", message=""):
         return True
     except Exception:
         return False
-
-
 def get_clipboard_file_paths():
     paths = []
     if SYSTEM == "Darwin":
@@ -54,7 +49,6 @@ def get_clipboard_file_paths():
             pass
     elif SYSTEM == "Windows":
         from ctypes import create_unicode_buffer, windll
-
         user32 = windll.user32
         kernel32 = windll.kernel32
         cf_hdrop = 15
@@ -72,8 +66,6 @@ def get_clipboard_file_paths():
                     kernel32.GlobalUnlock(h_global)
             user32.CloseClipboard()
     return paths
-
-
 class ClipboardFile:
     @property
     def file_objects(self):
@@ -91,8 +83,6 @@ class ClipboardFile:
             image.save(image_bytes_io, format="PNG")
             image_bytes_io.seek(0)
             yield image_bytes_io, ".png"
-
-
 def set_config():
     args = {}
     print("--- UpImg Configuration Setup ---")
@@ -107,7 +97,6 @@ def set_config():
             import winreg
             import pythoncom
             from win32com.shell import shell
-
             reg_key = winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER,
                 r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
@@ -129,18 +118,13 @@ def set_config():
             shortcut.QueryInterface(pythoncom.IID_IPersistFile).Save(lnk_path, 0)
         except Exception:
             print("Notice: Desktop hotkey link shortcut could not be configured.")
-
-
 def get_config():
     with open(CONFIG_PATH, "rb") as fp:
         return pickle.load(fp)
-
-
 class UpImage:
     def __init__(self, config):
         self.upyun = upyun.UpYun(config.service, config.username, config.password)
         self.upload_path = config.upload_path
-
     def upload(self):
         path_list = []
         clipboard_file = ClipboardFile()
@@ -150,14 +134,10 @@ class UpImage:
             file.close()
             path_list.append(full_path)
         return path_list
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Upload image from clipboard and return Markdown link.")
     parser.add_argument("-c", "--config", action="store_true", help="file upload config")
     return parser.parse_args()
-
-
 def main():
     args = parse_args()
     if args.config:
@@ -200,7 +180,5 @@ def main():
                 print_exc(file=fp)
             send_notify("Execution Error!!!", message=f"Trace log written to: {error_log}")
             print(f"Error detected. Visual diagnostic footprint isolated inside {error_log}")
-
-
 if __name__ == "__main__":
     main()

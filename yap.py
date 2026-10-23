@@ -22,7 +22,7 @@ from time import perf_counter as pff
 import tokenize
 from typing import Any, Protocol, Sequence, runtime_checkable
 
-from dh import cprint, format_time, fsz, get_pyfiles,atomic_write
+from dh import cprint, format_time, fsz, get_pyfiles, atomic_write
 
 
 __version__ = "2.0.0"
@@ -212,8 +212,6 @@ class FileResult:
     error: str | None
     mtime: float
     size: int
-
-
 
 
 def _read_source(path: Path) -> tuple[str, str, str]:

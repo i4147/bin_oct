@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
@@ -11,7 +10,6 @@ import re
 from subprocess import getoutput
 import sys
 from time import sleep
-
 try:
     from bs4 import BeautifulSoup
 except ImportError:
@@ -19,8 +17,6 @@ except ImportError:
     print("BeautifulSoup4 Not Found, use: pip install BeautifulSoup4")
 start_time = datetime.now()
 CSS_PROPS_TEXT = "\nalignment-adjust alignment-baseline animation animation-delay\nanimation-direction animation-duration animation-iteration-count\nanimation-name animation-play-state animation-timing-function appearance\nazimuth\nbackface-visibility background background-blend-mode background-attachment\nbackground-clip background-color background-image background-origin\nbackground-position background-position-block background-position-inline\nbackground-position-x background-position-y background-repeat background-size\nbaseline-shift bikeshedding bookmark-label bookmark-level bookmark-state\nbookmark-target border border-bottom border-bottom-color\nborder-bottom-left-radius border-bottom-parts border-bottom-right-radius\nborder-bottom-style border-bottom-width border-clip border-clip-top\nborder-clip-right border-clip-bottom border-clip-left border-collapse\nborder-color border-corner-shape border-image border-image-outset\nborder-image-repeat border-image-slice border-image-source border-image-width\nborder-left border-left-color border-left-style border-left-parts\nborder-left-width border-limit border-parts border-radius border-right\nborder-right-color border-right-style border-right-width border-right-parts\nborder-spacing border-style border-top border-top-color border-top-left-radius\nborder-top-parts border-top-right-radius border-top-style border-top-width\nborder-width bottom box-decoration-break box-shadow box-sizing\ncaption-side clear clip color column-count column-fill column-gap column-rule\ncolumn-rule-color column-rule-style column-rule-width column-span column-width\ncolumns content counter-increment counter-reset corners corner-shape\ncue cue-after cue-before cursor\ndirection display drop-initial-after-adjust drop-initial-after-align\ndrop-initial-before-adjust drop-initial-before-align drop-initial-size\ndrop-initial-value\nelevation empty-cells\nflex flex-basis flex-direction flex-flow flex-grow flex-shrink flex-wrap fit\nfit-position float font font-family font-size font-size-adjust font-stretch\nfont-style font-variant font-weight\ngrid-columns grid-rows\njustify-content\nhanging-punctuation height hyphenate-character hyphenate-resource hyphens\nicon image-orientation image-resolution inline-box-align\nleft letter-spacing line-height line-stacking line-stacking-ruby\nline-stacking-shift line-stacking-strategy linear-gradient list-style\nlist-style-image list-style-position list-style-type\nmargin margin-bottom margin-left margin-right margin-top marquee-direction\nmarquee-loop marquee-speed marquee-style max-height max-width min-height\nmin-width\nnav-index\nopacity orphans outline outline-color outline-offset outline-style\noutline-width overflow overflow-style overflow-x overflow-y\npadding padding-bottom padding-left padding-right padding-top page\npage-break-after page-break-before page-break-inside pause pause-after\npause-before perspective perspective-origin pitch pitch-range play-during\nposition presentation-level\nquotes\nresize rest rest-after rest-before richness right rotation rotation-point\nruby-align ruby-overhang ruby-position ruby-span\nsize speak speak-header speak-numeral speak-punctuation speech-rate src\nstress string-set\ntable-layout target target-name target-new target-position text-align\ntext-align-last text-decoration text-emphasis text-indent text-justify\ntext-outline text-shadow text-transform text-wrap top transform\ntransform-origin transition transition-delay transition-duration\ntransition-property transition-timing-function\nunicode-bidi unicode-range\nvertical-align visibility voice-balance voice-duration voice-family\nvoice-pitch voice-range voice-rate voice-stress voice-volume volume\nwhite-space widows width word-break word-spacing word-wrap\nz-index\n"
-
-
 def _compile_props(props_text: str, grouped: bool = False) -> tuple:
     props, prefixes = (
         [],
@@ -40,8 +36,6 @@ def _compile_props(props_text: str, grouped: bool = False) -> tuple:
         else:
             g_id += 1
     return (final_props, groups)
-
-
 def _prioritify(line_of_css: str, css_props_text_as_list: tuple) -> tuple:
     sorted_css_properties, groups_by_alphabetic_order = css_props_text_as_list
     priority_integer, group_integer = (9999, 0)
@@ -51,8 +45,6 @@ def _prioritify(line_of_css: str, css_props_text_as_list: tuple) -> tuple:
             group_integer = groups_by_alphabetic_order[priority_integer]
             break
     return (priority_integer, group_integer)
-
-
 def _props_grouper(props, pgs):
     if not props:
         return props
@@ -67,8 +59,6 @@ def _props_grouper(props, pgs):
         props += ["\n"]
     props.pop()
     return props
-
-
 def sort_properties(css_unsorted_string: str) -> str:
     css_pgs = _compile_props(CSS_PROPS_TEXT, grouped=bool(args.group))
     pattern = re.compile(r"(.*?{\r?\n?)(.*?)(}.*?)|(.*)", re.DOTALL + re.MULTILINE)
@@ -86,24 +76,16 @@ def sort_properties(css_unsorted_string: str) -> str:
             sorted_patterns += matched_groups[3].splitlines(True)
         sorted_buffer = "".join(sorted_patterns)
     return sorted_buffer
-
-
 def remove_empty_rules(css: str) -> str:
     return re.sub(r"[^\}\{]+\{\}", "", css)
-
-
 def condense_zero_units(css: str) -> str:
     return re.sub(
         r"([\s:])(0)(px|em|%|in|q|ch|cm|mm|pc|pt|ex|rem|s|ms|deg|grad|rad|turn|vw|vh|vmin|vmax|fr)",
         r"\1\2",
         css,
     )
-
-
 def condense_semicolons(css: str) -> str:
     return re.sub(";;+", ";", css)
-
-
 def wrap_css_lines(css: str, line_length: int = 80) -> str:
     print(f"Wrapping lines to ~{line_length} max line lenght.")
     lines, line_start = ([], 0)
@@ -114,12 +96,8 @@ def wrap_css_lines(css: str, line_length: int = 80) -> str:
     if line_start < len(css):
         lines.append(css[line_start:])
     return "\n".join(lines)
-
-
 def add_encoding(css: str) -> str:
     return "@charset utf-8;\n\n\n" + css if "@charset" not in css else css
-
-
 def normalize_whitespace(css: str) -> str:
     css_no_trailing_whitespace = ""
     for line_of_css in css.splitlines():
@@ -131,8 +109,6 @@ def normalize_whitespace(css: str) -> str:
     css = css.replace(" ;\n", ";\n").replace("{\n", " {\n")
     css = re.sub(r"\s{2,}{\n", " {\n", css)
     return css.replace("\t", "    ").rstrip() + "\n"
-
-
 def justify_right(css: str) -> str:
     max_indent, right_justified_css = (1, "")
     for css_line in css.splitlines():
@@ -159,8 +135,6 @@ def justify_right(css: str) -> str:
         else:
             right_justified_css += line_of_css + "\n"
     return right_justified_css if max_indent > 1 else css
-
-
 def split_long_selectors(css: str) -> str:
     result = ""
     for line in css.splitlines():
@@ -171,12 +145,8 @@ def split_long_selectors(css: str) -> str:
         else:
             result += line + "\n"
     return result
-
-
 def simple_replace(css: str) -> str:
     return css.replace("}\n#", "}\n\n#").replace("}\n.", "}\n\n.").replace("}\n*", "}\n\n*")
-
-
 def css_prettify(css: str, justify: bool = False, extraline: bool = False) -> str:
     css = sort_properties(css)
     css = condense_zero_units(css)
@@ -190,33 +160,24 @@ def css_prettify(css: str, justify: bool = False, extraline: bool = False) -> st
     if extraline:
         css = "\n\n".join(css.replace("\t", "    ").splitlines()) + "\n"
     return css
-
-
 if BeautifulSoup:
     orig_prettify = BeautifulSoup.prettify
     regez = re.compile(r"^(\s*)", re.MULTILINE)
-
     def prettify(self, encoding=None, formatter: str = "minimal", indent_width: int = 4) -> str:
         print("Monkey Patching BeautifulSoup on-the-fly to process HTML...")
         return regez.sub("\\1" * indent_width, orig_prettify(self, encoding, formatter))
-
     BeautifulSoup.prettify = prettify
-
     def html_prettify(html: str, extraline: bool = False) -> str:
         html = BeautifulSoup(html).prettify()
         if extraline:
             html = "\n\n".join(html.replace("\t", "    ").splitlines()) + "\n"
         return html
-
 else:
-
     def html_prettify(html: str, extraline: bool = False) -> str:
         html = minidom.parseString(html).toprettyxml(indent="    ")[22:]
         if extraline:
             html = "\n\n".join(html.replace("\t", "    ").splitlines()) + "\n"
         return html
-
-
 def walk2list(
     folder: str,
     target: tuple,
@@ -234,8 +195,6 @@ def walk2list(
         and (not p.name.endswith(omit))
         and p.name.endswith(target)
     ]
-
-
 def process_multiple_files(path) -> None:
     path = Path(path)
     print(f"Process {os.getpid()} is processing {path}.")
@@ -257,16 +216,12 @@ def process_multiple_files(path) -> None:
         process_single_css_file(str(path))
     else:
         process_single_html_file(str(path))
-
-
 def prefixer_extensioner(path: str) -> str:
     path_obj = Path(path)
     extension = path_obj.suffix.lower()
     filename = path_obj.stem
     filename = args.prefix + filename if args.prefix else filename
     return str(path_obj.parent / (filename + extension))
-
-
 def process_single_css_file(css_path: str) -> str:
     global args
     original_css = Path(css_path).read_text(encoding="utf-8-sig")
@@ -277,16 +232,12 @@ def process_single_css_file(css_path: str) -> str:
     min_css_path = prefixer_extensioner(css_path)
     Path(min_css_path).write_text(pretty_css, encoding="utf-8")
     return pretty_css
-
-
 def process_single_html_file(html_path: str) -> str:
     with Path(html_path).open(encoding="utf-8-sig") as html_file:
         pretty_html = html_prettify(html_file.read(), args.extraline)
     html_path = prefixer_extensioner(html_path)
     Path(html_path).write_text(pretty_html, encoding="utf-8")
     return pretty_html
-
-
 def make_arguments_parser() -> Namespace:
     parser = ArgumentParser(
         description=__doc__,
@@ -331,8 +282,6 @@ def make_arguments_parser() -> Namespace:
     global args
     args = parser.parse_args()
     return args
-
-
 def main() -> None:
     make_arguments_parser()
     global log
@@ -361,7 +310,5 @@ def main() -> None:
         print(getoutput(str(args.after)))
     print(f"\n {'-' * 40} \n Files Processed: {list_of_files}.")
     print(f"Number of Files Processed:\n          {(len(list_of_files) if isinstance(list_of_files, tuple) else 1)}")
-
-
 if __name__ in "__main__":
     raise SystemExit(main())

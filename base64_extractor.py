@@ -11,7 +11,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator, Optional
-
 MIME2EXT: dict[str, str] = {
     "image/png": ".png",
     "image/jpeg": ".jpg",
@@ -101,8 +100,6 @@ CSS_URL_DATA_RE = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 IMAGE_DATA_RE = re.compile(r"data:image/(?P<ext>[a-zA-Z0-9+.\-]+);base64,(?P<data>[A-Za-z0-9+/=\n\r]+)")
-
-
 def guess_extension(mime: str) -> str:
     mime = (mime or "").lower().strip()
     if not mime:
@@ -117,18 +114,12 @@ def guess_extension(mime: str) -> str:
         pass
     tail = mime.split("/")[-1].split(";")[0].strip()
     return f".{tail}" if tail else ".bin"
-
-
 def hash_bytes(data: bytes, algo: str = "sha256", length: Optional[int] = None) -> str:
     h = hashlib.new(algo, data).hexdigest()
     return h[:length] if length else h
-
-
 def safe_write_bytes(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
-
-
 def iter_files(
     root: Path,
     extensions: Iterable[str],
@@ -137,10 +128,8 @@ def iter_files(
 ) -> Iterator[Path]:
     exts = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in extensions}
     skip = {s.lower() for s in skip_dirs}
-
     def matches(p: Path) -> bool:
         return p.is_file() and p.suffix.lower() in exts
-
     if root.is_file():
         if matches(root):
             yield root
@@ -152,16 +141,12 @@ def iter_files(
             p = base / name
             if matches(p):
                 yield p
-
-
 def read_text_safe(path: Path) -> Optional[str]:
     try:
         return path.read_text(encoding="utf-8", errors="ignore")
     except Exception as e:
         print(f"WARNING: cannot read {path}: {e}", file=sys.stderr)
         return None
-
-
 def detect_mime_from_bytes(
     blob: bytes,
 ) -> tuple[Optional[str], Optional[str], Optional[str]]:
@@ -199,8 +184,6 @@ def detect_mime_from_bytes(
         if printable / max(1, len(sample)) > 0.8:
             return ("text/plain", ".txt", "data")
     return (None, None, None)
-
-
 def decode_b64(data: str) -> Optional[bytes]:
     cleaned = re.sub(r"\s+", "", data)
     pad = (-len(cleaned)) % 4
@@ -210,15 +193,11 @@ def decode_b64(data: str) -> Optional[bytes]:
         return _b64.b64decode(cleaned, validate=False)
     except Exception:
         return None
-
-
 def relurl(target: Path, from_dir: Path) -> str:
     try:
         return target.relative_to(from_dir).as_posix()
     except ValueError:
         return Path(os.path.relpath(target, from_dir)).as_posix()
-
-
 def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     out = Path(args.out).resolve()
@@ -226,7 +205,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
     algo = args.hash
     digest_len = args.hash_len
     seen: dict[str, str] = {}
-
     def replace(match: re.Match) -> str:
         uri = match.group(0)
         mime = match.group("mime") or None
@@ -251,14 +229,12 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
             if False
             else (Path(os.path.relpath(out / name, match.string_dir)).as_posix())
         )
-
     changed_files = 0
     exts = args.extensions or [".css", ".js", ".html"]
     for f in iter_files(root, exts):
         text = read_text_safe(f)
         if text is None:
             continue
-
         def repl(m: re.Match, _f: Path = f) -> str:
             uri = m.group(0)
             mime = m.group("mime") or None
@@ -279,7 +255,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
                     print(f"OK   saved asset: {target}")
                 seen[key] = name
             return relurl(out / name, _f.parent)
-
         new_text = DATA_URI_RE.sub(repl, text)
         if new_text != text:
             if args.dry_run:
@@ -290,8 +265,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
             changed_files += 1
     print(f"Done. Files changed: {changed_files}, unique assets: {len(seen)}")
     return 0
-
-
 def cmd_extract_images(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     out = Path(args.out).resolve()
@@ -321,8 +294,6 @@ def cmd_extract_images(args: argparse.Namespace) -> int:
         total += per_file
     print(f"\nExtraction complete. Total images saved: {total}")
     return 0
-
-
 def cmd_ttf_to_base64(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     pattern = args.pattern
@@ -340,8 +311,6 @@ def cmd_ttf_to_base64(args: argparse.Namespace) -> int:
             out.write_text(b64, encoding="utf-8")
             print(f"OK   {f.name} -> {out.name}")
     return 0
-
-
 def cmd_file_to_base64(args: argparse.Namespace) -> int:
     src = Path(args.file).expanduser().resolve()
     if not src.is_file():
@@ -358,8 +327,6 @@ def cmd_file_to_base64(args: argparse.Namespace) -> int:
         out.write_text(b64, encoding="utf-8")
         print(f"{out.name} created.")
     return 0
-
-
 def cmd_extract_css(args: argparse.Namespace) -> int:
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -378,7 +345,6 @@ def cmd_extract_css(args: argparse.Namespace) -> int:
         if text is None:
             continue
         seen: dict[str, str] = {}
-
         def repl(m: re.Match, _css: Path = css) -> str:
             mime = m.group("mime")
             payload = decode_b64(m.group("data"))
@@ -393,7 +359,6 @@ def cmd_extract_css(args: argparse.Namespace) -> int:
                     target.write_bytes(payload)
                 seen[digest] = name
             return f"url('{out.name}/{seen[digest]}')"
-
         new_text = CSS_URL_DATA_RE.sub(repl, text)
         if new_text != text and not args.dry_run:
             css.write_text(new_text, encoding="utf-8")
@@ -402,8 +367,6 @@ def cmd_extract_css(args: argparse.Namespace) -> int:
     print(f"\nTotal saved assets: {total}")
     print(f"Output directory: ./{out}")
     return 0
-
-
 _ASSET_PATTERNS = {
     "url": re.compile(
         r"""url\(\s*["']?data:(?P<mime>[^;,)\s"']+)(?:;[^,)]*)?;base64\s*,\s*(?P<data>""" + _B64 + r""")["']?\s*\)""",
@@ -425,8 +388,6 @@ _ASSET_PATTERNS = {
         re.IGNORECASE | re.VERBOSE,
     ),
 }
-
-
 @dataclass
 class AssetHit:
     path: Path
@@ -436,8 +397,6 @@ class AssetHit:
     mime: str
     data: str
     context: str
-
-
 def find_asset_hits(text: str, path: Path) -> list[AssetHit]:
     hits: list[AssetHit] = []
     seen: set[str] = set()
@@ -462,8 +421,6 @@ def find_asset_hits(text: str, path: Path) -> list[AssetHit]:
                 )
             )
     return hits
-
-
 def _process_asset_file(
     path: Path,
     assets_dir: Path,
@@ -528,8 +485,6 @@ def _process_asset_file(
         tmp.write_text(new_text, encoding="utf-8")
         tmp.replace(path)
     return extracted, len(replacements)
-
-
 def cmd_extract_assets(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     assets_dir = Path(args.out).resolve()
@@ -589,8 +544,6 @@ def cmd_extract_assets(args: argparse.Namespace) -> int:
     print(f"Replacements     : {total_replaced}")
     print(f"Assets saved to  : {assets_dir}")
     return 0
-
-
 def cmd_extract_elements(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     out = Path(args.out).resolve()
@@ -620,8 +573,6 @@ def cmd_extract_elements(args: argparse.Namespace) -> int:
             count += 1
     print(f"{count} elements extracted.")
     return 0
-
-
 def cmd_extract_html(args: argparse.Namespace) -> int:
     try:
         from bs4 import BeautifulSoup
@@ -635,7 +586,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
         return 3
     from bs4 import BeautifulSoup
     import requests
-
     root = Path(args.root).resolve()
     output = Path(args.out).resolve()
     assets = output / "assets"
@@ -643,7 +593,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
     download_remote = args.download_remote
     timeout = args.timeout
     _counter = {"n": 0}
-
     def save_asset(blob: bytes, mime_or_name: str, prefix: str) -> Path:
         ext = mimetypes.guess_extension(mime_or_name) or ""
         while True:
@@ -654,7 +603,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
                 break
         target.write_bytes(blob)
         return target
-
     def extract_data_uri(s: str, prefix: str) -> Optional[Path]:
         m = re.match(r"data:(.*?);base64,(.*)", s, re.DOTALL)
         if not m:
@@ -664,7 +612,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
         if blob is None:
             return None
         return save_asset(blob, mime.split(";")[0], prefix)
-
     def download(url: str, prefix: str) -> Optional[Path]:
         try:
             print(f"Downloading: {url}")
@@ -676,7 +623,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
         except Exception as e:
             print(f"WARN: failed to download {url}: {e}")
             return None
-
     html_files = list(
         [Path(p) for p in args.files]
         if args.files
@@ -750,8 +696,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
         print(f"Processed: {html}")
     print(f"\nAll done — extracted assets saved to {output}")
     return 0
-
-
 def cmd_list_lines(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     report = Path(args.report)
@@ -777,15 +721,12 @@ def cmd_list_lines(args: argparse.Namespace) -> int:
                 fh.write("\n")
                 fh.write("\n".join(blobs) + "\n")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="merge.py",
         description="Unified base64 / data-URI extractor and converter.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-
     def add_common(sp: argparse.ArgumentParser, default_root: str = ".") -> None:
         sp.add_argument(
             "--root",
@@ -793,7 +734,6 @@ def build_parser() -> argparse.ArgumentParser:
             help="Root path to scan (default: current dir)",
         )
         sp.add_argument("--dry-run", action="store_true", help="Do not write anything, just report")
-
     sp = sub.add_parser("extract-cleanuri", help="Extract data: URIs from css/js/html and rewrite.")
     add_common(sp)
     sp.add_argument("--out", default="assets")
@@ -879,8 +819,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--files", nargs="*", default=None)
     sp.set_defaults(func=cmd_list_lines)
     return p
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -889,7 +827,5 @@ def main(argv: Optional[list[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\nInterrupted.", file=sys.stderr)
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

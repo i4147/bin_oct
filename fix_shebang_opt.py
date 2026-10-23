@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import stat
-
 HOME = Path.home()
 cwd = Path.cwd()
 PREFIX = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
@@ -17,19 +16,13 @@ OLD_PREFIXES = (
     "/opt/homebrew/bin",
     "/usr/local/opt",
 )
-
-
 def looks_like_python_interpreter(interp: str) -> bool:
     name = Path(interp).name
     return "python" in name
-
-
 def should_rewrite(interp: str) -> bool:
     if not looks_like_python_interpreter(interp):
         return False
     return interp.strip() != str(PREFIX / "bin/python3.14")
-
-
 def parse_shebang(first_line: str):
     if not first_line.startswith("#!"):
         return None
@@ -43,8 +36,6 @@ def parse_shebang(first_line: str):
     if Path(exe).name == "env" and len(parts) >= 2:
         return parts[1]
     return exe
-
-
 def rewrite_file(path: Path) -> bool:
     try:
         data = path.read_bytes()
@@ -79,8 +70,6 @@ def rewrite_file(path: Path) -> bool:
         return False
     print(f"  ✓ {path.name}:  {interp}  →  {PREFIX}/bin/python3.14")
     return True
-
-
 def main():
     if not cwd.is_dir():
         print(f"Directory not found: {cwd}")
@@ -98,7 +87,5 @@ def main():
             changed += 1
     print()
     print(f"Scanned {scanned} executable file(s); rewrote {changed} shebang(s).")
-
-
 if __name__ == "__main__":
     main()

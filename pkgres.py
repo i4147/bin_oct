@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any
-
 SKIPPED_DIRS: frozenset[str] = frozenset({
     ".git",
     "__pycache__",
@@ -85,8 +83,6 @@ IMPORT_RE = re.compile(
     re.MULTILINE,
 )
 GENERIC_USAGE_RE = re.compile(r"pkg_resources\.([A-Za-z_][A-Za-z0-9_]*)")
-
-
 def collect_python_files(paths: list[str]) -> list[Path]:
     py_files: list[Path] = []
     for path_str in paths:
@@ -98,8 +94,6 @@ def collect_python_files(paths: list[str]) -> list[Path]:
                 if not any(part in SKIPPED_DIRS for part in p.parts):
                     py_files.append(p)
     return sorted(set(py_files))
-
-
 def scan_file(path: Path) -> dict[str, Any]:
     try:
         content = path.read_text(encoding="utf-8")
@@ -135,8 +129,6 @@ def scan_file(path: Path) -> dict[str, Any]:
         "usages": usages,
         "imports_needed": sorted(imports_needed),
     }
-
-
 def autofix_file(path: Path) -> dict[str, Any]:
     try:
         content = path.read_text(encoding="utf-8")
@@ -175,8 +167,6 @@ def autofix_file(path: Path) -> dict[str, Any]:
         except OSError as e:
             return {"file": path, "error": f"Write failed: {e}", "fixed": False}
     return {"file": path, "fixed": False, "reason": "No changes needed"}
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Detect and autofix deprecated pkg_resources usage.")
     parser.add_argument(
@@ -246,7 +236,5 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {e}")
         return 1
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

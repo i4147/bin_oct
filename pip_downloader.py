@@ -1,14 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import sys
 from urllib.parse import quote
 import httpx
-
 PREFERRED_EXTENSIONS = (".tar.gz", ".tar.bz2", ".zip")
-
-
 def main():
     if len(sys.argv) != 2:
         msg = f"Usage: python {sys.argv[0]} <package-list-file>"
@@ -59,7 +55,5 @@ def main():
                 print(f"Downloaded {package} {data['info']['version']}: {destination}")
             except (httpx.HTTPError, KeyError, ValueError) as exc:
                 print(f"ERROR {package}: {exc}")
-
-
 if __name__ == "__main__":
     main()

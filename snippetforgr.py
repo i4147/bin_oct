@@ -8,7 +8,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator, Sequence
-
 SOURCE_CODE_EXTS: frozenset[str] = frozenset({
     ".py",
     ".h",
@@ -73,8 +72,6 @@ FENCE_RE = re.compile(
 FENCE_OPEN_RE = re.compile(r"^```+(\w*)")
 PKG_FILENAMES: frozenset[str] = frozenset({"PKGINFO", "METADATA", "PKG-INFO"})
 PYTEXT_EXTS: frozenset[str] = frozenset({".md", ".txt", ".html"})
-
-
 def lang_to_ext(lang: str) -> str:
     lang = (lang or "").strip().lower()
     if not lang:
@@ -86,17 +83,11 @@ def lang_to_ext(lang: str) -> str:
     if "." in lang:
         return "." + lang.rsplit(".", 1)[-1]
     return "." + lang
-
-
 def slug(text: str, max_len: int = 200) -> str:
     cleaned = re.sub(r"[^\w\-.]", "_", text)
     return cleaned[:max_len].rstrip("_") or "code_block"
-
-
 def normalize_exts(exts: Iterable[str]) -> frozenset[str]:
     return frozenset(e if e.startswith(".") else "." + e for e in exts)
-
-
 def _head_collect(root: Path, exts: frozenset[str], n_lines: int, skip: Path) -> list[str]:
     out: list[str] = []
     for path in root.rglob("*"):
@@ -115,8 +106,6 @@ def _head_collect(root: Path, exts: frozenset[str], n_lines: int, skip: Path) ->
         if snippet:
             out.append(snippet)
     return out
-
-
 def cmd_head(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     out = Path(args.output).resolve()
@@ -127,13 +116,9 @@ def cmd_head(args: argparse.Namespace) -> int:
     print(f"Unique snippets saved → {out}")
     print(f"Total unique blocks: {len(unique)}")
     return 0
-
-
 def _parse_fenced_regex(text: str) -> Iterator[tuple[str, str]]:
     for m in FENCE_RE.finditer(text):
         yield m.group("lang") or "", m.group("code")
-
-
 def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
     lines = text.splitlines()
     blocks: list[dict] = []
@@ -170,8 +155,6 @@ def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
             "content": "\n".join(buf),
         })
     return blocks
-
-
 def _write_md_block_mode(md_path: Path, out_dir: Path) -> int:
     text = md_path.read_text(encoding="utf-8", errors="replace")
     stem = slug(md_path.stem)
@@ -182,8 +165,6 @@ def _write_md_block_mode(md_path: Path, out_dir: Path) -> int:
         (out_dir / name).write_text(code.rstrip("\n") + "\n", encoding="utf-8")
         count += 1
     return count
-
-
 def _write_md_lines_mode(md_path: Path, out_dir: Path, include_unclosed: bool) -> int:
     text = md_path.read_text(encoding="utf-8", errors="replace")
     stem = slug(md_path.stem)
@@ -194,8 +175,6 @@ def _write_md_lines_mode(md_path: Path, out_dir: Path, include_unclosed: bool) -
         (out_dir / name).write_text(block["content"].strip(), encoding="utf-8")
         count += 1
     return count
-
-
 def _collect_md_targets(roots: Sequence[Path], wide: bool) -> list[Path]:
     targets: list[Path] = []
     for root in roots:
@@ -211,8 +190,6 @@ def _collect_md_targets(roots: Sequence[Path], wide: bool) -> list[Path]:
             elif p.suffix.lower() == ".md":
                 targets.append(p)
     return sorted(set(targets))
-
-
 def cmd_md_blocks(args: argparse.Namespace) -> int:
     cwd = Path.cwd().resolve()
     out_dir = Path(args.output)
@@ -229,8 +206,6 @@ def cmd_md_blocks(args: argparse.Namespace) -> int:
             total += _write_md_block_mode(md_path, out_dir)
     print(f"Extracted {total} code block(s) into {out_dir}")
     return 0
-
-
 def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
     lines = text.split("\n")
     i, n = 0, len(lines)
@@ -277,8 +252,6 @@ def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
                 yield start_line, snippet
             continue
         i += 1
-
-
 def _snips_process_file(path: Path, out_dir: Path) -> dict:
     result = {"file": str(path), "count": 0, "errors": 0}
     try:
@@ -296,13 +269,9 @@ def _snips_process_file(path: Path, out_dir: Path) -> dict:
         except Exception:
             result["errors"] += 1
     return result
-
-
 def _snips_worker(pair: tuple[Path, Path]) -> dict:
     path, out_dir = pair
     return _snips_process_file(path, out_dir)
-
-
 def _collect_snips_targets(roots: Sequence[Path], exts: frozenset[str]) -> list[Path]:
     targets: list[Path] = []
     for root in roots:
@@ -315,8 +284,6 @@ def _collect_snips_targets(roots: Sequence[Path], exts: frozenset[str]) -> list[
             if p.is_file() and ".git" not in p.parts and not p.is_symlink() and p.suffix in exts:
                 targets.append(p)
     return targets
-
-
 def cmd_snips(args: argparse.Namespace) -> int:
     cwd = Path.cwd().resolve()
     out_dir = Path(args.output)
@@ -354,8 +321,6 @@ def cmd_snips(args: argparse.Namespace) -> int:
     print(f"\n✅ Complete: {total} snippets extracted, {errors} error(s).")
     print(f"📁 Output saved to: {out_dir.resolve()}")
     return 0
-
-
 PY_FENCE_RE = re.compile(r"```python\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 PY_DOCTEST_RE = re.compile(
     r"(?:^|\n)((?:>>>|\.\.\.).*?)(?=\n\s*\n|\Z)",
@@ -365,8 +330,6 @@ PY_TOPLEVEL_RE = re.compile(
     r"(?:^|\n)((?:import\s+\w+|from\s+\w+\s+import|def\s+\w+|class\s+\w+).*?)(?=\n\s*\n|\Z)",
     re.DOTALL | re.MULTILINE,
 )
-
-
 def _doctest_to_code(block: str) -> str:
     out: list[str] = []
     in_doctest = False
@@ -380,8 +343,6 @@ def _doctest_to_code(block: str) -> str:
         elif not s:
             out.append("")
     return "\n".join(out)
-
-
 def _pytext_extract(text: str, filename: str) -> list[str]:
     blocks: list[str] = []
     for m in PY_FENCE_RE.finditer(text):
@@ -400,14 +361,10 @@ def _pytext_extract(text: str, filename: str) -> list[str]:
             if code and ("import" in code or "def " in code or "class " in code):
                 blocks.append(code)
     return blocks
-
-
 def _is_pytext_target(path: Path) -> bool:
     if path.name in PKG_FILENAMES:
         return True
     return path.suffix.lower() in PYTEXT_EXTS
-
-
 def _collect_pytext_targets(roots: Sequence[Path]) -> list[Path]:
     found: set[Path] = set()
     for root in roots:
@@ -419,8 +376,6 @@ def _collect_pytext_targets(roots: Sequence[Path]) -> list[Path]:
                 if p.is_file() and _is_pytext_target(p):
                     found.add(p)
     return sorted(found)
-
-
 def _pytext_process_file(path: Path, out_dir: Path) -> tuple[str, int]:
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
@@ -433,13 +388,9 @@ def _pytext_process_file(path: Path, out_dir: Path) -> tuple[str, int]:
         header = f"# Source: {path}\n# Block: {idx}\n# Extracted: {path.name}\n\n"
         out.write_text(header + block + "\n", encoding="utf-8")
     return str(path), len(blocks)
-
-
 def _pytext_worker(pair: tuple[Path, Path]) -> tuple[str, int]:
     path, out_dir = pair
     return _pytext_process_file(path, out_dir)
-
-
 def cmd_pytext(args: argparse.Namespace) -> int:
     cwd = Path.cwd().resolve()
     roots = [Path(p).resolve() for p in args.paths] if args.paths else [cwd]
@@ -469,8 +420,6 @@ def cmd_pytext(args: argparse.Namespace) -> int:
     print(f"Done! Extracted {total} Python block(s) to '{out_dir}/'")
     print("Reference headers in each file indicate the source.")
     return 0
-
-
 HTML_PY_HINTS: tuple[str, ...] = (
     "def ",
     "class ",
@@ -509,8 +458,6 @@ HTML_FILENAME_RE = re.compile(
     re.IGNORECASE,
 )
 HTML_PY_MARKERS: tuple[str, ...] = ("def ", "import ", "class ", "if __name__")
-
-
 @dataclass
 class CodeBlock:
     content: str
@@ -518,24 +465,19 @@ class CodeBlock:
     source_file: str
     block_index: int
     suggested_name: str | None = None
-
-
 class HtmlCodeExtractor:
     def __init__(self, retries: int = 3, timeout: int = 10) -> None:
         import requests
         from requests.adapters import HTTPAdapter
         from urllib3.util.retry import Retry
-
         self.session = requests.Session()
         retry = Retry(total=retries, backoff_factor=1)
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
         self.timeout = timeout
-
     def fetch(self, url: str) -> str | None:
         from loguru import logger
-
         try:
             r = self.session.get(url, timeout=self.timeout)
             r.raise_for_status()
@@ -543,20 +485,16 @@ class HtmlCodeExtractor:
         except Exception as exc:
             logger.exception("Failed to fetch {}: {}", url, exc)
             return None
-
     def close(self) -> None:
         self.session.close()
-
     def extract_from_html(self, html: str, source: str) -> list[CodeBlock]:
         from bs4 import BeautifulSoup
-
         soup = BeautifulSoup(html, "html.parser")
         blocks: list[CodeBlock] = []
         blocks.extend(self._from_pre_code(soup, source))
         blocks.extend(self._from_code_tags(soup, source))
         blocks.extend(self._from_script_json(soup, source))
         return blocks
-
     def _from_pre_code(self, soup, source: str) -> list[CodeBlock]:
         out: list[CodeBlock] = []
         for idx, pre in enumerate(soup.find_all("pre")):
@@ -575,7 +513,6 @@ class HtmlCodeExtractor:
                     )
                 )
         return out
-
     def _from_code_tags(self, soup, source: str) -> list[CodeBlock]:
         out: list[CodeBlock] = []
         offset = len(soup.find_all("pre"))
@@ -595,7 +532,6 @@ class HtmlCodeExtractor:
                     )
                 )
         return out
-
     def _from_script_json(self, soup, source: str) -> list[CodeBlock]:
         out: list[CodeBlock] = []
         offset = len(soup.find_all("pre")) + len(soup.find_all("code"))
@@ -623,7 +559,6 @@ class HtmlCodeExtractor:
                         )
                     )
         return out
-
     def _walk_json(self, obj, depth: int = 0, max_depth: int = 5) -> list[str]:
         if depth > max_depth:
             return []
@@ -637,7 +572,6 @@ class HtmlCodeExtractor:
         elif isinstance(obj, str) and any(m in obj for m in HTML_PY_MARKERS):
             found.append(obj)
         return found
-
     @staticmethod
     def _is_python(text: str) -> bool:
         if not text.strip():
@@ -646,7 +580,6 @@ class HtmlCodeExtractor:
         hint_hits = sum(1 for h in HTML_PY_HINTS if h.lower() in lower)
         regex_hits = sum(1 for r in HTML_PY_REGEXES if r.search(text))
         return hint_hits >= 2 or regex_hits >= 2
-
     @staticmethod
     def _extract_filename(text: str) -> str | None:
         for line in text.split("\n")[:10]:
@@ -654,17 +587,13 @@ class HtmlCodeExtractor:
             if m is not None:
                 return m.group(1)
         return None
-
-
 class HtmlExtractorSink:
     def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.extractor = HtmlCodeExtractor()
-
     def process_file(self, path: Path) -> int:
         from loguru import logger
-
         path = Path(path)
         if path.suffix.lower() != ".html":
             return 0
@@ -678,10 +607,8 @@ class HtmlExtractorSink:
         except Exception as exc:
             logger.exception("Error processing {}: {}", path, exc)
             return 0
-
     def process_url(self, url: str) -> int:
         from loguru import logger
-
         try:
             html = self.extractor.fetch(url)
             if not html:
@@ -694,7 +621,6 @@ class HtmlExtractorSink:
         except Exception as exc:
             logger.exception("Error processing URL {}: {}", url, exc)
             return 0
-
     def _save(self, blocks: Sequence[CodeBlock], source: str) -> None:
         stem = "url_content" if source.startswith("http") else Path(source).stem
         target_dir = self.output_dir / stem
@@ -711,15 +637,10 @@ class HtmlExtractorSink:
                 out = target_dir / f"{base}_{counter}.py"
                 counter += 1
             out.write_text(block.content, encoding="utf-8")
-
     def close(self) -> None:
         self.extractor.close()
-
-
 def _collect_html_files(root: Path) -> list[str]:
     return [str(p) for p in root.rglob("*.html")]
-
-
 def _html_file_worker(pair: tuple[str, str]) -> int:
     path, out_dir = pair
     sink = HtmlExtractorSink(Path(out_dir))
@@ -727,8 +648,6 @@ def _html_file_worker(pair: tuple[str, str]) -> int:
         return sink.process_file(Path(path))
     finally:
         sink.close()
-
-
 def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int:
     total = 0
     pool = Pool(processes=workers)
@@ -745,8 +664,6 @@ def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int
         pool.terminate()
         raise
     return total
-
-
 def cmd_html(args: argparse.Namespace) -> int:
     try:
         import bs4
@@ -793,8 +710,6 @@ def cmd_html(args: argparse.Namespace) -> int:
     print(f"Total code blocks extracted: {total}")
     print(f"Results saved to: {Path(args.output)}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="snippetforge.py",
@@ -910,13 +825,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_html.set_defaults(func=cmd_html)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

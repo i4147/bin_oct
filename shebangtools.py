@@ -8,7 +8,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Optional, Sequence
-
 TERMUX_PREFIX = "/data/data/com.termux/files/usr"
 DEFAULT_SHEBANG_FIX = "#!/data/data/com.termux/usr"
 DEFAULT_SHEBANG_ADD = f"#!{TERMUX_PREFIX}/bin/env python"
@@ -114,8 +113,6 @@ _PY_INDICATOR = [
         r"^#!.*python",
     )
 ]
-
-
 def _gather(paths: Sequence[str], exts: Optional[Sequence[str]] = None) -> list[Path]:
     ext_set = None
     if exts:
@@ -134,24 +131,18 @@ def _gather(paths: Sequence[str], exts: Optional[Sequence[str]] = None) -> list[
         else:
             print(f"Not found: {p}", file=sys.stderr)
     return sorted(set(found))
-
-
 def _count_shebang_lines(path: Path) -> int:
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return 0
     return sum(1 for line in text.splitlines() if line.startswith("#!"))
-
-
 def _read_first_line(path: Path) -> Optional[str]:
     try:
         with open(path, encoding="utf-8", errors="ignore") as f:
             return f.readline().strip()
     except OSError:
         return None
-
-
 def _looks_like_python(path: Path) -> bool:
     try:
         with open(path, "rb") as f:
@@ -164,8 +155,6 @@ def _looks_like_python(path: Path) -> bool:
             return True
     text = head.decode("utf-8", errors="ignore")
     return any(p.search(text) for p in _PY_INDICATOR)
-
-
 def _iter_python_files(root: Path):
     for path in root.rglob("*"):
         if any(part.startswith(".") and part != "." for part in path.parts) and ".git" in path.parts:
@@ -185,8 +174,6 @@ def _iter_python_files(root: Path):
             continue
         if "." not in path.name and _looks_like_python(path):
             yield path
-
-
 def _unique_target(src: Path, new_ext: str) -> Optional[Path]:
     parent = src.parent
     stem = src.stem if src.suffix else src.name
@@ -198,8 +185,6 @@ def _unique_target(src: Path, new_ext: str) -> Optional[Path]:
     if candidate == src:
         return None
     return candidate
-
-
 def _do_rename(src: Path, new_ext: str, verbose: bool) -> Optional[Path]:
     target = _unique_target(src, new_ext)
     if target is None:
@@ -212,8 +197,6 @@ def _do_rename(src: Path, new_ext: str, verbose: bool) -> Optional[Path]:
     if verbose:
         print(f"  RENAMED:{src.name}->{target.name}")
     return target
-
-
 def _detect_ext_simple(path: Path) -> Optional[str]:
     first = _read_first_line(path)
     if first is None:
@@ -230,15 +213,11 @@ def _detect_ext_simple(path: Path) -> Optional[str]:
         if name in lower:
             return ext
     return None
-
-
 def _match_shebang_broad(line: str) -> Optional[str]:
     for pattern, ext in _RENAME_PATTERNS:
         if re.match(pattern, line):
             return ext
     return None
-
-
 def _worker_fix_sh(path_str: str, shebang: str) -> str:
     path = Path(path_str)
     try:
@@ -263,8 +242,6 @@ def _worker_fix_sh(path_str: str, shebang: str) -> str:
         with contextlib.suppress(OSError):
             path.chmod(0o755)
     return f"{path.name} updated"
-
-
 def _worker_fix_python(path_str: str, shebang: str, cv2_shebang: str) -> tuple[str, bool, Optional[str], str]:
     path = Path(path_str)
     if path.is_symlink():
@@ -290,8 +267,6 @@ def _worker_fix_python(path_str: str, shebang: str, cv2_shebang: str) -> tuple[s
         return (path_str, True, None, "updated")
     except Exception as e:
         return (path_str, False, str(e), "error")
-
-
 def _worker_rm(path_str: str) -> str:
     path = Path(path_str)
     try:
@@ -303,8 +278,6 @@ def _worker_rm(path_str: str) -> str:
         return f"{path.name} updated."
     except Exception:
         return ""
-
-
 def _should_add_python(path: Path) -> bool:
     try:
         if path.stat().st_size == 0 or path.name == "__init__.py":
@@ -326,8 +299,6 @@ def _should_add_python(path: Path) -> bool:
     except (OSError, UnicodeDecodeError):
         return False
     return False
-
-
 def _worker_add_python(path_str: str, shebang: str) -> str:
     path = Path(path_str)
     if path.is_symlink():
@@ -357,8 +328,6 @@ def _worker_add_python(path_str: str, shebang: str) -> str:
         with contextlib.suppress(OSError):
             path.chmod(0o755)
     return f"{path.name} updated."
-
-
 def _convert_to_cloud(path_str: str) -> tuple[str, bool, Optional[str]]:
     path = Path(path_str)
     try:
@@ -375,8 +344,6 @@ def _convert_to_cloud(path_str: str) -> tuple[str, bool, Optional[str]]:
     lines[0] = new_line
     path.write_text("\n".join(lines), encoding="utf-8")
     return (path_str, True, None)
-
-
 def _cmd_check_double(args: argparse.Namespace) -> int:
     paths = args.paths or [os.getcwd()]
     files = _gather(paths, [".py"])
@@ -386,8 +353,6 @@ def _cmd_check_double(args: argparse.Namespace) -> int:
         if _count_shebang_lines(f) > 1:
             print(f.name)
     return 0
-
-
 def _cmd_check(args: argparse.Namespace) -> int:
     paths = args.paths or [os.getcwd()]
     files = _gather(paths, [".py"])
@@ -398,8 +363,6 @@ def _cmd_check(args: argparse.Namespace) -> int:
             print(f"{f} has 2 shebang")
     print(f"Done. Updated {count} files.")
     return 0
-
-
 def _cmd_fix_sh(args: argparse.Namespace) -> int:
     paths = args.paths or [os.getcwd()]
     files = _gather(paths, [".sh"])
@@ -411,8 +374,6 @@ def _cmd_fix_sh(args: argparse.Namespace) -> int:
             if msg:
                 print(msg)
     return 0
-
-
 def _cmd_fix_ext(args: argparse.Namespace) -> int:
     paths = args.paths or [os.getcwd()]
     files = [f for f in _gather(paths) if f.is_file()]
@@ -443,8 +404,6 @@ def _cmd_fix_ext(args: argparse.Namespace) -> int:
     print(f"  {'Would rename' if args.dry_run else 'Renamed'}:{renamed} files")
     print(f"  Skipped:{skipped} files")
     return 0
-
-
 def _cmd_fix(args: argparse.Namespace) -> int:
     root = Path(args.paths[0]) if args.paths else Path.cwd()
     if not root.is_dir():
@@ -504,8 +463,6 @@ def _cmd_fix(args: argparse.Namespace) -> int:
             print(f"-{p}:{reason}")
         return 1
     return 0
-
-
 def _cmd_rename(args: argparse.Namespace) -> int:
     root = Path(args.paths[0]) if args.paths else Path.cwd()
     files = [f for f in root.iterdir() if f.is_file() and not f.name.startswith(".")]
@@ -542,8 +499,6 @@ def _cmd_rename(args: argparse.Namespace) -> int:
         print(f"   Unknown shebangs:{unknown} file(s)")
     print(f"{'=' * 40}")
     return 0
-
-
 def _cmd_rm(args: argparse.Namespace) -> int:
     paths = args.paths or [os.getcwd()]
     files = _gather(paths, [".py"])
@@ -555,8 +510,6 @@ def _cmd_rm(args: argparse.Namespace) -> int:
             if msg:
                 print(msg)
     return 0
-
-
 def _cmd_add(args: argparse.Namespace) -> int:
     root = Path(args.paths[0]) if args.paths else Path.cwd()
     files = [f for f in root.rglob("*") if f.is_file() and not f.is_symlink()]
@@ -568,8 +521,6 @@ def _cmd_add(args: argparse.Namespace) -> int:
             if msg:
                 print(msg)
     return 0
-
-
 def _cmd_to_cloud(args: argparse.Namespace) -> int:
     root = Path(args.paths[0]) if args.paths else Path()
     if not root.exists() or not root.is_dir():
@@ -604,8 +555,6 @@ def _cmd_to_cloud(args: argparse.Namespace) -> int:
     print(f"  Failed:{failed}")
     print(f"  Total files processed:{len(files)}")
     return 0
-
-
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="shebang_tool",
@@ -652,13 +601,9 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_to_cloud)
     return p
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args) or 0)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -8,18 +7,14 @@ from pathlib import Path
 import sys
 from rich.console import Console
 from rich.markdown import Markdown
-
 try:
     from readchar import (
         key as RKEY,
         readkey,
     )
-
     HAVE_READCHAR = True
 except Exception:
     HAVE_READCHAR = False
-
-
 def _key_set(*names: str) -> set[str]:
     keys: set[str] = set()
     for name in names:
@@ -27,8 +22,6 @@ def _key_set(*names: str) -> set[str]:
         if isinstance(value, str):
             keys.add(value)
     return keys
-
-
 NEXT_KEYS = {" ", "j", "f", "\n", "\r"} | _key_set("SPACE", "ENTER", "PAGE_DOWN", "RIGHT", "DOWN", "TAB")
 PREV_KEYS = {"b", "k"} | _key_set("PAGE_UP", "LEFT", "UP", "BACKSPACE")
 NEXT_FILE_KEYS = {"n", "]", ">"}
@@ -36,8 +29,6 @@ PREV_FILE_KEYS = {"p", "[", "<"}
 FIRST_KEYS = {"g"}
 LAST_KEYS = {"G"}
 QUIT_KEYS = {"q", "Q", "\x03", "\x04", "\x1b"}
-
-
 def classify(key: str) -> str | None:
     if key == "":
         return "next_page"
@@ -56,8 +47,6 @@ def classify(key: str) -> str | None:
     if key in QUIT_KEYS:
         return "quit"
     return None
-
-
 def read_action() -> str:
     if HAVE_READCHAR:
         try:
@@ -69,15 +58,11 @@ def read_action() -> str:
     except (EOFError, KeyboardInterrupt):
         return "quit"
     return classify(line[:1] if line else "") or ""
-
-
 @dataclass
 class Document:
     name: str
     docstring: str | None = None
     error: str | None = None
-
-
 def extract_docstring(path: Path) -> Document:
     try:
         source = path.read_text(encoding="utf-8")
@@ -95,8 +80,6 @@ def extract_docstring(path: Path) -> Document:
     except ValueError as error:
         return Document(path.name, error=str(error))
     return Document(path.name, docstring=ast.get_docstring(tree))
-
-
 def render_document(console: Console, document: Document, width: int) -> list[str]:
     lines = [f"  {document.name}  ", ""]
     if document.error is not None:
@@ -114,14 +97,10 @@ def render_document(console: Console, document: Document, width: int) -> list[st
         console.width = previous_width
     lines.extend(capture.get().splitlines())
     return lines
-
-
 def paginate(lines: list[str], height: int) -> list[list[str]]:
     height = max(height, 1)
     pages = [lines[i : i + height] for i in range(0, len(lines), height)]
     return pages or [[]]
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pydocview",
@@ -144,8 +123,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory to scan for .py files (default: current directory)",
     )
     return parser
-
-
 def main() -> int:
     args = build_parser().parse_args()
     console = Console()
@@ -164,7 +141,6 @@ def main() -> int:
         return 0
     documents = [extract_docstring(path) for path in paths]
     rendered: dict[tuple[int, int], list[str]] = {}
-
     def lines_for(index: int, width: int) -> list[str]:
         key = (index, width)
         cached = rendered.get(key)
@@ -172,7 +148,6 @@ def main() -> int:
             cached = render_document(console, documents[index], width)
             rendered[key] = cached
         return cached
-
     doc_index = 0
     page_index = 0
     message = ""
@@ -233,7 +208,5 @@ def main() -> int:
             doc_index = len(documents) - 1
             page_index = 0
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

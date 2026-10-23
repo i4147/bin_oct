@@ -5,14 +5,12 @@ from pathlib import Path
 import re
 import sys
 import unicodedata
-
 try:
     from pypinyin import lazy_pinyin
 except ImportError:
     lazy_pinyin = None
 try:
     import pykakasi
-
     _KAKASI = pykakasi.kakasi()
 except ImportError:
     _KAKASI = None
@@ -132,27 +130,19 @@ RESERVED = {
     *(f"COM{i}" for i in range(1, 10)),
     *(f"LPT{i}" for i in range(1, 10)),
 }
-
-
 def _japanese(text: str) -> str:
     parts = []
     for item in _KAKASI.convert(text):
         orig = item["orig"]
         parts.append(orig if orig.isascii() else item["hepburn"] + "_")
     return "".join(parts)
-
-
 def _chinese(text: str) -> str:
     return HAN.sub(lambda m: "_" + "_".join(lazy_pinyin(m.group())) + "_", text)
-
-
 def _ascii_fallback(text: str) -> str:
     if unidecode:
         return unidecode(text)
     decomposed = unicodedata.normalize("NFKD", text)
     return "".join(c if c.isascii() else "_" for c in decomposed if not unicodedata.combining(c))
-
-
 def _clean(name: str, original: str) -> str:
     name = BAD_CHARS.sub("_", name)
     name = re.sub(r"_{2,}", "_", name)
@@ -171,8 +161,6 @@ def _clean(name: str, original: str) -> str:
         suffix = Path(name).suffix[:20]
         name = name[: MAX_NAME - len(suffix)] + suffix
     return name
-
-
 def transliterate(name: str) -> str:
     text = unicodedata.normalize("NFKC", name)
     text = FA_MARKS.sub("", text)
@@ -183,16 +171,11 @@ def transliterate(name: str) -> str:
     text = text.translate(RU_TABLE).translate(FA_TABLE)
     text = _ascii_fallback(text)
     return _clean(text, name)
-
-
 def _key(path: Path) -> str:
     return str(path).casefold()
-
-
 def unique_target(path: Path, claimed: set) -> Path:
     def free(p: Path) -> bool:
         return _key(p) not in claimed and not p.exists() and not p.is_symlink()
-
     if free(path):
         return path
     n = 1
@@ -201,8 +184,6 @@ def unique_target(path: Path, claimed: set) -> Path:
         if free(candidate):
             return candidate
         n += 1
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Transliterate non-ASCII file/dir names in place.")
     parser.add_argument("root", nargs="?", default=".", type=Path)
@@ -249,7 +230,5 @@ def main() -> int:
     verb = "would rename" if args.dry_run else "renamed"
     print(f"\n{verb} {renamed} item(s), {failed} error(s).")
     return 2 if failed else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,19 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from multiprocessing import Pool, cpu_count
 import re
 import sys
 import hunspell
-
-
 def process_line(line: str, autofix: bool = False) -> tuple:
     h = hunspell.HunSpell("/usr/share/hunspell/en_US.dic", "/usr/share/hunspell/en_US.aff")
     misspelled_count = 0
     fixed_count = 0
     suggestions_dict = {}
-
     def check_and_replace(match):
         nonlocal misspelled_count, fixed_count
         word = match.group(0)
@@ -44,11 +40,8 @@ def process_line(line: str, autofix: bool = False) -> tuple:
                     suggestions_dict[word] = ["No suggestions"]
                 return word
         return word
-
     updated_line = re.sub(r"[a-zA-Z']+", check_and_replace, line)
     return updated_line, misspelled_count, fixed_count, suggestions_dict
-
-
 def process_file(
     path: str,
     autofix: bool = False,
@@ -66,7 +59,6 @@ def process_file(
         print(f"Error reading file: {e}")
         return
     import os
-
     if not os.path.exists(dic_path) or not os.path.exists(aff_path):
         print(f"Error: Hunspell dictionary files not found at:")
         print(f"  Dictionary: {dic_path}")
@@ -134,12 +126,9 @@ def process_file(
                     sugg_str += f", ... (+{len(suggestions) - 5} more)"
                 print(f"  '{word}' → {sugg_str}")
         print(f"\nRun with -a to autofix {total_misspelled} word(s).")
-
-
 def find_hunspell_dicts():
     import glob
     import os
-
     common_paths = [
         "/usr/share/hunspell/",
         "/usr/share/myspell/",
@@ -155,8 +144,6 @@ def find_hunspell_dicts():
                 if os.path.exists(aff_file):
                     found_dicts.append((dic_file, aff_file))
     return found_dicts
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Detect and optionally autofix misspelled words in a file using Hunspell with parallel processing.",

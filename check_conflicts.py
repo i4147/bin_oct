@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import json
@@ -8,15 +7,10 @@ import re
 import sys
 import time
 from dh import STDLIB
-
 PIP_JSON = Path("/sdcard/data/pip.json")
 DEFAULT_REPORT = Path("conflict_report.json")
-
-
 def normalize(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).strip().lower()
-
-
 def load_pypi_names(path: Path) -> set[str]:
     if not path.exists():
         print(f"warning: {path} not found -- PyPI check skipped", file=sys.stderr)
@@ -30,8 +24,6 @@ def load_pypi_names(path: Path) -> set[str]:
         elif isinstance(rec, str):
             names.add(normalize(rec))
     return names
-
-
 def installed_distributions() -> set[str]:
     try:
         from importlib.metadata import distributions
@@ -46,16 +38,12 @@ def installed_distributions() -> set[str]:
         if raw:
             names.add(normalize(str(raw)))
     return names
-
-
 def collect_targets(root: Path):
     for p in sorted(root.iterdir()):
         if p.is_file() and p.suffix == ".py":
             yield p, p.stem, "module"
         elif p.is_dir() and (p / "__init__.py").is_file():
             yield p, p.name, "package"
-
-
 def unique_target(path: Path) -> Path:
     stem, suffix = path.stem, path.suffix
     n = 1
@@ -64,8 +52,6 @@ def unique_target(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         n += 1
-
-
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Detect and optionally fix filename conflicts with stdlib / PyPI packages.",
@@ -97,8 +83,6 @@ def parse_args() -> argparse.Namespace:
         help="only report PyPI conflicts for packages installed in this interpreter (stdlib check is unaffected)",
     )
     return ap.parse_args()
-
-
 def main() -> int:
     args = parse_args()
     root: Path = args.dir.resolve()
@@ -192,7 +176,5 @@ def main() -> int:
     else:
         print("\nRun with -a / --autofix to rename them.")
     return 1
-
-
 if __name__ == "__main__":
     sys.exit(main())

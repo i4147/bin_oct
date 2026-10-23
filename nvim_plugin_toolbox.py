@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -10,7 +9,6 @@ import shutil
 import subprocess
 import sys
 from typing import Optional, Sequence
-
 PLUGIN_PATTERNS: dict[str, list[str]] = {
     "lazy.nvim": [
         r"lazy\.setup",
@@ -395,8 +393,6 @@ RENAME_MAP: dict[str, str] = {
     "nvim-bqf": "bqf",
     "nvim-illuminate": "illuminate",
 }
-
-
 def _unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -407,8 +403,6 @@ def _unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         n += 1
-
-
 def find_plugin_refs(path: Path, patterns: dict[str, list[str]] = PLUGIN_PATTERNS) -> set[str]:
     found: set[str] = set()
     try:
@@ -427,8 +421,6 @@ def find_plugin_refs(path: Path, patterns: dict[str, list[str]] = PLUGIN_PATTERN
                 found.add(name)
                 break
     return found
-
-
 def _safe_move(src: Path, dest_dir: Path) -> Path:
     dest_dir.mkdir(exist_ok=True)
     dest = dest_dir / src.name
@@ -441,8 +433,6 @@ def _safe_move(src: Path, dest_dir: Path) -> Path:
         print(f"  ⚠️  Name conflict: {src.name} → {dest.name}")
     shutil.move(str(src), str(dest))
     return dest
-
-
 def cmd_folderize(args: argparse.Namespace) -> int:
     root = Path.cwd()
     lua_files = list(root.rglob("*.lua"))
@@ -504,8 +494,6 @@ def cmd_folderize(args: argparse.Namespace) -> int:
                 print(f"  ✗ Failed to move {src}: {exc}")
     print(f"\n✅ Completed! Moved {moved} files.")
     return 0
-
-
 def _git_info(repo: Path) -> tuple[Optional[str], Optional[str]]:
     try:
         commit = subprocess.check_output(
@@ -523,8 +511,6 @@ def _git_info(repo: Path) -> tuple[Optional[str], Optional[str]]:
         return commit, branch
     except subprocess.CalledProcessError:
         return None, None
-
-
 def cmd_lock_main(args: argparse.Namespace) -> int:
     lazy_dir = Path(args.lazy_dir).expanduser()
     output = Path(args.output).expanduser()
@@ -563,8 +549,6 @@ def cmd_lock_main(args: argparse.Namespace) -> int:
     print(f"  Total plugins: {len(lock_data)}")
     print("\nDone! You can now use this lock file with lazy.nvim.")
     return 0
-
-
 def _find_block(text: str, start: int) -> Optional[tuple[int, int]]:
     if start >= len(text) or text[start] != "{":
         return None
@@ -595,8 +579,6 @@ def _find_block(text: str, start: int) -> Optional[tuple[int, int]]:
             if depth == 0:
                 return (start, i + 1)
     return None
-
-
 def _split_top_level(body: str) -> list[str]:
     entries: list[str] = []
     i, n = 0, len(body)
@@ -646,16 +628,12 @@ def _split_top_level(body: str) -> list[str]:
             j += 1
         i = j + 1 if j < n else n
     return entries
-
-
 _URL_PATTERNS = (
     r'"([^"]+/[^"]+)"',
     r"'([^']+/[^']+)'",
     r'\[\s*"([^"]+/[^"]+)"\s*\]',
     r"\[\s*'([^']+/[^']+)'\s*\]",
 )
-
-
 def _extract_plugin_url(block: str) -> Optional[str]:
     for pat in _URL_PATTERNS:
         m = re.search(pat, block)
@@ -663,8 +641,6 @@ def _extract_plugin_url(block: str) -> Optional[str]:
             return m.group(1)
     m = re.search(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', block)
     return m.group(1) if m else None
-
-
 def _format_plugin_block(block: str) -> str:
     lines = [ln.strip() for ln in block.strip().split("\n")]
     body = "\n".join(lines).strip()
@@ -673,8 +649,6 @@ def _format_plugin_block(block: str) -> str:
     if body.startswith("{"):
         return f"return {body}"
     return f"return {{\n  {body}\n}}"
-
-
 def _balanced_braces(code: str) -> bool:
     pairs = {"(": ")", "[": "]", "{": "}"}
     stack: list[str] = []
@@ -701,8 +675,6 @@ def _balanced_braces(code: str) -> bool:
         elif ch in pairs.values() and (not stack or pairs[stack.pop()] != ch):
             return False
     return not stack and not in_str
-
-
 def _lua_syntax_valid(code: str) -> bool:
     try:
         proc = subprocess.run(
@@ -727,8 +699,6 @@ def _lua_syntax_valid(code: str) -> bool:
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
     return _balanced_braces(code)
-
-
 def cmd_split(args: argparse.Namespace) -> int:
     strict = args.engine == "strict"
     do_validate = args.validate if args.validate is not None else strict
@@ -814,8 +784,6 @@ def cmd_split(args: argparse.Namespace) -> int:
             print(f"{input_path} removed.")
     print(f"\nTotal files created: {len(created)}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="nvim_plugin_toolbox.py",
@@ -927,14 +895,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_split.set_defaults(func=cmd_split)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     rc = args.func(args)
     return int(rc) if rc is not None else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

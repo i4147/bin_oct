@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import ast
 import multiprocessing as mp
 from pathlib import Path
 import shutil
 import sys
-
-
 def get_public_names(path: Path) -> list[str]:
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -23,20 +20,14 @@ def get_public_names(path: Path) -> list[str]:
         elif isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
             public_names.append(node.name)
     return sorted(set(public_names))
-
-
 def get_python_modules(directory: Path) -> list[Path]:
     modules = []
     for path in directory.glob("*.py"):
         if path.name != "__init__.py" and (not path.name.startswith("_")):
             modules.append(path)
     return sorted(modules)
-
-
 def process_module(module_path: Path) -> tuple[str, list[str]]:
     return module_path.stem, get_public_names(module_path)
-
-
 def parse_existing_init(init_file: Path) -> tuple[set[str], set[str], list[str]]:
     existing_imports: set[str] = set()
     existing_all: set[str] = set()
@@ -58,8 +49,6 @@ def parse_existing_init(init_file: Path) -> tuple[set[str], set[str], list[str]]
                             if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                 existing_all.add(elt.value)
     return existing_imports, existing_all, original_lines
-
-
 def main():
     cwd = Path.cwd()
     print(f"Scanning directory: {cwd}")
@@ -147,7 +136,5 @@ def main():
         print("-" * 40)
         print(init_content)
         print("-" * 40)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

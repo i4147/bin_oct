@@ -9,26 +9,19 @@ import sys
 from typing import Iterator
 from dotenv import load_dotenv
 from telethon import TelegramClient
-
 PATTERN_PRESETS: dict[str, str] = {
     "coc": r"https://link\.clashofclans\.com/[a-zA-Z0-9\?\=\&_]+",
     "general": r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
 }
-
-
 def load_credentials(env_path: Path) -> tuple[str | None, str | None]:
     if env_path.exists():
         load_dotenv(env_path)
     api_id = os.environ.get("API_ID")
     api_hash = os.environ.get("API_HASH")
     return api_id, api_hash
-
-
 def extract_matches(text: str, pattern: str) -> Iterator[str]:
     for match in re.findall(pattern, text):
         yield match
-
-
 async def run_extractor(args: argparse.Namespace) -> None:
     env_file = Path(args.env).expanduser()
     env_api_id, env_api_hash = load_credentials(env_file)
@@ -74,8 +67,6 @@ async def run_extractor(args: argparse.Namespace) -> None:
         print(f"\nDone. Extracted {found_count} link(s).")
     finally:
         await client.disconnect()
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Extract URLs/links from a Telegram channel using Telethon.")
     parser.add_argument(
@@ -148,13 +139,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Telegram API Hash (overrides .env).",
     )
     return parser
-
-
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
     asyncio.run(run_extractor(args))
-
-
 if __name__ == "__main__":
     main()

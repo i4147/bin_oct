@@ -8,13 +8,10 @@ import shutil
 import tempfile
 from typing import TYPE_CHECKING
 from joblib import Parallel, delayed
-
 if TYPE_CHECKING:
     from collections.abc import Generator
 logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
 logger = logging.getLogger(__name__)
-
-
 @dataclass
 class FileStats:
     path: Path
@@ -23,7 +20,6 @@ class FileStats:
     original_size: int = 0
     new_size: int = 0
     error_msg: str | None = None
-
     def __str__(self) -> str:
         relpath = self.path.relative_to(Path.cwd())
         if not self.success:
@@ -31,8 +27,6 @@ class FileStats:
         size_delta = self.new_size - self.original_size
         size_change = f"({size_delta:+d} bytes)" if size_delta != 0 else "(no size change)"
         return f"✓ {relpath}: {self.replacements} replacements {size_change}"
-
-
 def is_text_file(path: Path, max_sample: int = 8192) -> bool:
     try:
         with open(path, "rb") as f:
@@ -40,14 +34,10 @@ def is_text_file(path: Path, max_sample: int = 8192) -> bool:
             return b"\x00" not in chunk
     except OSError:
         return False
-
-
 def should_process_file(path: Path, text_only: bool = True) -> bool:
     if path.is_dir() or path.is_symlink():
         return False
     return not (text_only and not is_text_file(path))
-
-
 def collect_files(inputs: list[str | Path]) -> Generator[Path, None, None]:
     for input_path in inputs:
         path = Path(input_path).resolve()
@@ -60,8 +50,6 @@ def collect_files(inputs: list[str | Path]) -> Generator[Path, None, None]:
                     yield path
         else:
             logger.warning(f"Path not found: {path}")
-
-
 def process_file_chunked(
     path: Path,
     chunk_size: int = 1024 * 1024,
@@ -126,8 +114,6 @@ def process_file_chunked(
         if temp_path.exists():
             temp_path.unlink()
     return stats
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Replace literal \\n with actual newlines in files",
@@ -210,7 +196,5 @@ Examples:
     print(f"Total size change: {total_size_change:+d} bytes")
     print("=" * 40 + "\n")
     return 0 if failed == 0 else 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

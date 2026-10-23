@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 from rich.console import Console
 from weasyprint import CSS, HTML
-
 console = Console(stderr=True)
 PAPER: dict[str, tuple[float, float]] = {
     "A3": (297, 420),
@@ -18,13 +17,9 @@ PAPER: dict[str, tuple[float, float]] = {
     "Tabloid": (279, 432),
 }
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-
-
 def is_url(s: str) -> bool:
     p = urlparse(s)
     return p.scheme in {"http", "https", "file", "data"} and bool(p.netloc or p.scheme == "file")
-
-
 def to_target(raw: str) -> str:
     if is_url(raw):
         return raw
@@ -32,8 +27,6 @@ def to_target(raw: str) -> str:
     if path.exists():
         return path.resolve().as_uri()
     return f"https://{raw}"
-
-
 def fetch(url: str, timeout: float, user_agent: str) -> str:
     req = Request(
         url,
@@ -46,12 +39,8 @@ def fetch(url: str, timeout: float, user_agent: str) -> str:
     with urlopen(req, timeout=timeout) as r:
         charset = r.headers.get_content_charset() or "utf-8"
         return r.read().decode(charset, errors="replace")
-
-
 def _esc(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
-
-
 def _content(s: str) -> str:
     parts, buf, i = [], "", 0
     while i < len(s):
@@ -69,8 +58,6 @@ def _content(s: str) -> str:
     if buf:
         parts.append(f'"{_esc(buf)}"')
     return " ".join(parts) or '""'
-
-
 def build_css(
     paper: str,
     landscape: bool,
@@ -116,16 +103,12 @@ def build_css(
         "table { max-width: 100% !important; }",
     ]
     return "\n".join(rules)
-
-
 def default_output(target: str) -> Path:
     if target.startswith("file://"):
         return Path(urlparse(target).path).with_suffix(".pdf")
     host = urlparse(target).netloc or urlparse(target).path
     safe = "".join(c if c.isalnum() or c in ".-_" else "_" for c in host).strip("_")
     return Path(f"{safe or 'output'}.pdf")
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="web2pdf",
@@ -145,8 +128,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--timeout", type=float, default=30.0, help="Fetch timeout in seconds")
     p.add_argument("--css", type=Path, action="append", default=[], help="Extra CSS file(s)")
     return p
-
-
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.margin < 0:
@@ -186,7 +167,5 @@ def main(argv: list[str] | None = None) -> int:
     size_kb = output.stat().st_size / 1024
     console.print(f"[green]✓[/green] {output}  [dim]({size_kb:.1f} KB)[/dim]")
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

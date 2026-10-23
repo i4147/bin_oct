@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -16,7 +15,6 @@ import subprocess
 import time
 from typing import Optional, Sequence
 from urllib import request as urlrequest
-
 try:
     from colorama import (
         Fore,
@@ -24,23 +22,17 @@ try:
         init as colorama_init,
     )
     import requests
-
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True
 except ImportError:
     requests = None
     _HAS_COLORAMA = False
-
     class _DummyColors:
         GREEN = RED = ""
-
     class _DummyStyle:
         RESET_ALL = ""
-
     Fore = _DummyColors()
     Style = _DummyStyle()
-
-
 def get_public_ip() -> Optional[str]:
     endpoints = [
         ("https://api.ipify.org?format=json", "ip"),
@@ -58,8 +50,6 @@ def get_public_ip() -> Optional[str]:
         except Exception:
             continue
     return None
-
-
 def get_local_ip() -> str:
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,8 +60,6 @@ def get_local_ip() -> str:
         return ip
     except Exception:
         return socket.gethostbyname(socket.gethostname())
-
-
 def read_dns_servers(path: Path) -> list[str]:
     servers: list[str] = []
     try:
@@ -89,8 +77,6 @@ def read_dns_servers(path: Path) -> list[str]:
             seen.add(s)
             uniq.append(s)
     return uniq
-
-
 def _probe_one(idx: int, total: int, proxy: str, timeout: float, delay: float) -> tuple[str, Optional[str]]:
     proxy = proxy.strip()
     proxies = {"http": f"http://{proxy}", "https": f"https://{proxy}"}
@@ -106,8 +92,6 @@ def _probe_one(idx: int, total: int, proxy: str, timeout: float, delay: float) -
     mark = "✅" if ok else "❌"
     line = f"{color}[{idx}/{total}] {mark} {proxy}{Style.RESET_ALL}"
     return line, (proxy if ok else None)
-
-
 def cmd_proxy_test(args: argparse.Namespace) -> int:
     if requests is None:
         print("Error: 'requests' package is required for proxy-test. `pip install requests`")
@@ -143,8 +127,6 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
     Path(out_path).write_text("\n".join(valid) + "\n", encoding="utf-8")
     print(f"Valid proxies saved to {out_path}")
     return 0
-
-
 def _speed_download(url: str, timeout: float) -> Optional[float]:
     t0 = time.time()
     try:
@@ -154,8 +136,6 @@ def _speed_download(url: str, timeout: float) -> Optional[float]:
         return len(data) * 8 / elapsed / 1_000_000.0
     except Exception:
         return None
-
-
 def _speed_upload(url: str, size: int = 1024 * 1024, timeout: float = 20.0) -> Optional[float]:
     payload = "".join(random.choices(string.ascii_letters + string.digits, k=size)).encode()
     boundary = "----------ThIs_Is_tHe_bouNdaRY_$"
@@ -178,8 +158,6 @@ def _speed_upload(url: str, size: int = 1024 * 1024, timeout: float = 20.0) -> O
         return size * 8 / elapsed / 1_000_000.0
     except Exception:
         return None
-
-
 def cmd_net_info(args: argparse.Namespace) -> int:
     print("-" * 40)
     print(" NETWORK STATES ")
@@ -208,14 +186,10 @@ def cmd_net_info(args: argparse.Namespace) -> int:
         ul = _speed_upload(args.upload_url)
         print(f"    Upload:   {ul:.2f} Mbps" if ul is not None else "    Upload: failed")
     return 0
-
-
 _PING_HOST_RE = re.compile(r"PING\s+(\S+)\s+\(([^)]+)\)")
 _PING_RESP_RE = re.compile(r"bytes from.*icmp_seq=(\d+).*time=([0-9.]+)\s*ms")
 _PING_SUM_RE = re.compile(r"(\d+)\s+packets transmitted,\s+(\d+)(?:\s+packets)?\s+received,\s+([0-9.]+)%\s+packet loss")
 _PING_RTT_RE = re.compile(r"min/avg/max(?:/stddev)?\s*=\s*([0-9.]+)/([0-9.]+)/([0-9.]+)(?:/([0-9.]+))?")
-
-
 class PingStats:
     def __init__(self) -> None:
         self.host: str = ""
@@ -229,7 +203,6 @@ class PingStats:
         self.stddev_time: Optional[float] = None
         self.packet_loss_percent: float = 0.0
         self.responses: list[dict] = []
-
     def __str__(self) -> str:
         out = f"\n--- {self.host} ping statistics ---\n"
         out += (
@@ -243,8 +216,6 @@ class PingStats:
                 out += f"/{self.stddev_time:.3f}"
             out += " ms\n"
         return out
-
-
 def parse_ping_output(text: str) -> PingStats:
     st = PingStats()
     lines = text.splitlines()
@@ -270,8 +241,6 @@ def parse_ping_output(text: str) -> PingStats:
         if m.group(4):
             st.stddev_time = float(m.group(4))
     return st
-
-
 def run_ping(
     host: str,
     count: int = 4,
@@ -306,8 +275,6 @@ def run_ping(
     except Exception as e:
         print(f"Error: {e}")
         return None
-
-
 def cmd_ping(args: argparse.Namespace) -> int:
     stats = run_ping(
         args.host,
@@ -320,8 +287,6 @@ def cmd_ping(args: argparse.Namespace) -> int:
         return 1
     print(stats)
     return 0 if stats.packet_loss_percent < 100 else 1
-
-
 DNS_PROVIDERS: dict[str, list[str]] = {
     "DNS.Watch": ["84.200.69.80", "84.200.70.40"],
     "Comodo Secure DNS": ["8.26.56.26", "8.20.247.20"],
@@ -331,8 +296,6 @@ DNS_PROVIDERS: dict[str, list[str]] = {
     "Open DNS": ["208.67.222.222", "208.67.220.220"],
     "Google DNS": ["8.8.8.8", "8.8.4.4"],
 }
-
-
 def cmd_set_dns(args: argparse.Namespace) -> int:
     if args.list:
         print("Available DNS providers:")
@@ -359,13 +322,9 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"Error updating DNS: {e}")
         return 1
-
-
 def _public_ip_urllib() -> str:
     ip = get_public_ip()
     return ip or "Unable to determine public IP"
-
-
 def _public_ip_pycurl() -> str:
     try:
         import pycurl
@@ -383,8 +342,6 @@ def _public_ip_pycurl() -> str:
         return buf.getvalue().decode("utf-8").strip()
     except pycurl.error as e:
         return f"Curl error: {e}"
-
-
 def cmd_show_ip(args: argparse.Namespace) -> int:
     print(f"Local IP: {get_local_ip()}")
     if args.engine == "pycurl":
@@ -392,8 +349,6 @@ def cmd_show_ip(args: argparse.Namespace) -> int:
     else:
         print(f"Public IP: {_public_ip_urllib()}")
     return 0
-
-
 class SignalMeter:
     def __init__(self) -> None:
         self.wifi_strength: Optional[int] = None
@@ -401,7 +356,6 @@ class SignalMeter:
         self.wifi_ssid: Optional[str] = None
         self.cellular_status: Optional[str] = None
         self.is_airplane_mode: bool = False
-
     def read_wifi(self) -> Optional[int]:
         try:
             r = subprocess.run(["dumpsys", "wifi"], capture_output=True, text=True, timeout=2)
@@ -414,7 +368,6 @@ class SignalMeter:
         except Exception:
             self.wifi_strength = None
         return self.wifi_strength
-
     def read_cellular(self) -> Optional[int]:
         try:
             r = subprocess.run(
@@ -440,7 +393,6 @@ class SignalMeter:
         except Exception:
             self.cellular_strength = None
         return self.cellular_strength
-
     def read_airplane(self) -> bool:
         try:
             r = subprocess.run(
@@ -453,7 +405,6 @@ class SignalMeter:
         except Exception:
             self.is_airplane_mode = False
         return self.is_airplane_mode
-
     @staticmethod
     def strength_to_bars(strength: Optional[int], top: int = -30, bottom: int = -120) -> tuple[str, int]:
         if strength is None:
@@ -463,13 +414,10 @@ class SignalMeter:
         bars = int(pct / 100 * 5)
         bars = max(0, min(5, bars))
         return (f"{'█' * bars}{'░' * (5 - bars)}", int(pct))
-
     def update(self) -> None:
         self.read_wifi()
         self.read_cellular()
         self.read_airplane()
-
-
 def cmd_signal(args: argparse.Namespace) -> int:
     try:
         from rich.align import Align
@@ -480,7 +428,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
         return 2
     console = Console()
     meter = SignalMeter()
-
     def render_once() -> None:
         os.system("clear")
         console.print(
@@ -509,7 +456,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
             console.print("  [dim]No cellular data available[/dim]\n")
         console.print(f"[dim]Updated: {datetime.now().strftime('%H:%M:%S')}[/dim]")
         console.print("[dim]Press Ctrl+C to exit[/dim]")
-
     try:
         while True:
             meter.update()
@@ -521,8 +467,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
         console.print("\n[bold yellow]Exiting...[/bold yellow]")
         os.system("clear")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_net_tools.py",
@@ -651,13 +595,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_sig.add_argument("--once", action="store_true", help="Print a single snapshot and exit")
     p_sig.set_defaults(func=cmd_signal)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

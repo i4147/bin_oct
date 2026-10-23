@@ -8,7 +8,6 @@ import html
 import logging
 from pathlib import Path
 from typing import Optional, Sequence
-
 LOG = logging.getLogger("fontpreview")
 FONT_EXTS: frozenset[str] = frozenset({
     ".ttf",
@@ -41,8 +40,6 @@ _FONT_FORMATS = {
     ".eot": "Embedded OpenType",
     ".svg": "SVG Font",
 }
-
-
 def find_fonts(
     paths: Sequence[Path],
     *,
@@ -80,21 +77,15 @@ def find_fonts(
                 LOG.warning("Reached maximum font limit (%d)", max_fonts)
                 return found
     return sorted(found, key=lambda x: (x.parent, x.name))
-
-
 def format_size(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024.0:
             return f"{n:.1f} {unit}"
         n /= 1024.0
     return f"{n:.1f} TB"
-
-
 @lru_cache(maxsize=128)
 def font_format(ext: str) -> str:
     return _FONT_FORMATS.get(ext.lower(), ext.upper().lstrip("."))
-
-
 def _parse_paths(raw: Sequence[str]) -> list[Path]:
     if not raw:
         return [Path.cwd()]
@@ -109,8 +100,6 @@ def _parse_paths(raw: Sequence[str]) -> list[Path]:
         except (OSError, ValueError) as e:
             LOG.warning("Invalid path %r: %s", r, e)
     return out or [Path.cwd()]
-
-
 def _generate_simple_html(fonts: Sequence[Path], text: str, sizes: Sequence[int]) -> str:
     esc_text = html.escape(text)
     parts: list[str] = [
@@ -135,8 +124,6 @@ def _generate_simple_html(fonts: Sequence[Path], text: str, sizes: Sequence[int]
         parts.append("</div>")
     parts.append("</body></html>")
     return "\n".join(parts)
-
-
 def cmd_simple(args: argparse.Namespace) -> int:
     preset = PRESETS[args.preset]
     text: str = args.text if args.text is not None else preset["text"]
@@ -153,11 +140,7 @@ def cmd_simple(args: argparse.Namespace) -> int:
     output.write_text(doc, encoding="utf-8")
     LOG.info("Wrote %s (%s)", output, format_size(output.stat().st_size))
     return 0
-
-
 FontInfo = namedtuple("FontInfo", ["path", "index", "size", "format"])
-
-
 def _collect_font_infos(
     paths: Sequence[Path],
     *,
@@ -173,8 +156,6 @@ def _collect_font_infos(
         infos.append(FontInfo(p, i, st.st_size, font_format(p.suffix)))
     infos.sort(key=lambda f: (f.path.parent, f.path.name))
     return infos
-
-
 def _rich_font_face(info: FontInfo, root: Path) -> str:
     try:
         rel = info.path.relative_to(root).as_posix()
@@ -192,8 +173,6 @@ def _rich_font_face(info: FontInfo, root: Path) -> str:
         "  font-style:normal;\n"
         "}"
     )
-
-
 def _rich_section(info: FontInfo, root: Path, text: str) -> str:
     family = f"font_{info.index:04d}"
     fname = html.escape(info.path.name)
@@ -231,8 +210,6 @@ def _rich_section(info: FontInfo, root: Path, text: str) -> str:
         "</div>\n"
         "</section>"
     )
-
-
 _RICH_CSS = """
 :root {
   --bg: #ffffff;
@@ -323,8 +300,6 @@ footer {
 .metadata-item { display: flex; align-items: center; gap: 4px; }
 .metadata-label { opacity: 0.7; font-weight: 500; }
 """.strip()
-
-
 def _generate_rich_html(infos: Sequence[FontInfo], root: Path, text: str) -> str:
     timestamp = datetime.now().isoformat(timespec="seconds")
     head = (
@@ -348,8 +323,6 @@ def _generate_rich_html(infos: Sequence[FontInfo], root: Path, text: str) -> str
     faces = "\n".join(_rich_font_face(f, root) for f in infos)
     sections = "\n".join(_rich_section(f, root, text) for f in infos)
     return head + faces + "\n</style>\n" + sections + _rich_footer()
-
-
 def _rich_footer() -> str:
     return (
         "\n<footer>\n"
@@ -358,8 +331,6 @@ def _rich_footer() -> str:
         "</body>\n"
         "</html>\n"
     )
-
-
 def _atomic_write(text: str, dest: Path) -> bool:
     try:
         tmp = dest.with_suffix(dest.suffix + ".tmp")
@@ -369,8 +340,6 @@ def _atomic_write(text: str, dest: Path) -> bool:
     except OSError as e:
         LOG.error("Failed to write %s: %s", dest, e)
         return False
-
-
 def cmd_rich(args: argparse.Namespace) -> int:
     root = Path.cwd()
     paths = _parse_paths(args.paths)
@@ -391,8 +360,6 @@ def cmd_rich(args: argparse.Namespace) -> int:
         LOG.info("  File size: %s", format_size(output.stat().st_size))
         return 0
     return 1
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fontpreview.py",
@@ -443,8 +410,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_rich)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -460,7 +425,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except Exception as e:
         LOG.error("Unexpected error: %s", e, exc_info=True)
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -5,14 +5,11 @@ from pathlib import Path
 import sys
 from urllib.parse import unquote, urlparse
 import pycurl
-
 WORKERS = 8
 OUTPUT_DIR = Path("downloads")
 TIMEOUT = 30
 CONNECT_TIMEOUT = 5
 USER_AGENT = "Mozilla/5.0 (compatible; PyCurlDownloader/1.0)"
-
-
 def filename_from_url(url: str) -> str:
     parsed = urlparse(url)
     path = unquote(parsed.path)
@@ -22,8 +19,6 @@ def filename_from_url(url: str) -> str:
         name = f"{name}_{safe_query}"
     name = "".join(c if c.isalnum() or c in "-_." else "_" for c in name)
     return name or "index"
-
-
 def unique_path(directory: Path, name: str) -> Path:
     candidate = directory / name
     if not candidate.exists():
@@ -35,8 +30,6 @@ def unique_path(directory: Path, name: str) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
-
-
 def download_one(url: str) -> tuple[str, bool, str]:
     url = url.strip()
     if not url:
@@ -76,29 +69,20 @@ def download_one(url: str) -> tuple[str, bool, str]:
     except Exception as e:
         tmp_path.unlink(missing_ok=True)
         return (url, False, f"exception: {e}")
-
-
 def worker_init():
     import signal
-
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
 def load_urls(path: Path) -> list[str]:
     return [
         line.strip()
         for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
-
-
 def save_failed(path: Path, failed_urls: list[str]) -> None:
     if failed_urls:
         path.write_text("\n".join(failed_urls) + "\n", encoding="utf-8")
     else:
         path.write_text("", encoding="utf-8")
-
-
 def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <urls_file>")
@@ -150,7 +134,5 @@ def main():
     print(f"\nDone. Success: {ok_count}, Failed: {fail_count}")
     print(f"Remaining URLs saved back to: {input_path}")
     print(f"Files saved in: {OUTPUT_DIR.resolve()}")
-
-
 if __name__ == "__main__":
     main()

@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
-
 SKIP_CONTENT_TAGS = {"script", "style", "noscript", "template", "head"}
 BLOCK_TAGS = {
     "address",
@@ -48,8 +47,6 @@ BLOCK_TAGS = {
     "ul",
 }
 RAWTEXT_TAGS = {"script", "style", "textarea", "title"}
-
-
 def _find_safe_splits(path: Path, n: int) -> list[int]:
     size = path.stat().st_size
     if n <= 1 or size == 0:
@@ -111,31 +108,25 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
     while len(splits) < n - 1:
         splits.append(size)
     return splits
-
-
 class _TextExtractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self._skip_depth = 0
         self._chunks: list[str] = []
         self._pending_space = False
-
     def handle_starttag(self, tag, attrs):
         if tag in SKIP_CONTENT_TAGS:
             self._skip_depth += 1
         elif tag in BLOCK_TAGS:
             self._pending_space = True
-
     def handle_startendtag(self, tag, attrs):
         if tag in BLOCK_TAGS:
             self._pending_space = True
-
     def handle_endtag(self, tag):
         if tag in SKIP_CONTENT_TAGS and self._skip_depth:
             self._skip_depth -= 1
         elif tag in BLOCK_TAGS:
             self._pending_space = True
-
     def handle_data(self, data):
         if self._skip_depth:
             return
@@ -143,11 +134,8 @@ class _TextExtractor(HTMLParser):
             self._chunks.append(" ")
             self._pending_space = False
         self._chunks.append(data)
-
     def get_text(self) -> str:
         return " ".join("".join(self._chunks).split())
-
-
 def _parse_slice(args: tuple[str, int, int]) -> str:
     path_str, start, end = args
     parser = _TextExtractor()
@@ -163,8 +151,6 @@ def _parse_slice(args: tuple[str, int, int]) -> str:
             parser.feed(data.decode("utf-8", errors="replace"))
     parser.close()
     return parser.get_text()
-
-
 def process_file(path: Path, workers: int | None = None) -> bool:
     if workers is None:
         workers = min(4, os.cpu_count() or 1)
@@ -197,8 +183,6 @@ def process_file(path: Path, workers: int | None = None) -> bool:
     except Exception as e:
         print(f"error: {e}", file=sys.stderr)
         return False
-
-
 def main() -> None:
     if len(sys.argv) < 2:
         print(f"usage: {sys.argv[0]} FILE [workers]", file=sys.stderr)
@@ -206,7 +190,5 @@ def main() -> None:
     path = Path(sys.argv[1])
     workers = int(sys.argv[2]) if len(sys.argv) > 2 else None
     raise SystemExit(0 if process_file(path, workers) else 1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

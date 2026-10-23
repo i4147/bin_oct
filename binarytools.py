@@ -11,7 +11,6 @@ import subprocess
 import sys
 import time
 from typing import Iterator, Optional, Sequence
-
 SKIP_DIR_NAMES = {
     ".git",
     ".hg",
@@ -41,19 +40,13 @@ _ANSI = {
     "cyan": "\033[36m",
     "reset": "\033[0m",
 }
-
-
 def cprint(msg: str, color: Optional[str] = None) -> None:
     if color and sys.stdout.isatty() and color in _ANSI:
         print(f"{_ANSI[color]}{msg}{_ANSI['reset']}")
     else:
         print(msg)
-
-
 def should_skip(path: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in path.parts)
-
-
 def unique_path(p: Path) -> Path:
     if not p.exists():
         return p
@@ -63,8 +56,6 @@ def unique_path(p: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
-
-
 def iter_files(root: Path, ext: Optional[Sequence[str]] = None, recursive: bool = False) -> Iterator[Path]:
     if root.is_file():
         yield root
@@ -87,8 +78,6 @@ def iter_files(root: Path, ext: Optional[Sequence[str]] = None, recursive: bool 
             if ext and not any(p.name.endswith(e) for e in ext):
                 continue
             yield p
-
-
 def is_binary_file(path: Path, chunk: int = 1024) -> bool:
     try:
         with path.open("rb") as fh:
@@ -102,24 +91,18 @@ def is_binary_file(path: Path, chunk: int = 1024) -> bool:
         return False
     except UnicodeDecodeError:
         return True
-
-
 def is_elf_binary(path: Path) -> bool:
     try:
         with path.open("rb") as fh:
             return fh.read(4) == b"\x7fELF"
     except OSError:
         return False
-
-
 def is_shebang_script(path: Path) -> bool:
     try:
         with path.open("rb") as fh:
             return fh.read(2) == b"#!"
     except OSError:
         return False
-
-
 def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger("binarytoolkit")
@@ -133,8 +116,6 @@ def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
         sh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
         logger.addHandler(sh)
     return logger
-
-
 def verify_so_load(path: Path) -> tuple[bool, str]:
     if not path.exists():
         return False, "File does not exist"
@@ -148,8 +129,6 @@ def verify_so_load(path: Path) -> tuple[bool, str]:
         return False, f"OSError: {e}"
     except Exception as e:
         return False, f"{type(e).__name__}: {e}"
-
-
 def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
     try:
         res = subprocess.run(["nm", str(path)], capture_output=True, text=True, timeout=timeout)
@@ -163,8 +142,6 @@ def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
         return False, 0, res.stderr.strip()[:200]
     lines = [ln for ln in res.stdout.splitlines() if ln.strip()]
     return len(lines) > 0, len(lines), "ok"
-
-
 def cmd_sort(args: argparse.Namespace) -> int:
     src = Path(args.directory).resolve()
     dst = Path(args.dest)
@@ -188,8 +165,6 @@ def cmd_sort(args: argparse.Namespace) -> int:
                 cprint(f"  ! failed to move {f}: {e}", "red")
     print(f"Scanned {scanned} file(s); moved {moved} binary file(s) to {dst}")
     return 0
-
-
 def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
     for probe in PROBE_ARGS:
         try:
@@ -221,8 +196,6 @@ def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
         return path, None
     except Exception as e:
         return path, str(e)[:200]
-
-
 def _collect_testable_executables(root: Path) -> list[Path]:
     out: list[Path] = []
     for p in iter_files(root, recursive=True):
@@ -242,8 +215,6 @@ def _collect_testable_executables(root: Path) -> list[Path]:
             continue
         out.append(p)
     return out
-
-
 def cmd_sanity(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     err_dir = Path(args.err_dir)
@@ -307,8 +278,6 @@ def cmd_sanity(args: argparse.Namespace) -> int:
     print(f"Report written to: {report}")
     print("-" * 40)
     return 1 if failures else 0
-
-
 def _collect_so_files(inputs: Sequence[str]) -> list[Path]:
     if not inputs:
         return list(iter_files(Path.cwd(), ext=[".so"]))
@@ -322,8 +291,6 @@ def _collect_so_files(inputs: Sequence[str]) -> list[Path]:
         else:
             cprint(f"Warning: {p} does not exist", "yellow")
     return out
-
-
 def cmd_verify_so(args: argparse.Namespace) -> int:
     log_path = Path(args.log_file).expanduser()
     logger = setup_logger(log_path, verbose=args.verbose)
@@ -363,8 +330,6 @@ def cmd_verify_so(args: argparse.Namespace) -> int:
     print(f"Verification complete: {valid} valid, {len(bad)} errors")
     print(f"Log: {log_path}")
     return 1 if bad else 0
-
-
 class SoStripper:
     def __init__(
         self,
@@ -383,7 +348,6 @@ class SoStripper:
             "verified": 0,
             "bytes_saved": 0,
         }
-
     def process_file(self, path: Path) -> dict:
         self.stats["total"] += 1
         result: dict = {"path": path, "success": False, "reason": ""}
@@ -451,7 +415,6 @@ class SoStripper:
             pct = (before - after) / before * 100 if before else 0.0
             print(f"  ✓ {path.name}  {before} → {after} bytes (-{pct:.1f}%)")
         return result
-
     @staticmethod
     def _restore(backup: Path, target: Path) -> None:
         try:
@@ -459,13 +422,11 @@ class SoStripper:
                 shutil.move(str(backup), str(target))
         except OSError:
             pass
-
     def strip_by_size(self, root: Path, min_mb: float) -> dict:
         print(f"\nStripping .so files larger than {min_mb} MB under {root} ...")
         threshold = int(min_mb * 1024 * 1024)
         candidates = [f for f in iter_files(root, ext=[".so"], recursive=True) if f.stat().st_size >= threshold]
         return self._run(candidates)
-
     def strip_by_extension(self, root: Path, extensions: Sequence[str]) -> dict:
         print(f"\nStripping .so files with extensions {list(extensions)} under {root} ...")
         seen: set[Path] = set()
@@ -476,14 +437,12 @@ class SoStripper:
                     seen.add(f)
                     candidates.append(f)
         return self._run(candidates)
-
     def strip_by_exclude(self, root: Path, patterns: Sequence[str]) -> dict:
         print(f"\nStripping .so files under {root} (excluding {list(patterns)}) ...")
         candidates = [
             f for f in iter_files(root, ext=[".so"], recursive=True) if not any(pat in f.name for pat in patterns)
         ]
         return self._run(candidates)
-
     def strip_with_retry(self, root: Path, max_retries: int) -> dict:
         print(f"\nStripping with retry logic (max {max_retries} attempts) under {root} ...")
         candidates = list(iter_files(root, ext=[".so"], recursive=True))
@@ -497,13 +456,11 @@ class SoStripper:
                     time.sleep(1)
         self._report()
         return self.stats
-
     def _run(self, candidates: Sequence[Path]) -> dict:
         for path in candidates:
             self.process_file(path)
         self._report()
         return self.stats
-
     def _report(self) -> None:
         s = self.stats
         print("\n" + "=" * 40)
@@ -515,8 +472,6 @@ class SoStripper:
         print(f"Skipped: {s['skipped']}")
         print(f"Verified via ctypes: {s['verified']}")
         print(f"Bytes saved: {s['bytes_saved']:,}")
-
-
 def _strip_common_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "directory",
@@ -535,8 +490,6 @@ def _strip_common_args(p: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Skip ctypes verification after stripping",
     )
-
-
 def cmd_strip(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     stripper = SoStripper(
@@ -556,8 +509,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
         cprint("Unknown strip mode", "red")
         return 2
     return 1 if stripper.stats["failed"] else 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="binarytoolkit.py",
@@ -633,8 +584,6 @@ def build_parser() -> argparse.ArgumentParser:
     _strip_common_args(p_ret)
     p_strip.set_defaults(func=cmd_strip)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -646,7 +595,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         cprint("\nInterrupted by user", "yellow")
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

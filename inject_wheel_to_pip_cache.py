@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from email import policy
 from email.parser import Parser
@@ -14,8 +13,6 @@ from pip._internal.utils.compatibility_tags import (
     interpreter_version,
 )
 from pip._internal.utils.urls import path_to_url
-
-
 def wheel_cache_hash(link_url: str) -> str:
     key_parts = {
         "url": link_url,
@@ -23,13 +20,9 @@ def wheel_cache_hash(link_url: str) -> str:
         "interpreter_version": interpreter_version(),
     }
     return hashlib.sha224(json.dumps(key_parts, sort_keys=True).encode("utf-8")).hexdigest()
-
-
 def wheel_cache_dir(cache_dir: Path, link_url: str) -> Path:
     h = wheel_cache_hash(link_url)
     return Path(cache_dir) / "wheels" / h[0:2] / h[2:4] / h[4:6] / h
-
-
 def extract_wheel_metadata(wheel_path: Path) -> dict:
     with zipfile.ZipFile(wheel_path, "r") as wheel_zip:
         metadata_files = [f for f in wheel_zip.namelist() if f.endswith(".dist-info/METADATA")]
@@ -60,8 +53,6 @@ def extract_wheel_metadata(wheel_path: Path) -> dict:
         if value:
             wheel_metadata[field.lower().replace("-", "_")] = value
     return wheel_metadata
-
-
 def add_wheel_to_pip_cache(wheel_path: Path) -> None:
     cache_dir = Path(subprocess.check_output(["pip", "cache", "dir"]).decode().strip())
     link_url = path_to_url(str(wheel_path.absolute()))
@@ -74,11 +65,8 @@ def add_wheel_to_pip_cache(wheel_path: Path) -> None:
     print(f"Cache key (sha224): {wheel_cache_hash(link_url)}")
     print(f"Wheel cached at:    {target_file}")
     print(f"Metadata cached at: {target_dir / (wheel_path.name + '.json')}")
-
-
 if __name__ == "__main__":
     import sys
-
     if len(sys.argv) != 2:
         print("Usage: python add_wheel_to_cache.py <path/to/wheel.whl>")
         sys.exit(1)

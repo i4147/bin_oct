@@ -7,11 +7,8 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 import requests
-
 if TYPE_CHECKING:
     from requests.sessions import Session
-
-
 def create_session() -> Session:
     session = requests.Session()
     session.headers.update({
@@ -26,8 +23,6 @@ def create_session() -> Session:
         "Cache-Control": "max-age=0",
     })
     return session
-
-
 def extract_links(url: str, session: requests.Session):
     resp = session.get(url, timeout=30, allow_redirects=True)
     resp.raise_for_status()
@@ -49,8 +44,6 @@ def extract_links(url: str, session: requests.Session):
             if parsed.scheme in {"http", "https"}:
                 links.add(abs_url)
     return sorted(links)
-
-
 def split_internal_external(base_url, links):
     base_domain = urlparse(base_url).netloc
     internal = []
@@ -61,15 +54,11 @@ def split_internal_external(base_url, links):
         else:
             external.append(link)
     return internal, external
-
-
 def save_links(name: str, links) -> None:
     path = Path(name)
     content = "\n".join(links)
     path.write_text(content, encoding="utf-8")
     print(f"Saved {len(links)} links to {name}")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Extract and save all URLs from a webpage")
     parser.add_argument("url", nargs="?", help="Target URL")
@@ -100,7 +89,5 @@ def main() -> None:
     if external:
         save_links("external.txt", external)
     print(f"Total links: {len(links)} (Internal: {len(internal)}, External: {len(external)})")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -11,7 +11,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
-
 DEFAULT_RULES: list[tuple[str, str]] = [
     (r"_\d+", ""),
     (r"\(\d+\)", ""),
@@ -21,8 +20,6 @@ DEFAULT_EXCLUDES: set[str] = {".git", "node_modules", "__pycache__", ".venv", ".
 _SEP_COLLAPSE: re.Pattern[str] = re.compile(r"_+")
 _DASH_COLLAPSE: re.Pattern[str] = re.compile(r"-+")
 _SANITIZE: re.Pattern[str] = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
-
 @dataclass
 class CleanConfig:
     rules: list[tuple[str, str]] = field(default_factory=lambda: list(DEFAULT_RULES))
@@ -43,20 +40,14 @@ class CleanConfig:
     workers: Optional[int] = None
     dry_run: bool = False
     log_path: Optional[Path] = None
-
-
 @dataclass
 class RenameResult:
     source: Path
     target: Optional[Path]
     status: str
     reason: str = ""
-
-
 class ConflictError(Exception):
     pass
-
-
 def _clean_stem(stem: str, cfg: CleanConfig) -> str:
     for pattern, repl in cfg.rules:
         if cfg.trailing_only:
@@ -80,28 +71,21 @@ def _clean_stem(stem: str, cfg: CleanConfig) -> str:
     if not stem:
         stem = cfg.empty_fallback
     return stem
-
-
 def _compute_target(path: Path, cfg: CleanConfig) -> Path:
     stem = _clean_stem(path.stem, cfg)
     suffix = path.suffix
     if cfg.fix_double_ext and suffix and stem.lower().endswith(suffix.lower()) and len(stem) > len(suffix):
         stem = stem[: -len(suffix)]
     return path.with_name(f"{stem}{suffix}")
-
-
 def _matches(p: Path, cfg: CleanConfig) -> bool:
     if not cfg.include_hidden and p.name.startswith("."):
         return False
     if cfg.extensions is not None and p.suffix.lower() not in cfg.extensions:
         return False
     return True
-
-
 def walk_files(root: Path, cfg: CleanConfig) -> list[Path]:
     root = root.resolve()
     result: list[Path] = []
-
     def _walk(dir_: Path, depth: int) -> None:
         if cfg.max_depth is not None and depth > cfg.max_depth:
             return
@@ -121,16 +105,11 @@ def walk_files(root: Path, cfg: CleanConfig) -> list[Path]:
                 p = Path(entry.path)
                 if _matches(p, cfg):
                     result.append(p)
-
     _walk(root, 0)
     return result
-
-
 def _clean_worker(args: tuple[Path, CleanConfig]) -> tuple[Path, Path]:
     path, cfg = args
     return (path, _compute_target(path, cfg))
-
-
 def build_plan(files: list[Path], cfg: CleanConfig) -> list[tuple[Path, Path]]:
     if not files:
         return []
@@ -160,8 +139,6 @@ def build_plan(files: list[Path], cfg: CleanConfig) -> list[tuple[Path, Path]]:
         result.append((source, final))
         assigned.add(final)
     return result
-
-
 def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[RenameResult]:
     if cfg.dry_run:
         return [RenameResult(s, t, "planned", "dry-run") for s, t in plan]
@@ -169,11 +146,9 @@ def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[Rename
     all_sources = {s for s, t in plan}
     pending: list[tuple[Path, Path, Path]] = []
     rename_log: list[dict[str, str]] = []
-
     def _sort_key(item: tuple[Path, Path]) -> tuple[int, str]:
         s, t = item
         return (0 if t not in all_sources else 1, str(s))
-
     for source, target in sorted(plan, key=_sort_key):
         try:
             if not target.exists():
@@ -207,20 +182,14 @@ def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[Rename
         except (OSError, json.JSONDecodeError):
             pass
     return results
-
-
 def plan_renames(root: Path, cfg: CleanConfig) -> list[tuple[Path, Path]]:
     files = walk_files(root, cfg)
     return build_plan(files, cfg)
-
-
 def clean_filenames(root: Optional[Path] = None, cfg: Optional[CleanConfig] = None) -> list[RenameResult]:
     cfg = cfg or CleanConfig()
     root = root or Path.cwd()
     plan = plan_renames(root, cfg)
     return execute_plan(plan, cfg)
-
-
 def undo_renames(log_path: Path) -> list[RenameResult]:
     if not log_path.exists():
         return []
@@ -242,8 +211,6 @@ def undo_renames(log_path: Path) -> list[RenameResult]:
             else:
                 results.append(RenameResult(new, old, "skipped", "not-undoable"))
     return results
-
-
 def _normalize_exts(raw: str) -> set[str]:
     out: set[str] = set()
     for token in raw.split(","):
@@ -252,8 +219,6 @@ def _normalize_exts(raw: str) -> set[str]:
             continue
         out.add(token if token.startswith(".") else "." + token)
     return out
-
-
 def _print_summary(results: list[RenameResult]) -> None:
     counts: dict[str, int] = {}
     for r in results:
@@ -263,8 +228,6 @@ def _print_summary(results: list[RenameResult]) -> None:
         if r.status == "error":
             tgt = r.target.name if r.target else "?"
             print(f"  ERROR: {r.source.name} -> {tgt}  ({r.reason})", file=sys.stderr)
-
-
 def cli(argv: Optional[list[str]] = None) -> int:
     p = argparse.ArgumentParser(prog="cleaner", description="Clean filenames recursively.")
     p.add_argument("root", nargs="?", default=".", help="root directory")
@@ -341,7 +304,5 @@ def cli(argv: Optional[list[str]] = None) -> int:
     results = execute_plan(plan, cfg)
     _print_summary(results)
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(cli())

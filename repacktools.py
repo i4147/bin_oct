@@ -22,61 +22,41 @@ import sysconfig
 import tempfile
 from typing import Any, Optional, Sequence
 import zipfile
-
 try:
     from wheel.wheelfile import WheelFile
-
     _HAS_WHEEL = True
 except ImportError:
     WheelFile = None
     _HAS_WHEEL = False
 try:
     from tqdm import tqdm as _tqdm
-
     _HAS_TQDM = True
 except ImportError:
     _HAS_TQDM = False
-
     def _tqdm(it, **_kw):
         return it
-
-
 log = logging.getLogger("repack_tool")
-
-
 def _b64_nopad(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
-
-
 def _hash_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1 << 16), b""):
             h.update(chunk)
     return _b64_nopad(h.digest())
-
-
 def _hash_bytes(data: bytes) -> str:
     return _b64_nopad(hashlib.sha256(data).digest())
-
-
 def _human_size(n: int) -> str:
     return f"{n / (1024 * 1024):.2f} MB"
-
-
 def py_version_tag() -> str:
     a, b = sys.version_info[:2]
     return f"py{a}{b}"
-
-
 def abi_tag() -> str:
     a, b = sys.version_info[:2]
     flags = getattr(sys, "abiflags", "") or ""
     if getattr(sys.implementation, "name", "cpython") == "cpython":
         return f"cp{a}{b}{flags}"
     return f"cp{a}{b}"
-
-
 def platform_tag() -> str:
     sysname = platform.system().lower()
     machine = platform.machine().lower()
@@ -86,27 +66,18 @@ def platform_tag() -> str:
         "windows": f"win_{machine}",
     }
     return table.get(sysname, f"{sysname}_{machine}")
-
-
 def current_sys_tag() -> tuple[str, str, str]:
     try:
         from packaging.tags import sys_tags
-
         tag = next(sys_tags())
         return tag.interpreter, tag.abi, tag.platform
     except Exception:
         a, b = sys.version_info[:2]
         interp = f"cp{a}{b}"
         return interp, interp, platform_tag()
-
-
 BINARY_SUFFIXES = {".so", ".pyd", ".dll", ".dylib", ".sl"}
-
-
 def _has_binary(root: Path) -> bool:
     return any(p.is_file() and p.suffix.lower() in BINARY_SUFFIXES for p in root.rglob("*"))
-
-
 def _read_metadata(dist_info: Path) -> dict[str, str]:
     for name in ("METADATA", "PKG-INFO"):
         p = dist_info / name
@@ -119,8 +90,6 @@ def _read_metadata(dist_info: Path) -> dict[str, str]:
         except Exception:
             log.debug("Could not parse %s", p, exc_info=True)
     return {}
-
-
 def _parse_dist_info_stem(dist_info: Path) -> tuple[str, str]:
     stem = dist_info.name
     for suffix in (".dist-info", ".egg-info"):
@@ -131,8 +100,6 @@ def _parse_dist_info_stem(dist_info: Path) -> tuple[str, str]:
         name, version = stem.split("-", 1)
         return name, version
     return stem, "0.0.0"
-
-
 def _read_record(dist_info: Path) -> Optional[list[tuple[str, str, str]]]:
     rec = dist_info / "RECORD"
     if not rec.exists():
@@ -148,8 +115,6 @@ def _read_record(dist_info: Path) -> Optional[list[tuple[str, str, str]]]:
                 row[2] if len(row) > 2 else "",
             ))
     return rows
-
-
 def _console_script_names(dist_info: Path) -> list[str]:
     ep = dist_info / "entry_points.txt"
     if not ep.exists():
@@ -164,8 +129,6 @@ def _console_script_names(dist_info: Path) -> list[str]:
         if in_section and line and not line.startswith("#") and "=" in line:
             names.append(line.split("=", 1)[0].strip())
     return names
-
-
 @dataclass
 class PackageInfo:
     name: str
@@ -176,15 +139,11 @@ class PackageInfo:
     has_binary: bool = False
     top_level: str = ""
     metadata: dict[str, str] = field(default_factory=dict)
-
     @property
     def dist_name_underscored(self) -> str:
         return self.name.lower().replace("-", "_").replace(".", "_")
-
     def wheel_filename(self, tag: str) -> str:
         return f"{self.dist_name_underscored}-{self.version}-{tag}.whl"
-
-
 def resolve_source(source: str, explicit: Optional[Path]) -> Path:
     if explicit is not None:
         p = explicit.expanduser().resolve()
@@ -213,8 +172,6 @@ def resolve_source(source: str, explicit: Optional[Path]) -> Path:
         return Path.cwd()
     msg = f"unknown source: {source!r}"
     raise SystemExit(msg)
-
-
 def discover_packages(
     site_packages: Path,
     names: Optional[Sequence[str]] = None,
@@ -249,8 +206,6 @@ def discover_packages(
         for missing in sorted(wanted - found):
             log.warning("Package not found: %s", missing)
     return out
-
-
 def _package_has_binary(site_packages: Path, top_level: str) -> bool:
     for cand in (
         site_packages / top_level,
@@ -259,8 +214,6 @@ def _package_has_binary(site_packages: Path, top_level: str) -> bool:
         if cand.is_dir():
             return _has_binary(cand)
     return False
-
-
 def _guess_top_level(site_packages: Path, dist_info: Path, name: str) -> str:
     tl = dist_info / "top_level.txt"
     if tl.exists():
@@ -275,8 +228,6 @@ def _guess_top_level(site_packages: Path, dist_info: Path, name: str) -> str:
         if cand.exists():
             return underscored
     return _parse_dist_info_stem(dist_info)[0].replace("-", "_").lower()
-
-
 def _write_wheel_metadata(
     dist_info_dir: Path,
     pkg: PackageInfo,
@@ -292,8 +243,6 @@ def _write_wheel_metadata(
     if not (dist_info_dir / "METADATA").exists():
         md = f"Metadata-Version: 2.1\nName: {pkg.name}\nVersion: {pkg.version}\nSummary: Repacked wheel (repack_tool)\n"
         (dist_info_dir / "METADATA").write_text(md, encoding="utf-8")
-
-
 def _compute_record(base: Path, dist_info_name: str) -> str:
     rows: list[str] = []
     for f in sorted(base.rglob("*")):
@@ -305,15 +254,11 @@ def _compute_record(base: Path, dist_info_name: str) -> str:
         rows.append(f"{rel},{_hash_file(f)},{f.stat().st_size}")
     rows.append(f"{dist_info_name}/RECORD,,")
     return "\n".join(rows) + "\n"
-
-
 def _zip_directory(src: Path, dest: Path) -> None:
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in sorted(src.rglob("*")):
             if f.is_file():
                 zf.write(f, f.relative_to(src).as_posix())
-
-
 def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
     wheel_path = output_dir / pkg.wheel_filename(tag)
@@ -350,8 +295,6 @@ def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tup
     except Exception as e:
         log.debug("build_wheel_simple failed", exc_info=True)
         return False, f"error: {e}", None
-
-
 def build_wheel_from_record(
     pkg: PackageInfo,
     output_dir: Path,
@@ -435,8 +378,6 @@ def build_wheel_from_record(
     except Exception as e:
         log.debug("build_wheel_from_record failed", exc_info=True)
         return False, f"error: {e}", None
-
-
 def _venv_bin_dir(site_packages: Path) -> Optional[Path]:
     cur = site_packages.resolve()
     for _ in range(5):
@@ -446,8 +387,6 @@ def _venv_bin_dir(site_packages: Path) -> Optional[Path]:
                 return d
         cur = cur.parent
     return None
-
-
 def build_wheel_via_subprocess(src_unpacked: Path, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -469,8 +408,6 @@ def build_wheel_via_subprocess(src_unpacked: Path, output_dir: Path, verbose: bo
     if verbose and wheels:
         log.info("  wheelpack: %s", wheels[0].name)
     return True, "ok", wheels[0] if wheels else None
-
-
 @dataclass
 class RepackStats:
     total: int = 0
@@ -478,11 +415,8 @@ class RepackStats:
     failed: int = 0
     pure: int = 0
     with_c_ext: int = 0
-
     def to_dict(self) -> dict[str, int]:
         return asdict(self)
-
-
 class Repacker:
     def __init__(
         self,
@@ -505,7 +439,6 @@ class Repacker:
         self.verbose = verbose
         self.stats = RepackStats()
         self.results: list[dict[str, Any]] = []
-
     def repack_one(self, pkg: PackageInfo) -> tuple[bool, str, Optional[Path]]:
         if self.dry_run:
             tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
@@ -532,7 +465,6 @@ class Repacker:
                 if not ok2:
                     return False, f"wheelpack: {msg2}", path
         return ok, msg, path
-
     def run(self, packages: Sequence[PackageInfo]) -> RepackStats:
         if not packages:
             log.warning("No packages found to repack")
@@ -562,7 +494,6 @@ class Repacker:
                 "message": msg,
             })
         return self.stats
-
     def save_report(self, filename: str) -> Path:
         payload = {
             "timestamp": datetime.now().isoformat(),
@@ -575,8 +506,6 @@ class Repacker:
         out = self.output_dir / filename
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return out
-
-
 def _worker_repack(args_tuple: tuple[dict[str, Any], PackageInfo]) -> dict[str, Any]:
     cfg, pkg = args_tuple
     if cfg["method"] == "simple":
@@ -597,8 +526,6 @@ def _worker_repack(args_tuple: tuple[dict[str, Any], PackageInfo]) -> dict[str, 
         "wheel": path.name if path else None,
         "message": msg,
     }
-
-
 def _find_dist_info_dir(root: Path) -> Optional[Path]:
     if root.name.endswith(".dist-info"):
         return root
@@ -608,15 +535,11 @@ def _find_dist_info_dir(root: Path) -> Optional[Path]:
     if len(cands) > 1:
         log.warning("Multiple dist-info dirs in %s; using %s", root, cands[0].name)
     return cands[0]
-
-
 def _wheel_name_from_dist_info(dist_info: Path) -> tuple[str, str]:
     stem = dist_info.name[: -len(".dist-info")]
     if "-" in stem:
         return stem.split("-", 1)[0], stem.split("-", 1)[1]
     return stem, "0.0.0"
-
-
 def _wheel_tag_from_dist_info(dist_info: Path) -> str:
     wf = dist_info / "WHEEL"
     if not wf.exists():
@@ -625,8 +548,6 @@ def _wheel_tag_from_dist_info(dist_info: Path) -> str:
         if line.startswith("Tag:"):
             return line.split(":", 1)[1].strip()
     return "py3-none-any"
-
-
 def pack_unpacked_dir_library(src: Path, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     if not _HAS_WHEEL:
         return False, "wheel library not installed", None
@@ -649,21 +570,15 @@ def pack_unpacked_dir_library(src: Path, output_dir: Path, verbose: bool) -> tup
         if wheel_path.exists():
             wheel_path.unlink()
         return False, str(e), None
-
-
 def pack_unpacked_dir_subprocess(src: Path, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     ok, msg, path = build_wheel_via_subprocess(src, output_dir, verbose)
     if ok:
         return True, path.name if path else "ok", path
     return False, msg, None
-
-
 async def _pack_async(src: Path, output_dir: Path, queue: "asyncio.Queue[tuple[str, bool]]", verbose: bool) -> None:
     loop = asyncio.get_running_loop()
     ok, msg, _path = await loop.run_in_executor(None, pack_unpacked_dir_library, src, output_dir, verbose)
     await queue.put((msg if ok else f"{src.name}: {msg}", ok))
-
-
 def _pack_worker(args_tuple: tuple[Path, Path, str, bool]) -> tuple[bool, str]:
     src, output_dir, mode, verbose = args_tuple
     if mode == "subprocess":
@@ -671,8 +586,6 @@ def _pack_worker(args_tuple: tuple[Path, Path, str, bool]) -> tuple[bool, str]:
     else:
         ok, msg, _ = pack_unpacked_dir_library(src, output_dir, verbose)
     return ok, msg
-
-
 def run_pack_dirs(
     directory: Path,
     output_dir: Path,
@@ -696,7 +609,6 @@ def run_pack_dirs(
         if not _HAS_WHEEL:
             log.error("async mode requires the 'wheel' library")
             return 1
-
         async def _run_all() -> None:
             nonlocal successes, failures
             q: asyncio.Queue[tuple[str, bool]] = asyncio.Queue()
@@ -710,7 +622,6 @@ def run_pack_dirs(
                 else:
                     failures += 1
                     log.error("✗ %s", msg)
-
         asyncio.run(_run_all())
     elif parallel and len(dirs) > 1:
         workers = workers or min(cpu_count(), 8)
@@ -738,8 +649,6 @@ def run_pack_dirs(
                 log.error("✗ %s", msg)
     log.info("Done: %d successful, %d failed", successes, failures)
     return 0 if failures == 0 else 1
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="repack_tool",
@@ -846,8 +755,6 @@ def build_parser() -> argparse.ArgumentParser:
     pd.add_argument("--parallel", action="store_true", help="multiprocessing mode")
     pd.add_argument("--workers", type=int, default=None, help="worker count (parallel mode)")
     return p
-
-
 def cmd_repack(args: argparse.Namespace) -> int:
     explicit = args.site_packages
     if explicit is not None:
@@ -891,8 +798,6 @@ def cmd_repack(args: argparse.Namespace) -> int:
     if args.list_wheels:
         _list_wheels(args.output)
     return 0 if stats.failed == 0 else 1
-
-
 def _run_parallel(args: argparse.Namespace, packages: Sequence[PackageInfo]) -> int:
     workers = args.workers or min(cpu_count(), 8)
     log.info("Running with %d workers", workers)
@@ -946,8 +851,6 @@ def _run_parallel(args: argparse.Namespace, packages: Sequence[PackageInfo]) -> 
     if args.list_wheels:
         _list_wheels(args.output)
     return 0 if failed == 0 else 1
-
-
 def _list_wheels(output_dir: Path) -> None:
     wheels = sorted(output_dir.glob("*.whl"))
     if not wheels:
@@ -960,8 +863,6 @@ def _list_wheels(output_dir: Path) -> None:
         total += size
         log.info("  %-60s %s", w.name, _human_size(size))
     log.info("Total: %s", _human_size(total))
-
-
 def cmd_pack_dirs(args: argparse.Namespace) -> int:
     output = args.output or args.directory
     return run_pack_dirs(
@@ -972,8 +873,6 @@ def cmd_pack_dirs(args: argparse.Namespace) -> int:
         workers=args.workers or 0,
         verbose=args.verbose,
     )
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -994,10 +893,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 130
     parser.error(f"unknown command: {args.command}")
     return 2
-
-
 if __name__ == "__main__":
     from multiprocessing import freeze_support
-
     freeze_support()
     raise SystemExit(main())

@@ -28,15 +28,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypeAlias
-
 try:
     from xxhash import xxh64_hexdigest as _xxh64_hexdigest
 except ImportError:
-
     def _xxh64_hexdigest(data: bytes) -> str:
         return hashlib.blake2b(data, digest_size=8).hexdigest()
-
-
 try:
     import pathspec as _pathspec
 except ImportError:
@@ -99,12 +95,8 @@ SKIP_TOKEN_TYPES: frozenset[int] = frozenset({
 })
 ScanIssue: TypeAlias = tuple[str, str]
 Failure: TypeAlias = tuple[str, str]
-
-
 def _digest(data: bytes) -> str:
     return _xxh64_hexdigest(data)
-
-
 @dataclass(slots=True)
 class FileEntry:
     path: Path
@@ -112,8 +104,6 @@ class FileEntry:
     mtime_ns: int
     ino: int
     dev: int
-
-
 @dataclass(slots=True, frozen=True)
 class DefinitionRef:
     digest: str
@@ -121,7 +111,6 @@ class DefinitionRef:
     lineno: int
     name: str
     kind: str
-
     def __getstate__(self) -> dict[str, object]:
         return {
             "digest": self.digest,
@@ -130,12 +119,9 @@ class DefinitionRef:
             "name": self.name,
             "kind": self.kind,
         }
-
     def __setstate__(self, state: dict[str, object]) -> None:
         for name, value in state.items():
             object.__setattr__(self, name, value)
-
-
 @dataclass(slots=True)
 class WorkerResult:
     path: str
@@ -151,7 +137,6 @@ class WorkerResult:
     minhash_sig: list[int] | None = None
     simhash_hash: int | None = None
     from_cache: bool = False
-
     def __getstate__(self) -> dict[str, object]:
         return {
             "path": self.path,
@@ -168,39 +153,28 @@ class WorkerResult:
             "simhash_hash": self.simhash_hash,
             "from_cache": self.from_cache,
         }
-
     def __setstate__(self, state: dict[str, object]) -> None:
         for name, value in state.items():
             object.__setattr__(self, name, value)
-
-
 @dataclass(slots=True)
 class DuplicateGroup:
     digest: str
     paths: list[Path]
     sizes: dict[str, int]
     keeper: Path | None = None
-
-
 @dataclass(slots=True)
 class NearPair:
     paths: tuple[str, str]
     similarity: float
-
-
 @dataclass(slots=True)
 class DefinitionGroup:
     digest: str
     members: list[DefinitionRef]
-
-
 @dataclass(slots=True)
 class SimilarPair:
     paths: tuple[str, str]
     score: int
     method: str
-
-
 @dataclass(slots=True)
 class RunStats:
     scanned: int = 0
@@ -212,8 +186,6 @@ class RunStats:
     duplicate_files: int = 0
     wasted_bytes: int = 0
     elapsed_seconds: float = 0.0
-
-
 @dataclass(slots=True)
 class ScanOutcome:
     entries: dict[str, FileEntry]
@@ -223,8 +195,6 @@ class ScanOutcome:
     similar_pairs: list[SimilarPair]
     failures: list[Failure]
     stats: RunStats
-
-
 @dataclass(slots=True)
 class CacheEntry:
     mtime_ns: int
@@ -236,8 +206,6 @@ class CacheEntry:
     tlsh_hash: str | None = None
     minhash_sig: list[int] | None = None
     simhash_hash: int | None = None
-
-
 @dataclass(frozen=True, slots=True)
 class WorkerConfig:
     mode: str
@@ -250,7 +218,6 @@ class WorkerConfig:
     need_tlsh: bool = False
     need_minhash: bool = False
     need_simhash: bool = False
-
     def __getstate__(self) -> dict[str, object]:
         return {
             "mode": self.mode,
@@ -264,25 +231,19 @@ class WorkerConfig:
             "need_minhash": self.need_minhash,
             "need_simhash": self.need_simhash,
         }
-
     def __setstate__(self, state: dict[str, object]) -> None:
         for name, value in state.items():
             object.__setattr__(self, name, value)
-
-
 @dataclass(slots=True)
 class ScanConfig:
     follow_symlinks: bool
     include_notebooks: bool
     min_bytes: int
     exclude_patterns: list[str]
-
-
 class SourceNormalizer(ast.NodeTransformer):
     def __init__(self, strip_annotations: bool, strip_type_nodes: bool) -> None:
         self.strip_annotations = strip_annotations
         self.strip_type_nodes = strip_type_nodes
-
     @staticmethod
     def _without_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
         if (
@@ -293,18 +254,15 @@ class SourceNormalizer(ast.NodeTransformer):
         ):
             return body[1:]
         return body
-
     def _clear_type_params(self, node: ast.AST) -> None:
         if self.strip_type_nodes and hasattr(node, "type_params"):
             setattr(node, "type_params", [])
-
     def visit_Module(self, node: ast.Module) -> ast.Module:
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         if self.strip_type_nodes:
             node.type_ignores.clear()
         return node
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         if self.strip_type_nodes:
             node.type_comment = None
@@ -314,7 +272,6 @@ class SourceNormalizer(ast.NodeTransformer):
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         return node
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
         if self.strip_type_nodes:
             node.type_comment = None
@@ -324,26 +281,22 @@ class SourceNormalizer(ast.NodeTransformer):
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         return node
-
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         self._clear_type_params(node)
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         return node
-
     def visit_arg(self, node: ast.arg) -> ast.arg:
         if self.strip_annotations:
             node.annotation = None
         if self.strip_type_nodes and hasattr(node, "type_comment"):
             node.type_comment = None
         return node
-
     def visit_Assign(self, node: ast.Assign) -> ast.Assign:
         if self.strip_type_nodes:
             node.type_comment = None
         self.generic_visit(node)
         return node
-
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST | None:
         if self.strip_annotations:
             if node.value is None:
@@ -357,37 +310,30 @@ class SourceNormalizer(ast.NodeTransformer):
             return replacement
         self.generic_visit(node)
         return node
-
     def visit_For(self, node: ast.For) -> ast.For:
         if self.strip_type_nodes:
             node.type_comment = None
         self.generic_visit(node)
         return node
-
     def visit_AsyncFor(self, node: ast.AsyncFor) -> ast.AsyncFor:
         if self.strip_type_nodes:
             node.type_comment = None
         self.generic_visit(node)
         return node
-
     def visit_With(self, node: ast.With) -> ast.With:
         if self.strip_type_nodes:
             node.type_comment = None
         self.generic_visit(node)
         return node
-
     def visit_AsyncWith(self, node: ast.AsyncWith) -> ast.AsyncWith:
         if self.strip_type_nodes:
             node.type_comment = None
         self.generic_visit(node)
         return node
-
     def visit_TypeAlias(self, node: ast.AST) -> ast.AST | None:
         if self.strip_type_nodes:
             return None
         return node
-
-
 class _SimpleGitignore:
     def __init__(self, patterns: Sequence[str]) -> None:
         self._rules: list[tuple[bool, bool, re.Pattern[str]]] = []
@@ -410,7 +356,6 @@ class _SimpleGitignore:
                 continue
             regex = self._compile(line, anchored)
             self._rules.append((negated, dir_only, regex))
-
     @staticmethod
     def _compile(pattern: str, anchored: bool) -> re.Pattern[str]:
         out: list[str] = []
@@ -434,7 +379,6 @@ class _SimpleGitignore:
         else:
             expr = rf"^(?:.*/)?{body}(/.*)?$"
         return re.compile(expr)
-
     def matches(self, rel: str, is_dir: bool) -> bool:
         result = False
         for negated, dir_only, regex in self._rules:
@@ -443,8 +387,6 @@ class _SimpleGitignore:
             if regex.match(rel):
                 result = not negated
         return result
-
-
 class _PathMatcher:
     def __init__(self, patterns: Sequence[str], gitignore_style: bool) -> None:
         cleaned = [p for p in patterns if p.strip() and not p.strip().startswith("#")]
@@ -457,11 +399,9 @@ class _PathMatcher:
             return
         if gitignore_style:
             from pathspec.gitignore import GitIgnoreSpec
-
             self._spec = GitIgnoreSpec.from_lines(cleaned)
         else:
             self._spec = _pathspec.PathSpec.from_lines("gitignore", cleaned)
-
     def matches(self, rel: str, is_dir: bool) -> bool:
         if self._simple is not None:
             return self._simple.matches(rel, is_dir)
@@ -471,12 +411,8 @@ class _PathMatcher:
         if is_dir:
             probes.append(rel + "/")
         return any(self._spec.match_file(probe) for probe in probes)
-
-
 def _strip_lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
-
-
 def _load_ignore_patterns(root: Path) -> list[str]:
     patterns: list[str] = []
     ignore_file = root / ".pydupignore"
@@ -497,8 +433,6 @@ def _load_ignore_patterns(root: Path) -> list[str]:
     elif pyproject.is_file() and _tomllib is None:
         LOGGER.warning("tomllib/tomli unavailable; ignoring [tool.pydup] in %s", pyproject)
     return patterns
-
-
 def _load_gitignore_patterns(root: Path) -> list[str]:
     gitignore = root / ".gitignore"
     if not gitignore.is_file():
@@ -508,33 +442,24 @@ def _load_gitignore_patterns(root: Path) -> list[str]:
     except OSError as error:
         LOGGER.warning("cannot read %s: %s", gitignore, error)
         return []
-
-
 @dataclass(slots=True)
 class _RootFilter:
     exclude: _PathMatcher
     vcs: _PathMatcher
     local: _PathMatcher
-
     def ignored(self, rel: str, is_dir: bool) -> bool:
         return self.exclude.matches(rel, is_dir) or self.vcs.matches(rel, is_dir) or self.local.matches(rel, is_dir)
-
-
 def _build_root_filter(root: Path, cfg: ScanConfig) -> _RootFilter:
     return _RootFilter(
         exclude=_PathMatcher(cfg.exclude_patterns, gitignore_style=False),
         vcs=_PathMatcher(_load_gitignore_patterns(root), gitignore_style=True),
         local=_PathMatcher(_load_ignore_patterns(root), gitignore_style=True),
     )
-
-
 def _is_candidate_file(name: str, include_notebooks: bool) -> bool:
     lowered = name.lower()
     if lowered.endswith((".py", ".pyi")):
         return True
     return include_notebooks and lowered.endswith(NOTEBOOK_SUFFIX)
-
-
 def get_pyfiles(root: Path, cfg: ScanConfig) -> tuple[list[Path], list[ScanIssue]]:
     found: list[Path] = []
     issues: list[ScanIssue] = []
@@ -593,8 +518,6 @@ def get_pyfiles(root: Path, cfg: ScanConfig) -> tuple[list[Path], list[ScanIssue
             except OSError as error:
                 issues.append((str(path), f"{type(error).__name__}: {error}"))
     return found, issues
-
-
 def _decode_source(path: Path, raw: bytes) -> tuple[str | None, str | None]:
     if path.suffix.lower() == NOTEBOOK_SUFFIX:
         try:
@@ -618,8 +541,6 @@ def _decode_source(path: Path, raw: bytes) -> tuple[str | None, str | None]:
         return raw.decode(encoding), None
     except Exception as error:
         return None, f"{type(error).__name__}: {error}"
-
-
 def _parse_source(source: str, path: Path) -> tuple[ast.Module | None, str | None]:
     try:
         return (
@@ -636,8 +557,6 @@ def _parse_source(source: str, path: Path) -> tuple[ast.Module | None, str | Non
             return None, f"SyntaxError: {error}"
     except Exception as error:
         return None, f"{type(error).__name__}: {error}"
-
-
 def _filter_imports(tree: ast.Module) -> ast.Module:
     used: set[str] = set()
     for node in ast.walk(tree):
@@ -674,8 +593,6 @@ def _filter_imports(tree: ast.Module) -> ast.Module:
     kept_imports.sort(key=lambda stmt: ast.dump(stmt, include_attributes=False))
     tree.body = kept_imports + rest
     return tree
-
-
 def _normalize_tree(tree: ast.Module, mode: str, ignore_imports: bool) -> ast.Module:
     strip_annotations = mode in ("loose", "structural")
     strip_type_nodes = mode in ("default", "loose", "structural")
@@ -685,8 +602,6 @@ def _normalize_tree(tree: ast.Module, mode: str, ignore_imports: bool) -> ast.Mo
     if ignore_imports:
         result = _filter_imports(result)
     return result
-
-
 def significant_tokens(source: str) -> list[str]:
     try:
         return [
@@ -696,8 +611,6 @@ def significant_tokens(source: str) -> list[str]:
         ]
     except (tokenize.TokenError, SyntaxError, IndentationError, ValueError):
         return []
-
-
 def _ngram_hashes(tokens: Sequence[str]) -> list[int]:
     if len(tokens) < NGRAM_SIZE:
         return []
@@ -706,19 +619,13 @@ def _ngram_hashes(tokens: Sequence[str]) -> list[int]:
         key = "\x1f".join(tokens[index : index + NGRAM_SIZE]).encode("utf-8", "replace")
         collected.add(int(_digest(key), 16))
     return sorted(collected)
-
-
 def _tree_hash(tree: ast.Module) -> str:
     dumped = ast.dump(tree, annotate_fields=True, include_attributes=False)
     return _digest(dumped.encode("utf-8"))
-
-
 def _module_is_empty(tree: ast.Module) -> bool:
     if not tree.body:
         return True
     return len(tree.body) == 1 and isinstance(tree.body[0], ast.Pass)
-
-
 def _definition_refs(tree: ast.Module, mode: str, path_text: str) -> list[DefinitionRef]:
     strip_annotations = mode in ("loose", "structural")
     strip_type_nodes = mode in ("default", "loose", "structural")
@@ -755,8 +662,6 @@ def _definition_refs(tree: ast.Module, mode: str, path_text: str) -> list[Defini
             )
         )
     return refs
-
-
 def _hash_fuzzy(raw: bytes) -> str | None:
     if _ssdeep is None:
         return None
@@ -764,8 +669,6 @@ def _hash_fuzzy(raw: bytes) -> str | None:
         return str(_ssdeep.hash(raw))
     except Exception:
         return None
-
-
 def _hash_tlsh(raw: bytes) -> str | None:
     if _tlsh is None:
         return None
@@ -776,8 +679,6 @@ def _hash_tlsh(raw: bytes) -> str | None:
     if not value or value.upper().endswith("NULL"):
         return None
     return value
-
-
 def _shingle_values(tokens: Sequence[str]) -> set[int]:
     shingle_strings: list[str] = []
     if len(tokens) >= MINHASH_ROWS:
@@ -796,8 +697,6 @@ def _shingle_values(tokens: Sequence[str]) -> set[int]:
         for text in shingle_strings
     }
     return values
-
-
 def _minhash_signature(shingles: set[int]) -> list[int] | None:
     if not shingles:
         return None
@@ -805,8 +704,6 @@ def _minhash_signature(shingles: set[int]) -> list[int] | None:
         min((coeff_a * value + coeff_b) & MASK64 for value in shingles)
         for coeff_a, coeff_b in zip(_MINHASH_A, _MINHASH_B)
     ]
-
-
 def _simhash64(shingles: set[int]) -> int | None:
     if not shingles:
         return None
@@ -820,8 +717,6 @@ def _simhash64(shingles: set[int]) -> int | None:
         if count > 0:
             result |= 1 << bit
     return result
-
-
 def process_file(path_text: str, cfg: WorkerConfig) -> WorkerResult:
     path = Path(path_text)
     try:
@@ -842,8 +737,6 @@ def process_file(path_text: str, cfg: WorkerConfig) -> WorkerResult:
             if cfg.need_simhash:
                 result.simhash_hash = _simhash64(shingles)
     return result
-
-
 def _process_source(path_text: str, raw: bytes, cfg: WorkerConfig) -> WorkerResult:
     path = Path(path_text)
     source, decode_error = _decode_source(path, raw)
@@ -891,21 +784,15 @@ def _process_source(path_text: str, raw: bytes, cfg: WorkerConfig) -> WorkerResu
         ngrams=ngrams,
         definitions=definitions,
     )
-
-
 def _print_progress_line(message: str, previous_width: int) -> int:
     sys.stderr.write("\r" + message.ljust(previous_width))
     sys.stderr.flush()
     return len(message)
-
-
 def _notify(on_complete: Callable[[], None] | None, count: int = 1) -> None:
     if on_complete is None:
         return
     for _ in range(count):
         on_complete()
-
-
 def _run_serial(
     paths: Sequence[str],
     cfg: WorkerConfig,
@@ -916,8 +803,6 @@ def _run_serial(
         results.append(process_file(path_text, cfg))
         _notify(on_complete)
     return results
-
-
 def _executor_class(method: str) -> type:
     if method == "cf.ThreadPoolExecutor":
         if _ThreadPoolExecutor is None:
@@ -928,8 +813,6 @@ def _executor_class(method: str) -> type:
             raise RuntimeError("--mp-method cf.InterpreterPoolExecutor requires Python 3.14+")
         return _InterpreterPoolExecutor
     return ProcessPoolExecutor
-
-
 def _run_executor(
     executor_cls: type,
     paths: Sequence[str],
@@ -950,8 +833,6 @@ def _run_executor(
     else:
         executor.shutdown(wait=True)
     return results
-
-
 def _run_mp_pool(
     paths: Sequence[str],
     cfg: WorkerConfig,
@@ -960,7 +841,6 @@ def _run_mp_pool(
     on_complete: Callable[[], None] | None,
 ) -> list[WorkerResult]:
     import multiprocessing
-
     results: list[WorkerResult] = []
     pool = multiprocessing.Pool(processes=workers)
     worker = functools.partial(process_file, cfg=cfg)
@@ -1004,8 +884,6 @@ def _run_mp_pool(
     finally:
         pool.join()
     return results
-
-
 def _run_joblib(
     paths: Sequence[str],
     cfg: WorkerConfig,
@@ -1026,8 +904,6 @@ def _run_joblib(
         result.path = original_path
     _notify(on_complete, len(results))
     return results
-
-
 def _run_jobs(
     paths: Sequence[str],
     cfg: WorkerConfig,
@@ -1042,8 +918,6 @@ def _run_jobs(
     if method == "joblib":
         return _run_joblib(paths, cfg, workers, on_complete)
     return _run_executor(_executor_class(method), paths, cfg, workers, on_complete)
-
-
 def process_files(
     entries: Sequence[FileEntry],
     cfg: WorkerConfig,
@@ -1110,12 +984,10 @@ def process_files(
             return results, cache_hits
         completed = 0
         width = 0
-
         def update_progress() -> None:
             nonlocal completed, width
             completed += 1
             width = _print_progress_line(f"Processing Python files: {completed}/{total}", width)
-
         try:
             results.extend(_run_jobs(path_texts, cfg, worker_count, method, update_progress))
         finally:
@@ -1123,7 +995,6 @@ def process_files(
             sys.stderr.flush()
         return results, cache_hits
     from rich.console import Console as RichConsole
-
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -1144,34 +1015,24 @@ def process_files(
             )
         )
     return results, cache_hits
-
-
 def _fingerprint_key(result: WorkerResult, mode: str) -> str | None:
     if mode == "structural":
         if result.ast_hash is None or result.token_hash is None:
             return None
         return f"{result.ast_hash}:{result.token_hash}"
     return result.digest
-
-
 def _union_find(size: int) -> list[int]:
     return list(range(size))
-
-
 def _find(parent: list[int], node: int) -> int:
     while parent[node] != node:
         parent[node] = parent[parent[node]]
         node = parent[node]
     return node
-
-
 def _union(parent: list[int], left: int, right: int) -> None:
     root_left = _find(parent, left)
     root_right = _find(parent, right)
     if root_left != root_right:
         parent[root_right] = root_left
-
-
 def _verify_candidates(
     candidate_paths: set[str],
     results_by_path: dict[str, WorkerResult],
@@ -1210,8 +1071,6 @@ def _verify_candidates(
             continue
         verified[path_text] = fresh
     return verified, failures
-
-
 def _build_groups(
     results: list[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1297,8 +1156,6 @@ def _build_groups(
                 groups.append(_make_group(key, sorted(members), entries))
     groups.sort(key=lambda group: str(group.paths[0]))
     return groups, failures
-
-
 def _make_group(digest: str, members: Sequence[str], entries: dict[str, FileEntry]) -> DuplicateGroup:
     paths = [Path(member) for member in members]
     sizes: dict[str, int] = {}
@@ -1306,8 +1163,6 @@ def _make_group(digest: str, members: Sequence[str], entries: dict[str, FileEntr
         entry = entries.get(member)
         sizes[member] = entry.size if entry is not None else 0
     return DuplicateGroup(digest=digest, paths=paths, sizes=sizes)
-
-
 def _build_definition_groups(results: Sequence[WorkerResult]) -> list[DefinitionGroup]:
     buckets: dict[str, list[DefinitionRef]] = defaultdict(list)
     for result in results:
@@ -1321,8 +1176,6 @@ def _build_definition_groups(results: Sequence[WorkerResult]) -> list[Definition
         groups.append(DefinitionGroup(digest=digest, members=members))
     groups.sort(key=lambda group: (group.members[0].path, group.members[0].lineno))
     return groups
-
-
 def _build_near_pairs(
     results: Sequence[WorkerResult],
     threshold: float,
@@ -1356,8 +1209,6 @@ def _build_near_pairs(
                 )
     pairs.sort(key=lambda pair: (-pair.similarity, pair.paths))
     return pairs
-
-
 def _sized_results(
     results: Sequence[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1369,8 +1220,6 @@ def _sized_results(
             items.append((result.path, result, entry.size))
     items.sort(key=lambda item: item[2])
     return items
-
-
 def _ssdeep_pairs(
     results: Sequence[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1408,8 +1257,6 @@ def _ssdeep_pairs(
                         )
                     )
     return pairs
-
-
 def _sweep_pairs(
     results: Sequence[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1425,8 +1272,6 @@ def _sweep_pairs(
                 break
             pairs.append((items[left_index][1], items[right_index][1]))
     return pairs
-
-
 def _tlsh_pairs(
     results: Sequence[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1452,8 +1297,6 @@ def _tlsh_pairs(
                 )
             )
     return pairs
-
-
 def _simhash_pairs(
     results: Sequence[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1474,8 +1317,6 @@ def _simhash_pairs(
                 )
             )
     return pairs
-
-
 def _minhash_pairs(
     results: Sequence[WorkerResult],
     threshold: int,
@@ -1506,8 +1347,6 @@ def _minhash_pairs(
         if score > threshold:
             pairs.append(SimilarPair(paths=(left_path, right_path), score=score, method="minhash"))
     return pairs
-
-
 def _build_similar_pairs(
     results: Sequence[WorkerResult],
     entries: dict[str, FileEntry],
@@ -1525,8 +1364,6 @@ def _build_similar_pairs(
         pairs.extend(_simhash_pairs(results, entries, threshold))
     pairs.sort(key=lambda pair: (-pair.score, pair.method, pair.paths))
     return pairs
-
-
 def _write_simz(
     path: Path,
     pairs: Sequence[SimilarPair],
@@ -1540,8 +1377,6 @@ def _write_simz(
         "pairs": [{"method": pair.method, "paths": list(pair.paths), "score": pair.score} for pair in pairs],
     }
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
 def _load_cache(cache_path: Path, mode_key: str) -> dict[str, CacheEntry]:
     if not cache_path.is_file():
         return {}
@@ -1572,8 +1407,6 @@ def _load_cache(cache_path: Path, mode_key: str) -> dict[str, CacheEntry]:
             except (KeyError, TypeError, ValueError):
                 continue
     return entries
-
-
 def _save_cache(
     cache_path: Path,
     mode_key: str,
@@ -1624,8 +1457,6 @@ def _save_cache(
         os.replace(temp_path, cache_path)
     except OSError as error:
         LOGGER.warning("cannot write cache %s: %s", cache_path, error)
-
-
 def _nonneg_int(value: str) -> int:
     try:
         number = int(value)
@@ -1634,8 +1465,6 @@ def _nonneg_int(value: str) -> int:
     if number < 0:
         raise argparse.ArgumentTypeError("must be a non-negative integer")
     return number
-
-
 MP_METHOD_CANONICAL: tuple[str, ...] = (
     "cf.ProcessPoolExecutor",
     "cf.ThreadPoolExecutor",
@@ -1666,15 +1495,11 @@ _MP_METHOD_ALIASES.update({
     "mp.pool.imap_async": "mp.pool.imap_unordered",
     "joblib.parallel": "joblib",
 })
-
-
 def _mp_method_value(value: str) -> str:
     canonical = _MP_METHOD_ALIASES.get(value.strip().lower())
     if canonical is None:
         raise argparse.ArgumentTypeError(f"unknown mp method {value!r}; available: " + ", ".join(MP_METHOD_CANONICAL))
     return canonical
-
-
 def _similarity_value(value: str) -> float:
     try:
         number = float(value)
@@ -1683,8 +1508,6 @@ def _similarity_value(value: str) -> float:
     if not 0.0 < number <= 1.0:
         raise argparse.ArgumentTypeError("must be a float in (0, 1]")
     return number
-
-
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="pydup",
@@ -1863,8 +1686,6 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--log-format", choices=("text", "json"), default="text", help="log line format on stderr")
     parser.add_argument("--version", action="version", version=f"pydup {__version__}")
     return parser.parse_args(argv)
-
-
 class _JsonLogFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload = {
@@ -1875,8 +1696,6 @@ class _JsonLogFormatter(logging.Formatter):
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
         return json.dumps(payload, ensure_ascii=False)
-
-
 def _configure_logging(verbose: int, quiet: bool, log_format: str) -> None:
     if quiet:
         level = logging.ERROR
@@ -1895,8 +1714,6 @@ def _configure_logging(verbose: int, quiet: bool, log_format: str) -> None:
     LOGGER.addHandler(handler)
     LOGGER.setLevel(level)
     LOGGER.propagate = False
-
-
 def _human_bytes(count: int) -> str:
     size = float(count)
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -1906,15 +1723,11 @@ def _human_bytes(count: int) -> str:
             return f"{size:.1f} {unit}"
         size /= 1024.0
     return f"{size:.1f} TB"
-
-
 def _group_wasted(group: DuplicateGroup) -> int:
     if group.keeper is None:
         return sum(group.sizes.values())
     keeper_size = group.sizes.get(str(group.keeper), 0)
     return max(0, sum(group.sizes.values()) - keeper_size)
-
-
 def _choose_keeper(
     group: DuplicateGroup,
     entries: dict[str, FileEntry],
@@ -1923,17 +1736,14 @@ def _choose_keeper(
     prefer: str | None,
 ) -> Path:
     paths = list(group.paths)
-
     def path_key(path: Path) -> tuple[int, str]:
         entry = entries.get(str(path))
         return (entry.mtime_ns if entry is not None else 0, str(path))
-
     def variants(path: Path) -> list[str]:
         text = str(path)
         parts = Path(text).parts
         suffixes = ["/".join(parts[index:]) for index in range(1, len(parts))]
         return [text, path.name, *suffixes]
-
     if policy == "oldest":
         return min(paths, key=path_key)
     if policy == "newest":
@@ -1959,8 +1769,6 @@ def _choose_keeper(
         LOGGER.warning("--prefer %s matched no member of group %s; keeping first path", prefer, group.digest[:12])
         return min(paths, key=str)
     return min(paths, key=str)
-
-
 def _assign_keepers(
     groups: Sequence[DuplicateGroup],
     entries: dict[str, FileEntry],
@@ -1971,8 +1779,6 @@ def _assign_keepers(
     for group in groups:
         group.keeper = _choose_keeper(group, entries, policy, pattern, prefer)
         group.paths.sort(key=lambda path: (str(path) != str(group.keeper), str(path)))
-
-
 def _load_baseline(path: Path) -> set[tuple[str, ...]]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -1985,8 +1791,6 @@ def _load_baseline(path: Path) -> set[tuple[str, ...]]:
         if isinstance(paths, list):
             known.add(tuple(sorted(str(item) for item in paths)))
     return known
-
-
 def _filter_baseline(
     groups: list[DuplicateGroup],
     baseline: set[tuple[str, ...]],
@@ -2000,8 +1804,6 @@ def _filter_baseline(
         else:
             fresh.append(group)
     return fresh, suppressed
-
-
 def _changed_since_paths(roots: Sequence[Path], ref: str) -> set[str] | None:
     changed: set[str] = set()
     repositories = 0
@@ -2037,8 +1839,6 @@ def _changed_since_paths(roots: Sequence[Path], ref: str) -> set[str] | None:
         LOGGER.error("--changed-since requires at least one directory root inside a git repository")
         return None
     return changed
-
-
 def _stat_entry(path: Path) -> tuple[FileEntry | None, str | None]:
     try:
         stat_result = os.stat(path)
@@ -2058,8 +1858,6 @@ def _stat_entry(path: Path) -> tuple[FileEntry | None, str | None]:
         ),
         None,
     )
-
-
 def _finalize_entries(
     candidates: Iterable[Path],
     cfg: ScanConfig,
@@ -2086,8 +1884,6 @@ def _finalize_entries(
         seen_inodes[inode_key] = str(path)
         entries.append(entry)
     return entries, skipped
-
-
 def _split_paths(
     path_args: Sequence[str],
     root_args: Sequence[Path] | None,
@@ -2128,8 +1924,6 @@ def _split_paths(
             continue
         unique_roots.append(root)
     return unique_roots, files
-
-
 def _collect_entries(
     args: argparse.Namespace,
     cfg: ScanConfig,
@@ -2154,8 +1948,6 @@ def _collect_entries(
     explicit_entries, explicit_skipped = _finalize_entries(files, cfg, seen_inodes, issues, False)
     entries.extend(explicit_entries)
     return entries, skipped + explicit_skipped
-
-
 def _print_groups_plain(groups: Sequence[DuplicateGroup]) -> None:
     for index, group in enumerate(groups, start=1):
         wasted = _group_wasted(group)
@@ -2167,8 +1959,6 @@ def _print_groups_plain(groups: Sequence[DuplicateGroup]) -> None:
             marker = "keeper" if path == group.keeper else "dup   "
             size = group.sizes.get(str(path), 0)
             print(f"  [{marker}] {path} ({_human_bytes(size)})")
-
-
 def _print_groups_rich(groups: Sequence[DuplicateGroup]) -> bool:
     try:
         from rich.console import Console
@@ -2196,8 +1986,6 @@ def _print_groups_rich(groups: Sequence[DuplicateGroup]) -> bool:
         )
     Console().print(table)
     return True
-
-
 def _iter_group_pairs(groups: Sequence[DuplicateGroup]) -> set[frozenset[str]]:
     pairs: set[frozenset[str]] = set()
     for group in groups:
@@ -2206,8 +1994,6 @@ def _iter_group_pairs(groups: Sequence[DuplicateGroup]) -> set[frozenset[str]]:
             for right_index in range(left_index + 1, len(paths)):
                 pairs.add(frozenset((paths[left_index], paths[right_index])))
     return pairs
-
-
 def _group_payload(group: DuplicateGroup) -> dict[str, Any]:
     return {
         "digest": group.digest,
@@ -2215,8 +2001,6 @@ def _group_payload(group: DuplicateGroup) -> dict[str, Any]:
         "keeper": str(group.keeper) if group.keeper is not None else None,
         "bytes_wasted": _group_wasted(group),
     }
-
-
 def _report_text(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     groups = outcome.groups
     for path_text, error in outcome.failures:
@@ -2268,8 +2052,6 @@ def _report_text(outcome: ScanOutcome, args: argparse.Namespace) -> None:
         print(f"  duplicate groups: {stats.duplicate_groups}")
         print(f"  wasted bytes:    {stats.wasted_bytes} ({_human_bytes(stats.wasted_bytes)})")
         print(f"  elapsed:         {stats.elapsed_seconds:.2f}s")
-
-
 def _print_verbose_dry_run(groups: Sequence[DuplicateGroup], args: argparse.Namespace) -> None:
     if args.quarantine is not None:
         action = f"move to {args.quarantine.expanduser()}"
@@ -2324,8 +2106,6 @@ def _print_verbose_dry_run(groups: Sequence[DuplicateGroup], args: argparse.Name
         print("  re-run without --dry-run to perform deletion")
     else:
         print("  re-run with -r (and -y to skip prompts) to delete")
-
-
 def _report_json(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     payload: dict[str, Any] = {
         "version": 1,
@@ -2356,12 +2136,9 @@ def _report_json(outcome: ScanOutcome, args: argparse.Namespace) -> None:
         payload["stats"] = _stats_payload(outcome.stats)
     json.dump(payload, sys.stdout, indent=2)
     print()
-
-
 def _report_ndjson(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     def emit(payload: dict[str, Any]) -> None:
         print(json.dumps(payload, ensure_ascii=False))
-
     emit({"type": "meta", "version": 1, "generated": datetime.now(timezone.utc).isoformat()})
     for group in outcome.groups:
         emit({"type": "group", **_group_payload(group)})
@@ -2387,8 +2164,6 @@ def _report_ndjson(outcome: ScanOutcome, args: argparse.Namespace) -> None:
             })
     if args.stats:
         emit({"type": "stats", **_stats_payload(outcome.stats)})
-
-
 def _report_csv(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     writer = csv.writer(sys.stdout, lineterminator="\n")
     writer.writerow(["group", "digest", "path", "is_keeper", "size_bytes", "bytes_wasted"])
@@ -2403,8 +2178,6 @@ def _report_csv(outcome: ScanOutcome, args: argparse.Namespace) -> None:
                 group.sizes.get(str(path), 0),
                 wasted,
             ])
-
-
 def _stats_payload(stats: RunStats) -> dict[str, Any]:
     return {
         "files_scanned": stats.scanned,
@@ -2417,8 +2190,6 @@ def _stats_payload(stats: RunStats) -> dict[str, Any]:
         "wasted_bytes": stats.wasted_bytes,
         "elapsed_seconds": round(stats.elapsed_seconds, 3),
     }
-
-
 def _report(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     if args.output_format == "json":
         _report_json(outcome, args)
@@ -2428,15 +2199,11 @@ def _report(outcome: ScanOutcome, args: argparse.Namespace) -> None:
         _report_csv(outcome, args)
     else:
         _report_text(outcome, args)
-
-
 def _interactive() -> bool:
     try:
         return sys.stdin.isatty() and sys.stderr.isatty()
     except ValueError:
         return False
-
-
 def _prompt(message: str) -> str:
     sys.stderr.write(message)
     sys.stderr.flush()
@@ -2444,8 +2211,6 @@ def _prompt(message: str) -> str:
     if not line:
         return "q"
     return line.strip().lower()
-
-
 def _guard_unchanged(path: Path, entry: FileEntry | None) -> str | None:
     if entry is None:
         return "unknown file"
@@ -2460,8 +2225,6 @@ def _guard_unchanged(path: Path, entry: FileEntry | None) -> str | None:
     ):
         return "file changed since scan"
     return None
-
-
 def _quarantine_target(directory: Path, path: Path) -> Path:
     candidate = directory / path.name
     counter = 1
@@ -2469,8 +2232,6 @@ def _quarantine_target(directory: Path, path: Path) -> Path:
         candidate = directory / f"{path.stem}_{counter}{path.suffix}"
         counter += 1
     return candidate
-
-
 def _delete_one(
     path: Path,
     entry: FileEntry | None,
@@ -2491,7 +2252,6 @@ def _delete_one(
             record["action"] = "quarantine"
         elif args.to_trash:
             from send2trash import send2trash
-
             send2trash(str(path))
             record["action"] = "trash"
         else:
@@ -2503,8 +2263,6 @@ def _delete_one(
         return message
     record["removed"] = True
     return None
-
-
 def _write_manifest(path: Path, records: Sequence[dict[str, Any]]) -> None:
     payload = {
         "version": 1,
@@ -2513,8 +2271,6 @@ def _write_manifest(path: Path, records: Sequence[dict[str, Any]]) -> None:
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
 def _manifest_record(group: DuplicateGroup, path: Path, args: argparse.Namespace) -> dict[str, Any]:
     if args.quarantine is not None:
         action = "quarantine"
@@ -2532,8 +2288,6 @@ def _manifest_record(group: DuplicateGroup, path: Path, args: argparse.Namespace
         "error": None,
         "target": None,
     }
-
-
 def _apply_removals(
     outcome: ScanOutcome,
     args: argparse.Namespace,
@@ -2626,8 +2380,6 @@ def _apply_removals(
     if failed:
         return 2
     return 0
-
-
 def _run_diff(args: argparse.Namespace) -> int:
     left_path, right_path = args.diff
     texts: list[str] = []
@@ -2668,8 +2420,6 @@ def _run_diff(args: argparse.Namespace) -> int:
         print(f"{left_path} and {right_path} are identical under mode {args.mode}")
         return 0
     return 1
-
-
 def _resolve_fuzzy_methods(args: argparse.Namespace) -> tuple[list[str], str | None]:
     methods: list[str] = []
     if args.save_similar:
@@ -2690,8 +2440,6 @@ def _resolve_fuzzy_methods(args: argparse.Namespace) -> tuple[list[str], str | N
     if "tlsh" in methods and _tlsh is None:
         return [], "--tlsh requires the tlsh package (pip install py-tlsh)"
     return methods, None
-
-
 def _scan(args: argparse.Namespace) -> ScanOutcome | None:
     started = time.monotonic()
     issues: list[ScanIssue] = []
@@ -2801,8 +2549,6 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
         failures=failures,
         stats=stats,
     )
-
-
 def _validate_args(args: argparse.Namespace) -> str | None:
     methods, methods_error = _resolve_fuzzy_methods(args)
     if methods_error is not None:
@@ -2823,8 +2569,6 @@ def _validate_args(args: argparse.Namespace) -> str | None:
         LOGGER.warning("--print-keep only applies to --format text; ignoring")
         args.print_keep = False
     return None
-
-
 def _exit_code(args: argparse.Namespace, outcome: ScanOutcome, deletion_code: int) -> int:
     if deletion_code:
         return deletion_code
@@ -2834,8 +2578,6 @@ def _exit_code(args: argparse.Namespace, outcome: ScanOutcome, deletion_code: in
     if args.fail_on_error and outcome.failures:
         code = 1
     return code
-
-
 def _emit_outcome(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     if args.baseline is not None:
         try:
@@ -2849,8 +2591,6 @@ def _emit_outcome(outcome: ScanOutcome, args: argparse.Namespace) -> None:
         outcome.stats.duplicate_files = sum(len(group.paths) for group in outcome.groups)
         outcome.stats.wasted_bytes = sum(_group_wasted(group) for group in outcome.groups)
     _report(outcome, args)
-
-
 def _watch(args: argparse.Namespace) -> int:
     try:
         from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -2860,7 +2600,6 @@ def _watch(args: argparse.Namespace) -> int:
         return 2
     timer_lock = threading.Lock()
     pending: threading.Timer | None = None
-
     def run_scan() -> None:
         try:
             outcome = _scan(args)
@@ -2876,7 +2615,6 @@ def _watch(args: argparse.Namespace) -> int:
             _emit_outcome(outcome, args)
         except Exception as error:
             LOGGER.error("scan failed: %s", error)
-
     def schedule(_event: "FileSystemEvent") -> None:
         nonlocal pending
         with timer_lock:
@@ -2884,14 +2622,12 @@ def _watch(args: argparse.Namespace) -> int:
                 pending.cancel()
             pending = threading.Timer(0.5, run_scan)
             pending.start()
-
     class _Handler(FileSystemEventHandler):
         def on_any_event(self, event: "FileSystemEvent") -> None:
             if event.is_directory:
                 return
             if str(event.src_path).lower().endswith((".py", ".pyi", NOTEBOOK_SUFFIX)):
                 schedule(event)
-
     observer = Observer()
     roots: list[Path] = []
     root_args = args.root or []
@@ -2920,8 +2656,6 @@ def _watch(args: argparse.Namespace) -> int:
         observer.stop()
         observer.join()
     return 130
-
-
 def _run(args: argparse.Namespace) -> int:
     validation_error = _validate_args(args)
     if validation_error is not None:
@@ -2942,8 +2676,6 @@ def _run(args: argparse.Namespace) -> int:
         return 2
     deletion_code = _apply_removals(outcome, args)
     return _exit_code(args, outcome, deletion_code)
-
-
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     _configure_logging(args.verbose, args.quiet, args.log_format)
@@ -2954,7 +2686,5 @@ def main(argv: list[str] | None = None) -> int:
         return 130
     except BrokenPipeError:
         return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

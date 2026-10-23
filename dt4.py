@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -14,7 +13,6 @@ from typing import Callable, Optional
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from loguru import logger
-
 DEFAULT_INPUT = "input.txt"
 DEFAULT_OUTPUT = "chunks.json"
 DEFAULT_FAILED = "failed.txt"
@@ -101,20 +99,14 @@ LANG_MAPPING = {
     },
 }
 shutdown_flag = False
-
-
 def setup_logging(log_file: str = "translate_chunks.log") -> None:
     logger.remove()
     logger.add(sys.stderr, level="ERROR")
     logger.add(log_file, level="DEBUG", rotation="10 MB")
-
-
 def signal_handler(sig, frame) -> None:
     global shutdown_flag
     shutdown_flag = True
     logger.info("Shutdown signal received. Waiting for current tasks to complete...")
-
-
 def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     if not text:
         return []
@@ -132,8 +124,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
             chunks.append(chunk)
         start = end if end != start else end + 1
     return chunks
-
-
 def load_existing_output(output_path: Path) -> dict[str, str]:
     if output_path.exists():
         try:
@@ -142,8 +132,6 @@ def load_existing_output(output_path: Path) -> dict[str, str]:
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             logger.error(f"Failed to load existing output: {e}")
     return {}
-
-
 def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
     temp_path = output_path.with_suffix(".tmp")
     try:
@@ -154,18 +142,13 @@ def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
         if temp_path.exists():
             temp_path.unlink()
         raise
-
-
 def is_identity_translation(text: str, translated: str) -> bool:
     norm_orig = text.lower().strip()
     norm_trans = translated.lower().strip()
     return norm_orig == norm_trans
-
-
 def make_deep_translator(source: str, target: str) -> Callable[[str], str]:
     source_lang = LANG_MAPPING["deep_translator"].get(source, source)
     target_lang = LANG_MAPPING["deep_translator"].get(target, target)
-
     def translate(text: str) -> str:
         try:
             translator = GoogleTranslator(source=source_lang, target=target_lang)
@@ -176,10 +159,7 @@ def make_deep_translator(source: str, target: str) -> Callable[[str], str]:
         except Exception as e:
             logger.error(f"Unexpected error in deep_translator: {e}")
             raise
-
     return translate
-
-
 def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         import deepl
@@ -188,7 +168,6 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
         raise ImportError(msg)
     source_lang = LANG_MAPPING["deepl"].get(source, source)
     target_lang = LANG_MAPPING["deepl"].get(target, target)
-
     def translate(text: str) -> str:
         try:
             auth_key = os.getenv("DEEPL_API_KEY")
@@ -201,10 +180,7 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
         except Exception as e:
             logger.error(f"Translation failed for deepl: {e}")
             raise
-
     return translate
-
-
 def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         from translate import Translator
@@ -213,7 +189,6 @@ def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
         raise ImportError(msg)
     source_lang = LANG_MAPPING["translate"].get(source, source)
     target_lang = LANG_MAPPING["translate"].get(target, target)
-
     def translate(text: str) -> str:
         try:
             translator = Translator(from_lang=source_lang, to_lang=target_lang)
@@ -221,10 +196,7 @@ def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
         except Exception as e:
             logger.error(f"Translation failed for translate: {e}")
             raise
-
     return translate
-
-
 def make_translators_bing_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         import translators as ts
@@ -233,7 +205,6 @@ def make_translators_bing_translator(source: str, target: str) -> Callable[[str]
         raise ImportError(msg)
     source_lang = LANG_MAPPING["translators_bing"].get(source, source)
     target_lang = LANG_MAPPING["translators_bing"].get(target, target)
-
     def translate(text: str) -> str:
         try:
             return ts.translate_text(
@@ -245,10 +216,7 @@ def make_translators_bing_translator(source: str, target: str) -> Callable[[str]
         except Exception as e:
             logger.error(f"Translation failed for translators_bing: {e}")
             raise
-
     return translate
-
-
 def make_googletrans_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         from googletrans import Translator
@@ -258,7 +226,6 @@ def make_googletrans_translator(source: str, target: str) -> Callable[[str], str
     source_lang = LANG_MAPPING["googletrans"].get(source, source)
     target_lang = LANG_MAPPING["googletrans"].get(target, target)
     lock = Lock()
-
     def translate(text: str) -> str:
         try:
             with lock:
@@ -268,10 +235,7 @@ def make_googletrans_translator(source: str, target: str) -> Callable[[str], str
         except Exception as e:
             logger.error(f"Translation failed for googletrans: {e}")
             raise
-
     return translate
-
-
 def make_pygoogletranslation_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         from pygoogletranslation import Translator
@@ -281,7 +245,6 @@ def make_pygoogletranslation_translator(source: str, target: str) -> Callable[[s
     source_lang = LANG_MAPPING["pygoogletranslation"].get(source, source)
     target_lang = LANG_MAPPING["pygoogletranslation"].get(target, target)
     lock = Lock()
-
     def translate(text: str) -> str:
         try:
             with lock:
@@ -290,10 +253,7 @@ def make_pygoogletranslation_translator(source: str, target: str) -> Callable[[s
         except Exception as e:
             logger.error(f"Translation failed for pygoogletranslation: {e}")
             raise
-
     return translate
-
-
 def select_backend(source: str, target: str, backend: Optional[str] = None) -> Callable[[str], str]:
     backends = [
         ("deepl", make_deepl_translator),
@@ -321,8 +281,6 @@ def select_backend(source: str, target: str, backend: Optional[str] = None) -> C
             continue
     msg = "No translation backend available"
     raise RuntimeError(msg)
-
-
 def translate_chunk(
     chunk: str,
     index: int,
@@ -351,8 +309,6 @@ def translate_chunk(
             if attempt == max_retries - 1:
                 return index, None
     return index, None
-
-
 def process_chunks(
     chunks: list[str],
     translator: Callable[[str], str],
@@ -392,8 +348,6 @@ def process_chunks(
             for index in sorted(failed_indices):
                 f.write(f"{index}\n")
         logger.error(f"Saved {len(failed_indices)} failed chunk indices to {failed_path}")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Translate text file in chunks")
     parser.add_argument("-i", "--input", default=DEFAULT_INPUT, help="Input text file")
@@ -476,7 +430,5 @@ def main() -> None:
         logger.error(f"Processing failed: {e}")
         sys.exit(1)
     logger.info("Translation completed successfully")
-
-
 if __name__ == "__main__":
     main()

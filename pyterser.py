@@ -11,7 +11,6 @@ import subprocess
 import sys
 import tempfile
 from typing import Final, Iterator, NamedTuple, Sequence
-
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",
     ".hg",
@@ -40,8 +39,6 @@ DEFAULT_TIMEOUT: Final[float] = 300.0
 COMPARE_CHUNK: Final[int] = 1 << 16
 TERSER_SUCCESS: Final[int] = 0
 MIN_SAVINGS_BYTES: Final[int] = 2
-
-
 class ProcessResult(NamedTuple):
     path: Path
     original_size: int
@@ -51,15 +48,11 @@ class ProcessResult(NamedTuple):
     skipped: bool
     no_change: bool
     error: str | None
-
-
 def walk_files(directory: str) -> Iterator[str]:
     for root, dirs, files in os.walk(directory):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in files:
             yield os.path.join(root, name)
-
-
 def format_bytes(n: int) -> str:
     sign = "-" if n < 0 else ""
     value = float(abs(n))
@@ -70,15 +63,11 @@ def format_bytes(n: int) -> str:
             return f"{sign}{value:.2f} {unit}"
         value /= 1024.0
     return f"{sign}{value:.2f} TiB"
-
-
 def display_path(path: Path) -> str:
     try:
         return os.path.relpath(path, Path.cwd())
     except (OSError, ValueError):
         return str(path)
-
-
 def _dedupe(path: Path, seen: set[Path]) -> bool:
     try:
         key = path.resolve()
@@ -88,8 +77,6 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
         return False
     seen.add(key)
     return True
-
-
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
         found = list(walk_files(str(root)))
@@ -115,8 +102,6 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
             if not _dedupe(path, seen):
                 continue
             yield path
-
-
 def iter_js_files(roots: Sequence[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for raw_root in roots:
@@ -157,8 +142,6 @@ def iter_js_files(roots: Sequence[Path]) -> Iterator[Path]:
                 f"warning: cannot inspect {raw_root}: {exc}",
                 file=sys.stderr,
             )
-
-
 def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
     if a_size != b_size:
         return False
@@ -170,8 +153,6 @@ def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
                 return False
             if not chunk_a:
                 return True
-
-
 def _run_terser(cmd: Sequence[str], timeout: float) -> tuple[subprocess.CompletedProcess[bytes] | None, str | None]:
     try:
         completed = subprocess.run(
@@ -187,8 +168,6 @@ def _run_terser(cmd: Sequence[str], timeout: float) -> tuple[subprocess.Complete
     except OSError as exc:
         return None, f"failed to run terser: {exc}"
     return completed, None
-
-
 def _build_terser_cmd(
     terser: str,
     target: Path,
@@ -215,8 +194,6 @@ def _build_terser_cmd(
     cmd.extend(extra_args)
     cmd += ["-o", str(tmp_path), str(target)]
     return cmd
-
-
 def process_file(
     path: Path,
     *,
@@ -399,8 +376,6 @@ def process_file(
         if tmp_path is not None:
             with contextlib.suppress(OSError):
                 tmp_path.unlink()
-
-
 def _classify(result: ProcessResult, dry_run: bool) -> str:
     if result.error is not None:
         return "ERROR"
@@ -411,8 +386,6 @@ def _classify(result: ProcessResult, dry_run: bool) -> str:
     if dry_run:
         return "DRY-RUN"
     return "OK"
-
-
 def _emit_terser_output(result: ProcessResult) -> None:
     if result.stdout:
         sys.stdout.write(result.stdout)
@@ -424,8 +397,6 @@ def _emit_terser_output(result: ProcessResult) -> None:
         if not result.stderr.endswith("\n"):
             sys.stderr.write("\n")
         sys.stderr.flush()
-
-
 def _print_status(result: ProcessResult, tag: str) -> None:
     shown = display_path(result.path)
     orig = result.original_size
@@ -449,8 +420,6 @@ def _print_status(result: ProcessResult, tag: str) -> None:
         print(f"[SKIP]    {shown}  {format_bytes(orig)} -> {format_bytes(new)}  (larger by {format_bytes(growth)})")
     else:
         print(f"[ERROR]   {shown}  {result.error}", file=sys.stderr)
-
-
 def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
     total = sum(counters.values())
     print()
@@ -478,8 +447,6 @@ def _print_summary(counters: dict[str, int], total_before: int, total_after: int
     else:
         print()
         print("  Bytes     : no size changes")
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="terser-optimize",
@@ -561,8 +528,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"Per-file terser timeout (default: {DEFAULT_TIMEOUT:g}s).",
     )
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     roots = [Path(p) for p in args.paths] if args.paths else [Path()]
@@ -604,7 +569,5 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 130
     _print_summary(counters, total_before, total_after)
     return 1 if counters["ERROR"] else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

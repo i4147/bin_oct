@@ -5,8 +5,6 @@ import ast
 import multiprocessing as mp
 from pathlib import Path
 from dh import get_pyfiles
-
-
 def _first_statement_is_docstring(tree: ast.Module) -> bool:
     if not tree.body:
         return False
@@ -16,8 +14,6 @@ def _first_statement_is_docstring(tree: ast.Module) -> bool:
         and isinstance(getattr(node, "value", None), ast.Constant)
         and isinstance(node.value.value, str)
     )
-
-
 def _remove_docstrings_from_source(source: str) -> tuple[str, int]:
     try:
         tree = ast.parse(source)
@@ -56,16 +52,12 @@ def _remove_docstrings_from_source(source: str) -> tuple[str, int]:
                 lines[mid] = ""
     new_source = "".join(lines)
     return new_source, len(to_remove)
-
-
 def _validate_syntax(source: str) -> bool:
     try:
         ast.parse(source)
         return True
     except SyntaxError:
         return False
-
-
 def _collect_py_files(paths: list[Path], *, recursive: bool = True) -> list[Path]:
     py_files: list[Path] = []
     for target in paths:
@@ -76,8 +68,6 @@ def _collect_py_files(paths: list[Path], *, recursive: bool = True) -> list[Path
             pattern = "**/*.py" if recursive else "*.py"
             py_files.extend(target.glob(pattern))
     return sorted({p.resolve() for p in py_files})
-
-
 def process_file(path: Path, cwd: Path) -> tuple[str, int] | None:
     rel = str(path.relative_to(cwd))
     try:
@@ -96,8 +86,6 @@ def process_file(path: Path, cwd: Path) -> tuple[str, int] | None:
     except Exception:
         return None
     return rel, doc_count
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Strip docstrings from Python files (preserves module docstrings).")
     parser.add_argument(
@@ -126,7 +114,5 @@ def main() -> None:
         print(rel)
         if doc_count > 0:
             print(f"  docstrings removed: {doc_count}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

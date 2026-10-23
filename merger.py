@@ -1,33 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 import argparse
 from pathlib import Path
 import subprocess
 import sys
 from dh import get_nobinary, get_random_filename, should_skip
-
 MAX_CLIPBOARD_BYTES = 1024 * 1024
-
-
 def runcmd(cmd: list[str]) -> int:
     try:
         return subprocess.run(cmd, check=False).returncode
     except FileNotFoundError:
         print(f"❌ Command not found: {cmd[0]}")
         return 127
-
-
 def read_file(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8", errors="ignore")
     except (OSError, UnicodeDecodeError):
         return None
-
-
 def get_file_extension(path: Path) -> str:
     return path.suffix.lstrip(".").lower()
-
-
 def build_merged_content(files_content: list[tuple[Path, str]], cwd: Path) -> str:
     merged_content = ""
     for path, content in files_content:
@@ -37,8 +27,6 @@ def build_merged_content(files_content: list[tuple[Path, str]], cwd: Path) -> st
         if not content.endswith("\n"):
             merged_content += "\n"
     return merged_content
-
-
 def merged_content_byte_size(files_content: list[tuple[Path, str]], cwd: Path) -> int:
     total = 0
     for path, content in files_content:
@@ -47,8 +35,6 @@ def merged_content_byte_size(files_content: list[tuple[Path, str]], cwd: Path) -
         if not content.endswith("\n"):
             total += 1
     return total
-
-
 def copy_to_clipboard(content: str) -> None:
     if not content:
         return
@@ -58,8 +44,6 @@ def copy_to_clipboard(content: str) -> None:
         return
     runcmd(["termux-clipboard-set", content])
     print("✅ merged content copied to clipboard.")
-
-
 def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], cwd: Path) -> None:
     try:
         total_size = 0
@@ -81,8 +65,6 @@ def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], 
         print(f"❌ Error writing output file {output_file}: {e}")
         if output_file.exists():
             output_file.unlink()
-
-
 def merge_files_by_type(
     files: list[Path],
     cwd: Path,
@@ -152,8 +134,6 @@ def merge_files_by_type(
     if not clipboard_skipped and combined_parts:
         copy_to_clipboard("".join(combined_parts))
     return output_files
-
-
 def merge_files(args: argparse.Namespace) -> None:
     cwd = Path.cwd()
     files = list(get_nobinary(cwd))
@@ -168,8 +148,6 @@ def merge_files(args: argparse.Namespace) -> None:
     )
     if args.group and output_files:
         print(f"📁 All merged files saved in: {cwd / 'merged'}")
-
-
 def unmerge_file(merged_file: Path, output_dir: Path) -> list[Path]:
     if not merged_file.is_file():
         print(f"❌ File not found: {merged_file}")
@@ -184,7 +162,6 @@ def unmerge_file(merged_file: Path, output_dir: Path) -> list[Path]:
     current_path: Path | None = None
     buffer: list[str] = []
     written: list[Path] = []
-
     def flush() -> None:
         if current_path is None:
             return
@@ -195,7 +172,6 @@ def unmerge_file(merged_file: Path, output_dir: Path) -> list[Path]:
             written.append(target)
         except OSError as e:
             print(f"❌ Error writing {target}: {e}")
-
     for line in lines:
         if line.startswith(marker):
             flush()
@@ -210,8 +186,6 @@ def unmerge_file(merged_file: Path, output_dir: Path) -> list[Path]:
     else:
         print(f"✅ Extracted {len(written)} files into: {output_dir}")
     return written
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Merge text files in the current directory.",
@@ -256,8 +230,6 @@ Examples:
         help="Path to the merged file to split (used with -u)",
     )
     return parser.parse_args()
-
-
 def main() -> None:
     args = parse_args()
     if args.unmerge:
@@ -269,7 +241,5 @@ def main() -> None:
         unmerge_file(merged_path, output_dir)
         return
     merge_files(args)
-
-
 if __name__ == "__main__":
     main()

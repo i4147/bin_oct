@@ -5,8 +5,6 @@ from collections import defaultdict
 from pathlib import Path
 import re
 import shutil
-
-
 def normalize_name(path: Path) -> str:
     name = path.name
     name = re.sub(r"(?:\.lua)+$", "", name, flags=re.IGNORECASE)
@@ -16,8 +14,6 @@ def normalize_name(path: Path) -> str:
     name = re.sub(r"[^\w.-]+", "-", name)
     name = re.sub(r"-+", "-", name)
     return name.strip("-._") or "ungrouped"
-
-
 def unique_destination(destination: Path) -> Path:
     if not destination.exists():
         return destination
@@ -27,8 +23,6 @@ def unique_destination(destination: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
-
-
 def find_lua_files(root: Path, script_path: Path) -> list[Path]:
     files = []
     for path in root.rglob("*.lua"):
@@ -38,8 +32,6 @@ def find_lua_files(root: Path, script_path: Path) -> list[Path]:
             continue
         files.append(path)
     return files
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Group recursively collected Lua files into named folders.")
     parser.add_argument(
@@ -79,7 +71,5 @@ def main() -> None:
                 shutil.move(str(source), str(destination))
     if not args.apply:
         print("\nDry run only. Use --apply to perform the moves.")
-
-
 if __name__ == "__main__":
     main()

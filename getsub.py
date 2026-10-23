@@ -1,28 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
 import re
 from typing import Any, Sequence
-
 LOGGER = logging.getLogger(__name__)
 DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]
 DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-
-
 def normalize_extension(value: str) -> str:
     if not value:
         msg = "extension must not be empty"
         raise argparse.ArgumentTypeError(msg)
     return value if value.startswith(".") else f".{value}"
-
-
 def normalize_title(title: str) -> str:
     return title.replace("_", " ").replace(".", " ")
-
-
 def search_output_name(title: str, extension: str) -> str:
     name = title.replace(" ", "_").replace(".", "_")
     name = re.sub(r"[^\w\s-]", "", name)
@@ -32,8 +24,6 @@ def search_output_name(title: str, extension: str) -> str:
     if not name.lower().endswith(extension.lower()):
         name += extension
     return name
-
-
 def run_file_mode(args: argparse.Namespace) -> int:
     try:
         import babelfish
@@ -92,8 +82,6 @@ def run_file_mode(args: argparse.Namespace) -> int:
     except Exception as exc:
         LOGGER.error("Error downloading subtitles: %s", exc)
         return 1
-
-
 class TitleSubtitleClient:
     def __init__(self, args: argparse.Namespace) -> None:
         try:
@@ -115,13 +103,10 @@ class TitleSubtitleClient:
         self.yts_with_images: bool = args.yts_with_images
         self.yts_language: str = args.yts_language
         self.sources: list[str] = args.sources
-
     def timeout_kwargs(self) -> dict[str, Any]:
         return {} if self.timeout is None else {"timeout": self.timeout}
-
     def api_headers(self) -> dict[str, str]:
         return {"Api-Key": self.opensubtitles_api_key} if self.opensubtitles_api_key else {}
-
     def search_opensubtitles(self, title: str) -> dict[str, Any] | None:
         try:
             params = {
@@ -152,7 +137,6 @@ class TitleSubtitleClient:
         except Exception as exc:
             LOGGER.error("Error searching OpenSubtitles: %s", exc)
             return None
-
     def download_srt_from_url(self, url: str) -> str | None:
         try:
             response = self.session.get(url, **self.timeout_kwargs())
@@ -167,7 +151,6 @@ class TitleSubtitleClient:
         except Exception as exc:
             LOGGER.error("Error downloading subtitle: %s", exc)
             return None
-
     def download_from_opensubtitles(self, subtitle: dict[str, Any] | None) -> str | None:
         if not subtitle:
             return None
@@ -201,7 +184,6 @@ class TitleSubtitleClient:
                 except Exception as exc:
                     LOGGER.error("Error requesting OpenSubtitles download link: %s", exc)
         return None
-
     def search_yts(self, title: str) -> str | None:
         try:
             response = self.session.get(
@@ -239,7 +221,6 @@ class TitleSubtitleClient:
         except Exception as exc:
             LOGGER.error("Error searching YTS subtitles: %s", exc)
             return None
-
     def download_subtitles(self, title: str) -> tuple[str | None, str | None]:
         print(f"Searching for subtitles: {title}")
         for source in self.sources:
@@ -256,8 +237,6 @@ class TitleSubtitleClient:
                 if content:
                     return content, "YIFY Subtitles"
         return None, None
-
-
 def run_search_mode(args: argparse.Namespace) -> int:
     title = " ".join(args.query)
     try:
@@ -284,8 +263,6 @@ def run_search_mode(args: argparse.Namespace) -> int:
     print(f"✅ Subtitles found from {source}")
     print(f"✅ Subtitle saved to: {output_path}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Download English subtitles for a local video or search by movie/series title."
@@ -348,8 +325,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     search_parser.add_argument("--yts-language", default="english")
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -357,7 +332,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "file":
         return run_file_mode(args)
     return run_search_mode(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

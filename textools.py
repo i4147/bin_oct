@@ -10,12 +10,10 @@ from pathlib import Path
 import re
 import sys
 from typing import Any, Sequence
-
 try:
     import nltk
     from nltk.corpus import stopwords as _nltk_stopwords
     from nltk.tokenize import word_tokenize as _nltk_word_tokenize
-
     _HAS_NLTK = True
 except ImportError:
     _HAS_NLTK = False
@@ -125,8 +123,6 @@ SPECIAL_NAMES: set[str] = {
     "capfile",
     "thorfile",
 }
-
-
 def is_text_file(path: Path) -> bool:
     suffix = path.suffix.lower()
     if suffix in BINARY_EXTS:
@@ -152,8 +148,6 @@ def is_text_file(path: Path) -> bool:
     if mime:
         return mime.startswith("text/")
     return False
-
-
 def iter_text_files(root: Path) -> list[Path]:
     out: list[Path] = []
     for entry in sorted(root.rglob("*")):
@@ -166,12 +160,8 @@ def iter_text_files(root: Path) -> list[Path]:
         if is_text_file(entry):
             out.append(entry)
     return out
-
-
 _WORD_RE = re.compile(r"[a-z]+")
 _ALNUM_RE = re.compile(r"[a-zA-Z0-9]+")
-
-
 def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
     text = text.lower()
     if mode == "nltk":
@@ -187,8 +177,6 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
     if mode == "alnum":
         return [t for t in _ALNUM_RE.findall(text) if len(t) >= min_length]
     return [t for t in _WORD_RE.findall(text) if len(t) >= min_length]
-
-
 def load_stopwords(source: str, path: Path | None) -> set[str]:
     if source == "none":
         return set()
@@ -217,8 +205,6 @@ def load_stopwords(source: str, path: Path | None) -> set[str]:
             if w and not w.startswith("#"):
                 words.add(w)
     return words
-
-
 def _worker_word_counts(
     task: tuple[str, int, str, set[str]],
 ) -> tuple[str, Counter, str | None]:
@@ -231,8 +217,6 @@ def _worker_word_counts(
     if stopwords:
         tokens = [t for t in tokens if t not in stopwords]
     return path_str, Counter(tokens), None
-
-
 def _worker_collect_chars(path_str: str) -> set[str]:
     try:
         with open(path_str, "r", encoding="utf-8", errors="ignore") as fh:
@@ -245,8 +229,6 @@ def _worker_collect_chars(path_str: str) -> set[str]:
             return chars
     except OSError:
         return set()
-
-
 def _resolve_files(raw: Sequence[Path]) -> list[Path]:
     if not raw:
         return iter_text_files(Path.cwd())
@@ -259,8 +241,6 @@ def _resolve_files(raw: Sequence[Path]) -> list[Path]:
         else:
             print(f"Warning: {item} not found; skipping.", file=sys.stderr)
     return out
-
-
 def _write_json(path: Path, counter: Counter, with_metadata: bool) -> None:
     sorted_items = dict(sorted(counter.items(), key=lambda kv: (-kv[1], kv[0])))
     if with_metadata:
@@ -276,8 +256,6 @@ def _write_json(path: Path, counter: Counter, with_metadata: bool) -> None:
         payload = sorted_items
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Results saved to {path}")
-
-
 def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
     total_tokens = sum(counter.values())
     items = counter.most_common()
@@ -302,8 +280,6 @@ def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
     else:
         for word, count in items:
             print(f"{word:<15} {count}")
-
-
 def cmd_words(args: argparse.Namespace) -> int:
     files = _resolve_files(args.files)
     if not files:
@@ -348,8 +324,6 @@ def cmd_words(args: argparse.Namespace) -> int:
         _write_json(args.json, total, with_metadata=args.with_metadata)
     _emit_aggregate(total, args)
     return 0
-
-
 def cmd_chars(args: argparse.Namespace) -> int:
     path: Path = args.file
     if not path.exists():
@@ -363,8 +337,6 @@ def cmd_chars(args: argparse.Namespace) -> int:
     if args.bytes:
         print(f"char : {n_chars}\nsize : {path.stat().st_size}")
     return 0
-
-
 def cmd_collect_chars(args: argparse.Namespace) -> int:
     root: Path = args.directory.resolve()
     out_path: Path = args.output
@@ -390,7 +362,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
             processed += 1
     print(f"\n\u2713 Processed: {processed:,} files")
     print(f"\u2713 Unique characters found: {len(unique_chars):,}")
-
     def sort_key(ch: str) -> tuple[int, int]:
         code = ord(ch)
         if code < 32 and code not in (9, 10, 13):
@@ -400,7 +371,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
         if code == 32:
             return (2, code)
         return (3, code)
-
     ordered = sorted(unique_chars, key=sort_key)
     print(f"Saving unique characters to {out_path}...")
     with out_path.open("w", encoding="utf-8") as fh:
@@ -433,8 +403,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
     print(f"  Letters: {alpha_count}")
     print(f"  Unicode characters: {uni_count}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="textkit",
@@ -570,8 +538,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_cc.set_defaults(func=cmd_collect_chars)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -583,7 +549,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     except RuntimeError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

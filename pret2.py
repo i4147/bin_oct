@@ -6,7 +6,6 @@ import shutil
 import subprocess
 from typing import Final, NamedTuple
 from loguru import logger
-
 MAX_WORKERS: Final[int] = 8
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900
 ERROR_DIR_NAME: Final[str] = "error"
@@ -28,20 +27,14 @@ EXCLUDE_PATTERNS: Final[tuple[str, ...]] = (
     ".min.css",
     ".d.ts",
 )
-
-
 class FormatResult(NamedTuple):
     path: Path
     success: bool
     error_msg: str | None
-
-
 def should_format(path: Path) -> bool:
     if path.suffix not in EXTENSIONS:
         return False
     return all(not path.name.endswith(p) for p in EXCLUDE_PATTERNS)
-
-
 def get_files_to_format(cwd: Path) -> list[Path]:
     files: list[Path] = []
     for path in cwd.rglob("*"):
@@ -52,8 +45,6 @@ def get_files_to_format(cwd: Path) -> list[Path]:
         if should_format(path):
             files.append(path)
     return files
-
-
 def unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -66,8 +57,6 @@ def unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
-
-
 def move_to_error_folder(path: Path) -> Path | None:
     error_dir: Path = path.parent / ERROR_DIR_NAME
     error_dir.mkdir(exist_ok=True)
@@ -78,8 +67,6 @@ def move_to_error_folder(path: Path) -> Path | None:
     except Exception as e:
         logger.error("Failed to move {} to {}: {}", path, dest, e)
         return None
-
-
 def format_file(path: Path) -> FormatResult:
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
@@ -98,15 +85,11 @@ def format_file(path: Path) -> FormatResult:
         )
     except Exception as e:
         return FormatResult(path, False, str(e))
-
-
 def process_file_wrapper(path: Path) -> FormatResult:
     result: FormatResult = format_file(path)
     if not result.success:
         move_to_error_folder(result.path)
     return result
-
-
 def main() -> None:
     cwd: Path = Path.cwd()
     files: list[Path] = get_files_to_format(cwd)
@@ -125,7 +108,5 @@ def main() -> None:
                 logger.error("❌ Error: {} | Reason: {}", result.path.name, result.error_msg)
                 error_count += 1
     logger.info("Summary: {} success, {} errors.", success_count, error_count)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

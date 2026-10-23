@@ -4,8 +4,6 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from dh import fsz, get_nobinary, gsz
-
-
 def clean_text(text, strtofind):
     kept = []
     removed = 0
@@ -15,8 +13,6 @@ def clean_text(text, strtofind):
         else:
             kept.append(line)
     return "\n".join(kept), removed
-
-
 def clean_file(path, strtofind):
     try:
         original = Path(path).read_text(encoding="utf-8", errors="ignore")
@@ -26,8 +22,6 @@ def clean_file(path, strtofind):
     if cleaned != original:
         Path(path).write_text(cleaned, encoding="utf-8")
     return path, removed, len(original) - len(cleaned)
-
-
 def main():
     args = sys.argv[1:]
     if not args:
@@ -57,7 +51,5 @@ def main():
     print(f"total lines removed : {total_removed}")
     print(f"space freed : {fsz(isz - esz)}")
     return None
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import bz2
 import gzip
@@ -12,7 +11,6 @@ import tempfile
 import time
 from typing import Callable, Optional
 import zipfile
-
 try:
     import brotli
 except ImportError:
@@ -58,55 +56,37 @@ try:
 except ImportError:
     pyzipper = None
 Compressor = Callable[[Path, Path, Optional[int]], None]
-
-
 def human(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if n < 1024:
             return f"{n:.2f} {unit}"
         n /= 1024
     return f"{n:.2f} PB"
-
-
 def make_tar(src_dir: Path, tar_path: Path) -> None:
     with tarfile.open(tar_path, "w") as tar:
         tar.add(src_dir, arcname=src_dir.name)
-
-
 def _read_all(src: Path) -> bytes:
     with open(src, "rb") as f:
         return f.read()
-
-
 def _write_all(dst: Path, data: bytes) -> None:
     with open(dst, "wb") as f:
         f.write(data)
-
-
 def compress_gzip(src: Path, dst: Path, level: Optional[int]) -> None:
     lv = 9 if level is None else level
     with open(src, "rb") as fin, gzip.open(dst, "wb", compresslevel=lv) as fout:
         shutil.copyfileobj(fin, fout, 1024 * 1024)
-
-
 def compress_bz2(src: Path, dst: Path, level: Optional[int]) -> None:
     lv = 9 if level is None else level
     with open(src, "rb") as fin, bz2.open(dst, "wb", compresslevel=lv) as fout:
         shutil.copyfileobj(fin, fout, 1024 * 1024)
-
-
 def compress_lzma(src: Path, dst: Path, level: Optional[int]) -> None:
     preset = 6 if level is None else level
     with open(src, "rb") as fin, lzma.open(dst, "wb", preset=preset) as fout:
         shutil.copyfileobj(fin, fout, 1024 * 1024)
-
-
 def compress_zip(src: Path, dst: Path, level: Optional[int]) -> None:
     lv = 9 if level is None else level
     with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED, compresslevel=lv) as zf:
         zf.write(src, arcname=src.name)
-
-
 def compress_brotli(src: Path, dst: Path, level: Optional[int]) -> None:
     if brotli is None:
         msg = "brotli not installed"
@@ -120,8 +100,6 @@ def compress_brotli(src: Path, dst: Path, level: Optional[int]) -> None:
                 break
             fout.write(comp.process(chunk))
         fout.write(comp.finish())
-
-
 def compress_zstd(src: Path, dst: Path, level: Optional[int]) -> None:
     if zstd is None:
         msg = "zstandard not installed"
@@ -130,8 +108,6 @@ def compress_zstd(src: Path, dst: Path, level: Optional[int]) -> None:
     cctx = zstd.ZstdCompressor(level=lv)
     with open(src, "rb") as fin, open(dst, "wb") as fout:
         cctx.copy_stream(fin, fout)
-
-
 def compress_lz4(src: Path, dst: Path, level: Optional[int]) -> None:
     if lz4frame is None:
         msg = "lz4 not installed"
@@ -139,8 +115,6 @@ def compress_lz4(src: Path, dst: Path, level: Optional[int]) -> None:
     lv = 9 if level is None else level
     with open(src, "rb") as fin, lz4frame.open(dst, "wb", compression_level=lv) as fout:
         shutil.copyfileobj(fin, fout, 1024 * 1024)
-
-
 def compress_7z(src: Path, dst: Path, level: Optional[int]) -> None:
     if py7zr is None:
         msg = "py7zr not installed"
@@ -149,8 +123,6 @@ def compress_7z(src: Path, dst: Path, level: Optional[int]) -> None:
     filters = [{"id": py7zr.FILTER_LZMA2, "preset": preset}]
     with py7zr.SevenZipFile(dst, "w", filters=filters) as zf:
         zf.write(src, arcname=src.name)
-
-
 def compress_pylzma(src: Path, dst: Path, level: Optional[int]) -> None:
     if pylzma is None:
         msg = "pylzma not installed"
@@ -159,8 +131,6 @@ def compress_pylzma(src: Path, dst: Path, level: Optional[int]) -> None:
     data = _read_all(src)
     out = pylzma.compress(data, filters=[{"id": pylzma.FILTER_LZMA1, "preset": lv}])
     _write_all(dst, out)
-
-
 def compress_snappy(src: Path, dst: Path, _level: Optional[int]) -> None:
     if cramjam is None:
         msg = "cramjam not installed"
@@ -168,8 +138,6 @@ def compress_snappy(src: Path, dst: Path, _level: Optional[int]) -> None:
     data = _read_all(src)
     out = cramjam.snappy.compress(data)
     _write_all(dst, bytes(out))
-
-
 def compress_zopfli_gzip(src: Path, dst: Path, level: Optional[int]) -> None:
     if zopfli_gzip is None:
         msg = "zopfli not installed"
@@ -178,8 +146,6 @@ def compress_zopfli_gzip(src: Path, dst: Path, level: Optional[int]) -> None:
     data = _read_all(src)
     out = zopfli_gzip.compress(data, numiterations=iters)
     _write_all(dst, out)
-
-
 def compress_ppmd(src: Path, dst: Path, level: Optional[int]) -> None:
     if pyppmd is None:
         msg = "pyppmd not installed"
@@ -188,8 +154,6 @@ def compress_ppmd(src: Path, dst: Path, level: Optional[int]) -> None:
     data = _read_all(src)
     out = pyppmd.compress(data, max_order=order, mem_size=64 * 1024 * 1024)
     _write_all(dst, out)
-
-
 def compress_pyzstd(src: Path, dst: Path, level: Optional[int]) -> None:
     if pyzstd is None:
         msg = "pyzstd not installed"
@@ -198,32 +162,24 @@ def compress_pyzstd(src: Path, dst: Path, level: Optional[int]) -> None:
     data = _read_all(src)
     out = pyzstd.compress(data, level_or_option=lv)
     _write_all(dst, out)
-
-
 def compress_zip_deflate64(src: Path, dst: Path, _level: Optional[int]) -> None:
     if zipfile_deflate64 is None:
         msg = "zipfile-deflate64 not installed"
         raise RuntimeError(msg)
     with zipfile_deflate64.ZipFile(dst, "w") as zf:
         zf.write(src, arcname=src.name)
-
-
 def compress_zip_lzma(src: Path, dst: Path, _level: Optional[int]) -> None:
     if pyzipper is None:
         msg = "pyzipper not installed"
         raise RuntimeError(msg)
     with pyzipper.AESZipFile(dst, "w", compression=pyzipper.ZIP_LZMA) as zf:
         zf.write(src, arcname=src.name)
-
-
 def compress_zip_bzip2(src: Path, dst: Path, _level: Optional[int]) -> None:
     if pyzipper is None:
         msg = "pyzipper not installed"
         raise RuntimeError(msg)
     with pyzipper.AESZipFile(dst, "w", compression=pyzipper.ZIP_BZIP2) as zf:
         zf.write(src, arcname=src.name)
-
-
 def main() -> int:
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <file_or_folder>")
@@ -318,7 +274,5 @@ def main() -> int:
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -12,16 +11,12 @@ import os
 from pathlib import Path
 import re
 from typing import Any, Iterable, Optional
-
 try:
     from loguru import logger
 except ImportError:
     import logging
-
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger("dedup_tool")
-
-
 def iter_python_files(root: Path, exclude_paths: Iterable[Path] = ()) -> list[Path]:
     excludes = {Path(p).resolve() for p in exclude_paths if p is not None}
     results: list[Path] = []
@@ -38,8 +33,6 @@ def iter_python_files(root: Path, exclude_paths: Iterable[Path] = ()) -> list[Pa
                 continue
             results.append(p)
     return results
-
-
 def parse_file(path: Path) -> tuple[Optional[str], Optional[ast.AST]]:
     try:
         src = path.read_text(encoding="utf-8")
@@ -47,8 +40,6 @@ def parse_file(path: Path) -> tuple[Optional[str], Optional[ast.AST]]:
         return src, tree
     except (SyntaxError, UnicodeDecodeError, OSError):
         return None, None
-
-
 def normalize_body(body: str) -> str:
     lines: list[str] = []
     for line in body.split("\n"):
@@ -56,53 +47,39 @@ def normalize_body(body: str) -> str:
         if line.strip():
             lines.append(line.strip())
     return "\n".join(lines)
-
-
 def clean_source(lines: list[str]) -> str:
     nonempty = [ln for ln in lines if ln.strip()]
     if not nonempty:
         return ""
     indent = min(len(ln) - len(ln.lstrip()) for ln in nonempty)
     return "\n".join(ln[indent:] if ln.strip() else "" for ln in lines)
-
-
 def function_line_range(node: ast.AST) -> tuple[int, int]:
     end = getattr(node, "end_lineno", None) or node.lineno
     decs = getattr(node, "decorator_list", None)
     start = decs[0].lineno if decs else node.lineno
     return start, end
-
-
 class FunctionRecord:
     __slots__ = ("body", "lineno", "name", "node", "original_body")
-
     def __init__(self, name: str, body: str, lineno: int, node: ast.AST) -> None:
         self.name = name
         self.original_body = body
         self.body = normalize_body(body)
         self.lineno = lineno
         self.node = node
-
-
 class FunctionCollector(ast.NodeVisitor):
     def __init__(self, source_lines: list[str]) -> None:
         self.source_lines = source_lines
         self.functions: list[FunctionRecord] = []
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._collect(node)
-
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self._collect(node)
-
     def _collect(self, node: ast.AST) -> None:
         body_first = node.body[0].lineno - 1
         body_last = node.body[-1].end_lineno
         body = "\n".join(self.source_lines[body_first:body_last])
         self.functions.append(FunctionRecord(name=node.name, body=body, lineno=node.lineno, node=node))
         self.generic_visit(node)
-
-
 def find_duplicates_in_file(path: Path) -> dict[str, list[FunctionRecord]]:
     src, tree = parse_file(path)
     if tree is None:
@@ -114,8 +91,6 @@ def find_duplicates_in_file(path: Path) -> dict[str, list[FunctionRecord]]:
     for fn in collector.functions:
         groups[fn.body].append(fn)
     return {k: v for k, v in groups.items() if len(v) > 1}
-
-
 def print_duplicate_groups(groups: dict[str, list[FunctionRecord]]) -> bool:
     if not groups:
         print("No duplicate functions found!")
@@ -133,8 +108,6 @@ def print_duplicate_groups(groups: dict[str, list[FunctionRecord]]) -> bool:
         print(f"\n  Body preview:\n{preview}")
         print("-" * 40)
     return True
-
-
 def prompt_keep_choices(groups: dict[str, list[FunctionRecord]]) -> dict[str, int]:
     choices: dict[str, int] = {}
     for body, fns in groups.items():
@@ -153,8 +126,6 @@ def prompt_keep_choices(groups: dict[str, list[FunctionRecord]]) -> dict[str, in
                 break
             print(f"Please enter a number between 0 and {len(fns) - 1}")
     return choices
-
-
 def remove_duplicates_in_file(
     path: Path,
     groups: dict[str, list[FunctionRecord]],
@@ -180,8 +151,6 @@ def remove_duplicates_in_file(
     except OSError as e:
         print(f"Error writing to file: {e}")
         return False
-
-
 def cmd_single(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.exists():
@@ -215,8 +184,6 @@ def cmd_single(args: argparse.Namespace) -> int:
         return 1
     print("Operation cancelled")
     return 0
-
-
 def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
     _src, tree = parse_file(path)
     if tree is None:
@@ -247,12 +214,8 @@ def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
             "end_line": node.end_lineno,
         })
     return objects
-
-
 def _scan_worker(path_str: str) -> list[dict[str, Any]]:
     return extract_objects_from_file(Path(path_str))
-
-
 def find_exact_duplicates(
     objects: list[dict[str, Any]],
 ) -> dict[str, list[dict[str, Any]]]:
@@ -260,8 +223,6 @@ def find_exact_duplicates(
     for obj in objects:
         by_hash[obj["content_hash"]].append(obj)
     return {h: v for h, v in by_hash.items() if len(v) > 1}
-
-
 def save_scan_reports(groups: dict[str, list[dict[str, Any]]], output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     flat: list[dict[str, Any]] = []
@@ -301,8 +262,6 @@ def save_scan_reports(groups: dict[str, list[dict[str, Any]]], output_dir: Path)
         print(f"[+] Saved {len(subset)} {obj_type} duplicate instances to {output_dir / fname}")
     (output_dir / "exact_duplicates.json").write_text(json.dumps(flat, indent=4), encoding="utf-8")
     print(f"[+] Saved {len(flat)} exact duplicate instances to {output_dir / 'exact_duplicates.json'}")
-
-
 def refactor_to_shared_module(
     groups: dict[str, list[dict[str, Any]]],
     shared_module: Path,
@@ -346,8 +305,6 @@ def refactor_to_shared_module(
             insert_at += 1
         target.write_text("".join(lines), encoding="utf-8")
     print(f"[+] Refactored {len(imports_to_add)} files.")
-
-
 def find_fuzzy_duplicates(
     objects: list[dict[str, Any]],
     output_path: Path,
@@ -392,8 +349,6 @@ def find_fuzzy_duplicates(
                 })
     output_path.write_text(json.dumps(pairs, indent=4), encoding="utf-8")
     print(f"[+] Saved {len(pairs)} fuzzy duplicate pairs to {output_path}")
-
-
 def cmd_scan(args: argparse.Namespace) -> int:
     root = Path(args.path)
     if not root.exists():
@@ -425,8 +380,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
             args.similarity,
         )
     return 0
-
-
 def extract_definitions(
     path: Path,
 ) -> dict[tuple[str, str, str], tuple[str, dict[str, Any]]]:
@@ -446,14 +399,10 @@ def extract_definitions(
             key = ("constant", name, ast.unparse(node))
             found[key] = {"name": name, "type": "constant", "node": node}
     return {k: (str(path), rec) for k, rec in found.items()}
-
-
 def _consolidate_worker(
     path_str: str,
 ) -> dict[tuple[str, str, str], tuple[str, dict[str, Any]]]:
     return extract_definitions(Path(path_str))
-
-
 def strip_definition_from_source(source: str, name: str, kind: str, source_code: str, module_name: str) -> str:
     tree = ast.parse(source)
     new_body: list[ast.AST] = []
@@ -484,8 +433,6 @@ def strip_definition_from_source(source: str, name: str, kind: str, source_code:
     new_source = ast.unparse(tree)
     ast.parse(new_source)
     return new_source
-
-
 def cmd_consolidate(args: argparse.Namespace) -> int:
     root = Path(args.path)
     shared_module = root / args.shared_module
@@ -546,8 +493,6 @@ def cmd_consolidate(args: argparse.Namespace) -> int:
             print(f"❌ Failed to parse or modify file safely {path_str}: {e}. Skipping.")
     print(f"\n📊 Refactor complete. Adjusted and verified {updated} files.")
     return 0
-
-
 def _hash_function(node: ast.FunctionDef, lines: list[str]) -> str:
     start = node.lineno - 1
     end = node.end_lineno if node.end_lineno is not None else start + 1
@@ -562,8 +507,6 @@ def _hash_function(node: ast.FunctionDef, lines: list[str]) -> str:
         sig += ast.dump(node.returns)
     body = clean_source(body_lines[body_start:])
     return hashlib.md5(f"{sig}\n{body}".encode()).hexdigest()
-
-
 def analyze_file_functions(path: Path) -> Optional[dict[str, dict[str, Any]]]:
     try:
         src = path.read_text(encoding="utf-8")
@@ -583,8 +526,6 @@ def analyze_file_functions(path: Path) -> Optional[dict[str, dict[str, Any]]]:
                     "end_lineno": node.end_lineno,
                 }
     return result
-
-
 def _prune_worker(path_str: str, ref_hashes: dict[str, str], apply: bool) -> dict[str, Any]:
     path = Path(path_str)
     defs = analyze_file_functions(path)
@@ -618,8 +559,6 @@ def _prune_worker(path_str: str, ref_hashes: dict[str, str], apply: bool) -> dic
         return {"file": path, "status": "updated", "duplicates": removed}
     except Exception as e:
         return {"file": path, "status": "error", "error": str(e), "duplicates": []}
-
-
 def _collect_prune_targets(inputs: list[str]) -> list[Path]:
     files: set[Path] = set()
     if not inputs:
@@ -632,8 +571,6 @@ def _collect_prune_targets(inputs: list[str]) -> list[Path]:
             elif p.is_dir():
                 files.update(p.rglob("*.py"))
     return sorted(files)
-
-
 def cmd_prune(args: argparse.Namespace) -> int:
     ref_path = Path(args.reference)
     if not ref_path.exists():
@@ -688,8 +625,6 @@ def cmd_prune(args: argparse.Namespace) -> int:
         print(f"ℹ️  Found {found_count} duplicate function(s)")
         print("   Run with -a/--apply to remove")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dedup_tool.py",
@@ -795,14 +730,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--workers", type=int, default=8, help="Parallel worker count (default: 8).")
     p.set_defaults(func=cmd_prune)
     return parser
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     raise SystemExit(main())

@@ -6,16 +6,12 @@ import json
 import multiprocessing as mp
 from pathlib import Path
 from typing import Any
-
-
 def hash_node(node: ast.AST) -> str:
     try:
         source = ast.unparse(node)
     except AttributeError:
         source = ast.dump(node)
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
-
-
 def extract_definitions(path: Path) -> dict[str, Any] | None:
     try:
         source = path.read_text(encoding="utf-8")
@@ -42,18 +38,14 @@ def extract_definitions(path: Path) -> dict[str, Any] | None:
         "classes": classes,
         "constants": constants,
     }
-
-
 def compare_pair(pair: tuple[dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
     a, b = pair
-
     def intersect_hashes(key: str) -> list[str]:
         if key not in a or key not in b:
             return []
         a_map = a[key]
         b_map = b[key]
         return sorted(name for name in a_map.keys() & b_map.keys() if a_map[name] == b_map[name])
-
     shared_funcs = intersect_hashes("functions")
     shared_classes = intersect_hashes("classes")
     shared_consts = intersect_hashes("constants")
@@ -71,8 +63,6 @@ def compare_pair(pair: tuple[dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
         "shared_count": total_shared,
         "similarity": round(similarity, 4),
     }
-
-
 def main() -> None:
     current_dir = Path.cwd()
     py_files = sorted(current_dir.glob("*.py"))
@@ -105,7 +95,5 @@ def main() -> None:
         "results": comparisons,
     }
     print(json.dumps(report, indent=2))
-
-
 if __name__ == "__main__":
     main()

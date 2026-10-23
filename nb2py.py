@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
@@ -8,18 +7,13 @@ from typing import TYPE_CHECKING
 from loguru import logger
 import nbformat
 from nbformat import NotebookNode
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 POOL_SIZE: int = 8
 MAGIC_PREFIXES: tuple[str, ...] = ("%", "!", "%%")
 IMPORT_PREFIXES: tuple[str, ...] = ("import ", "from ")
-
-
 def is_import_line(line: str) -> bool:
     return line.startswith(IMPORT_PREFIXES)
-
-
 def strip_magics(source: str) -> str:
     lines: list[str] = source.split("\n")
     result: list[str] = []
@@ -37,8 +31,6 @@ def strip_magics(source: str) -> str:
             result.append(line)
         i += 1
     return "\n".join(result)
-
-
 def nb2py(notebook: NotebookNode) -> str:
     imports: list[str] = []
     os_mods: list[str] = []
@@ -83,8 +75,6 @@ def nb2py(notebook: NotebookNode) -> str:
     indent: str = "    "
     main_indented: str = "\n".join(f"{indent}{ln}" for ln in main_str.split("\n"))
     return f"{imports_str}if __name__ == '__main__':\n{main_indented}"
-
-
 def process_file(path: Path) -> str | None:
     path = Path(path)
     fo: Path = path.with_suffix(".py")
@@ -96,8 +86,6 @@ def process_file(path: Path) -> str | None:
     with fo.open("w", encoding="utf-8") as out:
         out.write(py_code)
     return f"Exported → {fo.name}"
-
-
 def _collect_files(args: Sequence[str]) -> list[Path]:
     if not args:
         return list(Path.cwd().rglob("*.ipynb"))
@@ -110,8 +98,6 @@ def _collect_files(args: Sequence[str]) -> list[Path]:
         elif p.is_dir():
             files.extend(p.rglob("*.ipynb"))
     return files
-
-
 def main(argv: Iterable[str] | None = None) -> int:
     args: list[str] = list(argv) if argv is not None else sys.argv[1:]
     files: list[Path] = _collect_files(args)
@@ -127,7 +113,5 @@ def main(argv: Iterable[str] | None = None) -> int:
             if message:
                 logger.info("{}", message)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

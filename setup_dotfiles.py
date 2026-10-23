@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import sys
 import textwrap
-
 HOME = os.path.expanduser("~")
 AGE_DIR = os.path.join(HOME, ".config", "age")
 AGE_KEY = os.path.join(AGE_DIR, "keys.txt")
@@ -27,27 +26,19 @@ IGNORE_PATTERNS = [
     "*.log",
     ".cache/",
 ]
-
-
 def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, **kw)
-
-
 def which(binary: str) -> str | None:
     return shutil.which(binary) or (
         os.path.exists(f"/data/data/com.termux/files/usr/bin/{binary}")
         and f"/data/data/com.termux/files/usr/bin/{binary}"
     )
-
-
 def ensure_tools() -> None:
     missing = [b for b in ("age", "age-keygen", "git") if not which(b)]
     if missing:
         print(f"Missing tools: {', '.join(missing)}")
         print("Install with:  pkg install age git")
         sys.exit(1)
-
-
 def ensure_age_key() -> str:
     os.makedirs(AGE_DIR, mode=0o700, exist_ok=True)
     if not os.path.exists(AGE_KEY):
@@ -74,8 +65,6 @@ def ensure_age_key() -> str:
     os.chmod(AGE_PUB, 0o644)
     print(f"age public key: {pubkey}")
     return pubkey
-
-
 FILTER_SOURCE = r'''#!/data/data/com.termux/files/usr/bin/python
 """Git clean/smudge filter using age. Managed by setup_dotfiles.py."""
 import os, subprocess, sys
@@ -113,24 +102,18 @@ if __name__ == "__main__":
         die("usage: git-age-filter {clean|smudge}")
     (clean if sys.argv[1] == "clean" else smudge)()
 '''
-
-
 def write_filter() -> None:
     os.makedirs(os.path.dirname(FILTER_PATH), exist_ok=True)
     with open(FILTER_PATH, "w") as f:
         f.write(FILTER_SOURCE)
     os.chmod(FILTER_PATH, 0o755)
     print(f"wrote filter: {FILTER_PATH}")
-
-
 def write_gitattributes() -> None:
     lines = ["# Managed by setup_dotfiles.py — encrypted via age filter"]
     lines += [f"{p} filter=age diff=age" for p in SECRET_PATTERNS]
     with open(GITATTRIBUTES, "w") as f:
         f.write("\n".join(lines) + "\n")
     print(f"wrote: {GITATTRIBUTES}")
-
-
 def write_gitignore() -> None:
     existing = ""
     if os.path.exists(GITIGNORE):
@@ -143,13 +126,9 @@ def write_gitignore() -> None:
             f.write("\n")
         f.write("\n".join(lines) + "\n")
     print(f"updated: {GITIGNORE}")
-
-
 def git(*args: str, cwd: str | None = None) -> None:
     cmd = ["git", f"--git-dir={REPO_DIR}", f"--work-tree={HOME}", *args]
     subprocess.run(cmd, check=True, cwd=cwd)
-
-
 def init_repo() -> None:
     if not os.path.isdir(REPO_DIR):
         run(["git", "init", "--bare", REPO_DIR])
@@ -161,8 +140,6 @@ def init_repo() -> None:
     git("config", "status.showUntrackedFiles", "no")
     git("config", "core.excludesfile", GITIGNORE)
     print("registered age clean/smudge filters")
-
-
 def main() -> None:
     ensure_tools()
     ensure_age_key()
@@ -191,7 +168,5 @@ def main() -> None:
     Lose it and the encrypted files are unrecoverable.
     """)
     )
-
-
 if __name__ == "__main__":
     main()

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -10,7 +9,6 @@ import select
 import shutil
 import sys
 from typing import Iterator, Optional, Sequence
-
 _WIN_EXTS = {".exe", ".dll", ".bat", ".com", ".msi", ".vbs", ".ps1"}
 _MAC_EXTS = {".dmg", ".app", ".ds_store", ".plist", ".pkg"}
 _DARWIN_NAMES = {
@@ -40,8 +38,6 @@ _CACHE_SUFFIXES = (".pyc", ".log", ".bak")
 _CACHE_DIRS = {"__pycache__", ".ruff_cache", ".mypy_cache"}
 _PDMP_NAME_EXCLUDES = {"tmp", "cache", "bin", ".git", "etc", "config", "var"}
 _PDMP_PART_EXCLUDES = {".git", "tmp", "etc", "var", "config"}
-
-
 def _human_size(num: float) -> str:
     num = float(num)
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -49,8 +45,6 @@ def _human_size(num: float) -> str:
             return f"{num:.2f} {unit}"
         num /= 1024.0
     return f"{num:.2f} PB"
-
-
 def _walk_recursive(root: Path) -> Iterator[Path]:
     try:
         for entry in root.iterdir():
@@ -59,15 +53,11 @@ def _walk_recursive(root: Path) -> Iterator[Path]:
                 yield from _walk_recursive(entry)
     except (OSError, PermissionError) as exc:
         print(f"Error accessing {root}: {exc}", file=sys.stderr)
-
-
 def _safe_rel(path: Path, root: Path) -> str:
     try:
         return str(path.relative_to(root))
     except ValueError:
         return str(path)
-
-
 def _remove_path(path: Path) -> tuple[str, int]:
     try:
         if path.is_file():
@@ -85,8 +75,6 @@ def _remove_path(path: Path) -> tuple[str, int]:
     except (OSError, PermissionError) as exc:
         print(f"Error deleting {path}: {exc}", file=sys.stderr)
     return str(path), 0
-
-
 def cmd_os_junk(args: argparse.Namespace) -> int:
     base = Path.cwd()
     print(f"Scanning directory: {base}\n")
@@ -121,8 +109,6 @@ def cmd_os_junk(args: argparse.Namespace) -> int:
                 print(f"Error deleting {p}: {exc}")
         print(f"\nDeleted {count} of {len(found)} files.")
     return 0
-
-
 def _darwin_match(path: Path, patterns: Sequence[str]) -> bool:
     name = path.name
     for pat in patterns:
@@ -138,8 +124,6 @@ def _darwin_match(path: Path, patterns: Sequence[str]) -> bool:
         elif name == pat or name.startswith(pat.split("*")[0]):
             return True
     return False
-
-
 def cmd_darwin(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.exists():
@@ -169,8 +153,6 @@ def cmd_darwin(args: argparse.Namespace) -> int:
         for p, size in details:
             print(f"  {p} ({size} bytes)")
     return 0
-
-
 def _cache_candidates(root: Path) -> Iterator[Path]:
     try:
         for entry in root.iterdir():
@@ -186,8 +168,6 @@ def _cache_candidates(root: Path) -> Iterator[Path]:
                     yield from _cache_candidates(entry)
     except PermissionError:
         return
-
-
 def _remove_one(path: Path) -> None:
     try:
         if path.is_file():
@@ -198,8 +178,6 @@ def _remove_one(path: Path) -> None:
             print(f"Removed directory: {_safe_rel(path, Path.cwd())}")
     except Exception as exc:
         print(f"Failed to remove {path}: {exc}")
-
-
 def cmd_caches(_args: argparse.Namespace) -> int:
     root = Path.cwd().resolve()
     targets = list(_cache_candidates(root))
@@ -208,8 +186,6 @@ def cmd_caches(_args: argparse.Namespace) -> int:
     with multiprocessing.Pool() as pool:
         pool.map(_remove_one, targets)
     return 0
-
-
 def _iter_empty_files(root: Path, exclude: set[str]) -> Iterator[Path]:
     for dirpath, _dirs, filenames in os.walk(root):
         for name in filenames:
@@ -223,8 +199,6 @@ def _iter_empty_files(root: Path, exclude: set[str]) -> Iterator[Path]:
                     yield p
             except OSError:
                 continue
-
-
 def _wait_for_key(timeout: int) -> bool:
     if timeout <= 0:
         return False
@@ -237,8 +211,6 @@ def _wait_for_key(timeout: int) -> bool:
             sys.stdin.readline()
         return True
     return False
-
-
 def cmd_empty_files(args: argparse.Namespace) -> int:
     root = Path.cwd()
     exclude: set[str] = set()
@@ -271,8 +243,6 @@ def cmd_empty_files(args: argparse.Namespace) -> int:
             print(f"Failed to remove {p}: {exc}", file=sys.stderr)
     print(f"Deleted: {removed}, Failed: {failed}")
     return 0
-
-
 def _is_excluded_dir(path: Path, root: Path, name_ex: set[str], part_ex: set[str]) -> bool:
     if path.name in name_ex:
         return True
@@ -283,8 +253,6 @@ def _is_excluded_dir(path: Path, root: Path, name_ex: set[str], part_ex: set[str
     except ValueError:
         pass
     return bool(path.name.startswith("mc") and path.parent.name == "tmp")
-
-
 def cmd_empty_dirs(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     if not root.is_dir():
@@ -348,8 +316,6 @@ def cmd_empty_dirs(args: argparse.Namespace) -> int:
     else:
         print("No empty dir.")
     return 0
-
-
 def cmd_twins(args: argparse.Namespace) -> int:
     root = Path.cwd()
     ext1 = args.ext1 if args.ext1.startswith(".") else "." + args.ext1
@@ -398,8 +364,6 @@ def cmd_twins(args: argparse.Namespace) -> int:
     else:
         print("Dry run only. No files removed.")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Merged filesystem cleanup toolkit")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -445,14 +409,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--interactive", action="store_true", help="Prompt for choice")
     p.set_defaults(func=cmd_twins)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     raise SystemExit(main())

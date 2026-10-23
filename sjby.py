@@ -4,8 +4,6 @@ import json
 from pathlib import Path
 import sys
 from typing import Any, Callable
-
-
 def main() -> None:
     args = sys.argv[1:]
     verbose = False
@@ -25,7 +23,5 @@ def main() -> None:
     serialized: str = json.dumps(sorted_data, ensure_ascii=False, indent=2)
     json.loads(serialized)
     path.write_text(serialized, encoding="utf-8")
-
-
 if __name__ == "__main__":
     main()

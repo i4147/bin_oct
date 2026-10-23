@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import json
 import os
 from pathlib import Path
 import re
 import sys
-
-
 def get_installed_packages_dependencies():
     dependencies = {}
     site_packages_path = None
@@ -32,8 +29,6 @@ def get_installed_packages_dependencies():
                             package_dependencies.append(dep)
                 dependencies[package_name] = package_dependencies
     return dependencies
-
-
 if __name__ == "__main__":
     all_dependencies = get_installed_packages_dependencies()
     if isinstance(all_dependencies, str):

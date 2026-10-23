@@ -6,11 +6,8 @@ from typing import Any
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
 mpl.use("Agg")
 _FUNCTION_EXPR: str = ""
-
-
 def f(x: np.ndarray) -> Any:
     return eval(
         _FUNCTION_EXPR,
@@ -31,8 +28,6 @@ def f(x: np.ndarray) -> Any:
             "e": np.e,
         },
     )
-
-
 def _eval_expr(expr: str) -> Any:
     return eval(
         expr,
@@ -52,8 +47,6 @@ def _eval_expr(expr: str) -> Any:
             "e": np.e,
         },
     )
-
-
 def _compute(args: tuple[str, np.ndarray]) -> np.ndarray:
     expr, x = args
     return eval(
@@ -75,8 +68,6 @@ def _compute(args: tuple[str, np.ndarray]) -> np.ndarray:
             "e": np.e,
         },
     )
-
-
 def _plot(function_expr: str, y: np.ndarray, x: np.ndarray) -> None:
     mask = np.isfinite(y)
     x_clean = x[mask]
@@ -101,8 +92,6 @@ def _plot(function_expr: str, y: np.ndarray, x: np.ndarray) -> None:
     ax.set_ylim(y_min, y_max)
     fig.savefig("plot.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
-
-
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: python script.py 'f(x)=expression'")
@@ -126,7 +115,5 @@ def main() -> None:
         sys.exit(1)
     _plot(function_expr, y, x)
     print("✅ Plot saved as 'plot.png'")
-
-
 if __name__ == "__main__":
     main()

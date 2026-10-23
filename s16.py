@@ -3,10 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from dh import mpf_map
-
 CHUNKSIZE = 15_850
-
-
 def split_at_boundary(text: str, max_size: int) -> tuple[str, str]:
     if len(text) <= max_size:
         return text, ""
@@ -22,8 +19,6 @@ def split_at_boundary(text: str, max_size: int) -> tuple[str, str]:
     if whitespace_pos > 0:
         return text[:whitespace_pos], text[whitespace_pos:]
     return text[:max_size], text[max_size:]
-
-
 def process_file(path: Path) -> None:
     path = Path(path)
     try:
@@ -46,16 +41,12 @@ def process_file(path: Path) -> None:
             part_num += 1
     except Exception as error:
         print(f"An error occurred during file splitting: {error}")
-
-
 def get_files(path: Path) -> list[Path]:
     return [
         file
         for file in path.rglob("*")
         if file.is_file() and not file.stem.endswith(tuple(f"_{number:03d}" for number in range(1000)))
     ]
-
-
 def main() -> int:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -75,7 +66,5 @@ def main() -> int:
     elif files:
         mpf_map(process_file, files)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,16 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import datetime as dt
 import os
 from pathlib import Path
 import subprocess
 import sys
-
 LOG_DIR = Path.home() / "tmp" / "apps"
 FSA = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
-
-
 def create_log_file():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -20,8 +16,6 @@ def create_log_file():
         log_file = LOG_DIR / f"felo_{timestamp}_{counter}.txt"
         counter += 1
     return log_file
-
-
 def write_log_header(log_file, cmd_args):
     timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a", encoding="utf-8") as f:
@@ -30,8 +24,6 @@ def write_log_header(log_file, cmd_args):
         f.write(f"Working directory: {os.getcwd()}\n")
         f.write(f"Arguments: {cmd_args!r}\n")
         f.write("--- Output ---\n")
-
-
 def write_log_footer(log_file, exit_code):
     timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a", encoding="utf-8") as f:
@@ -39,8 +31,6 @@ def write_log_footer(log_file, exit_code):
         f.write(f"Finished: {timestamp}\n")
         f.write(f"Exit code: {exit_code}\n")
         f.write("================================\n")
-
-
 def main():
     log_file = create_log_file()
     cmd_args = sys.argv[1:]
@@ -92,7 +82,5 @@ def main():
         write_log_footer(log_file, exit_code)
         print(f"Log saved to: {log_file}", file=sys.stderr)
     return exit_code
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -6,7 +6,6 @@ from pathlib import Path
 import sys
 import time
 from translate import Translator
-
 SAVE_EVERY = 50
 SLEEP_BETWEEN = 0.5
 MAX_RETRIES = 5
@@ -15,19 +14,13 @@ DEFAULT_SOURCE = "zh"
 DEFAULT_TARGET = "en"
 MAX_CHARS = 450
 CHUNK_SIZE = MAX_CHARS
-
-
 def progress_path(target: Path) -> Path:
     return target.with_suffix(target.suffix + ".progress")
-
-
 def make_translator(source: str, target: str) -> Translator:
     try:
         return Translator(from_lang=source, to_lang=target)
     except TypeError:
         return Translator(to_lang=target)
-
-
 def translate_text(translator: Translator, text: str) -> str:
     if not text.strip():
         return text
@@ -46,8 +39,6 @@ def translate_text(translator: Translator, text: str) -> str:
             delay *= BACKOFF_BASE
     msg = f"Translation failed after {MAX_RETRIES} retries: {last_err}"
     raise RuntimeError(msg)
-
-
 def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
     if len(line) <= max_chars:
         return [line]
@@ -76,8 +67,6 @@ def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
     if remaining:
         pieces.append(remaining)
     return pieces
-
-
 def chunk_lines(lines: list[str], max_chars: int = CHUNK_SIZE) -> list[list[str]]:
     chunks: list[list[str]] = []
     current: list[str] = []
@@ -93,8 +82,6 @@ def chunk_lines(lines: list[str], max_chars: int = CHUNK_SIZE) -> list[list[str]
     if current:
         chunks.append(current)
     return chunks
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Translate a text file between languages.")
     parser.add_argument("input", help="Path to the input file (UTF-8).")
@@ -129,8 +116,6 @@ def parse_args() -> argparse.Namespace:
         help=f"Target characters per chunk in default mode (default: {CHUNK_SIZE}, hard max: {MAX_CHARS}).",
     )
     return parser.parse_args()
-
-
 def run_chunked(
     in_path: Path,
     out_path: Path,
@@ -191,8 +176,6 @@ def run_chunked(
     prog_path.write_text(str(total), encoding="utf-8")
     print(f"\n✔ Done. Output written to {out_path}")
     return 0
-
-
 def load_pairs(json_path: Path, src_key: str, tgt_key: str) -> list[dict[str, str]]:
     if not json_path.is_file():
         return []
@@ -209,8 +192,6 @@ def load_pairs(json_path: Path, src_key: str, tgt_key: str) -> list[dict[str, st
     except (json.JSONDecodeError, OSError) as err:
         print(f"  ! Could not read existing JSON ({err}), starting fresh", file=sys.stderr)
     return []
-
-
 def run_line_mode(
     in_path: Path,
     out_path: Path,
@@ -282,8 +263,6 @@ def run_line_mode(
     prog_path.write_text(str(total), encoding="utf-8")
     print(f"✔ Done. {len(pairs)} pairs saved to {out_path}")
     return 0
-
-
 def main() -> int:
     args = parse_args()
     in_path = Path(args.input).expanduser().resolve()
@@ -301,7 +280,5 @@ def main() -> int:
     if args.line:
         return run_line_mode(in_path, out_path, source, target)
     return run_chunked(in_path, out_path, args.chunk_size, source, target)
-
-
 if __name__ == "__main__":
     sys.exit(main())

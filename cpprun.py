@@ -1,27 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import os
 from pathlib import Path
 import stat
 import sys
 import sh
-
 COMPILERS = {
     ".c": ("clang", ("clang", "gcc")),
     ".cpp": ("clang++", ("clang++", "g++")),
     ".cc": ("clang++", ("clang++", "g++")),
     ".cxx": ("clang++", ("clang++", "g++")),
 }
-
-
 def _pick_compiler(candidates):
     for c in candidates:
         if sh.which(c):
             return c
     return None
-
-
 def cpp_run(*args):
     if not args:
         print("Usage: cpprun <file.c|file.cpp|file.cc> [args...]")
@@ -78,7 +72,5 @@ def cpp_run(*args):
     except KeyboardInterrupt:
         return 130
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(cpp_run(*sys.argv[1:]))

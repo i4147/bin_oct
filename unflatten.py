@@ -7,7 +7,6 @@ import keyword
 from pathlib import Path
 import re
 import sys
-
 _S = (
     r'(?:"""(?:\\.|[^\\])*?"""'
     r"|'''(?:\\.|[^\\])*?'''"
@@ -61,16 +60,12 @@ CONT = {
 }
 IFISH = {"if", "elif", "else", "except", "finally"}
 SCOPED = {"for", "with", "ndef"}
-
-
 @dataclass
 class Tok:
     kind: str
     s: str
     start: int
     end: int
-
-
 def lex(src: str) -> list[Tok]:
     toks, pos = [], 0
     while pos < len(src):
@@ -80,14 +75,11 @@ def lex(src: str) -> list[Tok]:
             toks.append(Tok(kind, m.group(), m.start(), m.end()))
         pos = m.end()
     return toks
-
-
 @dataclass
 class Stmt:
     toks: list[Tok]
     header: bool = False
     kind: str = field(init=False)
-
     def __post_init__(self) -> None:
         t = self.toks[0]
         if t.kind == "comment":
@@ -98,19 +90,14 @@ class Stmt:
             self.kind = "@"
         else:
             self.kind = "str" if t.kind == "string" else ""
-
     def text(self, src: str) -> str:
         return src[self.toks[0].start : self.toks[-1].end]
-
-
 def operand_end(t: Tok) -> bool:
     if t.kind in ("number", "string"):
         return True
     if t.kind == "name":
         return t.s not in NOT_OPERAND
     return t.kind == "op" and t.s in (")", "]", "}", "...")
-
-
 def is_ternary_if(toks: list[Tok], i: int) -> bool:
     d = 0
     for t in toks[i + 1 :]:
@@ -128,8 +115,6 @@ def is_ternary_if(toks: list[Tok], i: int) -> bool:
         elif t.kind == "name" and t.s == "else" and d == 0:
             return True
     return False
-
-
 def begins_new(toks: list[Tok], i: int, cur: list[Tok], tern: int) -> bool:
     t, prev = toks[i], cur[-1]
     if not operand_end(prev):
@@ -156,19 +141,15 @@ def begins_new(toks: list[Tok], i: int, cur: list[Tok], tern: int) -> bool:
             return t.start != prev.end
         return s == "@"
     return False
-
-
 def split_statements(toks: list[Tok]) -> list[Stmt]:
     stmts: list[Stmt] = []
     cur: list[Tok] = []
     depth = lam = tern = 0
-
     def flush(header: bool = False) -> None:
         nonlocal cur, lam, tern
         if cur:
             stmts.append(Stmt(cur, header))
         cur, lam, tern = [], 0, 0
-
     for i, t in enumerate(toks):
         if t.kind == "nl":
             if depth == 0:
@@ -202,8 +183,6 @@ def split_statements(toks: list[Tok]) -> list[Stmt]:
                     flush(header=True)
     flush()
     return stmts
-
-
 def referenced(st: Stmt) -> set[str]:
     out, depth, tk = set(), 0, st.toks
     for i, t in enumerate(tk):
@@ -216,8 +195,6 @@ def referenced(st: Stmt) -> set[str]:
                 continue
             out.add(t.s)
     return out
-
-
 def assigned(st: Stmt) -> set[str]:
     if st.header or st.kind in COMPOUND:
         return set()
@@ -230,8 +207,6 @@ def assigned(st: Stmt) -> set[str]:
         elif t.kind == "name" and t.s not in keyword.kwlist and not (i and tk[i - 1].s == "."):
             out.add(t.s)
     return set()
-
-
 def header_names(st: Stmt) -> set[str]:
     tk, out = st.toks, set()
     if st.kind == "for":
@@ -252,24 +227,18 @@ def header_names(st: Stmt) -> set[str]:
             elif t.kind == "name" and depth == 1 and tk[i - 1].s in ("(", ",", "*", "**"):
                 out.add(t.s)
     return out
-
-
 @dataclass
 class Frame:
     kind: str
     names: set
     body: int = 0
     closed: bool = False
-
-
 def is_terminator(st: Stmt, text: str) -> bool:
     return st.kind in ("return", "raise", "continue", "break") or text.startswith((
         "pytest.skip(",
         "sys.exit(",
         "exit(",
     ))
-
-
 def rebuild_python(source: str) -> str:
     src = "\n".join(line.strip() for line in source.strip().splitlines())
     toks = lex(src)
@@ -277,13 +246,11 @@ def rebuild_python(source: str) -> str:
     out: list[str] = []
     stack: list[Frame] = []
     prev, base_return = None, False
-
     def ensure_blank(n: int) -> None:
         have = 0
         while have < len(out) and out[-1 - have] == "":
             have += 1
         out.extend([""] * (n - have))
-
     for st in stmts:
         text, k = st.text(src), st.kind
         if k == "#":
@@ -339,8 +306,6 @@ def rebuild_python(source: str) -> str:
         base_return = k == "return" and len(stack) == 1 and stack[0].kind == "def"
         prev = k
     return "\n".join(out) + "\n"
-
-
 def polish(code: str, use_black: bool) -> str:
     try:
         ast.parse(code)
@@ -350,23 +315,16 @@ def polish(code: str, use_black: bool) -> str:
     if use_black:
         try:
             import black
-
             return black.format_str(code, mode=black.Mode())
         except Exception:
             pass
     return code
-
-
 HEREDOC_RE = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
 PY_CMD_RE = re.compile(r"\bpython[\d.]*\b")
 TARGET_RE = re.compile(r"(?:>>?|\btee(?:\s+-a)?)\s+(\S+)")
-
-
 def clean_cmd(cmd: str) -> str:
     cmd = re.sub(r"^\s*\$\s+", "", cmd.strip())
     return re.sub(r"\s+\$\s+", "\n", cmd)
-
-
 def convert(text: str, use_black: bool = True) -> tuple[str, list[tuple[str, str]]]:
     text, pos = text.strip(), 0
     lines: list[str] = ["#!/usr/bin/env bash"]
@@ -395,8 +353,6 @@ def convert(text: str, use_black: bool = True) -> tuple[str, list[tuple[str, str
             files.append((f"script_{n_patch}.py", body + "\n"))
         lines += [f"{cmd} {m.group(0)}".strip(), body, tag]
     return "\n".join(lines) + "\n", files
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", nargs="?", help="flattened file (default: stdin)")
@@ -417,7 +373,5 @@ def main() -> None:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(body, encoding="utf-8")
             print(f"wrote {dest}", file=sys.stderr)
-
-
 if __name__ == "__main__":
     main()

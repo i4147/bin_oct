@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from datetime import datetime
@@ -9,15 +8,11 @@ import pickle
 import sys
 from typing import Any, Optional
 from urllib.parse import urlencode
-
 try:
     from dotenv import load_dotenv
 except ImportError:
-
     def load_dotenv(*_a, **_kw) -> bool:
         return False
-
-
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -25,15 +20,12 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 import requests
-
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 FOLDER_MIME = "application/vnd.google-apps.folder"
 DEFAULT_CREDENTIALS_FILE = "credentials.json"
 DEFAULT_TOKEN_FILE = "token.pickle"
 DEFAULT_ENV_FILE = Path.home() / ".env"
 DEFAULT_BACKUP_DIR = "./google_drive_backup"
-
-
 def _iso_to_timestamp(value: str) -> Optional[float]:
     if not value:
         return None
@@ -43,14 +35,10 @@ def _iso_to_timestamp(value: str) -> Optional[float]:
         return datetime.fromisoformat(value).timestamp()
     except ValueError:
         return None
-
-
 def _sanitize(name: str) -> str:
     for ch in '<>:"/\\|?*':
         name = name.replace(ch, "_")
     return name
-
-
 class DriveClient:
     def __init__(
         self,
@@ -70,7 +58,6 @@ class DriveClient:
         self.client_id = client_id or os.getenv("GOOGLE_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("GOOGLE_CLIENT_SECRET")
         self.service = self._authenticate()
-
     def _authenticate(self):
         creds: Optional[Credentials] = None
         if os.path.exists(self.token_file):
@@ -86,7 +73,6 @@ class DriveClient:
             with open(self.token_file, "wb") as fh:
                 pickle.dump(creds, fh)
         return build("drive", "v3", credentials=creds)
-
     def _installed_oauth_flow(self):
         if os.path.exists(self.credentials_file):
             flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
@@ -111,7 +97,6 @@ class DriveClient:
                 SCOPES,
             )
         return flow.run_local_server(port=0)
-
     def _manual_oauth_flow(self):
         if not self.client_id or not self.client_secret:
             msg = "Manual auth mode requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (env file or CLI flags)."
@@ -156,7 +141,6 @@ class DriveClient:
             client_secret=self.client_secret,
             scopes=SCOPES,
         )
-
     def list_children(self, folder_id: str = "root") -> list[dict]:
         results: list[dict] = []
         page_token: Optional[str] = None
@@ -181,13 +165,11 @@ class DriveClient:
             if not page_token:
                 break
         return results
-
     def find_folder(self, name: str, parent: str = "root") -> Optional[dict]:
         query = f"name='{name}' and mimeType='{FOLDER_MIME}' and '{parent}' in parents and trashed=false"
         resp = self.service.files().list(q=query, fields="files(id, name)").execute()
         files = resp.get("files", [])
         return files[0] if files else None
-
     def download_file(self, file_id: str, name: str, dest: str) -> bool:
         try:
             request = self.service.files().get_media(fileId=file_id)
@@ -207,7 +189,6 @@ class DriveClient:
         except HttpError as err:
             print(f"\n✗ Failed to download {name}: {err}")
             return False
-
     def sync_folder(
         self,
         folder_id: str,
@@ -244,8 +225,6 @@ class DriveClient:
                 ts = _iso_to_timestamp(modified)
                 if ts is not None:
                     os.utime(path, (ts, ts))
-
-
 def _make_client(args: argparse.Namespace) -> DriveClient:
     return DriveClient(
         auth_mode=args.auth_mode,
@@ -255,8 +234,6 @@ def _make_client(args: argparse.Namespace) -> DriveClient:
         client_id=args.client_id,
         client_secret=args.client_secret,
     )
-
-
 def cmd_download(args: argparse.Namespace) -> int:
     try:
         client = _make_client(args)
@@ -281,8 +258,6 @@ def cmd_download(args: argparse.Namespace) -> int:
     except Exception as err:
         print(f"Error: {err}")
         return 1
-
-
 def cmd_sync(args: argparse.Namespace) -> int:
     try:
         client = _make_client(args)
@@ -329,8 +304,6 @@ def cmd_sync(args: argparse.Namespace) -> int:
         print("  2. Verify credentials in --env-file / --credentials-file")
         print("  3. On Android run: termux-setup-storage")
         return 1
-
-
 def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
     grp = parser.add_argument_group("authentication")
     grp.add_argument(
@@ -360,8 +333,6 @@ def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
     )
     grp.add_argument("--client-id", default=None, help="Override GOOGLE_CLIENT_ID.")
     grp.add_argument("--client-secret", default=None, help="Override GOOGLE_CLIENT_SECRET.")
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="gdrive_sync.py",
@@ -417,13 +388,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_auth_arguments(p_sync)
     p_sync.set_defaults(func=cmd_sync)
     return parser
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
-
-
 if __name__ == "__main__":
     sys.exit(main())

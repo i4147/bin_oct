@@ -12,18 +12,13 @@ import tempfile
 import threading
 import time
 from typing import Callable
-
 try:
     from loguru import logger
 except ImportError as exc:
     msg = "Missing dependency: install it with 'pip install loguru'"
     raise SystemExit(msg) from exc
-
-
 class BackendError(Exception):
     pass
-
-
 TranslatorCallable = Callable[[str], str]
 Factory = Callable[[str, str, str], TranslatorCallable]
 _LANG_MAP: dict[str, dict[str, str]] = {
@@ -103,8 +98,6 @@ _CONSOLE_LOCK = threading.Lock()
 _RESULTS_LOCK = threading.Lock()
 _FAILED_LOCK = threading.Lock()
 _PROGRESS_LOCK = threading.Lock()
-
-
 def _configure_logging() -> None:
     logger.remove()
     logger.add(
@@ -120,13 +113,9 @@ def _configure_logging() -> None:
         level="ERROR",
         format="<red>{level}</red>: {message}",
     )
-
-
 def _print(message: str) -> None:
     with _CONSOLE_LOCK:
         print(message, flush=True)
-
-
 def _language(backend: str, code: str) -> str:
     mapped = _LANG_MAP.get(backend, {}).get(code.casefold())
     if mapped is None:
@@ -137,8 +126,6 @@ def _language(backend: str, code: str) -> str:
         )
         return code
     return mapped
-
-
 def _require_python_and_platform() -> None:
     if sys.version_info[:2] != (3, 12):
         msg = f"Python 3.12 is required; detected {platform.python_version()}"
@@ -150,16 +137,12 @@ def _require_python_and_platform() -> None:
     if sys.maxsize > 2**32:
         msg = "This script requires a 32-bit Python process"
         raise SystemExit(msg)
-
-
 def _import(name: str):
     try:
         return importlib.import_module(name)
     except Exception as exc:
         msg = f"cannot import {name}: {exc}"
         raise BackendError(msg) from exc
-
-
 def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallable:
     key = os.getenv("DEEPL_API_KEY")
     if not key:
@@ -168,7 +151,6 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallabl
     _import("deepl")
     source_code = _language("deepl", source)
     target_code = _language("deepl", target)
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("deepl")
@@ -182,15 +164,11 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallabl
             )
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_deep_translator(source: str, target: str, script_path: str) -> TranslatorCallable:
     _import("deep_translator")
     source_code = _language("deep_translator", source)
     target_code = _language("deep_translator", target)
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("deep_translator")
@@ -201,10 +179,7 @@ def _make_deep_translator(source: str, target: str, script_path: str) -> Transla
             return str(client.translate(text))
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_libretranslate_remote(source: str, target: str, script_path: str) -> TranslatorCallable:
     url = os.getenv("LIBRETRANSLATE_URL")
     if not url:
@@ -213,7 +188,6 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
     _import("deep_translator")
     source_code = _language("libretranslate_remote", source)
     target_code = _language("libretranslate_remote", target)
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("deep_translator")
@@ -225,16 +199,12 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
             return str(client.translate(text))
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_translate(source: str, target: str, script_path: str) -> TranslatorCallable:
     if Path(script_path).stem.casefold() == "translate":
         msg = "the local script name resolves to the translate package; rename it"
         raise BackendError(msg)
     _import("translate")
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("translate")
@@ -242,15 +212,11 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslatorCal
             return str(client.translate(text))
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_translators_bing(source: str, target: str, script_path: str) -> TranslatorCallable:
     _import("translators")
     lock = _SERIAL_LOCKS["translators_bing"]
     logger.warning("translators_bing is serialized because each request may start a JS runtime")
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("translators")
@@ -265,15 +231,11 @@ def _make_translators_bing(source: str, target: str, script_path: str) -> Transl
                 )
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_googletrans(source: str, target: str, script_path: str) -> TranslatorCallable:
     module = _import("googletrans")
     client = module.Translator()
     lock = _SERIAL_LOCKS["googletrans"]
-
     def translate(text: str) -> str:
         try:
             with lock:
@@ -281,10 +243,7 @@ def _make_googletrans(source: str, target: str, script_path: str) -> TranslatorC
                 return str(result.text)
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_pygoogletranslation(source: str, target: str, script_path: str) -> TranslatorCallable:
     module = _import("pygoogletranslation")
     client_class = getattr(module, "Translator", None)
@@ -293,7 +252,6 @@ def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Tra
         raise BackendError(msg)
     client = client_class()
     lock = _SERIAL_LOCKS["pygoogletranslation"]
-
     def translate(text: str) -> str:
         try:
             with lock:
@@ -301,15 +259,11 @@ def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Tra
                 return str(getattr(result, "text", result))
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_boto3(source: str, target: str, script_path: str) -> TranslatorCallable:
     _import("boto3")
     source_code = _language("boto3", source)
     target_code = _language("boto3", target)
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("boto3")
@@ -322,10 +276,7 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslatorCallabl
             return str(response["TranslatedText"])
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallable:
     app_id = os.getenv("BAIDU_APP_ID")
     api_key = os.getenv("BAIDU_API_KEY")
@@ -336,7 +287,6 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallabl
     _import("aip")
     source_code = _language("baidu", source)
     target_code = _language("baidu", target)
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("aip")
@@ -347,10 +297,7 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallabl
             return str(response["trans_result"]["dst"])
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCallable:
     access_key = os.getenv("ALIBABA_ACCESS_KEY_ID")
     secret = os.getenv("ALIBABA_ACCESS_KEY_SECRET")
@@ -362,7 +309,6 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCalla
     _import("aliyunsdkalimt")
     source_code = _language("alibaba", source)
     target_code = _language("alibaba", target)
-
     def translate(text: str) -> str:
         try:
             core = importlib.import_module("aliyunsdkcore.client")
@@ -377,10 +323,7 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCalla
             return str(payload["Data"]["Translated"])
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallable:
     api_key = os.getenv("WATSON_API_KEY")
     url = os.getenv("WATSON_URL")
@@ -388,7 +331,6 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallab
         msg = "WATSON_API_KEY and WATSON_URL are required"
         raise BackendError(msg)
     _import("ibm_watson")
-
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("ibm_watson")
@@ -407,10 +349,7 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallab
             return str(response["translations"][0]["translation"])
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallable:
     key = os.getenv("AZURE_TRANSLATOR_KEY")
     region = os.getenv("AZURE_TRANSLATOR_REGION")
@@ -424,7 +363,6 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallabl
     _import("requests")
     source_code = _language("azure", source)
     target_code = _language("azure", target)
-
     def translate(text: str) -> str:
         try:
             requests = importlib.import_module("requests")
@@ -443,10 +381,7 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallabl
             return str(response.json()[0]["translations"][0]["text"])
         except Exception as exc:
             raise BackendError(str(exc)) from exc
-
     return translate
-
-
 _BACKEND_FACTORIES: dict[str, Factory] = {
     "deepl": _make_deepl,
     "deep_translator": _make_deep_translator,
@@ -461,8 +396,6 @@ _BACKEND_FACTORIES: dict[str, Factory] = {
     "watson": _make_watson,
     "azure": _make_azure,
 }
-
-
 def _fallback_order() -> list[str]:
     order: list[str] = []
     if os.getenv("DEEPL_API_KEY"):
@@ -477,8 +410,6 @@ def _fallback_order() -> list[str]:
         "pygoogletranslation",
     ])
     return order
-
-
 def _select_backend(
     preferred: str | None,
     source: str,
@@ -507,8 +438,6 @@ def _select_backend(
                 raise SystemExit(msg) from exc
     msg = "No usable backend was found. Install deep_translator or configure one of the supported backends."
     raise SystemExit(msg)
-
-
 def _read_words(path: Path) -> list[str]:
     if not path.is_file():
         msg = f"Input file does not exist: {path}"
@@ -524,8 +453,6 @@ def _read_words(path: Path) -> list[str]:
         msg = f"Cannot read input file '{path}': {exc}"
         raise SystemExit(msg) from exc
     return words
-
-
 def _load_results(path: Path, continue_run: bool) -> dict[str, str]:
     if not continue_run or not path.exists():
         return {}
@@ -539,8 +466,6 @@ def _load_results(path: Path, continue_run: bool) -> dict[str, str]:
     except Exception as exc:
         msg = f"Cannot load existing output '{path}': {exc}"
         raise SystemExit(msg) from exc
-
-
 def _atomic_save(path: Path, results: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
@@ -559,14 +484,10 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
         os.replace(temporary_path, path)
     finally:
         temporary_path.unlink(missing_ok=True)
-
-
 def _append_failed(path: Path, word: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with _FAILED_LOCK, path.open("a", encoding="utf-8") as handle:
         handle.write(f"{word}\n")
-
-
 def _translate_one(
     word: str,
     translator: TranslatorCallable,
@@ -593,8 +514,6 @@ def _translate_one(
     _append_failed(failed_path, word)
     logger.error("Giving up on word {!r}; appended to {}", word, failed_path)
     return word, None
-
-
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Translate a one-word-per-line file into a JSON mapping.")
     parser.add_argument("-i", "--input", default="words.txt")
@@ -615,8 +534,6 @@ def _parse_args() -> argparse.Namespace:
     if args.delay < 0:
         parser.error("--delay cannot be negative")
     return args
-
-
 def _run(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     output_path = Path(args.output)
@@ -678,14 +595,10 @@ def _run(args: argparse.Namespace) -> int:
         return 130
     finally:
         executor.shutdown(wait=True, cancel_futures=True)
-
-
 def main() -> int:
     _require_python_and_platform()
     _configure_logging()
     args = _parse_args()
     return _run(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

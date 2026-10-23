@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -8,22 +7,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from loguru import logger
 from xxhash import xxh64
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 QUICK_READ: int = 4096
 CHUNK_SIZE: int = 32768
 POOL_WORKERS: int = 4
-
-
 def file_stat_key(p: Path) -> tuple[int, int] | None:
     try:
         st = p.stat()
         return (st.st_ino, st.st_dev)
     except OSError:
         return None
-
-
 def quick_hash(path: Path, n: int = QUICK_READ) -> str:
     h = xxh64()
     try:
@@ -42,8 +36,6 @@ def quick_hash(path: Path, n: int = QUICK_READ) -> str:
         msg = f"quick_hash error {path}: {e}"
         raise OSError(msg) from e
     return h.hexdigest()
-
-
 def full_hash(path: Path) -> tuple[str, Path]:
     try:
         if not path.stat().st_size:
@@ -61,8 +53,6 @@ def full_hash(path: Path) -> tuple[str, Path]:
         return (h.hexdigest(), path)
     except OSError:
         return ("", path)
-
-
 def iter_files(
     root: Path,
     recursive: bool,
@@ -81,8 +71,6 @@ def iter_files(
         if p.is_symlink() and not follow_symlinks:
             continue
         yield p
-
-
 def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
     if not files:
         msg = "Empty file list"
@@ -95,8 +83,6 @@ def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
         return max(files, key=lambda p: p.stat().st_mtime)
     else:
         return min(files, key=str)
-
-
 def format_size(n: int) -> str:
     if n < 1024:
         return f"{n} B"
@@ -106,8 +92,6 @@ def format_size(n: int) -> str:
         return f"{n / 1024 / 1024:.2f} MiB"
     else:
         return f"{n / 1024 / 1024 / 1024:.2f} GiB"
-
-
 def main() -> None:
     cwd = Path.cwd()
     p = argparse.ArgumentParser(description="Find and delete duplicate files by content.")
@@ -266,7 +250,5 @@ def main() -> None:
         print(f"Failed: {failed}")
     if freed_space:
         print(f"Space freed: {format_size(freed_space)}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

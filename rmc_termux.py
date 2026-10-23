@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import ast
 import difflib
@@ -23,13 +21,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import perf_counter
 from typing import Iterator
-
 from dh import ASTStripper, TSStripper, CSTStripper, SKIP_DIRS
-
 LOGGER = logging.getLogger("striper_termux")
 _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
-
-
 @dataclass
 class StripFileResult:
     path: Path
@@ -41,8 +35,6 @@ class StripFileResult:
     backup: Path | None = None
     traceback: str = ""
     skipped: str | None = None
-
-
 def make_diff(before: str, after: str, name: str) -> str:
     output: list[str] = []
     for line in difflib.unified_diff(
@@ -55,8 +47,6 @@ def make_diff(before: str, after: str, name: str) -> str:
         if not line.endswith("\n"):
             output.append("\n\\ No newline at end of file\n")
     return "".join(output)
-
-
 def create_backup(path: Path, original: bytes) -> Path:
     backup = path.with_name(path.name + ".bak")
     with backup.open("xb") as stream:
@@ -69,8 +59,6 @@ def create_backup(path: Path, original: bytes) -> Path:
             backup.unlink(missing_ok=True)
             raise
     return backup
-
-
 def _atomic_write(path: Path, data: bytes, original: bytes) -> None:
     mode = stat.S_IMODE(path.stat().st_mode)
     fd, name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
@@ -86,8 +74,6 @@ def _atomic_write(path: Path, data: bytes, original: bytes) -> None:
         temp.replace(path)
     finally:
         temp.unlink(missing_ok=True)
-
-
 def remove_blank_lines(source: str) -> str:
     protected: set[int] = set()
     tokens = tokenize.generate_tokens(io.StringIO(source).readline)
@@ -106,8 +92,6 @@ def remove_blank_lines(source: str) -> str:
     if before != after:
         raise ValueError("Blank-line removal would change the AST; not written")
     return result
-
-
 def _process_file(
     path: Path,
     stripper,
@@ -161,8 +145,6 @@ def _process_file(
         result.modified = False
     result.elapsed = perf_counter() - started
     return result
-
-
 def create_stripper(config: dict):
     cfg = dict(config)
     cls_name = cfg.pop("class")
@@ -175,8 +157,6 @@ def create_stripper(config: dict):
     else:
         raise ValueError(f"Unknown stripper class: {cls_name}")
     return cls(**cfg)
-
-
 def process_file_with_config(
     path: Path,
     config: dict,
@@ -199,8 +179,6 @@ def process_file_with_config(
         remove_blank_lines_flag=remove_blank_lines_flag,
         force_utf8=force_utf8,
     )
-
-
 def colorize_diff(diff: str, color: bool) -> str:
     if not color:
         return diff
@@ -219,36 +197,26 @@ def colorize_diff(diff: str, color: bool) -> str:
         )
         output.append(f"\033[{code}m{line}\033[0m" if code else line)
     return "".join(output)
-
-
 @dataclass(frozen=True)
 class Limits:
     max_bytes: int = 1_048_576
     max_lines: int = 20_000
     max_tokens: int = 50_000
     max_depth: int = 64
-
-
 class BudgetExceeded(ValueError):
     pass
-
-
 def read_bounded(path: Path, limit: int) -> bytes:
     with path.open("rb") as stream:
         data = stream.read(limit + 1)
     if len(data) > limit:
         raise BudgetExceeded(f"file exceeds {limit:,} bytes or grew while processing")
     return data
-
-
 def check_budget(source: str, limits: Limits) -> None:
     if source.count("\n") + 1 > limits.max_lines:
         raise BudgetExceeded(f"file exceeds {limits.max_lines:,} lines")
     for count, _ in enumerate(tokenize.generate_tokens(io.StringIO(source).readline), 1):
         if count > limits.max_tokens:
             raise BudgetExceeded(f"file exceeds {limits.max_tokens:,} tokens")
-
-
 def is_python_file(path: Path) -> bool:
     if path.suffix.lower() == ".py":
         return True
@@ -272,19 +240,13 @@ def is_python_file(path: Path) -> bool:
         return re.fullmatch(r"(?:python|pypy)(?:[23](?:\.\d+)*)?", Path(program).name) is not None
     except ValueError:
         return False
-
-
 def has_symlink_component(path: Path) -> bool:
     return path.is_symlink() or any(parent.is_symlink() for parent in path.parents)
-
-
 def excluded(path: Path, root: Path, patterns: tuple[str, ...]) -> bool:
     relative = path.relative_to(root).as_posix()
     return any(
         fnmatch.fnmatchcase(path.name, pattern) or fnmatch.fnmatchcase(relative, pattern) for pattern in patterns
     )
-
-
 def normalize_inputs(inputs: list[Path]) -> list[Path]:
     paths = sorted(
         {Path(os.path.abspath(path.expanduser())) for path in inputs},
@@ -303,8 +265,6 @@ def normalize_inputs(inputs: list[Path]) -> list[Path]:
             continue
         roots.append(path)
     return roots
-
-
 @dataclass
 class Stats:
     files: int = 0
@@ -312,8 +272,6 @@ class Stats:
     skipped: int = 0
     errors: int = 0
     bytes_reduced: int = 0
-
-
 def walk_python_files(
     roots: list[Path],
     *,
@@ -350,7 +308,6 @@ def walk_python_files(
         except OSError:
             stats.errors += 1
             LOGGER.exception("Cannot traverse %s", directory)
-
     for root in roots:
         if root.is_dir():
             if root.name not in skip_dirs and not root.name.endswith(".egg-info"):
@@ -362,8 +319,6 @@ def walk_python_files(
             except OSError:
                 stats.errors += 1
                 LOGGER.exception("Cannot inspect %s", root)
-
-
 class StreamingReport:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -372,7 +327,6 @@ class StreamingReport:
         self.stream = os.fdopen(fd, "w", encoding="utf-8", newline="\n")
         self.first = True
         self.stream.write('{"version":1,"files":[')
-
     def add(self, result: StripFileResult) -> None:
         data = asdict(result)
         data["path"] = str(result.path)
@@ -383,7 +337,6 @@ class StreamingReport:
             self.stream.write(",")
         json.dump(data, self.stream, ensure_ascii=False)
         self.first = False
-
     def finish(self, stats: Stats, dryrun: bool, elapsed: float) -> None:
         self.stream.write('],"summary":')
         json.dump({**asdict(stats), "dryrun": dryrun, "elapsed_seconds": elapsed}, self.stream)
@@ -392,12 +345,9 @@ class StreamingReport:
         os.fsync(self.stream.fileno())
         self.stream.close()
         self.temporary.replace(self.path)
-
     def close(self) -> None:
         self.stream.close()
         self.temporary.unlink(missing_ok=True)
-
-
 def configure_logging(error_log: Path, log_file: Path | None, level: str) -> None:
     LOGGER.setLevel(logging.DEBUG)
     LOGGER.propagate = False
@@ -416,8 +366,6 @@ def configure_logging(error_log: Path, log_file: Path | None, level: str) -> Non
         full = RotatingFileHandler(log_file, maxBytes=2_000_000, backupCount=2, encoding="utf-8", delay=True)
         full.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
         LOGGER.addHandler(full)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("inputs", nargs="*", type=Path, metavar="PATH")
@@ -495,7 +443,6 @@ def main() -> int:
         )
         if args.all:
             LOGGER.warning("--all removes shebangs, encoding comments, tool directives and module docstrings")
-
         # Build stripper configuration
         if args.stripper == "ast":
             cls_name = "ASTStripper"
@@ -515,7 +462,6 @@ def main() -> int:
         }
         force_utf8 = args.all
         remove_blank_lines_flag = args.remove_blank_lines
-
         # Enumerate all files up-front so we can show [N/total] and size columns to term width
         paths = list(
             walk_python_files(
@@ -528,7 +474,6 @@ def main() -> int:
             )
         )
         total = len(paths)
-
         # Column widths derived from terminal width
         term_w = shutil.get_terminal_size((80, 24)).columns
         num_w = len(str(total)) if total > 0 else 1
@@ -537,7 +482,6 @@ def main() -> int:
         bytes_w = min(max(len(f"-{limits.max_bytes:,}"), 6), 20)
         avail_for_name = term_w - prefix_w - 4 - bytes_w  # 4 = two 2-space separators
         name_w = min(longest_name, max(10, avail_for_name))
-
         def format_line(idx: int, name: str, value) -> str:
             idx_part = f"[{idx:>{num_w}}/{total}]"
             if len(name) > name_w:
@@ -552,7 +496,6 @@ def main() -> int:
             else:
                 val_display = f"{value:>{bytes_w}}"
             return f"{idx_part}  {name:<{name_w}}  {val_display}"
-
         def handle_result(result: StripFileResult, idx: int) -> None:
             stats.files += 1
             if result.skipped:
@@ -581,11 +524,9 @@ def main() -> int:
             print(line)
             if report is not None:
                 report.add(result)
-
         if args.mp:
             import multiprocessing as mp
             from functools import partial
-
             worker = partial(
                 process_file_with_config,
                 config=stripper_config,
@@ -602,7 +543,6 @@ def main() -> int:
         elif args.cf:
             import concurrent.futures as cf
             from functools import partial
-
             worker = partial(
                 process_file_with_config,
                 config=stripper_config,
@@ -664,8 +604,6 @@ def main() -> int:
     if args.time:
         print(f"Total elapsed: {perf_counter() - started:.4f}s")
     return 130 if interrupted else 1 if stats.errors else 3 if stats.skipped else 0
-
-
 if __name__ == "__main__":
     try:
         raise SystemExit(main())

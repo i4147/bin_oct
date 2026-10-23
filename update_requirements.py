@@ -8,7 +8,6 @@ import sys
 from typing import Final
 from packaging.version import InvalidVersion, Version
 import requests
-
 _TIMEOUT: Final[float] = 10.0
 _MAX_WORKERS: Final[int] = 16
 _DEFAULT_INPUT: Final[str] = "requirements.txt"
@@ -17,8 +16,6 @@ _DIM: Final[str] = "\033[2m"
 _GREEN: Final[str] = "\033[32m"
 _RESET: Final[str] = "\033[0m"
 _EDITABLE_RE = re.compile(r"^\s*(?:-e|--editable)\b")
-
-
 def parse_freeze(path: Path) -> dict[str, str]:
     installed: dict[str, str] = {}
     for raw in path.read_text(encoding="utf-8").splitlines():
@@ -38,8 +35,6 @@ def parse_freeze(path: Path) -> dict[str, str]:
             continue
         installed[name] = version
     return installed
-
-
 def fetch_latest(session: requests.Session, name: str) -> tuple[str, str | None]:
     try:
         r = session.get(f"https://pypi.org/pypi/{name}/json", timeout=_TIMEOUT)
@@ -49,8 +44,6 @@ def fetch_latest(session: requests.Session, name: str) -> tuple[str, str | None]
         return name, str(r.json()["info"]["version"])
     except (requests.RequestException, KeyError, ValueError):
         return name, None
-
-
 def find_upgradable(
     installed: dict[str, str],
     *,
@@ -78,8 +71,6 @@ def find_upgradable(
         if is_newer:
             upgradable[name] = (current, new)
     return upgradable
-
-
 def render(
     installed: dict[str, str],
     upgradable: dict[str, tuple[str, str]],
@@ -92,8 +83,6 @@ def render(
         else:
             lines.append(f"{name} {_DIM}{current} {current}{_RESET}")
     return "\n".join(lines)
-
-
 def write_upgradable(
     path: Path,
     upgradable: dict[str, tuple[str, str]],
@@ -102,8 +91,6 @@ def write_upgradable(
         "\n".join(f"{name}=={new}" for name, (_, new) in upgradable.items()),
         encoding="utf-8",
     )
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="upgradable",
@@ -142,7 +129,5 @@ def main(argv: list[str] | None = None) -> int:
         print(report)
     print(f"\n{len(upgradable)} upgradable package(s) written to {args.output}")
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

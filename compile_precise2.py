@@ -1,10 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import base64
 from pathlib import Path
-
-
 def get_font_b64_or_fallback(filename):
     path = Path(filename)
     if not path.exists():
@@ -14,8 +11,6 @@ def get_font_b64_or_fallback(filename):
     binary_data = path.read_bytes()
     b64_encoded = base64.b64encode(binary_data).decode("utf-8")
     return b64_encoded
-
-
 def build_precise_css():
     print("Parsing typography file tree...")
     reg_b64 = get_font_b64_or_fallback("Inter-Regular.ttf")
@@ -222,7 +217,5 @@ td {{
     output_name = "print-style.css"
     Path(output_name).write_text(css_template, encoding="utf-8")
     print(f"\n🎉 Process Complete! Output saved to: {output_name}")
-
-
 if __name__ == "__main__":
     build_precise_css()

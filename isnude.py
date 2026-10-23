@@ -1,17 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import sys
 import cv2
 from dh import cprint, get_files, mpf
 import nude
-
 nude_path = Path("nude")
 nude_path.mkdir(exist_ok=True)
 RESIZE = "-r" in sys.argv
-
-
 def check_nude(path: str) -> bool:
     img = cv2.imread(path)
     h, w = img.shape[:2]
@@ -22,8 +18,6 @@ def check_nude(path: str) -> bool:
     del img, h, w
     print(n)
     return bool(n.result)
-
-
 def process_file(path) -> None:
     path = Path(path)
     if "nude" in path.parts:
@@ -33,8 +27,6 @@ def process_file(path) -> None:
         cprint(f"{path.name} is nude", "cyan")
         new_path = nude_path / path.name
         path.rename(new_path)
-
-
 if __name__ == "__main__":
     cwd = Path.cwd()
     files = get_files(cwd, ext=[".jpg", ".jpeg", ".png", ".webp"])

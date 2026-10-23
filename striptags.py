@@ -4,7 +4,6 @@ import re
 from typing import Iterable, Optional
 from bs4 import BeautifulSoup, Comment, NavigableString
 import click
-
 NEWLINE_ELEMENTS = (
     "address",
     "article",
@@ -109,8 +108,6 @@ ATTRS_TO_KEEP = {
     "meta": {"name", "value", "property", "content"},
 }
 _whitespace_re = re.compile(r"\s+")
-
-
 def repl(m):
     newline_count = m.group(0).count("\n")
     if newline_count >= 2:
@@ -119,8 +116,6 @@ def repl(m):
         return "\n"
     else:
         return " "
-
-
 def tag_with_attributes(node, content, all_attrs=False):
     to_keep = {"id", "class"}
     to_keep.update(ATTRS_TO_KEEP.get(node.name) or [])
@@ -132,8 +127,6 @@ def tag_with_attributes(node, content, all_attrs=False):
     if node.name not in SELF_CLOSING_TAGS:
         output += f"</{node.name}>"
     return output
-
-
 def process_node(node, minify, keep_tags, all_attrs=False):
     if isinstance(node, Comment):
         return ""
@@ -157,8 +150,6 @@ def process_node(node, minify, keep_tags, all_attrs=False):
         if node.name in keep_tags:
             s = tag_with_attributes(node, s, all_attrs)
         return s
-
-
 def strip_tags(
     input: str,
     selectors: Optional[Iterable[str]] = None,
@@ -187,12 +178,10 @@ def strip_tags(
             else:
                 expanded_keep_tags.append(tag)
         keep_tags = expanded_keep_tags
-
     def should_keep(element):
         if element.name in keep_tags:
             return True
         return any(element.find(tag_name) for tag_name in keep_tags)
-
     for none_selector in DISPLAY_NONE_SELECTORS:
         for tag in soup.select(none_selector):
             if should_keep(tag):
@@ -218,8 +207,6 @@ def strip_tags(
     if remove_blank_lines:
         output = "\n".join(line for line in output.splitlines() if line.strip())
     return output
-
-
 @click.command()
 @click.version_option()
 @click.argument("selectors", nargs=-1)
@@ -250,7 +237,5 @@ def cli(selectors, removes, input, minify, keep_tags, all_attrs, first):
         all_attrs=all_attrs,
     )
     click.echo(final)
-
-
 if __name__ == "__main__":
     cli()

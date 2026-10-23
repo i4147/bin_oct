@@ -1,9 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 from dh import cprint, runcmd
-
 if __name__ == "__main__":
     cmd = ["apt", "list", "--upgradable"]
     _, txt, _ = runcmd(cmd, show_output=False)

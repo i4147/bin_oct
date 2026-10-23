@@ -1,17 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import ast
 import json
 import multiprocessing as mp
 from pathlib import Path
 from typing import Any
-
-
 class TypeAnnotationChecker(ast.NodeVisitor):
     def __init__(self):
         self.has_annotations = False
-
     def visit_FunctionDef(self, node):
         if node.returns:
             self.has_annotations = True
@@ -23,15 +19,11 @@ class TypeAnnotationChecker(ast.NodeVisitor):
         if node.args.kwarg and node.args.kwarg.annotation:
             self.has_annotations = True
         self.generic_visit(node)
-
     def visit_AsyncFunctionDef(self, node):
         self.visit_FunctionDef(node)
-
     def visit_AnnAssign(self, node):
         self.has_annotations = True
         self.generic_visit(node)
-
-
 class AnnotationStripper(ast.NodeTransformer):
     def visit_FunctionDef(self, node):
         node.returns = None
@@ -43,27 +35,19 @@ class AnnotationStripper(ast.NodeTransformer):
             node.args.kwarg.annotation = None
         self.generic_visit(node)
         return node
-
     def visit_AsyncFunctionDef(self, node):
         return self.visit_FunctionDef(node)
-
     def visit_AnnAssign(self, node):
         if node.value is not None:
             return ast.Assign(targets=[node.target], value=node.value)
         return None
-
-
 def get_canonical_structure(node: ast.AST) -> str:
     stripped_node = AnnotationStripper().visit(ast.parse(ast.unparse(node)))
     return ast.unparse(stripped_node)
-
-
 def check_annotations(node: ast.AST) -> bool:
     checker = TypeAnnotationChecker()
     checker.visit(node)
     return checker.has_annotations
-
-
 def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
     results = []
     try:
@@ -94,8 +78,6 @@ def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
                 "has_annotations": has_type_hints,
             })
     return results
-
-
 def main():
     current_dir = Path.cwd()
     output_dir = current_dir / "output"
@@ -147,7 +129,5 @@ def main():
             f"- {obj_type.capitalize()}s: {len(items)} duplicates "
             f"({annotation_diff_count} differ in type annotations) -> saved to output/duplicate_{obj_type}s.json"
         )
-
-
 if __name__ == "__main__":
     main()

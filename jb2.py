@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import json
 from pathlib import Path
 import sys
 from dh import cprint, fsz, get_files, gsz, mpf
-
-
 def process_file(path) -> None:
     path = Path(path)
     before = gsz(path)
@@ -32,8 +29,6 @@ def process_file(path) -> None:
     except:
         cprint(f"{path.name} Error", "yellow")
         return
-
-
 if __name__ == "__main__":
     cwd = Path.cwd()
     before = gsz(cwd)

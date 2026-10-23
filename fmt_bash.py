@@ -8,7 +8,6 @@ import shutil
 from typing import TYPE_CHECKING, Final, TypeAlias
 from dh import get_files, is_binary, runcmd
 from loguru import logger
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
 POOL_WORKERS: Final[int] = 8
@@ -21,8 +20,6 @@ POOL_METHODS: Final[tuple[str, ...]] = (
 SHEBANG_READ_BYTES: Final[int] = 256
 ERROR_DIR_NAME: Final[str] = "error"
 FormatResult: TypeAlias = tuple[bool, str]
-
-
 def has_shell_shebang(path: Path) -> bool:
     try:
         with path.open("rb") as f:
@@ -30,22 +27,16 @@ def has_shell_shebang(path: Path) -> bool:
         return first.startswith("#!") and ("bash" in first or "sh" in first)
     except OSError:
         return False
-
-
 def is_shell_file(path: Path) -> bool:
     if not path.is_file():
         return False
     if path.suffix == ".sh" or (not path.suffix and has_shell_shebang(path)):
         return not is_binary(path)
     return False
-
-
 def is_formattable_file(path: Path) -> bool:
     if not path.is_file():
         return False
     return not is_binary(path)
-
-
 def process_file(path_str: str) -> FormatResult:
     path = Path(path_str)
     logger.info(f"Formatting:  {path.name}")
@@ -54,12 +45,8 @@ def process_file(path_str: str) -> FormatResult:
         logger.error(f"shfmt failed on {path.name}: {stderr.strip()}")
         return (False, path_str)
     return (True, path_str)
-
-
 def _process_file_tuple(item: tuple[str]) -> FormatResult:
     return process_file(item[0])
-
-
 def _run_pool(paths: Sequence[str], method: str) -> list[FormatResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "starmap":
@@ -75,13 +62,9 @@ def _run_pool(paths: Sequence[str], method: str) -> list[FormatResult]:
             return [result.get() for result in async_results]
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
-
-
 def collect_shell_files(cwd: Path) -> list[Path]:
     files = [p for p in get_files(cwd) if (not p.suffix and has_shell_shebang(p)) or p.suffix == ".sh"]
     return [p for p in files if not is_binary(p)]
-
-
 def move_failed_files(failed: Sequence[Path], cwd: Path) -> list[Path]:
     error_dir: Path = cwd / ERROR_DIR_NAME
     error_dir.mkdir(exist_ok=True)
@@ -112,8 +95,6 @@ def move_failed_files(failed: Sequence[Path], cwd: Path) -> list[Path]:
         except OSError as exc:
             logger.error(f"Failed to move {src} to {dest}: {exc}")
     return moved
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -136,8 +117,6 @@ def parse_args() -> argparse.Namespace:
         help=f"Move files that failed formatting into the '{ERROR_DIR_NAME}' subdirectory under CWD.",
     )
     return parser.parse_args()
-
-
 def main() -> int:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
@@ -181,7 +160,5 @@ def main() -> int:
         if move_errors:
             move_failed_files(failed, cwd)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

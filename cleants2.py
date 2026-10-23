@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from dataclasses import dataclass
 import importlib
@@ -9,10 +8,7 @@ from pathlib import Path
 import sys
 import time
 from tree_sitter import Language, Node, Parser
-
 PathLike = str | Path
-
-
 @dataclass
 class ProcessResult:
     path: Path
@@ -22,8 +18,6 @@ class ProcessResult:
     processing_time: float = 0.0
     file_size: int = 0
     file_type: str = ""
-
-
 EXTENSION_TO_LANGUAGE = {
     ".js": "tree_sitter_javascript",
     ".jsx": "tree_sitter_javascript",
@@ -100,13 +94,10 @@ EXTENSION_TO_LANGUAGE = {
     ".wasm": "tree_sitter_wasm",
     ".wgsl": "tree_sitter_wgsl",
 }
-
-
 class UniversalCommentRemover:
     def __init__(self):
         self._parser_cache: dict[str, Parser] = {}
         self._language_cache: dict[str, Language] = {}
-
     def _load_language(self, module_name: str) -> Language | None:
         if module_name in self._language_cache:
             return self._language_cache[module_name]
@@ -125,7 +116,6 @@ class UniversalCommentRemover:
         except Exception as e:
             print(f"Warning: Failed to load {module_name}: {e}")
             return None
-
     def get_parser_for_file(self, path: Path) -> tuple[Parser, str] | None:
         extension = path.suffix.lower()
         if path.name.lower() == "dockerfile":
@@ -144,10 +134,8 @@ class UniversalCommentRemover:
         parser.language = language
         self._parser_cache[module_name] = parser
         return parser, extension
-
     def _get_comment_ranges(self, root_node: Node) -> list[tuple[int, int]]:
         comment_ranges = []
-
         def visit_node(node: Node):
             if node.type in (
                 "comment",
@@ -161,7 +149,6 @@ class UniversalCommentRemover:
                 return
             for child in node.children:
                 visit_node(child)
-
         visit_node(root_node)
         if comment_ranges:
             comment_ranges.sort(key=lambda x: x[0])
@@ -174,12 +161,10 @@ class UniversalCommentRemover:
                     merged.append((start, end))
             comment_ranges = merged
         return comment_ranges
-
     def _cleanup_empty_lines(self, content: bytes) -> bytes:
         while b"\n\n\n" in content:
             content = content.replace(b"\n\n\n", b"\n\n")
         return content
-
     def remove_comments(self, content: bytes, file_extension: str) -> tuple[bytes, int]:
         if file_extension in (".json", ".jsonc"):
             return self._remove_json_comments(content)
@@ -219,10 +204,8 @@ class UniversalCommentRemover:
         processed_content = b"".join(result_parts)
         processed_content = self._cleanup_empty_lines(processed_content)
         return processed_content, comments_removed
-
     def _remove_json_comments(self, content: bytes) -> tuple[bytes, int]:
         import re
-
         pattern_line = re.compile(rb"//.*?$", re.MULTILINE)
         pattern_block = re.compile(rb"/\*.*?\*/", re.DOTALL)
         comments_count = 0
@@ -232,8 +215,6 @@ class UniversalCommentRemover:
         content = pattern_block.sub(b"", content)
         content = self._cleanup_empty_lines(content)
         return content, comments_count
-
-
 def collect_supported_files(inputs: list[str]) -> list[Path]:
     supported_files = []
     supported_extensions = set(EXTENSION_TO_LANGUAGE.keys())
@@ -266,8 +247,6 @@ def collect_supported_files(inputs: list[str]) -> list[Path]:
             seen.add(resolved)
             unique_files.append(resolved)
     return unique_files
-
-
 def process_file(path: Path) -> ProcessResult:
     start_time = time.perf_counter()
     try:
@@ -317,8 +296,6 @@ def process_file(path: Path) -> ProcessResult:
             processing_time=processing_time,
             file_type=path.suffix or "unknown",
         )
-
-
 def process_files_parallel(files: list[Path], num_workers: int = 8) -> list[ProcessResult]:
     results = []
     total_files = len(files)
@@ -358,8 +335,6 @@ def process_files_parallel(files: list[Path], num_workers: int = 8) -> list[Proc
                 )
                 completed += 1
     return results
-
-
 def print_summary(results: list[ProcessResult], total_files: int, start_time: float):
     total_time = time.perf_counter() - start_time
     successful = sum(1 for r in results if r.success)
@@ -401,8 +376,6 @@ def print_summary(results: list[ProcessResult], total_files: int, start_time: fl
             if not r.success:
                 print(f"  - {r.path}: {r.error_message}")
     print("=" * 70)
-
-
 def main():
     inputs = sys.argv[1:]
     print("Universal Comment Remover")
@@ -420,8 +393,6 @@ def main():
     start_time = time.perf_counter()
     results = process_files_parallel(files, num_workers=8)
     print_summary(results, len(files), start_time)
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     main()

@@ -1,10 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import sys
-
-
 def delete_lines_from_file() -> None:
     filename = sys.argv[1]
     path = Path(filename)
@@ -18,7 +15,5 @@ def delete_lines_from_file() -> None:
     new_lines = lines[: fromline - 1] + lines[toline:]
     path.write_text("\n".join(new_lines), encoding="utf-8")
     print(f"remained: {len(new_lines)} lines")
-
-
 if __name__ == "__main__":
     delete_lines_from_file()

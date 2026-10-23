@@ -4,8 +4,6 @@ import contextlib
 from pathlib import Path
 import shutil
 from dh import gsz
-
-
 def folderize_by_extension(cwd: Path):
     root_path = Path(cwd)
     extension_stats = {}
@@ -54,8 +52,6 @@ def folderize_by_extension(cwd: Path):
     print(f"{'TOTAL':<15} : {total_files:4} files  {gsz(total_size):>8}")
     print("=" * 40)
     return created_dirs, extension_stats
-
-
 if __name__ == "__main__":
     target_dir = Path.cwd()
     created_dirs, stats = folderize_by_extension(target_dir)

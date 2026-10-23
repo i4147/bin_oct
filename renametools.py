@@ -10,10 +10,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterator, Optional, Sequence
-
 log = logging.getLogger("renametools")
-
-
 def iter_paths(
     paths: Sequence[Path],
     *,
@@ -47,8 +44,6 @@ def iter_paths(
             seen.add(p)
             out.append(p)
     return iter(sorted(out))
-
-
 def unique_path(target: Path) -> Path:
     if not target.exists():
         return target
@@ -60,8 +55,6 @@ def unique_path(target: Path) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
-
-
 def safe_rename(src: Path, dst: Path, *, dry_run: bool, verbose: bool = True) -> bool:
     if dst.exists() and dst != src:
         dst = unique_path(dst)
@@ -77,18 +70,12 @@ def safe_rename(src: Path, dst: Path, *, dry_run: bool, verbose: bool = True) ->
     if verbose:
         print(f"✓ {src.name} -> {dst.name}")
     return True
-
-
 def _common_prefix(strings: Sequence[str]) -> str:
     if not strings:
         return ""
     return commonpath(list(strings))
-
-
 def _common_suffix(strings: Sequence[str]) -> str:
     return _common_prefix([s[::-1] for s in strings])[::-1]
-
-
 def _lowercase_name(paths: Sequence[Path], *, recursive: bool, dry_run: bool, verbose: bool) -> int:
     items = list(iter_paths(paths, recursive=recursive, include_dirs=True))
     items.sort(key=lambda p: len(p.parts), reverse=True)
@@ -105,8 +92,6 @@ def _lowercase_name(paths: Sequence[Path], *, recursive: bool, dry_run: bool, ve
         if safe_rename(p, target, dry_run=dry_run, verbose=verbose):
             count += 1
     return count
-
-
 def _lowercase_ext(paths: Sequence[Path], *, recursive: bool, dry_run: bool, verbose: bool) -> int:
     count = 0
     for p in iter_paths(paths, recursive=recursive):
@@ -118,8 +103,6 @@ def _lowercase_ext(paths: Sequence[Path], *, recursive: bool, dry_run: bool, ver
         if safe_rename(p, target, dry_run=dry_run, verbose=verbose):
             count += 1
     return count
-
-
 def _lowercase_content(paths: Sequence[Path], *, dry_run: bool, verbose: bool) -> int:
     count = 0
     for p in paths:
@@ -145,8 +128,6 @@ def _lowercase_content(paths: Sequence[Path], *, dry_run: bool, verbose: bool) -
                 print(f"✓ Lowercased content: {p}")
         count += 1
     return count
-
-
 def cmd_lowercase(args: argparse.Namespace) -> int:
     if args.target == "content":
         n = _lowercase_content(args.paths, dry_run=args.dry_run, verbose=True)
@@ -167,12 +148,8 @@ def cmd_lowercase(args: argparse.Namespace) -> int:
     verb = "Would rename" if args.dry_run else "Renamed"
     print(f"\n{verb} {n} item(s).")
     return 0
-
-
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".gif", ".webp"}
 DIM_IN_NAME = re.compile(r"\d+[xX]\d+")
-
-
 def _image_dimensions(path: Path) -> Optional[tuple[int, int]]:
     try:
         import cv2
@@ -184,8 +161,6 @@ def _image_dimensions(path: Path) -> Optional[tuple[int, int]]:
         return None
     h, w = img.shape[:2]
     return w, h
-
-
 def _rename_image(args: tuple[Path, str, bool]) -> tuple[Path, bool, str]:
     path, separator, dry_run = args
     if DIM_IN_NAME.search(path.stem):
@@ -208,8 +183,6 @@ def _rename_image(args: tuple[Path, str, bool]) -> tuple[Path, bool, str]:
     except OSError as e:
         return (path, False, f"Rename failed: {e}")
     return (target, True, f"{path.name} -> {new_name} ({w}x{h})")
-
-
 def cmd_images(args: argparse.Namespace) -> int:
     root = args.root.resolve()
     files = list(iter_paths([root], recursive=True, suffixes=IMAGE_SUFFIXES))
@@ -233,8 +206,6 @@ def cmd_images(args: argparse.Namespace) -> int:
     print("-" * 40)
     print(f"[SUMMARY] Renamed: {renamed} | Skipped: {skipped} | Failed: {failed} | Total: {len(files)}")
     return 0 if failed == 0 else 1
-
-
 DEFAULT_JUNK_PATTERNS = (
     r"\bOutcast\b",
     r"\bS\d{2}\b",
@@ -245,14 +216,10 @@ DEFAULT_JUNK_PATTERNS = (
     "-REWARD_HI",
 )
 DEFAULT_MEDIA_SUFFIXES = {".srt", ".mkv", ".mp4", ".avi"}
-
-
 def _strip_junk(name: str, patterns: Sequence[re.Pattern[str]]) -> str:
     for pat in patterns:
         name = pat.sub("", name)
     return re.sub(r"\.+", ".", name).strip(". ")
-
-
 def cmd_clean_names(args: argparse.Namespace) -> int:
     patterns = [re.compile(p, re.IGNORECASE) for p in args.pattern]
     files = list(iter_paths(args.paths, recursive=args.recursive, suffixes=DEFAULT_MEDIA_SUFFIXES))
@@ -288,23 +255,15 @@ def cmd_clean_names(args: argparse.Namespace) -> int:
     else:
         print(f"\nRenamed up to {changed} file(s).")
     return 0
-
-
 _QUERY_ANY_RE = re.compile(r"(\.(?:js|css))([?#].*)?$", re.IGNORECASE)
 _QUERY_PARAM_RE = re.compile(r"\?[a-zA-Z0-9_-]+=[^\"'\s>]+", re.IGNORECASE)
 _JS_CSS_REF_RE = re.compile(r"\b([^\s<>\"']*?\.(?:js|css))([?#][^\s<>\"']*)?\b", re.IGNORECASE)
-
-
 def _strip_query(name: str, style: str) -> str:
     if style == "param":
         return _QUERY_PARAM_RE.sub("", name)
     return _QUERY_ANY_RE.sub(r"\1", name)
-
-
 def _strip_query_in_html(text: str) -> str:
     return _JS_CSS_REF_RE.sub(lambda m: m.group(1), text)
-
-
 def cmd_jscss(args: argparse.Namespace) -> int:
     renamed = 0
     for path in iter_paths(args.paths, recursive=True):
@@ -331,8 +290,6 @@ def cmd_jscss(args: argparse.Namespace) -> int:
                 print(f"✓ Updated HTML: {path}")
     print(f"\nProcessed {renamed} filename(s).")
     return 0
-
-
 _MEANINGLESS_STEMS = {"main", "run", "test", "script", "app"}
 _STOP_WORDS = {
     "this",
@@ -347,8 +304,6 @@ _STOP_WORDS = {
     "is",
 }
 _EPILOG_RE = re.compile(r"epilog\s*=\s*[\\'\"]([^\\'\"]+)[\\'\"]", re.IGNORECASE)
-
-
 @dataclass
 class NameSuggestion:
     path: Path
@@ -357,8 +312,6 @@ class NameSuggestion:
     suggestion: Optional[str] = None
     error: Optional[str] = None
     renamed: bool = False
-
-
 class SourceAnalyzer:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -372,14 +325,11 @@ class SourceAnalyzer:
         except OSError as e:
             msg = f"Failed to read {path}: {e}"
             raise RuntimeError(msg) from e
-
     def module_docstring(self) -> Optional[str]:
         return ast.get_docstring(self.tree) if self.tree else None
-
     def argparse_epilog(self) -> Optional[str]:
         m = _EPILOG_RE.search(self.content)
         return m.group(1) if m else None
-
     def main_docstring(self) -> Optional[str]:
         if not self.tree:
             return None
@@ -387,16 +337,13 @@ class SourceAnalyzer:
             if isinstance(node, ast.FunctionDef) and node.name == "main":
                 return ast.get_docstring(node)
         return None
-
     def purpose(self) -> Optional[str]:
         return self.module_docstring() or self.argparse_epilog() or self.main_docstring()
-
     def is_meaningful_name(self) -> bool:
         stem = self.path.stem
         if len(stem) < 3 or stem in _MEANINGLESS_STEMS:
             return False
         return not re.match(r"^[a-z0-9]{1,2}$", stem)
-
     def suggest_name(self) -> Optional[str]:
         purpose = self.purpose()
         if not purpose:
@@ -408,8 +355,6 @@ class SourceAnalyzer:
         if filtered:
             return "_".join(filtered[:3])
         return "_".join(words[:2]) if len(words) >= 2 else None
-
-
 def _analyze(path: Path) -> NameSuggestion:
     s = NameSuggestion(path=path, current_name=path.stem)
     try:
@@ -420,8 +365,6 @@ def _analyze(path: Path) -> NameSuggestion:
     except RuntimeError as e:
         s.error = str(e)
     return s
-
-
 def cmd_suggest_names(args: argparse.Namespace) -> int:
     py_files = list(iter_paths(args.paths, recursive=True, suffixes={".py"}))
     if not py_files:
@@ -476,17 +419,11 @@ def cmd_suggest_names(args: argparse.Namespace) -> int:
             if s.error:
                 print(f"  ❌ {s.path}: {s.error}")
     return 0
-
-
 SKIP_PARTS = {".git"}
-
-
 def _is_skippable(p: Path) -> bool:
     if p.is_symlink():
         return True
     return any(part in SKIP_PARTS for part in p.parts)
-
-
 def _pnr_remove(root: Path, needle: str, *, dry_run: bool, recursive: bool) -> int:
     count = 0
     try:
@@ -510,8 +447,6 @@ def _pnr_remove(root: Path, needle: str, *, dry_run: bool, recursive: bool) -> i
         if recursive and entry.is_dir():
             count += _pnr_remove(entry, needle, dry_run=dry_run, recursive=True)
     return count
-
-
 def _pnr_replace(root: Path, old: str, new: str, *, dry_run: bool, recursive: bool) -> int:
     count = 0
     try:
@@ -535,8 +470,6 @@ def _pnr_replace(root: Path, old: str, new: str, *, dry_run: bool, recursive: bo
         if recursive and entry.is_dir():
             count += _pnr_replace(entry, old, new, dry_run=dry_run, recursive=True)
     return count
-
-
 def _pnr_template(root: Path, prefix: str, *, dry_run: bool, recursive: bool) -> int:
     count = 0
     try:
@@ -564,8 +497,6 @@ def _pnr_template(root: Path, prefix: str, *, dry_run: bool, recursive: bool) ->
         for d in subdirs:
             count += _pnr_template(d, prefix, dry_run=dry_run, recursive=True)
     return count
-
-
 def cmd_pnr(args: argparse.Namespace) -> int:
     root = args.root.resolve()
     if args.dry_run:
@@ -579,8 +510,6 @@ def cmd_pnr(args: argparse.Namespace) -> int:
         n = _pnr_template(root, args.template, dry_run=args.dry_run, recursive=args.recursive)
     print(f"\nOperation complete. {n} item(s) affected.")
     return 0
-
-
 def _add_paths(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths",
@@ -589,8 +518,6 @@ def _add_paths(p: argparse.ArgumentParser) -> None:
         default=[Path.cwd()],
         help="Files or directories (default: current directory).",
     )
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="renametools",
@@ -712,8 +639,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pnr.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -737,7 +662,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except Exception as e:
         log.exception("Unexpected error: %s", e)
         return 1
-
-
 if __name__ == "__main__":
     sys.exit(main())

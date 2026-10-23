@@ -7,12 +7,9 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from loguru import logger
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
 POOL_SIZE: int = 8
-
-
 def normalize_function_body(lines: Sequence[str], start_idx: int, end_idx: int) -> str:
     body_lines: list[str] = list(lines[start_idx:end_idx])
     if not body_lines:
@@ -22,8 +19,6 @@ def normalize_function_body(lines: Sequence[str], start_idx: int, end_idx: int) 
         return ""
     min_indent: int = min(len(line) - len(line.lstrip()) for line in stripped)
     return "\n".join(line[min_indent:] if line.strip() else "" for line in body_lines)
-
-
 def compute_function_hash(path: Path, func_node: ast.FunctionDef) -> str | None:
     try:
         lines: list[str] = path.read_text().splitlines(keepends=True)
@@ -43,8 +38,6 @@ def compute_function_hash(path: Path, func_node: ast.FunctionDef) -> str | None:
     body: str = normalize_function_body(func_lines, body_start, len(func_lines))
     content: str = f"{sig}\n{body}"
     return hashlib.md5(content.encode()).hexdigest()
-
-
 def extract_top_level_functions(
     path: Path,
 ) -> dict[str, dict[str, Any]] | None:
@@ -66,8 +59,6 @@ def extract_top_level_functions(
                     "end_lineno": node.end_lineno,
                 }
     return functions
-
-
 def process_target_file(
     target_path: Path,
     ref_hashes: dict[str, str],
@@ -113,8 +104,6 @@ def process_target_file(
                 "duplicates": [],
             }
     return {"file": target_path, "status": "found", "duplicates": duplicates}
-
-
 def expand_input_paths(inputs: Sequence[str]) -> list[Path]:
     py_files: set[Path] = set()
     if not inputs:
@@ -127,8 +116,6 @@ def expand_input_paths(inputs: Sequence[str]) -> list[Path]:
             elif path.is_dir():
                 py_files.update(path.rglob("*.py"))
     return sorted(py_files)
-
-
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Remove duplicate functions from Python files",
@@ -150,8 +137,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Apply changes (default: dry-run)",
     )
     return parser.parse_args(argv)
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args: argparse.Namespace = parse_args(argv)
     ref_path: Path = Path(args.reference)
@@ -209,7 +194,5 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"ℹ️  Found {total_duplicates} duplicate function(s)")
         print("   Run with -a/--apply to remove")
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

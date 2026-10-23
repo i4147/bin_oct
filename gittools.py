@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 import argparse
 import concurrent.futures
 import json
@@ -10,10 +9,7 @@ import subprocess
 from typing import Any, Optional
 import urllib.error
 import urllib.request
-
 _SOURCE_CITATION: str = "[cite: 1]"
-
-
 def run_git(
     args: list[str], cwd: Optional[pathlib.Path] = None, check: bool = True, timeout: int = 60
 ) -> subprocess.CompletedProcess[str]:
@@ -25,8 +21,6 @@ def run_git(
         raise RuntimeError(f"git command timed out: {' '.join(args)}") from e
     except FileNotFoundError as e:
         raise RuntimeError("git executable not found") from e
-
-
 def get_current_branch(repo_path: pathlib.Path) -> str:
     res = run_git(["branch", "--show-current"], cwd=repo_path, check=False)
     branch = res.stdout.strip()
@@ -37,8 +31,6 @@ def get_current_branch(repo_path: pathlib.Path) -> str:
     if branch2 == "HEAD":
         raise RuntimeError("detached HEAD")
     return branch2
-
-
 def get_github_token(env_file: Optional[pathlib.Path] = None) -> str:
     token = os.environ.get("GITHUB_TOKEN", "").strip()
     if token:
@@ -57,8 +49,6 @@ def get_github_token(env_file: Optional[pathlib.Path] = None) -> str:
             if val:
                 return val
     raise RuntimeError(f"GITHUB_TOKEN not found in {path}")
-
-
 def github_api_request(token: str, method: str, url: str, data: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     body = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(url, data=body, method=method)
@@ -78,8 +68,6 @@ def github_api_request(token: str, method: str, url: str, data: Optional[dict[st
         except Exception:
             err_json = {"message": err_body}
         raise RuntimeError(f"GitHub API error {e.code}: {err_json.get('message', err_body)}") from e
-
-
 def create_github_repo(
     token: str, name: str, private: bool, description: Optional[str], auto_init: bool
 ) -> dict[str, Any]:
@@ -98,8 +86,6 @@ def create_github_repo(
                 "html_url": f"https://github.com/{login}/{name}",
             }
         raise
-
-
 def find_git_repos(root_path: pathlib.Path) -> list[pathlib.Path]:
     repos: list[pathlib.Path] = []
     for root, dirs, _ in os.walk(root_path):
@@ -108,15 +94,12 @@ def find_git_repos(root_path: pathlib.Path) -> list[pathlib.Path]:
             repos.append(current)
             dirs[:] = []
     return repos
-
-
 def cmd_scan_changes(args: argparse.Namespace) -> int:
     root = pathlib.Path(args.path).resolve()
     repos = find_git_repos(root)
     if not repos:
         print("No git repositories found.")
         return 0
-
     def check_repo(repo: pathlib.Path) -> tuple[pathlib.Path, bool, str]:
         try:
             res = run_git(["status", "--porcelain"], cwd=repo, check=False, timeout=10)
@@ -131,7 +114,6 @@ def cmd_scan_changes(args: argparse.Namespace) -> int:
             return (repo, True, detail)
         except Exception as e:
             return (repo, False, f"Error: {e}")
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
         results = list(executor.map(check_repo, repos))
     dirty_repos = [r for r in results if r[1]]
@@ -145,15 +127,12 @@ def cmd_scan_changes(args: argparse.Namespace) -> int:
     else:
         print("All repositories are clean")
     return 0
-
-
 def cmd_pull_all(args: argparse.Namespace) -> int:
     root = pathlib.Path(args.path).resolve()
     repos = find_git_repos(root)
     if not repos:
         print("No git repositories found.")
         return 0
-
     def pull_repo(repo: pathlib.Path) -> tuple[pathlib.Path, bool, str]:
         try:
             branch = get_current_branch(repo)
@@ -165,7 +144,6 @@ def cmd_pull_all(args: argparse.Namespace) -> int:
             return (repo, True, "Pulled successfully")
         except Exception as e:
             return (repo, False, str(e))
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
         results = list(executor.map(pull_repo, repos))
     for repo, success, msg in results:
@@ -174,8 +152,6 @@ def cmd_pull_all(args: argparse.Namespace) -> int:
         else:
             print(f"❌ {repo.relative_to(root)}: {msg}")
     return 0
-
-
 def cmd_new_repo(args: argparse.Namespace) -> int:
     token = get_github_token(pathlib.Path(args.env_file) if args.env_file else None)
     cwd = pathlib.Path.cwd().resolve()
@@ -206,8 +182,6 @@ def cmd_new_repo(args: argparse.Namespace) -> int:
     run_git(["push", "-u", "origin", args.branch], cwd=cwd, check=True)
     print(f"https://github.com/{login}/{name}")
     return 0
-
-
 def cmd_gitignore_add(args: argparse.Namespace) -> int:
     line = args.line.strip()
     if not line:
@@ -235,8 +209,6 @@ def cmd_gitignore_add(args: argparse.Namespace) -> int:
             print(f"Failed {gi}: {e}", file=sys.stderr)
     print(f"Modified {modified} file(s)")
     return 0
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(prog="git-helper")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -266,9 +238,6 @@ def main() -> int:
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-
-
 if __name__ == "__main__":
     import sys
-
     sys.exit(main())

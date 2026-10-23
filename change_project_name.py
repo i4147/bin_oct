@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import shutil
 import sys
-
-
 def replace_in_file(path: Path, old: str, new: str) -> None:
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
@@ -15,8 +12,6 @@ def replace_in_file(path: Path, old: str, new: str) -> None:
         return
     new_text = text.replace(old, new)
     path.write_text(new_text, encoding="utf-8")
-
-
 def rename_path(path: Path, old: str, new: str) -> Path:
     if old not in path.name:
         return path
@@ -30,8 +25,6 @@ def rename_path(path: Path, old: str, new: str) -> Path:
         return new_path
     except Exception:
         return path
-
-
 def main() -> None:
     if len(sys.argv) != 3:
         print(f"Usage: {sys.argv[0]} <text_to_change> <replacement_text>")
@@ -45,7 +38,5 @@ def main() -> None:
     paths = sorted(root.rglob("*"), key=lambda p: len(p.parts), reverse=True)
     for path in paths:
         rename_path(path, old, new)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

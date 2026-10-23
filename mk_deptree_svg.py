@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict, deque
@@ -8,14 +7,9 @@ from importlib import metadata
 from pathlib import Path
 import re
 from joblib import Parallel, delayed
-
 WORKERS = 8
-
-
 def normalize_name(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
-
-
 def get_installed_packages() -> dict[str, metadata.Distribution]:
     packages = {}
     for distribution in metadata.distributions():
@@ -23,8 +17,6 @@ def get_installed_packages() -> dict[str, metadata.Distribution]:
         if name:
             packages[normalize_name(name)] = distribution
     return packages
-
-
 def package_dependencies(
     item: tuple[str, metadata.Distribution],
 ) -> tuple[str, list[str]]:
@@ -37,8 +29,6 @@ def package_dependencies(
         if dependency_name:
             dependencies.append(normalize_name(dependency_name))
     return package_name, sorted(set(dependencies))
-
-
 def build_dependency_graph(
     packages: dict[str, metadata.Distribution],
 ) -> dict[str, list[str]]:
@@ -50,8 +40,6 @@ def build_dependency_graph(
     for package_name, dependencies in results:
         graph[package_name] = [dependency for dependency in dependencies if dependency in installed_names]
     return graph
-
-
 def reachable_graph(
     graph: dict[str, list[str]],
     roots: list[str] | None,
@@ -78,8 +66,6 @@ def reachable_graph(
         for package in sorted(included)
     }
     return limited_graph, selected_roots
-
-
 def topological_levels(
     graph: dict[str, list[str]],
     roots: list[str],
@@ -97,8 +83,6 @@ def topological_levels(
     for package in graph:
         levels.setdefault(package, 0)
     return levels
-
-
 def svg_text(
     x: int,
     y: int,
@@ -116,8 +100,6 @@ def svg_text(
         f'font-family="Arial, sans-serif" font-weight="{weight}">'
         f"{escaped}</text>"
     )
-
-
 def create_svg(
     graph: dict[str, list[str]],
     roots: list[str],
@@ -213,8 +195,6 @@ def create_svg(
         ])
     parts.append("</svg>")
     output.write_text("\n".join(parts), encoding="utf-8")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create an SVG dependency graph for installed Python packages.")
     parser.add_argument(
@@ -243,7 +223,5 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     create_svg(graph, roots, args.output)
     print(f"Wrote {len(graph)} packages to {args.output}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -17,50 +17,30 @@ import tarfile
 import textwrap
 from typing import TYPE_CHECKING
 import zipfile
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 try:
     import zstandard as zstd
-
     _HAS_ZSTD = True
 except ImportError:
     _HAS_ZSTD = False
 _USE_COLOR: bool = True
-
-
 def _c(code: str, text: str) -> str:
     return text if not _USE_COLOR else f"\x1b[{code}m{text}\x1b[0m"
-
-
 def bold(s: str) -> str:
     return _c("1", s)
-
-
 def cyan(s: str) -> str:
     return _c("36", s)
-
-
 def yellow(s: str) -> str:
     return _c("33", s)
-
-
 def red(s: str) -> str:
     return _c("31", s)
-
-
 def green(s: str) -> str:
     return _c("32", s)
-
-
 def dim(s: str) -> str:
     return _c("2", s)
-
-
 def _safe_read(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
-
-
 def _display_path(p: str) -> str:
     if "::" in p:
         return p
@@ -68,12 +48,8 @@ def _display_path(p: str) -> str:
         return str(Path(p).relative_to(Path.cwd()))
     except ValueError:
         return p
-
-
 def _iter_py_files(root: Path, skip_dirs: set[str]) -> list[Path]:
     return [p for p in root.rglob("*.py") if p.is_file() and not any(part in skip_dirs for part in p.parts)]
-
-
 _SKIP_DIRS: set[str] = {
     ".git",
     "__pycache__",
@@ -82,23 +58,17 @@ _SKIP_DIRS: set[str] = {
     "output",
     "node_modules",
 }
-
-
 @dataclass
 class UnusedImport:
     lineno: int
     col_offset: int
     original_stmt: str
     unused_names: list[str]
-
-
 @dataclass
 class _ImportReport:
     path: str
     unused: list[UnusedImport] = field(default_factory=list)
     error: str | None = None
-
-
 def _collect_type_checking_lines(tree: ast.Module) -> set[int]:
     lines: set[int] = set()
     for node in ast.walk(tree):
@@ -113,8 +83,6 @@ def _collect_type_checking_lines(tree: ast.Module) -> set[int]:
                 if hasattr(sub, "lineno"):
                     lines.add(sub.lineno)
     return lines
-
-
 def _collect_all_exports(tree: ast.Module) -> set[str]:
     names: set[str] = set()
     for node in tree.body:
@@ -127,8 +95,6 @@ def _collect_all_exports(tree: ast.Module) -> set[str]:
                         if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                             names.add(elt.value)
     return names
-
-
 def _collect_used_names(tree: ast.Module) -> set[str]:
     used: set[str] = set()
     for node in ast.walk(tree):
@@ -144,8 +110,6 @@ def _collect_used_names(tree: ast.Module) -> set[str]:
             for tok in re.findall(r"\b([A-Za-z_]\w*)\b", node.value):
                 used.add(tok)
     return used
-
-
 def _parse_import_names(node: ast.Import | ast.ImportFrom) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for alias in node.names:
@@ -153,8 +117,6 @@ def _parse_import_names(node: ast.Import | ast.ImportFrom) -> list[tuple[str, st
         bound = alias.asname or full.split(".")[0]
         pairs.append((full, bound))
     return pairs
-
-
 def _analyse_imports(
     source: str,
     path: str,
@@ -212,15 +174,11 @@ def _analyse_imports(
             )
         )
     return report
-
-
 def _bound_name(segment: str) -> str:
     m = re.match(r"^\s*[\w.]+\s+as\s+(\w+)\s*$", segment)
     if m:
         return m.group(1)
     return segment.strip().split(".")[0].strip()
-
-
 def _rewrite_simple_import(stmt: str, unused: set[str]) -> str | None:
     m = re.match(r"^(\s*import\s+)(.+)$", stmt)
     if m:
@@ -238,8 +196,6 @@ def _rewrite_simple_import(stmt: str, unused: set[str]) -> str | None:
             return None
         return head + ", ".join(kept)
     return stmt
-
-
 def _rewrite_multiline_import(stmt: str, unused: set[str]) -> str | None:
     m = re.match(r"^(\s*from\s+[\w.]+\s+import\s*$)(.*?)($.*)", stmt, re.DOTALL)
     if not m:
@@ -258,8 +214,6 @@ def _rewrite_multiline_import(stmt: str, unused: set[str]) -> str | None:
         return f"{head[:-1]}{kept[0]}{tail[1:]}"
     joined = ",\n    ".join(kept)
     return f"{head}\n    {joined},\n{tail}"
-
-
 def _rewrite_source(source: str, unused: list[UnusedImport]) -> str:
     by_line: dict[int, set[str]] = {}
     end_of: dict[int, int] = {}
@@ -294,8 +248,6 @@ def _rewrite_source(source: str, unused: list[UnusedImport]) -> str:
         skip_until = end
         i += 1
     return "".join(out)
-
-
 def _autoflake_one(path: Path, *, autofix: bool, diff: bool) -> None:
     if not path.exists():
         print(f"Error: The file `{path}` does not exist.")
@@ -342,8 +294,6 @@ def _autoflake_one(path: Path, *, autofix: bool, diff: bool) -> None:
             for line in ((proc.stdout or "") + (proc.stderr or "")).splitlines():
                 if line.strip():
                     print(f"{path}: {line}")
-
-
 def _scan_zip(path: Path) -> Iterator[tuple[str, str]]:
     try:
         with zipfile.ZipFile(path) as zf:
@@ -357,8 +307,6 @@ def _scan_zip(path: Path) -> Iterator[tuple[str, str]]:
                     yield key, f"__ERROR__:{exc}"
     except zipfile.BadZipFile as exc:
         yield f"{path.name}::?", f"__ERROR__:Bad zip: {exc}"
-
-
 def _scan_tar(path: Path) -> Iterator[tuple[str, str]]:
     def _inner(tf: tarfile.TarFile) -> Iterator[tuple[str, str]]:
         for member in tf.getmembers():
@@ -372,7 +320,6 @@ def _scan_tar(path: Path) -> Iterator[tuple[str, str]]:
                 yield key, fobj.read().decode("utf-8", errors="replace")
             except Exception as exc:
                 yield key, f"__ERROR__:{exc}"
-
     try:
         if _HAS_ZSTD:
             decomp = zstd.ZstdDecompressor()
@@ -385,16 +332,10 @@ def _scan_tar(path: Path) -> Iterator[tuple[str, str]]:
                 yield from _inner(tf)
     except Exception as exc:
         yield f"{path.name}::?", f"__ERROR__:Archive error: {exc}"
-
-
 _WORKER_IGNORE_INIT: bool = False
-
-
 def _init_worker_imports(ignore_init: bool) -> None:
     global _WORKER_IGNORE_INIT
     _WORKER_IGNORE_INIT = ignore_init
-
-
 def _worker_file(p: str) -> _ImportReport:
     path = Path(p)
     try:
@@ -403,23 +344,18 @@ def _worker_file(p: str) -> _ImportReport:
         return _ImportReport(path=p, error=f"OSError: {exc}")
     is_init = path.name == "__init__.py"
     return _analyse_imports(src, p, is_init=is_init, ignore_init=_WORKER_IGNORE_INIT)
-
-
 def _worker_archive(item: tuple[str, str]) -> _ImportReport:
     key, src = item
     if src.startswith("__ERROR__:"):
         return _ImportReport(path=key, error=src[len("__ERROR__:") :])
     is_init = key.endswith(("/__init__.py", "\\__init__.py"))
     return _analyse_imports(src, key, is_init=is_init, ignore_init=_WORKER_IGNORE_INIT)
-
-
 def _collect_import_targets(
     paths: Iterable[Path], excludes: list[re.Pattern[str]]
 ) -> tuple[list[str], list[tuple[str, str]]]:
     def _is_excluded(p: Path) -> bool:
         s = str(p)
         return any(pat.search(s) for pat in excludes)
-
     py_files: list[str] = []
     archive_members: list[tuple[str, str]] = []
     for p in paths:
@@ -449,8 +385,6 @@ def _collect_import_targets(
                 elif f.name.endswith(".tar.zst"):
                     archive_members.extend(_scan_tar(f))
     return py_files, archive_members
-
-
 def _print_report(rep: _ImportReport, *, verbose: bool) -> int:
     disp = _display_path(rep.path)
     if rep.error:
@@ -466,8 +400,6 @@ def _print_report(rep: _ImportReport, *, verbose: bool) -> int:
         print(f"  {bold(disp)}  -->  {loc}  {first}")
         print(f"{'':>50}  [unused: {red(', '.join(item.unused_names))}]")
     return len(rep.unused)
-
-
 def _cmd_imports(args: argparse.Namespace) -> int:
     if args.backend == "autoflake":
         return _cmd_imports_autoflake(args)
@@ -542,8 +474,6 @@ def _cmd_imports(args: argparse.Namespace) -> int:
         if args.autofix and not args.dry_run:
             print(green(f"Fixed {fixed_files} file(s)."))
     return 0 if total_unused == 0 else 1
-
-
 def _cmd_imports_autoflake(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in (args.paths or ["."])]
     files: list[Path] = []
@@ -558,8 +488,6 @@ def _cmd_imports_autoflake(args: argparse.Namespace) -> int:
     for f in files:
         _autoflake_one(f, autofix=args.autofix, diff=args.diff)
     return 0
-
-
 @dataclass
 class DefItem:
     name: str
@@ -567,8 +495,6 @@ class DefItem:
     file: Path
     lineno: int
     end_lineno: int
-
-
 @dataclass
 class _DefScanResult:
     file: Path
@@ -576,20 +502,13 @@ class _DefScanResult:
     used_names: set[str] = field(default_factory=set)
     source: str = ""
     error: str | None = None
-
-
 _NEVER_UNUSED = {"__all__", "__version__", "__author__"}
-
-
 def _is_const_name(name: str) -> bool:
     return name.isupper() and not name.startswith("__")
-
-
 class _DefCollector(ast.NodeVisitor):
     def __init__(self, file: Path) -> None:
         self.file = file
         self.defs: list[DefItem] = []
-
     def _add(self, name: str, kind: str, node: ast.AST) -> None:
         self.defs.append(
             DefItem(
@@ -600,40 +519,29 @@ class _DefCollector(ast.NodeVisitor):
                 end_lineno=getattr(node, "end_lineno", node.lineno),
             )
         )
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._add(node.name, "func", node)
-
     visit_AsyncFunctionDef = visit_FunctionDef
-
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._add(node.name, "class", node)
-
     def visit_Assign(self, node: ast.Assign) -> None:
         for target in node.targets:
             if isinstance(target, ast.Name) and _is_const_name(target.id):
                 self._add(target.id, "const", node)
         self.generic_visit(node)
-
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.target, ast.Name) and _is_const_name(node.target.id):
             self._add(node.target.id, "const", node)
         self.generic_visit(node)
-
-
 class _UsedNameCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.used: set[str] = set()
-
     def visit_Name(self, node: ast.Name) -> None:
         self.used.add(node.id)
         self.generic_visit(node)
-
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.used.add(node.attr)
         self.generic_visit(node)
-
-
 def _scan_one_defs(path: Path) -> _DefScanResult:
     try:
         src = path.read_text(encoding="utf-8", errors="replace")
@@ -645,8 +553,6 @@ def _scan_one_defs(path: Path) -> _DefScanResult:
     user = _UsedNameCollector()
     user.visit(tree)
     return _DefScanResult(file=path, defs=collector.defs, used_names=user.used, source=src)
-
-
 def _filter_unused_global(scans: list[_DefScanResult], kind_filter: str) -> list[DefItem]:
     all_defs: list[DefItem] = []
     all_used: set[str] = set()
@@ -668,8 +574,6 @@ def _filter_unused_global(scans: list[_DefScanResult], kind_filter: str) -> list
         if d.name not in all_used:
             result.append(d)
     return result
-
-
 def _filter_unused_per_file(scan: _DefScanResult, kind_filter: str) -> list[DefItem]:
     if scan.error:
         return []
@@ -682,8 +586,6 @@ def _filter_unused_per_file(scan: _DefScanResult, kind_filter: str) -> list[DefI
         if d.name not in scan.used_names:
             result.append(d)
     return result
-
-
 def _remove_defs_from_source(source: str, names: set[str], only_top_level: bool) -> str:
     tree = ast.parse(source)
     if only_top_level:
@@ -696,7 +598,6 @@ def _remove_defs_from_source(source: str, names: set[str], only_top_level: bool)
             new_body.append(node)
         tree.body = new_body
         return ast.unparse(tree)
-
     class _Remover(ast.NodeTransformer):
         def _maybe_drop(self, body: list[ast.stmt]) -> list[ast.stmt]:
             out: list[ast.stmt] = []
@@ -705,21 +606,14 @@ def _remove_defs_from_source(source: str, names: set[str], only_top_level: bool)
                     continue
                 out.append(self.visit(n))
             return out
-
         def visit_Module(self, node: ast.Module) -> ast.Module:
             node.body = self._maybe_drop(node.body)
             return node
-
         def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
             node.body = self._maybe_drop(node.body)
             return node
-
     return ast.unparse(_Remover().visit(tree))
-
-
 _EXTRACT_DIRS = {"func": "func", "class": "classes", "const": "const"}
-
-
 def _extract_one(item: DefItem, base: Path) -> str:
     target = base / _EXTRACT_DIRS[item.kind]
     target.mkdir(parents=True, exist_ok=True)
@@ -732,8 +626,6 @@ def _extract_one(item: DefItem, base: Path) -> str:
     )
     out.write_text(header + snippet + "\n", encoding="utf-8")
     return str(out)
-
-
 def _cmd_defs(args: argparse.Namespace) -> int:
     root = Path(args.dir).resolve()
     files = _iter_py_files(root, _SKIP_DIRS)
@@ -795,8 +687,6 @@ def _cmd_defs(args: argparse.Namespace) -> int:
         if not args.dry_run:
             print(green(f"\nRemoved unused objects from {removed_count} file(s)."))
     return 0
-
-
 _SKIPDIRS_RE = re.compile(r"^(.+?):(\d+):\s+unused variable\s+['\"]SKIP_DIRS['\"]")
 _UNUSED_VAR_RE = re.compile(
     r"^(?P<path>.*?):(?P<lineno>\d+):\s*unused variable '(?P<var>[^']+)'",
@@ -810,8 +700,6 @@ _VULTURE_RE = re.compile(
     r"|unreachable 'else' block"
     r"|unused import '([^']+)'\s+\(\d+% confidence\))$"
 )
-
-
 def _parse_vulture_lines(lines: list[str], mode: str) -> dict[str, list[tuple[int, str, str]]]:
     issues: dict[str, list[tuple[int, str, str]]] = defaultdict(list)
     if mode == "skip-dirs":
@@ -849,8 +737,6 @@ def _parse_vulture_lines(lines: list[str], mode: str) -> dict[str, list[tuple[in
             kind, name = "other", ""
         issues[path].append((lineno, kind, name))
     return dict(issues)
-
-
 def _comment_out(line: str, *, marker: bool = False) -> str:
     stripped = line.lstrip()
     indent = line[: len(line) - len(stripped)]
@@ -860,8 +746,6 @@ def _comment_out(line: str, *, marker: bool = False) -> str:
         return line
     prefix = "# REMOVED: " if marker else "# "
     return indent + prefix + stripped
-
-
 def _apply_vulture_fixes(path: str, fixes: list[tuple[int, str, str]], mode: str) -> tuple[list[str], list[str]]:
     p = Path(path)
     with p.open("r", encoding="utf-8") as f:
@@ -879,8 +763,6 @@ def _apply_vulture_fixes(path: str, fixes: list[tuple[int, str, str]], mode: str
         elif mode == "remove-all":
             lines[idx] = _comment_out(lines[idx], marker=True)
     return original, lines
-
-
 def _cmd_vulture(args: argparse.Namespace) -> int:
     src_file = args.file
     if src_file:
@@ -940,8 +822,6 @@ def _cmd_vulture(args: argparse.Namespace) -> int:
         if not args.apply:
             print(dim("Dry-run mode — use --apply to write changes."))
     return 0
-
-
 _REPLACE_FUNC_NAME = "format_size"
 _REPLACE_FUNC_NARGS = 1
 _REPLACE_FUNC_BODY = textwrap.dedent("""
@@ -954,8 +834,6 @@ _REPLACE_FUNC_BODY = textwrap.dedent("""
         return f"{size:.2f} PB"
 """).lstrip("\n")
 _REPLACE_FUNC_AST = ast.dump(ast.parse(_REPLACE_FUNC_BODY).body[0])
-
-
 def _is_target_func(node: ast.AST, inspect_only: bool) -> bool:
     if not isinstance(node, ast.FunctionDef):
         return False
@@ -964,8 +842,6 @@ def _is_target_func(node: ast.AST, inspect_only: bool) -> bool:
     if inspect_only:
         return len(node.args.args) == _REPLACE_FUNC_NARGS
     return ast.dump(node) == _REPLACE_FUNC_AST
-
-
 def _replace_func_in_file(path: Path, inspect_only: bool) -> tuple[Path, bool, str]:
     if path.name == "pycleaner.py":
         return path, False, "Skipped by filename"
@@ -1024,8 +900,6 @@ def _replace_func_in_file(path: Path, inspect_only: bool) -> tuple[Path, bool, s
     except Exception as exc:
         return path, False, f"Write error: {exc}"
     return path, True, "Successfully updated"
-
-
 def _cmd_replace_func(args: argparse.Namespace) -> int:
     root = Path(args.dir)
     files = [p for p in root.rglob("*.py") if p.is_file() and p.resolve() != Path(__file__).resolve()]
@@ -1043,8 +917,6 @@ def _cmd_replace_func(args: argparse.Namespace) -> int:
             elif msg != "Target function not found":
                 print(yellow(f"[SKIPPED] {path}: {msg}"))
     return 0
-
-
 def _read_block(path: Path) -> list[str]:
     try:
         text = path.read_text(encoding="utf-8")
@@ -1052,8 +924,6 @@ def _read_block(path: Path) -> list[str]:
         print(red(f"Failed to read {path}: {exc}"), file=sys.stderr)
         raise
     return [line.rstrip() for line in text.strip("\n").splitlines()]
-
-
 def _find_block(lines: list[str], block: list[str]) -> tuple[int, int] | None:
     stripped = [line.rstrip("\n").rstrip() for line in lines]
     n, m = len(stripped), len(block)
@@ -1061,8 +931,6 @@ def _find_block(lines: list[str], block: list[str]) -> tuple[int, int] | None:
         if stripped[i : i + m] == block:
             return i, i + m
     return None
-
-
 def _already_has_import(tree: ast.Module, name: str) -> bool:
     for node in tree.body:
         if isinstance(node, ast.ImportFrom) and node.module == "dh" and any(a.name == name for a in node.names):
@@ -1070,8 +938,6 @@ def _already_has_import(tree: ast.Module, name: str) -> bool:
         if isinstance(node, ast.Import) and any(a.name == name for a in node.names):
             return True
     return False
-
-
 def _top_import_end(tree: ast.Module) -> int:
     end = 0
     for node in tree.body:
@@ -1081,8 +947,6 @@ def _top_import_end(tree: ast.Module) -> int:
         else:
             break
     return end
-
-
 def _replace_block_in_file(path: Path, block: list[str], import_line: str) -> None:
     if path.resolve() == Path(__file__).resolve():
         return
@@ -1119,8 +983,6 @@ def _replace_block_in_file(path: Path, block: list[str], import_line: str) -> No
     body.insert(insert_at, import_line if import_line.endswith("\n") else import_line + "\n")
     path.write_text("".join(body), encoding="utf-8")
     print(green(f"Removed block and added import: {path}"))
-
-
 def _cmd_replace_block(args: argparse.Namespace) -> int:
     block_path = Path(args.block_file).expanduser()
     block = _read_block(block_path)
@@ -1134,8 +996,6 @@ def _cmd_replace_block(args: argparse.Namespace) -> int:
         except Exception as exc:
             print(red(f"Error processing {f}: {exc}"))
     return 0
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pycleaner",
@@ -1259,8 +1119,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_rb.set_defaults(func=_cmd_replace_block)
     return parser
-
-
 def main(argv: list[str] | None = None) -> int:
     global _USE_COLOR
     parser = _build_parser()
@@ -1268,7 +1126,5 @@ def main(argv: list[str] | None = None) -> int:
     if getattr(args, "no_color", False) or not sys.stdout.isatty():
         _USE_COLOR = False
     return args.func(args)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

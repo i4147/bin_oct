@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -8,20 +7,15 @@ from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Final
 import libcst as cst
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from multiprocessing.pool import AsyncResult
 MAX_WORKERS: Final[int] = 8
 PRESERVE_PREFIXES: Final[tuple[str, ...]] = ("#!", "# type:", "# fmt:")
 PRESERVE_EXACT: Final[frozenset[str]] = frozenset({"# fmt: skip", "# fmt: on", "# fmt: off"})
-
-
 def should_preserve_comment(comment_text: str) -> bool:
     stripped: str = comment_text.strip()
     return stripped.startswith(PRESERVE_PREFIXES) or stripped in PRESERVE_EXACT
-
-
 class StripTransformer(cst.CSTTransformer):
     def leave_Comment(
         self, original_node: cst.Comment, updated_node: cst.Comment
@@ -29,7 +23,6 @@ class StripTransformer(cst.CSTTransformer):
         if should_preserve_comment(updated_node.value):
             return updated_node
         return cst.RemovalSentinel.REMOVE
-
     @staticmethod
     def _strip_leading_string(
         body: Sequence[cst.BaseStatement],
@@ -45,7 +38,6 @@ class StripTransformer(cst.CSTTransformer):
         ):
             return tuple(body[1:])
         return tuple(body)
-
     def _strip_suite(self, suite: cst.BaseSuite) -> cst.BaseSuite:
         if isinstance(suite, cst.IndentedBlock):
             new_body: tuple[cst.BaseStatement, ...] = self._strip_leading_string(suite.body)
@@ -58,18 +50,13 @@ class StripTransformer(cst.CSTTransformer):
                 new_body = (cst.Pass(),)
             return suite.with_changes(body=new_body)
         return suite
-
     def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         new_body: tuple[cst.BaseStatement, ...] = self._strip_leading_string(updated_node.body)
         return updated_node.with_changes(body=new_body)
-
     def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
         return updated_node.with_changes(body=self._strip_suite(updated_node.body))
-
     def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         return updated_node.with_changes(body=self._strip_suite(updated_node.body))
-
-
 def process_file(file_path: Path) -> str:
     try:
         source: str = file_path.read_text(encoding="utf-8")
@@ -96,8 +83,6 @@ def process_file(file_path: Path) -> str:
         return f"[SUCCESS] Processed and stripped: {file_path}"
     except Exception as exc:
         return f"[ERROR] Failed to save updates to {file_path}: {exc}"
-
-
 def gather_files(inputs: list[str]) -> list[Path]:
     files: set[Path] = set()
     if not inputs:
@@ -110,8 +95,6 @@ def gather_files(inputs: list[str]) -> list[Path]:
         elif p.is_dir():
             files.update(p.rglob("*.py"))
     return sorted(files)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Strip comments and docstrings using libcst safely.")
     parser.add_argument(
@@ -130,7 +113,5 @@ def main() -> None:
         for async_res in async_results:
             result_string: str = async_res.get()
             print(result_string)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

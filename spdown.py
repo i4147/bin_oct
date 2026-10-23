@@ -20,13 +20,10 @@ from packaging.utils import (
 )
 from packaging.version import InvalidVersion, Version
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
-
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"
 CHUNK = 1024 * 1024
 NO_TAG = 10**9
-
-
 @dataclass(frozen=True, slots=True)
 class Link:
     url: str
@@ -34,16 +31,12 @@ class Link:
     requires_python: str | None = None
     yanked: bool = False
     sha256: str | None = None
-
-
 def current_tags() -> list[Tag]:
     py = sys.version_info[:2]
     interp = f"{interpreter_name()}{interpreter_version()}"
     tags = list(cpython_tags(py)) if interpreter_name() == "cp" else []
     tags += list(compatible_tags(py, interp))
     return tags
-
-
 def fetch_links(client: httpx.Client, name: str) -> list[Link]:
     url = urljoin(PYPI, canonicalize_name(name) + "/")
     r = client.get(url, headers={"Accept": ACCEPT})
@@ -62,8 +55,6 @@ def fetch_links(client: httpx.Client, name: str) -> list[Link]:
             )
         )
     return out
-
-
 def py_ok(spec: str | None) -> bool:
     if not spec:
         return True
@@ -71,8 +62,6 @@ def py_ok(spec: str | None) -> bool:
         return SpecifierSet(spec).contains(f"{sys.version_info.major}.{sys.version_info.minor}", prereleases=True)
     except InvalidSpecifier:
         return True
-
-
 def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
     tag_index = {t: i for i, t in enumerate(current_tags())}
     best_key: tuple[Version, int] | None = None
@@ -111,8 +100,6 @@ def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
             best_key = key
             best = (link, version)
     return best
-
-
 def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / link.filename
@@ -155,8 +142,6 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
         raise
     logger.success("saved {}", dest)
     return dest
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Download a package from PyPI.")
     ap.add_argument("requirement", help="e.g. requests or 'requests==2.31.0'")
@@ -187,7 +172,5 @@ def main(argv=None) -> int:
         path = download(client, link, args.dest.expanduser().resolve())
         print(path)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

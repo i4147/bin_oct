@@ -2,8 +2,6 @@
 from __future__ import annotations
 import sys
 from urllib.parse import urlparse
-
-
 def url_to_filename(url: str) -> str:
     parsed = urlparse(url)
     if not parsed.scheme:
@@ -13,8 +11,6 @@ def url_to_filename(url: str) -> str:
     domain = domain.removeprefix("www.")
     safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in domain)
     return f"{safe}.pdf"
-
-
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
         sys.stderr.write("Usage: python3 script.py <url>\n")
@@ -23,14 +19,11 @@ def main(argv: list[str]) -> int:
     output_pdf = url_to_filename(target_url)
     try:
         import pdfkit
-
         pdfkit.from_url(target_url, output_pdf)
         print(f"Saved PDF to {output_pdf}")
     except Exception as exc:
         sys.stderr.write(f"Error creating PDF: {exc}\n")
         return 1
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

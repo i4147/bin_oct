@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict, deque
@@ -22,11 +20,8 @@ import time
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
-
 from bs4 import BeautifulSoup
 import requests
-
-
 DEFAULT_UA = "Mozilla/5.0 (compatible; MergedTools/1.0)"
 _COLORS = {
     "red": "\033[31m",
@@ -36,18 +31,13 @@ _COLORS = {
     "magenta": "\033[35m",
     "white": "\033[37m",
 }
-
-
 def cprint(msg: str, color: str | None = None) -> None:
     if color and color in _COLORS:
         print(f"{_COLORS[color]}{msg}\033[0m")
     else:
         print(msg)
-
-
 def get_installed_packages() -> dict[str, str]:
     import importlib.metadata as md
-
     out: dict[str, str] = {}
     for d in md.distributions():
         try:
@@ -58,8 +48,6 @@ def get_installed_packages() -> dict[str, str]:
         if name and ver:
             out[name] = ver
     return out
-
-
 def http_get(url: str, *, timeout: float = 15, headers: dict | None = None, stream: bool = False) -> requests.Response:
     h = {"User-Agent": DEFAULT_UA}
     if headers:
@@ -67,8 +55,6 @@ def http_get(url: str, *, timeout: float = 15, headers: dict | None = None, stre
     r = requests.get(url, headers=h, timeout=timeout, stream=stream)
     r.raise_for_status()
     return r
-
-
 def make_session(headers: dict | None = None) -> requests.Session:
     s = requests.Session()
     h = {"User-Agent": DEFAULT_UA}
@@ -76,37 +62,25 @@ def make_session(headers: dict | None = None) -> requests.Session:
         h.update(headers)
     s.headers.update(h)
     return s
-
-
 def read_lines(path: str | Path) -> list[str]:
     try:
         with open(path, encoding="utf-8") as f:
             return [ln.strip() for ln in f if ln.strip()]
     except FileNotFoundError:
         return []
-
-
 def write_lines(path: str | Path, items: Iterable[str]) -> None:
     with open(path, "w", encoding="utf-8") as f:
         f.writelines(f"{x}\n" for x in items)
-
-
 def strip_fragment(url: str) -> str:
     return urldefrag(url)[0]
-
-
 def same_site(url_a: str, url_b: str) -> bool:
     return urlparse(url_a).netloc.lower() == urlparse(url_b).netloc.lower()
-
-
 def fmt_bytes(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024:
             return f"{n:.2f} {unit}"
         n /= 1024
     return f"{n:.2f} TB"
-
-
 def build_robots(session: requests.Session, base_url: str) -> RobotFileParser | None:
     rp = RobotFileParser()
     rp.set_url(urljoin(base_url, "/robots.txt"))
@@ -117,11 +91,8 @@ def build_robots(session: requests.Session, base_url: str) -> RobotFileParser | 
     except Exception as e:
         print(f"⚠️  Could not load robots.txt ({e}). Proceeding with caution.")
         return None
-
-
 def _latest_from_mirror(pkg: str, mirror: str, timeout: float) -> str | None:
     from packaging.version import Version
-
     url = urljoin(mirror, pkg)
     try:
         body = requests.get(url, timeout=timeout).text
@@ -140,11 +111,8 @@ def _latest_from_mirror(pkg: str, mirror: str, timeout: float) -> str | None:
     latest = str(max(versions))
     print(f"{pkg}:{latest}")
     return latest
-
-
 def cmd_pkg_updates(args: argparse.Namespace) -> int:
     from packaging.version import Version
-
     start = time.time()
     installed = get_installed_packages()
     cprint(f"Found {len(installed)} installed packages.", "blue")
@@ -210,13 +178,9 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
         cprint("All installed packages are up to date or could not be checked.", "green")
     cprint(f"\nFinished in {time.time() - start:.2f} seconds.", "blue")
     return 0
-
-
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
-
     from loguru import logger
-
     logger.remove()
     logger.add(
         args.log,
@@ -227,7 +191,6 @@ def cmd_import_check(args: argparse.Namespace) -> int:
         diagnose=True,
     )
     logger.add(sys.stderr, level="INFO", format="<level>{level:<8}</level> | {message}")
-
     def _site_roots() -> list[Path]:
         roots: list[Path] = []
         for p in site.getsitepackages():
@@ -241,12 +204,10 @@ def cmd_import_check(args: argparse.Namespace) -> int:
         except Exception:
             pass
         return roots
-
     def _iter_py(roots: list[Path]):
         for r in roots:
             logger.debug(f"Scanning {r}")
             yield from r.rglob("*.py")
-
     def _try_load(path: Path) -> bool:
         name = "".join(random.choice(string.ascii_letters) for _ in range(20))
         try:
@@ -257,7 +218,6 @@ def cmd_import_check(args: argparse.Namespace) -> int:
             logger.error(f"FAIL {path}")
             logger.opt(exception=True).debug("Traceback:")
             return False
-
     if args.paths:
         files = [Path(p) for p in args.paths]
     else:
@@ -279,8 +239,6 @@ def cmd_import_check(args: argparse.Namespace) -> int:
             fail += 1
     print(f"Done. OK={ok} FAIL={fail} TOTAL={ok + fail}")
     return 1 if fail else 0
-
-
 _COC_KEYWORDS = ["th18", "town hall 18", "townhall 18", "th-18"]
 _COC_HTML_HEAD = """<!DOCTYPE html>
 <html lang="en">
@@ -325,8 +283,6 @@ _COC_HTML_HEAD = """<!DOCTYPE html>
         <h1>🏰 Clash of Clans TH18 Base Links</h1>
         <p class="info">Extracted and compiled base links from various sources</p>
 """
-
-
 def _scrape_th18_from_site(url: str, timeout: float, keywords: list[str]) -> list[dict]:
     found: list[dict] = []
     try:
@@ -347,8 +303,6 @@ def _scrape_th18_from_site(url: str, timeout: float, keywords: list[str]) -> lis
     except requests.RequestException as e:
         print(f"✗ Error fetching {url}: {e}")
     return found
-
-
 def _render_coc_report(bases: list[dict], out_path: Path) -> None:
     html = _COC_HTML_HEAD
     html += f"""
@@ -387,8 +341,6 @@ def _render_coc_report(bases: list[dict], out_path: Path) -> None:
 """
     out_path.write_text(html, encoding="utf-8")
     print(f"\n✓ HTML file saved as {out_path}")
-
-
 def cmd_coc_links(args: argparse.Namespace) -> int:
     print("-" * 40)
     print("Clash of Clans TH18 Base Link Extractor")
@@ -409,16 +361,12 @@ def cmd_coc_links(args: argparse.Namespace) -> int:
     _render_coc_report(all_bases, Path(args.output))
     print(f"\nDone! Open '{args.output}' in your browser to view the results.")
     return 0
-
-
 _DEFAULT_CHANNELS = {
     "Blueprint_CoC": "UCQJJGSWnPUCb8uKV_MoJeOA",
     "iTzu": "UCLKKvlo0yK8OgWvjCiZQ3sA",
     "Clash_Champs": "UC_mD8S6pWpSstY3mXJ9nEqw",
 }
 _LINK_RE = re.compile(r"(https?://link\.clashofclans\.com/[^\s]+)")
-
-
 def _yt_recent_videos(yt, channel_id: str, days: int = 30, max_videos: int = 100) -> list[dict]:
     cutoff = (datetime.now(UTC) - timedelta(days=days)).isoformat()
     out: list[dict] = []
@@ -445,13 +393,9 @@ def _yt_recent_videos(yt, channel_id: str, days: int = 30, max_videos: int = 100
         if len(out) > max_videos:
             break
     return out
-
-
 def _extract_th18_links(text: str) -> list[str]:
     links = _LINK_RE.findall(text)
     return [l for l in links if "TH18" in l.upper() or "TH18" in text.upper()]
-
-
 def _write_coc_youtube_report(channel_name: str, videos: list[dict], out_dir: Path) -> Path:
     stamp = datetime.now().strftime("%d-%m-%Y")
     d = out_dir / f"{stamp}_{channel_name}"
@@ -485,14 +429,10 @@ def _write_coc_youtube_report(channel_name: str, videos: list[dict], out_dir: Pa
     out.write_text(html, encoding="utf-8")
     print(f"Generated: {out}")
     return out
-
-
 def cmd_coc_youtube(args: argparse.Namespace) -> int:
     from googleapiclient.discovery import build
-
     with contextlib.suppress(Exception):
         from dotenv import load_dotenv
-
         load_dotenv()
     api_key = args.api_key or os.getenv("YOUTUBE_API_KEY")
     if not api_key:
@@ -523,11 +463,7 @@ def cmd_coc_youtube(args: argparse.Namespace) -> int:
         else:
             print(f"No TH18 links found for {name}.")
     return 0
-
-
 _SIZE_RE = re.compile(r"([\d.]+)\s*([KMG]?)i?B?")
-
-
 def _parse_size_mb(text: str) -> float | None:
     if not text or text.strip() == "-":
         return None
@@ -543,8 +479,6 @@ def _parse_size_mb(text: str) -> float | None:
     if unit == "K":
         return val / 1024
     return val / 1024 / 1024
-
-
 def _quality_of(name: str) -> str | None:
     low = name.lower()
     if "480p" in low:
@@ -552,8 +486,6 @@ def _quality_of(name: str) -> str | None:
     if "720p" in low:
         return "720"
     return None
-
-
 def _wanted_movie(
     name: str,
     size_mb: float | None,
@@ -567,8 +499,6 @@ def _wanted_movie(
     if qualities and not any(q in low for q in qualities):
         return False
     return not (size_mb is None or size_mb >= max_mb)
-
-
 def _movie_basic(args: argparse.Namespace) -> int:
     base = args.url or "https://dls2.aparatchi-dlcenter.top/DonyayeSerial/"
     movies_file = Path(args.movies_file)
@@ -589,19 +519,16 @@ def _movie_basic(args: argparse.Namespace) -> int:
     if not found and movies_file.exists():
         found = read_lines(movies_file)
         print(f"📂 Loaded {len(found)} movies from {movies_file}")
-
     def save_state() -> None:
         state_file.write_text(
             json.dumps({"visited": list(visited), "found_movies": found}, indent=2),
             encoding="utf-8",
         )
-
     def add_movie(url: str) -> None:
         if url not in found:
             found.append(url)
             with movies_file.open("a", encoding="utf-8") as f:
                 f.write(url + "\n")
-
     def crawl(url: str, depth: int = 0) -> None:
         if url in visited or "movie" in url.lower():
             return
@@ -635,7 +562,6 @@ def _movie_basic(args: argparse.Namespace) -> int:
                 print(f"✅ Found: {full} ({size_mb:.2f} MB)")
                 add_movie(full)
                 save_state()
-
     print("🎬 Movie Crawler (basic engine)")
     print("=" * 40)
     try:
@@ -647,8 +573,6 @@ def _movie_basic(args: argparse.Namespace) -> int:
     save_state()
     print(f"\n✅ Done. {len(found)} movies saved to {movies_file}")
     return 0
-
-
 def _movie_simple(args: argparse.Namespace) -> int:
     base = args.url or "https://dls2.aparatchi-dlcenter.top/DonyayeSerial/"
     movies_file = Path(args.movies_file)
@@ -656,7 +580,6 @@ def _movie_simple(args: argparse.Namespace) -> int:
     extensions = tuple(args.extensions)
     qualities = tuple(args.qualities)
     results: list[str] = []
-
     def extract(soup: BeautifulSoup, src_url: str) -> None:
         for row in soup.find_all("tr"):
             cells = row.find_all("td")
@@ -694,9 +617,7 @@ def _movie_simple(args: argparse.Namespace) -> int:
                 if href.lower().endswith(extensions) and any(q in href.lower() for q in qualities):
                     print(f"  ✓ Found in p tag: {href}")
                     results.append(href)
-
     seen: set[str] = set()
-
     def _crawl(url: str) -> None:
         if url in seen or "movie" in url.lower():
             return
@@ -709,7 +630,6 @@ def _movie_simple(args: argparse.Namespace) -> int:
             print(f"  ❌ Failed to access {url}: {e}")
             return
         extract(BeautifulSoup(r.text, "html.parser"), url)
-
     print("🚀 Movie Crawler (simple engine)")
     print(f"📁 Base URL: {base}")
     print(f"📊 Max size: {max_mb} MB")
@@ -719,20 +639,13 @@ def _movie_simple(args: argparse.Namespace) -> int:
         f.writelines(u + "\n" for u in unique)
     print(f"\n✅ Done. {len(unique)} movies saved to {movies_file}")
     return 0
-
-
 _STOP = False
-
-
 def _sigint(_sig, _frame):
     global _STOP
     _STOP = True
     print("\n⚠️ Interrupt received. Saving progress...")
-
-
 def _parallel_worker(url: str, max_mb: float):
     from loguru import logger
-
     matches: list[dict] = []
     subdirs: list[str] = []
     try:
@@ -768,11 +681,8 @@ def _parallel_worker(url: str, max_mb: float):
             continue
         matches.append({"url": full, "quality": quality, "size_mb": size_mb})
     return matches, subdirs
-
-
 def _movie_parallel(args: argparse.Namespace) -> int:
     from multiprocessing import Manager, Pool
-
     global _STOP
     _STOP = False
     signal.signal(signal.SIGINT, _sigint)
@@ -796,16 +706,13 @@ def _movie_parallel(args: argparse.Namespace) -> int:
             pass
     if not queue:
         queue = [base]
-
     def save_state(q, v):
         state_file.write_text(json.dumps({"queue": list(q), "visited": list(v)}), encoding="utf-8")
-
     def append(matches):
         with movies_file.open("a", encoding="utf-8") as f:
             f.writelines(m["url"] + "\n" for m in matches)
         with json_out.open("a", encoding="utf-8") as f:
             f.writelines(json.dumps(m) + "\n" for m in matches)
-
     mgr = Manager()
     shared_visited = mgr.list(visited)
     shared_queue = mgr.list(queue)
@@ -841,8 +748,6 @@ def _movie_parallel(args: argparse.Namespace) -> int:
             state_file.unlink()
         print("✅ Crawl completed successfully.")
     return 0
-
-
 def cmd_movie_crawl(args: argparse.Namespace) -> int:
     if args.engine == "basic":
         return _movie_basic(args)
@@ -852,8 +757,6 @@ def cmd_movie_crawl(args: argparse.Namespace) -> int:
         return _movie_parallel(args)
     print(f"Unknown engine: {args.engine}")
     return 2
-
-
 def _img_urls_from_soup(soup: BeautifulSoup, base: str) -> set[str]:
     out: set[str] = set()
     for img in soup.find_all("img"):
@@ -872,8 +775,6 @@ def _img_urls_from_soup(soup: BeautifulSoup, base: str) -> set[str]:
                     if urlparse(full).scheme in {"http", "https"}:
                         out.add(full)
     return out
-
-
 def _same_host_links(soup: BeautifulSoup, base: str, host: str) -> set[str]:
     out: set[str] = set()
     for a in soup.find_all("a", href=True):
@@ -881,11 +782,8 @@ def _same_host_links(soup: BeautifulSoup, base: str, host: str) -> set[str]:
         if urlparse(full).scheme in {"http", "https"} and urlparse(full).netloc == host:
             out.add(full)
     return out
-
-
 def _check_image_size(url: str, min_w: int, min_h: int):
     from PIL import Image
-
     try:
         r = requests.get(url, timeout=20, headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*"})
         r.raise_for_status()
@@ -898,8 +796,6 @@ def _check_image_size(url: str, min_w: int, min_h: int):
     except Exception:
         return None
     return None
-
-
 def _download_image(item) -> str | None:
     url, _, _ = item
     out_dir = Path("images")
@@ -917,8 +813,6 @@ def _download_image(item) -> str | None:
         return str(dest)
     except Exception:
         return None
-
-
 def _hunt_images(
     start_url: str,
     max_pages: int,
@@ -973,8 +867,6 @@ def _hunt_images(
     print(
         f"Scanned {len(seen_pages)} page(s), checked {len(seen_imgs)} image(s), found {len(matches)} matching image(s)."
     )
-
-
 def cmd_image_hunt(args: argparse.Namespace) -> int:
     if not args.print_urls and not args.download:
         print("Error: use -p and/or -d to select an action.")
@@ -989,8 +881,6 @@ def cmd_image_hunt(args: argparse.Namespace) -> int:
         Path(args.urls_file),
     )
     return 0
-
-
 def cmd_image_save(args: argparse.Namespace) -> int:
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1015,8 +905,6 @@ def cmd_image_save(args: argparse.Namespace) -> int:
         except Exception as e:
             print(f"Failed to download {full}: {e}")
     return 0
-
-
 def _crawl_site(
     start_url: str,
     *,
@@ -1035,7 +923,6 @@ def _crawl_site(
     else:
         rp = None
     session = make_session()
-
     def allowed(url: str) -> bool:
         if rp is None:
             return True
@@ -1043,11 +930,9 @@ def _crawl_site(
             return rp.can_fetch(session.headers["User-Agent"], url)
         except Exception:
             return True
-
     def same_domain(url: str) -> bool:
         h = urlparse(url).netloc.lower().split(":")[0]
         return h == host or h.endswith("." + host)
-
     queue = deque([start_url])
     visited: set[str] = set()
     results: set[str] = set()
@@ -1103,8 +988,6 @@ def _crawl_site(
                 queue.append(full)
         time.sleep(delay)
     return sorted(results)
-
-
 def cmd_link_crawl(args: argparse.Namespace) -> int:
     if args.mode == "ext" and not args.ext:
         print("Error: --ext is required with --mode ext.")
@@ -1124,11 +1007,7 @@ def cmd_link_crawl(args: argparse.Namespace) -> int:
     write_lines(args.output, out)
     print(f"\n✅ Saved {len(out)} URLs to '{args.output}'")
     return 0
-
-
 _ZZZ_ID_RE = re.compile(r"zzztube\.com/(\d+)")
-
-
 def _inspect_video_page(url: str, timeout: float) -> dict:
     try:
         r = http_get(
@@ -1163,8 +1042,6 @@ def _inspect_video_page(url: str, timeout: float) -> dict:
         "iframe_src": iframe_src,
         "direct_url": (f"https://player.zzztube.com/video/{video_id}" if video_id else None),
     }
-
-
 def cmd_video_info(args: argparse.Namespace) -> int:
     out: list[dict] = []
     for url in args.urls:
@@ -1182,16 +1059,11 @@ def cmd_video_info(args: argparse.Namespace) -> int:
     out_path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n💾 Results saved to: {out_path.absolute()}")
     return 0
-
-
 def cmd_google_search(args: argparse.Namespace) -> int:
     from googlesearch import search as gsearch
-
     for result in gsearch(args.query, num_results=args.num_results):
         print(result)
     return 0
-
-
 _WEBSIZE_TAGS = {
     "link": ["href"],
     "script": ["src"],
@@ -1203,8 +1075,6 @@ _WEBSIZE_TAGS = {
     "embed": ["src"],
     "object": ["data"],
 }
-
-
 def _expand_srcset(base: str, value: str) -> list[str]:
     out = []
     for item in value.split(","):
@@ -1212,8 +1082,6 @@ def _expand_srcset(base: str, value: str) -> list[str]:
         if url:
             out.append(urljoin(base, url))
     return out
-
-
 def _head_size(session: requests.Session, url: str) -> tuple[int, str] | None:
     try:
         r = session.get(url, stream=True, timeout=15, allow_redirects=True)
@@ -1225,8 +1093,6 @@ def _head_size(session: requests.Session, url: str) -> tuple[int, str] | None:
     except requests.RequestException as e:
         print(f"  ! Failed: {url} ({e})", file=sys.stderr)
         return None
-
-
 def cmd_web_size(args: argparse.Namespace) -> int:
     session = make_session({"User-Agent": args.user_agent})
     start = args.url
@@ -1294,8 +1160,6 @@ def cmd_web_size(args: argparse.Namespace) -> int:
     for ctype, size in sorted(by_type.items(), key=lambda kv: -kv[1]):
         print(f"  {ctype:<30} {fmt_bytes(size):>12}")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="merged_tools.py",
@@ -1381,8 +1245,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--user-agent", default="Mozilla/5.0 (size-checker)")
     sp.set_defaults(func=cmd_web_size)
     return p
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -1391,8 +1253,6 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\n⏹️ Interrupted by user.")
         return 130
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(main())

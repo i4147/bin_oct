@@ -1,9 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import sys
-
-
 def move_lines(src_file: str, start_line: int, end_line: int, dest_file: str) -> None:
     try:
         with open(src_file, encoding="utf-8") as f:
@@ -21,8 +18,6 @@ def move_lines(src_file: str, start_line: int, end_line: int, dest_file: str) ->
         print(f"Error: The file {src_file} was not found.")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Usage: python move_lines.py <src_file> <start_line> <end_line> <dest_file>")

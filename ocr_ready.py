@@ -1,37 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import multiprocessing
 import sys
 from pathlib import Path
 from typing import Any, Union
-
 import numpy as np
 import pytesseract
 from loguru import logger
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
-
 try:
     import cv2
-
     HAS_CV2: bool = True
 except ImportError:
     HAS_CV2 = False
-
 try:
     from skimage import exposure, filters, restoration, transform
-
     HAS_SKIMAGE: bool = True
 except ImportError:
     HAS_SKIMAGE = False
-
 SUPPORTED_EXT: set[str] = {".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".webp"}
 BASE_DIR: Path = Path.cwd()
 POOL_SIZE: int = 8
 ImageType = Union[np.ndarray, "Image.Image"]
-
-
 def deskew(image: np.ndarray) -> np.ndarray:
     if HAS_CV2:
         coords = np.column_stack(np.where(image > 0))
@@ -57,7 +47,6 @@ def deskew(image: np.ndarray) -> np.ndarray:
                 binary = image < 0.5
             if not binary.any():
                 return image
-
             edges = filters.sobel(binary.astype(np.float32))
             lines = transform.probabilistic_hough_line(edges, threshold=10, line_length=50, line_gap=5)
             angles: list[float] = []
@@ -69,11 +58,9 @@ def deskew(image: np.ndarray) -> np.ndarray:
                     angles.append(a)
             if not angles:
                 return image
-
             skew = float(np.median(angles))
             if abs(skew) < 0.5:
                 return image
-
             rotated = transform.rotate(
                 image,
                 -skew,
@@ -87,8 +74,6 @@ def deskew(image: np.ndarray) -> np.ndarray:
         except Exception as exc:
             logger.debug(f"skimage deskew skipped: {exc}")
     return image
-
-
 def preprocess_image_cv2(img_path: Path) -> np.ndarray | None:
     img = cv2.imread(str(img_path))
     if img is None:
@@ -107,8 +92,6 @@ def preprocess_image_cv2(img_path: Path) -> np.ndarray | None:
         2,
     )
     return deskew(thresh)
-
-
 def preprocess_image_skimage(img_path: Path) -> np.ndarray | None:
     try:
         pil = Image.open(str(img_path))
@@ -117,7 +100,6 @@ def preprocess_image_skimage(img_path: Path) -> np.ndarray | None:
     except Exception as exc:
         logger.debug(f"cannot open {img_path}: {exc}")
         return None
-
     try:
         h, w = arr.shape
         arr = transform.resize(
@@ -135,8 +117,6 @@ def preprocess_image_skimage(img_path: Path) -> np.ndarray | None:
     except Exception as exc:
         logger.debug(f"skimage preprocess failed for {img_path}: {exc}")
         return None
-
-
 def preprocess_image_pillow(img_path: Path) -> Image.Image | None:
     try:
         img = Image.open(str(img_path))
@@ -153,8 +133,6 @@ def preprocess_image_pillow(img_path: Path) -> Image.Image | None:
         return img
     except Exception:
         return None
-
-
 def preprocess_image(img_path: Path) -> ImageType | None:
     if HAS_CV2:
         res = preprocess_image_cv2(img_path)
@@ -165,12 +143,8 @@ def preprocess_image(img_path: Path) -> ImageType | None:
         if res is not None:
             return res
     return preprocess_image_pillow(img_path)
-
-
 def should_skip(path: Path) -> bool:
     return path.suffix.lower() not in SUPPORTED_EXT
-
-
 def save_processed_image(img: ImageType, img_path: Path) -> None:
     if isinstance(img, np.ndarray):
         if HAS_CV2:
@@ -190,8 +164,6 @@ def save_processed_image(img: ImageType, img_path: Path) -> None:
         img.save(str(img_path))
         return
     raise ValueError("Unsupported image format")
-
-
 def process_single_image(image_path: Path) -> dict[str, Any]:
     result: dict[str, Any] = {
         "path": str(image_path),
@@ -215,16 +187,12 @@ def process_single_image(image_path: Path) -> dict[str, Any]:
     except Exception as e:
         result["error"] = str(e)
     return result
-
-
 def get_image_files() -> list[Path]:
     image_files: list[Path] = []
     for path in BASE_DIR.rglob("*"):
         if path.is_file() and not should_skip(path):
             image_files.append(path)
     return image_files
-
-
 def process() -> None:
     if HAS_CV2:
         if HAS_SKIMAGE:
@@ -235,7 +203,6 @@ def process() -> None:
         logger.warning("OpenCV not found; using scikit-image backend")
     else:
         logger.warning("OpenCV and scikit-image not found; using Pillow-only fallback (limited accuracy)")
-
     image_files = get_image_files()
     total_images = len(image_files)
     if total_images == 0:
@@ -244,12 +211,10 @@ def process() -> None:
     print(f"📊 Found {total_images} images to process")
     print(f"⚡ Using {POOL_SIZE} workers for parallel processing")
     print("🔄 Processing images in-place...\n")
-
     processed_count = 0
     error_count = 0
     total_before = 0
     total_after = 0
-
     pool = multiprocessing.Pool(processes=POOL_SIZE)
     try:
         async_results = [(path, pool.apply_async(process_single_image, (path,))) for path in image_files]
@@ -274,7 +239,6 @@ def process() -> None:
     finally:
         pool.close()
         pool.join()
-
     print("=" * 40)
     print("📊 Processing Summary:")
     print(f"   ✅ Successfully processed: {processed_count} images")
@@ -286,8 +250,6 @@ def process() -> None:
         print(f"   📦 Total size after: {total_after / (1024 * 1024):.2f} MB")
         print(f"   📉 Size reduction: {size_reduction:.1f}%")
     print("-" * 40)
-
-
 def main() -> None:
     logger.warning("⚠️  WARNING: This script will MODIFY original image files in-place!")
     logger.warning("⚠️  NO BACKUPS will be created.")
@@ -298,7 +260,5 @@ def main() -> None:
         print("\n❌ Cancelled by user.")
         sys.exit(0)
     process()
-
-
 if __name__ == "__main__":
     main()

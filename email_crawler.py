@@ -12,7 +12,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
-
 DEBUG = True
 USE_COLORS = True
 DATABASE_NAME = "data/crawler.sqlite"
@@ -21,8 +20,6 @@ EMAILS_FILENAME = Path("data/emails.csv")
 DOMAINS_FILENAME = Path("data/domains.csv")
 LOG_DIR = Path("logs")
 MAX_SEARCH_RESULTS = 150
-
-
 class ColorStreamHandler(logging.Handler):
     def __init__(self, use_colors: bool = True):
         super().__init__()
@@ -39,7 +36,6 @@ class ColorStreamHandler(logging.Handler):
             self.use_colors = False
             self.COLOR_NORMAL = self.COLOR_INFO = self.COLOR_ERROR = b""
             self.COLOR_WARNING = self.COLOR_DEBUG = b""
-
     def color(self, msg: str, level: str) -> str:
         if not self.use_colors:
             return msg
@@ -54,7 +50,6 @@ class ColorStreamHandler(logging.Handler):
             return (prefix + msg.encode("utf-8") + self.COLOR_NORMAL).decode("utf-8", "replace")
         except Exception:
             return msg
-
     def emit(self, record: logging.LogRecord) -> None:
         try:
             msg = self.format(record)
@@ -67,8 +62,6 @@ class ColorStreamHandler(logging.Handler):
             print(msg)
         except Exception:
             self.handleError(record)
-
-
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
@@ -111,8 +104,6 @@ LOGGING = {
 }
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger("crawler_logger")
-
-
 class CrawlerDb:
     def __init__(self) -> None:
         self.connected = False
@@ -120,7 +111,6 @@ class CrawlerDb:
         self.connection = None
         self.metadata = None
         self.website_table = None
-
     def connect(self) -> bool:
         Path(DATABASE_NAME).parent.mkdir(parents=True, exist_ok=True)
         self.engine = create_engine(f"sqlite:///{DATABASE_NAME}")
@@ -137,7 +127,6 @@ class CrawlerDb:
         )
         self.metadata.create_all(self.engine)
         return self.connected
-
     def enqueue(self, url: str, emails: list[str] | None = None) -> bool:
         if not self.connected:
             return False
@@ -152,14 +141,12 @@ class CrawlerDb:
         self.connection.execute(self.website_table.insert().values(**values))
         self.connection.commit()
         return True
-
     def dequeue(self):
         if not self.connected:
             return False
         s = select(self.website_table).where(self.website_table.c.has_crawled.is_(False)).limit(1)
         result = self.connection.execute(s).fetchall()
         return result[0] if result else False
-
     def crawled(self, website, new_emails: str | None = None) -> None:
         if not self.connected:
             return
@@ -171,7 +158,6 @@ class CrawlerDb:
         )
         self.connection.execute(stmt)
         self.connection.commit()
-
     def get_all_emails(self) -> set[str] | None:
         if not self.connected:
             return None
@@ -181,7 +167,6 @@ class CrawlerDb:
             if row.emails:
                 email_set.update(e.strip() for e in row.emails.split(",") if e.strip())
         return email_set
-
     def get_all_domains(self) -> set[str] | None:
         if not self.connected:
             return None
@@ -200,28 +185,22 @@ class CrawlerDb:
                 domain = ".".join(parts[-2:]) if len(parts) >= 2 else parsed.hostname
             domain_set.add(domain)
         return domain_set
-
     def save_html(self, filename: str, html: str) -> None:
         HTML_DIR.mkdir(parents=True, exist_ok=True)
         path = HTML_DIR / filename
         path.write_text(html, encoding="utf-8", errors="replace")
-
     def close(self) -> None:
         if self.connection:
             self.connection.close()
         if self.engine:
             self.engine.dispose()
         self.connected = False
-
-
 google_adurl_regex = re.compile(r'adurl=(.*?)"', re.IGNORECASE)
 google_url_regex = re.compile(r"url\?q=(.*?)&amp;sa=", re.IGNORECASE)
 email_regex = re.compile(r"([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,24})", re.IGNORECASE)
 url_regex = re.compile(r"""<a\s[^>]*?href=['"](.*?)['"]""", re.IGNORECASE)
 db = CrawlerDb()
 db.connect()
-
-
 def retrieve_html(url: str) -> str | None:
     req = urllib.request.Request(url, headers={"User-Agent": "Just-Crawling/0.2"})
     try:
@@ -233,14 +212,10 @@ def retrieve_html(url: str) -> str | None:
     except Exception as exc:
         logger.error("Exception at url: %s\n%s", url, exc)
         return None
-
-
 def find_emails_in_html(html: str | None) -> set[str]:
     if not html:
         return set()
     return {m.group(1).lower() for m in email_regex.finditer(html)}
-
-
 def find_links_in_html_with_same_hostname(url: str, html: str | None) -> set[str]:
     if not html:
         return set()
@@ -258,8 +233,6 @@ def find_links_in_html_with_same_hostname(url: str, html: str | None) -> set[str
         except Exception:
             continue
     return links
-
-
 def find_emails_2_level_deep(url: str) -> set[str]:
     html = retrieve_html(url)
     emails = find_emails_in_html(html)
@@ -274,8 +247,6 @@ def find_emails_2_level_deep(url: str) -> set[str]:
         if found:
             db.enqueue(link, list(found))
     return set()
-
-
 def crawl(keywords: str) -> None:
     logger.info("-" * 40)
     logger.info("Keywords to Google for: %s", keywords)
@@ -296,8 +267,6 @@ def crawl(keywords: str) -> None:
             break
         email_set = find_emails_2_level_deep(uncrawled.url)
         db.crawled(uncrawled, ",".join(email_set) if email_set else None)
-
-
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage:")
@@ -333,7 +302,5 @@ def main() -> None:
         traceback.print_exc()
     finally:
         db.close()
-
-
 if __name__ == "__main__":
     main()

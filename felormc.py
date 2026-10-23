@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
@@ -18,14 +17,11 @@ from libcst import (
     TrailingWhitespace,
 )
 from loguru import logger
-
 DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")
 SHEBANG_PREFIX: Final[str] = "#!"
 PY_EXTENSIONS: Final[frozenset[str]] = frozenset({".py", ".pyi", ".pyw"})
 PY_SHEBANG_HINTS: Final[tuple[str, ...]] = ("python",)
-
-
 def configure_logging(verbose: bool = False) -> None:
     logger.remove()
     level = "DEBUG" if verbose else "INFO"
@@ -41,23 +37,17 @@ def configure_logging(verbose: bool = False) -> None:
         backtrace=False,
         diagnose=False,
     )
-
-
 @dataclass(frozen=True, slots=True)
 class ProcessResult:
     path: Path
     success: bool
     changed: bool
     message: str = ""
-
-
 def _looks_like_python_shebang(first_line: str) -> bool:
     if not first_line.startswith(SHEBANG_PREFIX):
         return False
     lowered = first_line.lower()
     return any(hint in lowered for hint in PY_SHEBANG_HINTS)
-
-
 def _is_extensionless_python_file(path: Path) -> bool:
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as fh:
@@ -66,8 +56,6 @@ def _is_extensionless_python_file(path: Path) -> bool:
         logger.debug(f"Could not sniff {path}: {exc}")
         return False
     return _looks_like_python_shebang(first_line)
-
-
 def is_python_file(path: Path) -> bool:
     if not path.is_file():
         return False
@@ -76,8 +64,6 @@ def is_python_file(path: Path) -> bool:
     if path.suffix == "":
         return _is_extensionless_python_file(path)
     return False
-
-
 def iter_target_files(inputs: Iterable[Path]) -> Iterator[Path]:
     skip_dirs = {
         ".git",
@@ -106,23 +92,16 @@ def iter_target_files(inputs: Iterable[Path]) -> Iterator[Path]:
                         yield resolved
         else:
             logger.warning(f"Path does not exist, skipping: {path}")
-
-
 def _is_pragma_comment(comment_value: str) -> bool:
     stripped = comment_value.strip()
     return any(stripped.startswith(prefix) for prefix in PRAGMA_PREFIXES)
-
-
 def _is_shebang_comment(comment_value: str) -> bool:
     return comment_value.startswith(SHEBANG_PREFIX)
-
-
 class CommentDocstringStripper(cst.CSTTransformer):
     def __init__(self) -> None:
         super().__init__()
         self._is_module_level: bool = True
         self._module_docstring_seen: bool = False
-
     def leave_EmptyLine(self, original_node: EmptyLine, updated_node: EmptyLine) -> EmptyLine:
         comment = updated_node.comment
         if comment is None:
@@ -131,7 +110,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         if _is_shebang_comment(value) or _is_pragma_comment(value):
             return updated_node
         return updated_node.with_changes(comment=None)
-
     def leave_TrailingWhitespace(
         self, original_node: TrailingWhitespace, updated_node: TrailingWhitespace
     ) -> TrailingWhitespace:
@@ -142,20 +120,15 @@ class CommentDocstringStripper(cst.CSTTransformer):
         if _is_pragma_comment(value):
             return updated_node
         return updated_node.with_changes(comment=None)
-
     def visit_Module(self, node: Module) -> Optional[bool]:
         self._is_module_level = True
         return None
-
     def leave_Module(self, original_node: Module, updated_node: Module) -> Module:
         return updated_node
-
     def leave_FunctionDef(self, original_node: FunctionDef, updated_node: FunctionDef) -> FunctionDef:
         return updated_node.with_changes(body=self._strip_docstring_body(updated_node.body))
-
     def leave_ClassDef(self, original_node: ClassDef, updated_node: ClassDef) -> ClassDef:
         return updated_node.with_changes(body=self._strip_docstring_body(updated_node.body))
-
     @staticmethod
     def _is_docstring_statement(stmt: BaseStatement) -> bool:
         if not isinstance(stmt, SimpleStatementLine):
@@ -167,7 +140,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
             return False
         value = expr_stmt.value
         return isinstance(value, (cst.SimpleString, cst.ConcatenatedString))
-
     def _strip_docstring_body(self, body: cst.IndentedBlock) -> cst.IndentedBlock:
         if not body.body:
             return body
@@ -179,26 +151,17 @@ class CommentDocstringStripper(cst.CSTTransformer):
             pass_stmt = SimpleStatementLine(body=[cst.Pass()])
             remaining = [pass_stmt]
         return body.with_changes(body=tuple(remaining))
-
-
 class ModuleDocstringPreserver(cst.CSTTransformer):
     def __init__(self) -> None:
         super().__init__()
-
     def leave_Module(self, original_node: Module, updated_node: Module) -> Module:
         return updated_node
-
-
 def strip_comments_and_docstrings(source: str) -> str:
     module = cst.parse_module(source)
     transformed = module.visit(CommentDocstringStripper())
     return transformed.code
-
-
 def validate_python_source(source: str, filename: str) -> None:
     compile(source, filename=filename, mode="exec", dont_inherit=True)
-
-
 def process_file(path_str: str, dry_run: bool) -> ProcessResult:
     path = Path(path_str)
     try:
@@ -229,8 +192,6 @@ def process_file(path_str: str, dry_run: bool) -> ProcessResult:
     except OSError as exc:
         return ProcessResult(path=path, success=False, changed=False, message=f"write error: {exc}")
     return ProcessResult(path=path, success=True, changed=True, message="stripped")
-
-
 def run(paths: list[Path], workers: int, dry_run: bool) -> int:
     search_roots = paths or [Path.cwd()]
     targets = list(iter_target_files(search_roots))
@@ -263,8 +224,6 @@ def run(paths: list[Path], workers: int, dry_run: bool) -> int:
         logger.error(f"{len(failures)} file(s) failed to process.")
         return 1
     return 0
-
-
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Strip comments and docstrings from Python files using LibCST.")
     parser.add_argument(
@@ -290,8 +249,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="Enable verbose (DEBUG-level) logging.",
     )
     return parser.parse_args(argv)
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     configure_logging(verbose=args.verbose)
@@ -303,8 +260,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     except KeyboardInterrupt:
         logger.warning("Interrupted by user.")
         return 130
-
-
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=False)
     sys.exit(main())

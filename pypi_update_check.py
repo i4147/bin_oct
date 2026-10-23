@@ -16,21 +16,16 @@ import time
 from typing import Any, Optional, Sequence
 from packaging import version
 import requests
-
 try:
     import pycurl
 except ImportError:
     pycurl = None
-
-
 def normalize_name(name: str, mode: str) -> str:
     if mode == "pypi":
         return re.sub(r"[-_.]+", "-", name).lower()
     if mode == "underscore":
         return name.lower().replace("-", "_")
     return name
-
-
 def get_installed_packages(normalize: str = "none") -> dict[str, str]:
     packages: dict[str, str] = {}
     for dist in importlib.metadata.distributions():
@@ -39,8 +34,6 @@ def get_installed_packages(normalize: str = "none") -> dict[str, str]:
         if name and ver:
             packages[normalize_name(name, normalize)] = ver
     return dict(sorted(packages.items()))
-
-
 def load_state(path: Optional[Path]) -> dict[str, Any]:
     if not path or not path.exists():
         return {}
@@ -51,8 +44,6 @@ def load_state(path: Optional[Path]) -> dict[str, Any]:
         return data if isinstance(data, dict) else {}
     except Exception:
         return {}
-
-
 def save_state(path: Path, state: dict[str, Any], wrapper: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if wrapper:
@@ -63,8 +54,6 @@ def save_state(path: Path, state: dict[str, Any], wrapper: bool = False) -> None
     else:
         payload = state
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
 def fallback_compare(installed: str, latest: str) -> bool:
     try:
         a = tuple(int(x) for x in installed.split(".")[:3])
@@ -72,15 +61,11 @@ def fallback_compare(installed: str, latest: str) -> bool:
         return b > a
     except Exception:
         return False
-
-
 def is_upgradable(installed: str, latest: str) -> bool:
     try:
         return version.parse(latest) > version.parse(installed)
     except Exception:
         return fallback_compare(installed, latest)
-
-
 def _fetch_requests(name: str, timeout: int, user_agent: str) -> Optional[dict[str, Any]]:
     url = f"https://pypi.org/pypi/{name}/json"
     try:
@@ -112,8 +97,6 @@ def _fetch_requests(name: str, timeout: int, user_agent: str) -> Optional[dict[s
         }
     except Exception:
         return None
-
-
 def _fetch_pycurl(name: str, timeout: int, user_agent: str) -> Optional[dict[str, Any]]:
     if pycurl is None:
         msg = "pycurl is not installed"
@@ -156,8 +139,6 @@ def _fetch_pycurl(name: str, timeout: int, user_agent: str) -> Optional[dict[str
         info = data.get("info", {})
         download_url = info.get("home_page") or info.get("project_url")
     return {"latest_version": latest, "download_url": download_url, "pypi_name": name}
-
-
 def fetch_pypi_info(
     name: str,
     backend: str,
@@ -178,8 +159,6 @@ def fetch_pypi_info(
         if info:
             return info
     return None
-
-
 def check_one(
     name: str,
     installed: str,
@@ -208,8 +187,6 @@ def check_one(
     result["pypi_name"] = info.get("pypi_name")
     result["needs_update"] = is_upgradable(installed, latest)
     return result
-
-
 def process_packages(packages: dict[str, str], args: argparse.Namespace) -> dict[str, dict[str, Any]]:
     items = list(packages.items())
     if not items:
@@ -249,8 +226,6 @@ def process_packages(packages: dict[str, str], args: argparse.Namespace) -> dict
                 latest = res.get("latest_version") or "?"
                 print(f"{name}: {latest}")
     return {res["package"]: res for res in results}
-
-
 def filter_pending(
     installed: dict[str, str],
     state: dict[str, Any],
@@ -266,8 +241,6 @@ def filter_pending(
         elif resume_mode == "version" and state[name].get("installed_version") != ver:
             pending[name] = ver
     return pending
-
-
 def write_output(path: Path, results: dict[str, dict[str, Any]], fmt: str) -> None:
     if fmt == "none":
         return
@@ -292,8 +265,6 @@ def write_output(path: Path, results: dict[str, dict[str, Any]], fmt: str) -> No
                 lines.append(f"  Download URL: {r.get('download_url') or 'N/A'}\n")
                 lines.append("-" * 40 + "\n")
         path.write_text("".join(lines), encoding="utf-8")
-
-
 def print_summary(results: dict[str, dict[str, Any]]) -> None:
     total = len(results)
     upgradable = [r for r in results.values() if r.get("needs_update")]
@@ -307,8 +278,6 @@ def print_summary(results: dict[str, dict[str, Any]]) -> None:
         for r in sorted(upgradable, key=lambda x: x["package"]):
             print(f"  {r['package']}: {r['installed_version']} -> {r['latest_version']}")
     print("=" * 40)
-
-
 def setup_logging(log_file: Path, level: str) -> None:
     logger = logging.getLogger("pkg_updater")
     logger.setLevel(getattr(logging, level))
@@ -322,8 +291,6 @@ def setup_logging(log_file: Path, level: str) -> None:
     sh = logging.StreamHandler(sys.stdout)
     sh.setFormatter(formatter)
     logger.addHandler(sh)
-
-
 def add_common_args(parser: argparse.ArgumentParser, defaults: dict[str, Any]) -> None:
     parser.add_argument("--backend", choices=["requests", "pycurl"], default=defaults["backend"])
     parser.add_argument("--workers", type=int, default=defaults["workers"])
@@ -370,8 +337,6 @@ def add_common_args(parser: argparse.ArgumentParser, defaults: dict[str, Any]) -
         action=argparse.BooleanOptionalAction,
         default=defaults["interrupt_handler"],
     )
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Unified PyPI package update checker")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -481,19 +446,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_check = sub.add_parser("check")
     add_common_args(p_check, check_defaults)
     return parser
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.log_file:
         setup_logging(args.log_file, args.log_level)
     if args.interrupt_handler:
-
         def _handler(signum: int, frame: Any) -> None:
             print("\nInterrupted by user. State saved.")
             sys.exit(0)
-
         signal.signal(signal.SIGINT, _handler)
     installed = get_installed_packages(args.normalize)
     print(f"Found {len(installed)} installed packages.")
@@ -515,7 +476,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         write_output(args.output, results, args.output_format)
     print_summary(results)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

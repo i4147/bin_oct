@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -14,7 +13,6 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from loguru import logger
 import requests
-
 logger.remove()
 logger.add(sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>")
 IMAGE_EXTENSIONS: set[str] = {
@@ -32,17 +30,11 @@ IMAGE_EXTENSIONS: set[str] = {
 CSS_URL_PATTERN: re.Pattern[str] = re.compile(r'url\((["\']?)([^)"\']+)\1\)')
 TIMEOUT: int = 20
 POOL_SIZE: int = 8
-
-
 def is_remote(url: str) -> bool:
     return urlparse(url).scheme in ("http", "https") or url.startswith("//")
-
-
 def is_image(url: str) -> bool:
     ext = Path(urlparse(url).path).suffix.lower()
     return ext in IMAGE_EXTENSIONS
-
-
 def get_mime_type(path: str) -> str:
     mime, _ = mimetypes.guess_type(path)
     if not mime:
@@ -57,8 +49,6 @@ def get_mime_type(path: str) -> str:
             return "application/vnd.ms-fontobject"
         return "application/octet-stream"
     return mime
-
-
 def fetch_remote(url: str) -> bytes | None:
     if url.startswith("//"):
         url = "https:" + url
@@ -69,20 +59,15 @@ def fetch_remote(url: str) -> bytes | None:
     except Exception as e:
         logger.error(f"Failed to fetch {url}: {e}")
         return None
-
-
 def read_local(path: Path) -> bytes | None:
     try:
         return path.read_bytes()
     except Exception as e:
         logger.error(f"Failed to read {path}: {e}")
         return None
-
-
 def process_css_content(css_content: str, base_path: Path, base_url: str | None = None) -> tuple[str, int, int]:
     loc: int = 0
     rem: int = 0
-
     def replacer(match: re.Match[str]) -> str:
         nonlocal loc, rem
         quote: str = match.group(1)
@@ -113,11 +98,8 @@ def process_css_content(css_content: str, base_path: Path, base_url: str | None 
                 loc += 1
                 return f"url({quote}data:{mime};base64,{b64}{quote})"
             return match.group(0)
-
     new_css: str = CSS_URL_PATTERN.sub(replacer, css_content)
     return new_css, loc, rem
-
-
 def process_html_file(path: Path) -> dict[str, Any]:
     stats: dict[str, Any] = {
         "path": str(path),
@@ -215,8 +197,6 @@ def process_html_file(path: Path) -> dict[str, Any]:
         logger.error(f"Failed to process HTML file {path}: {e}")
     stats["time"] = time.perf_counter() - start
     return stats
-
-
 def process_css_file(path: Path) -> dict[str, Any]:
     stats: dict[str, Any] = {
         "path": str(path),
@@ -237,8 +217,6 @@ def process_css_file(path: Path) -> dict[str, Any]:
         logger.error(f"Failed to process CSS file {path}: {e}")
     stats["time"] = time.perf_counter() - start
     return stats
-
-
 def process_file(path: Path) -> dict[str, Any]:
     if path.suffix.lower() == ".html" or path.suffix.lower() == ".htm":
         return process_html_file(path)
@@ -251,8 +229,6 @@ def process_file(path: Path) -> dict[str, Any]:
         "time": 0.0,
         "status": "skipped",
     }
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Standalone HTML/CSS Bundler Tool")
     parser.add_argument(
@@ -303,7 +279,5 @@ def main() -> int:
     print(f"\nBuild Complete in {total_time:.2f}s!")
     print(f"Total globally embedded resources: {t_loc} local, {t_rem} remote.")
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

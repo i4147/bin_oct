@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import shutil
 import sys
-
-
 def unique_destination_path(dest_dir: Path, filename: str) -> Path:
     candidate = dest_dir / filename
     if not candidate.exists():
@@ -18,8 +15,6 @@ def unique_destination_path(dest_dir: Path, filename: str) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
-
-
 def collect_files_by_extension(extension: str) -> None:
     cwd = Path.cwd()
     target_dir = cwd / extension
@@ -36,8 +31,6 @@ def collect_files_by_extension(extension: str) -> None:
                 print(f"Error copying {path}: {e}")
     print("\nFinished collecting files.")
     print(f"Total files copied: {copied_count}")
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python collect_files.py <extension>")

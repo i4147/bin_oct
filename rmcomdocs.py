@@ -9,7 +9,6 @@ from pathlib import Path
 import sys
 import time
 from typing import Iterable, Sequence
-
 try:
     from tree_sitter import Language, Node, Parser, Query, QueryCursor
     import tree_sitter_python as _tspython
@@ -31,8 +30,6 @@ _DOCSTRING_QUERY = """
 """
 _BASE_KEEP_PREFIXES: tuple[str, ...] = ("#!", "# type:", "# fmt:")
 _TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
-
-
 @dataclass
 class StripConfig:
     engine: str = "query"
@@ -42,15 +39,11 @@ class StripConfig:
     remove_blank_lines: bool = False
     keep_module_docstring: bool = False
     keep_prefixes: tuple[str, ...] = _BASE_KEEP_PREFIXES
-
-
 @dataclass
 class Edit:
     start: int
     end: int
     replacement: bytes
-
-
 @dataclass
 class FileResult:
     path: Path
@@ -61,23 +54,15 @@ class FileResult:
     original_size: int = 0
     new_size: int = 0
     elapsed: float = 0.0
-
-
 def _make_parser() -> Parser:
     return Parser(_LANGUAGE)
-
-
 def _comment_is_kept(text: str, keep_prefixes: Sequence[str]) -> bool:
     stripped = text.strip()
     return any(stripped.startswith(prefix) for prefix in keep_prefixes)
-
-
 def _eat_trailing_newlines(source: bytes, edits: list[Edit]) -> None:
     for edit in edits:
         if edit.end < len(source) and source[edit.end : edit.end + 1] == b"\n":
             edit.end += 1
-
-
 def _remove_blank_lines(text: str) -> str:
     out: list[str] = []
     prev_blank = False
@@ -88,8 +73,6 @@ def _remove_blank_lines(text: str) -> str:
         out.append(line)
         prev_blank = blank
     return "\n".join(out)
-
-
 def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, int]:
     parser = _make_parser()
     tree = parser.parse(source)
@@ -122,8 +105,6 @@ def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, 
                 edits.append(Edit(node.start_byte, node.end_byte, b""))
             n_docstrings += 1
     return edits, n_comments, n_docstrings
-
-
 def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, int]:
     parser = _make_parser()
     tree = parser.parse(source)
@@ -173,8 +154,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
             edits.append(Edit(module_doc.start_byte, module_doc.end_byte, b""))
         n_docstrings += 1
     return edits, n_comments, n_docstrings
-
-
 def _strip_line_comment(line: str) -> str:
     in_string = False
     quote_char: str | None = None
@@ -196,14 +175,10 @@ def _strip_line_comment(line: str) -> str:
             out.append(ch)
         i += 1
     return "".join(out)
-
-
 def _strip_via_ast_line(source: bytes) -> bytes:
     text = source.decode("utf-8", "replace")
     stripped = "\n".join(_strip_line_comment(line) for line in text.split("\n"))
     return stripped.encode("utf-8")
-
-
 def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> bytes:
     edits = sorted(edits, key=lambda e: e.start)
     if not edits:
@@ -226,8 +201,6 @@ def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> byte
         cursor = edit.end
     out.extend(source[cursor:])
     return bytes(out)
-
-
 def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResult:
     t0 = time.perf_counter()
     try:
@@ -299,8 +272,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
         new_size=len(new_source),
         elapsed=time.perf_counter() - t0,
     )
-
-
 def _discover_python_files(paths: Sequence[str]) -> list[Path]:
     if not paths:
         paths = ["."]
@@ -312,16 +283,12 @@ def _discover_python_files(paths: Sequence[str]) -> list[Path]:
         elif p.is_dir():
             found.update(p.rglob("*.py"))
     return sorted(found)
-
-
 def _parallel_map(files: list[Path], cfg: StripConfig, write: bool, workers: int) -> list[FileResult]:
     if workers <= 1 or len(files) <= 1:
         return [_process_file(f, cfg, write) for f in files]
     ctx = mp.get_context("spawn")
     with ctx.Pool(processes=workers) as pool:
         return pool.starmap(_process_file, [(f, cfg, write) for f in files])
-
-
 def _print_summary(results: list[FileResult], label: str, total_time: float) -> None:
     ok = [r for r in results if r.success and r.error != "no changes"]
     unchanged = [r for r in results if r.success and r.error == "no changes"]
@@ -341,8 +308,6 @@ def _print_summary(results: list[FileResult], label: str, total_time: float) -> 
     print(f"Original bytes  : {in_size:,}")
     print(f"New bytes       : {out_size:,}")
     print(f"Reduction       : {saved:,} bytes ({pct:.1f}%)")
-
-
 def _build_keep_prefixes(args: argparse.Namespace) -> tuple[str, ...]:
     prefixes = list(_BASE_KEEP_PREFIXES)
     if getattr(args, "keep_todo", False):
@@ -356,8 +321,6 @@ def _build_keep_prefixes(args: argparse.Namespace) -> tuple[str, ...]:
             seen.add(p)
             unique.append(p)
     return tuple(unique)
-
-
 def cmd_strip(args: argparse.Namespace) -> int:
     cfg = StripConfig(
         engine=args.engine,
@@ -390,8 +353,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
                 print(f"[OK]    {r.path}  comments={r.comments_removed} docstrings={r.docstrings_removed}")
         _print_summary(results, cfg.engine, elapsed)
     return 1 if failed else 0
-
-
 def cmd_compare(args: argparse.Namespace) -> int:
     files = _discover_python_files(args.paths)
     if not files:
@@ -423,8 +384,6 @@ def cmd_compare(args: argparse.Namespace) -> int:
     print(f"Speedup             : {speedup:.2f}x")
     print("NOTE: no files were modified (dry-run mode).")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="rmcomdocs",
@@ -512,13 +471,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cp.set_defaults(func=cmd_compare)
     return parser
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args) or 0)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

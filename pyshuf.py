@@ -8,10 +8,7 @@ import random
 import secrets
 import sys
 from typing import Any
-
 MMAP_THRESHOLD_BYTES: int = 5 * 1024 * 1024
-
-
 def get_line_offsets(path: Path) -> list[int]:
     offsets: list[int] = []
     with path.open("rb") as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
@@ -23,23 +20,17 @@ def get_line_offsets(path: Path) -> list[int]:
                 break
             offset = newline_pos + 1
     return offsets
-
-
 def crypto_shuffle(lst: list[Any]) -> None:
     n = len(lst)
     for i in range(n - 1, 0, -1):
         j = secrets.randbelow(i + 1)
         lst[i], lst[j] = lst[j], lst[i]
-
-
 def shuffle3(lst: list[Any]) -> None:
     sys_random = random.SystemRandom()
     n = len(lst)
     for i in range(n - 1, 0, -1):
         j = sys_random.randint(0, i)
         lst[i], lst[j] = lst[j], lst[i]
-
-
 def weighted_shuffle(lst: list[Any]) -> None:
     n = len(lst)
     for i in range(n - 1, 0, -1):
@@ -49,8 +40,6 @@ def weighted_shuffle(lst: list[Any]) -> None:
         for i in range(n - 1):
             swap_pos = random.randint(i + 1, n - 1)
             lst[i], lst[swap_pos] = lst[swap_pos], lst[i]
-
-
 def shuffle_lines(lines: list[str], method: str) -> None:
     if method == "basic":
         random.shuffle(lines)
@@ -60,8 +49,6 @@ def shuffle_lines(lines: list[str], method: str) -> None:
         shuffle3(lines)
     elif method == "weighted":
         weighted_shuffle(lines)
-
-
 def process_small_file(input_path: Path, output_path: Path, methods: list[str], repeats: int) -> bool:
     try:
         with input_path.open(encoding="utf-8") as f:
@@ -87,8 +74,6 @@ def process_small_file(input_path: Path, output_path: Path, methods: list[str], 
             print(f"Error writing output file: {e}", file=sys.stderr)
             return False
     return True
-
-
 def process_large_file(input_path: Path, output_path: Path) -> bool:
     file_size = input_path.stat().st_size
     line_offsets = get_line_offsets(input_path)
@@ -116,8 +101,6 @@ def process_large_file(input_path: Path, output_path: Path) -> bool:
         if output_path.exists() and output_path != input_path:
             output_path.unlink()
         return False
-
-
 def test_randomness(input_file: Path) -> None:
     try:
         with input_file.open(encoding="utf-8") as f:
@@ -133,8 +116,6 @@ def test_randomness(input_file: Path) -> None:
         crypto_shuffle(current_lines)
         changes = sum(1 for a, b in zip(original_order, current_lines, strict=False) if a != b)
         print(f"Shuffle {i + 1}: {changes} out of {len(current_lines)} positions changed")
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file")
@@ -157,7 +138,5 @@ def main() -> int:
     else:
         success = process_small_file(input_path, output_path, args.methods, args.repeats)
     return 0 if success else 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

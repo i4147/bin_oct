@@ -12,7 +12,6 @@ import subprocess
 import sys
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
-
 PYPI_BASE = "https://pypi.org"
 USER_AGENT = "pypi-user-packages/1.3"
 DEFAULT_MAX_MIB = 10.0
@@ -22,15 +21,12 @@ DEFAULT_BACKEND = "httpx"
 DEFAULT_JOBS = 8
 _PROJECT_RE = re.compile(r"^/project/([^/?#]+)/?$")
 _PAGE_RE = re.compile(r"[?&]page=(\d+)")
-
-
 class _ProfileParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self._snippet_hrefs: list[str] = []
         self._all_project_hrefs: list[str] = []
         self.page_numbers: set[int] = set()
-
     def handle_starttag(self, tag, attrs):
         if tag != "a":
             return
@@ -44,7 +40,6 @@ class _ProfileParser(HTMLParser):
             classes = (attrs.get("class") or "").split()
             if "package-snippet" in classes:
                 self._snippet_hrefs.append(href)
-
     def project_names(self) -> list[str]:
         hrefs = self._snippet_hrefs or self._all_project_hrefs
         names: list[str] = []
@@ -58,17 +53,11 @@ class _ProfileParser(HTMLParser):
                 seen.add(name)
                 names.append(name)
         return names
-
-
 def _page_of(url: str) -> int:
     m = re.search(r"[?&]page=(\d+)", url)
     return int(m.group(1)) if m else 1
-
-
 def _with_page(url: str, page: int) -> str:
     return f"{url.split('?', 1)[0]}?page={page}"
-
-
 def check_backend(backend: str) -> None:
     if backend == "requests":
         try:
@@ -92,8 +81,6 @@ def check_backend(backend: str) -> None:
             import httpx
         except ImportError:
             sys.exit("backend 'httpx' selected but 'httpx' is not installed (pip install httpx)")
-
-
 def fetch_bytes(url: str, backend: str = DEFAULT_BACKEND, timeout: float = 30.0):
     if backend == "aria2c":
         backend = "urllib"
@@ -104,25 +91,17 @@ def fetch_bytes(url: str, backend: str = DEFAULT_BACKEND, timeout: float = 30.0)
     if backend == "httpx":
         return _fetch_httpx(url, timeout)
     return _fetch_urllib(url, timeout)
-
-
 def _fetch_urllib(url: str, timeout: float):
     req = Request(url, headers={"User-Agent": USER_AGENT})
     with urlopen(req, timeout=timeout) as resp:
         return resp.read(), resp.geturl()
-
-
 def _fetch_requests(url: str, timeout: float):
     import requests
-
     resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=timeout)
     resp.raise_for_status()
     return resp.content, resp.url
-
-
 def _fetch_httpx(url: str, timeout: float):
     import httpx
-
     resp = httpx.get(
         url,
         headers={"User-Agent": USER_AGENT},
@@ -131,11 +110,8 @@ def _fetch_httpx(url: str, timeout: float):
     )
     resp.raise_for_status()
     return resp.content, str(resp.url)
-
-
 def _fetch_pycurl(url: str, timeout: float):
     import pycurl
-
     buf = io.BytesIO()
     curl = pycurl.Curl()
     try:
@@ -153,12 +129,8 @@ def _fetch_pycurl(url: str, timeout: float):
     if status >= 400:
         raise HTTPError(url, status, f"HTTP {status}", None, None)
     return buf.getvalue(), effective
-
-
 class FileTooLarge(Exception):
     pass
-
-
 def download_file(
     url: str,
     dest: Path,
@@ -183,8 +155,6 @@ def download_file(
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise
-
-
 def _download_urllib(url: str, tmp: Path, max_bytes: int, timeout: float) -> int:
     req = Request(url, headers={"User-Agent": USER_AGENT})
     with urlopen(req, timeout=timeout) as resp:
@@ -204,11 +174,8 @@ def _download_urllib(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
                     raise FileTooLarge(msg)
                 fh.write(chunk)
     return written
-
-
 def _download_requests(url: str, tmp: Path, max_bytes: int, timeout: float) -> int:
     import requests
-
     written = 0
     with requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=timeout, stream=True) as resp:
         resp.raise_for_status()
@@ -226,16 +193,12 @@ def _download_requests(url: str, tmp: Path, max_bytes: int, timeout: float) -> i
                     raise FileTooLarge(msg)
                 fh.write(chunk)
     return written
-
-
 def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int:
     import pycurl
-
     written = 0
     aborted = False
     fh = open(tmp, "wb")
     curl = pycurl.Curl()
-
     def _write(data: bytes) -> int:
         nonlocal written, aborted
         written += len(data)
@@ -243,7 +206,6 @@ def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
             aborted = True
             return 0
         return fh.write(data)
-
     try:
         curl.setopt(pycurl.URL, url)
         curl.setopt(pycurl.FOLLOWLOCATION, True)
@@ -264,8 +226,6 @@ def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
     if status >= 400:
         raise HTTPError(url, status, f"HTTP {status}", None, None)
     return written
-
-
 def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int:
     cmd = [
         ARIA2C_BIN,
@@ -309,8 +269,6 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
         raise FileTooLarge(msg)
     tmp.with_name(tmp.name + ".aria2").unlink(missing_ok=True)
     return size
-
-
 async def _download_one_async(
     client,
     url: str,
@@ -344,8 +302,6 @@ async def _download_one_async(
         except BaseException as exc:
             tmp.unlink(missing_ok=True)
             return dest, None, exc
-
-
 async def _download_all_async(
     tasks: list[tuple[str, Path]],
     max_bytes: int,
@@ -354,7 +310,6 @@ async def _download_all_async(
     on_event,
 ) -> None:
     import httpx
-
     sem = asyncio.Semaphore(jobs)
     limits = httpx.Limits(
         max_connections=None,
@@ -370,8 +325,6 @@ async def _download_all_async(
         for coro in asyncio.as_completed(coros):
             dest, written, exc = await coro
             on_event("done", dest, written, exc)
-
-
 def download_all(
     tasks: list[tuple[str, Path]],
     backend: str,
@@ -389,29 +342,21 @@ def download_all(
             on_event("done", dest, None, exc)
         else:
             on_event("done", dest, written, None)
-
-
 def resolve_profile_url(target: str) -> str:
     target = target.strip()
     if "://" in target:
         return target
     return f"{PYPI_BASE}/user/{target.strip('/')}/"
-
-
 def extract_username(target: str) -> str:
     target = target.strip().rstrip("/")
     if "://" in target:
         target = target.rsplit("/", 1)[-1]
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", target)
     return safe or "pypi_user"
-
-
 def save_package_list(names: list[str], username: str) -> Path:
     out_path = Path.cwd() / f"{username}.txt"
     out_path.write_text("\n".join(names) + "\n", encoding="utf-8")
     return out_path
-
-
 def collect_packages(start_url: str, backend: str, timeout: float, quiet: bool = False):
     names: list[str] = []
     seen: set[str] = set()
@@ -435,18 +380,12 @@ def collect_packages(start_url: str, backend: str, timeout: float, quiet: bool =
         else:
             page_url = None
     return names, final_url
-
-
 def fetch_package_files(name: str, backend: str, timeout: float):
     body, _ = fetch_bytes(f"{PYPI_BASE}/pypi/{name}/json", backend, timeout)
     meta = json.loads(body)
     return meta["info"]["version"], meta.get("urls", [])
-
-
 def _mib(n: int) -> str:
     return f"{n / (1024 * 1024):.2f} MiB"
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pypi_user_packages.py",
@@ -505,8 +444,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="suppress progress messages on stderr",
     )
     return p
-
-
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     check_backend(args.backend)
@@ -566,7 +503,6 @@ def main(argv=None) -> int:
             tasks.append((url, dest))
     total_files = 0
     failures = 0
-
     def on_event(kind: str, dest: Path, written, exc) -> None:
         nonlocal total_files, failures
         if exc is None:
@@ -577,7 +513,6 @@ def main(argv=None) -> int:
         else:
             failures += 1
             print(f"    fail {dest.name}: {exc}", file=sys.stderr)
-
     download_all(
         tasks,
         args.backend,
@@ -592,8 +527,6 @@ def main(argv=None) -> int:
         f" -> {outdir.resolve()}"
     )
     return 0 if failures == 0 else 1
-
-
 if __name__ == "__main__":
     try:
         sys.exit(main())

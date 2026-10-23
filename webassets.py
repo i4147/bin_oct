@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -16,8 +14,6 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Callable, Optional, Sequence
-
-
 try:
     from rcssmin import cssmin as _rcssmin
 except ImportError:
@@ -36,19 +32,13 @@ _ANSI = {
     "grey": "\033[90m",
     "reset": "\033[0m",
 }
-
-
 def cprint(msg: str, color: str = "white") -> None:
     print(f"{_ANSI.get(color, '')}{msg}{_ANSI['reset']}")
-
-
 def file_size(p: Path | str) -> int:
     try:
         return Path(p).stat().st_size
     except OSError:
         return 0
-
-
 def dir_size(p: Path | str) -> int:
     p = Path(p)
     if p.is_file():
@@ -56,8 +46,6 @@ def dir_size(p: Path | str) -> int:
     if not p.is_dir():
         return 0
     return sum(file_size(f) for f in p.rglob("*") if f.is_file())
-
-
 def human_size(n: float) -> str:
     sign = "-" if n < 0 else ""
     n = abs(float(n))
@@ -66,8 +54,6 @@ def human_size(n: float) -> str:
             return f"{sign}{n:.2f}{unit}"
         n /= 1024
     return f"{sign}{n:.2f}TB"
-
-
 def find_files(
     root: Path | str,
     extensions: Sequence[str],
@@ -90,8 +76,6 @@ def find_files(
         if any(f.name.lower().endswith(e) for e in exts):
             out.append(f)
     return sorted(set(out))
-
-
 def parallel_map(
     func: Callable[[Any], Any],
     items: list[Any],
@@ -105,16 +89,12 @@ def parallel_map(
         return [func(i) for i in items]
     with ProcessPoolExecutor(max_workers=workers) as ex:
         return list(ex.map(func, items))
-
-
 def require_tool(tool: str, hint: str = "") -> None:
     if shutil.which(tool) is None:
         msg = f"'{tool}' is not installed."
         if hint:
             msg += " " + hint
         raise RuntimeError(msg)
-
-
 @dataclass
 class Result:
     path: Path
@@ -124,25 +104,19 @@ class Result:
     error: Optional[str] = None
     no_change: bool = False
     dry_run: bool = False
-
     @property
     def saved(self) -> int:
         return self.original_size - self.minified_size
-
     @property
     def ratio(self) -> float:
         if self.original_size == 0:
             return 0.0
         return (1 - self.minified_size / self.original_size) * 100
-
-
 def _relative(path: Path) -> Path | str:
     try:
         return path.relative_to(Path.cwd())
     except ValueError:
         return path
-
-
 def print_file_result(r: Result) -> None:
     rel = _relative(r.path)
     if not r.success:
@@ -158,8 +132,6 @@ def print_file_result(r: Result) -> None:
             f"(-{human_size(r.saved)}, {r.ratio:.1f}%)",
             "green",
         )
-
-
 def print_summary(results: Sequence[Result], title: str = "Summary") -> None:
     total = len(results)
     ok = sum(1 for r in results if r.success and not r.no_change)
@@ -182,8 +154,6 @@ def print_summary(results: Sequence[Result], title: str = "Summary") -> None:
     cprint(f"Minified size:   {human_size(new)}", "white")
     cprint(f"Total saved:     {human_size(saved)} ({ratio:.1f}%)", "green")
     print("=" * 40)
-
-
 HTML_HMIN_CONFIG: dict[str, Any] = {
     "collapseBooleanAttributes": True,
     "collapseInlineTagWhitespace": True,
@@ -237,20 +207,14 @@ _INLINE_TAGS = "span|a|strong|em|b|i|code|label"
 _RE_DOCTYPE_LOWER = re.compile(r"<!(doctype)(html)", re.IGNORECASE)
 _RE_DOCTYPE_UPPER = re.compile(r"<!(DOCTYPE)(HTML)")
 _RE_INLINE_WS = re.compile(f"(</(?:{_INLINE_TAGS})>)(<(?:{_INLINE_TAGS}))")
-
-
 def _fix_doctype(s: str) -> str:
     s = _RE_DOCTYPE_LOWER.sub(r"<!\1 \2", s)
     s = _RE_DOCTYPE_UPPER.sub(r"<!\1 \2", s)
     return s
-
-
 def _post_process_html(s: str) -> str:
     s = _fix_doctype(s)
     s = _RE_INLINE_WS.sub(r"\1 \2", s)
     return s
-
-
 def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -294,8 +258,6 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
         if tmp_cfg is not None and tmp_cfg.exists():
             with contextlib.suppress(OSError):
                 tmp_cfg.unlink()
-
-
 def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -323,8 +285,6 @@ def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
         return Result(path, orig, orig, False, f"timeout ({timeout}s exceeded)")
     except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
-
-
 def minify_css_csso(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -344,8 +304,6 @@ def minify_css_csso(path: Path) -> Result:
         return Result(path, orig, orig, False, "csso not found")
     except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
-
-
 def minify_css_rcssmin(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -360,8 +318,6 @@ def minify_css_rcssmin(path: Path) -> Result:
         return Result(path, orig, file_size(path), True)
     except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
-
-
 def minify_js_rjsmin(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -376,8 +332,6 @@ def minify_js_rjsmin(path: Path) -> Result:
         return Result(path, orig, file_size(path), True)
     except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
-
-
 def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -402,8 +356,6 @@ def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
         return Result(path, orig, file_size(path), True)
     except Exception as exc:
         return Result(path, orig, orig, False, f"cannot write: {exc}")
-
-
 def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> Result:
     path = Path(path)
     if any(s in path.parts for s in skip_parts) or not path.exists():
@@ -433,8 +385,6 @@ def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> 
         if tmp_path is not None and tmp_path.exists():
             with contextlib.suppress(OSError):
                 tmp_path.unlink()
-
-
 DEFAULT_TRUNCATE_TAGS: tuple[str, ...] = (
     "</svg>",
     "</html>",
@@ -442,8 +392,6 @@ DEFAULT_TRUNCATE_TAGS: tuple[str, ...] = (
     "</script>",
     "</div>",
 )
-
-
 def truncate_at_last_tag(
     path: Path,
     tags: Sequence[str] = DEFAULT_TRUNCATE_TAGS,
@@ -468,18 +416,12 @@ def truncate_at_last_tag(
     new_content = "".join(lines)[:cut_at]
     path.write_text(new_content, encoding="utf-8")
     return Result(path, orig, file_size(path), True)
-
-
 _RE_HTML_TAG_GAP = re.compile(r">\s+<")
 _RE_HTML_MULTI_WS = re.compile(r"\s{2,}")
-
-
 def _collapse_html_ws(s: str) -> str:
     s = _RE_HTML_TAG_GAP.sub("><", s)
     s = _RE_HTML_MULTI_WS.sub(" ", s)
     return s.strip()
-
-
 def minify_mixed(path: Path) -> tuple[Path, str]:
     path = Path(path)
     ext = path.suffix.lower()
@@ -499,11 +441,7 @@ def minify_mixed(path: Path) -> tuple[Path, str]:
         return path, f"OK → {path}"
     except Exception as exc:
         return path, f"ERR ({path}): {exc}"
-
-
 _MESON_DB: dict[str, Any] = {}
-
-
 def _v_keys(prefix: str, actual: dict, expected: dict) -> dict:
     assert set(actual.keys()).issuperset(expected.keys()), (
         f"{prefix}:DIFF:{set(actual.keys()).difference(expected.keys())}"
@@ -514,8 +452,6 @@ def _v_keys(prefix: str, actual: dict, expected: dict) -> dict:
         assert isinstance(v, t), f"{prefix}:type({k}:{v})!={t}"
         kept[k] = v
     return kept
-
-
 def _v_base(prefix: str, name: str, d: dict) -> None:
     schema = {
         "name": str,
@@ -531,8 +467,6 @@ def _v_base(prefix: str, name: str, d: dict) -> None:
     assert r["name"] == name, f"{prefix}.{name}"
     assert all(isinstance(x, str) and x for x in r["notes"]), f"{prefix}.{name}"
     assert all(isinstance(x, str) and x for x in r["warnings"]), f"{prefix}.{name}"
-
-
 def _v_obj(prefix: str, d: dict) -> None:
     schema = {"obj": str, "holds": list}
     r = _v_keys(prefix, d, schema)
@@ -540,8 +474,6 @@ def _v_obj(prefix: str, d: dict) -> None:
     assert r["obj"] in _MESON_DB["objects"], prefix
     for i in r["holds"]:
         _v_obj(prefix, i)
-
-
 def _v_arg(prefix: str, name: str, d: dict) -> None:
     _v_base(prefix, name, d)
     schema = {
@@ -562,8 +494,6 @@ def _v_arg(prefix: str, name: str, d: dict) -> None:
         assert r["min_varargs"] > 0, f"{prefix}.{name}"
     if r["max_varargs"] is not None:
         assert r["max_varargs"] > 0, f"{prefix}.{name}"
-
-
 def _v_func(prefix: str, name: str, d: dict) -> None:
     _v_base(prefix, name, d)
     schema = {
@@ -590,8 +520,6 @@ def _v_func(prefix: str, name: str, d: dict) -> None:
         _v_arg(f"{prefix}.{name}", k, v)
     if r["varargs"]:
         _v_arg(f"{prefix}.{name}", r["varargs"]["name"], r["varargs"])
-
-
 def _v_object(prefix: str, name: str, d: dict) -> None:
     _v_base(prefix, name, d)
     schema = {
@@ -633,8 +561,6 @@ def _v_object(prefix: str, name: str, d: dict) -> None:
         assert name in _MESON_DB["objects_by_type"]["returned"], f"{prefix}.{name}"
     if r["object_type"] == "MODULE":
         assert name in _MESON_DB["objects_by_type"]["modules"], f"{prefix}.{name}"
-
-
 def validate_meson_json(doc_file: Path) -> int:
     global _MESON_DB
     _MESON_DB = json.loads(Path(doc_file).read_text(encoding="utf-8"))
@@ -676,19 +602,13 @@ def validate_meson_json(doc_file: Path) -> int:
     for name, body in r["objects"].items():
         _v_object("root", name, body)
     return 0
-
-
 def _collect_files(paths: Sequence[str], extensions: Sequence[str]) -> list[Path]:
     files: list[Path] = []
     for p in paths:
         files.extend(find_files(Path(p).resolve(), extensions))
     return sorted(set(files))
-
-
 def _ext_list(s: str) -> list[str]:
     return [e.strip() for e in s.split(",") if e.strip()]
-
-
 def cmd_html(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -704,8 +624,6 @@ def cmd_html(args: argparse.Namespace) -> int:
         print_file_result(r)
     print_summary(results, "HTML Summary")
     return 0 if all(r.success or r.no_change for r in results) else 1
-
-
 def cmd_css(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -722,8 +640,6 @@ def cmd_css(args: argparse.Namespace) -> int:
         print_file_result(r)
     print_summary(results, "CSS Summary")
     return 0 if all(r.success or r.no_change for r in results) else 1
-
-
 def cmd_js(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -735,8 +651,6 @@ def cmd_js(args: argparse.Namespace) -> int:
         print_file_result(r)
     print_summary(results, "JS Summary")
     return 0 if all(r.success or r.no_change for r in results) else 1
-
-
 def cmd_json(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -749,8 +663,6 @@ def cmd_json(args: argparse.Namespace) -> int:
         print_file_result(r)
     print_summary(results, "JSON Summary")
     return 0 if all(r.success or r.no_change for r in results) else 1
-
-
 def cmd_svg(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -763,8 +675,6 @@ def cmd_svg(args: argparse.Namespace) -> int:
         print_file_result(r)
     print_summary(results, "SVG Summary")
     return 0 if all(r.success or r.no_change for r in results) else 1
-
-
 def cmd_truncate(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -778,8 +688,6 @@ def cmd_truncate(args: argparse.Namespace) -> int:
         print_file_result(r)
     print_summary(results, "Truncate Summary")
     return 0 if all(r.success or r.no_change for r in results) else 1
-
-
 def cmd_mixed(args: argparse.Namespace) -> int:
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
@@ -792,8 +700,6 @@ def cmd_mixed(args: argparse.Namespace) -> int:
     ok = sum(1 for _, m in results if m.startswith(("OK", "SKIP")))
     print(f"\n{ok}/{len(results)} file(s) processed successfully.")
     return 0 if ok == len(results) else 1
-
-
 def cmd_validate_meson_json(args: argparse.Namespace) -> int:
     try:
         validate_meson_json(args.doc_file)
@@ -802,8 +708,6 @@ def cmd_validate_meson_json(args: argparse.Namespace) -> int:
         return 1
     print(f"OK: {args.doc_file} is valid.")
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="webassets.py",
@@ -910,8 +814,6 @@ def build_parser() -> argparse.ArgumentParser:
     pv.add_argument("doc_file", type=Path, help="Path to the JSON docs file to validate.")
     pv.set_defaults(func=cmd_validate_meson_json)
     return p
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -926,7 +828,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("Interrupted.", file=sys.stderr)
         return 130
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -14,7 +14,6 @@ import sys
 import tempfile
 import time
 from loguru import logger
-
 try:
     import tomllib
 except ImportError:
@@ -41,8 +40,6 @@ SKIP_DIRS = frozenset({
     "site-packages",
 })
 TAIL_LINES = 40
-
-
 @dataclass(frozen=True, slots=True)
 class Result:
     rel: str
@@ -50,12 +47,8 @@ class Result:
     seconds: float = 0.0
     reason: str = ""
     output: str = ""
-
-
 def relpath(path: Path, base: Path) -> str:
     return os.path.relpath(path, base)
-
-
 def find_projects(root: Path) -> list[Path]:
     found: list[Path] = []
     stack = [root]
@@ -80,8 +73,6 @@ def find_projects(root: Path) -> list[Path]:
             except OSError:
                 continue
     return sorted(found)
-
-
 def is_buildable(directory: Path) -> bool:
     if (directory / "setup.py").is_file():
         return True
@@ -95,8 +86,6 @@ def is_buildable(directory: Path) -> bool:
     except OSError:
         return False
     return "project" in data or "build-system" in data
-
-
 def kill_tree(process: subprocess.Popen) -> None:
     with contextlib.suppress(OSError, ProcessLookupError):
         if os.name == "posix":
@@ -108,16 +97,12 @@ def kill_tree(process: subprocess.Popen) -> None:
                 check=False,
             )
             process.kill()
-
-
 def build_one(task: tuple[str, str], *, out_root: str | None, no_isolation: bool, timeout: int) -> Result:
     path_str, rel = task
     directory = Path(path_str)
     started = time.perf_counter()
-
     def elapsed() -> float:
         return time.perf_counter() - started
-
     try:
         if not is_buildable(directory):
             return Result(
@@ -174,13 +159,9 @@ def build_one(task: tuple[str, str], *, out_root: str | None, no_isolation: bool
         raise
     except Exception as exc:
         return Result(rel, "failed", elapsed(), f"{type(exc).__name__}: {exc}")
-
-
 def tail(text: str | None) -> str:
     lines = (text or "").strip().splitlines()
     return "\n".join(lines[-TAIL_LINES:])
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build every Python project under the current directory.")
     parser.add_argument("--out", metavar="DIR", help="keep built artifacts here (default: discard)")
@@ -197,8 +178,6 @@ def parse_args() -> argparse.Namespace:
     if args.timeout < 1:
         parser.error("--timeout must be at least 1")
     return args
-
-
 def main() -> int:
     args = parse_args()
     logger.remove()
@@ -258,8 +237,6 @@ def main() -> int:
         for rel in sorted(skipped):
             print(f"  {rel}")
     return 1 if failed else 0
-
-
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(main())

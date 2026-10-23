@@ -1,48 +1,36 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import multiprocessing as mp
 import os
 from pathlib import Path
 import re
-
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}
 SO_RE = re.compile(r".*\.so(?:\.\d+)*$")
 WORKERS = 8
-
-
 def has_shebang(p):
     try:
         with p.open("rb") as f:
             return f.read(2) == b"#!"
     except OSError:
         return False
-
-
 def is_binary(p):
     try:
         with p.open("rb") as f:
             return b"\x00" in f.read(8192)
     except OSError:
         return False
-
-
 def is_executable(p):
     try:
         return bool(p.stat().st_mode & 0o100)
     except OSError:
         return False
-
-
 def chmod_x(p):
     try:
         p.chmod(p.stat().st_mode | 0o111)
         return True
     except OSError:
         return False
-
-
 def should_execute(p):
     if has_shebang(p):
         return True
@@ -51,8 +39,6 @@ def should_execute(p):
     if SO_RE.match(p.name):
         return True
     return bool(not p.suffix and is_binary(p))
-
-
 def process(path_str):
     p = Path(path_str)
     try:
@@ -69,8 +55,6 @@ def process(path_str):
         return path_str, False, "chmod failed"
     except Exception as e:
         return path_str, False, str(e)
-
-
 def main():
     root = Path.cwd()
     self_path = Path(__file__).resolve()
@@ -106,7 +90,5 @@ def main():
     if os.name != "posix":
         print("Note: non-POSIX system — executable bits not applied.")
     return 1 if errors else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

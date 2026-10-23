@@ -3,8 +3,6 @@ from pathlib import Path
 import shutil
 import sys
 from PIL import Image
-
-
 def render_image(image_path: str | Path, max_width: int | None = None, max_height: int | None = None) -> None:
     path = Path(image_path)
     if not path.is_file():
@@ -43,8 +41,6 @@ def render_image(image_path: str | Path, max_width: int | None = None, max_heigh
             row_str.append(f"{fg}{bg}▀")
         output.append("----" + "".join(row_str) + "\x1b[0m")
     print("\n".join(output))
-
-
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 chafa_clone.py <image_path>")
