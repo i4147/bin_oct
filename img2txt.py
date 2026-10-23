@@ -6,12 +6,18 @@ import sys
 from typing import TYPE_CHECKING
 from PIL import Image
 from pytesseract import image_to_string
+
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
 def mpf(process_function: Callable, files: list[Path], **kwargs):
     from joblib import Parallel, delayed
+
     file_strings = [str(f) for f in files]
     return Parallel(n_jobs=2)(delayed(process_function)(file_str, **kwargs) for file_str in file_strings)
+
+
 def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
     path = Path(path)
     skip_dirs = {".git", "__pycache__", "node_modules"}
@@ -30,6 +36,8 @@ def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
         except (PermissionError, OSError, FileNotFoundError):
             continue
     return files
+
+
 def extract_text(image_path: Path) -> str:
     try:
         with Image.open(image_path) as img:
@@ -42,6 +50,8 @@ def extract_text(image_path: Path) -> str:
     except Exception as e:
         print(f"Error processing {image_path.name}: {e}")
         return ""
+
+
 def process_file(path: Path) -> None:
     path = Path(path)
     txtfile = path.with_suffix(".txt")
@@ -58,6 +68,8 @@ def process_file(path: Path) -> None:
             print(f"✗ Failed to write {txtfile.name}: {e}")
     else:
         print(f"⚠ No significant text in {path.name}")
+
+
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -76,5 +88,7 @@ def main() -> None:
     else:
         print(f"Using {max_workers} worker(s) for memory safety...")
         mpf(process_file, files)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

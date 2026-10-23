@@ -4,16 +4,23 @@ import base64
 from pathlib import Path
 import sys
 from dh import cprint
+
+
 def content_hash(data: bytes) -> str:
     from hashlib import sha256
+
     if not isinstance(data, bytes):
         data = data.encode("utf8")
     return sha256(data).hexdigest()
+
+
 cleanup = True
 cwd = Path.cwd()
 out_dir = Path("output")
 if not out_dir.exists():
     out_dir.mkdir(exist_ok=True)
+
+
 def try_again(txt, fout) -> None:
     try:
         txt = txt[:-1]
@@ -21,6 +28,8 @@ def try_again(txt, fout) -> None:
         fout.write_text(dbz)
     except:
         return
+
+
 def clean_line(txt):
     cleaned: str = ""
     indx = txt.index("base64,") + 7
@@ -35,6 +44,8 @@ def clean_line(txt):
         end_indx = cleaned.index(")")
         cleaned = cleaned[:end_indx]
     return cleaned
+
+
 def decode_base64_lines(path: Path) -> None:
     success_count = 0
     error_count = 0
@@ -62,6 +73,8 @@ def decode_base64_lines(path: Path) -> None:
     if cleanup:
         new_content = "\n".join(remained)
         path.write_text(new_content)
+
+
 if __name__ == "__main__":
     INPUT_FILE = Path(sys.argv[1])
     decode_base64_lines(INPUT_FILE)

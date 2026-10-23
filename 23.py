@@ -6,14 +6,19 @@ from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Any
 from dh import runcmd
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 MAX_WORKERS = 8
 print_lock = Lock()
+
+
 def walk_files(directory: Path) -> Iterator[Path]:
     for root, _dirs, files in directory.walk():
         for name in files:
             yield root / name
+
+
 def is_python_file(path: Path) -> bool:
     if path.suffix == ".py":
         return True
@@ -26,6 +31,8 @@ def is_python_file(path: Path) -> bool:
         except Exception:
             return False
     return False
+
+
 def process_file(path: Path) -> None:
     path = Path(path)
     print(f"[OK] {path.name}")
@@ -63,12 +70,16 @@ def process_file(path: Path) -> None:
         with print_lock:
             print("\n".join(output))
             sys.stdout.flush()
+
+
 def get_all_files(cwd: Path) -> list[Path]:
     py_files: list[Path] = []
     for path in walk_files(cwd):
         if path.is_file() and is_python_file(path):
             py_files.append(path)
     return py_files
+
+
 def main() -> None:
     cwd = Path.cwd()
     files = get_all_files(cwd)
@@ -85,5 +96,7 @@ def main() -> None:
         pending.popleft().get()
     pool.close()
     pool.join()
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

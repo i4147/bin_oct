@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 import chardet
 import charset_normalizer
+
+
 def get_file_encoding() -> None:
     if len(sys.argv) < 2:
         print("Error: Please provide an input file path.", file=sys.stderr)
@@ -32,5 +34,7 @@ def get_file_encoding() -> None:
     except Exception as e:
         print(f"Error reading file: {e}", file=sys.stderr)
         sys.exit(1)
+
+
 if __name__ == "__main__":
     get_file_encoding()

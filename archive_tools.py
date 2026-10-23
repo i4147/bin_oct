@@ -16,6 +16,7 @@ import tempfile
 import time
 from typing import Iterable, Iterator, Optional, Sequence
 import zipfile
+
 try:
     import py7zr
 except ImportError:
@@ -88,6 +89,8 @@ ALL_EXTENSIONS: tuple[str, ...] = tuple(
         reverse=True,
     )
 )
+
+
 @dataclass
 class ExtractResult:
     archive_path: Path
@@ -98,6 +101,7 @@ class ExtractResult:
     extraction_time: float = 0.0
     original_size: int = 0
     error_message: str = ""
+
     def __str__(self) -> str:
         mb = self.original_size / (1024 * 1024)
         icon = {"success": "✓", "failed": "✗", "skipped": "○"}.get(self.status, "?")
@@ -109,16 +113,22 @@ class ExtractResult:
         elif self.status == "failed" and self.error_message:
             out += f" - {self.error_message}"
         return out
+
+
 def count_files(p: Path) -> int:
     try:
         return sum(1 for f in p.rglob("*") if f.is_file())
     except Exception:
         return 0
+
+
 def dir_size(p: Path) -> int:
     try:
         return sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
     except Exception:
         return 0
+
+
 def unique_dir(p: Path) -> Path:
     if not p.exists():
         return p
@@ -128,12 +138,16 @@ def unique_dir(p: Path) -> Path:
         if not q.exists():
             return q
         i += 1
+
+
 def strip_version(stem: str) -> str:
     parts = stem.replace(".whl", "").split("-")
     for i, part in enumerate(parts):
         if part and part[0].isdigit():
             return "-".join(parts[:i])
     return parts[0]
+
+
 def detect_extension(path: Path) -> Optional[str]:
     name = path.name.lower()
     if name.endswith(".whl"):
@@ -146,6 +160,8 @@ def detect_extension(path: Path) -> Optional[str]:
         if name.endswith(ext):
             return ext
     return None
+
+
 @contextlib.contextmanager
 def _open_decompressor(path: Path, kind: str) -> Iterator:
     if kind == "gz":
@@ -168,6 +184,7 @@ def _open_decompressor(path: Path, kind: str) -> Iterator:
             msg = "brotli is not installed"
             raise RuntimeError(msg)
         import io
+
         yield io.BytesIO(brotli.decompress(path.read_bytes()))
     elif kind == "lz4":
         if lz4frame is None:
@@ -178,14 +195,20 @@ def _open_decompressor(path: Path, kind: str) -> Iterator:
     else:
         msg = f"unknown compression kind: {kind}"
         raise ValueError(msg)
+
+
 def _decompress_stream(src: Path, dst: Path, kind: str) -> None:
     with _open_decompressor(src, kind) as f, open(dst, "wb") as o:
         shutil.copyfileobj(f, o, CHUNK)
+
+
 def _safe_extract_tar(tar: tarfile.TarFile, dest: Path) -> None:
     try:
         tar.extractall(path=dest, filter="data")
     except TypeError:
         tar.extractall(path=dest)
+
+
 def _extract_tar_python(archive: Path, dest: Path) -> None:
     name = archive.name.lower()
     dest.mkdir(parents=True, exist_ok=True)
@@ -213,6 +236,8 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
         raise ValueError(msg)
     with tarfile.open(archive, mode) as tar:
         _safe_extract_tar(tar, dest)
+
+
 def extract_with_python(archive: Path, dest: Path) -> None:
     name = archive.name.lower()
     dest.mkdir(parents=True, exist_ok=True)
@@ -257,6 +282,8 @@ def extract_with_python(archive: Path, dest: Path) -> None:
             return
     msg = f"python engine does not support: {archive.name}"
     raise ValueError(msg)
+
+
 def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
     ext = detect_extension(archive)
     if not ext or ext not in CLI_COMMANDS:
@@ -339,6 +366,8 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
         cwd=cwd,
         timeout=DEFAULT_TIMEOUT,
     )
+
+
 def _try_extract(archive: Path, dest: Path, engine: str) -> None:
     if engine == "python":
         extract_with_python(archive, dest)
@@ -360,6 +389,8 @@ def _try_extract(archive: Path, dest: Path, engine: str) -> None:
     else:
         msg = f"unknown engine: {engine}"
         raise ValueError(msg)
+
+
 def should_use_subdir(archive: Path) -> bool:
     name = archive.name.lower()
     for ext in (".gz", ".bz2", ".xz", ".lz4", ".lzma", ".zst", ".br"):
@@ -381,6 +412,8 @@ def should_use_subdir(archive: Path) -> bool:
         return len(roots) == 1 and any(len(p) > 1 for p in parts)
     except Exception:
         return False
+
+
 def check_integrity(archive: Path) -> tuple[bool, str]:
     name = archive.name.lower()
     try:
@@ -430,6 +463,8 @@ def check_integrity(archive: Path) -> tuple[bool, str]:
     except Exception as e:
         return False, f"Corrupted: {archive.name} ({e})"
     return True, f"Skipped check: {archive.name}"
+
+
 def find_archives(roots: Iterable[Path], recursive: bool, formats: Optional[set[str]] = None) -> list[Path]:
     exts = formats or set(ALL_EXTENSIONS)
     ordered = sorted(exts, key=len, reverse=True)
@@ -451,6 +486,8 @@ def find_archives(roots: Iterable[Path], recursive: bool, formats: Optional[set[
                 found.append(p)
                 seen.add(p)
     return sorted(found)
+
+
 def extract_one(
     archive: Path,
     *,
@@ -514,9 +551,13 @@ def extract_one(
             res.error_message = f"extracted, but couldn't remove original: {e}"
     res.extraction_time = time.time() - start
     return res
+
+
 def _worker(payload: tuple[Path, dict]) -> ExtractResult:
     archive, opts = payload
     return extract_one(archive, **opts)
+
+
 def _parse_formats(s: Optional[str]) -> Optional[set[str]]:
     if not s:
         return None
@@ -529,6 +570,8 @@ def _parse_formats(s: Optional[str]) -> Optional[set[str]]:
             tok = "." + tok
         out.add(tok)
     return out
+
+
 def _summary(results: Sequence[ExtractResult], elapsed: float, *, quiet: bool) -> None:
     ok = sum(1 for r in results if r.status == "success")
     fail = sum(1 for r in results if r.status == "failed")
@@ -543,6 +586,8 @@ def _summary(results: Sequence[ExtractResult], elapsed: float, *, quiet: bool) -
     print(f"✗ Failed : {fail}")
     print(f"○ Skipped: {skip}")
     print(f"Time    : {elapsed:.1f}s")
+
+
 def cmd_extract(args: argparse.Namespace) -> int:
     roots = [Path(p) for p in (args.paths or ["."])]
     formats = _parse_formats(args.formats)
@@ -593,6 +638,8 @@ def cmd_extract(args: argparse.Namespace) -> int:
             print(line)
     _summary(results, elapsed, quiet=args.quiet)
     return 0 if all(r.status != "failed" for r in results) else 1
+
+
 def fix_misextracted(root: Path, do_fix: bool, verbose: bool) -> int:
     count = 0
     dirs = sorted(
@@ -626,6 +673,8 @@ def fix_misextracted(root: Path, do_fix: bool, verbose: bool) -> int:
         except Exception as e:
             print(f"Failed to fix {d}: {e}", file=sys.stderr)
     return count
+
+
 def cmd_fix(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     if not root.exists():
@@ -637,6 +686,8 @@ def cmd_fix(args: argparse.Namespace) -> int:
     n = fix_misextracted(root, do_fix=args.fix, verbose=args.verbose)
     print(f"\nSummary: {n} issue(s) {'fixed' if args.fix else 'found'}.")
     return 0
+
+
 def cmd_whl(args: argparse.Namespace) -> int:
     roots = [Path(p) for p in (args.paths or ["."])]
     wheels: list[Path] = []
@@ -667,6 +718,8 @@ def cmd_whl(args: argparse.Namespace) -> int:
     if not args.quiet:
         print(f"\nDone: {ok} extracted, {fail} failed, {time.time() - start:.1f}s")
     return 0 if fail == 0 else 1
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     roots = [Path(p) for p in (args.paths or ["."])]
     archives = find_archives(roots, args.recursive, _parse_formats(args.formats))
@@ -687,6 +740,8 @@ def cmd_check(args: argparse.Namespace) -> int:
             f"— {len(archives) - fail} valid, {fail} invalid."
         )
     return 0 if fail == 0 else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="archive_tool.py",
@@ -815,10 +870,14 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("-q", "--quiet", action="store_true", help="Suppress summary output.")
     pc.set_defaults(func=cmd_check)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(main())

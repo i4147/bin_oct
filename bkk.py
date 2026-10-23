@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 from pathlib import Path
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     for r, _d, files in cwd.walk():

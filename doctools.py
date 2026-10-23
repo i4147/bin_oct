@@ -10,12 +10,20 @@ import shutil
 import subprocess
 import sys
 from typing import Iterable, Optional, Sequence
+
+
 def info(msg: str) -> None:
     print(f"[INFO] {msg}")
+
+
 def warn(msg: str) -> None:
     print(f"[WARN] {msg}", file=sys.stderr)
+
+
 def err(msg: str) -> None:
     print(f"[ERR] {msg}", file=sys.stderr)
+
+
 def unique_path(p: Path) -> Path:
     if not p.exists():
         return p
@@ -26,10 +34,14 @@ def unique_path(p: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
+
+
 def _collect_by_ext(root: Path, exts: Iterable[str], recursive: bool = True) -> list[Path]:
     exts = {e.lower() for e in exts}
     iterator = root.rglob("*") if recursive else root.glob("*")
     return [p for p in iterator if p.is_file() and p.suffix.lower() in exts]
+
+
 def cmd_chat_export(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.is_file():
@@ -56,6 +68,8 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
                 f.write("\n\n---\n\n")
     info(f"Wrote {len(data)} chat(s) to {out_dir}")
     return 0
+
+
 def _convert_one_info(src: Path) -> Optional[Path]:
     stem = re.sub(r"\.info(-\d+)?$", "", src.name)
     dest = src.parent / f"{stem}.md"
@@ -76,6 +90,8 @@ def _convert_one_info(src: Path) -> Optional[Path]:
         return dest
     warn(f"Failed to convert {src.name} (exit {result.returncode}): {result.stderr.strip()}")
     return None
+
+
 def cmd_info_to_md(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -94,6 +110,8 @@ def cmd_info_to_md(args: argparse.Namespace) -> int:
             except Exception as e:
                 err(f"Worker raised: {e}")
     return 0
+
+
 def _render_roff(text: str) -> str:
     lines = text.splitlines()
     out: list[str] = []
@@ -188,6 +206,8 @@ def _render_roff(text: str) -> str:
     if in_fence:
         out.append("```")
     return "\n".join(out)
+
+
 def cmd_man_to_md(args: argparse.Namespace) -> int:
     src = Path(args.input)
     try:
@@ -201,8 +221,11 @@ def cmd_man_to_md(args: argparse.Namespace) -> int:
     dest.write_text(rendered, encoding="utf-8")
     print(f"Converted {src} -> {dest}")
     return 0
+
+
 def _apply_tailwind_classes(html: str) -> str:
     from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(html, "html.parser")
     class_map = {
         "h1": "text-4xl font-bold mt-4 mb-2",
@@ -219,6 +242,8 @@ def _apply_tailwind_classes(html: str) -> str:
             merged = list(set(existing + classes.split()))
             el["class"] = merged
     return str(soup)
+
+
 def _replace_latex(text: str) -> str:
     text = re.sub(
         r"\\\[(.*?)\\\]",
@@ -233,6 +258,8 @@ def _replace_latex(text: str) -> str:
         flags=re.DOTALL,
     )
     return text
+
+
 _HTML_TEMPLATE = """\
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth bg-gray-50 text-gray-900 antialiased">
@@ -256,6 +283,8 @@ _HTML_TEMPLATE = """\
 </body>
 </html>
 """
+
+
 def cmd_md_to_html(args: argparse.Namespace) -> int:
     try:
         import markdown
@@ -294,9 +323,13 @@ def cmd_md_to_html(args: argparse.Namespace) -> int:
     shutil.copy(tmp_html, local)
     print(f"Output saved in {local}")
     return 0
+
+
 _MD_HEADING = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 _MD_CODE = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
 _MD_LINK = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
 def _md_to_rst(text: str) -> str:
     def heading(match: re.Match) -> str:
         level = len(match.group(1))
@@ -309,8 +342,10 @@ def _md_to_rst(text: str) -> str:
             return f"{title}\n{bar}"
         underline = "~^+"[min(level - 3, 2)]
         return f"{title}\n{underline * len(title)}"
+
     text = _MD_HEADING.sub(heading, text)
     text = _MD_LINK.sub(r"`\1<\2>`_", text)
+
     def code(match: re.Match) -> str:
         lang = match.group(1) or ""
         body = match.group(2).strip()
@@ -318,6 +353,7 @@ def _md_to_rst(text: str) -> str:
         if lang:
             return f".. code-block:: {lang}\n\n{indented}\n"
         return f"::\n\n{indented}\n"
+
     text = _MD_CODE.sub(code, text)
     text = re.sub(r"\*\*(.+?)\*\*", r"**\1**", text)
     text = re.sub(r"\*(.+?)\*", r"*\1*", text)
@@ -325,6 +361,8 @@ def _md_to_rst(text: str) -> str:
     text = re.sub(r"^---$", "-------", text, flags=re.MULTILINE)
     text = re.sub(r"^\*", "-", text, flags=re.MULTILINE)
     return text
+
+
 def _find_rst2html_helper() -> Optional[Path]:
     candidates = [
         Path.cwd() / "doc" / "rest2html.py",
@@ -335,9 +373,13 @@ def _find_rst2html_helper() -> Optional[Path]:
         if c.exists():
             return c
     return None
+
+
 def _style_hash(style_path: Path) -> str:
     data = style_path.read_bytes()
     return f"style_{hashlib.sha256(data).hexdigest()[:32]}.css"
+
+
 def _convert_one_to_html(
     args_tuple: tuple[Path, Optional[str]],
 ) -> tuple[Path, Optional[Path]]:
@@ -380,6 +422,8 @@ def _convert_one_to_html(
     finally:
         if temp_rst is not None and temp_rst.exists():
             temp_rst.unlink()
+
+
 def cmd_rst_to_html(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -425,6 +469,8 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
                 err(f"Error processing file: {e}")
     print(f"\nConversion complete: {converted} converted, {failures} errors")
     return 0
+
+
 def cmd_mobi_to_html(args: argparse.Namespace) -> int:
     try:
         import mobi
@@ -454,6 +500,8 @@ def cmd_mobi_to_html(args: argparse.Namespace) -> int:
     print(f"HTML saved to: {dest_html}")
     shutil.rmtree(temp_dir, ignore_errors=True)
     return 0
+
+
 def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
     try:
         from pptx import Presentation
@@ -486,6 +534,8 @@ def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
                 f.write("\n")
     print(f"Text extracted to: {dest}")
     return 0
+
+
 def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
     if not src.exists():
         err(f"{src} not found")
@@ -514,6 +564,8 @@ def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
     else:
         print(f"Converted: {src} -> {dest}")
     return True
+
+
 def cmd_rst_to_md(args: argparse.Namespace) -> int:
     try:
         subprocess.run(["pandoc", "--version"], capture_output=True, check=True)
@@ -545,6 +597,8 @@ def cmd_rst_to_md(args: argparse.Namespace) -> int:
         else:
             err(f"{raw} is not valid")
     return 0 if any_processed else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="doc_convert.py",
@@ -614,10 +668,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_rst_to_md)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main())

@@ -10,6 +10,7 @@ from typing import Any
 import zipfile
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
+
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (
     ".whl",
@@ -22,13 +23,17 @@ ARCHIVE_EXTENSIONS = (
     ".zst",
 )
 ALLOWED_PYTHON_EXTENSIONS = (".py", "")
+
+
 class EntityExtractor(cst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(self, source_content: str, original_path: Path):
         self.entities: list[dict[str, Any]] = []
         self.source_lines = source_content.splitlines(keepends=True)
         self.original_path = original_path
         self.scope_depth = 0
+
     def _get_source_slice(self, node: cst.CSTNode) -> str:
         try:
             position = self.get_metadata(PositionProvider, node)
@@ -55,6 +60,7 @@ class EntityExtractor(cst.CSTVisitor):
                     ]
                 )
             return ""
+
     def _extract_and_save(self, node: cst.CSTNode, entity_type: str, name: str):
         entity_code = self._get_source_slice(node)
         self.entities.append({
@@ -67,16 +73,19 @@ class EntityExtractor(cst.CSTVisitor):
             "is_class": entity_type == "class",
             "is_function": entity_type == "function",
         })
+
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
         if self.scope_depth == 0:
             self._extract_and_save(node, "function", node.name.value)
             return False
         return True
+
     def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
         if self.scope_depth == 0:
             self._extract_and_save(node, "class", node.name.value)
             return False
         return True
+
     def visit_Assign(self, node: cst.Assign) -> bool | None:
         if self.scope_depth == 0 and len(node.targets) == 1:
             target = node.targets[0].target
@@ -85,6 +94,7 @@ class EntityExtractor(cst.CSTVisitor):
                 if re.match(r"^[A-Z_][A-Z0-9_]*$", target_name):
                     self._extract_and_save(node, "constant", target_name)
         return True
+
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         if self.scope_depth == 0:
             target = node.target
@@ -93,11 +103,15 @@ class EntityExtractor(cst.CSTVisitor):
                 if re.match(r"^[A-Z_][A-Z0-9_]*$", target_name):
                     self._extract_and_save(node, "constant", target_name)
         return True
+
     def visit_IndentedBlock(self, node: cst.IndentedBlock) -> bool | None:
         self.scope_depth += 1
         return True
+
     def leave_IndentedBlock(self, original_node: cst.IndentedBlock) -> None:
         self.scope_depth -= 1
+
+
 def get_unique_path(base_path: Path) -> Path:
     if not base_path.exists():
         return base_path
@@ -109,6 +123,8 @@ def get_unique_path(base_path: Path) -> Path:
         if not new_path.exists():
             return new_path
         i += 1
+
+
 def save_entity(entity: dict[str, Any]) -> None:
     filename_base = f"{entity['full_name']}.py"
     output_path_base = OUTPUT_DIR / entity["type"] / filename_base
@@ -121,6 +137,8 @@ def save_entity(entity: dict[str, Any]) -> None:
             f.write(content)
     except Exception as e:
         print(f"Error saving {final_py_path}: {e}")
+
+
 def extract_entities_from_content(content: str, path: Path) -> list[dict[str, Any]]:
     try:
         tree = cst.parse_module(content)
@@ -133,6 +151,8 @@ def extract_entities_from_content(content: str, path: Path) -> list[dict[str, An
     except Exception as e:
         print(f"Error parsing CST for {path}: {e}")
         return []
+
+
 def is_python_file_no_extension(path: Path) -> bool:
     if path.suffix:
         return False
@@ -146,6 +166,8 @@ def is_python_file_no_extension(path: Path) -> bool:
     except Exception:
         pass
     return False
+
+
 def process_single_file(path: Path) -> list[dict[str, Any]]:
     try:
         if path.suffix == ".py" or is_python_file_no_extension(path):
@@ -155,6 +177,8 @@ def process_single_file(path: Path) -> list[dict[str, Any]]:
     except Exception as e:
         print(f"Error reading file {path}: {e}")
         return []
+
+
 def process_archive(path: Path) -> list[dict[str, Any]]:
     entities: list[dict[str, Any]] = []
     if path.suffix in (".zip", ".whl"):
@@ -193,11 +217,15 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
         except Exception as e:
             print(f"Error processing TAR archive {path}: {e}")
     return entities
+
+
 def worker_process(path_str: str) -> list[dict[str, Any]]:
     path = Path(path_str)
     if path.name.endswith(ARCHIVE_EXTENSIONS):
         return process_archive(path)
     return process_single_file(path)
+
+
 def main() -> int:
     print(f"Starting analysis in {Path.cwd()}...")
     if OUTPUT_DIR.exists():
@@ -232,5 +260,7 @@ def main() -> int:
     print("\n\nAll tasks finished successfully!")
     print(f"Results are saved in the '{OUTPUT_DIR}' folder, organized by entity type (class, function, constant).")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

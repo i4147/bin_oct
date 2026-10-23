@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from functools import partial
@@ -8,10 +6,8 @@ import multiprocessing as mp
 from pathlib import Path
 import re
 from typing import TYPE_CHECKING, Optional, Sequence
-
 import cv2
 import pytesseract
-
 
 if TYPE_CHECKING:
     import numpy as np

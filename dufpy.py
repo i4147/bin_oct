@@ -13,12 +13,17 @@ from pathlib import Path
 from typing import TypeAlias
 from dh import cprint, get_pyfiles
 from xxhash import xxh64_hexdigest
+
 ProcessResult: TypeAlias = tuple[str, str | None, str | None]
 ProcessingFailure: TypeAlias = tuple[str, str]
+
+
 @dataclass(slots=True)
 class DuplicateGroup:
     digest: str
     paths: list[Path]
+
+
 class SourceNormalizer(ast.NodeTransformer):
     @staticmethod
     def _without_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
@@ -30,15 +35,18 @@ class SourceNormalizer(ast.NodeTransformer):
         ):
             return body[1:]
         return body
+
     @staticmethod
     def _remove_type_parameters(node: ast.AST) -> None:
         if hasattr(node, "type_params"):
             setattr(node, "type_params", [])
+
     def visit_Module(self, node: ast.Module) -> ast.Module:
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         node.type_ignores.clear()
         return node
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         node.returns = None
         node.type_comment = None
@@ -46,6 +54,7 @@ class SourceNormalizer(ast.NodeTransformer):
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         return node
+
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
         node.returns = None
         node.type_comment = None
@@ -53,19 +62,23 @@ class SourceNormalizer(ast.NodeTransformer):
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         return node
+
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         self._remove_type_parameters(node)
         self.generic_visit(node)
         node.body = self._without_docstring(node.body)
         return node
+
     def visit_arg(self, node: ast.arg) -> ast.arg:
         node.annotation = None
         node.type_comment = None
         return node
+
     def visit_Assign(self, node: ast.Assign) -> ast.Assign:
         node.type_comment = None
         self.generic_visit(node)
         return node
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST | None:
         if node.value is None:
             return None
@@ -74,24 +87,31 @@ class SourceNormalizer(ast.NodeTransformer):
         if target is None or value is None:
             return None
         return ast.Assign(targets=[target], value=value, type_comment=None)
+
     def visit_For(self, node: ast.For) -> ast.For:
         node.type_comment = None
         self.generic_visit(node)
         return node
+
     def visit_AsyncFor(self, node: ast.AsyncFor) -> ast.AsyncFor:
         node.type_comment = None
         self.generic_visit(node)
         return node
+
     def visit_With(self, node: ast.With) -> ast.With:
         node.type_comment = None
         self.generic_visit(node)
         return node
+
     def visit_AsyncWith(self, node: ast.AsyncWith) -> ast.AsyncWith:
         node.type_comment = None
         self.generic_visit(node)
         return node
+
     def visit_TypeAlias(self, node: ast.AST) -> None:
         return None
+
+
 def normalize_file(path: Path) -> str:
     with tokenize.open(path) as source_file:
         source = source_file.read()
@@ -100,6 +120,8 @@ def normalize_file(path: Path) -> str:
     if not isinstance(normalized_tree, ast.Module):
         raise TypeError(f"Expected a module AST for {path}")
     return ast.dump(normalized_tree, annotate_fields=True, include_attributes=False)
+
+
 def process_file(path_text: str) -> ProcessResult:
     try:
         normalized = normalize_file(Path(path_text))
@@ -107,6 +129,8 @@ def process_file(path_text: str) -> ProcessResult:
         return path_text, digest, None
     except Exception as error:
         return path_text, None, f"{type(error).__name__}: {error}"
+
+
 def _run_jobs(
     paths: list[Path],
     workers: int,
@@ -127,6 +151,8 @@ def _run_jobs(
             if on_complete is not None:
                 on_complete()
     return results
+
+
 def process_files(
     paths: list[Path],
     workers: int | None,
@@ -151,6 +177,7 @@ def process_files(
         )
     except ImportError:
         completed = 0
+
         def update_basic_progress() -> None:
             nonlocal completed
             completed += 1
@@ -160,6 +187,7 @@ def process_files(
                 file=sys.stderr,
                 flush=True,
             )
+
         try:
             return _run_jobs(paths, worker_count, update_basic_progress)
         finally:
@@ -178,6 +206,8 @@ def process_files(
             worker_count,
             lambda: progress.update(task_id, advance=1),
         )
+
+
 def identify_duplicates(
     results: list[ProcessResult],
 ) -> tuple[list[DuplicateGroup], list[ProcessingFailure]]:
@@ -204,6 +234,8 @@ def identify_duplicates(
     duplicate_groups.sort(key=lambda group: str(group.paths[0]))
     failures.sort(key=lambda failure: failure[0])
     return duplicate_groups, failures
+
+
 def _positive_int(value: str) -> int:
     try:
         number = int(value)
@@ -212,6 +244,8 @@ def _positive_int(value: str) -> int:
     if number < 1:
         raise argparse.ArgumentTypeError("must be a positive integer")
     return number
+
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Find Python files with identical normalized ASTs.")
     parser.add_argument(
@@ -239,9 +273,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="directory to scan (default: current directory)",
     )
     return parser.parse_args(argv)
+
+
 def _print_failures(failures: list[ProcessingFailure]) -> None:
     for path, error in failures:
         print(f"Skipped {path}: {error}", file=sys.stderr)
+
+
 def _report_duplicates(groups: list[DuplicateGroup], remove: bool) -> None:
     if not groups:
         cprint("No duplicate files found.", "green")
@@ -267,6 +305,8 @@ def _report_duplicates(groups: list[DuplicateGroup], remove: bool) -> None:
         cprint(f"{deleted} duplicate files removed.", "cyan")
     else:
         cprint("No duplicate files were removed.", "green")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     root = args.root.expanduser().resolve()
@@ -283,5 +323,7 @@ def main(argv: list[str] | None = None) -> int:
         _print_failures(failures)
     _report_duplicates(duplicate_groups, args.remove)
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

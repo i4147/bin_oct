@@ -13,6 +13,7 @@ import threading
 import time
 from typing import Callable, TypeAlias
 from loguru import logger
+
 Translator: TypeAlias = Callable[[str], str]
 LANGUAGE_CODES: dict[str, str] = {
     "auto": "auto",
@@ -81,11 +82,14 @@ GOOGLE_LANGUAGE_CODES: dict[str, str] = {
     "zh": "zh-cn",
 }
 _TRANSLATION_LOCK = threading.Lock()
+
+
 class RequestLimiter:
     def __init__(self, delay: float) -> None:
         self.delay = max(0.0, delay)
         self._lock = threading.Lock()
         self._last_request = 0.0
+
     def wait(self) -> None:
         with self._lock:
             now = time.monotonic()
@@ -93,6 +97,8 @@ class RequestLimiter:
             if remaining > 0:
                 time.sleep(remaining)
             self._last_request = time.monotonic()
+
+
 def _map_language(
     language: str,
     mapping: dict[str, str],
@@ -103,10 +109,14 @@ def _map_language(
         msg = f"Unsupported language code {language!r}. Supported codes include: {supported}"
         raise ValueError(msg)
     return mapping[normalized]
+
+
 def _make_deep_translator(source: str, target: str) -> Translator:
     from deep_translator import GoogleTranslator
+
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         translator = GoogleTranslator(
             source=mapped_source,
@@ -117,15 +127,20 @@ def _make_deep_translator(source: str, target: str) -> Translator:
             msg = "deep_translator returned a non-string result"
             raise TypeError(msg)
         return result
+
     return translate
+
+
 def _make_deepl(source: str, target: str) -> Translator:
     import deepl
+
     api_key = os.environ.get("DEEPL_API_KEY", "").strip()
     if not api_key:
         msg = "DEEPL_API_KEY is not set"
         raise RuntimeError(msg)
     mapped_source = _map_language(source, DEEPL_LANGUAGE_CODES)
     mapped_target = _map_language(target, DEEPL_LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         client = deepl.Translator(api_key)
         result = client.translate_text(
@@ -138,11 +153,16 @@ def _make_deepl(source: str, target: str) -> Translator:
             msg = "deepl returned a non-string result"
             raise TypeError(msg)
         return translated
+
     return translate
+
+
 def _make_translate(source: str, target: str) -> Translator:
     from translate import Translator as TranslateClient
+
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         client = TranslateClient(
             from_lang=mapped_source,
@@ -153,11 +173,16 @@ def _make_translate(source: str, target: str) -> Translator:
             msg = "translate returned a non-string result"
             raise TypeError(msg)
         return result
+
     return translate
+
+
 def _make_translators_bing(source: str, target: str) -> Translator:
     import translators
+
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         result = translators.translate_text(
             query_text=text,
@@ -169,11 +194,16 @@ def _make_translators_bing(source: str, target: str) -> Translator:
             msg = "translators returned a non-string result"
             raise TypeError(msg)
         return result
+
     return translate
+
+
 def _make_googletrans(source: str, target: str) -> Translator:
     from googletrans import Translator as GoogleTransClient
+
     mapped_source = _map_language(source, GOOGLE_LANGUAGE_CODES)
     mapped_target = _map_language(target, GOOGLE_LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         with _TRANSLATION_LOCK:
             client = GoogleTransClient()
@@ -187,11 +217,16 @@ def _make_googletrans(source: str, target: str) -> Translator:
             msg = "googletrans returned a non-string result"
             raise TypeError(msg)
         return translated
+
     return translate
+
+
 def _make_pygoogletranslation(source: str, target: str) -> Translator:
     from pygoogletranslation import Translator as PyGoogleClient
+
     mapped_source = _map_language(source, GOOGLE_LANGUAGE_CODES)
     mapped_target = _map_language(target, GOOGLE_LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         with _TRANSLATION_LOCK:
             client = PyGoogleClient()
@@ -207,11 +242,16 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
             msg = "pygoogletranslation returned an unsupported result"
             raise TypeError(msg)
         return translated
+
     return translate
+
+
 def _make_boto3(source: str, target: str) -> Translator:
     import boto3
+
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         client = boto3.client("translate")
         result = client.translate_text(
@@ -224,11 +264,15 @@ def _make_boto3(source: str, target: str) -> Translator:
             msg = "boto3 returned no translated text"
             raise TypeError(msg)
         return translated
+
     return translate
+
+
 def _make_azure(source: str, target: str) -> Translator:
     import urllib.error
     import urllib.parse
     import urllib.request
+
     endpoint = os.environ.get(
         "AZURE_TRANSLATOR_ENDPOINT",
         "https://api.cognitive.microsofttranslator.com",
@@ -240,6 +284,7 @@ def _make_azure(source: str, target: str) -> Translator:
         raise RuntimeError(msg)
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         query = urllib.parse.urlencode({
             "api-version": "3.0",
@@ -268,12 +313,16 @@ def _make_azure(source: str, target: str) -> Translator:
             msg = "Azure returned no translated text"
             raise TypeError(msg)
         return translated
+
     return translate
+
+
 def _make_baidu(source: str, target: str) -> Translator:
     import hashlib
     import random
     import urllib.parse
     import urllib.request
+
     app_id = os.environ.get("BAIDU_APP_ID", "").strip()
     secret_key = os.environ.get("BAIDU_SECRET_KEY", "").strip()
     if not app_id or not secret_key:
@@ -281,6 +330,7 @@ def _make_baidu(source: str, target: str) -> Translator:
         raise RuntimeError(msg)
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
+
     def translate(text: str) -> str:
         salt = str(random.randint(10000, 99999))
         sign = hashlib.md5(f"{app_id}{text}{salt}{secret_key}".encode("utf-8")).hexdigest()
@@ -307,13 +357,20 @@ def _make_baidu(source: str, target: str) -> Translator:
             msg = "Baidu returned no translated text"
             raise TypeError(msg)
         return translated
+
     return translate
+
+
 def _make_alibaba(source: str, target: str) -> Translator:
     msg = "Alibaba backend requires a product-specific API integration and is not configured by this script"
     raise RuntimeError(msg)
+
+
 def _make_watson(source: str, target: str) -> Translator:
     msg = "Watson backend requires a product-specific API integration and is not configured by this script"
     raise RuntimeError(msg)
+
+
 BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "deep_translator": _make_deep_translator,
     "deepl": _make_deepl,
@@ -335,8 +392,12 @@ FALLBACK_ORDER: tuple[str, ...] = (
     "deepl",
     "translators_bing",
 )
+
+
 def _module_available(module_name: str) -> bool:
     return importlib.util.find_spec(module_name) is not None
+
+
 def _select_backend(
     requested: str,
     source: str,
@@ -378,6 +439,8 @@ def _select_backend(
             continue
         return backend, translator
     raise RuntimeError("No usable translation backend was found. Install one of: " + ", ".join(FALLBACK_ORDER))
+
+
 def _split_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         msg = "chunk_size must be greater than zero"
@@ -403,6 +466,8 @@ def _split_chunks(text: str, chunk_size: int) -> list[str]:
             chunks.append(chunk)
         position = split_at
     return chunks
+
+
 def _load_output(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
@@ -419,6 +484,8 @@ def _load_output(path: Path) -> dict[str, str]:
         if isinstance(key, str) and isinstance(value, str):
             output[key] = value
     return output
+
+
 def _atomic_save(path: Path, translations: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     ordered = {
@@ -447,6 +514,8 @@ def _atomic_save(path: Path, translations: dict[str, str]) -> None:
         temporary.flush()
         os.fsync(temporary.fileno())
     temporary_path.replace(path)
+
+
 def _is_identity_translation(original: str, translated: str) -> bool:
     left = " ".join(original.split()).casefold()
     right = " ".join(translated.split()).casefold()
@@ -455,6 +524,8 @@ def _is_identity_translation(original: str, translated: str) -> bool:
     if left == right:
         return True
     return SequenceMatcher(None, left, right).ratio() >= 0.995
+
+
 def _translate_with_retry(
     index: int,
     text: str,
@@ -493,10 +564,14 @@ def _translate_with_retry(
         last_error = RuntimeError("Unknown translation failure")
     msg = f"Chunk {index} failed after 3 attempts: {last_error}"
     raise RuntimeError(msg) from last_error
+
+
 def _append_failed(path: Path, index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as file:
         file.write(f"{index}\n")
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Translate a text file in independently resumable chunks.",
@@ -561,6 +636,8 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
     )
     return parser.parse_args()
+
+
 def main() -> int:
     args = _parse_args()
     if not 1 <= args.workers <= 2:
@@ -655,6 +732,8 @@ def main() -> int:
         len(chunks) - len(translations),
     )
     return 0
+
+
 if __name__ == "__main__":
     logger.remove()
     logger.add(

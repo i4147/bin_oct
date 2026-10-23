@@ -11,6 +11,7 @@ from typing import Final
 from dh import fsz
 import ffmpeg
 from loguru import logger
+
 NUM_WORKERS: Final[int] = 8
 MIN_BITRATE_KBPS: Final[int] = 8
 STDERR_PREVIEW_LEN: Final[int] = 100
@@ -18,6 +19,8 @@ MP3_GLOBS: Final[tuple[str, ...]] = ("*.mp3", "*.MP3", "*.Mp3")
 BITRATE_PERCENT_DIVISOR: Final[float] = 40.0
 MS_PER_SECOND: Final[float] = 400.0
 SECONDS_PER_MINUTE: Final[float] = 60.0
+
+
 class Colors:
     HEADER: str = "\033[95m"
     CYAN: str = "\033[96m"
@@ -28,6 +31,8 @@ class Colors:
     DIM: str = "\033[2m"
     END: str = "\033[0m"
     CLEAR_LINE: str = "\033[2K\r"
+
+
 @dataclass
 class ConversionStats:
     path: Path
@@ -38,6 +43,8 @@ class ConversionStats:
     success: bool
     error_message: str = ""
     duration: float = 0.0
+
+
 def check_ffmpeg() -> None:
     try:
         ffmpeg.probe("dummy")
@@ -46,6 +53,8 @@ def check_ffmpeg() -> None:
     except FileNotFoundError:
         logger.error("ffmpeg/ffprobe is required but not installed.")
         sys.exit(1)
+
+
 def format_duration(seconds: float) -> str:
     if seconds < 1:
         return f"{seconds * MS_PER_SECOND:.0f}ms"
@@ -54,6 +63,8 @@ def format_duration(seconds: float) -> str:
     minutes = int(seconds // SECONDS_PER_MINUTE)
     secs = seconds % SECONDS_PER_MINUTE
     return f"{minutes}m {secs:.0f}s"
+
+
 def get_audio_info(mp3_file: Path) -> tuple[int | None, int | None]:
     try:
         result = subprocess_run([
@@ -80,10 +91,15 @@ def get_audio_info(mp3_file: Path) -> tuple[int | None, int | None]:
         return None, None
     except (json.JSONDecodeError, KeyError, ValueError, OSError, ffmpeg.Error):
         return None, None
+
+
 def subprocess_run(cmd: list[str]) -> str:
     import subprocess
+
     completed = subprocess.run(cmd, capture_output=True, text=True, check=True)
     return completed.stdout
+
+
 def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
     start_time = time.time()
     rel_path = mp3_file.relative_to(base_dir)
@@ -114,6 +130,7 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
     temp_file = mp3_file.with_suffix(".tmp_convert.mp3")
     try:
         import subprocess
+
         result = subprocess.run(
             [
                 "ffmpeg",
@@ -169,6 +186,8 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
             error_message=str(e)[:STDERR_PREVIEW_LEN],
             duration=duration,
         )
+
+
 def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
     if stat.success:
         size_saved = stat.original_size - stat.new_size
@@ -183,6 +202,8 @@ def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
     else:
         logger.opt(colors=True).error(f"<red>✗</red> [{index}/{total}] <red>{stat.path}</red>")
         logger.opt(colors=True).error(f"  <red>Error: {stat.error_message}</red>")
+
+
 def print_final_summary(stats: list[ConversionStats], total_duration: float) -> None:
     successful = [s for s in stats if s.success]
     failed = [s for s in stats if not s.success]
@@ -205,6 +226,8 @@ def print_final_summary(stats: list[ConversionStats], total_duration: float) -> 
         )
     print(f"<bold>Total time:</bold> {format_duration(total_duration)}")
     print("─" * 40)
+
+
 def find_mp3_files(directories: list[Path]) -> list[Path]:
     mp3_files: list[Path] = []
     for directory in directories:
@@ -224,6 +247,8 @@ def find_mp3_files(directories: list[Path]) -> list[Path]:
             seen.add(resolved)
             unique_files.append(f)
     return sorted(unique_files)
+
+
 def process_directory(directory: Path) -> None:
     mp3_files = find_mp3_files([directory])
     if not mp3_files:
@@ -249,6 +274,8 @@ def process_directory(directory: Path) -> None:
         for stat in failed:
             logger.opt(colors=True).error(f"  <red>✗</red> {stat.path}: {stat.error_message}")
     print_final_summary(stats, total_duration)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Convert MP3 files to half their original bitrate",
@@ -285,5 +312,7 @@ Examples:
         if len(directories) > 1:
             print()
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

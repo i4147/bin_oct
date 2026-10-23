@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 import fire
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+
 __version__ = "0.0.0"
 DATE_FIELDS = [
     "CURRENT_DATE",
@@ -22,21 +23,33 @@ DATE_FIELDS = [
     "START_CURRENT_YEAR",
     "END_CURRENT_YEAR",
 ]
+
+
 def _is_number(s):
     try:
         float(s)
         return True
     except ValueError:
         return False
+
+
 def _first_day_month(current_date):
     return current_date.replace(day=1)
+
+
 def _first_day_year(current_date):
     return current_date.replace(day=1).replace(month=1)
+
+
 def _last_day_year(current_date):
     return current_date.replace(day=31).replace(month=12)
+
+
 def _last_day_month(current_date):
     month_last_day = calendar.monthrange(current_date.year, current_date.month)[1]
     return current_date.replace(day=month_last_day)
+
+
 def _parse_field(field, to_add, current_date, date_format="%Y-%m-%d"):
     if field == "CURRENT_DATE":
         return (current_date + dt.timedelta(days=to_add)).strftime(date_format)
@@ -50,6 +63,8 @@ def _parse_field(field, to_add, current_date, date_format="%Y-%m-%d"):
         return (_last_day_year(current_date) + relativedelta(years=to_add)).strftime(date_format)
     else:
         return field
+
+
 def _parse_formula(formula, current_date, date_format="%Y-%m-%d"):
     if any(ext in formula for ext in DATE_FIELDS):
         if "+" in formula:
@@ -59,6 +74,8 @@ def _parse_formula(formula, current_date, date_format="%Y-%m-%d"):
             parts = formula.split("-")
             return _parse_field(parts[0].strip(), -int(parts[1]), current_date, date_format)
     return _parse_field(formula.strip(), 0, current_date, date_format)
+
+
 def parse_parameter(param_value, current_date, format_separator="|"):
     if not param_value:
         return param_value
@@ -69,18 +86,28 @@ def parse_parameter(param_value, current_date, format_separator="|"):
         return _parse_formula(field, current_date, date_format.strip())
     else:
         return _parse_formula(param_value, current_date)
+
+
 def _current_date(timezone: Optional[str] = None) -> dt.date:
     if timezone:
         return dt.datetime.now(ZoneInfo(timezone)).date()
     return dt.date.today()
+
+
 def map_result_proxy2list_dict(result_proxy) -> list:
     keys = list(result_proxy.keys())
     return [dict(zip(keys, row)) for row in result_proxy]
+
+
 _TRUTHY_STRINGS = {"true", "t", "yes", "y", "1", "on"}
+
+
 def _coerce_bool(value) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in _TRUTHY_STRINGS
     return bool(value)
+
+
 def _begin_read_only(con) -> None:
     dialect = con.engine.dialect.name
     try:
@@ -90,9 +117,13 @@ def _begin_read_only(con) -> None:
             con.exec_driver_sql("SET TRANSACTION READ ONLY")
     except Exception:
         pass
+
+
 def _is_read_only_violation(exc: Exception) -> bool:
     message = str(getattr(exc, "orig", exc)).lower()
     return "readonly" in message or "read only" in message or "read-only" in message
+
+
 def handle_run_query2json(
     name="default",
     query="default",
@@ -147,6 +178,8 @@ def handle_run_query2json(
     except Exception as e:
         print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)
         sys.exit(1)
+
+
 def run_query(
     engine,
     raw_query: str,
@@ -180,6 +213,8 @@ def run_query(
         else:
             con.commit()
     return records
+
+
 def load_config_file(config_path: str) -> dict:
     try:
         with open(config_path) as json_file:
@@ -190,6 +225,8 @@ def load_config_file(config_path: str) -> dict:
         "conections": {"default": "sqlite:///:memory:"},
         "queries": {"default": "SELECT 1 AS a, 2 AS b"},
     }
+
+
 def _find_config() -> str:
     candidates = [
         os.path.join(os.getcwd(), "sql2json.json"),
@@ -200,24 +237,34 @@ def _find_config() -> str:
         if os.path.exists(path):
             return path
     return candidates[-1]
+
+
 def load_query_from_file(sql_file_path: str) -> str:
     file_name = sql_file_path
     if sql_file_path.startswith("@"):
         file_name = sql_file_path[1:]
     with open(file_name, "r") as file:
         return file.read()
+
+
 def get_for_key_or_first_map_value(my_dict: dict, key: Optional[str] = None):
     if key in my_dict:
         return my_dict.get(key)
     for v in my_dict.values():
         return v
     return ""
+
+
 def _get_connections_dict(config: dict) -> dict:
     return config.get("connections") or config.get("conections", {})
+
+
 def list_connections(config_path: Optional[str] = None) -> list:
     path = config_path or _find_config()
     config = load_config_file(path)
     return list(_get_connections_dict(config).keys())
+
+
 def _get_connection_queries_dict(config: dict, connections: dict) -> dict:
     connection_queries = config.get("connection_queries", {})
     if connection_queries is None:
@@ -237,6 +284,8 @@ def _get_connection_queries_dict(config: dict, connections: dict) -> dict:
                 msg = f"connection_queries.{connection_name}.{query_name} must be a string"
                 raise ValueError(msg)
     return connection_queries
+
+
 def list_queries(
     config_path: Optional[str] = None,
     scoped: bool = False,
@@ -263,6 +312,8 @@ def list_queries(
                 effective_query_names.append(query_name)
         return effective_query_names
     return global_query_names
+
+
 def _resolve_query_string(connection_name: str, query_name: str, connections: dict, config: dict) -> str:
     connection_queries = _get_connection_queries_dict(config, connections)
     scoped_queries = connection_queries.get(connection_name, {})
@@ -270,6 +321,8 @@ def _resolve_query_string(connection_name: str, query_name: str, connections: di
         return scoped_queries[query_name]
     config_queries = config.get("queries", {})
     return config_queries.get(query_name, query_name)
+
+
 def run_query_by_name(conection_name: str = "default", query_name: str = "default", **kwargs) -> list | dict:
     config_path = kwargs.pop("config", None) or _find_config()
     timezone = kwargs.pop("timezone", None)
@@ -282,6 +335,8 @@ def run_query_by_name(conection_name: str = "default", query_name: str = "defaul
         raw_query_string = load_query_from_file(raw_query_string[1:])
     engine = create_engine(conection_string)
     return run_query(engine, raw_query_string, timezone=timezone, read_only=read_only, **kwargs)
+
+
 def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
     jsonkeys_list = []
     if type(jsonkeys) is tuple:
@@ -297,12 +352,16 @@ def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
         else:
             response[key] = result[key]
     return response
+
+
 def apply_wrapper(result: str | dict | list, wrapper: bool | str = False) -> str | dict | list:
     if isinstance(wrapper, str) and wrapper:
         return {wrapper: result}
     elif wrapper:
         return {"data": result}
     return result
+
+
 def apply_output_transforms(
     unparsed_results: list,
     wrapper: bool | str = False,
@@ -329,11 +388,15 @@ def apply_output_transforms(
     else:
         result = [item.get(key) if key and key in item else item for item in results]
     return apply_wrapper(result, wrapper)
+
+
 def _warn_read_only_write(result: dict) -> None:
     print(
         "read-only mode: write not persisted (re-run without --read-only to commit the change).",
         file=sys.stderr,
     )
+
+
 def run_query2json(
     name: str = "default",
     query: str = "default",
@@ -353,28 +416,40 @@ def run_query2json(
             _warn_read_only_write(result)
         return apply_wrapper(result, wrapper)
     return apply_output_transforms(result, wrapper, first, key, value, jsonkeys)
+
+
 def _parse_filename_after_brackets(part, current_date):
     if "}" in part:
         new_parts = [parse_parameter(item, current_date) for item in part.split("}")]
         return "".join(new_parts)
     return parse_parameter(part, current_date)
+
+
 def parse_filename(file_name, current_date):
     parts = file_name.split("{")
     results = [_parse_filename_after_brackets(part, current_date) for part in parts]
     return "".join(results)
+
+
 def json_default(value):
     if isinstance(value, Decimal):
         return float(value)
     msg = f"Object of type {type(value).__name__} is not JSON serializable"
     raise TypeError(msg)
+
+
 def json_dumps(value):
     return json.dumps(value, default=json_default)
+
+
 def save_json(rows, file_name, timezone=None):
     current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
     final_file_name = parsed_filename if ".json" in parsed_filename else parsed_filename + ".json"
     with open(final_file_name, "w") as outfile:
         outfile.write(json_dumps(rows))
+
+
 def save_csv(rows, file_name, dialect, key, timezone=None):
     current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
@@ -406,6 +481,8 @@ def save_csv(rows, file_name, dialect, key, timezone=None):
         writer.writeheader()
         for data in final_rows:
             writer.writerow(data)
+
+
 def emit_result(result, format, output, key, value, first, timezone):
     if output:
         if format == "csv":
@@ -420,6 +497,8 @@ def emit_result(result, format, output, key, value, first, timezone):
         print(result)
     else:
         print(json_dumps(result))
+
+
 def handle_run_query2json(
     name="default",
     query="default",
@@ -468,10 +547,14 @@ def handle_run_query2json(
     except Exception as e:
         print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)
         sys.exit(1)
+
+
 def main():
     if any(arg in ("--version", "-v") for arg in sys.argv[1:]):
         print(f"sql2json {__version__}")
         sys.exit(0)
     fire.Fire(handle_run_query2json)
+
+
 if __name__ == "__main__":
     main()

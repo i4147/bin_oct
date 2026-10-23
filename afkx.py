@@ -13,11 +13,15 @@ import sys
 import tarfile
 from typing import Optional
 import zipfile
+
 try:
     import zstandard as zstd
+
     HAS_ZSTD = True
 except ImportError:
     HAS_ZSTD = False
+
+
 @dataclass
 class UnusedImport:
     lineno: int
@@ -25,6 +29,8 @@ class UnusedImport:
     statement: str
     unused_names: list[str] = field(default_factory=list)
     path: str = ""
+
+
 @dataclass
 class FileResult:
     path: str
@@ -33,9 +39,12 @@ class FileResult:
     size: int = 0
     diff: str = ""
     fixed_source: str = ""
+
     @property
     def has_unused(self) -> bool:
         return bool(self.unused_imports) or bool(self.diff)
+
+
 class Colors:
     BOLD = "\033[1m"
     CYAN = "\033[36m"
@@ -43,11 +52,14 @@ class Colors:
     RED = "\033[31m"
     GREEN = "\033[32m"
     RESET = "\033[0m"
+
     @classmethod
     def disable(cls) -> None:
         for name in dir(cls):
             if not name.startswith("_") and name != "disable":
                 setattr(cls, name, "")
+
+
 class ImportCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.imports: dict[str, tuple[int, int, str]] = {}
@@ -56,6 +68,7 @@ class ImportCollector(ast.NodeVisitor):
         self.all_exports: set[str] = set()
         self.star_imports: set[str] = set()
         self._in_type_checking = False
+
     def visit_If(self, node: ast.If) -> None:
         is_type_checking = (isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING") or (
             isinstance(node.test, ast.Attribute) and node.test.attr == "TYPE_CHECKING"
@@ -70,6 +83,7 @@ class ImportCollector(ast.NodeVisitor):
                 self.visit(stmt)
         else:
             self.generic_visit(node)
+
     def visit_Import(self, node: ast.Import) -> None:
         if node.names and node.names[0].name == "*":
             self.star_imports.add("")
@@ -83,6 +97,7 @@ class ImportCollector(ast.NodeVisitor):
             else:
                 self.imports[name] = (node.lineno, node.col_offset, stmt)
         self.generic_visit(node)
+
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module == "__future__":
             for alias in node.names:
@@ -101,6 +116,7 @@ class ImportCollector(ast.NodeVisitor):
             else:
                 self.imports[name] = (node.lineno, node.col_offset, stmt)
         self.generic_visit(node)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         for target in node.targets:
             if (
@@ -112,27 +128,35 @@ class ImportCollector(ast.NodeVisitor):
                     if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                         self.all_exports.add(elt.value)
         self.generic_visit(node)
+
     @staticmethod
     def _unparse(node: ast.AST) -> str:
         try:
             return ast.unparse(node)
         except Exception:
             return "<import statement>"
+
+
 class NameCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.used_names: set[str] = set()
+
     def visit_Name(self, node: ast.Name) -> None:
         self.used_names.add(node.id)
         self.generic_visit(node)
+
     def visit_Attribute(self, node: ast.Attribute) -> None:
         if isinstance(node.value, ast.Name):
             self.used_names.add(node.value.id)
         self.generic_visit(node)
+
     def visit_Constant(self, node: ast.Constant) -> None:
         if isinstance(node.value, str):
             for match in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", node.value):
                 self.used_names.add(match)
         self.generic_visit(node)
+
+
 def analyze_source(source: str, path: str = "") -> tuple[list[UnusedImport], Optional[str]]:
     try:
         tree = ast.parse(source)
@@ -173,6 +197,8 @@ def analyze_source(source: str, path: str = "") -> tuple[list[UnusedImport], Opt
                     item.unused_names.append(name)
                     break
     return results, None
+
+
 def read_py_file(path: str) -> FileResult:
     p = Path(path)
     try:
@@ -184,6 +210,8 @@ def read_py_file(path: str) -> FileResult:
         return FileResult(path=str(p), error=f"Read error: {exc}")
     unused, err = analyze_source(text, str(p))
     return FileResult(path=str(p), unused_imports=unused, error=err, size=size)
+
+
 def extract_from_wheel(wheel_path: str) -> dict[str, str]:
     result = {}
     try:
@@ -198,6 +226,8 @@ def extract_from_wheel(wheel_path: str) -> dict[str, str]:
     except Exception:
         pass
     return result
+
+
 def extract_from_tar_zst(archive_path: str) -> dict[str, str]:
     result = {}
     try:
@@ -212,6 +242,8 @@ def extract_from_tar_zst(archive_path: str) -> dict[str, str]:
     except Exception:
         pass
     return result
+
+
 def _extract_tar_members(tar: tarfile.TarFile, archive_name: str, out: dict) -> None:
     for member in tar:
         if member.isfile() and member.name.endswith(".py"):
@@ -223,6 +255,8 @@ def _extract_tar_members(tar: tarfile.TarFile, archive_name: str, out: dict) -> 
                 out[f"{archive_name}::{member.name}"] = content
             except Exception:
                 pass
+
+
 def analyze_archive_member(item: tuple[str, str]) -> FileResult:
     path, source = item
     unused, err = analyze_source(source, path)
@@ -232,6 +266,8 @@ def analyze_archive_member(item: tuple[str, str]) -> FileResult:
         error=err,
         size=len(source.encode("utf-8")),
     )
+
+
 def rewrite_imports(source: str, unused: list[UnusedImport]) -> tuple[str, bool]:
     lines = source.splitlines(keepends=True)
     by_line: dict[int, set[str]] = {}
@@ -261,6 +297,8 @@ def rewrite_imports(source: str, unused: list[UnusedImport]) -> tuple[str, bool]
         return new_source, True
     except SyntaxError:
         return source, False
+
+
 def _rebuild_import_line(node: ast.AST, remove: set[str], original: str) -> Optional[str]:
     indent = original[: len(original) - len(original.lstrip())]
     if isinstance(node, ast.Import):
@@ -278,6 +316,8 @@ def _rebuild_import_line(node: ast.AST, remove: set[str], original: str) -> Opti
         parts = [f"{a.name} as {a.asname}" if a.asname else a.name for a in kept]
         return f"{indent}from {dots}{module} import {', '.join(parts)}"
     return original
+
+
 def autofix_file(path: str, unused: list[UnusedImport], dry_run: bool = False) -> tuple[bool, Optional[str]]:
     if "::" in path:
         return False, "Cannot autofix inside packed archives"
@@ -295,7 +335,11 @@ def autofix_file(path: str, unused: list[UnusedImport], dry_run: bool = False) -
         return True, None
     except Exception as exc:
         return False, f"Write error: {exc}"
+
+
 AUTOFLAKE_CMD = ["autoflake", "--remove-all-unused-imports", "--ignore-init-module-imports"]
+
+
 def run_autoflake_on_file(path: str) -> FileResult:
     try:
         original = Path(path).read_text(encoding="utf-8", errors="replace")
@@ -324,6 +368,8 @@ def run_autoflake_on_file(path: str) -> FileResult:
         )
     )
     return FileResult(path=path, diff=diff, fixed_source=fixed)
+
+
 def run_autoflake_on_source(item: tuple[str, str]) -> FileResult:
     path, source = item
     try:
@@ -350,12 +396,16 @@ def run_autoflake_on_source(item: tuple[str, str]) -> FileResult:
         )
     )
     return FileResult(path=path, diff=diff, fixed_source=fixed)
+
+
 def collect_targets(paths: list[str], exclude_patterns: list[str]) -> tuple[list[str], list[tuple[str, str]]]:
     py_files: list[str] = []
     archive_members: list[tuple[str, str]] = []
     exclude_re = [re.compile(p) for p in exclude_patterns]
+
     def excluded(p: str) -> bool:
         return any(rx.search(p) for rx in exclude_re)
+
     for raw in paths:
         p = Path(raw)
         if not p.exists():
@@ -376,6 +426,8 @@ def collect_targets(paths: list[str], exclude_patterns: list[str]) -> tuple[list
                     if not excluded(member):
                         archive_members.append((member, content))
     return py_files, archive_members
+
+
 def _handle_single_file(
     p: Path,
     excluded,
@@ -393,6 +445,8 @@ def _handle_single_file(
         for member, content in extract_from_tar_zst(str(p)).items():
             if not excluded(member):
                 archive_members.append((member, content))
+
+
 def report_builtin(
     results: list[FileResult],
     *,
@@ -438,6 +492,8 @@ def report_builtin(
         print(f"Fixed {fixed} file(s).")
         if skipped:
             print(f"Skipped {skipped} file(s).")
+
+
 def report_autoflake(
     results: list[FileResult],
     *,
@@ -487,6 +543,8 @@ def report_autoflake(
         print(f"Fixed {fixed} file(s).")
         if skipped:
             print(f"Skipped {skipped} file(s).")
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Detect and optionally remove unused imports from Python files and archives.",
@@ -535,6 +593,8 @@ Examples:
     )
     p.add_argument("--no-color", action="store_true", help="Disable ANSI colors")
     return p
+
+
 def main() -> int:
     args = build_parser().parse_args()
     if args.dry_run:
@@ -582,5 +642,7 @@ def main() -> int:
             )
     has_issues = any(r.has_unused for r in results)
     return 1 if has_issues else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

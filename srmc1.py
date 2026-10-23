@@ -18,12 +18,15 @@ from typing import ClassVar, Iterable, Iterator, Literal, Sequence
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
+
 VERSION = "1.0.0"
 UTF8_BOM = b"\xef\xbb\xbf"
 CODING_PATTERN = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
 FULL_COMMENT_PATTERN = re.compile(r"^([ \t\f]*)#(.*)$")
 COMMENT_DIRECTIVE_PATTERN = re.compile(r"^\s*#\s*(?:type|fmt)\s*:", re.IGNORECASE)
 Status = Literal["modified", "unchanged", "would_modify", "skipped", "failed"]
+
+
 @dataclass(frozen=True, slots=True)
 class TransformOptions:
     remove_all_comments: bool
@@ -34,11 +37,15 @@ class TransformOptions:
     dry_run: bool
     check: bool
     include_diff: bool
+
+
 @dataclass(frozen=True, slots=True)
 class WorkItem:
     path: Path
     backup_path: Path | None
     options: TransformOptions
+
+
 @dataclass(slots=True)
 class FileResult:
     path: str
@@ -52,13 +59,19 @@ class FileResult:
     message: str = ""
     diff: str = ""
     backup_path: str | None = None
+
+
 @dataclass(frozen=True, slots=True)
 class DecodedSource:
     text: str
     encoding: str
     bom: bytes
+
+
 class UnsupportedEncodingError(Exception):
     pass
+
+
 def decode_source(data: bytes) -> DecodedSource:
     if data.startswith(UTF8_BOM):
         try:
@@ -74,17 +87,24 @@ def decode_source(data: bytes) -> DecodedSource:
         return DecodedSource(data.decode("cp1252"), "cp1252", b"")
     except UnicodeDecodeError as error:
         raise UnsupportedEncodingError(str(error)) from error
+
+
 def encode_source(source: DecodedSource, text: str) -> bytes:
     return source.bom + text.encode(source.encoding)
+
+
 def strip_line_ending(line: str) -> tuple[str, str]:
     if line.endswith("\r\n"):
         return line[:-2], "\r\n"
     if line.endswith(("\n", "\r")):
         return line[:-1], line[-1:]
     return line, ""
+
+
 def commented_code_lines(source: str) -> frozenset[int]:
     protected: set[int] = set()
     run: list[tuple[int, str]] = []
+
     def is_valid(candidate: str) -> bool:
         if not candidate.strip():
             return False
@@ -93,6 +113,7 @@ def commented_code_lines(source: str) -> frozenset[int]:
         except (SyntaxError, ValueError, TypeError):
             return False
         return True
+
     def finish_run() -> None:
         if not run:
             return
@@ -107,6 +128,7 @@ def commented_code_lines(source: str) -> frozenset[int]:
                     if is_valid("".join(candidate_lines)):
                         protected.update(number for number, _ in run[start : end + 1])
         run.clear()
+
     for number, raw_line in enumerate(source.splitlines(keepends=True), start=1):
         line, ending = strip_line_ending(raw_line)
         match = FULL_COMMENT_PATTERN.match(line)
@@ -119,6 +141,8 @@ def commented_code_lines(source: str) -> frozenset[int]:
         run.append((number, match.group(1) + payload + ending))
     finish_run()
     return frozenset(protected)
+
+
 def is_protected_comment(comment: str, line_number: int, remove_everything: bool, full_line: bool) -> bool:
     if remove_everything:
         return False
@@ -127,6 +151,8 @@ def is_protected_comment(comment: str, line_number: int, remove_everything: bool
     if full_line and line_number <= 2 and CODING_PATTERN.match(comment):
         return True
     return COMMENT_DIRECTIVE_PATTERN.match(comment) is not None
+
+
 def is_string_expression(value: cst.BaseExpression) -> bool:
     if isinstance(value, cst.SimpleString):
         try:
@@ -136,6 +162,8 @@ def is_string_expression(value: cst.BaseExpression) -> bool:
     if isinstance(value, cst.ConcatenatedString):
         return is_string_expression(value.left) and is_string_expression(value.right)
     return False
+
+
 def is_docstring_statement(statement: cst.BaseStatement) -> bool:
     if not isinstance(statement, cst.SimpleStatementLine):
         return False
@@ -143,16 +171,24 @@ def is_docstring_statement(statement: cst.BaseStatement) -> bool:
         return False
     only_statement = statement.body[0]
     return isinstance(only_statement, cst.Expr) and is_string_expression(only_statement.value)
+
+
 def is_docstring_small_statement(statement: cst.BaseSmallStatement) -> bool:
     return isinstance(statement, cst.Expr) and is_string_expression(statement.value)
+
+
 def line_with_pass(statement: cst.SimpleStatementLine) -> cst.SimpleStatementLine:
     return statement.with_changes(body=(cst.Pass(),))
+
+
 def prepend_leading_lines(removed: cst.SimpleStatementLine, replacement: cst.BaseStatement) -> cst.BaseStatement:
     leading_lines = removed.leading_lines
     if not leading_lines:
         return replacement
     current_lines = getattr(replacement, "leading_lines", ())
     return replacement.with_changes(leading_lines=leading_lines + current_lines)
+
+
 def remove_docstring_from_suite(suite: cst.BaseSuite) -> tuple[cst.BaseSuite, bool]:
     if isinstance(suite, cst.IndentedBlock):
         body = tuple(suite.body)
@@ -171,6 +207,8 @@ def remove_docstring_from_suite(suite: cst.BaseSuite) -> tuple[cst.BaseSuite, bo
             return suite.with_changes(body=(cst.Pass(),)), True
         return suite.with_changes(body=body[1:]), True
     return suite, False
+
+
 def remove_module_docstring(module: cst.Module) -> tuple[cst.Module, bool]:
     body = tuple(module.body)
     if not body or not is_docstring_statement(body[0]):
@@ -180,14 +218,18 @@ def remove_module_docstring(module: cst.Module) -> tuple[cst.Module, bool]:
         return module.with_changes(body=(line_with_pass(first),)), True
     next_statement = prepend_leading_lines(first, body[1])
     return module.with_changes(body=(next_statement,) + body[2:]), True
+
+
 class StripTransformer(cst.CSTTransformer):
     METADATA_DEPENDENCIES: ClassVar[tuple[object, ...]] = (PositionProvider,)
+
     def __init__(self, options: TransformOptions, protected_code_lines: frozenset[int]) -> None:
         self.options = options
         self.protected_code_lines = protected_code_lines
         self.comments_removed = 0
         self.docstrings_removed = 0
         self.annotations_removed = 0
+
     def leave_TrailingWhitespace(
         self,
         original_node: cst.TrailingWhitespace,
@@ -206,6 +248,7 @@ class StripTransformer(cst.CSTTransformer):
             return updated_node
         self.comments_removed += 1
         return updated_node.with_changes(whitespace=cst.SimpleWhitespace(""), comment=None)
+
     def leave_EmptyLine(
         self, original_node: cst.EmptyLine, updated_node: cst.EmptyLine
     ) -> cst.EmptyLine | cst.RemovalSentinel:
@@ -222,11 +265,13 @@ class StripTransformer(cst.CSTTransformer):
             return updated_node
         self.comments_removed += 1
         return cst.RemoveFromParent()
+
     def leave_Param(self, original_node: cst.Param, updated_node: cst.Param) -> cst.Param:
         if self.options.remove_annotations and original_node.annotation is not None:
             self.annotations_removed += 1
             return updated_node.with_changes(annotation=None)
         return updated_node
+
     def leave_SimpleStatementLine(
         self,
         original_node: cst.SimpleStatementLine,
@@ -264,6 +309,7 @@ class StripTransformer(cst.CSTTransformer):
         if not new_body:
             return updated_node.with_changes(body=(cst.Pass(),))
         return updated_node.with_changes(body=tuple(new_body))
+
     def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
         result = updated_node
         if self.options.remove_annotations and original_node.returns is not None:
@@ -275,6 +321,7 @@ class StripTransformer(cst.CSTTransformer):
                 self.docstrings_removed += 1
                 result = result.with_changes(body=body)
         return result
+
     def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         if not self.options.remove_docstrings:
             return updated_node
@@ -283,6 +330,7 @@ class StripTransformer(cst.CSTTransformer):
             return updated_node
         self.docstrings_removed += 1
         return updated_node.with_changes(body=body)
+
     def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         if not self.options.remove_module_docstring:
             return updated_node
@@ -290,8 +338,12 @@ class StripTransformer(cst.CSTTransformer):
         if removed:
             self.docstrings_removed += 1
         return module
+
+
 def validate_python(source: str, path: Path) -> None:
     ast.parse(source, filename=str(path), mode="exec", feature_version=(3, 12))
+
+
 def make_diff(path: Path, original: str, transformed: str) -> str:
     return "".join(
         difflib.unified_diff(
@@ -301,6 +353,8 @@ def make_diff(path: Path, original: str, transformed: str) -> str:
             tofile=str(path),
         )
     )
+
+
 def atomic_write(path: Path, data: bytes, mode: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
@@ -316,6 +370,8 @@ def atomic_write(path: Path, data: bytes, mode: int) -> None:
         with contextlib.suppress(OSError):
             temporary_path.unlink(missing_ok=True)
         raise
+
+
 def process_file(item: WorkItem) -> FileResult:
     path = item.path
     try:
@@ -365,12 +421,16 @@ def process_file(item: WorkItem) -> FileResult:
             original_bytes=len(raw),
             message=f"{type(error).__name__}: {error}",
         )
+
+
 def is_within(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
     except ValueError:
         return False
     return True
+
+
 def matches_patterns(path: Path, root: Path, includes: Sequence[str], excludes: Sequence[str]) -> bool:
     relative = path.relative_to(root)
     if excludes and any(relative.match(pattern) for pattern in excludes):
@@ -378,6 +438,8 @@ def matches_patterns(path: Path, root: Path, includes: Sequence[str], excludes: 
     if includes:
         return any(relative.match(pattern) for pattern in includes)
     return path.suffix.lower() == ".py" or not path.suffix
+
+
 def scan_paths(
     paths: Sequence[Path],
     recursive: bool,
@@ -447,6 +509,8 @@ def scan_paths(
         except OSError as error:
             scan_results.append(FileResult(path=str(path), status="skipped", message=f"cannot scan: {error}"))
     return sorted(discovered.items(), key=lambda pair: str(pair[0])), scan_results
+
+
 def create_work_items(
     discovered: Sequence[tuple[Path, Path]],
     options: TransformOptions,
@@ -468,6 +532,8 @@ def create_work_items(
             backup_path = path.with_name(f"{path.name}.bak")
         items.append(WorkItem(path=path, backup_path=backup_path, options=options))
     return items
+
+
 def run_pool(items: Sequence[WorkItem], workers: int, method: str) -> list[FileResult]:
     if not items:
         return []
@@ -479,11 +545,15 @@ def run_pool(items: Sequence[WorkItem], workers: int, method: str) -> list[FileR
         else:
             iterator = pool.imap_unordered(process_file, items)
         return list(iterator)
+
+
 def result_data(result: FileResult, include_diff: bool) -> dict[str, object]:
     data = asdict(result)
     if not include_diff:
         data.pop("diff", None)
     return data
+
+
 def summary_data(results: Sequence[FileResult]) -> dict[str, int]:
     return {
         "scanned": len(results),
@@ -497,6 +567,8 @@ def summary_data(results: Sequence[FileResult]) -> dict[str, int]:
         "docstrings_removed": sum(result.docstrings_removed for result in results),
         "annotations_removed": sum(result.annotations_removed for result in results),
     }
+
+
 def format_counts(result: FileResult, show_stats: bool) -> str:
     saved = f"{result.bytes_saved} bytes saved"
     if not show_stats:
@@ -505,6 +577,8 @@ def format_counts(result: FileResult, show_stats: bool) -> str:
         f"{saved}; comments={result.comments_removed}; "
         f"docstrings={result.docstrings_removed}; annotations={result.annotations_removed}"
     )
+
+
 def report_results(
     results: Sequence[FileResult],
     show_stats: bool,
@@ -549,6 +623,8 @@ def report_results(
             f"annotations={summary['annotations_removed']}"
         )
     sys.stdout.write(summary_line + "\n")
+
+
 def positive_integer(value: str) -> int:
     try:
         number = int(value)
@@ -559,6 +635,8 @@ def positive_integer(value: str) -> int:
         msg = "must be at least 1"
         raise argparse.ArgumentTypeError(msg)
     return number
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pystrip",
@@ -595,6 +673,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--verbose", action="count", default=0, help="increase logging detail")
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     return parser
+
+
 def configure_logging(quiet: int, verbose: int) -> None:
     if quiet:
         level = "WARNING"
@@ -604,6 +684,8 @@ def configure_logging(quiet: int, verbose: int) -> None:
         level = "INFO"
     logger.remove()
     logger.add(sys.stderr, level=level, colorize=False, format="{level} | {message}")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     arguments = parser.parse_args(argv)
@@ -651,5 +733,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if arguments.check and any(result.status == "would_modify" for result in results):
         return 1
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

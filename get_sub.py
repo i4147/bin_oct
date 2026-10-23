@@ -24,6 +24,7 @@ import rarfile
 import requests
 from requests import exceptions
 from requests.utils import quote
+
 __version__ = "0.0.0"
 SUB_FORMATS: list[str] = [".ass", ".srt", ".ssa", ".sub", ".sup"]
 ARCHIVE_TYPES: list[str] = [".zip", ".rar", ".7z"]
@@ -67,11 +68,14 @@ VIDEO_FORMATS: list[str] = [
     ".f4a",
     ".f4b",
 ]
+
+
 class ProgressBar:
     def __init__(self, prefix_info: str, title: str = "", total: int = 0, count_time: int = 0) -> None:
         self.title: str = title
         self.total: int = total
         self.prefix_info: str = prefix_info
+
     def refresh(self, cur_len: int) -> None:
         terminal_width: int = get_terminal_size().columns
         info: str = "%s '%s'...  %.2f%%" % (
@@ -88,6 +92,8 @@ class ProgressBar:
             )
         end_str: str = "\r" if cur_len < self.total else "\n"
         print(info, end=end_str)
+
+
 def num_to_cn(number: str) -> str:
     assert number.isdigit()
     assert 1 <= int(number) <= 99
@@ -97,6 +103,8 @@ def num_to_cn(number: str) -> str:
     part1: str = "十" if number[0] == "1" else trans_map[number[0]] + "十"
     part2: str = trans_map[number[1]] if number[1] != "0" else ""
     return part1 + part2
+
+
 def extract_name(name: str, en: bool = False) -> str:
     name, suffix = path.splitext(name)
     c_pattern: str = "[一-鿿]"
@@ -135,6 +143,8 @@ def extract_name(name: str, en: bool = False) -> str:
         new_name = name[result[0] : result[1]]
     new_name = new_name.strip() + suffix
     return new_name
+
+
 def _print_and_choose(items: list[str]) -> int:
     for i, item in enumerate(items):
         print("%3s) %s" % (i, item))
@@ -154,6 +164,8 @@ def _print_and_choose(items: list[str]) -> int:
             choice = None
     print()
     return choice
+
+
 def choose_archive(sub_dict: dict[str, Any], sub_num: int = 5, query: bool = True) -> tuple[bool, Any]:
     should_exit: bool = False
     if not query:
@@ -175,6 +187,8 @@ def choose_archive(sub_dict: dict[str, Any], sub_num: int = 5, query: bool = Tru
         should_exit = True
         return should_exit, []
     return should_exit, list(sub_dict.keys())[choice - 1]
+
+
 def choose_subtitle(subtitles: list[str]) -> str:
     items: list[str] = []
     for subtitle in subtitles:
@@ -183,6 +197,8 @@ def choose_subtitle(subtitles: list[str]) -> str:
         items.append(subtitle)
     choice: int = _print_and_choose(items)
     return subtitles[choice]
+
+
 def compute_subtitle_score(video_detail: dict[str, Any], subname: str, match_episode: bool = True) -> int:
     video_name: str = video_detail["title"].lower()
     season: str = str(video_detail.get("season"))
@@ -229,6 +245,8 @@ def compute_subtitle_score(video_detail: dict[str, Any], subname: str, match_epi
     score += ("ass" in subname or "ssa" in subname) * 2
     score += ("srt" in subname) * 1
     return score
+
+
 def guess_subtitle(sublist: list[str], video_detail: dict[str, Any]) -> tuple[bool, Optional[str]]:
     if not sublist:
         return False, None
@@ -247,6 +265,8 @@ def guess_subtitle(sublist: list[str], video_detail: dict[str, Any]) -> tuple[bo
     max_score: int = max(scores)
     max_pos: int = scores.index(max_score)
     return max_score > 0, subs[max_pos]
+
+
 def get_file_list(data: bytes, datatype: str) -> dict[str, Any]:
     sub_buff: BytesIO = BytesIO(data)
     file_handler: Any
@@ -275,14 +295,19 @@ def get_file_list(data: bytes, datatype: str) -> dict[str, Any]:
             datatype = path.splitext(one_file)[-1]
             sub_lists_dict.update(get_file_list(data, datatype))
     return sub_lists_dict
+
+
 def run_command(cmd: str) -> tuple[str, str, int]:
     process: subprocess.Popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = process.communicate()
     return output.decode(), error.decode(), process.returncode
+
+
 class P7ZIP:
     def __init__(self, file: BytesIO) -> None:
         self.data: bytes = file.read()
         self.namelist()
+
     def _parse_list_output(self, output: str) -> list[str]:
         header_pattern: str = r"\s+Date\s+Time\s+Attr\s+Size\s+Compressed\s+Name\s+"
         body: str = re.split(header_pattern, output)[-1]
@@ -296,6 +321,7 @@ class P7ZIP:
                 continue
             file_names.append(file_name)
         return file_names
+
     def namelist(self) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path: str = path.join(tmp_dir, "archive.7z")
@@ -307,6 +333,7 @@ class P7ZIP:
                 raise ValueError(err)
             file_names: list[str] = self._parse_list_output(output)
         return file_names
+
     def read(self, name: str) -> bytes:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path: str = path.join(tmp_dir, "archive.7z")
@@ -321,11 +348,14 @@ class P7ZIP:
             with open(sub_file_path, "rb") as f:
                 sub_data: bytes = f.read()
         return sub_data
+
+
 class Video:
     @classmethod
     def sub_exists(cls, video_name: str, store_path: str, identifier: str) -> bool:
         sub_types: list[str] = [identifier + sub_type for sub_type in SUB_FORMATS]
         return any(exists(join(store_path, video_name + sub_type)) for sub_type in sub_types)
+
     def __init__(self, video_path: str, sub_store_path: str = "", identifier: str = "") -> None:
         self.name: str
         self.type: str
@@ -336,6 +366,7 @@ class Video:
         self.has_subtitle: bool = Video.sub_exists(self.name, self.sub_store_path, self.sub_identifier)
         self.extracted_name: str = extract_name(self.name)
         self.info: dict[str, Any] = guessit(self.extracted_name + self.type)
+
     def delete_existed_subtitles(self) -> None:
         if not self.has_subtitle:
             return
@@ -344,6 +375,8 @@ class Video:
             delete_file: str = join(self.sub_store_path, delete_name)
             if exists(delete_file):
                 os.remove(delete_file)
+
+
 class Downloader:
     header: dict[str, str] = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit 537.36 (KHTML, like Gecko) Chrome",
@@ -351,6 +384,7 @@ class Downloader:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     }
     service_short_names: dict[str, str] = {"amazon prime": "amzn"}
+
     @classmethod
     def get_keywords(cls, video: Video) -> list[str]:
         keywords: list[str] = []
@@ -376,8 +410,10 @@ class Downloader:
             keywords.append(str(info_dict["screen_size"]))
         keywords = [quote(_keyword) for _keyword in keywords]
         return keywords
+
     def get_subtitles(self, video: Video, sub_num: int = 5) -> dict[str, Any]:
         raise NotImplementedError
+
     def download_file(
         self,
         file_name: str,
@@ -385,11 +421,14 @@ class Downloader:
         session: Optional[requests.Session] = None,
     ) -> tuple[Optional[str], Optional[bytes], str]:
         raise NotImplementedError
+
+
 class ZimukuDownloader(Downloader):
     name: str = "zimuku"
     choice_prefix: str = "[ZIMUKU]"
     site_url: str = "http://www.zimuku.la"
     search_url: str = "http://www.zimuku.la/search?q="
+
     def get_keywords(self, video: Video) -> list[str]:
         if video.info["type"] == "episode":
             keywords: list[str] = [
@@ -399,6 +438,7 @@ class ZimukuDownloader(Downloader):
             return keywords
         else:
             return super().get_keywords(video)
+
     def _parse_episode_page(
         self,
         session: requests.Session,
@@ -416,6 +456,7 @@ class ZimukuDownloader(Downloader):
             download_link: str = bs_obj.find("a", {"rel": "nofollow"}).attrs["href"]
             download_link = urljoin(ZimukuDownloader.site_url, download_link)
             return download_link
+
         r = session.get(link)
         bs_obj = BeautifulSoup(r.text, "html.parser")
         subs_body = bs_obj.find("div", class_="subs box clearfix").find("tbody")
@@ -447,6 +488,7 @@ class ZimukuDownloader(Downloader):
                 "score": score,
             }
         return subs
+
     def _parse_shooter_episode_page(self, session: requests.Session, title: str, link: str) -> dict[str, Any]:
         sub: dict[str, Any] = dict()
         r = session.get(link)
@@ -471,6 +513,7 @@ class ZimukuDownloader(Downloader):
             "session": backup_session,
         }
         return sub
+
     def get_subtitles(self, video: Video, sub_num: int = 10) -> dict[str, Any]:
         print("Searching ZIMUKU...", end="\r")
         keywords: list[str] = self.get_keywords(video)
@@ -531,6 +574,7 @@ class ZimukuDownloader(Downloader):
         sub_dict = OrderedDict(sorted(sub_dict.items(), key=lambda e: e[1]["score"], reverse=True))
         keys: list[str] = list(sub_dict.keys())[:sub_num]
         return {key: sub_dict[key] for key in keys}
+
     def download_file(
         self,
         file_name: str,
@@ -565,11 +609,14 @@ class ZimukuDownloader(Downloader):
                     datatype = sub_type
                     break
         return datatype, sub_data_bytes, ""
+
+
 class ZimuzuDownloader(Downloader):
     name: str = "zimuzu"
     choice_prefix: str = "[ZIMUZU]"
     site_url: str = "http://www.rrys2020.com"
     search_url: str = "http://www.rrys2020.com/search?keyword={0}&type=subtitle"
+
     def get_subtitles(self, video: Video, sub_num: int = 5) -> dict[str, Any]:
         print("Searching ZIMUZU...", end="\r")
         keywords: list[str] = Downloader.get_keywords(video)
@@ -615,6 +662,7 @@ class ZimuzuDownloader(Downloader):
         if len(sub_dict.items()) > 0 and list(sub_dict.items())[0][1]["lan"] < 8:
             sub_dict = OrderedDict(sorted(sub_dict.items(), key=lambda e: e[1]["lan"], reverse=True))
         return sub_dict
+
     def download_file(
         self,
         file_name: str,
@@ -668,21 +716,27 @@ class ZimuzuDownloader(Downloader):
         else:
             datatype = "Unknown"
         return datatype, sub_data_bytes, ""
+
+
 class DownloaderManager:
     downloaders: tuple[Downloader, ...] = (ZimukuDownloader(), ZimuzuDownloader())
     downloader_names: list[str] = [d.__class__.name for d in downloaders]
+
     @classmethod
     def get_downloader_by_name(cls, name: str) -> Optional[Downloader]:
         for downloader in DownloaderManager.downloaders:
             if downloader.__class__.name == name:
                 return downloader
         return None
+
     @classmethod
     def get_downloader_by_choice_prefix(cls, choice_prefix: str) -> Optional[Downloader]:
         for downloader in DownloaderManager.downloaders:
             if downloader.__class__.choice_prefix == choice_prefix:
                 return downloader
         return None
+
+
 class GetSubtitles:
     def __init__(
         self,
@@ -735,6 +789,7 @@ class GetSubtitles:
             self.sub_store_path = ""
         else:
             print("subtitles will be saved to: " + self.sub_store_path)
+
     def get_videos(self, raw_path: str) -> list[Video]:
         raw_path = raw_path.replace('"', "")
         videos: list[Video] = []
@@ -764,6 +819,7 @@ class GetSubtitles:
             video = Video(raw_path, sub_store_path=s_path, identifier=self.sub_identifier)
             videos.append(video)
         return videos
+
     def get_search_results(self, video: Video) -> dict[str, Any]:
         results: dict[str, Any] = OrderedDict()
         for i, downloader in enumerate(self.downloader):
@@ -782,6 +838,7 @@ class GetSubtitles:
             if len(results) >= self.sub_num:
                 break
         return results
+
     def process_archive(
         self,
         video: Video,
@@ -827,6 +884,7 @@ class GetSubtitles:
                 file_handler = sub_lists_dict[one_sub]
                 sub.write(file_handler.read(one_sub))
         return error, extract_subs
+
     def process_subtitle(self, video: Video, sub_data: bytes, datatype: str) -> tuple[str, list[list[str]]]:
         video.delete_existed_subtitles()
         sub_name: str = video.name + video.sub_identifier + datatype
@@ -835,6 +893,7 @@ class GetSubtitles:
             sub.write(sub_data)
         extract_subs: list[list[str]] = [[sub_name, datatype]]
         return "", extract_subs
+
     def process_result(
         self,
         video: Video,
@@ -877,6 +936,7 @@ class GetSubtitles:
                 f.write(data)
             print("save original file.")
         return "", extract_subs
+
     def process_video(self, video: Video) -> tuple[str, list[list[str]]]:
         extract_subs: list[list[str]] = []
         sub_dict: dict[str, Any] = self.get_search_results(video)
@@ -903,6 +963,7 @@ class GetSubtitles:
             finally:
                 sub_dict.pop(chosen_sub)
         return "", extract_subs
+
     def start(self) -> dict[str, Any]:
         videos: list[Video] = self.get_videos(self.arg_name)
         for i, video in enumerate(videos):
@@ -963,6 +1024,8 @@ class GetSubtitles:
             "fail": len(self.failed_list),
             "fail_videos": self.failed_list,
         }
+
+
 def main() -> None:
     arg_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog="GetSubtitles",
@@ -1032,5 +1095,7 @@ def main() -> None:
         downloader=args.downloader,
         sub_path=args.directory,
     ).start()
+
+
 if __name__ == "__main__":
     main()

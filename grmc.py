@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 import argparse
 import concurrent.futures
 import os
@@ -9,7 +8,6 @@ import tempfile
 import re
 from pathlib import Path
 
-# Optional dependency imports handled gracefully with clear instructions
 try:
     import tree_sitter
     import tree_sitter_python as ts_python
@@ -17,15 +15,12 @@ try:
     HAS_TREESITTER = True
 except ImportError:
     HAS_TREESITTER = False
-
 try:
     import libcst as cst
 
     HAS_LIBCST = True
 except ImportError:
     HAS_LIBCST = False
-
-
 ANSI_GREEN = "\033[32m"
 ANSI_DIM = "\033[2m"
 ANSI_RESET = "\033[0m"
@@ -35,18 +30,13 @@ def is_comment_preserved(comment_text: str, is_shebang: bool = False) -> bool:
     """Check if a comment should be preserved based on rules."""
     if is_shebang:
         return True
-
-    # Lang directives & type checking hints
     directives = ["noqa", "type:", "pylint:", "pragma:", "mypy:", "ruff:", "flake8:"]
     lower_text = comment_text.lower()
     if any(d in lower_text for d in directives):
         return True
-
-    # Heuristic for commented-out code (contains assignment, keywords, or python syntax)
     code_keywords = ["def ", "class ", "import ", "from ", "if ", "for ", "while ", "return ", "pass ", "="]
     if any(kw in comment_text for kw in code_keywords):
         return True
-
     return False
 
 
@@ -56,34 +46,24 @@ def process_file_treesitter(content: str, path: str, mode_c: bool, mode_d: bool,
         raise RuntimeError(
             "tree-sitter and tree-sitter-python are required for 'ts' backend. Run: pip install tree-sitter tree-sitter-python"
         )
-
     parser = tree_sitter.Parser(tree_sitter.Language(ts_python.language()))
     tree = parser.parse(content.encode("utf-8"))
     root_node = tree.root_node
-
     source_bytes = content.encode("utf-8")
-
-    # Collect nodes to remove or replace (store as tuples: (start_byte, end_byte, replacement_string))
     edits = []
 
     def traverse(node, parent_is_body=False):
-        # Shebang check
         if node.start_byte == 0 and node.type == "comment":
             text = source_bytes[node.start_byte : node.end_byte].decode("utf-8")
             if text.startswith("#!"):
                 if not mode_a:
                     return
-
         if node.type == "comment":
             text = source_bytes[node.start_byte : node.end_byte].decode("utf-8")
             is_shebang = text.startswith("#!")
-
-            # Check if inline vs block
-            # Inline comment: preceded by code on the same line
             line_start = source_bytes.rfind(b"\n", 0, node.start_byte) + 1
             preceding_text = source_bytes[line_start : node.start_byte].decode("utf-8")
             is_inline = len(preceding_text.strip()) > 0
-
             should_remove = False
             if mode_a:
                 should_remove = not is_shebang
@@ -91,65 +71,46 @@ def process_file_treesitter(content: str, path: str, mode_c: bool, mode_d: bool,
                 if not is_comment_preserved(text, is_shebang):
                     should_remove = True
             else:
-                # Normal run: only strip inline comments
                 if is_inline and not is_comment_preserved(text, is_shebang):
                     should_remove = True
-
             if should_remove:
-                # Include leading spaces if inline comment
                 start = node.start_byte
                 if is_inline:
                     while start > line_start and source_bytes[start - 1] in (b" ", b"\t"):
                         start -= 1
                 edits.append((start, node.end_byte, b""))
-
         elif node.type == "string":
-            # Check if docstring
-            # A docstring is typically the first expression statement in module, class_definition, or function_definition
             parent = node.parent
             if parent and parent.type in ("module", "class_definition", "function_definition"):
-                # Check if it's the first child in block/body
                 body_node = parent.child_by_field_name("body")
                 is_module_doc = parent.type == "module" and node == parent.children[0]
                 is_body_doc = body_node and len(body_node.children) > 0 and body_node.children[0] == node
-
                 if is_module_doc or is_body_doc:
-                    # Module docstring preserved unless -a or -d
                     if is_module_doc and not mode_a and not mode_d:
-                        # Skip removal
                         pass
                     elif mode_a or mode_d or (not is_module_doc):
-                        # Determine if we should remove or replace with pass (for class/function with ONLY a docstring)
                         if (
                             parent.type in ("class_definition", "function_definition")
                             and body_node
                             and len(body_node.children) == 1
                         ):
-                            # Edge case: class/func only has docstring -> replace with pass
-                            # Find indentation of the body/docstring
                             indent_match = re.search(
                                 r"^[ \t]*",
                                 source_bytes[node.start_byte - 20 : node.start_byte].decode("utf-8", errors="ignore"),
                             )
-                            indent = "    "  # default fallback
+                            indent = "    "
                             edits.append((node.start_byte, node.end_byte, f"pass".encode("utf-8")))
                         else:
                             edits.append((node.start_byte, node.end_byte, b""))
-
         for child in node.children:
             traverse(child)
 
     traverse(root_node)
-
-    # Apply edits in reverse order to preserve byte offsets
     edits.sort(key=lambda x: x[0], reverse=True)
     modified_bytes = source_bytes
     for start, end, replacement in edits:
         modified_bytes = modified_bytes[:start] + replacement + modified_bytes[end:]
-
     result_code = modified_bytes.decode("utf-8")
-
-    # Clean up excess blank lines left behind
     result_code = re.sub(r"\n[ \t]*\n[ \t]*\n+", "\n\n", result_code)
     return result_code
 
@@ -166,7 +127,6 @@ class LibCSTRemover(cst.CSTTransformer):
     def leave_SimpleStatementLine(
         self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine
     ) -> cst.SimpleStatementLine | cst.RemovalSentinel:
-        # Filter comments in simple statements
         new_whitespace = []
         for ws in updated_node.leading_lines:
             if ws.comment:
@@ -176,8 +136,6 @@ class LibCSTRemover(cst.CSTTransformer):
                 if self.mode_c and not is_comment_preserved(text):
                     continue
             new_whitespace.append(ws)
-
-        # Check trailing comment
         trailing = updated_node.trailing_whitespace
         if trailing and trailing.comment:
             text = trailing.comment.value
@@ -194,7 +152,6 @@ class LibCSTRemover(cst.CSTTransformer):
                 )
             ):
                 updated_node = updated_node.with_changes(trailing_whitespace=trailing.with_changes(comment=None))
-
         return updated_node
 
 
@@ -238,18 +195,14 @@ def process_single_file(args_tuple):
     try:
         original_content = path.read_text(encoding="utf-8")
         orig_bytes_len = len(original_content.encode("utf-8"))
-
         if backend == "libcst":
             new_content = process_file_libcst(original_content, mode_c, mode_d, mode_a)
         else:
             new_content = process_file_treesitter(original_content, str(path), mode_c, mode_d, mode_a)
-
         if not validate_python_code(new_content, str(path)):
             return file_path, 0, "Syntax validation failed, skipped."
-
         new_bytes_len = len(new_content.encode("utf-8"))
         reduced = orig_bytes_len - new_bytes_len
-
         atomic_write(path, new_content)
         return file_path, reduced, None
     except Exception as e:
@@ -265,9 +218,7 @@ def main():
     parser.add_argument("-d", action="store_true", help="Remove all docstrings")
     parser.add_argument("-a", action="store_true", help="Remove all comments & docstrings including preserved ones")
     parser.add_argument("-b", choices=["ts", "libcst"], default="ts", help="Backend engine (default: ts)")
-
     cli_args = parser.parse_args()
-
     py_files = []
     for p in cli_args.paths:
         p_path = Path(p)
@@ -275,30 +226,21 @@ def main():
             py_files.append(p_path)
         elif p_path.is_dir():
             py_files.extend(p_path.rglob("*.py"))
-
     if not py_files:
         print("No Python files found.")
         sys.exit(0)
-
     total_files = len(py_files)
     tasks = [
         (str(f), idx, total_files, cli_args.c, cli_args.d, cli_args.a, cli_args.b) for idx, f in enumerate(py_files, 1)
     ]
-
     term_width = shutil.get_terminal_size((80, 20)).columns
-
     print(f"Processing {total_files} file(s) with 4 workers (backend: {cli_args.b})...\n")
-
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(process_single_file, task): task[0] for task in tasks}
-
         for future in concurrent.futures.as_completed(futures):
             file_path, reduced, err = future.result()
-
-            # Format output line
             idx_str = f"[{tasks[[t[0] for t in tasks].index(file_path)][1]}/{total_files}]"
             filename_str = Path(file_path).name
-
             if err:
                 print(f"{idx_str}  {filename_str:<25} Error: {err}")
             else:
@@ -307,9 +249,7 @@ def main():
                     colored_reduced = f"{ANSI_GREEN}{reduced_str}{ANSI_RESET}"
                 else:
                     colored_reduced = f"{ANSI_DIM}{reduced_str}{ANSI_RESET}"
-
                 line = f"{idx_str:<10} {filename_str:<30} {colored_reduced}"
-                # Trim or pad to terminal width nicely
                 print(line[:term_width])
 
 

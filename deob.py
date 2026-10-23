@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import re
 import sys
+
 _ASSIGN_RE = re.compile(
     r"""
     (?P<name>[A-Za-z_][A-Za-z0-9_]*)=
@@ -14,6 +15,8 @@ _ASSIGN_RE = re.compile(
     """,
     re.VERBOSE | re.DOTALL,
 )
+
+
 def parse_assignments(src: str) -> dict[str, str]:
     out: dict[str, str] = {}
     for m in _ASSIGN_RE.finditer(src):
@@ -23,21 +26,32 @@ def parse_assignments(src: str) -> dict[str, str]:
         else:
             out[name] = re.sub(r"\\([\"\\$`])", r"\1", m.group("double"))
     return out
+
+
 _EVAL_RE = re.compile(r'\beval\s+"((?:[^"\\]|\\.)*)"')
+
+
 def find_eval_expr(src: str) -> str | None:
     m = _EVAL_RE.search(src)
     return m.group(1) if m else None
+
+
 def substitute(expr: str, variables: dict[str, str]) -> str:
     def repl(m: re.Match) -> str:
         name = m.group(1) or m.group(2)
         return variables.get(name, m.group(0))
+
     expr = re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}", repl, expr)
     expr = re.sub(r"\$([A-Za-z_][A-Za-z0-9_]*)", repl, expr)
     return expr
+
+
 def pretty(code: str) -> str:
     code = code.replace(";clear;", ";\nclear;")
     code = code.replace(";\n}", ";\n}\n")
     return code
+
+
 def pick_output(inp: Path, explicit: str | None) -> Path:
     if explicit:
         return Path(explicit)
@@ -51,6 +65,8 @@ def pick_output(inp: Path, explicit: str | None) -> Path:
         candidate = base.with_name(f"{base.stem}.{n}{base.suffix}")
         n += 1
     return candidate
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(add_help=True)
     ap.add_argument("input", help="obfuscated bash file")
@@ -72,5 +88,7 @@ def main() -> int:
     out.write_text(resolved.rstrip() + "\n", encoding="utf-8")
     print(f"[+] wrote {out}  ({len(resolved.splitlines())} lines)")
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

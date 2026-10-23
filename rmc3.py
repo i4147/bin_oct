@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 import warnings
 import zipfile
 from loguru import logger
+
 try:
     from rich.console import Console
     from rich.text import Text
@@ -63,6 +64,8 @@ KEEP_COMMENT_RE: re.Pattern[str] = re.compile(r"#+\s*(?:type:|fmt\s*:)")
 CODING_RE: re.Pattern[str] = re.compile(r"#.*?coding[:=]\s*[-\w.]+")
 BYTES_COL_WIDTH: int = 12
 console = Console()
+
+
 @dataclass(frozen=True, slots=True)
 class Options:
     strip_comments: bool = True
@@ -72,15 +75,20 @@ class Options:
     dry_run: bool = False
     remove_module_docstring: bool = False
     clipboard: bool = False
+
     @property
     def drop_comments(self) -> bool:
         return self.strip_comments or self.strip_all
+
     @property
     def drop_docstrings(self) -> bool:
         return self.strip_docstrings or self.strip_all
+
     @property
     def drop_module_docstring(self) -> bool:
         return self.strip_all or self.remove_module_docstring
+
+
 @dataclass(slots=True)
 class FileResult:
     path: Path
@@ -91,28 +99,40 @@ class FileResult:
     changed: bool = False
     final_code: str | None = None
     backend: str = ""
+
+
 @dataclass(frozen=True, slots=True)
 class Stripped:
     code: str
     comments: int
     docstrings: int
     backend: str = ""
+
+
 @dataclass(frozen=True, slots=True)
 class Edit:
     start: int
     end: int
     replacement: bytes
     kind: str
+
+
 @dataclass(frozen=True, slots=True)
 class _CommentEntry:
     lineno: int
     is_full_line: bool
     text: str
     edit: Edit
+
+
 type Backend = Callable[[str, Options], Stripped]
+
+
 def configure_logging() -> None:
     logger.remove()
     logger.add(sys.stderr, level="INFO", format="{level: <8} {message}", colorize=False)
+
+
 def decode_source(raw: bytes) -> tuple[str, str]:
     if raw.startswith(codecs.BOM_UTF8):
         return raw.decode("utf-8-sig"), "utf-8-sig"
@@ -120,16 +140,22 @@ def decode_source(raw: bytes) -> tuple[str, str]:
         return raw.decode("utf-8"), "utf-8"
     except UnicodeDecodeError:
         return raw.decode("latin-1"), "latin-1"
+
+
 def parse_tree(text: str) -> ast.Module:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return ast.parse(text)
+
+
 def parses(text: str) -> bool:
     try:
         parse_tree(text)
     except Exception:
         return False
     return True
+
+
 def _parses_as_meaningful_code(code: str) -> bool:
     try:
         module = parse_tree(code)
@@ -140,30 +166,41 @@ def _parses_as_meaningful_code(code: str) -> bool:
             continue
         return True
     return False
+
+
 def _looks_like_code(comment_texts: Sequence[str]) -> bool:
     if not comment_texts:
         return False
+
     def strip_hash(line: str) -> str:
         return line[1:] if line.startswith("#") else line
+
     def strip_hash_space(line: str) -> str:
         if line.startswith("#"):
             line = line[1:]
             if line.startswith(" "):
                 line = line[1:]
         return line
+
     for stripper in (strip_hash, strip_hash_space):
         joined = "\n".join(stripper(line) for line in comment_texts)
         dedented = textwrap.dedent(joined)
         if _parses_as_meaningful_code(dedented):
             return True
     return False
+
+
 def _is_commented_out_docstring(content: str) -> bool:
     if "\n" not in content.strip():
         return False
     dedented = textwrap.dedent(content)
     return _parses_as_meaningful_code(dedented)
+
+
 def line_starts(raw: bytes) -> list[int]:
     return [0, *(match.end() for match in NEWLINE_RE.finditer(raw))]
+
+
 def apply_edits(raw: bytes, edits: Iterable[Edit]) -> tuple[bytes, int, int]:
     out = bytearray()
     position = 0
@@ -181,22 +218,30 @@ def apply_edits(raw: bytes, edits: Iterable[Edit]) -> tuple[bytes, int, int]:
             docstrings += 1
     out += raw[position:]
     return bytes(out), comments, docstrings
+
+
 def keep_comment(text: str, lineno: int) -> bool:
     if lineno == 1 and text.startswith("#!"):
         return True
     if lineno <= 2 and CODING_RE.match(text):
         return True
     return KEEP_COMMENT_RE.match(text) is not None
+
+
 def comment_edit(raw: bytes, line_start: int, comment_start: int, comment_end: int) -> Edit:
     prefix = raw[line_start:comment_start]
     if not prefix.strip():
         return Edit(line_start, comment_end, b"", "comment")
     return Edit(comment_start - (len(prefix) - len(prefix.rstrip())), comment_end, b"", "comment")
+
+
 def statement_edit(raw: bytes, start: int, end: int, replacement: bytes, kind: str) -> Edit:
     match = SEMICOLON_RE.match(raw, end)
     if match is not None:
         end = match.end()
     return Edit(start, end, replacement, kind)
+
+
 def _filter_comments(entries: Sequence[_CommentEntry], opts: Options) -> list[Edit]:
     n = len(entries)
     group_ids: list[int | None] = [None] * n
@@ -227,6 +272,8 @@ def _filter_comments(entries: Sequence[_CommentEntry], opts: Options) -> list[Ed
                 continue
         filtered.append(entry.edit)
     return filtered
+
+
 def strip_comments(text: str, opts: Options) -> tuple[str, int]:
     if not opts.drop_comments:
         return text, 0
@@ -252,8 +299,11 @@ def strip_comments(text: str, opts: Options) -> tuple[str, int]:
     edits = _filter_comments(entries, opts)
     code, comments, _ = apply_edits(raw, edits)
     return code.decode(), comments
+
+
 def _libcst_docstring_content(node: object) -> str | None:
     import libcst as cst
+
     if not isinstance(node, cst.Expr):
         return None
     value = node.value
@@ -262,9 +312,12 @@ def _libcst_docstring_content(node: object) -> str | None:
         if isinstance(result, str):
             return result
     return None
+
+
 @cache
 def libcst_remover() -> type[cst.CSTTransformer]:
     import libcst as cst
+
     def is_docstring(node: cst.BaseSmallStatement) -> bool:
         if not isinstance(node, cst.Expr):
             return False
@@ -272,6 +325,7 @@ def libcst_remover() -> type[cst.CSTTransformer]:
         if isinstance(value, (cst.SimpleString, cst.ConcatenatedString)):
             return isinstance(value.evaluated_value, str)
         return False
+
     class Remover(cst.CSTTransformer):
         def __init__(self, drop_module: bool, drop_other: bool, preserve_commented_code: bool) -> None:
             super().__init__()
@@ -279,6 +333,7 @@ def libcst_remover() -> type[cst.CSTTransformer]:
             self.drop_other = drop_other
             self.preserve_commented_code = preserve_commented_code
             self.removed = 0
+
         def _is_commented_docstring(self, node: cst.BaseSmallStatement) -> bool:
             if not self.preserve_commented_code:
                 return False
@@ -286,6 +341,7 @@ def libcst_remover() -> type[cst.CSTTransformer]:
             if content is None:
                 return False
             return _is_commented_out_docstring(content)
+
         def strip_lines(self, body: Sequence[cst.BaseStatement], keep_empty: bool) -> list[cst.BaseStatement]:
             first = body[0] if body else None
             if not isinstance(first, cst.SimpleStatementLine) or not first.body or not is_docstring(first.body[0]):
@@ -298,6 +354,7 @@ def libcst_remover() -> type[cst.CSTTransformer]:
             if len(body) > 1 or keep_empty:
                 return list(body[1:])
             return [first.with_changes(body=[cst.Pass()])]
+
         def strip_suite(self, suite: cst.BaseSuite) -> cst.BaseSuite:
             if isinstance(suite, cst.IndentedBlock):
                 return suite.with_changes(body=self.strip_lines(suite.body, False))
@@ -308,21 +365,28 @@ def libcst_remover() -> type[cst.CSTTransformer]:
                 self.removed += 1
                 return suite.with_changes(body=list(small[1:]) or [cst.Pass()])
             return suite
+
         def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
             if not self.drop_module:
                 return updated_node
             return updated_node.with_changes(body=self.strip_lines(updated_node.body, True))
+
         def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
             if not self.drop_other:
                 return updated_node
             return updated_node.with_changes(body=self.strip_suite(updated_node.body))
+
         def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
             if not self.drop_other:
                 return updated_node
             return updated_node.with_changes(body=self.strip_suite(updated_node.body))
+
     return Remover
+
+
 def strip_libcst(text: str, opts: Options) -> Stripped:
     import libcst as cst
+
     remover = libcst_remover()(
         opts.drop_module_docstring,
         opts.drop_docstrings,
@@ -331,11 +395,16 @@ def strip_libcst(text: str, opts: Options) -> Stripped:
     code = cst.parse_module(text).visit(remover).code
     code, comments = strip_comments(code, opts)
     return Stripped(code, comments, remover.removed)
+
+
 @cache
 def tree_sitter_parser() -> Parser:
     from tree_sitter import Language, Parser
     import tree_sitter_python
+
     return Parser(Language(tree_sitter_python.language()))
+
+
 def is_plain_string(node: Node, raw: bytes) -> bool:
     if node.type == "string":
         head = raw[node.start_byte : node.end_byte]
@@ -346,6 +415,8 @@ def is_plain_string(node: Node, raw: bytes) -> bool:
         parts = node.named_children
         return bool(parts) and all(part.type == "string" and is_plain_string(part, raw) for part in parts)
     return False
+
+
 def _extract_string_content(raw: bytes, node: Node) -> str | None:
     try:
         text = raw[node.start_byte : node.end_byte].decode("utf-8", "replace")
@@ -353,6 +424,8 @@ def _extract_string_content(raw: bytes, node: Node) -> str | None:
     except (SyntaxError, ValueError):
         return None
     return value if isinstance(value, str) else None
+
+
 def tree_sitter_docstring(node: Node, raw: bytes, opts: Options) -> Edit | None:
     parent = node.parent
     if parent is None:
@@ -382,6 +455,8 @@ def tree_sitter_docstring(node: Node, raw: bytes, opts: Options) -> Edit | None:
             return None
     replacement = b"pass" if (not is_module and len(siblings) == 1) else b""
     return statement_edit(raw, node.start_byte, node.end_byte, replacement, "docstring")
+
+
 def _tree_sitter_comment_edits(raw: bytes, comment_nodes: Sequence[Node], opts: Options) -> list[Edit]:
     entries: list[_CommentEntry] = []
     for node in comment_nodes:
@@ -397,6 +472,8 @@ def _tree_sitter_comment_edits(raw: bytes, comment_nodes: Sequence[Node], opts: 
         entries.append(_CommentEntry(lineno, is_full_line, comment_text, edit))
     entries.sort(key=lambda entry: entry.lineno)
     return _filter_comments(entries, opts)
+
+
 def strip_tree_sitter(text: str, opts: Options) -> Stripped:
     raw = text.encode()
     tree = tree_sitter_parser().parse(raw)
@@ -416,16 +493,22 @@ def strip_tree_sitter(text: str, opts: Options) -> Stripped:
         edits += _tree_sitter_comment_edits(raw, comment_nodes, opts)
     code, comments, docstrings = apply_edits(raw, edits)
     return Stripped(code.decode(), comments, docstrings)
+
+
 BACKENDS: dict[str, Backend] = {
     "libcst": strip_libcst,
     "tree-sitter": strip_tree_sitter,
 }
+
+
 def backend_available(name: str) -> bool:
     if name == "libcst":
         return importlib.util.find_spec("libcst") is not None
     if name == "tree-sitter":
         return all(importlib.util.find_spec(module) is not None for module in ("tree_sitter", "tree_sitter_python"))
     return False
+
+
 def resolve_backends(requested: str | None) -> tuple[str, ...]:
     if requested is not None and not backend_available(requested):
         raise SystemExit(INSTALL_HINTS.get(requested, f"Unknown backend: {requested}"))
@@ -435,6 +518,8 @@ def resolve_backends(requested: str | None) -> tuple[str, ...]:
         hints = "\n".join(INSTALL_HINTS.values())
         raise SystemExit(f"No stripping backend available. Install one:\n{hints}")
     return tuple(order)
+
+
 def strip_source(text: str, opts: Options) -> Stripped:
     source_valid = parses(text)
     errors: list[Exception] = []
@@ -454,6 +539,8 @@ def strip_source(text: str, opts: Options) -> Stripped:
     if syntax_error is not None:
         raise syntax_error
     raise errors[-1] if errors else RuntimeError("no backend available")
+
+
 def write_atomic(path: Path, data: bytes) -> None:
     target = path.resolve()
     descriptor, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
@@ -468,6 +555,8 @@ def write_atomic(path: Path, data: bytes) -> None:
         temporary.replace(target)
     finally:
         temporary.unlink(missing_ok=True)
+
+
 def process_file(path: Path, opts: Options) -> FileResult:
     result = FileResult(path)
     try:
@@ -504,6 +593,8 @@ def process_file(path: Path, opts: Options) -> FileResult:
             result.changed = False
             logger.opt(exception=exc).error("Write failed for {}", path)
     return result
+
+
 def process_wheel(path: Path, opts: Options) -> FileResult:
     result = FileResult(path)
     wheel_backends: set[str] = set()
@@ -559,6 +650,8 @@ def process_wheel(path: Path, opts: Options) -> FileResult:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.opt(exception=exc).error("Wheel I/O failure {}", path)
     return result
+
+
 def is_python_file(path: Path) -> bool:
     suffix = path.suffix
     if suffix == ".py":
@@ -578,8 +671,12 @@ def is_python_file(path: Path) -> bool:
         return True
     except (OSError, SyntaxError, ValueError, RecursionError, MemoryError):
         return False
+
+
 def is_candidate(path: Path) -> bool:
     return path.suffix == ".whl" or is_python_file(path)
+
+
 def walk_directory(root: Path) -> Iterator[Path]:
     for current, directories, files in root.walk():
         directories[:] = [
@@ -593,6 +690,8 @@ def walk_directory(root: Path) -> Iterator[Path]:
                 continue
             if is_candidate(candidate):
                 yield candidate
+
+
 def discover(roots: Iterable[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for root in roots:
@@ -609,17 +708,23 @@ def discover(roots: Iterable[Path]) -> Iterator[Path]:
                 continue
             seen.add(key)
             yield path
+
+
 def display_path(path: Path) -> str:
     try:
         return str(path.resolve().relative_to(Path.cwd().resolve()))
     except ValueError:
         return str(path)
+
+
 def format_name(name: str, width: int) -> str:
     if len(name) <= width:
         return name.ljust(width)
     if width <= 3:
         return name[:width]
     return name[: width - 1] + "…"
+
+
 def report(index: int, result: FileResult, counter_width: int, name_width: int, bytes_width: int) -> None:
     name = display_path(result.path)
     counter = f"[{index}]".ljust(counter_width)
@@ -638,6 +743,8 @@ def report(index: int, result: FileResult, counter_width: int, name_width: int, 
         line.append(name_col, style="dim")
         line.append(f" {'(unchanged)':>{bytes_width}}", style="dim")
     console.print(line)
+
+
 def summarize(results: Sequence[FileResult]) -> None:
     changed = sum(1 for item in results if item.changed)
     removed = sum(item.bytes_removed for item in results)
@@ -660,6 +767,8 @@ def summarize(results: Sequence[FileResult]) -> None:
     if backend_counts:
         parts = ", ".join(f"{name}={count}" for name, count in sorted(backend_counts.items()))
         console.print(Text(f"Backends used: {parts}", style="dim"))
+
+
 def copy_to_clipboard(code: str) -> None:
     try:
         subprocess.run(["termux-clipboard-set"], input=code, text=True, check=True)
@@ -667,6 +776,8 @@ def copy_to_clipboard(code: str) -> None:
         logger.error("termux-clipboard-set not found; install Termux:API")
     except subprocess.CalledProcessError as exc:
         logger.error("termux-clipboard-set failed: {}", exc)
+
+
 def run_sources(paths: Sequence[Path], opts: Options) -> Iterator[FileResult]:
     if not paths:
         return
@@ -677,6 +788,8 @@ def run_sources(paths: Sequence[Path], opts: Options) -> Iterator[FileResult]:
         return
     with Pool(workers, initializer=configure_logging) as pool:
         yield from pool.imap_unordered(worker, paths)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Strip comments and docstrings from Python files.")
     parser.add_argument("paths", nargs="*", type=Path, help="Files or directories (default: cwd)")
@@ -717,6 +830,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dry-run", action="store_true", help="Show changes without writing.")
     parser.add_argument("--remove-module-docstring", action="store_true", help="Also strip module-level docstrings.")
     return parser
+
+
 def make_options(args: argparse.Namespace) -> Options:
     strip_all: bool = args.all or args.x
     default_comments = not (args.comments or args.docstring or strip_all)
@@ -729,6 +844,8 @@ def make_options(args: argparse.Namespace) -> Options:
         remove_module_docstring=args.remove_module_docstring,
         clipboard=args.x,
     )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     configure_logging()
     args = build_parser().parse_args(argv)
@@ -762,5 +879,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             logger.warning("No output produced for clipboard")
     return 1 if any(item.error for item in results) else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

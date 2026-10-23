@@ -18,6 +18,7 @@ import tokenize
 from typing import Iterator, NamedTuple
 import libcst as cst
 from loguru import logger
+
 SKIP_DIRS = frozenset({
     ".git",
     "__pycache__",
@@ -44,6 +45,8 @@ UNDO_FILE = ".camel_undo.json"
 DUNDER_RE = re.compile(r"^__.*__$")
 GETATTR_FUNCS = frozenset({"getattr", "setattr", "delattr", "hasattr"})
 ALLOWED_TARGETS = ("function", "class", "variable", "param")
+
+
 def to_snake(name: str) -> str | None:
     if not name or DUNDER_RE.match(name):
         return None
@@ -68,6 +71,8 @@ def to_snake(name: str) -> str | None:
     if snake == name:
         return None
     return f"{pre}{snake}{post}"
+
+
 def to_pascal(name: str) -> str | None:
     if not name or name.startswith("__") or DUNDER_RE.match(name):
         return None
@@ -86,6 +91,8 @@ def to_pascal(name: str) -> str | None:
     if pascal == core:
         return None
     return "_" * leading + pascal + "_" * trailing
+
+
 def read_bytes(path: Path) -> bytes:
     with path.open("rb") as f:
         if os.fstat(f.fileno()).st_size == 0:
@@ -95,6 +102,8 @@ def read_bytes(path: Path) -> bytes:
                 return mm[:]
         except (ValueError, OSError):
             return f.read()
+
+
 def detect_encoding(data: bytes) -> str:
     if data.startswith(b"\xef\xbb\xbf"):
         return "utf-8-sig"
@@ -103,6 +112,8 @@ def detect_encoding(data: bytes) -> str:
         return enc
     except (SyntaxError, LookupError):
         return "utf-8"
+
+
 def atomic_write(path: Path, data: bytes) -> None:
     d = path.parent
     fd, tmp = tempfile.mkstemp(dir=str(d), prefix=path.name + ".", suffix=".tmp")
@@ -124,6 +135,8 @@ def atomic_write(path: Path, data: bytes) -> None:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
         raise
+
+
 def load_json(path: Path) -> dict:
     if not path.exists():
         return {}
@@ -132,20 +145,30 @@ def load_json(path: Path) -> dict:
         return obj if isinstance(obj, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
+
+
 def save_json(path: Path, obj: dict) -> None:
     try:
         path.write_text(json.dumps(obj, sort_keys=True), "utf-8")
     except OSError as exc:
         logger.warning("state write failed {}: {}", path, exc)
+
+
 def load_cache(path: Path) -> dict[str, str]:
     return {k: v for k, v in load_json(path).items() if isinstance(v, str)}
+
+
 def load_undo(path: Path) -> dict[str, dict]:
     return load_json(path)
+
+
 def snapshot_undo(store: dict[str, dict], path: Path, data: bytes, encoding: str) -> None:
     key = str(path.resolve())
     if key in store:
         return
     store[key] = {"encoding": encoding, "data": base64.b64encode(data).decode("ascii")}
+
+
 def restore_undo(store: dict[str, dict]) -> int:
     count = 0
     for key, entry in store.items():
@@ -158,6 +181,8 @@ def restore_undo(store: dict[str, dict]) -> int:
         atomic_write(p, data)
         count += 1
     return count
+
+
 def iter_py_files(root: Path) -> Iterator[Path]:
     if root.is_file():
         if root.suffix == ".py" and not root.is_symlink():
@@ -189,6 +214,8 @@ def iter_py_files(root: Path) -> Iterator[Path]:
                 stack.append(entry)
             elif entry.suffix == ".py":
                 yield entry
+
+
 def unified_diff(path: Path, old: str, new: str) -> str:
     return "".join(
         difflib.unified_diff(
@@ -198,46 +225,59 @@ def unified_diff(path: Path, old: str, new: str) -> str:
             tofile=str(path),
         )
     )
+
+
 class SymbolCollector(cst.CSTVisitor):
     def __init__(self, targets: set[str]) -> None:
         self.targets = targets
         self.renames: dict[str, str] = {}
+
     def _add(self, name: str, new: str | None) -> None:
         if new and new != name and name not in self.renames:
             self.renames[name] = new
+
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
         if "function" in self.targets:
             self._add(node.name.value, to_snake(node.name.value))
         return True
+
     def visit_ClassDef(self, node: cst.ClassDef) -> bool:
         if "class" in self.targets:
             self._add(node.name.value, to_pascal(node.name.value))
         return True
+
     def visit_Param(self, node: cst.Param) -> bool:
         if "param" in self.targets and node.name is not None:
             self._add(node.name.value, to_snake(node.name.value))
         return True
+
     def visit_AssignTarget(self, node: cst.AssignTarget) -> bool:
         if "variable" in self.targets and isinstance(node.target, cst.Name):
             self._add(node.target.value, to_snake(node.target.value))
         return True
+
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool:
         if "variable" in self.targets and isinstance(node.target, cst.Name):
             self._add(node.target.value, to_snake(node.target.value))
         return True
+
     def visit_AugAssign(self, node: cst.AugAssign) -> bool:
         if "variable" in self.targets and isinstance(node.target, cst.Name):
             self._add(node.target.value, to_snake(node.target.value))
         return True
+
     def visit_For(self, node: cst.For) -> bool:
         if "variable" in self.targets and isinstance(node.target, cst.Name):
             self._add(node.target.value, to_snake(node.target.value))
         return True
+
     def visit_WithItem(self, node: cst.WithItem) -> bool:
         if "variable" in self.targets and isinstance(node.asname, cst.AsName):
             if isinstance(node.asname.name, cst.Name):
                 self._add(node.asname.name.value, to_snake(node.asname.name.value))
         return True
+
+
 class RenameTransformer(cst.CSTTransformer):
     def __init__(self, renames: dict[str, str], module_renames: dict[str, str]) -> None:
         self.renames = renames
@@ -245,35 +285,44 @@ class RenameTransformer(cst.CSTTransformer):
         self.count = 0
         self._str_ctx = 0
         self._in_import = 0
+
     def _in_all_assign(self, node: cst.Assign) -> bool:
         return any(isinstance(tgt.target, cst.Name) and tgt.target.value == "__all__" for tgt in node.targets)
+
     def visit_Assign(self, node: cst.Assign) -> bool:
         if self._in_all_assign(node):
             self._str_ctx += 1
         return True
+
     def leave_Assign(self, orig: cst.Assign, updated: cst.Assign) -> cst.Assign:
         if self._in_all_assign(orig):
             self._str_ctx -= 1
         return updated
+
     def visit_AugAssign(self, node: cst.AugAssign) -> bool:
         if isinstance(node.target, cst.Name) and node.target.value == "__all__":
             self._str_ctx += 1
         return True
+
     def leave_AugAssign(self, orig: cst.AugAssign, updated: cst.AugAssign) -> cst.AugAssign:
         if isinstance(orig.target, cst.Name) and orig.target.value == "__all__":
             self._str_ctx -= 1
         return updated
+
     def visit_Call(self, node: cst.Call) -> bool:
         if isinstance(node.func, cst.Name) and node.func.value in GETATTR_FUNCS:
             self._str_ctx += 1
         return True
+
     def leave_Call(self, orig: cst.Call, updated: cst.Call) -> cst.Call:
         if isinstance(orig.func, cst.Name) and orig.func.value in GETATTR_FUNCS:
             self._str_ctx -= 1
         return updated
+
     def visit_Import(self, node: cst.Import) -> bool:
         self._in_import += 1
         return True
+
     def leave_Import(self, orig: cst.Import, updated: cst.Import) -> cst.Import:
         self._in_import -= 1
         new_names = []
@@ -288,9 +337,11 @@ class RenameTransformer(cst.CSTTransformer):
         if changed:
             return updated.with_changes(names=new_names)
         return updated
+
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool:
         self._in_import += 1
         return True
+
     def leave_ImportFrom(self, orig: cst.ImportFrom, updated: cst.ImportFrom) -> cst.ImportFrom:
         self._in_import -= 1
         if updated.module is not None:
@@ -312,6 +363,7 @@ class RenameTransformer(cst.CSTTransformer):
         if changed:
             return updated.with_changes(names=new_names)
         return updated
+
     def _rename_module_ref(self, node: cst.BaseExpression) -> cst.BaseExpression:
         if isinstance(node, cst.Name):
             if node.value in self.module_renames:
@@ -328,6 +380,7 @@ class RenameTransformer(cst.CSTTransformer):
                 return node.with_changes(value=new_value, attr=new_attr)
             return node
         return node
+
     def leave_Name(self, orig: cst.Name, updated: cst.Name) -> cst.Name:
         if self._in_import > 0:
             return updated
@@ -335,6 +388,7 @@ class RenameTransformer(cst.CSTTransformer):
             self.count += 1
             return updated.with_changes(value=self.renames[updated.value])
         return updated
+
     def leave_SimpleString(self, orig: cst.SimpleString, updated: cst.SimpleString) -> cst.SimpleString:
         if self._str_ctx <= 0:
             return updated
@@ -350,6 +404,8 @@ class RenameTransformer(cst.CSTTransformer):
             return updated
         self.count += 1
         return updated.with_changes(value=f"{q}{new_val}{q}")
+
+
 class FileResult(NamedTuple):
     path: Path
     count: int
@@ -357,6 +413,8 @@ class FileResult(NamedTuple):
     undo_entry: tuple[Path, bytes, str] | None
     error: str | None
     diff: str
+
+
 def process_file(
     payload: tuple[Path, dict[str, str], dict[str, str], str | None, bool, bool, bool],
 ) -> FileResult:
@@ -399,6 +457,8 @@ def process_file(
         except OSError as exc:
             return FileResult(path, 0, None, None, f"write failed: {exc}", "")
     return FileResult(path, count, new_hash, (path, data, encoding), None, "")
+
+
 def collect_symbols(path: Path, targets: set[str]) -> dict[str, str]:
     try:
         data = read_bytes(path)
@@ -419,9 +479,13 @@ def collect_symbols(path: Path, targets: set[str]) -> dict[str, str]:
     except Exception:
         return {}
     return c.renames
+
+
 def collect_worker(payload: tuple[Path, set[str]]) -> tuple[Path, dict[str, str]]:
     path, targets = payload
     return path, collect_symbols(path, targets)
+
+
 def detect_module_renames(files: list[Path]) -> dict[str, str]:
     renames: dict[str, str] = {}
     for f in files:
@@ -436,6 +500,8 @@ def detect_module_renames(files: list[Path]) -> dict[str, str]:
             continue
         renames[stem] = new
     return renames
+
+
 def apply_module_file_renames(
     files: list[Path], module_renames: dict[str, str], apply: bool
 ) -> list[tuple[Path, Path]]:
@@ -459,6 +525,8 @@ def apply_module_file_renames(
                 logger.error("module rename failed {} -> {}: {}", old, new, exc)
                 raise
     return moves
+
+
 def gather(targets: list[Path]) -> list[Path]:
     seen: set[Path] = set()
     out: list[Path] = []
@@ -474,6 +542,8 @@ def gather(targets: list[Path]) -> list[Path]:
             seen.add(rp)
             out.append(f)
     return out
+
+
 def parse_targets(value: str) -> set[str]:
     parts = {p.strip() for p in value.split(",") if p.strip()}
     invalid = parts - set(ALLOWED_TARGETS)
@@ -481,6 +551,8 @@ def parse_targets(value: str) -> set[str]:
         msg = f"invalid targets: {sorted(invalid)}"
         raise argparse.ArgumentTypeError(msg)
     return parts
+
+
 def main() -> int:
     logger.remove()
     logger.add(sys.stderr, level="INFO", format="<level>{level}</level>: {message}")
@@ -513,6 +585,7 @@ def main() -> int:
     files = gather(args.paths)
     if args.exclude:
         import re as _re
+
         pats = [_re.compile(p) for p in args.exclude]
         files = [f for f in files if not any(p.search(str(f)) for p in pats)]
     if not files:
@@ -586,6 +659,8 @@ def main() -> int:
         errors,
     )
     return 1 if errors else 0
+
+
 def _handle_result(
     res: FileResult,
     apply: bool,
@@ -607,5 +682,7 @@ def _handle_result(
         p, data, enc = res.undo_entry
         snapshot_undo(undo_store, p, data, enc)
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

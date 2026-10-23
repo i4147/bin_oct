@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from collections import deque
 import compileall
 from multiprocessing import get_context
 from pathlib import Path
 import sys
-
 from dh import fsz, get_files, gsz
-
 
 MAX_QUEUE = 4
 

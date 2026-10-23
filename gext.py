@@ -4,12 +4,15 @@ import ast
 import multiprocessing as mp
 import os
 import sys
+
 OUTPUT_DIR = "output"
 CLASSES_DIR = os.path.join(OUTPUT_DIR, "classes")
 FUNCTIONS_DIR = os.path.join(OUTPUT_DIR, "functions")
 CONST_DIR = os.path.join(OUTPUT_DIR, "const")
 EXCLUDE_DIRS = {"test", "tests", "examples", "output"}
 WORKERS = 8
+
+
 def is_python_script(path: str) -> bool:
     if path.endswith(".py"):
         return True
@@ -19,6 +22,8 @@ def is_python_script(path: str) -> bool:
         return line.startswith("#!") and "python" in line.lower()
     except Exception:
         return False
+
+
 def collect_files(inputs: list[str]) -> list[str]:
     files: list[str] = []
     for inp in inputs:
@@ -33,12 +38,18 @@ def collect_files(inputs: list[str]) -> list[str]:
                     if is_python_script(p):
                         files.append(p)
     return files
+
+
 def mark_parents(node: ast.AST, parent=None):
     for child in ast.iter_child_nodes(node):
         child._parent = node
         mark_parents(child, node)
+
+
 def is_constant_name(name: str) -> bool:
     return name.isupper()
+
+
 def extract_from_file(path: str):
     classes: dict[str, str] = {}
     funcs: dict[str, str] = {}
@@ -77,11 +88,15 @@ def extract_from_file(path: str):
             if src:
                 consts[name] = src
     return path, classes, funcs, consts
+
+
 def write_entity(directory: str, name: str, src: str) -> None:
     safe = name.replace(os.sep, "_").replace("/", "_")
     fpath = os.path.join(directory, safe + ".py")
     with open(fpath, "w", encoding="utf-8") as f:
         f.write(src.rstrip() + "\n")
+
+
 def main():
     inputs = sys.argv[1:]
     if not inputs:
@@ -112,5 +127,7 @@ def main():
     print(f"Functions     : {len(all_funcs)}")
     print(f"Constants     : {len(all_consts)}")
     print("Outputs saved to:", OUTPUT_DIR)
+
+
 if __name__ == "__main__":
     main()

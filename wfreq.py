@@ -1,15 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator
-
 from spellchecker import SpellChecker
-
 
 WORD_RE = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*", re.UNICODE)
 _TEXT_CHARS = bytes({7, 8, 9, 10, 12, 13, 27} | (set(range(0x20, 0x100)) - {0x7F}))

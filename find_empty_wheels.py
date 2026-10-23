@@ -2,6 +2,8 @@
 from __future__ import annotations
 from pathlib import Path
 import zipfile
+
+
 def is_empty_wheel(whl_path: Path) -> bool | None:
     try:
         with zipfile.ZipFile(whl_path, "r") as zf:
@@ -12,6 +14,8 @@ def is_empty_wheel(whl_path: Path) -> bool | None:
         print(f"Warning: {whl_path} is not a valid ZIP file. Skipping.")
         return False
     return True
+
+
 def main() -> None:
     empty_wheels = []
     cwd = Path.cwd()
@@ -30,5 +34,7 @@ def main() -> None:
             k.rename(new_path)
     else:
         print("No empty wheels found.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

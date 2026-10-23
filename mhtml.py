@@ -21,6 +21,7 @@ from urllib.parse import unquote, urljoin
 from urllib.request import Request, urlopen
 from loguru import logger
 from lxml import html as lh
+
 if TYPE_CHECKING:
     import os
 __all__ = ["convert", "convert_file", "main"]
@@ -71,12 +72,18 @@ _CSS_CHARSET = re.compile(rb"""^@charset\s+["']([^"']+)["']""", re.IGNORECASE)
 _CLOSING_TAG = re.compile(r"</(style|script)", re.IGNORECASE)
 _SRCSET_SPLIT = re.compile(r"\s*,\s+")
 _XPATH_EVENT_ATTRS = "//*[@*[starts-with(name(), 'on')]]"
+
+
 class Resource(NamedTuple):
     mime: str
     charset: Optional[str]
     data: bytes
+
+
 def _safe(text: str) -> str:
     return _CLOSING_TAG.sub(r"<\\/\1", text)
+
+
 def _decode(res: Resource) -> str:
     enc = res.charset
     if not enc and res.mime == "text/css":
@@ -86,11 +93,15 @@ def _decode(res: Resource) -> str:
         return res.data.decode(enc or "utf-8-sig", "replace")
     except LookupError:
         return res.data.decode("utf-8-sig", "replace")
+
+
 def _data_uri(res: Resource, url: str) -> str:
     mime = res.mime
     if not mime or mime == "application/octet-stream":
         mime = mimetypes.guess_type(url)[0] or "application/octet-stream"
     return f"data:{mime};base64,{base64.b64encode(res.data).decode('ascii')}"
+
+
 def parse_mhtml(raw: bytes) -> tuple[Resource, str, dict[str, Optional[Resource]]]:
     msg = BytesParser(policy=compat32).parsebytes(raw)
     resources: dict[str, Optional[Resource]] = {}
@@ -117,8 +128,11 @@ def parse_mhtml(raw: bytes) -> tuple[Resource, str, dict[str, Optional[Resource]
         msg_0 = "no HTML part found in MHTML archive"
         raise ValueError(msg_0)
     return root, root_url, resources
+
+
 class _Converter:
     __slots__ = ("fetch", "res", "scripts", "stack", "timeout", "uris")
+
     def __init__(
         self,
         resources: dict[str, Optional[Resource]],
@@ -132,6 +146,7 @@ class _Converter:
         self.timeout = timeout
         self.uris: dict[str, str] = {}
         self.stack: set[str] = set()
+
     def download(self, url: str) -> Optional[Resource]:
         res: Optional[Resource] = None
         try:
@@ -142,6 +157,7 @@ class _Converter:
             logger.warning("fetch failed {}: {}", url, e)
         self.res[url] = res
         return res
+
     def lookup(self, url: str) -> Optional[Resource]:
         url = url.partition("#")[0]
         if url in self.res:
@@ -152,6 +168,7 @@ class _Converter:
         if self.fetch and url.startswith(("http://", "https://")):
             return self.download(url)
         return None
+
     def inline(self, ref: str, base: str) -> str:
         ref = ref.strip()
         if not ref or ref[0] == "#" or ref.lower().startswith(_SKIP_PREFIXES):
@@ -165,6 +182,7 @@ class _Converter:
                 return url
             uri = self.uris[bare] = _data_uri(res, bare)
         return f"{uri}#{frag}" if frag else uri
+
     def srcset(self, value: str, base: str) -> str:
         out: list[str] = []
         for item in _SRCSET_SPLIT.split(value.strip()):
@@ -172,10 +190,12 @@ class _Converter:
             if bits:
                 out.append(" ".join([self.inline(bits[0].rstrip(","), base), *bits[1:]]))
         return ", ".join(out)
+
     def css(self, text: str, base: str, depth: int = 0) -> str:
         if depth < 8 and "@import" in text.lower():
             text = _CSS_IMPORT.sub(lambda m: self._css_import(m, base, depth), text)
         return _CSS_URL.sub(lambda m: self._css_url(m, base), text)
+
     def _css_import(self, m: re.Match[str], base: str, depth: int) -> str:
         ref = m.group(1) or m.group(2) or m.group(3)
         media = m.group(4).strip()
@@ -185,12 +205,14 @@ class _Converter:
             return f'@import url("{url}"){" " + media if media else ""};'
         body = self.css(_decode(res), url, depth + 1)
         return f"@media {media}{{{body}}}" if media else body
+
     def _css_url(self, m: re.Match[str], base: str) -> str:
         ref = m.group(1) or m.group(2) or m.group(3) or ""
         new = self.inline(ref, base)
         if new == ref:
             return m.group(0)
         return 'url("%s")' % new.replace('"', "%22")
+
     def document(self, res: Resource, base: str) -> bytes:
         enc = res.charset or "utf-8"
         try:
@@ -330,11 +352,15 @@ class _Converter:
             head.insert(0, doc.makeelement("meta", charset="utf-8"))
         doctype = doc.getroottree().docinfo.doctype
         return lh.tostring(doc, encoding="utf-8", method="html", doctype=doctype or "<!DOCTYPE html>")
+
+
 def _convert(raw: bytes, scripts: bool, fetch: bool, timeout: float) -> bytes:
     root, url, resources = parse_mhtml(raw)
     converter = _Converter(resources, scripts, fetch, timeout)
     converter.stack.add(url)
     return converter.document(root, url)
+
+
 def convert(
     mhtml: "bytes | str | os.PathLike[str]",
     *,
@@ -344,6 +370,8 @@ def convert(
 ) -> str:
     raw = mhtml if isinstance(mhtml, bytes) else Path(mhtml).read_bytes()
     return _convert(raw, enable_scripts, fetch_missing_resources, timeout).decode("utf-8")
+
+
 def convert_file(
     src: "str | os.PathLike[str]",
     out: "str | os.PathLike[str] | None" = None,
@@ -377,19 +405,28 @@ def convert_file(
         with contextlib.suppress(OSError):
             tmp.unlink()
         return False
+
+
 def _run(job: Sequence[Any]) -> bool:
     return convert_file(*job)
+
+
 def _init_worker(worker_logger: Any) -> None:
     global logger
     logger = worker_logger
+
+
 def collect(inputs: Sequence[str]) -> list[Path]:
     found: dict[Path, None] = {}
+
     def add_file(p: Path) -> None:
         found.setdefault(p.absolute(), None)
+
     def add_dir(p: Path) -> None:
         for f in p.rglob("*"):
             if f.suffix.lower() in MHTML_SUFFIXES and f.is_file():
                 add_file(f)
+
     for item in inputs or ["."]:
         p = Path(item)
         if p.is_dir():
@@ -407,6 +444,8 @@ def collect(inputs: Sequence[str]) -> list[Path]:
                 elif hp.is_file():
                     add_file(hp)
     return list(found)
+
+
 def run_jobs(jobs: Sequence[tuple[Any, ...]], workers: int, method: str) -> list[bool]:
     if not jobs:
         return []
@@ -427,6 +466,8 @@ def run_jobs(jobs: Sequence[tuple[Any, ...]], workers: int, method: str) -> list
             return [pool.apply(convert_file, j) for j in jobs]
         pending = [pool.apply_async(convert_file, j) for j in jobs]
         return [r.get() for r in pending]
+
+
 def _setup_logging(verbose: bool, quiet: bool, log_file: Optional[Path]) -> None:
     logger.remove()
     level = "DEBUG" if verbose else ("ERROR" if quiet else "INFO")
@@ -438,6 +479,8 @@ def _setup_logging(verbose: bool, quiet: bool, log_file: Optional[Path]) -> None
     )
     if log_file:
         logger.add(log_file, level="DEBUG", enqueue=True, rotation="10 MB", encoding="utf-8")
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="mhtml-to-html",
@@ -481,6 +524,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging with tracebacks")
     p.add_argument("-q", "--quiet", action="store_true", help="only log errors")
     return p
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     _setup_logging(args.verbose, args.quiet, args.log_file)
@@ -509,5 +554,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     logger.info("{}/{} converted", ok, len(jobs))
     logger.complete()
     return 0 if ok == len(jobs) else 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

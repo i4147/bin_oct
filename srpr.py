@@ -1,10 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
-
 from dh import runcmd
-
 
 if __name__ == "__main__":
     from string import ascii_lowercase, ascii_uppercase

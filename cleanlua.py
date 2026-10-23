@@ -7,16 +7,21 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_lua
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 LUA_LANGUAGE: Language = Language(tree_sitter_lua.language())
 LUA_EXTS: set[str] = {".lua"}
 _PARSER: Parser | None = None
+
+
 def get_parser() -> Parser:
     global _PARSER
     if _PARSER is None:
         _PARSER = Parser(LUA_LANGUAGE)
     return _PARSER
+
+
 def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
     ranges: list[tuple[int, int]] = []
     stack: list[Node] = [root]
@@ -30,6 +35,8 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         for child in reversed(node.children):
             stack.append(child)
     return ranges
+
+
 def strip_comments(content: bytes) -> tuple[bytes, int]:
     parser: Parser = get_parser()
     tree = parser.parse(content)
@@ -44,6 +51,8 @@ def strip_comments(content: bytes) -> tuple[bytes, int]:
         last = end
     out.extend(content[last:])
     return bytes(out), len(ranges)
+
+
 def process_file_worker(args: tuple[Path, Path]) -> tuple[str, int, str]:
     path, base = args
     try:
@@ -58,6 +67,8 @@ def process_file_worker(args: tuple[Path, Path]) -> tuple[str, int, str]:
         return rel, count, ""
     except Exception as exc:
         return str(path), 0, str(exc)
+
+
 def iter_lua_files(paths: list[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for p in paths:
@@ -72,6 +83,8 @@ def iter_lua_files(paths: list[Path]) -> Iterator[Path]:
                 if rp not in seen:
                     seen.add(rp)
                     yield f
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Remove comments from Lua files in place, preserving '---' annotations (tree-sitter powered)."
@@ -108,5 +121,7 @@ def main() -> int:
         f"{total_comments} comment(s) removed, {errors} error(s)."
     )
     return 1 if errors else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

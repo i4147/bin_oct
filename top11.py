@@ -1,13 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import operator
 from pathlib import Path
 import sys
-
 from dh import fsz, get_files
-
 
 cwd = Path.cwd()
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 11

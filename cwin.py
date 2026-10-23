@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from dh import fsz
+
 DARWIN_PATTERNS = {
     ".DS_Store",
     ".AppleDouble",
@@ -30,6 +31,8 @@ WINDOWS_PATTERNS = {
     "$RECYCLE.BIN",
 }
 ALL_PATTERNS = DARWIN_PATTERNS | WINDOWS_PATTERNS
+
+
 def matches_pattern(path: Path, patterns: set) -> bool:
     name = path.name
     for pattern in patterns:
@@ -45,6 +48,8 @@ def matches_pattern(path: Path, patterns: set) -> bool:
         elif name == pattern or path.name.startswith(pattern.split("*")[0]):
             return True
     return False
+
+
 def walk_directory(root_dir: Path):
     try:
         for entry in root_dir.iterdir():
@@ -53,6 +58,8 @@ def walk_directory(root_dir: Path):
                 yield from walk_directory(entry)
     except (OSError, PermissionError) as e:
         print(f"Error accessing {root_dir}: {e}", file=sys.stderr)
+
+
 def process_path(path: Path) -> tuple[str, int]:
     try:
         if path.is_file():
@@ -65,11 +72,14 @@ def process_path(path: Path) -> tuple[str, int]:
                 if path.is_file():
                     total_size += path.stat().st_size
             import shutil
+
             shutil.rmtree(path)
             return (str(path), total_size)
     except (OSError, PermissionError) as e:
         print(f"Error deleting {path}: {e}", file=sys.stderr)
     return (str(path), 0)
+
+
 def find_and_remove_files(root_dir: Path | None = None) -> dict:
     if root_dir is None:
         root_dir = Path.cwd()
@@ -98,7 +108,11 @@ def find_and_remove_files(root_dir: Path | None = None) -> dict:
         "details": results,
     }
     return stats
+
+
 def main():
     stats = find_and_remove_files(Path.cwd())
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

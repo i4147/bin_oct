@@ -18,6 +18,7 @@ import brotli
 from loguru import logger
 import lz4.frame
 import zstandard as zstd
+
 EXTENSION_MAP: dict[str, dict[str, str | int]] = {
     ".txt": {"algo": "brotli", "level": 11},
     ".log": {"algo": "brotli", "level": 11},
@@ -85,11 +86,17 @@ DEFAULT_SETTINGS: dict[str, dict[str, str | int]] = {
     "large_binary": {"algo": "zstd", "level": 21},
     "already_compressed": {"algo": "lz4", "level": 1},
 }
+
+
 def compress_zstd(data: bytes, level: int) -> bytes:
     compressor = zstd.ZstdCompressor(level=level)
     return compressor.compress(data)
+
+
 def compress_brotli_standard(data: bytes, level: int) -> bytes:
     return brotli.compress(data, quality=level)
+
+
 def compress_brotli_streaming(data: bytes, level: int, chunk_size: int = 512 * 1024) -> bytes:
     compressor = brotli.Compressor(quality=level)
     result_parts: list[bytes] = []
@@ -98,17 +105,27 @@ def compress_brotli_streaming(data: bytes, level: int, chunk_size: int = 512 * 1
         result_parts.append(compressor.process(chunk))
     result_parts.append(compressor.finish())
     return b"".join(result_parts)
+
+
 def compress_lzma(data: bytes, level: int) -> bytes:
     return lzma.compress(data, preset=level)
+
+
 def compress_gzip(data: bytes, level: int) -> bytes:
     out = BytesIO()
     with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=level) as gz:
         gz.write(data)
     return out.getvalue()
+
+
 def compress_bz2(data: bytes, level: int) -> bytes:
     return bz2.compress(data, compresslevel=level)
+
+
 def compress_lz4(data: bytes, level: int) -> bytes:
     return lz4.frame.compress(data, compression_level=level)
+
+
 def compress_data(data: bytes, algo: str, level: int, is_large: bool = False) -> bytes:
     if algo == "zstd":
         return compress_zstd(data, level)
@@ -128,6 +145,8 @@ def compress_data(data: bytes, algo: str, level: int, is_large: bool = False) ->
     else:
         msg = f"Unknown algorithm: {algo}"
         raise ValueError(msg)
+
+
 def is_already_compressed(data: bytes, sample_size: int = 4096) -> bool:
     if len(data) < 4:
         return False
@@ -143,6 +162,8 @@ def is_already_compressed(data: bytes, sample_size: int = 4096) -> bool:
         (b"7z\xbc\xaf'\x1c", "7z"),
     ]
     return any(data.startswith(magic) for magic, _ in magic_bytes)
+
+
 def choose_algorithm(
     path: str | Path,
     data: bytes | None = None,
@@ -174,6 +195,8 @@ def choose_algorithm(
         return DEFAULT_SETTINGS["large_binary"]
     else:
         return DEFAULT_SETTINGS["small_binary"]
+
+
 def compress_single_file(
     path: str | Path,
     output_path: str | Path | None = None,
@@ -224,6 +247,8 @@ def compress_single_file(
         if verbose:
             logger.error(f"✗ Failed to compress {path}: {e}")
         return {"file": str(path), "success": False, "error": str(e)}
+
+
 def compress_multiple_files(
     paths: list[str | Path],
     output_dir: str | Path | None = None,
@@ -249,6 +274,8 @@ def compress_multiple_files(
                 file_name = Path(result["file"]).name
                 logger.debug(f"  Completed: {file_name} ({result['algorithm']})")
     return results
+
+
 def create_tar_archive(
     source_dir: str | Path,
     output_path: str | Path | None = None,
@@ -324,6 +351,8 @@ def create_tar_archive(
             "original_size": total_size,
             "time": elapsed,
         }
+
+
 def decompress_file(
     compressed_path: str | Path,
     output_dir: str | Path | None = None,
@@ -383,6 +412,8 @@ def decompress_file(
     if verbose:
         print(f"✓ Decompressed to: {output_path}")
     return output_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Smart Archiver - Automatically chooses best compression algorithm",
@@ -477,6 +508,7 @@ Examples:
             decompress_file(path, args.output_dir, args.verbose)
     elif args.command == "benchmark":
         from hybrid_compression_benchmark import benchmark_hybrid
+
         input_path = Path(args.input)
         if input_path.is_dir():
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -498,6 +530,8 @@ Examples:
             with open(input_path, "rb") as f:
                 data = f.read()
             results = benchmark_hybrid(data, len(data))
+
+
 if __name__ == "__main__":
     logger.remove()
     logger.add(

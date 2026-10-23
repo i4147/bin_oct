@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 import sys
+
+
 def unique_target(target: Path) -> Path:
     if not target.exists():
         return target
@@ -15,6 +17,8 @@ def unique_target(target: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
+
+
 def flatten_directory(directory="."):
     root = Path(directory).resolve()
     if not root.is_dir():
@@ -60,8 +64,12 @@ def flatten_directory(directory="."):
             print(f"Error removing {subdir}: {e}")
     print(f"\nRemoved {removed_dirs} empty directory(ies)")
     print("Flattening complete!")
+
+
 def main():
     target_dir = sys.argv[1] if len(sys.argv) > 1 else "."
     flatten_directory(target_dir)
+
+
 if __name__ == "__main__":
     main()

@@ -4,10 +4,13 @@ import argparse
 from multiprocessing import Pool, cpu_count
 import re
 from spellchecker import SpellChecker
+
+
 def process_line(line: str, autofix: bool = False) -> tuple:
     spell = SpellChecker()
     misspelled_count = 0
     fixed_count = 0
+
     def check_and_replace(match):
         nonlocal misspelled_count, fixed_count
         word = match.group(0)
@@ -38,8 +41,11 @@ def process_line(line: str, autofix: bool = False) -> tuple:
                 print(f"Misspelled: '{word}' | Suggestions: {suggestions}")
                 return word
         return word
+
     updated_line = re.sub(r"[a-zA-Z']+", check_and_replace, line)
     return updated_line, misspelled_count, fixed_count
+
+
 def process_file(path: str, autofix: bool = False, num_processes: int | None = None):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -86,6 +92,8 @@ def process_file(path: str, autofix: bool = False, num_processes: int | None = N
         print("No misspelled words found.")
     else:
         print(f"\nFound {total_misspelled} misspelled word(s). Run with -a to autofix.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Detect and optionally autofix misspelled words in a file using parallel processing."

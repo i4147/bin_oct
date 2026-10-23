@@ -11,6 +11,7 @@ import urllib.error
 from urllib.parse import unquote, urldefrag
 import urllib.request
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 EXT_IMAGE: Final[frozenset[str]] = frozenset({
@@ -33,17 +34,25 @@ MD_LINK_RE: Final[re.Pattern[str]] = re.compile(r"\[(?P<text>[^\]]*?)\]\((?P<url
 DEFAULT_TIMEOUT: Final[int] = 8
 POOL_WORKERS: Final[int] = 8
 TARGET_EXTS: Final[tuple[str, ...]] = (".md", ".html", ".htm")
+
+
 def _strip_fragment_query(u: str) -> str:
     v, _ = urldefrag(u)
     if "?" in v:
         v = v.split("?", 1)[0]
     return v
+
+
 def _guess_ext(u: str) -> str:
     p = _strip_fragment_query(u)
     return Path(p).suffix.lower()
+
+
 def _is_remote(u: str) -> bool:
     s = u.strip()
     return any(s.startswith(x) for x in HTTP_SCHEMES)
+
+
 def _is_local_ref(u: str) -> bool:
     s = u.strip()
     if not s:
@@ -51,10 +60,16 @@ def _is_local_ref(u: str) -> bool:
     if s.startswith("#"):
         return False
     return not _is_remote(s)
+
+
 def _is_imageish(u: str) -> bool:
     return _guess_ext(u) in EXT_IMAGE
+
+
 def _read_bytes(path: Path) -> bytes:
     return path.read_bytes()
+
+
 def _local_target_resolve(base_dir: Path, u: str) -> Path | None:
     s = u.strip()
     if not s:
@@ -68,16 +83,22 @@ def _local_target_resolve(base_dir: Path, u: str) -> Path | None:
         return (base_dir / s).resolve()
     except OSError:
         return None
+
+
 def _mime_for_local(path: Path) -> str:
     if path.suffix.lower() == ".svg":
         return "image/svg+xml"
     m, _ = mimetypes.guess_type(str(path))
     return m or "application/octet-stream"
+
+
 def _to_data_uri(path: Path) -> str:
     mime = _mime_for_local(path)
     raw = _read_bytes(path)
     b64 = base64.b64encode(raw).decode("ascii")
     return f"data:{mime};base64,{b64}"
+
+
 def _http_check(url: str, timeout: int) -> bool:
     req = urllib.request.Request(url, method="HEAD")
     try:
@@ -92,8 +113,11 @@ def _http_check(url: str, timeout: int) -> bool:
                 return code < 400
         except Exception:
             return False
+
+
 def _replace_html(html: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
     removals: list[str] = []
+
     def html_attr_repl(m: re.Match[str]) -> str:
         attr = m.group("attr")
         q = m.group("q")
@@ -120,10 +144,14 @@ def _replace_html(html: str, file_dir: Path, timeout: int) -> tuple[str, list[st
                     return m.group(0)
                 return f"{attr}={q}{data_uri}{q}"
         return m.group(0)
+
     out = HTML_ATTR_RE.sub(html_attr_repl, html)
     return out, removals
+
+
 def _replace_md(md: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
     removals: list[str] = []
+
     def replace_md_images(match: re.Match[str]) -> str:
         url = match.group("url").strip()
         if not url or url.startswith(("#", "data:")):
@@ -146,6 +174,7 @@ def _replace_md(md: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
             text = match.group(1) or ""
             return f"![{text}]({data_uri})"
         return match.group(0)
+
     def replace_md_links(match: re.Match[str]) -> str:
         url = match.group("url").strip()
         if not url or url.startswith(("#", "data:")):
@@ -161,9 +190,12 @@ def _replace_md(md: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
                 removals.append(f"LOCAL_UNAVAILABLE_MD_LINK {url}")
             return match.group(0)
         return match.group(0)
+
     out = MD_IMAGE_RE.sub(replace_md_images, md)
     out = MD_LINK_RE.sub(replace_md_links, out)
     return out, removals
+
+
 def process_file(args: tuple[str, int]) -> list[str]:
     path_str, timeout = args
     path = Path(path_str)
@@ -181,12 +213,16 @@ def process_file(args: tuple[str, int]) -> list[str]:
     if new_content != content:
         path.write_text(new_content, encoding="utf-8", errors="replace")
     return report
+
+
 def iter_files(root: Path, exts: tuple[str, ...]) -> list[str]:
     out: list[str] = []
     for p in root.rglob("*"):
         if p.is_file() and p.suffix.lower() in exts:
             out.append(str(p))
     return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("root", help="Folder to scan")
@@ -215,5 +251,7 @@ def main() -> int:
     for line in all_reports:
         print(line)
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

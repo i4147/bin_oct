@@ -3,6 +3,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 import sys
+
+
 def sort_python_script(path: Path) -> None:
     try:
         source_code = path.read_text(encoding="utf-8")
@@ -93,6 +95,8 @@ def sort_python_script(path: Path) -> None:
         print(f"Successfully sorted and saved: {path}")
     except Exception as e:
         print(f"Error writing to {path}: {e}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python sort_script.py <path_to_python_script>")

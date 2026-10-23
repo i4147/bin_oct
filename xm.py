@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import ast
@@ -9,7 +7,6 @@ import json
 from pathlib import Path
 import re
 import textwrap
-
 
 OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
 MAX_LINE: int = 80

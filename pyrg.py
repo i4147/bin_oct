@@ -14,6 +14,7 @@ import time
 from typing import TYPE_CHECKING, Any, TextIO
 from dh import is_binary
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 logger.remove()
@@ -73,16 +74,22 @@ _PATH_PALETTE = (
     "\x1b[92m",
     "\x1b[93m",
 )
+
+
 def _stable_hash(s: str) -> int:
     h = 2166136261
     for ch in s:
         h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
     return h
+
+
 def color_for_path(path: str, enabled: bool) -> str:
     if not enabled:
         return ""
     d = os.path.dirname(path) or "."
     return _PATH_PALETTE[_stable_hash(d) % len(_PATH_PALETTE)]
+
+
 def normalize_extension(value: str) -> str:
     v = value.strip().lower().rstrip(".")
     if not v:
@@ -90,6 +97,8 @@ def normalize_extension(value: str) -> str:
     if not v.startswith("."):
         v = "." + v
     return v
+
+
 def parse_extension_args(raw_exts: list[str] | None) -> set[str]:
     out: set[str] = set()
     if not raw_exts:
@@ -100,6 +109,8 @@ def parse_extension_args(raw_exts: list[str] | None) -> set[str]:
             if ext:
                 out.add(ext)
     return out
+
+
 def resolve_type_presets(types: list[str] | None) -> set[str]:
     out: set[str] = set()
     if not types:
@@ -114,14 +125,20 @@ def resolve_type_presets(types: list[str] | None) -> set[str]:
                 raise ValueError(msg)
             out |= TYPE_PRESETS[key]
     return out
+
+
 def matches_any_glob(path: Path, patterns: list[str]) -> bool:
     name = path.name
     s = str(path)
     return any(fnmatch.fnmatch(s, p) or fnmatch.fnmatch(name, p) for p in patterns)
+
+
 def _open_output(path: str | None) -> tuple[TextIO, bool]:
     if not path:
         return sys.stdout, False
     return open(path, "w", encoding="utf-8", newline=""), True
+
+
 def _should_color(args: argparse.Namespace, is_stdout: bool) -> bool:
     if args.color == "never":
         return False
@@ -132,9 +149,12 @@ def _should_color(args: argparse.Namespace, is_stdout: bool) -> bool:
     if os.environ.get("NO_COLOR"):
         return False
     return sys.stdout.isatty()
+
+
 class IgnoreMatcher:
     def __init__(self) -> None:
         self._cache: dict[str, list[tuple[re.Pattern[str], bool, bool]]] = {}
+
     def _load(self, d: Path) -> list[tuple[re.Pattern[str], bool, bool]]:
         key = str(d)
         cached = self._cache.get(key)
@@ -173,6 +193,7 @@ class IgnoreMatcher:
                 rules.append((rx, negated, dir_only))
         self._cache[key] = rules
         return rules
+
     @staticmethod
     def _glob_to_regex(pattern: str, anchored: bool) -> str:
         out: list[str] = [r"^" if anchored else r"(?:^|.*/)"]
@@ -215,6 +236,7 @@ class IgnoreMatcher:
                 i += 1
         out.append(r"(?:/.*)?$")
         return "".join(out)
+
     def is_ignored(self, path: Path, root: Path) -> bool:
         try:
             rel = path.relative_to(root)
@@ -235,13 +257,19 @@ class IgnoreMatcher:
             if ignored:
                 return True
         return False
+
+
 OutputLine = tuple[int, str, bool, list[tuple[int, int]]]
+
+
 @dataclass
 class FileResult:
     path: str
     groups: list[list[OutputLine]] = field(default_factory=list)
     match_count: int = 0
     error: str | None = None
+
+
 def _walk_dir(
     root: Path,
     *,
@@ -297,6 +325,8 @@ def _walk_dir(
                 if ignore_matcher is not None and ignore_matcher.is_ignored(p, root):
                     continue
                 yield p
+
+
 def get_files(
     paths: list[str],
     include_globs: list[str],
@@ -321,6 +351,7 @@ def get_files(
         if include_globs and not matches_any_glob(p, include_globs):
             return False
         return not (exclude_globs and matches_any_glob(p, exclude_globs))
+
     for p_str in paths:
         p = Path(p_str)
         if p.is_file():
@@ -339,6 +370,8 @@ def get_files(
         ):
             if _post_filter(f):
                 yield f
+
+
 def _spans_for_line(
     line: str,
     regex: re.Pattern[str] | None,
@@ -361,6 +394,8 @@ def _spans_for_line(
         spans.append((idx, idx + len(needle)))
         start = idx + L
     return spans
+
+
 def _apply_replace_line(
     line: str,
     matches: list[re.Match[str]],
@@ -386,12 +421,16 @@ def _apply_replace_line(
         pos = m.end()
     parts.append(line[pos:])
     return "".join(parts), spans
+
+
 def _replace_fixed(text: str, needle: str, repl: str, ignore_case: bool) -> str:
     if not needle:
         return text
     if ignore_case:
         return re.sub(re.escape(needle), lambda _m: repl, text, flags=re.IGNORECASE)
     return text.replace(needle, repl)
+
+
 def _build_groups(
     lines: list[str],
     match_lines: dict[int, tuple[str, list[tuple[int, int]]]],
@@ -420,6 +459,8 @@ def _build_groups(
     if current:
         groups.append(current)
     return groups
+
+
 def _process_lines(
     rel_path: str,
     lines: list[str],
@@ -488,6 +529,8 @@ def _process_lines(
             match_lines[lineno] = (text, spans)
     groups = _build_groups(lines, match_lines, context_before, context_after)
     return FileResult(path=rel_path, groups=groups, match_count=match_count)
+
+
 def _process_multiline(
     rel_path: str,
     text: str,
@@ -502,8 +545,10 @@ def _process_multiline(
     for i, ch in enumerate(text):
         if ch == "\n":
             line_starts.append(i + 1)
+
     def to_line_idx(offset: int) -> int:
         return max(0, bisect.bisect_right(line_starts, offset) - 1)
+
     hits: dict[int, list[tuple[int, int]]] = {}
     order: list[int] = []
     for m in regex.finditer(text):
@@ -538,6 +583,8 @@ def _process_multiline(
             match_lines[li + 1] = (line_text, spans)
     groups = _build_groups(lines, match_lines, context_before, context_after)
     return FileResult(path=rel_path, groups=groups, match_count=len(order))
+
+
 def _replace_spans(
     line: str,
     spans: list[tuple[int, int]],
@@ -559,6 +606,8 @@ def _replace_spans(
         pos = e
     parts.append(line[pos:])
     return "".join(parts), new_spans
+
+
 def worker(job: dict[str, Any]) -> FileResult:
     path_str: str = job["path"]
     cwd_str: str = job["cwd"]
@@ -630,6 +679,8 @@ def worker(job: dict[str, Any]) -> FileResult:
         return FileResult(path=rel_path, error=f"regex error: {ex}")
     except Exception as ex:
         return FileResult(path=rel_path, error=f"{type(ex).__name__}: {ex}")
+
+
 def _colorize_line(line: str, spans: list[tuple[int, int]]) -> str:
     if not spans:
         return line
@@ -638,11 +689,15 @@ def _colorize_line(line: str, spans: list[tuple[int, int]]) -> str:
         chars.insert(e, ANSI_RESET)
         chars.insert(s, ANSI_BLUE + ANSI_BOLD)
     return "".join(chars)
+
+
 def _emit_path(path: str, out_fh: TextIO, color: bool) -> None:
     if color:
         print(f"{color_for_path(path, color)}{path}{ANSI_RESET}", file=out_fh)
     else:
         print(path, file=out_fh)
+
+
 def emit_result(
     result: FileResult,
     args: argparse.Namespace,
@@ -709,6 +764,8 @@ def emit_result(
                     print(f"{prefix}{lineno}{sep}{body}", file=out_fh)
             else:
                 print(f"{prefix}{body}", file=out_fh)
+
+
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pyrg",
@@ -844,6 +901,8 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Files or directories to search (default: .)",
     )
     return p
+
+
 def _collect_files(args: argparse.Namespace) -> list[Path]:
     extensions = parse_extension_args(args.extensions)
     extensions |= resolve_type_presets(args.types)
@@ -863,6 +922,8 @@ def _collect_files(args: argparse.Namespace) -> list[Path]:
             ignore_matcher=ignore_matcher,
         )
     )
+
+
 def _run_files_mode(args: argparse.Namespace, cwd: Path) -> int:
     files = _collect_files(args)
     if args.sort == "path":
@@ -879,6 +940,8 @@ def _run_files_mode(args: argparse.Namespace, cwd: Path) -> int:
         if should_close:
             out_fh.close()
     return 0
+
+
 def _search_quiet(
     files: list[Path],
     cwd: Path,
@@ -918,6 +981,8 @@ def _search_quiet(
                     f.cancel()
                 return True
     return False
+
+
 def main(argv: list[str] | None = None) -> int:
     cwd = Path.cwd()
     args = build_argparser().parse_args(argv)
@@ -994,6 +1059,7 @@ def main(argv: list[str] | None = None) -> int:
     files_errored = 0
     total_matches = 0
     any_match = False
+
     def _consume(results: Iterator[FileResult]) -> None:
         nonlocal files_searched, files_matched, files_errored, total_matches, any_match
         for result in results:
@@ -1010,18 +1076,21 @@ def main(argv: list[str] | None = None) -> int:
                 emit_result(result, args, out_fh, color, heading)
             elif args.files_without_match:
                 _emit_path(result.path, out_fh, color)
+
     try:
         if args.workers <= 1:
             _consume(worker(j) for j in jobs)
         else:
             with ProcessPoolExecutor(max_workers=args.workers) as ex:
                 futures = [ex.submit(worker, j) for j in jobs]
+
                 def _gen() -> Iterator[FileResult]:
                     for fut in as_completed(futures):
                         try:
                             yield fut.result()
                         except Exception as exc:
                             yield FileResult(path="<worker>", error=str(exc))
+
                 _consume(_gen())
     except KeyboardInterrupt:
         print("\nSearch cancelled.", file=sys.stderr)
@@ -1043,5 +1112,7 @@ def main(argv: list[str] | None = None) -> int:
             parts.append(f"{files_errored} errors")
         print(", ".join(parts), file=sys.stderr)
     return 0 if any_match else 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -9,9 +9,12 @@ import subprocess
 import sys
 import time
 from loguru import logger
+
 WORKER_COUNT = 8
 DEFAULT_TIMEOUT = 30.0
 MAX_ERROR_MSG_LEN = 200
+
+
 class Outcome(str, Enum):
     SUCCESS = "success"
     MODULE_NOT_FOUND = "ModuleNotFoundError"
@@ -23,6 +26,8 @@ class Outcome(str, Enum):
     KEYBOARD_INTERRUPT = "KeyboardInterrupt"
     TIMEOUT = "TimeoutError"
     OTHER_ERROR = "OtherError"
+
+
 @dataclass(slots=True)
 class FileResult:
     path: Path
@@ -30,28 +35,38 @@ class FileResult:
     returncode: int | None = None
     stderr: str = ""
     duration: float = 0.0
+
+
 @dataclass(slots=True)
 class Summary:
     results: list[FileResult] = field(default_factory=list)
+
     @property
     def total(self) -> int:
         return len(self.results)
+
     @property
     def succeeded(self) -> int:
         return sum(1 for r in self.results if r.outcome is Outcome.SUCCESS)
+
     @property
     def failed(self) -> int:
         return self.total - self.succeeded
+
     def counts_by_outcome(self) -> dict[Outcome, int]:
         counts: dict[Outcome, int] = {}
         for result in self.results:
             counts[result.outcome] = counts.get(result.outcome, 0) + 1
         return counts
+
+
 def discover_python_files(directory: Path, recursive: bool) -> list[Path]:
     pattern = "*.py"
     if recursive:
         return sorted(p for p in directory.rglob(pattern) if p.is_file())
     return sorted(p for p in directory.glob(pattern) if p.is_file())
+
+
 def _classify_failure(stderr: str, returncode: int | None) -> Outcome:
     lower_stderr = stderr.lower()
     if "modulenotfounderror" in lower_stderr or "no module named" in lower_stderr:
@@ -69,6 +84,8 @@ def _classify_failure(stderr: str, returncode: int | None) -> Outcome:
     if "keyboardinterrupt" in lower_stderr or returncode in (-2, 130):
         return Outcome.KEYBOARD_INTERRUPT
     return Outcome.OTHER_ERROR
+
+
 def run_file(path: Path, timeout: float) -> FileResult:
     start = time.monotonic()
     try:
@@ -116,6 +133,8 @@ def run_file(path: Path, timeout: float) -> FileResult:
         stderr=err_output,
         duration=duration,
     )
+
+
 def _log_result(result: FileResult, verbose: bool) -> None:
     if result.outcome is Outcome.SUCCESS:
         if verbose:
@@ -127,6 +146,8 @@ def _log_result(result: FileResult, verbose: bool) -> None:
             if len(msg) > MAX_ERROR_MSG_LEN:
                 msg = msg[:MAX_ERROR_MSG_LEN] + "..."
             logger.debug(f"   {msg}")
+
+
 def report_summary(summary: Summary, elapsed: float) -> None:
     print("=" * 60)
     print(f"Summary: {summary.total} file(s), {summary.succeeded} succeeded, {summary.failed} failed in {elapsed:.2f}s")
@@ -136,6 +157,8 @@ def report_summary(summary: Summary, elapsed: float) -> None:
         if count:
             print(f"  {outcome.value:<22} {count}")
     print("=" * 60)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pyrunner",
@@ -166,6 +189,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Enable verbose logging.",
     )
     return parser
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -206,5 +231,7 @@ def main(argv: list[str] | None = None) -> int:
     elapsed_time = time.monotonic() - start_time
     report_summary(summary, elapsed_time)
     return 0 if summary.failed == 0 else 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

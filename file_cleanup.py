@@ -12,16 +12,25 @@ import shutil
 import sys
 import tempfile
 from typing import Any, Callable, Iterable, Optional, Sequence
+
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_WORKERS = 8
+
+
 def info(msg: str) -> None:
     print(f"[INFO] {msg}")
+
+
 def warn(msg: str) -> None:
     print(f"[WARN] {msg}", file=sys.stderr)
+
+
 def err(msg: str) -> None:
     print(f"[ERROR] {msg}", file=sys.stderr)
+
+
 def read_lines(path: Path, encoding: str = DEFAULT_ENCODING, skip_empty: bool = False) -> list[str]:
     if not path.exists():
         raise FileNotFoundError(path)
@@ -53,11 +62,15 @@ def read_lines(path: Path, encoding: str = DEFAULT_ENCODING, skip_empty: bool = 
                 if not skip_empty or line.strip():
                     lines.append(line)
     return lines
+
+
 def write_lines(path: Path, lines: Sequence[str], encoding: str = DEFAULT_ENCODING) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding=encoding) as f:
         for line in lines:
             f.write(line + "\n")
+
+
 def dedupe_preserving_order(lines: Iterable[str]) -> tuple[list[str], list[str]]:
     seen: set = set()
     unique: list[str] = []
@@ -69,10 +82,14 @@ def dedupe_preserving_order(lines: Iterable[str]) -> tuple[list[str], list[str]]
             seen.add(line)
             unique.append(line)
     return unique, removed
+
+
 def backup_file(path: Path) -> Path:
     bak = path.with_suffix(path.suffix + ".bak")
     shutil.copy2(path, bak)
     return bak
+
+
 def sort_lines(
     lines: list[str],
     *,
@@ -99,6 +116,8 @@ def sort_lines(
             h.close()
         for cf in chunk_files:
             cf.unlink(missing_ok=True)
+
+
 def cmd_analyze(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
@@ -130,6 +149,8 @@ def cmd_analyze(args: argparse.Namespace) -> int:
             print(f"  ({cnt}x) {shown}")
     print("=" * 44)
     return 0
+
+
 def cmd_sort_dedupe(args: argparse.Namespace) -> int:
     input_path = Path(args.file)
     if not input_path.is_file():
@@ -230,6 +251,8 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             err(f"Error saving report: {e}")
             return 1
     return 0
+
+
 def cmd_dedupe_seq(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
@@ -241,8 +264,10 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
         err(f"Error reading {path}: {e}")
         return 1
     ignore_blanks = not args.include_blanks
+
     def blank(s: str) -> bool:
         return s.strip() == ""
+
     dupes: list[tuple[int, str]] = []
     i = 0
     while i < len(lines) - 1:
@@ -282,11 +307,15 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
     path.write_text("".join(new_lines), encoding=args.encoding)
     print(f"  ✅ Fixed (backup: {bak.name}, {len(dupes)} line(s) removed)")
     return 0
+
+
 def _is_same_char_line(line: str) -> bool:
     body = line.rstrip("\n")
     if len(body) <= 1:
         return False
     return all(c == body[0] for c in body)
+
+
 def cmd_drop_same_char(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
@@ -303,6 +332,8 @@ def cmd_drop_same_char(args: argparse.Namespace) -> int:
         f.writelines(kept)
     info(f"Removed {removed} same-character line(s) from {path.name}.")
     return 0
+
+
 def cmd_dedupe_json(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
@@ -332,11 +363,13 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
         seen.add(dedupe_key)
         unique.append(item)
     if args.sort_by:
+
         def sort_key(x: Any) -> str:
             if isinstance(x, dict):
                 v = x.get(args.sort_by, "")
                 return v.lower() if isinstance(v, str) else str(v)
             return ""
+
         unique.sort(key=sort_key)
     if args.dry_run:
         info(f"[DRY RUN] {len(data)} → {len(unique)} entries (would remove {len(data) - len(unique)}).")
@@ -347,6 +380,8 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
     )
     info(f"{path.name}: {len(data)} → {len(unique)} entries ({len(data) - len(unique)} removed).")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="file_cleanup.py",
@@ -505,10 +540,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_dedupe_json)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main())

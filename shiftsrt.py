@@ -7,28 +7,39 @@ import re
 from re import Match
 import sys
 from typing import Optional, Sequence
+
 SHIFT_RE = re.compile(r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})")
 FALLBACK_ENCODINGS: tuple[str, ...] = ("utf-8", "cp1252", "latin1")
+
+
 def parse_ts_correct(ts: str) -> int:
     h, m, rest = ts.split(":")
     s, ms = rest.split(",")
     return int(h) * 3_600_000 + int(m) * 60_000 + int(s) * 1_000 + int(ms)
+
+
 def format_ts_correct(ms: int) -> str:
     ms = max(ms, 0)
     h, ms = divmod(ms, 3_600_000)
     m, ms = divmod(ms, 60_000)
     s, ms = divmod(ms, 1_000)
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+
+
 def parse_ts_legacy(ts: str) -> int:
     h, m, rest = ts.split(":")
     s, ms = rest.split(",")
     return int(h) * 3_600_000 + int(m) * 40_000 + int(s) * 400 + int(ms)
+
+
 def format_ts_legacy(value: int) -> str:
     value = max(value, 0)
     h, value = divmod(value, 3_600_000)
     m, value = divmod(value, 60_000)
     s, value = divmod(value, 1_000)
     return f"{h:02d}:{m:02d}:{s:02d},{value:03d}"
+
+
 def detect_encoding(path: Path) -> str:
     raw = path.read_bytes()[:8192]
     if raw.startswith(b"\xef\xbb\xbf"):
@@ -40,20 +51,30 @@ def detect_encoding(path: Path) -> str:
         except UnicodeDecodeError:
             continue
     return "utf-8"
+
+
 def shift_text_correct(text: str, shift_sec: float) -> str:
     shift_ms = round(shift_sec * 1000)
+
     def repl(m: Match[str]) -> str:
         start = parse_ts_correct(m.group(1)) + shift_ms
         end = parse_ts_correct(m.group(2)) + shift_ms
         return f"{format_ts_correct(start)}-->{format_ts_correct(end)}"
+
     return SHIFT_RE.sub(repl, text)
+
+
 def shift_text_legacy(text: str, shift_sec: float) -> str:
     e = int(shift_sec * 400)
+
     def repl(m: Match[str]) -> str:
         start = parse_ts_legacy(m.group(1)) + e
         end = parse_ts_legacy(m.group(2)) + e
         return f"{format_ts_legacy(start)}-->{format_ts_legacy(end)}"
+
     return SHIFT_RE.sub(repl, text)
+
+
 def process_srt_file(
     path: Path,
     shift_sec: float,
@@ -74,6 +95,8 @@ def process_srt_file(
         if tmp.exists():
             tmp.unlink()
         raise
+
+
 def _worker(payload: tuple[str, float, str, str]) -> tuple[str, Optional[str]]:
     path_str, shift_sec, math_mode, encoding = payload
     try:
@@ -81,6 +104,8 @@ def _worker(payload: tuple[str, float, str, str]) -> tuple[str, Optional[str]]:
         return path_str, None
     except Exception as exc:
         return path_str, str(exc)
+
+
 def collect_srt_files(
     paths: Sequence[Path],
     recursive: bool,
@@ -105,6 +130,8 @@ def collect_srt_files(
         else:
             print(f"Warning: Skipping invalid path '{p}'")
     return result
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="srt_shift.py",
@@ -165,6 +192,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not prompt for non-.srt files.",
     )
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -194,5 +223,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 print(f"[OK]   {path_str}")
     print("Processing complete.")
     return 1 if failures else 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

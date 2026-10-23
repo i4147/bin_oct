@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import ast
 import base64
@@ -11,9 +9,7 @@ import string
 import sys
 from typing import Callable, Iterator, Sequence
 import zlib
-
 from dh import cprint
-
 
 PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {
     "__file__",

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -12,9 +11,7 @@ import sys
 import tarfile
 import tempfile
 from typing import Any, Optional
-
 import py7zr
-
 
 try:
     from loguru import logger as _log

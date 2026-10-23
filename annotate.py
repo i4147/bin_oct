@@ -17,6 +17,8 @@ from typing import Optional
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
+
+
 class TypeshedSanitizer(cst.CSTTransformer):
     def leave_ImportFrom(self, original_node, updated_node):
         if original_node.module and cst.helpers.get_full_name_for_node(original_node.module) == "_typeshed":
@@ -25,6 +27,7 @@ class TypeshedSanitizer(cst.CSTTransformer):
                 names=[cst.ImportAlias(name=cst.Name("Any"))],
             )
         return updated_node
+
     def leave_Import(self, original_node, updated_node):
         names = []
         for alias in original_node.names:
@@ -33,6 +36,7 @@ class TypeshedSanitizer(cst.CSTTransformer):
             else:
                 names.append(alias)
         return updated_node.with_changes(names=names)
+
     def leave_Attribute(self, original_node, updated_node):
         if (
             isinstance(original_node.value, cst.Name)
@@ -41,12 +45,17 @@ class TypeshedSanitizer(cst.CSTTransformer):
         ):
             return cst.Attribute(value=cst.Name("typing"), attr=cst.Name("Any"))
         return updated_node
+
     def leave_Name(self, original_node, updated_node):
         if original_node.value == "Incomplete":
             return cst.Name("Any")
         return updated_node
+
+
 def sanitize_stub_cst(stub_cst: cst.Module) -> cst.Module:
     return stub_cst.visit(TypeshedSanitizer())
+
+
 def apply_type_annotations(
     source_code: str,
     stub_code: str,
@@ -74,8 +83,12 @@ def apply_type_annotations(
     transformer = ApplyTypeAnnotationsVisitor(context)
     annotated_cst = transformer.transform_module(source_cst)
     return annotated_cst.code
+
+
 _PY_LANGUAGE = None
 _TS_PARSER_FACTORY = None
+
+
 def _ensure_tree_sitter() -> None:
     global _PY_LANGUAGE, _TS_PARSER_FACTORY
     if _PY_LANGUAGE is not None:
@@ -87,6 +100,7 @@ def _ensure_tree_sitter() -> None:
         raise RuntimeError(msg) from exc
     try:
         from tree_sitter_languages import get_language
+
         _PY_LANGUAGE = get_language("python")
     except Exception as exc:
         msg = (
@@ -95,18 +109,26 @@ def _ensure_tree_sitter() -> None:
         )
         raise RuntimeError(msg) from exc
     _TS_PARSER_FACTORY = Parser
+
+
 TYPE_COMMENT_RE = re.compile(r"\s*#\s*type\s*:\s*([^\n]*)$", flags=re.IGNORECASE)
+
+
 def _prev_nonspace(buf: bytes, i: int) -> int:
     j = i - 1
     while j >= 0 and buf[j] in b" \t\r":
         j -= 1
     return j
+
+
 def _next_nonspace(buf: bytes, i: int) -> int:
     n = len(buf)
     j = i
     while j < n and buf[j] in b" \t\r":
         j += 1
     return min(n, j)
+
+
 def _collect_annotation_nodes(root):
     stack = [root]
     ann_nodes = []
@@ -117,6 +139,8 @@ def _collect_annotation_nodes(root):
         for c in node.children:
             stack.append(c)
     return ann_nodes
+
+
 def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> bytes:
     if not ranges:
         return src
@@ -134,6 +158,8 @@ def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> byte
     for s, e in reversed(merged):
         del out[s:e]
     return bytes(out)
+
+
 def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, list[str], Optional[str]]:
     _ensure_tree_sitter()
     parser = _TS_PARSER_FACTORY()
@@ -192,12 +218,16 @@ def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, l
         return src_bytes, warnings, None
     new_bytes = _remove_ranges_from_bytes(src_bytes, all_remove)
     return new_bytes, warnings, None
+
+
 def validate_python_code(code: str, filename: str) -> None:
     try:
         ast.parse(code, filename=filename)
     except SyntaxError as e:
         msg = f"Invalid Python syntax at line {e.lineno}, col {e.offset}: {e.msg}"
         raise SyntaxError(msg) from e
+
+
 def compute_diff(original: str, modified: str, filename: str) -> str:
     diff = difflib.unified_diff(
         original.splitlines(keepends=True),
@@ -206,8 +236,12 @@ def compute_diff(original: str, modified: str, filename: str) -> str:
         tofile=f"{filename} (modified)",
     )
     return "".join(diff)
+
+
 def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, text=True, capture_output=True, check=False)
+
+
 @dataclass
 class Options:
     dry_run: bool = False
@@ -220,6 +254,8 @@ class Options:
     use_future_annotations: bool = False
     stub_file: Optional[str] = None
     remove: bool = False
+
+
 @dataclass
 class Result:
     path: Path
@@ -229,6 +265,8 @@ class Result:
     diff: str = ""
     backup_path: Optional[Path] = None
     mode: str = "annotate"
+
+
 def _annotate_file(path: Path, options: Options) -> Result:
     result = Result(path=path, mode="annotate")
     if options.stub_file:
@@ -277,6 +315,8 @@ def _annotate_file(path: Path, options: Options) -> Result:
     result.changed = modified != original
     result.diff = compute_diff(original, modified, str(path))
     return result
+
+
 def _strip_file(path: Path, options: Options) -> Result:
     result = Result(path=path, mode="remove")
     try:
@@ -317,6 +357,8 @@ def _strip_file(path: Path, options: Options) -> Result:
         result.diff = compute_diff(original_text, new_text, str(path))
     result._new_text = new_text
     return result
+
+
 def process_file(path_str: str, options: Options) -> Result:
     path = Path(path_str)
     if not path.exists() or not path.is_file():
@@ -372,6 +414,8 @@ def process_file(path_str: str, options: Options) -> Result:
         if res.returncode != 0:
             result.warnings.append(f"mypy reported issues:\n{res.stdout}{res.stderr}")
     return result
+
+
 def gather_py_files(paths: list[str]) -> list[Path]:
     out: list[Path] = []
     provided = list(paths) if paths else ["."]
@@ -389,6 +433,8 @@ def gather_py_files(paths: list[str]) -> list[Path]:
                 if f.is_file() and f.suffix == ".py":
                     out.append(f.resolve())
     return sorted(set(out))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="batch_annotate",
@@ -473,6 +519,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of parallel worker processes (default: min(8, n_files)).",
     )
     return parser
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -558,5 +606,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             f"warnings={len(warnings)}"
         )
     return 0 if not failed else 2
+
+
 if __name__ == "__main__":
     sys.exit(main())

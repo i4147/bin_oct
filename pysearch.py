@@ -14,6 +14,7 @@ import tarfile
 import threading
 from typing import Iterator, Optional, Sequence
 import zipfile
+
 try:
     import py7zr
 except ImportError:
@@ -69,12 +70,16 @@ SKIP_DIRS: set[str] = {
 RESET = "\x1b[0m"
 CYAN = "\x1b[5;96m"
 RED = "\x1b[91m"
+
+
 def is_binary(path: Path, sample: int = 1024) -> bool:
     try:
         with path.open("rb") as f:
             return b"\x00" in f.read(sample)
     except OSError:
         return True
+
+
 def walk_files(
     roots: Sequence[Path],
     *,
@@ -89,6 +94,7 @@ def walk_files(
 ) -> Iterator[Path]:
     skip = SKIP_DIRS if skip_dirs is None else skip_dirs
     blocked = BIN_EXT_DEFAULT if blocked_exts is None else blocked_exts
+
     def ok(p: Path) -> bool:
         try:
             if not p.is_file():
@@ -113,6 +119,7 @@ def walk_files(
         if include_globs and not any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in include_globs):
             return False
         return not (exclude_globs and any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in exclude_globs))
+
     for root in roots:
         root = root.resolve()
         if root.is_file():
@@ -130,6 +137,8 @@ def walk_files(
                 fp = dp / name
                 if ok(fp):
                     yield fp
+
+
 def highlight(line: str, spans: Sequence[tuple[int, int]], enabled: bool) -> str:
     if not enabled or not spans:
         return line
@@ -141,6 +150,8 @@ def highlight(line: str, spans: Sequence[tuple[int, int]], enabled: bool) -> str
         last = e
     parts.append(line[last:])
     return "".join(parts)
+
+
 def _load_names(path: Path) -> list[tuple[str, re.Pattern[str]]]:
     out: list[tuple[str, re.Pattern[str]]] = []
     with path.open("r", encoding="utf-8") as f:
@@ -157,6 +168,8 @@ def _load_names(path: Path) -> list[tuple[str, re.Pattern[str]]]:
                 pat = re.escape(name[0].upper()) + r"[\w\s\-']+"
             out.append((name, re.compile(pat, re.IGNORECASE)))
     return out
+
+
 def cmd_names(args: argparse.Namespace) -> int:
     names_file = Path(args.names_file)
     root = Path(args.directory)
@@ -204,7 +217,11 @@ def cmd_names(args: argparse.Namespace) -> int:
         for it in items:
             print(f"  - File: {it['file']}, Match: '{it['match']}'")
     return 0
+
+
 _pause_event: Optional[threading.Event] = None
+
+
 def _fast_worker(job: tuple[str, str, bool]) -> list[tuple[str, Optional[int]]]:
     path_str, query, content_mode = job
     path = Path(path_str)
@@ -220,6 +237,8 @@ def _fast_worker(job: tuple[str, str, bool]) -> list[tuple[str, Optional[int]]]:
     elif query.lower() in path.name.lower():
         out.append((str(path), None))
     return out
+
+
 def _install_pause_hotkey() -> bool:
     if keyboard is None:
         print("'keyboard' not installed. Pause disabled.")
@@ -227,6 +246,7 @@ def _install_pause_hotkey() -> bool:
     global _pause_event
     _pause_event = threading.Event()
     _pause_event.set()
+
     def handler(ev):
         if ev.name in {"space", "p"} and _pause_event.is_set():
             _pause_event.clear()
@@ -234,8 +254,11 @@ def _install_pause_hotkey() -> bool:
         elif ev.name == "c" and not _pause_event.is_set():
             _pause_event.set()
             print("RESUMED - searching...")
+
     keyboard.on_press(handler)
     return True
+
+
 def cmd_fast(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not args.no_pause:
@@ -279,6 +302,8 @@ def cmd_fast(args: argparse.Namespace) -> int:
                 total += 1
     print(f"Total results: {total}")
     return 0
+
+
 def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     needle = pattern.lower()
@@ -306,6 +331,7 @@ def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
                         out.append((str(archive), m.name))
         elif name.endswith(".tar.zst") and zstandard is not None:
             import tempfile
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as tmp:
                 d = zstandard.ZstdDecompressor()
                 with archive.open("rb") as f:
@@ -325,6 +351,7 @@ def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
                         out.append((str(archive), entry))
         elif name.endswith(".tar.br") and brotli is not None:
             import tempfile
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=".tar") as tmp:
                 tmp.write(brotli.decompress(archive.read_bytes()))
                 tmp_path = tmp.name
@@ -338,6 +365,8 @@ def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
     except Exception:
         pass
     return out
+
+
 def _find_worker(job: tuple[str, str]) -> list[tuple[str, Optional[str]]]:
     path_str, pattern = job
     p = Path(path_str)
@@ -348,11 +377,14 @@ def _find_worker(job: tuple[str, str]) -> list[tuple[str, Optional[str]]]:
     if pattern.lower() in p.name.lower():
         results.append((str(p), None))
     return results
+
+
 def cmd_find(args: argparse.Namespace) -> int:
     roots = [Path(d) for d in args.directories]
     files = list(walk_files(roots, hidden=True, allowed_exts=None, blocked_exts=set()))
     jobs = [(str(p), args.pattern) for p in files]
     total = 0
+
     def iter_results():
         if args.workers > 1 and len(jobs) > 1:
             with ProcessPoolExecutor(max_workers=args.workers) as pool:
@@ -360,11 +392,14 @@ def cmd_find(args: argparse.Namespace) -> int:
         else:
             for j in jobs:
                 yield _find_worker(j)
+
     for res in iter_results():
         for path_str, entry in res:
             print(f"{path_str}:{entry}" if entry else path_str)
             total += 1
     return 0 if total else 1
+
+
 def _grep_worker(
     job: tuple[str, str, bool, bool, bool],
 ) -> tuple[str, list[tuple[int, str, list[tuple[int, int]]]]]:
@@ -404,6 +439,8 @@ def _grep_worker(
     except Exception:
         pass
     return str(path), results
+
+
 def cmd_grep(args: argparse.Namespace) -> int:
     pattern = args.pattern_e or args.pattern
     if not pattern:
@@ -434,6 +471,7 @@ def cmd_grep(args: argparse.Namespace) -> int:
     )
     use_color = (not args.no_color) and sys.stdout.isatty()
     jobs = [(str(p), pattern, args.ignore_case, args.fixed_strings, True) for p in files]
+
     def iter_results():
         if args.workers > 1 and len(jobs) > 1:
             with ProcessPoolExecutor(max_workers=args.workers) as pool:
@@ -441,6 +479,7 @@ def cmd_grep(args: argparse.Namespace) -> int:
         else:
             for j in jobs:
                 yield _grep_worker(j)
+
     found_any = False
     try:
         for path_str, matches in iter_results():
@@ -462,6 +501,8 @@ def cmd_grep(args: argparse.Namespace) -> int:
         print("\nSearch cancelled.", file=sys.stderr)
         return 130
     return 0 if found_any else 1
+
+
 def _collect_stems(root: Path) -> Iterator[str]:
     stack = [root]
     while stack:
@@ -476,6 +517,8 @@ def _collect_stems(root: Path) -> Iterator[str]:
                         yield Path(entry.name).stem
         except (PermissionError, OSError):
             continue
+
+
 def _edit_distance_bounded(a: str, b: str, bound: int) -> int:
     n, m = len(a), len(b)
     if abs(n - m) > bound:
@@ -503,6 +546,8 @@ def _edit_distance_bounded(a: str, b: str, bound: int) -> int:
             return bound + 1
         prev = cur
     return prev[m] if prev[m] <= bound else bound + 1
+
+
 def _similar_groups(names: list[str], ratio: float = 0.8) -> list[list[str]]:
     n = len(names)
     used = [False] * n
@@ -533,6 +578,8 @@ def _similar_groups(names: list[str], ratio: float = 0.8) -> list[list[str]]:
         if len(group) > 1:
             groups.append(group)
     return groups
+
+
 def cmd_info(args: argparse.Namespace) -> int:
     root = Path(args.directory)
     counts = Counter(_collect_stems(root))
@@ -547,6 +594,8 @@ def cmd_info(args: argparse.Namespace) -> int:
         for i, g in enumerate(groups, 1):
             print(f"Group {i}: {', '.join(g)}")
     return 0
+
+
 def cmd_regex(args: argparse.Namespace) -> int:
     src = Path(args.filename)
     if not src.exists():
@@ -556,6 +605,8 @@ def cmd_regex(args: argparse.Namespace) -> int:
         lines = [ln.rstrip("\n") for ln in f]
     print("^(?:{})$".format("|".join(re.escape(l) for l in lines)))
     return 0
+
+
 def _strings_worker(job: tuple[str, str]) -> Optional[tuple[str, str]]:
     path_str, _ = job
     path = Path(path_str)
@@ -574,6 +625,8 @@ def _strings_worker(job: tuple[str, str]) -> Optional[tuple[str, str]]:
     except Exception:
         return None
     return path.name, out
+
+
 def cmd_strings(args: argparse.Namespace) -> int:
     output = Path(args.output)
     if args.files:
@@ -588,6 +641,7 @@ def cmd_strings(args: argparse.Namespace) -> int:
         print("'strings' command not found in PATH.", file=sys.stderr)
         return 1
     jobs = [(str(f), str(output)) for f in files]
+
     def iter_results():
         if args.workers > 1 and len(jobs) > 1:
             with ProcessPoolExecutor(max_workers=args.workers) as pool:
@@ -595,6 +649,7 @@ def cmd_strings(args: argparse.Namespace) -> int:
         else:
             for j in jobs:
                 yield _strings_worker(j)
+
     with output.open("a", encoding="utf-8") as fh:
         for i, res in enumerate(iter_results(), 1):
             if res is None:
@@ -603,6 +658,8 @@ def cmd_strings(args: argparse.Namespace) -> int:
             print(f"[{i}/{total}] {name}")
             fh.write(f"\n# filename :{name}\n{text}")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_search.py",
@@ -677,9 +734,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-w", "--workers", type=int, default=8)
     p.set_defaults(func=cmd_strings)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -7,6 +7,7 @@ import multiprocessing
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 from loguru import logger
+
 WORKERS = 8
 CHUNK_SIZE = 64 * 1024
 DETECTION_SIZE = 4000
@@ -31,12 +32,16 @@ SKIP_DIRS = frozenset({
     ".idea",
     ".vscode",
 })
+
+
 @dataclass(frozen=True)
 class ScanResult:
     path: Path
     found: bool
     languages: tuple[str, ...]
     error: str | None
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Detect non-English text in text-based files.")
     parser.add_argument(
@@ -60,28 +65,36 @@ def parse_arguments() -> argparse.Namespace:
         help="Language-detection backend. Defaults to pycld2.",
     )
     return parser.parse_args()
+
+
 def create_detector(backend: str) -> Any:
     if backend == "pycld2":
         import pycld2
+
         return pycld2
     if backend == "gcld3":
         import gcld3
+
         return gcld3.NNetLanguageIdentifier(
             min_num_bytes=0,
             max_num_bytes=DETECTION_SIZE,
         )
     if backend == "langdetect":
         from langdetect import DetectorFactory
+
         DetectorFactory.seed = 0
         return DetectorFactory
     if backend == "lingua":
         from lingua import LanguageDetectorBuilder
+
         return LanguageDetectorBuilder.from_all_languages().build()
     if backend == "fast_langdetect":
         from fast_langdetect import detect
+
         return detect
     if backend == "fasttext":
         import fasttext
+
         model_path_text = __import__("os").environ.get("FASTTEXT_MODEL")
         if not model_path_text:
             msg = (
@@ -96,13 +109,19 @@ def create_detector(backend: str) -> Any:
         return fasttext.load_model(str(model_path))
     msg = f"Unsupported backend: {backend}"
     raise RuntimeError(msg)
+
+
 def validate_backend(backend: str) -> None:
     create_detector(backend)
     logger.info("Language backend validated: {}", backend)
+
+
 def initialize_worker(backend: str) -> None:
     global _BACKEND, _DETECTOR
     _BACKEND = backend
     _DETECTOR = create_detector(backend)
+
+
 def detect_language(text: str) -> str:
     if _BACKEND == "pycld2":
         _, _, details = _DETECTOR.detect(text, bestEffort=True)
@@ -114,6 +133,7 @@ def detect_language(text: str) -> str:
         return str(result.language).lower()
     if _BACKEND == "langdetect":
         from langdetect import detect
+
         return str(detect(text)).lower()
     if _BACKEND == "lingua":
         language = _DETECTOR.detect_language_of(text)
@@ -133,9 +153,13 @@ def detect_language(text: str) -> str:
         return str(labels[0]).removeprefix("__label__").lower()
     msg = f"Worker backend is not initialized: {_BACKEND}"
     raise RuntimeError(msg)
+
+
 def is_english(language: str) -> bool:
     normalized = language.strip().lower()
     return normalized in {"en", "eng", "english"} or normalized.startswith("en_")
+
+
 def is_usable_text(text: str) -> bool:
     if not text:
         return False
@@ -144,6 +168,8 @@ def is_usable_text(text: str) -> bool:
         return False
     printable = sum(character.isprintable() or character in "\n\r\t" for character in text)
     return printable / len(text) >= 0.85
+
+
 def text_samples(path: Path) -> Iterator[str]:
     try:
         with path.open("rb") as handle:
@@ -178,6 +204,8 @@ def text_samples(path: Path) -> Iterator[str]:
     except OSError as error:
         msg = f"{path}: {error}"
         raise RuntimeError(msg) from error
+
+
 def scan_file(path: Path) -> ScanResult:
     languages: set[str] = set()
     try:
@@ -206,6 +234,8 @@ def scan_file(path: Path) -> ScanResult:
             languages=(),
             error=str(error),
         )
+
+
 def collect_files(inputs: Iterable[Path]) -> list[Path]:
     files: dict[Path, Path] = {}
     pending: list[Path] = []
@@ -250,11 +280,15 @@ def collect_files(inputs: Iterable[Path]) -> list[Path]:
         except OSError as error:
             logger.error("Unable to enumerate directory {}: {}", directory, error)
     return list(files.values())
+
+
 def display_path(path: Path, base: Path) -> Path:
     try:
         return path.relative_to(base)
     except ValueError:
         return path
+
+
 def print_result(
     result: ScanResult,
     base: Path,
@@ -273,6 +307,8 @@ def print_result(
             flush=True,
         )
         logger.info("Non-English text found in {}", shown_path)
+
+
 def print_worker_error(
     error: BaseException,
     failures: list[ScanResult],
@@ -286,6 +322,8 @@ def print_worker_error(
             error=str(error),
         )
     )
+
+
 def ask_to_save_report(matches: list[Path], report_path: Path) -> bool:
     if not matches:
         logger.info("No non-English text was detected.")
@@ -296,6 +334,8 @@ def ask_to_save_report(matches: list[Path], report_path: Path) -> bool:
         logger.error("Unable to read report confirmation from standard input.")
         return False
     return answer in {"y", "yes"}
+
+
 def save_report(matches: list[Path], report_path: Path) -> None:
     try:
         unique_matches = sorted({str(path) for path in matches})
@@ -306,6 +346,8 @@ def save_report(matches: list[Path], report_path: Path) -> None:
     except OSError as error:
         logger.error("Unable to save report {}: {}", report_path, error)
         raise
+
+
 def main() -> int:
     arguments = parse_arguments()
     base = Path.cwd()
@@ -371,5 +413,7 @@ def main() -> int:
         len(matches),
     )
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

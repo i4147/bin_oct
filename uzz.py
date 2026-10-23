@@ -1,19 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
-
 from loguru import logger
+from dh import get_files
 
 
-def process_wheels(directory: Path = Path()) -> None:
-    wheel_files = list(directory.glob("*.whl"))
+def process_wheels(cwd: Path = Path.cwd()) -> None:
+    wheel_files = list(get_files(cwd, ext=[".zip", ".whl"]))
     if not wheel_files:
-        logger.warning("No .whl files found in {}", directory.resolve())
+        logger.warning("No .whl files found in {}", cwd.resolve())
         return
-    logger.info("Found {} .whl file(s) in {}", len(wheel_files), directory.resolve())
+    logger.info("Found {} .whl file(s) in {}", len(wheel_files), cwd.resolve())
     for wheel_path in wheel_files:
         if not wheel_path.is_file():
             logger.debug("Skipping non-file entry: {}", wheel_path)

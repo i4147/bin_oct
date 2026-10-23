@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Sequence
+
 logger = logging.getLogger("add_main_guard")
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",
@@ -31,6 +32,8 @@ MAIN_TEMPLATE: str = (
     '    print("Hello from main!")\n'
 )
 GUARD_TEMPLATE: str = '\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
+
+
 def is_main_guard_if(node: ast.If) -> bool:
     test = node.test
     if not isinstance(test, ast.Compare):
@@ -44,8 +47,12 @@ def is_main_guard_if(node: ast.If) -> bool:
         return False
     comp = test.comparators[0]
     return isinstance(comp, ast.Constant) and comp.value == "__main__"
+
+
 def has_main_guard_ast(tree: ast.Module) -> bool:
     return any(isinstance(n, ast.If) and is_main_guard_if(n) for n in tree.body)
+
+
 def is_movable(node: ast.stmt) -> bool:
     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
         return False
@@ -54,6 +61,8 @@ def is_movable(node: ast.stmt) -> bool:
     if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
         return False
     return not (isinstance(node, ast.If) and is_main_guard_if(node))
+
+
 def indent_text(text: str, spaces: int = DEFAULT_INDENT) -> str:
     prefix = " " * spaces
     out: list[str] = []
@@ -63,6 +72,8 @@ def indent_text(text: str, spaces: int = DEFAULT_INDENT) -> str:
         else:
             out.append(prefix + line)
     return "".join(out)
+
+
 def fix_with_ast(
     path: Path,
     *,
@@ -120,6 +131,8 @@ def fix_with_ast(
     except OSError as exc:
         return "error", f"write failed: {exc}"
     return "added", "wrapped top-level code in main()"
+
+
 def insert_main_template(source: str) -> str:
     if "def main(" in source:
         return source
@@ -133,10 +146,14 @@ def insert_main_template(source: str) -> str:
             insert_at = 0
     lines.insert(insert_at, MAIN_TEMPLATE)
     return "\n".join(lines)
+
+
 def append_main_guard(source: str) -> str:
     if MAIN_GUARD_RE.search(source):
         return source
     return source.rstrip() + GUARD_TEMPLATE
+
+
 def fix_with_template(path: Path, *, dry_run: bool = False) -> tuple[str, str]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -152,6 +169,8 @@ def fix_with_template(path: Path, *, dry_run: bool = False) -> tuple[str, str]:
     except OSError as exc:
         return "error", f"write failed: {exc}"
     return "added", "added guard successfully"
+
+
 def discover_files(paths: Sequence[str], excludes: frozenset[str]) -> list[Path]:
     roots = [Path(p) for p in paths] if paths else [Path()]
     found: list[Path] = []
@@ -166,6 +185,8 @@ def discover_files(paths: Sequence[str], excludes: frozenset[str]) -> list[Path]
         elif root.suffix == ".py" and root.is_file():
             found.append(root)
     return sorted(set(found))
+
+
 def _fix_worker(payload: tuple[str, str, bool, int]) -> tuple[Path, str, str]:
     path_str, strategy, dry_run, indent_size = payload
     path = Path(path_str)
@@ -174,6 +195,8 @@ def _fix_worker(payload: tuple[str, str, bool, int]) -> tuple[Path, str, str]:
     else:
         status, message = fix_with_template(path, dry_run=dry_run)
     return path, status, message
+
+
 def _check_worker(payload: tuple[str, str]) -> tuple[Path, str, str]:
     path_str, detect = payload
     path = Path(path_str)
@@ -190,12 +213,16 @@ def _check_worker(payload: tuple[str, str]) -> tuple[Path, str, str]:
         return path, "error", f"parse error: {exc}"
     status = "skipped" if has_main_guard_ast(tree) else "missing"
     return path, status, ""
+
+
 def _resolve_excludes(args: argparse.Namespace) -> frozenset[str]:
     base: list[str] = []
     if not args.no_default_excludes:
         base.extend(DEFAULT_EXCLUDES)
     base.extend(args.exclude)
     return frozenset(base)
+
+
 def run_check(args: argparse.Namespace) -> int:
     excludes = _resolve_excludes(args)
     files = discover_files(args.paths, excludes)
@@ -207,6 +234,7 @@ def run_check(args: argparse.Namespace) -> int:
     skipped = 0
     errors: list[tuple[Path, str]] = []
     payloads = [(str(p), args.detect) for p in files]
+
     def handle(path: Path, status: str, message: str) -> None:
         nonlocal skipped
         if status == "missing":
@@ -215,6 +243,7 @@ def run_check(args: argparse.Namespace) -> int:
             skipped += 1
         else:
             errors.append((path, message))
+
     if args.workers > 1 and len(files) > 1:
         with ProcessPoolExecutor(max_workers=args.workers) as pool:
             for path, status, message in pool.map(_check_worker, payloads):
@@ -233,6 +262,8 @@ def run_check(args: argparse.Namespace) -> int:
         return 1
     print("All Python files have the main guard")
     return 0
+
+
 def _classify(
     status: str,
     path: Path,
@@ -250,6 +281,8 @@ def _classify(
         skipped.append(path)
     else:
         errors.append((path, message))
+
+
 def run_fix(args: argparse.Namespace) -> int:
     excludes = _resolve_excludes(args)
     files = discover_files(args.paths, excludes)
@@ -287,6 +320,8 @@ def run_fix(args: argparse.Namespace) -> int:
     if args.dry_run and would_add:
         print("Dry run complete: no files were modified")
     return 0 if not errors else 2
+
+
 def _add_common_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--workers",
@@ -312,6 +347,8 @@ def _add_common_options(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Verbose logging",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="add_main_guard",
@@ -367,6 +404,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_options(fix)
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -380,5 +419,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_fix(args)
     parser.print_help()
     return 2
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

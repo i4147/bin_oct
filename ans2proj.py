@@ -4,9 +4,12 @@ from pathlib import Path
 import re
 import sys
 from loguru import logger
+
 HEADER_RE: re.Pattern[str] = re.compile(r"^##\s+`([^`]+)`\s*$", re.MULTILINE)
 OPEN_FENCE_RE: re.Pattern[str] = re.compile(r"```[^\n]*\n")
 CLOSE_FENCE_RE: re.Pattern[str] = re.compile(r"(?m)^```[ \t]*\r?$")
+
+
 def extract_sections(text: str) -> list[tuple[str, str]]:
     headers = list(HEADER_RE.finditer(text))
     sections: list[tuple[str, str]] = []
@@ -31,6 +34,8 @@ def extract_sections(text: str) -> list[tuple[str, str]]:
             logger.warning(f"{rel}: last section in file, saving what exists")
         sections.append((rel, content))
     return sections
+
+
 def write_file(root: Path, rel: str, content: str) -> bool:
     target = root / rel
     try:
@@ -41,6 +46,8 @@ def write_file(root: Path, rel: str, content: str) -> bool:
     except OSError as exc:
         logger.error(f"failed to write {target}: {exc}")
         return False
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         logger.error("usage: script.py <source.md> [output_dir]")
@@ -62,5 +69,7 @@ def main() -> int:
             ok += 1
     logger.info(f"created {ok}/{len(sections)} files under {root}")
     return 0 if ok == len(sections) else 1
+
+
 if __name__ == "__main__":
     sys.exit(main())

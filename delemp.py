@@ -8,6 +8,7 @@ import time
 from typing import TYPE_CHECKING, Final
 from dh import is_binary, should_skip
 from loguru import logger
+
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
 ANSI_RESET: Final[str] = "\x1b[0m"
@@ -19,6 +20,8 @@ ANSI_YELLOW: Final[str] = "\x1b[33m"
 ANSI_RED: Final[str] = "\x1b[31m"
 NUM_WORKERS: Final[int] = 8
 MAX_PREVIEW_FILES: Final[int] = 5
+
+
 class ANSI:
     RESET: str = ANSI_RESET
     BOLD: str = ANSI_BOLD
@@ -27,11 +30,14 @@ class ANSI:
     GREEN: str = ANSI_GREEN
     YELLOW: str = ANSI_YELLOW
     RED: str = ANSI_RED
+
     @classmethod
     def disable(cls) -> None:
         for attr in dir(cls):
             if not attr.startswith("_") and attr != "disable":
                 setattr(cls, attr, "")
+
+
 @dataclass
 class FileResult:
     path: Path
@@ -40,6 +46,8 @@ class FileResult:
     removed_lines: int = 0
     error_message: str = ""
     is_bin: bool = False
+
+
 @dataclass
 class ProcessingStats:
     total_files: int = 0
@@ -49,6 +57,8 @@ class ProcessingStats:
     lines_removed: int = 0
     errors_count: int = 0
     results: list[FileResult] = field(default_factory=list)
+
+
 def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, int]:
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -68,6 +78,8 @@ def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, in
         except OSError as e:
             raise OSError(f"Failed to write file: {e}") from e
     return total_lines, removed_lines
+
+
 def process_file_worker(path: Path, remove_spaces: bool = False) -> FileResult:
     result: FileResult = FileResult(path=path, status="error")
     try:
@@ -92,6 +104,8 @@ def process_file_worker(path: Path, remove_spaces: bool = False) -> FileResult:
         result.status = "error"
         result.error_message = f"Unexpected error: {e}"
     return result
+
+
 def discover_files(paths: list[str]) -> tuple[list[Path], int]:
     files: list[Path] = []
     seen: set[Path] = set()
@@ -123,6 +137,8 @@ def discover_files(paths: list[str]) -> tuple[list[Path], int]:
         logger.warning(f"Not a regular file or directory: {path}")
         missing += 1
     return files, missing
+
+
 def print_input_paths(paths: list[str]) -> None:
     print("Processing paths:")
     for path_str in paths:
@@ -133,18 +149,26 @@ def print_input_paths(paths: list[str]) -> None:
             resolved = p
         kind = "dir " if p.is_dir() else "file" if p.is_file() else "?   "
         print(f"  {ANSI.DIM}• [{kind}]{ANSI.RESET} {resolved}")
+
+
 def print_mode(remove_spaces: bool) -> None:
     if remove_spaces:
         print(f"Mode: {ANSI.BOLD}Remove blank lines and whitespace-only lines{ANSI.RESET}")
     else:
         print(f"Mode: {ANSI.BOLD}Remove blank lines only{ANSI.RESET}")
+
+
 def print_separator() -> None:
     print(f"{ANSI.CYAN}{'─' * 40}{ANSI.RESET}")
+
+
 def _rel(path: Path) -> Path:
     try:
         return path.relative_to(Path.cwd())
     except ValueError:
         return path
+
+
 def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
     processed: list[FileResult] = [r for r in stats.results if r.status == "processed"]
     unchanged: list[FileResult] = [r for r in stats.results if r.status == "unchanged"]
@@ -173,6 +197,8 @@ def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
         for result in sorted(errors, key=lambda r: r.path):
             print(f"  {ANSI.RED}✗ {_rel(result.path)}{ANSI.RESET}")
             print(f"    {ANSI.DIM}{result.error_message}{ANSI.RESET}")
+
+
 def print_summary(stats: ProcessingStats) -> None:
     print_separator()
     print(f"{ANSI.BOLD}Summary:{ANSI.RESET}")
@@ -184,6 +210,8 @@ def print_summary(stats: ProcessingStats) -> None:
     if stats.errors_count > 0:
         print(f"  Errors:                {ANSI.BOLD}{ANSI.RED}{stats.errors_count:,}{ANSI.RESET}")
     print_separator()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Recursively remove blank lines from text files with parallel processing.",
@@ -251,5 +279,7 @@ def main() -> int:
     print_summary(stats)
     print(f"Completed in {ANSI.DIM}{elapsed:.2f}s{ANSI.RESET}")
     return 0 if stats.errors_count == 0 else 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

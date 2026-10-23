@@ -4,11 +4,15 @@ import ast
 from pathlib import Path
 import re
 import tokenize
+
+
 def reformat_docstring(content):
     content = content.strip()
     content = re.sub(r"\s+", " ", content)
     sentences = re.split(r"(?<=[.!?])\s+", content)
     return "\n".join(sentences)
+
+
 def process_file(path):
     try:
         with tokenize.open(path) as f:
@@ -64,6 +68,8 @@ def process_file(path):
     except Exception:
         return False
     return True
+
+
 def main():
     for path in Path().rglob("*.py"):
         if path.is_file() and process_file(path):
@@ -72,5 +78,7 @@ def main():
             except ValueError:
                 rel = path
             print(rel)
+
+
 if __name__ == "__main__":
     main()

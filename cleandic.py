@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sys
+
+
 def main():
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <dic.json>")
@@ -51,5 +53,7 @@ def main():
             f.write("\n".join(failed))
             f.write("\n")
         print(f"Wrote {len(failed)} failed records to {failed_path}")
+
+
 if __name__ == "__main__":
     main()

@@ -10,13 +10,18 @@ import subprocess
 import sys
 from typing import Iterable, Iterator
 from loguru import logger
+
 BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
 DEFAULT_SUFFIXES: tuple[str, ...] = (".html", ".htm", ".xhtml")
 SKIP_DIR_NAMES: frozenset[str] = frozenset({".git"})
 DEFAULT_JOBS: int = 8
 TMP_SUFFIX: str = ".beautify.tmp"
+
+
 def _is_html(path: Path, suffixes: frozenset[str]) -> bool:
     return path.suffix.lower() in suffixes
+
+
 def iter_html_files(root: Path, suffixes: frozenset[str]) -> Iterator[Path]:
     if root.is_symlink():
         logger.debug("skip symlink: {}", root)
@@ -51,6 +56,8 @@ def iter_html_files(root: Path, suffixes: frozenset[str]) -> Iterator[Path]:
                         yield candidate
             except OSError as exc:
                 logger.error("stat failed for {}: {}", entry.path, exc)
+
+
 def collect_targets(raw_paths: Iterable[str], suffixes: frozenset[str]) -> list[Path]:
     seen: set[Path] = set()
     targets: list[Path] = []
@@ -65,6 +72,8 @@ def collect_targets(raw_paths: Iterable[str], suffixes: frozenset[str]) -> list[
             seen.add(key)
             targets.append(path)
     return targets
+
+
 def beautify(path: Path) -> Path:
     tmp = path.with_name(path.name + TMP_SUFFIX)
     try:
@@ -86,6 +95,8 @@ def beautify(path: Path) -> Path:
             tmp.unlink(missing_ok=True)
         raise
     return path
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="beautify-html",
@@ -118,6 +129,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only log warnings and errors.",
     )
     return parser
+
+
 def main() -> int:
     args = build_parser().parse_args()
     logger.remove()
@@ -160,5 +173,7 @@ def main() -> int:
         logger.critical("{} file(s) failed to beautify", len(failures))
         return 1
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

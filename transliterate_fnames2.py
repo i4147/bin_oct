@@ -4,6 +4,7 @@ import argparse
 import pathlib
 import re
 import unicodedata
+
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",
     "آ": "a",
@@ -85,6 +86,8 @@ PERSIAN_MAP: dict[str, str] = {
 }
 SAFE_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
 MULTIPLE_UNDERSCORES = re.compile(r"_+")
+
+
 def transliterate(text: str) -> str:
     result: list[str] = []
     i = 0
@@ -114,6 +117,8 @@ def transliterate(text: str) -> str:
     name = MULTIPLE_UNDERSCORES.sub("_", name)
     name = name.strip("._- ")
     return name or "file"
+
+
 def unique_path(path: pathlib.Path, reserved: set[pathlib.Path]) -> pathlib.Path:
     if path not in reserved and not path.exists():
         return path
@@ -126,12 +131,16 @@ def unique_path(path: pathlib.Path, reserved: set[pathlib.Path]) -> pathlib.Path
         if candidate not in reserved and not candidate.exists():
             return candidate
         counter += 1
+
+
 def collect_entries(root: pathlib.Path) -> list[pathlib.Path]:
     return sorted(
         root.rglob("*"),
         key=lambda path: len(path.parts),
         reverse=True,
     )
+
+
 def rename_tree(root: pathlib.Path, dry_run: bool) -> None:
     entries = collect_entries(root)
     reserved: set[pathlib.Path] = set()
@@ -157,6 +166,8 @@ def rename_tree(root: pathlib.Path, dry_run: bool) -> None:
         except OSError as exc:
             print(f"FAILED: {entry}: {exc}")
             reserved.discard(destination)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Recursively transliterate Persian filenames/directories.",
@@ -174,6 +185,8 @@ def parse_args() -> argparse.Namespace:
         help="actually rename files/directories; default is dry-run",
     )
     return parser.parse_args()
+
+
 def main() -> None:
     args = parse_args()
     roots = args.paths or [pathlib.Path()]
@@ -195,5 +208,7 @@ def main() -> None:
                     print(f"FAILED: {root}: {exc}")
         elif root.is_dir():
             rename_tree(root, dry_run=not args.apply)
+
+
 if __name__ == "__main__":
     main()

@@ -8,6 +8,7 @@ import sys
 import time
 from typing import TYPE_CHECKING, Any
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 try:
@@ -25,12 +26,16 @@ MAX_FILE_SIZE_BYTES: int = 10 * 1024 * 1024
 POOL_WORKERS: int = 8
 PREVIEW_LENGTH: int = 200
 REPORT_PREVIEW_LENGTH: int = 150
+
+
 @dataclass
 class DetectionResult:
     path: Path
     non_english_lines: list[dict[str, Any]] = field(default_factory=list)
     total_lines: int = 0
     error: str | None = None
+
+
 @dataclass
 class ScanConfig:
     confidence_threshold: float = DEFAULT_CONFIDENCE
@@ -141,12 +146,16 @@ class ScanConfig:
         }
     )
     batch_size: int = DEFAULT_BATCH_SIZE
+
+
 class NonEnglishDetector:
     config: ScanConfig
     detector: LanguageDetector
+
     def __init__(self, config: ScanConfig) -> None:
         self.config = config
         self.detector = LanguageDetector(confidence_threshold=config.confidence_threshold)
+
     def is_text_file(self, path: Path) -> bool:
         if path.suffix.lower() in self.config.text_extensions:
             return True
@@ -170,6 +179,7 @@ class NonEnglishDetector:
             "notice",
         }
         return path.name.lower() in no_ext_names
+
     def should_ignore(self, path: Path) -> bool:
         parts: tuple[str, ...] = path.parts
         for part in parts:
@@ -231,6 +241,7 @@ class NonEnglishDetector:
         except OSError:
             return True
         return False
+
     def read_file_lines(self, path: Path) -> list[str] | None:
         encodings: list[str] = [
             self.config.encoding,
@@ -246,6 +257,7 @@ class NonEnglishDetector:
             except (UnicodeDecodeError, PermissionError, OSError):
                 continue
         return None
+
     def filter_lines(self, lines: Sequence[str]) -> list[tuple[int, str]]:
         filtered: list[tuple[int, str]] = []
         for i, line in enumerate(lines, 1):
@@ -263,6 +275,7 @@ class NonEnglishDetector:
                 continue
             filtered.append((i, stripped))
         return filtered
+
     def _is_code_pattern(self, line: str) -> bool:
         code_indicators: list[bool] = [
             line.startswith((
@@ -321,6 +334,7 @@ class NonEnglishDetector:
             line.strip().endswith(("{", "}", ";", "(", ")", "[", "]", ":", ",")),
         ]
         return any(code_indicators)
+
     def process_file(self, path: Path) -> DetectionResult:
         result: DetectionResult = DetectionResult(path=path)
         try:
@@ -358,6 +372,7 @@ class NonEnglishDetector:
         except Exception as e:
             result.error = f"Error processing file: {e!s}"
         return result
+
     def scan_directory(self, root_dir: Path = Path()) -> list[DetectionResult]:
         results: list[DetectionResult] = []
         paths: list[Path] = []
@@ -390,6 +405,7 @@ class NonEnglishDetector:
                     rel = path.relative_to(root_dir)
                     logger.error(f"[{completed}/{total}] failed {rel}: {e!s}")
         return results
+
     def save_results(self, results: list[DetectionResult], output_file: Path) -> None:
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("Non-English Content Detection Results\n")
@@ -430,6 +446,8 @@ class NonEnglishDetector:
                         f.write("\n")
             f.write("\n" + "=" * 40 + "\n")
             f.write("End of report\n")
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Detect non-English content in text files recursively",
@@ -475,6 +493,8 @@ Examples:
         help="Show detailed progress for each file",
     )
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser: argparse.ArgumentParser = build_arg_parser()
     args: argparse.Namespace = parser.parse_args(argv)
@@ -510,5 +530,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except Exception as e:
         logger.exception(f"Error: {e!s}")
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

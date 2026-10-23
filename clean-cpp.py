@@ -9,6 +9,7 @@ from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_c
 import tree_sitter_cpp
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 CPP_EXTS: frozenset[str] = frozenset({
@@ -26,6 +27,8 @@ C_EXTS: frozenset[str] = frozenset({".c", ".h"})
 ALL_EXTS: frozenset[str] = C_EXTS | CPP_EXTS
 WORKERS: int = 8
 _PARSERS: dict[str, Parser] = {}
+
+
 def get_parser(ext: str) -> Parser:
     if ext not in _PARSERS:
         if ext in C_EXTS:
@@ -39,6 +42,8 @@ def get_parser(ext: str) -> Parser:
         parser.language = lang
         _PARSERS[ext] = parser
     return _PARSERS[ext]
+
+
 def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
     ranges: list[tuple[int, int]] = []
     stack: list[Node] = [root]
@@ -53,10 +58,14 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         for child in reversed(node.children):
             stack.append(child)
     return ranges
+
+
 def remove_blank_lines(content: bytes) -> bytes:
     lines = content.splitlines(keepends=True)
     non_blank = [line for line in lines if line.strip(b" \t\r\n") != b""]
     return b"".join(non_blank)
+
+
 def strip_comments(
     content: bytes,
     ext: str,
@@ -78,6 +87,8 @@ def strip_comments(
         last = end
     out.extend(content[last:])
     return bytes(out), len(ranges)
+
+
 def process_file(path: Path, base: Path) -> tuple[str, int, int, str]:
     try:
         path = Path(path).resolve()
@@ -98,6 +109,8 @@ def process_file(path: Path, base: Path) -> tuple[str, int, int, str]:
         return rel, reduced, count, ""
     except Exception as exc:
         return str(path), 0, 0, str(exc)
+
+
 def iter_cc_files(paths: Iterable[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for p in paths:
@@ -113,6 +126,8 @@ def iter_cc_files(paths: Iterable[Path]) -> Iterator[Path]:
                     if rp not in seen:
                         seen.add(rp)
                         yield f
+
+
 def main() -> int:
     ap: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Remove non-vital comments and blank lines from C/C++ files in place (tree-sitter powered)."
@@ -155,5 +170,7 @@ def main() -> int:
                 print(f"{rel}  {green_reduced}")
     print(f"\nTotal space freed: {total_reduced} bytes")
     return 1 if errors else 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

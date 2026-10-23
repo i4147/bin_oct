@@ -11,6 +11,7 @@ import random
 import re
 import sys
 from typing import Callable, Iterable, Sequence
+
 __all__ = [
     "DEFAULT_METRICS",
     "Cosine",
@@ -49,8 +50,12 @@ __all__ = [
 _WS_RE = re.compile(r"\s+")
 _PUNCT_RE = re.compile(r"[^\w\s]", re.UNICODE)
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
+
+
 def default_tokenize(text: str) -> list[str]:
     return _WORD_RE.findall(text.lower())
+
+
 def normalize_text(
     text: str,
     *,
@@ -68,22 +73,31 @@ def normalize_text(
     if strip:
         text = text.strip()
     return text
+
+
 def ngrams(text: str, n: int) -> list[str]:
     if n <= 0:
         raise ValueError("n must be >= 1")
     if len(text) < n:
         return [text] if text else []
     return [text[i : i + n] for i in range(len(text) - n + 1)]
+
+
 class SimilarityMetric(ABC):
     name: str = "metric"
+
     @abstractmethod
     def similarity(self, a: str, b: str) -> float: ...
     def distance(self, a: str, b: str) -> float:
         return 1.0 - self.similarity(a, b)
+
     def __call__(self, a: str, b: str) -> float:
         return self.similarity(a, b)
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}()"
+
+
 class EditDistanceMetric(SimilarityMetric):
     @abstractmethod
     def edit_distance(self, a: str, b: str) -> int: ...
@@ -94,8 +108,11 @@ class EditDistanceMetric(SimilarityMetric):
         if denom == 0:
             return 1.0
         return 1.0 - self.edit_distance(a, b) / denom
+
+
 class Levenshtein(EditDistanceMetric):
     name = "levenshtein"
+
     def edit_distance(self, a: str, b: str) -> int:
         if a == b:
             return 0
@@ -113,8 +130,11 @@ class Levenshtein(EditDistanceMetric):
                 curr.append(min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost))
             prev = curr
         return prev[-1]
+
+
 class DamerauLevenshtein(EditDistanceMetric):
     name = "damerau"
+
     def edit_distance(self, a: str, b: str) -> int:
         la, lb = len(a), len(b)
         if a == b:
@@ -135,18 +155,25 @@ class DamerauLevenshtein(EditDistanceMetric):
                 if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
                     d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost)
         return d[la][lb]
+
+
 class Hamming(EditDistanceMetric):
     name = "hamming"
+
     def __init__(self, strict: bool = False) -> None:
         self.strict = strict
+
     def edit_distance(self, a: str, b: str) -> int:
         if self.strict and len(a) != len(b):
             raise ValueError("Hamming distance requires equal-length strings")
         common = min(len(a), len(b))
         mismatches = sum(1 for i in range(common) if a[i] != b[i])
         return mismatches + abs(len(a) - len(b))
+
+
 class Jaro(SimilarityMetric):
     name = "jaro"
+
     def similarity(self, a: str, b: str) -> float:
         if a == b:
             return 1.0
@@ -181,11 +208,15 @@ class Jaro(SimilarityMetric):
             k += 1
         transpositions //= 2
         return (matches / la + matches / lb + (matches - transpositions) / matches) / 3.0
+
+
 class JaroWinkler(Jaro):
     name = "jaro_winkler"
+
     def __init__(self, prefix_scale: float = 0.1, max_prefix: int = 4) -> None:
         self.prefix_scale = prefix_scale
         self.max_prefix = max_prefix
+
     def similarity(self, a: str, b: str) -> float:
         j = super().similarity(a, b)
         if j <= 0.7:
@@ -196,22 +227,31 @@ class JaroWinkler(Jaro):
                 break
             prefix += 1
         return j + prefix * self.prefix_scale * (1.0 - j)
+
     def __repr__(self) -> str:
         return f"JaroWinkler(prefix_scale={self.prefix_scale}, max_prefix={self.max_prefix})"
+
+
 class Jaccard(SimilarityMetric):
     name = "jaccard"
+
     def __init__(self, tokenizer: Callable[[str], list[str]] = default_tokenize) -> None:
         self.tokenizer = tokenizer
+
     def similarity(self, a: str, b: str) -> float:
         ta, tb = set(self.tokenizer(a)), set(self.tokenizer(b))
         if not ta and not tb:
             return 1.0
         union = ta | tb
         return len(ta & tb) / len(union) if union else 0.0
+
+
 class Dice(SimilarityMetric):
     name = "dice"
+
     def __init__(self, tokenizer: Callable[[str], list[str]] = default_tokenize) -> None:
         self.tokenizer = tokenizer
+
     def similarity(self, a: str, b: str) -> float:
         ta, tb = set(self.tokenizer(a)), set(self.tokenizer(b))
         if not ta and not tb:
@@ -219,8 +259,11 @@ class Dice(SimilarityMetric):
         if not ta or not tb:
             return 0.0
         return 2.0 * len(ta & tb) / (len(ta) + len(tb))
+
+
 class Cosine(SimilarityMetric):
     name = "cosine"
+
     def __init__(
         self,
         tokenizer: Callable[[str], list[str]] = default_tokenize,
@@ -228,11 +271,13 @@ class Cosine(SimilarityMetric):
     ) -> None:
         self.tokenizer = tokenizer
         self.idf = idf or {}
+
     def _vector(self, text: str) -> dict[str, float]:
         tf = Counter(self.tokenizer(text))
         if not self.idf:
             return dict(tf)
         return {t: c * self.idf.get(t, 1.0) for t, c in tf.items()}
+
     def similarity(self, a: str, b: str) -> float:
         va, vb = self._vector(a), self._vector(b)
         if not va and not vb:
@@ -244,8 +289,11 @@ class Cosine(SimilarityMetric):
         na = math.sqrt(sum(v * v for v in va.values()))
         nb = math.sqrt(sum(v * v for v in vb.values()))
         return dot / (na * nb) if na and nb else 0.0
+
+
 class LCSSimilarity(SimilarityMetric):
     name = "lcs"
+
     def lcs_length(self, a: str, b: str) -> int:
         if not a or not b:
             return 0
@@ -261,6 +309,7 @@ class LCSSimilarity(SimilarityMetric):
                     curr.append(max(prev[j], curr[j - 1]))
             prev = curr
         return prev[-1]
+
     def similarity(self, a: str, b: str) -> float:
         if a == b:
             return 1.0
@@ -268,12 +317,16 @@ class LCSSimilarity(SimilarityMetric):
         if denom == 0:
             return 1.0
         return self.lcs_length(a, b) / denom
+
+
 class NGram(SimilarityMetric):
     name = "ngram"
+
     def __init__(self, n: int = 2) -> None:
         if n < 1:
             raise ValueError("n must be >= 1")
         self.n = n
+
     def similarity(self, a: str, b: str) -> float:
         if a == b:
             return 1.0
@@ -286,8 +339,11 @@ class NGram(SimilarityMetric):
         overlap = sum((ga & gb).values())
         total = sum(ga.values()) + sum(gb.values())
         return 2.0 * overlap / total
+
     def __repr__(self) -> str:
         return f"NGram(n={self.n})"
+
+
 _SOUNDEX_CODES = {
     "B": "1",
     "F": "1",
@@ -308,6 +364,8 @@ _SOUNDEX_CODES = {
     "N": "5",
     "R": "6",
 }
+
+
 def soundex(name: str) -> str:
     letters = [c for c in name.upper() if c.isalpha()]
     if not letters:
@@ -326,6 +384,8 @@ def soundex(name: str) -> str:
         else:
             prev = ""
     return ("".join(out) + "000")[:4]
+
+
 def nysiis(name: str) -> str:
     name = re.sub(r"[^A-Z]", "", name.upper())
     if not name:
@@ -378,7 +438,11 @@ def nysiis(name: str) -> str:
     if len(result) >= 2 and result[-1] == result[-2]:
         result = result[:-1]
     return result
+
+
 _METAPHONE_VOWELS = set("AEIOU")
+
+
 def metaphone(word: str, max_length: int = 4) -> str:
     w = re.sub(r"[^A-Z]", "", word.upper())
     if not w:
@@ -483,12 +547,17 @@ def metaphone(word: str, max_length: int = 4) -> str:
             out.pop()
         i += 1
     return "".join(out)
+
+
 class _PhoneticMetric(SimilarityMetric):
     encoder: Callable[[str], str] = staticmethod(lambda s: s)
+
     def __init__(self, code_metric: SimilarityMetric | None = None) -> None:
         self.code_metric = code_metric or JaroWinkler()
+
     def code(self, text: str) -> str:
         return self.encoder(text)
+
     def similarity(self, a: str, b: str) -> float:
         ca, cb = self.code(a), self.code(b)
         if not ca and not cb:
@@ -496,21 +565,34 @@ class _PhoneticMetric(SimilarityMetric):
         if not ca or not cb:
             return 0.0
         return self.code_metric.similarity(ca, cb)
+
+
 class SoundexMetric(_PhoneticMetric):
     name = "soundex"
     encoder = staticmethod(soundex)
+
+
 class NYSIISMetric(_PhoneticMetric):
     name = "nysiis"
     encoder = staticmethod(nysiis)
+
+
 class MetaphoneMetric(_PhoneticMetric):
     name = "metaphone"
     encoder = staticmethod(metaphone)
+
+
 _MERSENNE_61 = (1 << 61) - 1
+
+
 def _stable_hash(data: str, seed: int = 0) -> int:
     h = hashlib.blake2b(data.encode("utf-8"), digest_size=8, key=seed.to_bytes(8, "big")).digest()
     return int.from_bytes(h, "big")
+
+
 class MinHash(SimilarityMetric):
     name = "minhash"
+
     def __init__(
         self,
         num_perm: int = 128,
@@ -527,6 +609,7 @@ class MinHash(SimilarityMetric):
         rng = random.Random(seed)
         self._a = [rng.randrange(1, _MERSENNE_61) for _ in range(num_perm)]
         self._b = [rng.randrange(0, _MERSENNE_61) for _ in range(num_perm)]
+
     def _shingles(self, text: str) -> set[str]:
         if self.tokenizer is not None:
             tokens = self.tokenizer(text)
@@ -536,6 +619,7 @@ class MinHash(SimilarityMetric):
         if len(tokens) < n:
             return {"".join(tokens)} if tokens else set()
         return {"".join(tokens[i : i + n]) for i in range(len(tokens) - n + 1)}
+
     def signature(self, text: str) -> list[int]:
         shingles = self._shingles(text)
         if not shingles:
@@ -545,14 +629,19 @@ class MinHash(SimilarityMetric):
         for a, b in zip(self._a, self._b):
             sig.append(min((a * h + b) % _MERSENNE_61 for h in base))
         return sig
+
     def similarity(self, a: str, b: str) -> float:
         sa, sb = self.signature(a), self.signature(b)
         equal = sum(1 for x, y in zip(sa, sb) if x == y)
         return equal / self.num_perm
+
     def __repr__(self) -> str:
         return f"MinHash(num_perm={self.num_perm}, shingle_size={self.shingle_size})"
+
+
 class SimHash(SimilarityMetric):
     name = "simhash"
+
     def __init__(
         self,
         bits: int = 64,
@@ -562,6 +651,7 @@ class SimHash(SimilarityMetric):
         self.bits = bits
         self.tokenizer = tokenizer
         self.weights = weights or {}
+
     def fingerprint(self, text: str) -> int:
         tokens = self.tokenizer(text)
         if not tokens:
@@ -578,15 +668,20 @@ class SimHash(SimilarityMetric):
             if vector[i] > 0:
                 fp |= 1 << i
         return fp
+
     def similarity(self, a: str, b: str) -> float:
         fa, fb = self.fingerprint(a), self.fingerprint(b)
         if fa == 0 and fb == 0:
             return 1.0
         return 1.0 - bin(fa ^ fb).count("1") / self.bits
+
     def __repr__(self) -> str:
         return f"SimHash(bits={self.bits})"
+
+
 class TokenSort(SimilarityMetric):
     name = "token_sort"
+
     def __init__(
         self,
         base: SimilarityMetric | None = None,
@@ -594,14 +689,18 @@ class TokenSort(SimilarityMetric):
     ) -> None:
         self.base = base or Levenshtein()
         self.tokenizer = tokenizer
+
     def similarity(self, a: str, b: str) -> float:
         ta = " ".join(sorted(self.tokenizer(a)))
         tb = " ".join(sorted(self.tokenizer(b)))
         if not ta and not tb:
             return 1.0
         return self.base.similarity(ta, tb)
+
+
 class TokenSet(SimilarityMetric):
     name = "token_set"
+
     def __init__(
         self,
         base: SimilarityMetric | None = None,
@@ -609,6 +708,7 @@ class TokenSet(SimilarityMetric):
     ) -> None:
         self.base = base or Levenshtein()
         self.tokenizer = tokenizer
+
     def similarity(self, a: str, b: str) -> float:
         ta, tb = set(self.tokenizer(a)), set(self.tokenizer(b))
         if not ta and not tb:
@@ -624,10 +724,14 @@ class TokenSet(SimilarityMetric):
             self.base.similarity(s_inter, s_b),
             self.base.similarity(s_a, s_b),
         )
+
+
 class PartialRatio(SimilarityMetric):
     name = "partial"
+
     def __init__(self, base: SimilarityMetric | None = None) -> None:
         self.base = base or Levenshtein()
+
     def similarity(self, a: str, b: str) -> float:
         if not a or not b:
             return 0.0
@@ -641,6 +745,8 @@ class PartialRatio(SimilarityMetric):
                 if best == 1.0:
                     break
         return best
+
+
 DEFAULT_METRICS: dict[str, Callable[..., SimilarityMetric]] = {
     "levenshtein": Levenshtein,
     "damerau": DamerauLevenshtein,
@@ -661,6 +767,8 @@ DEFAULT_METRICS: dict[str, Callable[..., SimilarityMetric]] = {
     "token_set": TokenSet,
     "partial": PartialRatio,
 }
+
+
 class FuzzyComparator:
     def __init__(
         self,
@@ -671,6 +779,7 @@ class FuzzyComparator:
     ) -> None:
         self.normalize = normalize
         self.metric = self._resolve(metric, **metric_kwargs)
+
     @staticmethod
     def _resolve(metric: str | SimilarityMetric, **kwargs: object) -> SimilarityMetric:
         if isinstance(metric, SimilarityMetric):
@@ -680,12 +789,16 @@ class FuzzyComparator:
         except KeyError as exc:
             raise KeyError(f"Unknown metric {metric!r}. Available: {sorted(DEFAULT_METRICS)}") from exc
         return factory(**kwargs)
+
     def _prep(self, text: str) -> str:
         return normalize_text(text) if self.normalize else text
+
     def similarity(self, a: str, b: str) -> float:
         return self.metric.similarity(self._prep(a), self._prep(b))
+
     def distance(self, a: str, b: str) -> float:
         return self.metric.distance(self._prep(a), self._prep(b))
+
     def compare_all(
         self,
         a: str,
@@ -699,6 +812,7 @@ class FuzzyComparator:
             m = self._resolve(name, **overrides.get(name, {}))
             results[name] = m.similarity(self._prep(a), self._prep(b))
         return results
+
     def best_match(
         self,
         query: str,
@@ -710,6 +824,7 @@ class FuzzyComparator:
             if s > best_score:
                 best, best_score = cand, s
         return best, max(best_score, 0.0)
+
     def matches_above(
         self,
         query: str,
@@ -722,6 +837,7 @@ class FuzzyComparator:
             key=lambda t: t[1],
             reverse=True,
         )
+
     def rank(
         self,
         query: str,
@@ -729,10 +845,14 @@ class FuzzyComparator:
     ) -> list[tuple[str, float]]:
         scored = [(c, self.similarity(query, c)) for c in candidates]
         return sorted(scored, key=lambda t: t[1], reverse=True)
+
     def __call__(self, a: str, b: str) -> float:
         return self.similarity(a, b)
+
     def __repr__(self) -> str:
         return f"FuzzyComparator(metric={self.metric!r}, normalize={self.normalize})"
+
+
 @dataclass
 class DiffOp:
     tag: str
@@ -741,6 +861,7 @@ class DiffOp:
     index_a: int
     index_b: int
     score: float = 0.0
+
     def __str__(self) -> str:
         marker = {"equal": "  ", "replace": "~ ", "delete": "- ", "insert": "+ "}[self.tag]
         if self.tag == "equal":
@@ -750,6 +871,8 @@ class DiffOp:
         if self.tag == "insert":
             return f"{marker}{self.line_b}"
         return f"{marker}{self.line_a}  ==>  {self.line_b}  ({self.score:.2f})"
+
+
 @dataclass
 class FileComparison:
     path_a: str
@@ -764,9 +887,11 @@ class FileComparison:
     deleted: int = 0
     inserted: int = 0
     ops: list[DiffOp] = field(default_factory=list)
+
     @property
     def identical(self) -> bool:
         return self.equal == self.lines_a == self.lines_b and not (self.replaced or self.deleted or self.inserted)
+
     def report(self, show_diff: bool = False) -> str:
         pct = f"{self.similarity * 100:.1f}%"
         lines = [
@@ -784,8 +909,11 @@ class FileComparison:
             lines.append("")
             lines.extend(str(op) for op in self.ops)
         return "\n".join(lines)
+
     def __str__(self) -> str:
         return self.report()
+
+
 def align_lines(
     lines_a: Sequence[str],
     lines_b: Sequence[str],
@@ -796,8 +924,10 @@ def align_lines(
     n, m = len(lines_a), len(lines_b)
     ops: list[DiffOp] = []
     i = j = 0
+
     def _score(x: str, y: str) -> float:
         return metric.similarity(x, y) if x != y else 1.0
+
     while i < n and j < m:
         score = _score(lines_a[i], lines_b[j])
         if score >= threshold:
@@ -835,12 +965,17 @@ def align_lines(
         ops.append(DiffOp("insert", None, lines_b[j], -1, j, 0.0))
         j += 1
     return ops
+
+
 class _NormalizedWrapper(SimilarityMetric):
     def __init__(self, base: SimilarityMetric) -> None:
         self.base = base
         self.name = base.name
+
     def similarity(self, a: str, b: str) -> float:
         return self.base.similarity(normalize_text(a), normalize_text(b))
+
+
 class FileComparator:
     def __init__(
         self,
@@ -857,8 +992,10 @@ class FileComparator:
         self.normalize_lines = normalize_lines
         self.encoding = encoding
         self.errors = errors
+
     def _read(self, path: str | Path) -> str:
         return Path(path).read_text(encoding=self.encoding, errors=self.errors)
+
     def compare(
         self,
         path_a: str | Path,
@@ -895,6 +1032,7 @@ class FileComparator:
             inserted=inserted,
             ops=ops,
         )
+
     def diff_lines(
         self,
         path_a: str | Path,
@@ -904,6 +1042,7 @@ class FileComparator:
         window: int = 200,
     ) -> list[DiffOp]:
         return self.compare(path_a, path_b, threshold=threshold, window=window).ops
+
     def fuzzy_grep(
         self,
         path: str | Path,
@@ -917,6 +1056,8 @@ class FileComparator:
             if s >= threshold:
                 hits.append((i, line, s))
         return sorted(hits, key=lambda t: t[2], reverse=True)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="fuzzycmp", description="Fuzzy text comparison CLI")
     parser.add_argument("--version", action="version", version="fuzzycmp 1.0.0")
@@ -958,10 +1099,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_phon = sub.add_parser("phonetic", help="Show phonetic codes for a word")
     p_phon.add_argument("--word", required=True)
     return parser
+
+
 def _cmd_similarity(args: argparse.Namespace) -> int:
     fc = FuzzyComparator(args.metric, normalize=args.normalize)
     print(f"{fc.similarity(args.a, args.b):.6f}")
     return 0
+
+
 def _cmd_compare_all(args: argparse.Namespace) -> int:
     fc = FuzzyComparator("levenshtein", normalize=args.normalize)
     results = fc.compare_all(args.a, args.b)
@@ -969,6 +1114,8 @@ def _cmd_compare_all(args: argparse.Namespace) -> int:
     for name in sorted(results, key=lambda k: results[k], reverse=True):
         print(f"{name:<{width}}  {results[name]:.6f}")
     return 0
+
+
 def _cmd_best_match(args: argparse.Namespace) -> int:
     fc = FuzzyComparator(args.metric, normalize=args.normalize)
     if args.rank:
@@ -981,6 +1128,8 @@ def _cmd_best_match(args: argparse.Namespace) -> int:
         return 1
     print(f"{score:.6f}\t{best}")
     return 0
+
+
 def _cmd_files(args: argparse.Namespace) -> int:
     fc = FileComparator(
         args.metric,
@@ -991,6 +1140,7 @@ def _cmd_files(args: argparse.Namespace) -> int:
     result = fc.compare(args.a, args.b, threshold=args.threshold, window=args.window)
     if args.json:
         import json
+
         payload = {
             "path_a": result.path_a,
             "path_b": result.path_b,
@@ -1020,6 +1170,8 @@ def _cmd_files(args: argparse.Namespace) -> int:
     else:
         print(result.report(show_diff=args.diff))
     return 0 if not result.identical else 0
+
+
 def _cmd_grep(args: argparse.Namespace) -> int:
     fc = FileComparator(args.metric, normalize=args.normalize, encoding=args.encoding)
     hits = fc.fuzzy_grep(args.file, args.query, threshold=args.threshold)
@@ -1028,12 +1180,16 @@ def _cmd_grep(args: argparse.Namespace) -> int:
     for line_no, line, score in hits:
         print(f"{line_no}\t{score:.4f}\t{line}")
     return 0
+
+
 def _cmd_phonetic(args: argparse.Namespace) -> int:
     word = args.word
     print(f"soundex   {soundex(word)}")
     print(f"nysiis    {nysiis(word)}")
     print(f"metaphone {metaphone(word)}")
     return 0
+
+
 _DISPATCH: dict[str, Callable[[argparse.Namespace], int]] = {
     "similarity": _cmd_similarity,
     "compare-all": _cmd_compare_all,
@@ -1042,10 +1198,14 @@ _DISPATCH: dict[str, Callable[[argparse.Namespace], int]] = {
     "grep": _cmd_grep,
     "phonetic": _cmd_phonetic,
 }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     handler = _DISPATCH[args.command]
     return handler(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

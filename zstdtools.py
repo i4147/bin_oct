@@ -14,10 +14,12 @@ import threading
 import time
 from typing import Iterable, Optional, Sequence
 import zstandard as zstd
+
 try:
     from loguru import logger
 except ImportError:
     import logging
+
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger("zstd_toolkit")
 DEFAULT_LEVEL: int = 19
@@ -92,6 +94,8 @@ SKIP_DIRS: frozenset[str] = frozenset({
     "dist",
     "build",
 })
+
+
 def parse_size(value: str) -> int:
     s = value.strip().upper().replace(" ", "")
     units = {
@@ -110,17 +114,23 @@ def parse_size(value: str) -> int:
             num = s[: -len(suffix)] or "0"
             return int(float(num) * factor)
     return int(float(s))
+
+
 def human_size(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if n < 1024 or unit == "TB":
             return f"{int(n)} B" if unit == "B" else f"{n:.1f} {unit}"
         n /= 1024
     return f"{n:.1f} TB"
+
+
 def _file_size(p: Path) -> int:
     try:
         return p.stat().st_size
     except OSError:
         return 0
+
+
 def dir_size(path: Path) -> int:
     total = 0
     try:
@@ -130,11 +140,15 @@ def dir_size(path: Path) -> int:
     except OSError:
         pass
     return total
+
+
 def _safe_extractall(tar: tarfile.TarFile, path: Path) -> None:
     try:
         tar.extractall(path, filter="data")
     except TypeError:
         tar.extractall(path)
+
+
 @dataclass(slots=True)
 class TaskResult:
     path: Path
@@ -147,6 +161,7 @@ class TaskResult:
     output: Optional[Path] = None
     original_deleted: bool = False
     tar_extracted: bool = False
+
     @property
     def savings_pct(self) -> float:
         if self.original_size <= 0:
@@ -154,6 +169,8 @@ class TaskResult:
         if self.operation == "compress":
             return (1 - self.processed_size / self.original_size) * 100
         return (self.processed_size / self.original_size - 1) * 100
+
+
 def run_parallel(
     tasks: Sequence[Path],
     worker,
@@ -170,6 +187,7 @@ def run_parallel(
     total = len(tasks)
     lock = threading.Lock()
     state = {"done": 0, "orig": 0, "proc": 0, "start": time.time()}
+
     def render(last: Optional[TaskResult], final: bool = False) -> None:
         done = state["done"]
         pct = done / total * 100 if total else 0.0
@@ -188,6 +206,7 @@ def run_parallel(
             f"({saved:5.1f}% saved, {speed:5.1f} MB/s) - {name:<30}{ending}"
         )
         sys.stdout.flush()
+
     results: list[TaskResult] = []
     try:
         with Pool(processes=workers) as pool:
@@ -203,6 +222,8 @@ def run_parallel(
         return results
     render(results[-1] if results else None, final=True)
     return results
+
+
 def compress_file(
     src: Path,
     level: int,
@@ -274,6 +295,8 @@ def compress_file(
             operation="compress",
             duration=time.perf_counter() - t0,
         )
+
+
 def tar_compress_dir(
     src_dir: Path,
     level: int,
@@ -328,6 +351,8 @@ def tar_compress_dir(
             operation="compress",
             duration=time.perf_counter() - t0,
         )
+
+
 def decompress_file(
     src: Path,
     keep: bool = True,
@@ -391,14 +416,24 @@ def decompress_file(
             operation="decompress",
             duration=time.perf_counter() - t0,
         )
+
+
 def _compress_file_task(path: Path, *, level: int, threads: int, keep: bool, only_if_smaller: bool) -> TaskResult:
     return compress_file(path, level, threads, keep, only_if_smaller)
+
+
 def _tar_compress_dir_task(path: Path, *, level: int, threads: int, keep: bool) -> TaskResult:
     return tar_compress_dir(path, level, threads, keep)
+
+
 def _decompress_task(path: Path, *, keep: bool, untar: bool) -> TaskResult:
     return decompress_file(path, keep=keep, untar=untar)
+
+
 def _should_skip_path(p: Path) -> bool:
     return any(part in SKIP_DIRS for part in p.parts)
+
+
 def discover_targets(root: Path, args: argparse.Namespace) -> tuple[list[Path], list[Path]]:
     files: list[Path] = []
     dirs: list[Path] = []
@@ -434,6 +469,8 @@ def discover_targets(root: Path, args: argparse.Namespace) -> tuple[list[Path], 
                 continue
             dirs.append(d)
     return files, dirs
+
+
 def print_summary(results: Sequence[TaskResult], operation: str) -> None:
     total = len(results)
     ok = [r for r in results if r.success]
@@ -454,6 +491,8 @@ def print_summary(results: Sequence[TaskResult], operation: str) -> None:
         print(f"CPU time      : {duration:.2f}s")
     for r in fail:
         logger.warning(f"FAIL {r.path}: {r.error}")
+
+
 def cmd_compress(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -487,6 +526,8 @@ def cmd_compress(args: argparse.Namespace) -> int:
         results += run_parallel(files, worker, args.workers, "compress", dry_run=args.dry_run)
     print_summary(results, "compress")
     return 0 if all(r.success or not r.original_size for r in results) else 1
+
+
 def cmd_decompress(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -502,6 +543,8 @@ def cmd_decompress(args: argparse.Namespace) -> int:
     results = run_parallel(targets, worker, args.workers, "decompress", dry_run=args.dry_run)
     print_summary(results, "decompress")
     return 0 if all(r.success for r in results) else 1
+
+
 def _verify_archive(archive: Path) -> None:
     print(f"\nVerifying {archive.name} …")
     try:
@@ -522,6 +565,8 @@ def _verify_archive(archive: Path) -> None:
         print(f"OK — {count} entries")
     except Exception as exc:
         logger.error(f"Verification failed: {exc}")
+
+
 def cmd_archive_cwd(args: argparse.Namespace) -> int:
     cwd = Path.cwd().resolve()
     parent = cwd.parent
@@ -575,6 +620,8 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
         else:
             print("Original directory preserved.")
     return 0
+
+
 def cmd_split(args: argparse.Namespace) -> int:
     src = Path(args.input).resolve()
     if not src.is_file():
@@ -631,6 +678,8 @@ def cmd_split(args: argparse.Namespace) -> int:
     print(f"  wrote {out_path.name}")
     print(f"\nSplit into {part_num} parts.")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="zstd_toolkit.py",
@@ -781,6 +830,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_s.set_defaults(func=cmd_split)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -789,5 +840,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
         return 130
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

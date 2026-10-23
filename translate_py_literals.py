@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 import sys
+
 try:
     from translate import Translator
 except ImportError:
@@ -14,10 +15,14 @@ try:
     from deep_translator import GoogleTranslator
 except ImportError:
     GoogleTranslator = None
+
+
 def contains_non_english(text: str) -> bool:
     if not text or not text.strip():
         return False
     return any(ord(char) > 127 for char in text)
+
+
 @lru_cache(maxsize=1024)
 def translate_text(text: str, target_lang: str = "en") -> str:
     if Translator is not None:
@@ -36,6 +41,8 @@ def translate_text(text: str, target_lang: str = "en") -> str:
         except Exception as e:
             print(f"    [Warning] Fallback translation failed for '{text[:20]}...': {e}")
     return text
+
+
 def get_node_char_offsets(source_code: str, node: ast.AST) -> tuple[int, int]:
     source_bytes = source_code.encode("utf-8")
     lines_bytes = source_bytes.splitlines(keepends=True)
@@ -44,6 +51,8 @@ def get_node_char_offsets(source_code: str, node: ast.AST) -> tuple[int, int]:
     start_char = len(source_bytes[:start_byte].decode("utf-8", errors="ignore"))
     end_char = len(source_bytes[:end_byte].decode("utf-8", errors="ignore"))
     return start_char, end_char
+
+
 def reformat_literal(orig_slice: str, translated_text: str) -> str:
     if not orig_slice:
         return f'"{translated_text}"'
@@ -69,6 +78,8 @@ def reformat_literal(orig_slice: str, translated_text: str) -> str:
         else:
             escaped = escaped.replace("'", "\\'")
     return f"{prefix}{quote}{escaped}{quote}"
+
+
 def process_python_file(file_path: Path) -> bool:
     try:
         source_code = file_path.read_text(encoding="utf-8")
@@ -108,6 +119,8 @@ def process_python_file(file_path: Path) -> bool:
     else:
         print(f"No changes made to: {file_path}")
         return False
+
+
 def resolve_input_paths(inputs: list[str]) -> list[Path]:
     current_script = Path(__file__).resolve()
     target_files: list[Path] = []
@@ -125,6 +138,8 @@ def resolve_input_paths(inputs: list[str]) -> list[Path]:
                 print(f"Warning: Ignored '{item}' (not a valid .py file or directory)")
     unique_files = sorted({f.resolve() for f in target_files if f.resolve() != current_script})
     return unique_files
+
+
 def main():
     parser = argparse.ArgumentParser(description="Translate non-English string literals in Python scripts in-place.")
     parser.add_argument(
@@ -148,5 +163,7 @@ def main():
         if process_python_file(file_path):
             updated_count += 1
     print(f"\nDone! Updated {updated_count}/{len(files_to_process)} file(s).")
+
+
 if __name__ == "__main__":
     main()

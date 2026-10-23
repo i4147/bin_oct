@@ -9,6 +9,8 @@ import subprocess
 import sys
 import tomllib
 import zipfile
+
+
 def get_cargo_metadata():
     with open("Cargo.toml", "rb") as f:
         cargo_data = tomllib.load(f)
@@ -19,8 +21,11 @@ def get_cargo_metadata():
         print("[-] Error: Could not parse package name from Cargo.toml", file=sys.stderr)
         sys.exit(1)
     return name, version
+
+
 def get_wheel_tags():
     import sysconfig
+
     py_version = f"{sys.version_info.major}{sys.version_info.minor}"
     is_freethreaded = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
     py_tag = f"cp{py_version}{'t' if is_freethreaded else ''}"
@@ -29,12 +34,16 @@ def get_wheel_tags():
     if "linux" in platform and ("armv8l" in platform or "armv7l" in platform):
         platform = "linux_armv7l"
     return py_tag, abi_tag, platform
+
+
 def build_cargo():
     print("[+] Compiling Rust crate via Cargo...")
     result = subprocess.run(["cargo", "build", "--release"], check=True)
     if result.returncode != 0:
         print("[-] Cargo compilation failed.", file=sys.stderr)
         sys.exit(1)
+
+
 def create_wheel():
     pkg_name, version = get_cargo_metadata()
     py_tag, abi_tag, plat_tag = get_wheel_tags()
@@ -69,11 +78,13 @@ def create_wheel():
     )
     (dist_info_path / "METADATA").write_text(metadata_content)
     record_entries = []
+
     def add_to_record(file_path: Path):
         rel_path = file_path.relative_to(build_dir)
         content = file_path.read_bytes()
         digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).decode("utf-8").rstrip("=")
         record_entries.append(f"{rel_path},sha256={digest},{len(content)}")
+
     add_to_record(build_dir / so_target_name)
     add_to_record(dist_info_path / "WHEEL")
     add_to_record(dist_info_path / "METADATA")
@@ -95,6 +106,8 @@ def create_wheel():
                     zinfo.external_attr = 0o644 << 16
                 zipf.writestr(zinfo, full_path.read_bytes())
     print(f"[+] Wheel successfully generated!")
+
+
 if __name__ == "__main__":
     build_cargo()
     create_wheel()

@@ -13,17 +13,24 @@ import sys
 import tarfile
 from typing import Any, Iterable, Iterator, Optional, Sequence
 import zipfile
+
 try:
     from tqdm import tqdm as _tqdm
 except Exception:
+
     def _tqdm(iterable=None, **kwargs):
         return iterable if iterable is not None else []
+
+
 def _hash_bytes(data: bytes) -> str:
     try:
         import xxhash
+
         return xxhash.xxh64(data).hexdigest()
     except Exception:
         return hashlib.sha256(data).hexdigest()
+
+
 DEFAULT_PIP_FILE = "/sdcard/data/pip.txt"
 DEFAULT_CACHE_FILE = ".reqcache.json"
 DEFAULT_IGNORE = [
@@ -286,14 +293,20 @@ _BLOCKLIST: set[str] = {
     "__main__",
     "__init__",
 }
+
+
 def norm(name: str) -> str:
     return name.strip().lower().replace("_", "-")
+
+
 def is_valid_module_name(name: str) -> bool:
     if not name or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):
         return False
     if name.startswith("__") and name.endswith("__"):
         return False
     return norm(name) not in {norm(b) for b in _BLOCKLIST}
+
+
 def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
     out: set[str] = set()
     if not path:
@@ -312,6 +325,8 @@ def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
                 out.add(norm(head))
     print(f"[i] Loaded {len(out)} packages from {p}")
     return out
+
+
 def load_mapping(path: str | os.PathLike | None) -> dict[str, str]:
     out: dict[str, str] = {}
     if not path:
@@ -329,6 +344,8 @@ def load_mapping(path: str | os.PathLike | None) -> dict[str, str]:
             out[norm(mod)] = pkg.strip()
     print(f"[i] Loaded {len(out)} module->package mappings")
     return out
+
+
 def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> set[str]:
     mods: set[str] = set()
     if source in ("embedded", "both"):
@@ -345,7 +362,11 @@ def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> set[str]:
                     if line and not line.startswith("#"):
                         mods.add(line.split(".", 1)[0])
     return mods
+
+
 _SHEBANG_RE = re.compile(r"^#!.*python", re.IGNORECASE)
+
+
 def looks_like_python_script(path: Path) -> bool:
     try:
         with path.open("rb") as f:
@@ -356,6 +377,8 @@ def looks_like_python_script(path: Path) -> bool:
     if _SHEBANG_RE.match(first):
         return True
     return bool(re.search(rb"\b(import|from)\b", head))
+
+
 def iter_candidate_files(
     root: str | os.PathLike,
     ignore: Iterable[str],
@@ -379,6 +402,8 @@ def iter_candidate_files(
                 yield p
             elif p.suffix == "" and looks_like_python_script(p):
                 yield p
+
+
 def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[str]:
     local: set[str] = set()
     ignore_set = set(ignore)
@@ -390,6 +415,8 @@ def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[
             if name.endswith((".py", ".pyw")) and name != "__init__.py":
                 local.add(Path(name).stem)
     return {n for n in local if n}
+
+
 _EMPTY_RESULT = lambda: {
     "imports": set(),
     "star_modules": set(),
@@ -399,6 +426,8 @@ _EMPTY_RESULT = lambda: {
 _IMP_RE = re.compile(r"^\s*import\s+([A-Za-z0-9_.*\s,]+)")
 _FROM_RE = re.compile(r"^\s*from\s+([A-Za-z0-9_.]+)\s+import")
 _DYN_RE = re.compile(r'(?:import_module|__import__)\(\s*[\'"]([\w.]+)[\'"]\s*\)')
+
+
 def extract_ast(source: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     try:
@@ -441,6 +470,8 @@ def extract_ast(source: str) -> dict[str, set[str]]:
             ):
                 res["dynamic"].add(node.args[0].value.split(".", 1)[0])
     return res
+
+
 def extract_regex(source: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     for line in source.splitlines():
@@ -457,13 +488,19 @@ def extract_regex(source: str) -> dict[str, set[str]]:
             if mod and mod != "__future__":
                 res["imports"].add(mod.split(".", 1)[0])
     return res
+
+
 def extract_imports(source: str, extractor: str = "ast") -> dict[str, set[str]]:
     if extractor == "regex":
         return extract_regex(source)
     return extract_ast(source)
+
+
 def _merge_into(dst: dict[str, set[str]], src: dict[str, set[str]]) -> None:
     for k in dst:
         dst[k] |= src.get(k, set())
+
+
 def _extract_from_notebook(text: str, extractor: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     try:
@@ -476,6 +513,8 @@ def _extract_from_notebook(text: str, extractor: str) -> dict[str, set[str]]:
         src = "".join(cell.get("source", []))
         _merge_into(res, extract_imports(src, extractor))
     return res
+
+
 def _extract_from_zip(path: Path, extractor: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     try:
@@ -491,6 +530,8 @@ def _extract_from_zip(path: Path, extractor: str) -> dict[str, set[str]]:
     except Exception:
         pass
     return res
+
+
 def _extract_from_tar(path: Path, extractor: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     low = path.name.lower()
@@ -533,6 +574,8 @@ def _extract_from_tar(path: Path, extractor: str) -> dict[str, set[str]]:
     except Exception:
         pass
     return res
+
+
 def process_path(path: str | os.PathLike, extractor: str = "ast") -> dict[str, set[str]]:
     p = Path(path)
     low = p.name.lower()
@@ -553,6 +596,8 @@ def process_path(path: str | os.PathLike, extractor: str = "ast") -> dict[str, s
     if low.endswith(ARCHIVE_SUFFIXES):
         return _extract_from_tar(p, extractor)
     return _EMPTY_RESULT()
+
+
 def _file_cache_key(path: Path) -> tuple[float, str]:
     try:
         st = path.stat()
@@ -561,23 +606,35 @@ def _file_cache_key(path: Path) -> tuple[float, str]:
         return st.st_mtime, _hash_bytes(head + str(st.st_size).encode())
     except OSError:
         return 0.0, "0"
+
+
 def load_cache(path: Path) -> dict[str, Any]:
     try:
         with path.open(encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return {}
+
+
 def save_cache(path: Path, data: dict[str, Any]) -> None:
     try:
         with path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, sort_keys=True)
     except OSError:
         pass
+
+
 def _result_to_json(res: dict[str, set[str]]) -> dict[str, list[str]]:
     return {k: sorted(v) for k, v in res.items()}
+
+
 def _result_from_json(obj: dict[str, list[str]]) -> dict[str, set[str]]:
     return {k: set(v) for k, v in obj.items()}
+
+
 _WORKER_STATE: dict[str, Any] = {}
+
+
 def _init_worker(extractor: str, cache_file: Optional[str]) -> None:
     _WORKER_STATE["extractor"] = extractor
     _WORKER_STATE["cache_file"] = cache_file
@@ -585,6 +642,8 @@ def _init_worker(extractor: str, cache_file: Optional[str]) -> None:
         _WORKER_STATE["cache"] = load_cache(Path(cache_file))
     else:
         _WORKER_STATE["cache"] = {}
+
+
 def _worker_one(path_str: str) -> tuple[str, dict[str, set[str]]]:
     extractor = _WORKER_STATE.get("extractor", "ast")
     cache = _WORKER_STATE.get("cache") or {}
@@ -600,6 +659,8 @@ def _worker_one(path_str: str) -> tuple[str, dict[str, set[str]]]:
             except Exception:
                 pass
     return path_str, process_path(p, extractor)
+
+
 def filter_packages(
     imports: set[str],
     stdlib: set[str],
@@ -634,6 +695,8 @@ def filter_packages(
         else:
             out.add(target or imp)
     return out
+
+
 def run_scan(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.exists():
@@ -729,9 +792,13 @@ def run_scan(args: argparse.Namespace) -> int:
             }
         save_cache(cache_path, cache)
     return 0
+
+
 def _write_lines(path: str | os.PathLike, lines: Sequence[str]) -> None:
     with Path(path).open("w", encoding="utf-8") as f:
         f.writelines(f"{line}\n" for line in lines)
+
+
 def _pip_freeze(pip_cmd: str) -> Optional[set[str]]:
     try:
         proc = subprocess.run(
@@ -752,7 +819,11 @@ def _pip_freeze(pip_cmd: str) -> Optional[set[str]]:
         if name:
             out.add(norm(name))
     return out
+
+
 _METADATA_RE = re.compile(r"^Requires-Dist:\s*([^\s;]+)")
+
+
 def _parse_metadata(path: Path) -> list[str]:
     reqs: list[str] = []
     try:
@@ -764,6 +835,8 @@ def _parse_metadata(path: Path) -> list[str]:
     except OSError:
         pass
     return reqs
+
+
 def run_metadata(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.exists():
@@ -785,6 +858,8 @@ def run_metadata(args: argparse.Namespace) -> int:
             f.write(r + "\n")
     print(f"[✓] {len(found)} requirements {'appended to' if args.append else 'written to'} {out}")
     return 0
+
+
 def _add_common_ignore(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--ignore",
@@ -792,6 +867,8 @@ def _add_common_ignore(p: argparse.ArgumentParser) -> None:
         default=list(DEFAULT_IGNORE),
         help="Directories to skip (default: common VCS/build/cache dirs)",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="merge_reqs.py",
@@ -916,6 +993,8 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_ignore(md)
     md.set_defaults(func=run_metadata)
     return p
+
+
 def _dispatch_scan(args: argparse.Namespace) -> int:
     if args.clear_cache:
         if args.cache and Path(args.cache).exists():
@@ -923,6 +1002,8 @@ def _dispatch_scan(args: argparse.Namespace) -> int:
             print(f"[i] Cache cleared: {args.cache}")
         return 0
     return run_scan(args)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -931,5 +1012,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\n[!] interrupted", file=sys.stderr)
         return 130
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

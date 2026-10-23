@@ -7,12 +7,17 @@ import re
 from typing import Any, Callable, Final, Self
 import urllib.parse
 import warnings
+
 try:
     from icecream import ic
 except ImportError:
+
     def ic(*a: Any) -> Any:
         return None if not a else (a[0] if len(a) == 1 else a)
+
+
 from orderedmultidict import omdict1D
+
 __title__: Final[str] = "furl"
 __version__: Final[str] = "2.1.4"
 __license__: Final[str] = "Unlicense"
@@ -72,20 +77,30 @@ DEFAULT_PORTS: Final[dict[str, int]] = {
 }
 PERCENT_REGEX: Final[str] = r"\%[a-fA-F\d][a-fA-F\d]"
 INVALID_HOST_CHARS: Final[str] = "!@#$%^&'\"*()+=:;/"
+
+
 def callable_attr(obj: Any, attr: str) -> bool:
     return hasattr(obj, attr) and callable(getattr(obj, attr))
+
+
 def is_iterable_but_not_string(v: Any) -> bool:
     return callable_attr(v, "__iter__") and not isinstance(v, (str, bytes))
+
+
 def lget(lst: Any, index: int, default: Any = None) -> Any:
     try:
         return lst[index]
     except IndexError:
         return default
+
+
 def attemptstr(o: Any) -> Any:
     try:
         return str(o)
     except Exception:
         return o
+
+
 def utf8(o: Any, default: Any = absent) -> Any:
     try:
         if isinstance(o, str):
@@ -95,26 +110,39 @@ def utf8(o: Any, default: Any = absent) -> Any:
         return o
     except Exception:
         return o if default is absent else default
+
+
 def non_string_iterable(o: Any) -> bool:
     return callable_attr(o, "__iter__") and not isinstance(o, (str, bytes))
+
+
 def idna_encode(o: Any) -> Any:
     if callable_attr(o, "encode"):
         return str(o.encode("idna").decode("utf8"))
     return o
+
+
 def idna_decode(o: Any) -> Any:
     o_utf8 = utf8(o)
     if callable_attr(o_utf8, "decode"):
         return o_utf8.decode("idna")
     return o
+
+
 def is_valid_port(port: Any) -> bool:
     port_str = str(port)
     return port_str.isdigit() and 0 < int(port_str) <= 65535
+
+
 def static_vars(**kwargs: Any) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         for key, value in kwargs.items():
             setattr(func, key, value)
         return func
+
     return decorator
+
+
 def create_quote_fn(safe_charset: str, quote_plus: bool) -> Callable[[Any, Any], str]:
     def quote_fn(s: Any, dont_quote: Any) -> str:
         if dont_quote is True:
@@ -128,19 +156,30 @@ def create_quote_fn(safe_charset: str, quote_plus: bool) -> Callable[[Any, Any],
         if quote_plus:
             quoted = quoted.replace("%20", "+")
         return quoted
+
     return quote_fn
+
+
 @static_vars(regex=re.compile(r"^([\w%s]|(%s))*$" % (re.escape("-.~:@!$&'()*+,;="), PERCENT_REGEX)))
 def is_valid_encoded_path_segment(segment: str) -> bool:
     return is_valid_encoded_path_segment.regex.match(segment) is not None
+
+
 @static_vars(regex=re.compile(r"^([\w%s]|(%s))*$" % (re.escape("-.~:@!$&'()*+,;/?"), PERCENT_REGEX)))
 def is_valid_encoded_query_key(key: str) -> bool:
     return is_valid_encoded_query_key.regex.match(key) is not None
+
+
 @static_vars(regex=re.compile(r"^([\w%s]|(%s))*$" % (re.escape("-.~:@!$&'()*+,;/?="), PERCENT_REGEX)))
 def is_valid_encoded_query_value(value: str) -> bool:
     return is_valid_encoded_query_value.regex.match(value) is not None
+
+
 @static_vars(regex=re.compile(r"[a-zA-Z][a-zA-Z\-\.\+]*"))
 def is_valid_scheme(scheme: str) -> bool:
     return is_valid_scheme.regex.match(scheme) is not None
+
+
 @static_vars(regex=re.compile("[%s]" % re.escape(INVALID_HOST_CHARS)))
 def is_valid_host(hostname: str) -> bool:
     toks = hostname.split(".")
@@ -150,6 +189,8 @@ def is_valid_host(hostname: str) -> bool:
         if is_valid_host.regex.search(tok) is not None:
             return False
     return "" not in toks
+
+
 def get_scheme(url: str) -> str | None:
     if url.startswith(":"):
         return ""
@@ -160,20 +201,28 @@ def get_scheme(url: str) -> str | None:
     if scheme is not None and not is_valid_scheme(scheme):
         return None
     return scheme
+
+
 def strip_scheme(url: str) -> str:
     scheme = get_scheme(url) or ""
     url = url[len(scheme) :]
     url = url.removeprefix(":")
     return url
+
+
 def set_scheme(url: str, scheme: str | None) -> str:
     after_scheme = strip_scheme(url)
     if scheme is None:
         return after_scheme
     else:
         return f"{scheme}:{after_scheme}"
+
+
 def has_netloc(url: str) -> bool:
     scheme = get_scheme(url)
     return url.startswith("//" if scheme is None else f"{scheme}://")
+
+
 def urlsplit(url: str) -> urllib.parse.SplitResult:
     original_scheme = get_scheme(url)
     if original_scheme is not None:
@@ -186,6 +235,8 @@ def urlsplit(url: str) -> urllib.parse.SplitResult:
         netloc = ""
     scheme = original_scheme or ""
     return urllib.parse.SplitResult(scheme, netloc, path, query, fragment)
+
+
 def urljoin(base: str, url: str) -> str:
     base_scheme = get_scheme(base) if has_netloc(base) else None
     url_scheme = get_scheme(url) if has_netloc(url) else None
@@ -198,6 +249,8 @@ def urljoin(base: str, url: str) -> str:
     if new_scheme is not None and has_netloc(joined):
         joined = set_scheme(joined, new_scheme)
     return joined
+
+
 def join_path_segments(*args: list[str]) -> list[str]:
     finals: list[str] = []
     for segments in args:
@@ -212,6 +265,8 @@ def join_path_segments(*args: list[str]) -> list[str]:
                 segments = segments[1:]
             finals.extend(segments)
     return finals
+
+
 def remove_path_segments(segments: list[str], remove: list[str]) -> list[str]:
     if segments == [""]:
         segments.append("")
@@ -233,10 +288,15 @@ def remove_path_segments(segments: list[str], remove: list[str]) -> list[str]:
         else:
             ret = segments
     return ret or []
+
+
 def quacks_like_a_path_with_segments(obj: Any) -> bool:
     return hasattr(obj, "segments") and is_iterable_but_not_string(obj.segments)
+
+
 class Path:
     SAFE_SEGMENT_CHARS: Final[str] = ":@-._~!$&'()*+,;="
+
     def __init__(
         self,
         path: Any = "",
@@ -248,6 +308,7 @@ class Path:
         self._isabsolute = False
         self._force_absolute = force_absolute
         self.load(path)
+
     def load(self, path: Any) -> Self:
         if not path:
             segments: list[str] = []
@@ -265,6 +326,7 @@ class Path:
             segments.pop(0)
         self.segments = segments
         return self
+
     def add(self, path: Any) -> Self:
         if quacks_like_a_path_with_segments(path):
             newsegments = path.segments
@@ -279,9 +341,11 @@ class Path:
             segments.insert(0, "")
         self.load(join_path_segments(segments, newsegments))
         return self
+
     def set(self, path: Any) -> Self:
         self.load(path)
         return self
+
     def remove(self, path: Any) -> Self:
         if path is True:
             self.load("")
@@ -293,6 +357,7 @@ class Path:
             base = ([""] if self.isabsolute else []) + self.segments
             self.load(remove_path_segments(base, segments))
         return self
+
     def normalize(self) -> Self:
         if str(self):
             normalized = normpath(str(self)) + ("/" * self.isdir)
@@ -300,6 +365,7 @@ class Path:
                 normalized = "/" + normalized.lstrip("/")
             self.load(normalized)
         return self
+
     def asdict(self) -> dict[str, Any]:
         return {
             "encoded": str(self),
@@ -308,11 +374,13 @@ class Path:
             "segments": self.segments,
             "isabsolute": self.isabsolute,
         }
+
     @property
     def isabsolute(self) -> bool:
         if self._force_absolute(self):
             return True
         return self._isabsolute
+
     @isabsolute.setter
     def isabsolute(self, isabsolute: bool) -> None:
         if self._force_absolute(self):
@@ -323,21 +391,28 @@ class Path:
             )
             raise AttributeError(s)
         self._isabsolute = isabsolute
+
     @property
     def isdir(self) -> bool:
         return self.segments == [] or (bool(self.segments) and self.segments[-1] == "")
+
     @property
     def isfile(self) -> bool:
         return not self.isdir
+
     def __truediv__(self, path: Any) -> Self:
         copy = deepcopy(self)
         return copy.add(path)
+
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
+
     def __ne__(self, other: object) -> bool:
         return not self == other
+
     def __bool__(self) -> bool:
         return len(self.segments) > 0
+
     def __str__(self) -> str:
         segments = list(self.segments)
         if self.isabsolute:
@@ -346,8 +421,10 @@ class Path:
             else:
                 segments.insert(0, "")
         return self._path_from_segments(segments)
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self!s}')"
+
     def _segments_from_path(self, path: str) -> list[str]:
         segments: list[Any] = []
         for segment in path.split("/"):
@@ -363,15 +440,20 @@ class Path:
         del segment
         segments_decoded = [segment.decode("utf8") if isinstance(segment, bytes) else segment for segment in segments]
         return [urllib.parse.unquote(segment) for segment in segments_decoded]
+
     def _path_from_segments(self, segments: list[str]) -> str:
         safe_segments = [urllib.parse.quote(utf8(attemptstr(segment)), self.SAFE_SEGMENT_CHARS) for segment in segments]
         return "/".join(safe_segments)
+
+
 class PathCompositionInterface(abc.ABC):
     def __init__(self, strict: bool = False) -> None:
         self._path = Path(force_absolute=self._force_absolute, strict=strict)
+
     @property
     def path(self) -> Path:
         return self._path
+
     @property
     def pathstr(self) -> str:
         s = (
@@ -381,9 +463,11 @@ class PathCompositionInterface(abc.ABC):
         )
         warnings.warn(s, DeprecationWarning)
         return str(self._path)
+
     @abc.abstractmethod
     def _force_absolute(self, path: Any) -> bool:
         pass
+
     def __setattr__(self, attr: str, value: Any) -> bool:
         if attr == "_path":
             self.__dict__[attr] = value
@@ -392,34 +476,47 @@ class PathCompositionInterface(abc.ABC):
             self._path.load(value)
             return True
         return False
+
+
 class URLPathCompositionInterface(PathCompositionInterface):
     def __init__(self, strict: bool = False) -> None:
         PathCompositionInterface.__init__(self, strict=strict)
+
     def _force_absolute(self, path: Any) -> bool:
         return bool(path) and bool(getattr(self, "netloc", None))
+
+
 class FragmentPathCompositionInterface(PathCompositionInterface):
     def __init__(self, strict: bool = False) -> None:
         PathCompositionInterface.__init__(self, strict=strict)
+
     def _force_absolute(self, path: Any) -> bool:
         return False
+
+
 class Query:
     SAFE_KEY_CHARS: Final[str] = "/?:@-._~!$'()*+,;"
     SAFE_VALUE_CHARS: Final[str] = SAFE_KEY_CHARS + "="
+
     def __init__(self, query: Any = "", strict: bool = False) -> None:
         self.strict = strict
         self._params = omdict1D()
         self.load(query)
+
     def load(self, query: Any) -> Self:
         items = self._items(query)
         self.params.load(items)
         return self
+
     def add(self, args: Any) -> Self:
         for param, value in self._items(args):
             self.params.add(param, value)
         return self
+
     def set(self, mapping: Any) -> Self:
         self.params.updateall(mapping)
         return self
+
     def remove(self, query: Any) -> Self:
         if query is True:
             self.load("")
@@ -437,15 +534,18 @@ class Query:
                 key = item
                 self.params.pop(key, None)
         return self
+
     @property
     def params(self) -> Any:
         return self._params
+
     @params.setter
     def params(self, params: Any) -> None:
         items = self._items(params)
         self._params.clear()
         for key, value in items:
             self._params.add(key, value)
+
     def encode(
         self,
         delimiter: str = "&",
@@ -471,21 +571,28 @@ class Query:
                 pair = f"{quoted_key}={quoted_value}"
             pairs.append(pair)
         return delimiter.join(pairs)
+
     def asdict(self) -> dict[str, Any]:
         return {
             "encoded": str(self),
             "params": list(self.params.allitems()),
         }
+
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
+
     def __ne__(self, other: object) -> bool:
         return not self == other
+
     def __bool__(self) -> bool:
         return len(self.params) > 0
+
     def __str__(self) -> str:
         return self.encode()
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self!s}')"
+
     def _items(self, items: Any) -> list[tuple[Any, Any]]:
         if not items:
             items = []
@@ -502,6 +609,7 @@ class Query:
         else:
             items = list(items)
         return items
+
     def _extract_items_from_querystr(self, querystr: str) -> list[tuple[str, str | None]]:
         items = []
         pairstrs = querystr.split("&")
@@ -523,12 +631,16 @@ class Query:
                 value_decoded = urllib.parse.unquote(value.replace("+", " "))
             items.append((key_decoded, value_decoded))
         return items
+
+
 class QueryCompositionInterface(abc.ABC):
     def __init__(self, strict: bool = False) -> None:
         self._query = Query(strict=strict)
+
     @property
     def query(self) -> Query:
         return self._query
+
     @property
     def querystr(self) -> str:
         s = (
@@ -538,14 +650,18 @@ class QueryCompositionInterface(abc.ABC):
         )
         warnings.warn(s, DeprecationWarning)
         return str(self._query)
+
     @property
     def args(self) -> Any:
         return self._query.params
+
     def __setattr__(self, attr: str, value: Any) -> bool:
         if attr in ("args", "query"):
             self._query.load(value)
             return True
         return False
+
+
 class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
     def __init__(self, fragment: Any = "", strict: bool = False) -> None:
         FragmentPathCompositionInterface.__init__(self, strict=strict)
@@ -553,6 +669,7 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
         self.strict = strict
         self.separator = True
         self.load(fragment)
+
     def load(self, fragment: Any) -> None:
         self.path.load("")
         self.query.load("")
@@ -572,12 +689,14 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
             self._query.load(toks[1])
         else:
             self._path.load(fragment)
+
     def add(self, path: Any = absent, args: Any = absent) -> Self:
         if path is not absent:
             self.path.add(path)
         if args is not absent:
             self.query.add(args)
         return self
+
     def set(self, path: Any = absent, args: Any = absent, separator: Any = absent) -> Self:
         if path is not absent:
             self.path.load(path)
@@ -586,6 +705,7 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
         if separator is True or separator is False:
             self.separator = separator
         return self
+
     def remove(self, fragment: Any = absent, path: Any = absent, args: Any = absent) -> Self:
         if fragment is True:
             self.load("")
@@ -594,6 +714,7 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
         if args is not absent:
             self.query.remove(args)
         return self
+
     def asdict(self) -> dict[str, Any]:
         return {
             "encoded": str(self),
@@ -601,31 +722,41 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
             "path": self.path.asdict(),
             "query": self.query.asdict(),
         }
+
     def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
+
     def __ne__(self, other: object) -> bool:
         return not self == other
+
     def __setattr__(self, attr: str, value: Any) -> None:
         if not PathCompositionInterface.__setattr__(self, attr, value) and not QueryCompositionInterface.__setattr__(
             self, attr, value
         ):
             object.__setattr__(self, attr, value)
+
     def __bool__(self) -> bool:
         return bool(self.path) or bool(self.query)
+
     def __str__(self) -> str:
         path, query = str(self._path), str(self._query)
         if path and (not query or not self.separator):
             path = path.replace("%3F", "?")
         separator = "?" if path and query and self.separator else ""
         return path + separator + query
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self!s}')"
+
+
 class FragmentCompositionInterface(abc.ABC):
     def __init__(self, strict: bool = False) -> None:
         self._fragment = Fragment(strict=strict)
+
     @property
     def fragment(self) -> Fragment:
         return self._fragment
+
     @property
     def fragmentstr(self) -> str:
         s = (
@@ -635,11 +766,14 @@ class FragmentCompositionInterface(abc.ABC):
         )
         warnings.warn(s, DeprecationWarning)
         return str(self._fragment)
+
     def __setattr__(self, attr: str, value: Any) -> bool:
         if attr == "fragment":
             self.fragment.load(value)
             return True
         return False
+
+
 class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompositionInterface):
     def __init__(
         self,
@@ -683,6 +817,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
             username=username,
             password=password,
         )
+
     def load(self, url: Any) -> Self:
         self.username = self.password = None
         self._host = self._port = self._scheme = None
@@ -699,17 +834,21 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         self.query.load(tokens.query)
         self.fragment.load(tokens.fragment)
         return self
+
     @property
     def scheme(self) -> str | None:
         return self._scheme
+
     @scheme.setter
     def scheme(self, scheme: Any) -> None:
         if callable_attr(scheme, "lower"):
             scheme = scheme.lower()
         self._scheme = scheme
+
     @property
     def host(self) -> str | None:
         return self._host
+
     @host.setter
     def host(self, host: Any) -> None:
         urllib.parse.urlsplit(f"http://{host}/")
@@ -726,9 +865,11 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if callable_attr(host, "startswith") and host.startswith("xn--"):
             host = idna_decode(host)
         self._host = host
+
     @property
     def port(self) -> int | None:
         return self._port or DEFAULT_PORTS.get(self.scheme or "")
+
     @port.setter
     def port(self, port: Any) -> None:
         if port is None:
@@ -738,6 +879,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         else:
             msg = f"Invalid port '{port}'."
             raise ValueError(msg)
+
     @property
     def netloc(self) -> str:
         userpass = urllib.parse.quote(utf8(self.username) or "", safe="")
@@ -751,6 +893,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if userpass or netloc:
             netloc = (userpass or "") + (netloc or "")
         return netloc
+
     @netloc.setter
     def netloc(self, netloc: str | None) -> None:
         urllib.parse.urlsplit(f"http://{netloc}/")
@@ -779,6 +922,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         self.host = host
         self.username = None if username is None else urllib.parse.unquote(username)
         self.password = None if password is None else urllib.parse.unquote(password)
+
     @property
     def origin(self) -> str:
         port = ""
@@ -787,6 +931,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if self.port and self.port != DEFAULT_PORTS.get(self.scheme or ""):
             port = f":{self.port}"
         return f"{scheme}://{host}{port}"
+
     @origin.setter
     def origin(self, origin: str | None) -> None:
         if origin is None:
@@ -801,12 +946,15 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
                 self.host, self.port = host_port.split(":", 1)
             else:
                 self.host = host_port
+
     @property
     def url(self) -> str:
         return self.tostr()
+
     @url.setter
     def url(self, url: Any) -> None:
         self.load(url)
+
     def add(
         self,
         args: Any = absent,
@@ -832,6 +980,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if fragment_path is not absent or fragment_args is not absent:
             self.fragment.add(path=fragment_path, args=fragment_args)
         return self
+
     def set(
         self,
         args: Any = absent,
@@ -884,6 +1033,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if fragment_path is not absent or fragment_args is not absent or fragment_separator is not absent:
             self.fragment.set(path=fragment_path, args=fragment_args, separator=fragment_separator)
         return self
+
     def remove(
         self,
         args: Any = absent,
@@ -904,8 +1054,10 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if fragment_path is not absent or fragment_args is not absent:
             self.fragment.remove(path=fragment_path, args=fragment_args)
         return self
+
     def copy(self) -> Self:
         return deepcopy(self)
+
     def tostr(self) -> str:
         res = ""
         if self.scheme is not None:
@@ -923,6 +1075,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         if fragment_str:
             res += f"#{fragment_str}"
         return res
+
     def __setattr__(self, attr: str, value: Any) -> None:
         if (
             not URLPathCompositionInterface.__setattr__(self, attr, value)
@@ -930,15 +1083,19 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
             and not FragmentCompositionInterface.__setattr__(self, attr, value)
         ):
             object.__setattr__(self, attr, value)
+
     def __str__(self) -> str:
         return self.tostr()
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.tostr()}')"
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
             return self.tostr() == other
         elif isinstance(other, furl):
             return self.tostr() == other.tostr()
         return False
+
     def __ne__(self, other: object) -> bool:
         return not self == other

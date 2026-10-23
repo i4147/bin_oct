@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+
+
 def update_setup_files() -> None:
     target_cp = f"cp3{sys.version_info.minor}"
     pattern = re.compile(r'(python,\s*abi\s*=\s*")cp3\d+(")')
@@ -20,5 +22,7 @@ def update_setup_files() -> None:
         except Exception as e:
             print(f"❌ Error processing {setup_file}: {e}")
     print(f"\nFinished! Updated {updated_files} file(s) to match Python version '{target_cp}'.")
+
+
 if __name__ == "__main__":
     update_setup_files()

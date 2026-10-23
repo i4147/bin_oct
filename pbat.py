@@ -14,6 +14,7 @@ from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
 from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer
 from pygments.styles import get_all_styles, get_style_by_name
 from pygments.util import ClassNotFound
+
 RESET = "\x1b[0m"
 GRID_COLOR = "\x1b[38;5;238m"
 HEADER_COLOR = "\x1b[38;5;81m"
@@ -25,6 +26,8 @@ HIGHLIGHT_BG = "\x1b[48;5;236m"
 BOX_H, BOX_V = "─", "│"
 BOX_TL, BOX_TR, BOX_BL, BOX_BR = "╭", "╮", "╰", "╯"
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
 @dataclass
 class BatConfig:
     files: list = field(default_factory=list)
@@ -40,12 +43,15 @@ class BatConfig:
     paging: str = "auto"
     tab_width: int = 4
     color: str = "auto"
+
     def apply_plain(self):
         if self.plain:
             self.show_numbers = False
             self.show_grid = False
             self.show_header = False
             self.show_changes = False
+
+
 class GitDiffCalculator:
     def __init__(self, path: Path):
         self.path = path
@@ -53,6 +59,7 @@ class GitDiffCalculator:
         self.modified: set = set()
         self.removed_before: dict = {}
         self._compute()
+
     def _compute(self):
         if not shutil.which("git"):
             return
@@ -90,6 +97,7 @@ class GitDiffCalculator:
                 self._parse_hunks(result.stdout)
         except Exception:
             pass
+
     def _parse_hunks(self, diff_text: str):
         for line in diff_text.splitlines():
             if not line.startswith("@@"):
@@ -113,17 +121,22 @@ class GitDiffCalculator:
             elif old_count == 0 and new_count > 0:
                 for i in range(new_count):
                     self.added.add(new_start + i)
+
     def status_for(self, line_no: int) -> str | None:
         if line_no in self.added:
             return "added"
         if line_no in self.modified:
             return "modified"
         return None
+
     def removed_marker(self, line_no: int) -> int:
         return self.removed_before.get(line_no, 0)
+
+
 class Printer:
     def __init__(self, config: BatConfig):
         self.config = config
+
     def print_file(self, path: Path | None, content: str) -> str:
         lines = content.splitlines()
         total = len(lines)
@@ -145,6 +158,7 @@ class Printer:
         if self.config.show_grid:
             out.write(f"{GRID_COLOR}{BOX_H * width}{RESET}\n")
         return out.getvalue()
+
     def _get_lexer(self, path, content):
         if self.config.language:
             try:
@@ -160,6 +174,7 @@ class Printer:
             return guess_lexer(content, stripnl=False)
         except ClassNotFound:
             return TextLexer(stripnl=False)
+
     def _get_formatter(self):
         if self.config.color == "never":
             return None
@@ -170,6 +185,7 @@ class Printer:
         if "truecolor" in os.environ.get("COLORTERM", "") or "24bit" in os.environ.get("COLORTERM", ""):
             return TerminalTrueColorFormatter(style=style)
         return Terminal256Formatter(style=style)
+
     def _highlight_lines(self, lines, lexer, formatter):
         if self.config.plain or formatter is None:
             return lines
@@ -178,18 +194,21 @@ class Printer:
         if highlighted and highlighted[-1] == "":
             highlighted.pop()
         return highlighted
+
     def _resolve_range(self, total):
         if self.config.line_range:
             s, e = self.config.line_range
             e = e if e is not None else total
             return max(1, s), min(total, e)
         return 1, total
+
     def _print_header(self, out, path, width):
         name = str(path) if path else "STDIN"
         title = f" {name} "
         left = BOX_H * 2
         right = BOX_H * max(width - len(left) - len(title) - 2, 0)
         out.write(f"{GRID_COLOR}{BOX_TL}{left}{RESET}{HEADER_COLOR}{title}{RESET}{GRID_COLOR}{right}{BOX_TR}{RESET}\n")
+
     def _print_line(self, out, line_no, text, git):
         prefix_parts = []
         if self.config.show_changes:
@@ -211,12 +230,16 @@ class Printer:
         prefix = " ".join(prefix_parts)
         line_out = f"{HIGHLIGHT_BG}{text}{RESET}" if line_no in self.config.highlight_lines else text
         out.write(f"{prefix} {line_out}\n" if prefix else f"{line_out}\n")
+
+
 def parse_line_range(s: str):
     if ":" in s:
         a, b = s.split(":", 1)
         return (int(a) if a else 1, int(b) if b else None)
     n = int(s)
     return (n, n)
+
+
 def read_input(path: str):
     if path == "-":
         return None, sys.stdin.read()
@@ -236,12 +259,18 @@ def read_input(path: str):
         return p, data.decode("utf-8")
     except UnicodeDecodeError:
         return p, data.decode("utf-8", errors="replace")
+
+
 def list_languages():
     for name, aliases, _, _ in sorted(get_all_lexers(), key=lambda x: x[0].lower()):
         print(f"{name:30} {', '.join(aliases)}")
+
+
 def list_themes():
     for style in sorted(get_all_styles()):
         print(style)
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pybat",
@@ -281,6 +310,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--list-languages", action="store_true")
     p.add_argument("--list-themes", action="store_true")
     return p
+
+
 def config_from_args(args) -> BatConfig:
     cfg = BatConfig(
         files=args.files,
@@ -308,6 +339,8 @@ def config_from_args(args) -> BatConfig:
     if args.line_range:
         cfg.line_range = parse_line_range(args.line_range)
     return cfg
+
+
 def should_page(cfg: BatConfig, line_count: int) -> bool:
     if cfg.paging == "always":
         return True
@@ -316,6 +349,8 @@ def should_page(cfg: BatConfig, line_count: int) -> bool:
     if not sys.stdout.isatty():
         return False
     return line_count > shutil.get_terminal_size((100, 24)).lines
+
+
 def page_output(text: str):
     pager = os.environ.get("PAGER", "less")
     try:
@@ -323,6 +358,8 @@ def page_output(text: str):
         proc.communicate(text.encode("utf-8"))
     except FileNotFoundError:
         sys.stdout.write(text)
+
+
 def main(argv=None) -> int:
     args = build_arg_parser().parse_args(argv)
     if args.list_languages:
@@ -347,5 +384,7 @@ def main(argv=None) -> int:
     else:
         sys.stdout.write(final_text)
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -3,6 +3,8 @@ from __future__ import annotations
 from os import chdir as os_chdir
 from pathlib import Path
 from dh import get_files, mpf, runcmd
+
+
 def process_file(path_str: str) -> None:
     path = Path(path_str)
     os_chdir(path.parent)
@@ -10,6 +12,8 @@ def process_file(path_str: str) -> None:
     ret, _, _ = runcmd(cmd)
     if ret != 0:
         print(f"Error building wheel for {path}")
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     files = get_files(cwd)

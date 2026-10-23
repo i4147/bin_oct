@@ -12,37 +12,61 @@ import time
 from typing import TYPE_CHECKING
 from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import FrameType
+
+
 class TranslationFailedError(Exception):
     pass
+
+
 class UnknownBackendError(Exception):
     pass
+
+
 class NoBackendAvailableError(Exception):
     pass
+
+
 _DEEPL_TARGET_OVERRIDES: dict[str, str] = {
     "en": "EN-US",
     "pt": "PT-PT",
     "zh": "ZH",
 }
+
+
 def _lang_for_deepl(code: str, *, is_target: bool) -> str:
     code = code.strip()
     if is_target and code.lower() in _DEEPL_TARGET_OVERRIDES:
         return _DEEPL_TARGET_OVERRIDES[code.lower()]
     return code.upper()
+
+
 def _lang_for_deep_translator(code: str, *, is_target: bool) -> str:
     return code.strip().lower()
+
+
 def _lang_for_translate_pkg(code: str, *, is_target: bool) -> str:
     return code.strip().lower()
+
+
 def _lang_for_translators_bing(code: str, *, is_target: bool) -> str:
     return code.strip().lower()
+
+
 def _lang_for_googletrans(code: str, *, is_target: bool) -> str:
     return code.strip().lower()
+
+
 def _lang_for_pygoogletranslation(code: str, *, is_target: bool) -> str:
     return code.strip().lower()
+
+
 def _make_deepl(source: str, target: str) -> Callable[[str], str]:
     import deepl
+
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
         msg = "DEEPL_API_KEY is not set"
@@ -50,14 +74,20 @@ def _make_deepl(source: str, target: str) -> Callable[[str], str]:
     translator = deepl.Translator(api_key)
     src = _lang_for_deepl(source, is_target=False)
     tgt = _lang_for_deepl(target, is_target=True)
+
     def translate(text: str) -> str:
         result = translator.translate_text(text, source_lang=src, target_lang=tgt)
         return str(result.text)
+
     return translate
+
+
 def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
     from deep_translator import GoogleTranslator
+
     src = _lang_for_deep_translator(source, is_target=False)
     tgt = _lang_for_deep_translator(target, is_target=True)
+
     def translate(text: str) -> str:
         client = GoogleTranslator(source=src, target=tgt)
         result = client.translate(text)
@@ -65,11 +95,16 @@ def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
             msg = "deep_translator returned None"
             raise TranslationFailedError(msg)
         return str(result)
+
     return translate
+
+
 def _make_translate(source: str, target: str) -> Callable[[str], str]:
     from translate import Translator as TranslatePkgTranslator
+
     src = _lang_for_translate_pkg(source, is_target=False)
     tgt = _lang_for_translate_pkg(target, is_target=True)
+
     def translate(text: str) -> str:
         client = TranslatePkgTranslator(from_lang=src, to_lang=tgt)
         result = client.translate(text)
@@ -77,24 +112,36 @@ def _make_translate(source: str, target: str) -> Callable[[str], str]:
             msg = "translate package returned empty result"
             raise TranslationFailedError(msg)
         return str(result)
+
     return translate
+
+
 def _make_translators_bing(source: str, target: str) -> Callable[[str], str]:
     import translators as ts
+
     src = _lang_for_translators_bing(source, is_target=False)
     tgt = _lang_for_translators_bing(target, is_target=True)
+
     def translate(text: str) -> str:
         result = ts.translate_text(text, translator="bing", from_language=src, to_language=tgt)
         if not result:
             msg = "translators (bing) returned empty result"
             raise TranslationFailedError(msg)
         return str(result)
+
     return translate
+
+
 _googletrans_lock = threading.Lock()
+
+
 def _make_googletrans(source: str, target: str) -> Callable[[str], str]:
     from googletrans import Translator as GoogleTransTranslator
+
     src = _lang_for_googletrans(source, is_target=False)
     tgt = _lang_for_googletrans(target, is_target=True)
     client = GoogleTransTranslator()
+
     def translate(text: str) -> str:
         with _googletrans_lock:
             result = client.translate(text, src=src, dest=tgt)
@@ -102,13 +149,20 @@ def _make_googletrans(source: str, target: str) -> Callable[[str], str]:
             msg = "googletrans returned empty result"
             raise TranslationFailedError(msg)
         return str(result.text)
+
     return translate
+
+
 _pygoogletranslation_lock = threading.Lock()
+
+
 def _make_pygoogletranslation(source: str, target: str) -> Callable[[str], str]:
     from pygoogletranslation import Translator as PyGoogleTranslator
+
     src = _lang_for_pygoogletranslation(source, is_target=False)
     tgt = _lang_for_pygoogletranslation(target, is_target=True)
     client = PyGoogleTranslator()
+
     def translate(text: str) -> str:
         with _pygoogletranslation_lock:
             result = client.translate(text, src=src, dest=tgt)
@@ -116,7 +170,10 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable[[str], str]:
             msg = "pygoogletranslation returned empty result"
             raise TranslationFailedError(msg)
         return str(result.text)
+
     return translate
+
+
 BACKEND_FACTORIES: dict[str, Callable[[str, str], Callable[[str], str]]] = {
     "deepl": _make_deepl,
     "deep_translator": _make_deep_translator,
@@ -133,6 +190,8 @@ FALLBACK_ORDER: tuple[str, ...] = (
     "googletrans",
     "pygoogletranslation",
 )
+
+
 def select_backend(requested: str | None, source: str, target: str) -> tuple[str, Callable[[str], str]]:
     if requested:
         if requested not in BACKEND_FACTORIES:
@@ -158,6 +217,8 @@ def select_backend(requested: str | None, source: str, target: str) -> tuple[str
             continue
     msg = f"no backend could be constructed from fallback order {FALLBACK_ORDER}. Last error: {last_error}"
     raise NoBackendAvailableError(msg)
+
+
 def chunk_text(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         msg = "chunk_size must be positive"
@@ -181,12 +242,18 @@ def chunk_text(text: str, chunk_size: int) -> list[str]:
         while pos < length and text[pos] in " \t\n\r":
             pos += 1
     return chunks
+
+
 def _normalize_for_comparison(s: str) -> str:
     return " ".join(s.lower().split())
+
+
 def looks_untranslated(source_text: str, translated_text: str, source_lang: str, target_lang: str) -> bool:
     if source_lang.strip().lower() == target_lang.strip().lower():
         return False
     return _normalize_for_comparison(source_text) == _normalize_for_comparison(translated_text)
+
+
 def translate_with_retry(
     translate_fn: Callable[[str], str],
     text: str,
@@ -216,7 +283,10 @@ def translate_with_retry(
             msg = "translation looks identical to source (likely untranslated)"
             raise TranslationFailedError(msg)
         return result
+
     return _attempt()
+
+
 def load_existing_results(output_path: Path) -> dict[str, str]:
     if not output_path.exists():
         return {}
@@ -230,6 +300,8 @@ def load_existing_results(output_path: Path) -> dict[str, str]:
     except (OSError, json.JSONDecodeError) as e:
         logger.warning(f"Could not load existing output {output_path}: {e}")
         return {}
+
+
 def save_results_atomic(output_path: Path, results: dict[str, str]) -> None:
     tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
     ordered = {str(k): results[str(k)] for k in sorted(results, key=int)}
@@ -242,13 +314,21 @@ def save_results_atomic(output_path: Path, results: dict[str, str]) -> None:
     finally:
         if tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
+
+
 def append_failed_index(failed_path: Path, index: int) -> None:
     with failed_path.open("a", encoding="utf-8") as f:
         f.write(f"{index}\n")
+
+
 _shutdown_requested = threading.Event()
+
+
 def _handle_sigint(signum: int, frame: FrameType | None) -> None:
     logger.info("Ctrl+C received, finishing in-flight chunks and saving...")
     _shutdown_requested.set()
+
+
 def run_translation(
     chunks: list[str],
     existing: dict[str, str],
@@ -312,6 +392,8 @@ def run_translation(
     save_results_atomic(output_path, results)
     logger.info(f"Saved {len(results)}/{len(chunks)} chunk(s) to {output_path}")
     return results
+
+
 def configure_logging(log_file: Path) -> None:
     logger.remove()
     logger.add(sys.stderr, level="ERROR", backtrace=False, diagnose=False)
@@ -324,6 +406,8 @@ def configure_logging(log_file: Path) -> None:
         backtrace=True,
         diagnose=False,
     )
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Split a text file into chunks, translate each chunk, and save results to JSON.",
@@ -367,6 +451,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Start fresh: ignore any existing output file instead of resuming.",
     )
     return ap.parse_args(argv)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     workers = max(1, min(args.workers, 4))
@@ -413,5 +499,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     logger.info("All chunks translated successfully.")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

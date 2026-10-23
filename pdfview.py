@@ -13,21 +13,28 @@ import textwrap
 import tty
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 from loguru import logger
+
 if TYPE_CHECKING:
     import os
 WORKERS: int = 8
 PDF_SUFFIXES: frozenset[str] = frozenset({".pdf"})
+
+
 @dataclass(frozen=True, slots=True)
 class InputFile:
     path: Path
     backend: str
     page_count: int
+
+
 @dataclass(frozen=True, slots=True)
 class ScreenPart:
     page_number: int
     part_number: int
     part_count: int
     text: str
+
+
 def render_screen(part: ScreenPart, screen_index: int, screen_count: int) -> None:
     clear_screen()
     title: str = (
@@ -38,6 +45,8 @@ def render_screen(part: ScreenPart, screen_index: int, screen_count: int) -> Non
     sys.stdout.write(part.text)
     sys.stdout.write("\n")
     sys.stdout.flush()
+
+
 def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Display extracted PDF text in a scrollable terminal pager."
@@ -75,9 +84,13 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help="Loguru log level; default: WARNING.",
     )
     return parser.parse_args(argv)
+
+
 def configure_logging(level: str) -> None:
     logger.remove()
     logger.add(sys.stderr, level=level, enqueue=False)
+
+
 def unique_paths(paths: Iterable[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
     for raw_path in paths:
@@ -104,6 +117,8 @@ def unique_paths(paths: Iterable[Path]) -> Iterator[Path]:
                 if resolved not in seen:
                     seen.add(resolved)
                     yield resolved
+
+
 def find_pdf_files(paths: Sequence[Path], recursive: bool) -> list[Path]:
     if not paths:
         paths = (Path.cwd(),)
@@ -129,14 +144,20 @@ def find_pdf_files(paths: Sequence[Path], recursive: bool) -> list[Path]:
                             result.append(resolved)
         return sorted(result)
     return sorted(unique_paths(paths))
+
+
 def executable_exists(name: str) -> bool:
     return shutil.which(name) is not None
+
+
 def importable(module_name: str) -> bool:
     try:
         __import__(module_name)
     except ImportError:
         return False
     return True
+
+
 def usable_python_backends() -> list[str]:
     result: list[str] = []
     if importable("pdfminer"):
@@ -146,8 +167,12 @@ def usable_python_backends() -> list[str]:
     if importable("fitz"):
         result.append("pymupdf")
     return result
+
+
 def usable_system_backend() -> bool:
     return executable_exists("gs") and executable_exists("tesseract")
+
+
 def resolve_backend(requested: str) -> str:
     if requested == "auto":
         available: list[str] = usable_python_backends()
@@ -176,22 +201,33 @@ def resolve_backend(requested: str) -> str:
         return "system"
     msg = f"Backend '{requested}' is unavailable and no system OCR fallback exists."
     raise RuntimeError(msg)
+
+
 def page_count_pdfminer(path: Path) -> int:
     from pdfminer.pdfpage import PDFPage
+
     with path.open("rb") as handle:
         count: int = sum(1 for _ in PDFPage.get_pages(handle))
     return count
+
+
 def page_count_pypdf(path: Path) -> int:
     from pypdf import PdfReader
+
     reader: PdfReader = PdfReader(str(path), strict=False)
     return len(reader.pages)
+
+
 def page_count_pymupdf(path: Path) -> int:
     import fitz
+
     document = fitz.open(str(path))
     try:
         return document.page_count
     finally:
         document.close()
+
+
 def page_count_pdfinfo(path: Path) -> int:
     if not executable_exists("pdfinfo"):
         msg = "pdfinfo is required to count pages for system OCR."
@@ -210,6 +246,8 @@ def page_count_pdfinfo(path: Path) -> int:
                 return count
     msg = f"pdfinfo did not report a valid page count for {path}"
     raise RuntimeError(msg)
+
+
 def get_page_count(path: Path, backend: str) -> int:
     if backend == "pdfminer":
         return page_count_pdfminer(path)
@@ -221,11 +259,14 @@ def get_page_count(path: Path, backend: str) -> int:
         return page_count_pdfinfo(path)
     msg = f"Unknown backend: {backend}"
     raise RuntimeError(msg)
+
+
 def extract_pdfminer_page(path: Path, page_number: int) -> str:
     from io import StringIO
     from pdfminer.high_level import extract_text_to_fp
     from pdfminer.layout import LAParams
     from pdfminer.pdfpage import PDFPage
+
     output: StringIO = StringIO()
     with path.open("rb") as handle:
         pages = PDFPage.get_pages(
@@ -241,19 +282,27 @@ def extract_pdfminer_page(path: Path, page_number: int) -> str:
             codec="utf-8",
         )
     return output.getvalue()
+
+
 def extract_pypdf_page(path: Path, page_number: int) -> str:
     from pypdf import PdfReader
+
     reader: PdfReader = PdfReader(str(path), strict=False)
     page = reader.pages[page_number - 1]
     return page.extract_text() or ""
+
+
 def extract_pymupdf_page(path: Path, page_number: int) -> str:
     import fitz
+
     document = fitz.open(str(path))
     try:
         page = document.load_page(page_number - 1)
         return page.get_text("text") or ""
     finally:
         document.close()
+
+
 def extract_system_page(path: Path, page_number: int) -> str:
     required_tools: tuple[str, ...] = ("gs", "tesseract")
     missing: list[str] = [tool for tool in required_tools if not executable_exists(tool)]
@@ -298,6 +347,8 @@ def extract_system_page(path: Path, page_number: int) -> str:
             errors="replace",
         )
     return completed.stdout
+
+
 def extract_page(task: tuple[str, int, str]) -> str:
     path_string, page_number, backend = task
     path: Path = Path(path_string)
@@ -311,11 +362,15 @@ def extract_page(task: tuple[str, int, str]) -> str:
         return extract_system_page(path, page_number)
     msg = f"Unknown backend: {backend}"
     raise RuntimeError(msg)
+
+
 def terminal_size() -> tuple[int, int]:
     size: os.terminal_size = shutil.get_terminal_size((80, 24))
     columns: int = max(20, size.columns)
     rows: int = max(5, size.lines)
     return columns, rows
+
+
 def wrap_text(value: str, width: int) -> list[str]:
     normalized: str = value.replace("\r\n", "\n").replace("\r", "\n")
     result: list[str] = []
@@ -337,6 +392,8 @@ def wrap_text(value: str, width: int) -> list[str]:
     while result and result[-1] == "":
         result.pop()
     return result or [""]
+
+
 def split_into_screen_parts(
     page_number: int,
     text: str,
@@ -361,6 +418,8 @@ def split_into_screen_parts(
         )
         for part in parts
     ]
+
+
 def make_screen_parts(page_text: Sequence[str]) -> list[ScreenPart]:
     columns, rows = terminal_size()
     result: list[ScreenPart] = []
@@ -374,8 +433,12 @@ def make_screen_parts(page_text: Sequence[str]) -> list[ScreenPart]:
             )
         )
     return result
+
+
 def clear_screen() -> None:
     sys.stdout.write("\033[2J\033[H")
+
+
 def read_key() -> str:
     character: str = sys.stdin.read(1)
     if character != "\033":
@@ -398,6 +461,8 @@ def read_key() -> str:
         if sequence.endswith("F"):
             return "end"
     return "escape"
+
+
 def pager(parts: Sequence[ScreenPart]) -> None:
     if not parts:
         logger.warning("No text was extracted.")
@@ -428,6 +493,8 @@ def pager(parts: Sequence[ScreenPart]) -> None:
     finally:
         termios.tcsetattr(file_descriptor, termios.TCSADRAIN, original_settings)
         clear_screen()
+
+
 def extract_file(path: Path, backend: str, workers: int) -> list[str]:
     page_count: int = get_page_count(path, backend)
     logger.info(
@@ -439,6 +506,8 @@ def extract_file(path: Path, backend: str, workers: int) -> list[str]:
     tasks: list[tuple[str, int, str]] = [(str(path), page_number, backend) for page_number in range(1, page_count + 1)]
     with ProcessPoolExecutor(max_workers=workers) as executor:
         return list(executor.map(extract_page, tasks, chunksize=1))
+
+
 def process_file(path: Path, requested_backend: str, workers: int) -> None:
     backend: str = resolve_backend(requested_backend)
     logger.info("Opening {} using backend {}", path, backend)
@@ -459,6 +528,8 @@ def process_file(path: Path, requested_backend: str, workers: int) -> None:
         raise RuntimeError(msg)
     print(f"\n{path}\n")
     pager(make_screen_parts(page_text))
+
+
 def main(argv: Sequence[str]) -> int:
     arguments: argparse.Namespace = parse_arguments(argv)
     configure_logging(arguments.log_level)
@@ -479,6 +550,8 @@ def main(argv: Sequence[str]) -> int:
             workers=arguments.workers,
         )
     return 0
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main(sys.argv[1:]))

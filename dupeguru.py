@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import sys
 from typing import Iterable, Iterator
+
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16
 DIGEST_BYTES = 16
@@ -43,6 +44,8 @@ SKIP_DIRS = frozenset({
     "$RECYCLE.BIN",
     "System Volume Information",
 })
+
+
 def human_size(n: int) -> str:
     x = float(n)
     for unit in ("B", "KiB", "MiB", "GiB", "TiB", "PiB"):
@@ -50,6 +53,8 @@ def human_size(n: int) -> str:
             return f"{int(x)} B" if unit == "B" else f"{x:.2f} {unit}"
         x /= 1024
     return f"{n} B"
+
+
 def walk_files(roots: Iterable[Path]) -> Iterator[Path]:
     for root in roots:
         try:
@@ -73,6 +78,8 @@ def walk_files(roots: Iterable[Path]) -> Iterator[Path]:
                         yield p
                 except OSError:
                     continue
+
+
 def _hash_worker(task: tuple[str, int | None]) -> tuple[str, str, int, str | None]:
     path, limit = task
     try:
@@ -91,6 +98,8 @@ def _hash_worker(task: tuple[str, int | None]) -> tuple[str, str, int, str | Non
         return path, h.hexdigest(), read, None
     except OSError as exc:
         return path, "", 0, str(exc)
+
+
 def find_duplicates(
     roots: list[Path],
     workers: int,
@@ -147,6 +156,8 @@ def find_duplicates(
                 continue
             full_groups[(size, digest)].append(Path(path))
     return [paths for paths in full_groups.values() if len(paths) > 1]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="dupefinder",
@@ -188,9 +199,11 @@ def main(argv: list[str] | None = None) -> int:
         if not p.exists():
             print(f"error: path does not exist: {p}", file=sys.stderr)
             return 2
+
     def log(msg: str) -> None:
         if not args.quiet:
             print(msg, file=sys.stderr)
+
     log(f"Scanning {len(args.paths)} root(s) with {args.workers} worker(s)...")
     groups = find_duplicates(
         roots=list(args.paths),
@@ -240,6 +253,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"Dry run complete. Re-run with -a/--apply to delete {total_redundant} file(s).")
     return 0
+
+
 if __name__ == "__main__":
     try:
         sys.exit(main())

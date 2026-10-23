@@ -13,8 +13,10 @@ import subprocess
 import sys
 import time
 from typing import Iterable, Optional, Sequence
+
 try:
     import xxhash
+
     _HAS_XXHASH = True
 except ImportError:
     _HAS_XXHASH = False
@@ -24,11 +26,13 @@ except ImportError:
     tqdm = None
 try:
     import ppdeep
+
     _HAS_PPDEEP = True
 except ImportError:
     _HAS_PPDEEP = False
 try:
     from xorhash import get_xorhash
+
     _HAS_XORHASH = True
 except ImportError:
     _HAS_XORHASH = False
@@ -46,12 +50,20 @@ DEFAULT_EXCLUDES = (
 )
 DEFAULT_SYMLINK_MANIFEST = Path.home() / ".symlink_backup.json"
 DEFAULT_STASH_DIR = Path.home() / "dups"
+
+
 def info(msg: str) -> None:
     print(f"[INFO] {msg}")
+
+
 def warn(msg: str) -> None:
     print(f"[WARN] {msg}", file=sys.stderr)
+
+
 def err(msg: str) -> None:
     print(f"[ERROR] {msg}", file=sys.stderr)
+
+
 def _new_hasher(algorithm: str):
     if algorithm == "xxhash" and _HAS_XXHASH:
         return xxhash.xxh64()
@@ -67,29 +79,41 @@ def _new_hasher(algorithm: str):
         return _PPDeepHasher()
     msg = f"Unknown algorithm: {algorithm!r}"
     raise ValueError(msg)
+
+
 class _XorHasher:
     __slots__ = ("_acc",)
+
     def __init__(self) -> None:
         self._acc = 0
+
     def update(self, data: bytes) -> None:
         for i in range(0, len(data) - 7, 8):
             word = int.from_bytes(data[i : i + 8], "little")
             self._acc ^= word
+
     def hexdigest(self) -> str:
         return f"{self._acc:016x}"
+
+
 class _PPDeepHasher:
     __slots__ = ("_buf", "_h")
+
     def __init__(self) -> None:
         self._h = hashlib.blake2b(digest_size=8)
         self._buf = bytearray()
+
     def update(self, data: bytes) -> None:
         if len(self._buf) < 4096:
             self._buf.extend(data[: 4096 - len(self._buf)])
         self._h.update(data)
+
     def hexdigest(self) -> str:
         if _HAS_PPDEEP:
             return self._h.hexdigest()
         return self._h.hexdigest()
+
+
 def hash_file(path: Path, algorithm: str = "xxhash", chunk_size: int = BIG_CHUNK_SIZE) -> Optional[str]:
     if algorithm == "ppdeep" and _HAS_PPDEEP:
         try:
@@ -113,6 +137,8 @@ def hash_file(path: Path, algorithm: str = "xxhash", chunk_size: int = BIG_CHUNK
         return h.hexdigest()
     except OSError:
         return None
+
+
 def quick_hash(path: Path, head: int = QUICK_HEAD) -> Optional[str]:
     try:
         size = path.stat().st_size
@@ -127,6 +153,8 @@ def quick_hash(path: Path, head: int = QUICK_HEAD) -> Optional[str]:
         return h.hexdigest()
     except OSError:
         return None
+
+
 def collect_files(
     root: Path,
     *,
@@ -152,11 +180,17 @@ def collect_files(
             continue
         out.append(p)
     return out
+
+
 def _hash_worker(args: tuple[Path, str, int]) -> tuple[Path, Optional[str]]:
     path, algorithm, chunk_size = args
     return path, hash_file(path, algorithm, chunk_size)
+
+
 def _quick_worker(path: Path) -> tuple[Path, Optional[str]]:
     return path, quick_hash(path)
+
+
 def find_duplicates(
     files: list[Path],
     *,
@@ -200,6 +234,8 @@ def find_duplicates(
         if workers > 1:
             pool.shutdown(wait=True)
     return {h: g for h, g in by_hash.items() if len(g) > 1}
+
+
 def select_keeper(group: list[Path], policy: str) -> Path:
     if not group:
         msg = "empty group"
@@ -213,8 +249,12 @@ def select_keeper(group: list[Path], policy: str) -> Path:
     if policy == "shortest-name":
         return min(group, key=lambda p: (len(str(p)), str(p)))
     return min(group, key=str)
+
+
 def _trash_available() -> bool:
     return shutil.which("gio") is not None
+
+
 def _delete_file(path: Path, use_trash: bool) -> bool:
     try:
         if use_trash and _trash_available():
@@ -225,6 +265,8 @@ def _delete_file(path: Path, use_trash: bool) -> bool:
     except (OSError, subprocess.CalledProcessError) as e:
         warn(f"could not delete {path}: {e}")
         return False
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -276,6 +318,8 @@ def cmd_report(args: argparse.Namespace) -> int:
             err(f"could not write {args.json}: {e}")
             return 1
     return 0
+
+
 def cmd_delete(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -329,11 +373,15 @@ def cmd_delete(args: argparse.Namespace) -> int:
         f"({freed / 1024 / 1024:.2f} MB)"
     )
     return 0
+
+
 @dataclass
 class SymlinkOp:
     symlink: str
     target: str
     size: int
+
+
 def cmd_symlink(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -437,6 +485,8 @@ def cmd_symlink(args: argparse.Namespace) -> int:
         err(f"could not write manifest: {e}")
         return 1
     return 0
+
+
 def cmd_restore(args: argparse.Namespace) -> int:
     manifest_path = Path(args.manifest).expanduser()
     if not manifest_path.exists():
@@ -479,6 +529,8 @@ def cmd_restore(args: argparse.Namespace) -> int:
             pass
     print(f"\nRestored {restored} symlink(s).")
     return 0
+
+
 def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> None:
     p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     p.add_argument(
@@ -530,6 +582,8 @@ def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> No
         default=list(DEFAULT_EXCLUDES),
         help="Directory names to skip (default: .git __pycache__ ...)",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dupe_tool.py",
@@ -616,9 +670,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_restore)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

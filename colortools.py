@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import colorsys
@@ -11,7 +10,6 @@ import random
 import re
 import sys
 from typing import Iterator, Optional, Sequence
-
 
 try:
     from dh import cprint, is_binary, should_skip

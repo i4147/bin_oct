@@ -13,6 +13,7 @@ import time
 from typing import Any, Final
 from deep_translator import GoogleTranslator
 from loguru import logger
+
 MAX_WORKERS: Final[int] = 8
 RETRY_ATTEMPTS: Final[int] = 4
 RETRY_DELAY: Final[float] = 0.6
@@ -20,12 +21,18 @@ MAX_CHUNK_SIZE: Final[int] = 2000
 SAVE_INTERVAL: Final[int] = 10
 CYRILLIC_RE: Final[re.Pattern[str]] = re.compile(r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]")
 interrupted: bool = False
+
+
 def signal_handler(signum: int, frame: Any) -> None:
     global interrupted
     interrupted = True
     logger.warning("Received interrupt signal (Ctrl+C). Saving progress and exiting gracefully...")
+
+
 def contains_cyrillic(text: str) -> bool:
     return bool(CYRILLIC_RE.search(text))
+
+
 def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
     chunks: list[list[str]] = []
     current_chunk: list[str] = []
@@ -48,6 +55,8 @@ def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
     if current_chunk:
         chunks.append(current_chunk)
     return chunks
+
+
 def translate_chunk(
     chunk: list[str],
     source_lang: str,
@@ -81,6 +90,8 @@ def translate_chunk(
             if attempt < RETRY_ATTEMPTS:
                 time.sleep(sleep_time)
     return (chunk, None)
+
+
 def save_progress(
     all_lines: list[str],
     results: dict[str, str],
@@ -150,6 +161,8 @@ def save_progress(
         print(msg)
     except Exception as e:
         logger.error("Error saving progress: {}", e)
+
+
 def main() -> None:
     global interrupted
     signal.signal(signal.SIGINT, signal_handler)
@@ -254,6 +267,7 @@ def main() -> None:
         )
         last_save_time = time.time()
         save_lock = threading.Lock()
+
         def periodic_save() -> None:
             nonlocal last_save_time
             while not interrupted:
@@ -271,6 +285,7 @@ def main() -> None:
                             args.output_type,
                         )
                         last_save_time = time.time()
+
         save_thread = threading.Thread(target=periodic_save, daemon=True)
         save_thread.start()
         try:
@@ -389,6 +404,8 @@ def main() -> None:
     else:
         translated_count = sum(1 for line in all_lines if line in results and results[line] != line)
         print(f"Translation complete: {translated_count}/{len(all_lines)} lines translated successfully")
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main())

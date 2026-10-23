@@ -6,6 +6,8 @@ import re
 import sys
 import tokenize
 from dh import get_pyfiles, mpf
+
+
 def remove_comments_and_docstrings(source_code: str) -> str:
     io_obj = io.StringIO(source_code)
     out = ""
@@ -29,11 +31,15 @@ def remove_comments_and_docstrings(source_code: str) -> str:
             last_col = end_col
             last_lineno = start_lineno
     return out
+
+
 def shorten_variable_name(name):
     if not name or name.startswith("_"):
         return name
     vowels = "aeiouAEIOU"
     return "".join([char for char in name if char not in vowels])
+
+
 def process_file(path) -> None:
     path = Path(path)
     content = path.read_text(encoding="utf-8")
@@ -42,12 +48,15 @@ def process_file(path) -> None:
     non_empty_lines = [line.strip() for line in lines if line.strip()]
     "\n".join(non_empty_lines)
     import keyword
+
     keywords = set(keyword.kwlist)
+
     def replacer(match):
         name = match.group(0)
         if name in keywords:
             return name
         return shorten_variable_name(name)
+
     content_no_multiline_strings = re.sub("'''.*?'''|\\\"\\\"\\\".*?\\\"\\\"\\\"", "", content, flags=re.DOTALL)
     content_no_comments_single = re.sub("#.*", "", content_no_multiline_strings)
     lines = content_no_comments_single.splitlines()
@@ -55,6 +64,8 @@ def process_file(path) -> None:
     final_content = "\n".join(non_empty_lines)
     compressed_path = path.with_stem(path.stem + "_compressed")
     compressed_path.write_text(final_content, encoding="utf-8")
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]

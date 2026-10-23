@@ -15,6 +15,7 @@ import tarfile
 import tempfile
 from typing import Iterable, Sequence
 import zipfile
+
 log = logging.getLogger("py3migrate")
 DEFAULT_EXT: tuple[str, ...] = (".py",)
 DEFAULT_WORKERS: int = 8
@@ -76,6 +77,8 @@ FALLBACK_FIXERS: tuple[str, ...] = (
     "lib2to3.fixes.fix_xreadlines",
     "lib2to3.fixes.fix_zip",
 )
+
+
 def iter_files(
     paths: Iterable[Path],
     exts: Sequence[str] = DEFAULT_EXT,
@@ -99,6 +102,8 @@ def iter_files(
             seen.add(f)
             out.append(f)
     return out
+
+
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -107,25 +112,36 @@ def read_text(path: Path) -> str:
     except OSError as e:
         msg = f"cannot read {path}: {e}"
         raise OSError(msg) from e
+
+
 def _make_backup(path: Path) -> None:
     shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
+
+
 def _write(path: Path, text: str, *, backup: bool) -> None:
     if backup:
         _make_backup(path)
     path.write_text(text, encoding="utf-8")
+
+
 def discover_fixers(fixer_module: str = DEFAULT_FIXER_MODULE) -> list[str]:
     try:
         import importlib
+
         mod = importlib.import_module(fixer_module)
     except ImportError:
         return list(FALLBACK_FIXERS)
     return [
         name for _finder, name, is_pkg in pkgutil.iter_modules(mod.__path__, prefix=fixer_module + ".") if not is_pkg
     ]
+
+
 def resolve_fixers(spec: str, fixer_module: str) -> list[str]:
     if spec == "auto":
         return discover_fixers(fixer_module)
     return [f.strip() for f in spec.split(",") if f.strip()]
+
+
 def _import_refactoring_tool():
     try:
         from lib2to3.refactor import RefactoringTool
@@ -136,23 +152,31 @@ def _import_refactoring_tool():
         )
         raise RuntimeError(msg) from e
     return RefactoringTool
+
+
 class _CapturingTool:
     @staticmethod
     def build(fixers: list[str], options: dict) -> tuple[object, list[str], list[str]]:
         base = _import_refactoring_tool()
+
         class _Tool(base):
             def __init__(self, *a, **kw):
                 self.captured_errors: list[str] = []
                 self.captured_output: list[str] = []
                 super().__init__(*a, **kw)
+
             def log_error(self, msg, *args, **kwargs):
                 self.captured_errors.append(msg % args if args else msg)
+
             def log_message(self, msg, *args, **kwargs):
                 if args:
                     msg = msg % args
                 self.captured_output.append(msg)
+
         tool = _Tool(fixers, options)
         return tool, tool.captured_errors, tool.captured_output
+
+
 def describe_diff(
     original: str,
     new_text: str,
@@ -186,6 +210,8 @@ def describe_diff(
     if changed > max_lines:
         body += f"\n  ... and {changed - max_lines} more change(s)"
     return f"{header}\n{body}"
+
+
 def _refactor_file(
     path: Path,
     fixers: list[str],
@@ -229,6 +255,8 @@ def _refactor_file(
         return (path, True, f"📝 {path.name}: would change{detail}{log_block}")
     _write(path, new_text, backup=backup)
     return (path, True, f"✓ {path.name}: changed{detail}{log_block}")
+
+
 def detect_file(path: Path) -> tuple[Path, int | None, str]:
     try:
         text = read_text(path)
@@ -270,6 +298,8 @@ def detect_file(path: Path) -> tuple[Path, int | None, str]:
         confidence = "Low"
         reasons.append("No strong indicators; defaulting to Python 3.")
     return (path, version, f"{confidence}: {'; '.join(reasons)}")
+
+
 def cmd_detect(args: argparse.Namespace) -> int:
     files = iter_files(args.paths, args.ext)
     if not files:
@@ -283,6 +313,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
             else:
                 print(f"{path.name} → Python {version}\n  {reason}")
     return 0
+
+
 def cmd_refactor(args: argparse.Namespace) -> int:
     fixers = resolve_fixers(args.fixers, args.fixer_module)
     if not fixers:
@@ -325,10 +357,14 @@ def cmd_refactor(args: argparse.Namespace) -> int:
     else:
         print(f"Would update {changed} file(s); {failed} failure(s).")
     return 0 if failed == 0 else 1
+
+
 PRINT_BARE_RE = re.compile(r"^(\s*)print\s*$")
 PRINT_REDIRECT_RE = re.compile(r"^(\s*)print\s+>>\s*(\w+)\s*,\s*(.+?)(\s*#.*)?$")
 PRINT_PLAIN_RE = re.compile(r"^(\s*)print\s+(?!\()(.+?)(\s*#.*)?$")
 EXCEPT_RE = re.compile(r"^(\s*)except\s+(\S+)\s*,\s*(\S+)\s*:")
+
+
 def _convert_print_line(line: str) -> tuple[str, bool]:
     if PRINT_BARE_RE.match(line):
         indent = line[: len(line) - len(line.lstrip())]
@@ -342,6 +378,8 @@ def _convert_print_line(line: str) -> tuple[str, bool]:
         indent, expr, _ = m.groups()
         return (f"{indent}print({expr})\n", True)
     return (line, False)
+
+
 def _convert_legacy_line(line: str) -> tuple[str, bool]:
     original = line
     line = line.replace("xrange(", "range(")
@@ -352,6 +390,8 @@ def _convert_legacy_line(line: str) -> tuple[str, bool]:
         exc, name = m.group(2), m.group(3)
         line = f"{indent}except {exc} as {name}:\n"
     return (line, line != original)
+
+
 def fixprint_text(text: str, do_all: bool) -> tuple[str, bool]:
     out_lines: list[str] = []
     changed = False
@@ -363,6 +403,8 @@ def fixprint_text(text: str, do_all: bool) -> tuple[str, bool]:
         out_lines.append(new_line)
         changed = changed or c1
     return ("".join(out_lines), changed)
+
+
 def _fixprint_file(
     path: Path,
     do_all: bool,
@@ -384,6 +426,8 @@ def _fixprint_file(
     if with_ruff:
         extra = _run_ruff_up010(path)
     return (path, True, f"✓ {path.name}: rewritten{extra}")
+
+
 def _run_ruff_up010(path: Path) -> str:
     if shutil.which("ruff") is None:
         return " (ruff not found; skipped)"
@@ -399,6 +443,8 @@ def _run_ruff_up010(path: Path) -> str:
     if proc.returncode == 0:
         return " (+ ruff applied fixes)"
     return " (ruff reported remaining issues)"
+
+
 def cmd_fixprint(args: argparse.Namespace) -> int:
     files = iter_files(args.paths)
     if not files:
@@ -426,6 +472,8 @@ def cmd_fixprint(args: argparse.Namespace) -> int:
     print("=" * 40)
     print(f"{'Updated' if args.apply else 'Would update'} {changed} file(s).")
     return 0
+
+
 def _run_2to3_cli(path: Path) -> tuple[Path, bool, str]:
     if not path.is_file():
         return (path, False, f"✗ {path.name}: file not found")
@@ -441,6 +489,8 @@ def _run_2to3_cli(path: Path) -> tuple[Path, bool, str]:
     except subprocess.CalledProcessError as e:
         return (path, False, f"✗ {path.name}: {e.stderr.strip() or e}")
     return (path, True, f"✓ {path.name}: 2to3 CLI ran")
+
+
 def cmd_run2to3(args: argparse.Namespace) -> int:
     files = iter_files(args.paths)
     if not files:
@@ -452,11 +502,15 @@ def cmd_run2to3(args: argparse.Namespace) -> int:
             if msg:
                 print(msg)
     return 0
+
+
 def _strip_tag_from_text(text: str, tag: str) -> str:
     out = "\n".join(l for l in text.splitlines() if not l.startswith(tag))
     if text.endswith("\n"):
         out += "\n"
     return out
+
+
 def _process_zip(path: Path, targets: frozenset[str], tag: str) -> bool:
     _tmp_fd, tmp_name = tempfile.mkstemp(suffix=".zip")
     tmp = Path(tmp_name)
@@ -481,6 +535,8 @@ def _process_zip(path: Path, targets: frozenset[str], tag: str) -> bool:
     finally:
         if tmp.exists():
             tmp.unlink(missing_ok=True)
+
+
 def _process_tar(path: Path, targets: frozenset[str], tag: str) -> bool:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_p = Path(tmpdir)
@@ -510,6 +566,8 @@ def _process_tar(path: Path, targets: frozenset[str], tag: str) -> bool:
                 tout.add(entry, arcname=str(arcname), recursive=False)
         shutil.move(str(tmp_archive), str(path))
         return True
+
+
 def _strip_tag_file(path: Path, targets: frozenset[str], tag: str) -> tuple[Path, bool, str]:
     low = path.name.lower()
     try:
@@ -537,6 +595,8 @@ def _strip_tag_file(path: Path, targets: frozenset[str], tag: str) -> tuple[Path
         return (path, False, "")
     except Exception as e:
         return (path, False, f"✗ {path.name}: {e}")
+
+
 def cmd_strip_tag(args: argparse.Namespace) -> int:
     targets = frozenset(args.target)
     paths: list[Path] = []
@@ -563,6 +623,8 @@ def cmd_strip_tag(args: argparse.Namespace) -> int:
     print("=" * 40)
     print(f"Modified {total} file(s).")
     return 0
+
+
 def _add_common_opts(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths",
@@ -577,6 +639,8 @@ def _add_common_opts(p: argparse.ArgumentParser) -> None:
         default=DEFAULT_WORKERS,
         help=f"Worker processes (default: {DEFAULT_WORKERS}).",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="py3migrate",
@@ -726,6 +790,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only scan top level of any directory argument.",
     )
     return parser
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -741,5 +807,7 @@ def main(argv: list[str] | None = None) -> int:
         "strip-tag": cmd_strip_tag,
     }
     return dispatch[args.command](args)
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -12,8 +12,11 @@ import re
 import shutil
 import subprocess
 from typing import Iterable
+
 WORKERS: int = 6
 BACKUP_SUFFIX: str = ".bak"
+
+
 @dataclass(frozen=True)
 class Options:
     mode: str = "single"
@@ -26,6 +29,7 @@ class Options:
     target_consts: str = ""
     target_classes: str = ""
     target_funcs: str = ""
+
     def __post_init__(self) -> None:
         if not self.target_funcs:
             object.__setattr__(self, "target_funcs", "funcs.py")
@@ -33,6 +37,8 @@ class Options:
             object.__setattr__(self, "target_consts", "consts.py")
         if not self.target_classes:
             object.__setattr__(self, "target_classes", "classes.py")
+
+
 def list_py_files(root: str, recursive: bool = True) -> list[Path]:
     root_path = Path(root)
     if recursive:
@@ -42,10 +48,14 @@ def list_py_files(root: str, recursive: bool = True) -> list[Path]:
         for p in root_path.iterdir()
         if p.is_file() and p.suffix == ".py" and not p.name.endswith(f"{BACKUP_SUFFIX}.py")
     )
+
+
 def ensure_backups(paths: Iterable[Path]) -> None:
     for p in paths:
         if p.exists():
             shutil.copy2(p, p.with_name(p.name + BACKUP_SUFFIX))
+
+
 def restore_backups(paths: Iterable[Path]) -> list[Path]:
     restored = []
     for p in paths:
@@ -54,14 +64,20 @@ def restore_backups(paths: Iterable[Path]) -> list[Path]:
             shutil.copy2(backup, p)
             restored.append(p)
     return restored
+
+
 def overwrite_file(path: Path, content: str, dry_run: bool) -> None:
     if dry_run:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
 def try_format(path: Path) -> None:
     with contextlib.suppress(Exception):
         subprocess.run(["ruff", "format", str(path)], check=False)
+
+
 def parse_name_from_block(block: str) -> str | None:
     block = block.strip()
     if block.startswith("def "):
@@ -73,8 +89,12 @@ def parse_name_from_block(block: str) -> str | None:
         if target.isupper():
             return target
     return None
+
+
 def extract_referenced_names(block: str) -> set[str]:
     return set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\b", block))
+
+
 def topological_sort(blocks: list[str], known_names: set[str]) -> list[str]:
     name_to_block: dict[str, str] = {}
     for block in blocks:
@@ -109,6 +129,8 @@ def topological_sort(blocks: list[str], known_names: set[str]) -> list[str]:
     if len(ordered) != len(name_to_block):
         return blocks
     return [name_to_block[name] for name in ordered]
+
+
 def _optimize_imports(import_lines: list[str]) -> str:
     seen: set[str] = set()
     from_imports: defaultdict[str, list[str] | None] = defaultdict(list)
@@ -141,6 +163,7 @@ def _optimize_imports(import_lines: list[str]) -> str:
             dotted.append((module, names))
         else:
             stdlib_plain.append((module, names))
+
     def render(entries: list[tuple[str, list[str] | None]]) -> list[str]:
         rendered: list[str] = []
         for module, names in sorted(entries):
@@ -159,8 +182,11 @@ def _optimize_imports(import_lines: list[str]) -> str:
             else:
                 rendered.append(f"{prefix}{joined}")
         return rendered
+
     lines = render(stdlib_plain) + render(dotted)
     return "\n".join(lines) + "\n\n" if lines else ""
+
+
 @lru_cache(maxsize=256)
 def _parse_import_names(line: str) -> tuple[str, ...]:
     if line.startswith("import "):
@@ -168,10 +194,14 @@ def _parse_import_names(line: str) -> tuple[str, ...]:
     if line.startswith("from "):
         return (line.split()[1],)
     return ()
+
+
 def _extract_block(lines: list[str], node: ast.AST) -> str:
     start = node.lineno - 1
     end = getattr(node, "end_lineno", start + 1)
     return "\n".join(lines[start:end]) + "\n"
+
+
 def parse_top_level_items(
     path: Path,
 ) -> tuple[list[str], list[str], list[str], list[str]]:
@@ -197,6 +227,8 @@ def parse_top_level_items(
         ):
             consts.append(_extract_block(lines, node))
     return funcs, consts, classes, imports
+
+
 def collect_from_files(
     paths: list[Path],
 ) -> tuple[list[str], list[str], list[str], list[str], dict[Path, dict]]:
@@ -219,10 +251,14 @@ def collect_from_files(
         all_classes += classes
         all_imports += imports
     return all_funcs, all_consts, all_classes, all_imports, file_map
+
+
 def make_all_list(names: list[str]) -> str:
     unique_sorted = sorted(set(names))
     body = ",\n    ".join(f'"{n}"' for n in unique_sorted)
     return f"__all__ = [\n    {body}\n]\n"
+
+
 def build_merged_module(file_map: dict[Path, dict]) -> str:
     all_imports: list[str] = []
     func_blocks, const_blocks, class_blocks = [], [], []
@@ -283,6 +319,8 @@ def build_merged_module(file_map: dict[Path, dict]) -> str:
         parts.append(body)
     parts.append(all_declaration)
     return "\n\n\n".join(parts) + "\n"
+
+
 def build_top_level_modules(file_map: dict[Path, dict]) -> tuple[str, str, str]:
     func_blocks, const_blocks, class_blocks = [], [], []
     for entry in file_map.values():
@@ -294,6 +332,8 @@ def build_top_level_modules(file_map: dict[Path, dict]) -> tuple[str, str, str]:
         "\n\n".join(const_blocks),
         "\n\n".join(class_blocks),
     )
+
+
 def build_subpkg_modules(root: str, file_map: dict[Path, dict]) -> dict[str, tuple[str, str, str, dict]]:
     root_path = Path(root)
     grouped: dict[str, dict[str, list[str]]] = {}
@@ -317,10 +357,14 @@ def build_subpkg_modules(root: str, file_map: dict[Path, dict]) -> dict[str, tup
             entry,
         )
     return result
+
+
 def get_merged_module_path(opts: Options) -> Path:
     root_path = Path(opts.root).resolve()
     package_name = root_path.name
     return Path(opts.root) / f"{package_name}.py"
+
+
 def get_category_paths(opts: Options) -> dict[str, Path]:
     root_path = Path(opts.root)
     return {
@@ -328,6 +372,8 @@ def get_category_paths(opts: Options) -> dict[str, Path]:
         "consts": root_path / opts.target_consts,
         "classes": root_path / opts.target_classes,
     }
+
+
 def write_init_with_reexport(imports: list[str], root: str, dry_run: bool, opts: Options) -> None:
     root_path = Path(root)
     package_name = root_path.name
@@ -337,6 +383,8 @@ def write_init_with_reexport(imports: list[str], root: str, dry_run: bool, opts:
     overwrite_file(init_path, content, dry_run)
     if opts.format and not dry_run:
         try_format(init_path)
+
+
 def run_single_file_mode(opts: Options) -> None:
     if opts.verbose:
         print("Running single_file mode: merging all Python files into one module")
@@ -377,6 +425,8 @@ def run_single_file_mode(opts: Options) -> None:
         print(
             f"Successfully merged {len(funcs)} functions, {len(classes)} classes, and {len(consts)} constants into {package_name}.py"
         )
+
+
 def run_legacy_single_mode(opts: Options) -> None:
     root_path = Path(opts.root)
     all_files = list_py_files(opts.root, recursive=True)
@@ -395,6 +445,8 @@ def run_legacy_single_mode(opts: Options) -> None:
     if opts.format and not dry_run:
         try_format(merged_path)
         try_format(init_path)
+
+
 def run_small_package_mode(opts: Options) -> None:
     all_files = list_py_files(opts.root, recursive=False)
     init_path = Path(opts.root) / "__init__.py"
@@ -416,6 +468,8 @@ def run_small_package_mode(opts: Options) -> None:
                 list(pool.imap_unordered(try_format, [merged_path, init_path]))
         finally:
             pass
+
+
 def run_merge_mode(opts: Options) -> None:
     root_path = Path(opts.root)
     all_files = list_py_files(opts.root, recursive=True)
@@ -456,6 +510,8 @@ def run_merge_mode(opts: Options) -> None:
                 list(pool.imap_unordered(try_format, targets))
         finally:
             pass
+
+
 def run_subpkg_mode(opts: Options) -> None:
     root_path = Path(opts.root)
     all_files = list_py_files(opts.root, recursive=True)
@@ -519,6 +575,8 @@ def run_subpkg_mode(opts: Options) -> None:
                     all_names.extend(class_names)
             init_content = "\n".join(import_lines) + f"\n\n{make_all_list(all_names)}"
             overwrite_file(subpkg_dir / "__init__.py", init_content, dry_run)
+
+
 def run(opts: Options) -> None:
     if opts.undo:
         package_name = Path(opts.root).resolve().name
@@ -549,6 +607,8 @@ def run(opts: Options) -> None:
         msg = f"Unknown mode: {opts.mode}"
         raise ValueError(msg)
     handler(opts)
+
+
 def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="pyrefactor", description="Refactor small python packages")
     parser.add_argument("run", nargs="?", default="run")
@@ -564,6 +624,8 @@ def parse_cli_args() -> argparse.Namespace:
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--undo", action="store_true")
     return parser.parse_args()
+
+
 def main() -> None:
     args = parse_cli_args()
     cwd = Path.cwd()
@@ -582,5 +644,7 @@ def main() -> None:
     )
     print(f"Running pyrefactor mode={opts.mode} root={opts.root}")
     run(opts)
+
+
 if __name__ == "__main__":
     main()

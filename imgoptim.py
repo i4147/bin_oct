@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 from dh import walker
+
 GREEN = "\033[32m"
 DIM = "\033[2m"
 RESET = "\033[0m"
@@ -21,6 +22,8 @@ JPEG_MAGIC: Final[bytes] = b"\xff\xd8\xff"
 PNG_MAGIC: Final[bytes] = b"\x89PNG\r\n\x1a\n"
 DEFAULT_TIMEOUT: Final[float] = 300.0
 PNGQUANT_NOOP = {98, 99}
+
+
 @dataclass
 class Result:
     path: Path
@@ -31,11 +34,16 @@ class Result:
     detail: str = ""
     stdout: str = ""
     stderr: str = ""
+
     @property
     def saved(self) -> int:
         return max(self.before - self.after, 0)
+
+
 def kind_of(p: Path) -> str:
     return KIND_BY_EXT.get(p.suffix.lower(), "")
+
+
 def _run(cmd, timeout, label):
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
@@ -46,6 +54,8 @@ def _run(cmd, timeout, label):
     except OSError as e:
         return None, "", "", f"{label} failed: {e}"
     return proc, proc.stdout or "", proc.stderr or "", None
+
+
 def _validate_jpeg(p: Path) -> str | None:
     try:
         with p.open("rb") as f:
@@ -54,6 +64,8 @@ def _validate_jpeg(p: Path) -> str | None:
     except OSError as e:
         return f"cannot read output: {e}"
     return None
+
+
 def _validate_png(p: Path) -> str | None:
     try:
         with p.open("rb") as f:
@@ -62,6 +74,8 @@ def _validate_png(p: Path) -> str | None:
     except OSError as e:
         return f"cannot read output: {e}"
     return None
+
+
 def _validate_svg(p: Path) -> str | None:
     try:
         ET.parse(p)
@@ -70,6 +84,8 @@ def _validate_svg(p: Path) -> str | None:
     except OSError as e:
         return f"cannot read output: {e}"
     return None
+
+
 def optimize_jpg(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
     q = opts["jpg_quality"]
     flags: list[str] = []
@@ -131,6 +147,8 @@ def optimize_jpg(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
                 tmp_path.unlink(missing_ok=True)
             except OSError:
                 pass
+
+
 def optimize_png(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
     tmp_out: Path | None = None
     try:
@@ -170,6 +188,8 @@ def optimize_png(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
                 tmp_out.unlink(missing_ok=True)
             except OSError:
                 pass
+
+
 def optimize_svg(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
     tmp_out: Path | None = None
     try:
@@ -213,6 +233,8 @@ def optimize_svg(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
                 tmp_out.unlink(missing_ok=True)
             except OSError:
                 pass
+
+
 def optimize_one(args: tuple[Path, dict, bool]) -> Result:
     path, opts, dry_run = args
     kind = kind_of(path)
@@ -230,6 +252,8 @@ def optimize_one(args: tuple[Path, dict, bool]) -> Result:
         return Result(path, before, before, "unchanged", kind, "unknown extension")
     except Exception as e:
         return Result(path, 0, 0, "error", kind, f"{type(e).__name__}: {e}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
@@ -341,5 +365,7 @@ def main() -> int:
     if args.dry_run:
         print("(dry run — no files were modified)")
     return 0 if counts["error"] == 0 else 2
+
+
 if __name__ == "__main__":
     sys.exit(main())

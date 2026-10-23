@@ -5,13 +5,18 @@ import shutil
 import site
 import zipfile
 from google.colab import drive
+
 drive.mount("/content/drive")
 site_pkgs = Path(site.getsitepackages()[0])
 out_dir = Path("/content/drive/MyDrive/wheels")
 out_dir.mkdir(parents=True, exist_ok=True)
 EXCLUDE_PREFIXES = "setuptools", "pip"
+
+
 def excluded(name: str) -> bool:
     return name.startswith(EXCLUDE_PREFIXES)
+
+
 copied_files = 0
 zipped_dirs = 0
 for entry in site_pkgs.iterdir():

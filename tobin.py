@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 from hashlib import sha256
 from pathlib import Path
 import sys
-
 
 CHUNK_SIZE = 32768
 dest = Path.home() / "sbin"

@@ -14,36 +14,48 @@ import sys
 import tarfile
 import time
 from typing import Any, Optional, Sequence
+
 try:
     import lzma_mt
+
     _HAS_LZMA_MT: bool = True
 except ImportError:
     _HAS_LZMA_MT = False
 try:
     import pylzma
+
     _HAS_PYLZMA: bool = True
 except ImportError:
     _HAS_PYLZMA = False
 try:
     from loguru import logger
+
     _HAS_LOGURU = True
 except ImportError:
     _HAS_LOGURU = False
+
     class _FallbackLogger:
         def info(self, m: str) -> None:
             print(m)
+
         def warning(self, m: str) -> None:
             print(f"WARN: {m}", file=sys.stderr)
+
         def error(self, m: str) -> None:
             print(f"ERROR: {m}", file=sys.stderr)
+
         def success(self, m: str) -> None:
             print(m)
+
         def debug(self, m: str) -> None:
             pass
+
         def remove(self) -> None:
             pass
+
         def add(self, *a: Any, **k: Any) -> None:
             pass
+
     logger = _FallbackLogger()
 DEFAULT_SKIP_DIRS: set[str] = {
     ".git",
@@ -145,6 +157,8 @@ if _HAS_PYLZMA:
     ]
 else:
     _PYLZMA_FILTERS = []
+
+
 def format_size(n: float) -> str:
     n = float(n)
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -152,6 +166,8 @@ def format_size(n: float) -> str:
             return f"{int(n)} B" if unit == "B" else f"{n:.2f} {unit}"
         n /= 1024.0
     return f"{n:.2f} PB"
+
+
 def dir_size(path: Path) -> int:
     total = 0
     for p in path.rglob("*"):
@@ -161,13 +177,19 @@ def dir_size(path: Path) -> int:
         except OSError:
             continue
     return total
+
+
 def _is_skipped_dir(path: Path, skip_dirs: set[str]) -> bool:
     return any(part in skip_dirs for part in path.parts)
+
+
 def _matches_exclude(path: Path, patterns: Sequence[str]) -> bool:
     if not patterns:
         return False
     s = str(path)
     return any(p in s for p in patterns)
+
+
 def discover_files(
     root: Path,
     *,
@@ -207,6 +229,8 @@ def discover_files(
                 continue
         out.append(p)
     return sorted(out)
+
+
 def compress_bytes(
     data: bytes,
     *,
@@ -221,6 +245,8 @@ def compress_bytes(
         raise RuntimeError(msg)
     lvl = preset | lzma.PRESET_EXTREME if preset == 9 else preset
     return lzma.compress(data, format=lzma.FORMAT_XZ, preset=lvl)
+
+
 def decompress_bytes(data: bytes, *, backend: str = "auto") -> bytes:
     if backend in ("auto", "lzma_mt", "lzmamt") and _HAS_LZMA_MT:
         return lzma_mt.decompress(data)
@@ -228,6 +254,8 @@ def decompress_bytes(data: bytes, *, backend: str = "auto") -> bytes:
         msg = "lzma_mt requested but not installed."
         raise RuntimeError(msg)
     return lzma.decompress(data, format=lzma.FORMAT_XZ)
+
+
 @dataclass
 class FileResult:
     path: Path
@@ -237,6 +265,8 @@ class FileResult:
     processed_size: int = 0
     duration: float = 0.0
     was_tarred: bool = False
+
+
 def _worker_compress_xz(args: tuple[str, int, int, str, bool, bool]) -> FileResult:
     path_str, preset, threads, backend, remove_orig, dry_run = args
     src = Path(path_str)
@@ -265,6 +295,8 @@ def _worker_compress_xz(args: tuple[str, int, int, str, bool, bool]) -> FileResu
             if dst.exists():
                 dst.unlink()
         return FileResult(src, False, f"Error: {exc}", duration=time.monotonic() - t0)
+
+
 def _worker_decompress_xz(args: tuple[str, bool, bool]) -> FileResult:
     path_str, remove_orig, handle_tar_xz = args
     src = Path(path_str)
@@ -304,6 +336,8 @@ def _worker_decompress_xz(args: tuple[str, bool, bool]) -> FileResult:
         )
     except Exception as exc:
         return FileResult(src, False, f"Error: {exc}", duration=time.monotonic() - t0)
+
+
 def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
     dir_str, preset, verify, remove_orig = args
     src = Path(dir_str)
@@ -362,19 +396,27 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
             "original_size": orig_size,
             "compressed_size": 0,
         }
+
+
 def _read_file_bytes(args: tuple[str]) -> tuple[str, bytes]:
     (path_str,) = args
     return (path_str, Path(path_str).read_bytes())
+
+
 def _pylzma_compress_blob(data: bytes) -> bytes:
     if not _HAS_PYLZMA:
         msg = "pylzma is not installed (`pip install pylzma`)."
         raise RuntimeError(msg)
     return pylzma.compress(data, filters=_PYLZMA_FILTERS)
+
+
 def _pylzma_decompress_blob(data: bytes) -> bytes:
     if not _HAS_PYLZMA:
         msg = "pylzma is not installed."
         raise RuntimeError(msg)
     return pylzma.decompress(data)
+
+
 def _worker_pylzma_7z(args: tuple[str, bool, Optional[str], bool]) -> FileResult:
     path_str, keep, out_dir_str, _tar_subdirs = args
     src = Path(path_str)
@@ -420,6 +462,8 @@ def _worker_pylzma_7z(args: tuple[str, bool, Optional[str], bool]) -> FileResult
             )
     except Exception as exc:
         return FileResult(src, False, f"Error: {exc}", duration=time.monotonic() - t0)
+
+
 def _worker_pylzma_un7z(args: tuple[str, bool, Optional[str], bool]) -> FileResult:
     path_str, keep, out_dir_str, _ = args
     src = Path(path_str)
@@ -464,8 +508,12 @@ def _worker_pylzma_un7z(args: tuple[str, bool, Optional[str], bool]) -> FileResu
         return FileResult(src, False, "not a .7z / .tar.7z file")
     except Exception as exc:
         return FileResult(src, False, f"Error: {exc}", duration=time.monotonic() - t0)
+
+
 def _pylzma_compress_chunk(chunk: bytes) -> bytes:
     return _pylzma_compress_blob(chunk)
+
+
 def _chunked_compress_file(src: Path, dst: Path, chunk_size: int, workers: int) -> bool:
     data = src.read_bytes()
     total = len(data)
@@ -479,6 +527,8 @@ def _chunked_compress_file(src: Path, dst: Path, chunk_size: int, workers: int) 
             fh.write(len(blob).to_bytes(8, "big"))
             fh.write(blob)
     return True
+
+
 def _chunked_decompress_file(src: Path, dst: Path) -> bool:
     with src.open("rb") as fin, dst.open("wb") as fout:
         header = fin.read(4)
@@ -498,6 +548,8 @@ def _chunked_decompress_file(src: Path, dst: Path) -> bool:
                 raise ValueError(msg)
             fout.write(_pylzma_decompress_blob(blob))
     return True
+
+
 def _worker_lzma_chunk_compress(args: tuple[str, int, int, bool]) -> FileResult:
     path_str, chunk_size, workers, remove_orig = args
     src = Path(path_str)
@@ -534,6 +586,8 @@ def _worker_lzma_chunk_compress(args: tuple[str, int, int, bool]) -> FileResult:
             if dst.exists():
                 dst.unlink()
         return FileResult(src, False, f"Error: {exc}", duration=time.monotonic() - t0)
+
+
 def _worker_lzma_chunk_decompress(args: tuple[str, bool]) -> FileResult:
     path_str, remove_orig = args
     src = Path(path_str)
@@ -568,6 +622,8 @@ def _worker_lzma_chunk_decompress(args: tuple[str, bool]) -> FileResult:
             if dst.exists():
                 dst.unlink()
         return FileResult(src, False, f"Error: {exc}", duration=time.monotonic() - t0)
+
+
 def _print_file_result(root: Path, r: FileResult, index: int = 0, total: int = 0) -> None:
     prefix = ""
     if total:
@@ -583,6 +639,8 @@ def _print_file_result(root: Path, r: FileResult, index: int = 0, total: int = 0
         ratio = r.processed_size / r.original_size * 100
         extra = f"  ({format_size(r.original_size)} → {format_size(r.processed_size)}, {ratio:.1f}%)"
     print(f"{prefix}{mark} {rel}: {r.message}{extra}")
+
+
 def _print_summary(results: Sequence[FileResult]) -> None:
     ok = [r for r in results if r.success]
     fail = [r for r in results if not r.success]
@@ -599,6 +657,8 @@ def _print_summary(results: Sequence[FileResult]) -> None:
                 print(f"Space saved:           {format_size(orig - proc)} ({(orig - proc) / orig * 100:.1f}%)")
             else:
                 print(f"Size increase:         {format_size(proc - orig)} ({(proc - orig) / orig * 100:.1f}%)")
+
+
 def _tar_top_level_dirs(root: Path, preset: int, workers: int) -> list[dict[str, Any]]:
     subdirs = [
         p
@@ -615,6 +675,8 @@ def _tar_top_level_dirs(root: Path, preset: int, workers: int) -> list[dict[str,
         mark = "✅" if r["success"] else "❌"
         print(f"  {mark} {r['message']} ({format_size(r['original_size'])} → {format_size(r['compressed_size'])})")
     return results
+
+
 def cmd_compress(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -666,6 +728,8 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if not args.no_size_stats:
         _print_summary(results)
     return 0
+
+
 def cmd_decompress(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -696,6 +760,8 @@ def cmd_decompress(args: argparse.Namespace) -> int:
                 _print_file_result(root, r, i, len(files))
     _print_summary(results)
     return 0
+
+
 def cmd_tar_dirs(args: argparse.Namespace) -> int:
     root = Path(args.directory).expanduser().resolve()
     if not root.is_dir():
@@ -735,6 +801,8 @@ def cmd_tar_dirs(args: argparse.Namespace) -> int:
     print(f"Successful: {ok}")
     print(f"Failed:     {fail}")
     return 0 if fail == 0 else 1
+
+
 def cmd_archive_cwd(args: argparse.Namespace) -> int:
     cwd = Path.cwd().resolve()
     parent = cwd.parent
@@ -798,6 +866,8 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
     shutil.rmtree(cwd)
     logger.success(f"Done. Archive: {archive}")
     return 0
+
+
 def _collect_7z_targets(
     paths: Sequence[str],
     mode: str,
@@ -805,14 +875,17 @@ def _collect_7z_targets(
     output_dir: Optional[Path],
 ) -> list[Path]:
     targets: list[Path] = []
+
     def add_compress_tree(base: Path) -> None:
         for p in base.rglob("*"):
             if p.is_file() and not p.name.endswith(SEVENZ_SUFFIX):
                 targets.append(p.resolve())
+
     def add_decompress_tree(base: Path) -> None:
         for p in base.rglob(f"*{SEVENZ_SUFFIX}"):
             if p.is_file():
                 targets.append(p.resolve())
+
     if not paths:
         if mode == "compress":
             add_compress_tree(cwd)
@@ -844,6 +917,8 @@ def _collect_7z_targets(
             seen.add(t)
             ordered.append(t)
     return ordered
+
+
 def cmd_7z(args: argparse.Namespace) -> int:
     if not _HAS_PYLZMA:
         logger.error("pylzma is required for the `7z` subcommand. Install it with `pip install pylzma`.")
@@ -867,6 +942,8 @@ def cmd_7z(args: argparse.Namespace) -> int:
             mark = "✓" if r.success else "✗"
             print(f"  {mark} {r.path}: {r.message}")
     return 0
+
+
 def cmd_lzma_chunk(args: argparse.Namespace) -> int:
     if not _HAS_PYLZMA:
         logger.error("pylzma is required for the `lzma-chunk` subcommand.")
@@ -918,6 +995,8 @@ def cmd_lzma_chunk(args: argparse.Namespace) -> int:
         print(f"Total processed:  {format_size(total_new)}")
         print(f"Space saved:      {format_size(abs(saved))} ({pct:.1f}%)")
     return 0
+
+
 def _add_common_xz_opts(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "directory",
@@ -944,6 +1023,8 @@ def _add_common_xz_opts(p: argparse.ArgumentParser) -> None:
         metavar="PAT",
         help="Skip paths containing any of these substrings",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="xz_tool.py",
@@ -1099,6 +1180,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_l.add_argument("--keep-orig", action="store_true", help="Keep original files after processing")
     p_l.set_defaults(func=cmd_lzma_chunk)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -1110,5 +1193,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except Exception as exc:
         logger.error(f"Unexpected error: {exc}")
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

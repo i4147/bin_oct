@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import shutil
+
+
 def get_directory_size(path: Path) -> int:
     total_size = 0
     try:
@@ -15,6 +17,8 @@ def get_directory_size(path: Path) -> int:
     except (PermissionError, FileNotFoundError):
         pass
     return total_size
+
+
 def folderize_directories(n_parts: int):
     current_dir = Path()
     subdirs = [p for p in current_dir.iterdir() if p.is_dir() and not p.name.startswith("group_")]
@@ -43,6 +47,8 @@ def folderize_directories(n_parts: int):
             print(f"Moving '{subdir.name}' -> '{group_name}/'")
             shutil.move(str(subdir), str(dest_path))
     print("\nFolderization complete successfully!")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Group top-level subdirectories into N parts by similar size.")
     parser.add_argument(

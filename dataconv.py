@@ -14,14 +14,19 @@ import sqlite3
 import sys
 from typing import Any, Callable, Optional
 from loguru import logger
+
 Tables = dict[str, list[dict[str, Any]]]
 MMAP_THRESHOLD = 5 * 1024 * 1024
+
+
 def _require(modname: str):
     try:
         return importlib.import_module(modname)
     except ImportError as exc:
         msg = f"format requires '{modname}'; install with: pip install {modname}"
         raise ImportError(msg) from exc
+
+
 def read_text(path: Path) -> str:
     size = path.stat().st_size
     if size == 0:
@@ -31,6 +36,8 @@ def read_text(path: Path) -> str:
         with path.open("rb") as fh, mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ) as mm:
             return mm[:].decode("utf-8", errors="replace")
     return path.read_text(encoding="utf-8")
+
+
 def _columns(rows: list[dict[str, Any]]) -> list[str]:
     cols: list[str] = []
     seen: set = set()
@@ -40,6 +47,8 @@ def _columns(rows: list[dict[str, Any]]) -> list[str]:
                 seen.add(key)
                 cols.append(key)
     return cols
+
+
 def _flat(value: Any) -> Any:
     if value is None:
         return ""
@@ -48,6 +57,8 @@ def _flat(value: Any) -> Any:
     if isinstance(value, (int, float, str)):
         return value
     return json.dumps(value, ensure_ascii=False, default=str)
+
+
 def _infer_sql_type(values) -> str:
     kind: Optional[str] = None
     for v in values:
@@ -68,6 +79,8 @@ def _infer_sql_type(values) -> str:
         else:
             return "TEXT"
     return kind or "TEXT"
+
+
 def _sqlite_val(value: Any) -> Any:
     if value is None:
         return None
@@ -76,6 +89,8 @@ def _sqlite_val(value: Any) -> Any:
     if isinstance(value, (int, float, str, bytes)):
         return value
     return json.dumps(value, ensure_ascii=False, default=str)
+
+
 def _sql_literal(value: Any) -> str:
     if value is None:
         return "NULL"
@@ -88,19 +103,27 @@ def _sql_literal(value: Any) -> str:
     if isinstance(value, str):
         return "'" + value.replace("'", "''") + "'"
     return "'" + json.dumps(value, ensure_ascii=False, default=str).replace("'", "''") + "'"
+
+
 def _is_table_dict(data: Any) -> bool:
     return isinstance(data, dict) and bool(data) and all(isinstance(v, list) for v in data.values())
+
+
 def _as_tables(data: Any, fallback_name: str) -> Tables:
     if _is_table_dict(data):
         return {str(k): [r if isinstance(r, dict) else {"value": r} for r in v] for k, v in data.items()}
     if isinstance(data, list):
         return {fallback_name: [r if isinstance(r, dict) else {"value": r} for r in data]}
     return {fallback_name: [data if isinstance(data, dict) else {"value": data}]}
+
+
 def load_csv(path: Path) -> Tables:
     text = read_text(path)
     dialect: Any = "excel-tab" if path.suffix.lower() == ".tsv" else "excel"
     reader = csv.DictReader(io.StringIO(text), dialect=dialect)
     return {path.stem: [dict(r) for r in reader]}
+
+
 def write_csv(tables: Tables, out_path: Path) -> list[Path]:
     multi = len(tables) > 1
     written: list[Path] = []
@@ -114,8 +137,12 @@ def write_csv(tables: Tables, out_path: Path) -> list[Path]:
                 writer.writerow({c: _flat(row.get(c)) for c in cols})
         written.append(target)
     return written
+
+
 def load_json(path: Path) -> Tables:
     return _as_tables(json.loads(read_text(path)), path.stem)
+
+
 def write_json(tables: Tables, out_path: Path) -> list[Path]:
     payload: Any = next(iter(tables.values())) if len(tables) == 1 else tables
     out_path.write_text(
@@ -123,6 +150,8 @@ def write_json(tables: Tables, out_path: Path) -> list[Path]:
         encoding="utf-8",
     )
     return [out_path]
+
+
 def load_jsonl(path: Path) -> Tables:
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as fh:
@@ -133,12 +162,16 @@ def load_jsonl(path: Path) -> Tables:
             obj = json.loads(line)
             rows.append(obj if isinstance(obj, dict) else {"value": obj})
     return {path.stem: rows}
+
+
 def write_jsonl(tables: Tables, out_path: Path) -> list[Path]:
     _name, rows = next(iter(tables.items()))
     with out_path.open("w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
     return [out_path]
+
+
 def load_db(path: Path) -> Tables:
     size = path.stat().st_size
     con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
@@ -156,6 +189,8 @@ def load_db(path: Path) -> Tables:
         return out
     finally:
         con.close()
+
+
 def write_db(tables: Tables, out_path: Path) -> list[Path]:
     if out_path.exists():
         out_path.unlink()
@@ -178,6 +213,8 @@ def write_db(tables: Tables, out_path: Path) -> list[Path]:
     finally:
         con.close()
     return [out_path]
+
+
 _CREATE_RE = re.compile(
     r'CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[\]]?(\w+)[`"\[\]]?\s*\(',
     re.IGNORECASE,
@@ -196,6 +233,8 @@ _NON_COLUMN_KEYWORDS = {
     "KEY",
     "INDEX",
 }
+
+
 def _split_top_level(s: str) -> list[str]:
     parts: list[str] = []
     cur: list[str] = []
@@ -224,6 +263,8 @@ def _split_top_level(s: str) -> list[str]:
     if cur:
         parts.append("".join(cur))
     return parts
+
+
 def _iter_create_tables(text: str):
     for m in _CREATE_RE.finditer(text):
         name = m.group(1)
@@ -245,6 +286,8 @@ def _iter_create_tables(text: str):
                 depth -= 1
             i += 1
         yield name, text[start : i - 1]
+
+
 def _iter_inserts(text: str):
     for m in _INSERT_RE.finditer(text):
         name = m.group(1)
@@ -277,6 +320,8 @@ def _iter_inserts(text: str):
             else:
                 i += 1
         yield name, cols, text[start:i]
+
+
 def _convert_sql_value(tok: str) -> Any:
     if tok == "":
         return None
@@ -299,6 +344,8 @@ def _convert_sql_value(tok: str) -> Any:
     except ValueError:
         pass
     return tok
+
+
 def _parse_value_tuples(raw: str) -> list[list[Any]]:
     rows: list[list[Any]] = []
     i, n = 0, len(raw)
@@ -347,6 +394,8 @@ def _parse_value_tuples(raw: str) -> list[list[Any]]:
                 i += 1
         rows.append([_convert_sql_value(v) for v in row])
     return rows
+
+
 def load_sql(path: Path) -> Tables:
     text = read_text(path)
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
@@ -377,6 +426,8 @@ def load_sql(path: Path) -> Tables:
                 declared_cols[name] = cols
             tables.setdefault(name, []).append(dict(zip(cols, values)))
     return tables
+
+
 def write_sql(tables: Tables, out_path: Path) -> list[Path]:
     lines: list[str] = ["-- generated by dataconv.py", ""]
     for name, rows in tables.items():
@@ -393,6 +444,8 @@ def write_sql(tables: Tables, out_path: Path) -> list[Path]:
         lines.append("")
     out_path.write_text("\n".join(lines), encoding="utf-8")
     return [out_path]
+
+
 def load_xlsx(path: Path) -> Tables:
     openpyxl = _require("openpyxl")
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
@@ -409,6 +462,8 @@ def load_xlsx(path: Path) -> Tables:
     finally:
         wb.close()
     return out
+
+
 def load_xls(path: Path) -> Tables:
     xlrd = _require("xlrd")
     book = xlrd.open_workbook(path)
@@ -422,6 +477,8 @@ def load_xls(path: Path) -> Tables:
             {header[c]: sheet.cell_value(r, c) for c in range(sheet.ncols)} for r in range(1, sheet.nrows)
         ]
     return out
+
+
 def load_xlsb(path: Path) -> Tables:
     pyxlsb = _require("pyxlsb")
     out: Tables = {}
@@ -436,6 +493,8 @@ def load_xlsb(path: Path) -> Tables:
                     continue
                 out[name] = [{header[i]: c.v for i, c in enumerate(row)} for row in rows_iter]
     return out
+
+
 def load_ods(path: Path) -> Tables:
     odf = _require("odf.opendocument")
     table_mod = _require("odf.table")
@@ -460,6 +519,8 @@ def load_ods(path: Path) -> Tables:
             rows_out.append({header[i] if i < len(header) else f"c{i}": v for i, v in enumerate(values)})
         out[name] = rows_out
     return out
+
+
 def write_xlsx(tables: Tables, out_path: Path) -> list[Path]:
     openpyxl = _require("openpyxl")
     wb = openpyxl.Workbook()
@@ -472,6 +533,8 @@ def write_xlsx(tables: Tables, out_path: Path) -> list[Path]:
             ws.append([_flat(row.get(c)) for c in cols])
     wb.save(out_path)
     return [out_path]
+
+
 def write_ods(tables: Tables, out_path: Path) -> list[Path]:
     odf_opendoc = _require("odf.opendocument")
     table_mod = _require("odf.table")
@@ -497,9 +560,13 @@ def write_ods(tables: Tables, out_path: Path) -> list[Path]:
         doc.spreadsheet.addElement(sheet)
     doc.save(str(out_path).rsplit(".", 1)[0])
     return [Path(str(out_path).rsplit(".", 1)[0] + ".ods")]
+
+
 def load_parquet(path: Path) -> Tables:
     pq = _require("pyarrow.parquet")
     return {path.stem: pq.read_table(path).to_pylist()}
+
+
 def write_parquet(tables: Tables, out_path: Path) -> list[Path]:
     pa = _require("pyarrow")
     pq = _require("pyarrow.parquet")
@@ -513,9 +580,13 @@ def write_parquet(tables: Tables, out_path: Path) -> list[Path]:
         pq.write_table(tbl, target, compression="snappy")
         written.append(target)
     return written
+
+
 def load_feather(path: Path) -> Tables:
     feather = _require("pyarrow.feather")
     return {path.stem: feather.read_table(path).to_pylist()}
+
+
 def write_feather(tables: Tables, out_path: Path) -> list[Path]:
     pa = _require("pyarrow")
     feather = _require("pyarrow.feather")
@@ -524,9 +595,13 @@ def write_feather(tables: Tables, out_path: Path) -> list[Path]:
     arrays = {c: [r.get(c) for r in rows] for c in cols}
     feather.write_feather(pa.table(arrays), out_path, compression="lz4")
     return [out_path]
+
+
 def load_orc(path: Path) -> Tables:
     orc = _require("pyarrow.orc")
     return {path.stem: orc.read_table(path).to_pylist()}
+
+
 def write_orc(tables: Tables, out_path: Path) -> list[Path]:
     pa = _require("pyarrow")
     orc = _require("pyarrow.orc")
@@ -535,12 +610,16 @@ def write_orc(tables: Tables, out_path: Path) -> list[Path]:
     arrays = {c: [r.get(c) for r in rows] for c in cols}
     orc.write_table(pa.table(arrays), out_path)
     return [out_path]
+
+
 def load_arrow(path: Path) -> Tables:
     ipc = _require("pyarrow.ipc")
     ipc_feather = _require("pyarrow.feather")
     with path.open("rb") as fh:
         reader = ipc.open_file(fh)
         return {path.stem: reader.read_all().to_pylist()}
+
+
 def write_arrow(tables: Tables, out_path: Path) -> list[Path]:
     pa = _require("pyarrow")
     ipc = _require("pyarrow.ipc")
@@ -551,9 +630,13 @@ def write_arrow(tables: Tables, out_path: Path) -> list[Path]:
     with out_path.open("wb") as fh, ipc.new_file(fh, tbl.schema) as writer:
         writer.write_table(tbl)
     return [out_path]
+
+
 def load_yaml(path: Path) -> Tables:
     yaml = _require("yaml")
     return _as_tables(yaml.safe_load(read_text(path)), path.stem)
+
+
 def write_yaml(tables: Tables, out_path: Path) -> list[Path]:
     yaml = _require("yaml")
     payload = next(iter(tables.values())) if len(tables) == 1 else tables
@@ -562,17 +645,23 @@ def write_yaml(tables: Tables, out_path: Path) -> list[Path]:
         encoding="utf-8",
     )
     return [out_path]
+
+
 def load_toml(path: Path) -> Tables:
     try:
         import tomllib as toml_mod
     except ImportError:
         toml_mod = _require("tomli")
     return _as_tables(toml_mod.loads(read_text(path)), path.stem)
+
+
 def write_toml(tables: Tables, out_path: Path) -> list[Path]:
     tomli_w = _require("tomli_w")
     payload = next(iter(tables.values())) if len(tables) == 1 else tables
     out_path.write_bytes(tomli_w.dumps(payload))
     return [out_path]
+
+
 def load_xml(path: Path) -> Tables:
     ET = _require("xml.etree.ElementTree")
     tree = ET.parse(path)
@@ -589,6 +678,8 @@ def load_xml(path: Path) -> Tables:
     for child in root:
         rows.append({sub.tag: sub.text for sub in child})
     return {path.stem: rows}
+
+
 def write_xml(tables: Tables, out_path: Path) -> list[Path]:
     ET = _require("xml.etree.ElementTree")
     root = ET.Element("data")
@@ -603,27 +694,41 @@ def write_xml(tables: Tables, out_path: Path) -> list[Path]:
                 el.text = "" if v is None else str(v)
     ET.ElementTree(root).write(out_path, encoding="utf-8", xml_declaration=True)
     return [out_path]
+
+
 def load_pickle(path: Path) -> Tables:
     import pickle
+
     return _as_tables(pickle.loads(path.read_bytes()), path.stem)
+
+
 def write_pickle(tables: Tables, out_path: Path) -> list[Path]:
     import pickle
+
     payload = next(iter(tables.values())) if len(tables) == 1 else tables
     out_path.write_bytes(pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL))
     return [out_path]
+
+
 def load_msgpack(path: Path) -> Tables:
     msgpack = _require("msgpack")
     data = msgpack.unpackb(path.read_bytes(), raw=False)
     return _as_tables(data, path.stem)
+
+
 def write_msgpack(tables: Tables, out_path: Path) -> list[Path]:
     msgpack = _require("msgpack")
     payload = next(iter(tables.values())) if len(tables) == 1 else tables
     out_path.write_bytes(msgpack.packb(payload, use_bin_type=True))
     return [out_path]
+
+
 def load_avro(path: Path) -> Tables:
     fastavro = _require("fastavro")
     with path.open("rb") as fh:
         return {path.stem: list(fastavro.reader(fh))}
+
+
 def write_avro(tables: Tables, out_path: Path) -> list[Path]:
     fastavro = _require("fastavro")
     name, rows = next(iter(tables.items()))
@@ -646,11 +751,15 @@ def write_avro(tables: Tables, out_path: Path) -> list[Path]:
     with out_path.open("wb") as fh:
         fastavro.writer(fh, schema, rows)
     return [out_path]
+
+
 def load_bson(path: Path) -> Tables:
     bson_mod = _require("bson")
     data = path.read_bytes()
     rows = list(bson_mod.decode_all(data))
     return _as_tables(rows, path.stem)
+
+
 def write_bson(tables: Tables, out_path: Path) -> list[Path]:
     bson_mod = _require("bson")
     _, rows = next(iter(tables.items()))
@@ -658,6 +767,8 @@ def write_bson(tables: Tables, out_path: Path) -> list[Path]:
         for row in rows:
             fh.write(bson_mod.encode(row))
     return [out_path]
+
+
 def load_hdf5(path: Path) -> Tables:
     pd = _require("pandas")
     out: Tables = {}
@@ -667,6 +778,8 @@ def load_hdf5(path: Path) -> Tables:
             df = store.get(key)
             out[clean] = df.to_dict(orient="records")
     return out
+
+
 def write_hdf5(tables: Tables, out_path: Path) -> list[Path]:
     pd = _require("pandas")
     _require("tables")
@@ -674,6 +787,8 @@ def write_hdf5(tables: Tables, out_path: Path) -> list[Path]:
         for name, rows in tables.items():
             store.put(name, pd.DataFrame(rows), format="table")
     return [out_path]
+
+
 def load_netcdf(path: Path) -> Tables:
     xr = _require("xarray")
     ds = xr.open_dataset(path)
@@ -681,6 +796,8 @@ def load_netcdf(path: Path) -> Tables:
         return {var: ds[var].to_dataframe().reset_index().to_dict("records") for var in ds.data_vars}
     finally:
         ds.close()
+
+
 def write_netcdf(tables: Tables, out_path: Path) -> list[Path]:
     xr = _require("xarray")
     pd = _require("pandas")
@@ -690,6 +807,8 @@ def write_netcdf(tables: Tables, out_path: Path) -> list[Path]:
         ds[name] = xr.DataArray(df.values, dims=[f"{name}_i", f"{name}_j"])
     ds.to_netcdf(out_path)
     return [out_path]
+
+
 def load_zarr(path: Path) -> Tables:
     xr = _require("xarray")
     ds = xr.open_zarr(path)
@@ -697,6 +816,8 @@ def load_zarr(path: Path) -> Tables:
         return {var: ds[var].to_dataframe().reset_index().to_dict("records") for var in ds.data_vars}
     finally:
         ds.close()
+
+
 def write_zarr(tables: Tables, out_path: Path) -> list[Path]:
     xr = _require("xarray")
     pd = _require("pandas")
@@ -706,36 +827,52 @@ def write_zarr(tables: Tables, out_path: Path) -> list[Path]:
         ds[name] = xr.DataArray(df.values, dims=[f"{name}_i", f"{name}_j"])
     ds.to_zarr(out_path, mode="w")
     return [out_path]
+
+
 def load_rds(path: Path) -> Tables:
     pyreadr = _require("pyreadr")
     result = pyreadr.read_r(str(path))
     return {name: df.to_dict(orient="records") for name, df in result.items()}
+
+
 def write_rds(tables: Tables, out_path: Path) -> list[Path]:
     pyreadr = _require("pyreadr")
     pd = _require("pandas")
     _, rows = next(iter(tables.items()))
     pyreadr.write_rds(str(out_path), pd.DataFrame(rows))
     return [out_path]
+
+
 def load_dta(path: Path) -> Tables:
     pd = _require("pandas")
     df = pd.read_stata(path)
     return {path.stem: df.to_dict(orient="records")}
+
+
 def write_dta(tables: Tables, out_path: Path) -> list[Path]:
     pd = _require("pandas")
     _, rows = next(iter(tables.items()))
     pd.DataFrame(rows).to_stata(out_path)
     return [out_path]
+
+
 def load_sav(path: Path) -> Tables:
     pyreadstat = _require("pyreadstat")
     df, _meta = pyreadstat.read_sav(str(path))
     return {path.stem: df.to_dict(orient="records")}
+
+
 def load_sas7bdat(path: Path) -> Tables:
     pyreadstat = _require("pyreadstat")
     df, _meta = pyreadstat.read_sas7bdat(str(path))
     return {path.stem: df.to_dict(orient="records")}
+
+
 def load_dbf(path: Path) -> Tables:
     dbfread = _require("dbfread")
     return {path.stem: [dict(r) for r in dbfread.DBF(str(path))]}
+
+
 def write_dbf(tables: Tables, out_path: Path) -> list[Path]:
     dbf = _require("dbf")
     _, rows = next(iter(tables.items()))
@@ -751,22 +888,29 @@ def write_dbf(tables: Tables, out_path: Path) -> list[Path]:
     finally:
         table.close()
     return [out_path]
+
+
 def _geo_to_tables(gdf) -> Tables:
     df = gdf.copy()
     if "geometry" in df.columns:
         df["geometry"] = df["geometry"].apply(lambda g: g.wkt if g is not None else None)
     return {df.attrs.get("name", "features"): df.to_dict(orient="records")}
+
+
 def load_geojson(path: Path) -> Tables:
     gpd = _require("geopandas")
     gdf = gpd.read_file(path)
     gdf.attrs["name"] = path.stem
     return _geo_to_tables(gdf)
+
+
 def write_geojson(tables: Tables, out_path: Path) -> list[Path]:
     gpd = _require("geopandas")
     shapely_wkt = _require("shapely.wkt")
     _, rows = next(iter(tables.items()))
     df = _geo = None
     import pandas as pd
+
     df = pd.DataFrame(rows)
     if "geometry" in df.columns:
         df["geometry"] = df["geometry"].apply(lambda w: shapely_wkt.loads(w) if isinstance(w, str) and w else None)
@@ -775,15 +919,20 @@ def write_geojson(tables: Tables, out_path: Path) -> list[Path]:
         gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy([0] * len(df), [0] * len(df)))
     gdf.to_file(out_path, driver="GeoJSON")
     return [out_path]
+
+
 def load_shapefile(path: Path) -> Tables:
     gpd = _require("geopandas")
     gdf = gpd.read_file(path)
     gdf.attrs["name"] = path.stem
     return _geo_to_tables(gdf)
+
+
 def write_shapefile(tables: Tables, out_path: Path) -> list[Path]:
     gpd = _require("geopandas")
     shapely_wkt = _require("shapely.wkt")
     import pandas as pd
+
     _, rows = next(iter(tables.items()))
     df = pd.DataFrame(rows)
     if "geometry" in df.columns:
@@ -793,22 +942,30 @@ def write_shapefile(tables: Tables, out_path: Path) -> list[Path]:
         gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy([0] * len(df), [0] * len(df)))
     gdf.to_file(out_path)
     return [out_path]
+
+
 def load_ini(path: Path) -> Tables:
     import configparser
+
     cp = configparser.ConfigParser()
     cp.read(path)
     out: Tables = {}
     for section in cp.sections():
         out[section] = [{"key": k, "value": v} for k, v in cp.items(section)]
     return out
+
+
 def write_ini(tables: Tables, out_path: Path) -> list[Path]:
     import configparser
+
     cp = configparser.ConfigParser()
     for name, rows in tables.items():
         cp[name] = {str(r.get("key")): str(r.get("value", "")) for r in rows if r.get("key") is not None}
     with out_path.open("w", encoding="utf-8") as fh:
         cp.write(fh)
     return [out_path]
+
+
 def load_fixed_width(path: Path) -> Tables:
     schema_path = path.with_suffix(path.suffix + ".schema.json")
     if not schema_path.exists():
@@ -828,6 +985,8 @@ def load_fixed_width(path: Path) -> Tables:
                 pos += w
             rows.append(row)
     return {path.stem: rows}
+
+
 def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
     _, rows = next(iter(tables.items()))
     cols = _columns(rows)
@@ -842,6 +1001,8 @@ def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
         for row in rows:
             fh.write("".join(str(row.get(c, "")).ljust(widths[c]) for c in cols) + "\n")
     return [out_path, schema_path]
+
+
 EXT_TO_FMT: dict[str, str] = {
     ".csv": "csv",
     ".tsv": "csv",
@@ -988,9 +1149,13 @@ WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
     "ini": write_ini,
     "fixedwidth": write_fixed_width,
 }
+
+
 def _output_path(src: Path, target_fmt: str, out_dir: Optional[Path]) -> Path:
     name = src.stem + FMT_TO_EXT[target_fmt]
     return (out_dir / name) if out_dir else src.with_name(name)
+
+
 def convert_job(
     job: tuple[str, str, Optional[str]],
 ) -> tuple[str, bool, list[str], str]:
@@ -1021,8 +1186,12 @@ def convert_job(
     except Exception as exc:
         logger.exception(f"failed to convert {src}")
         return src_str, False, [], f"{type(exc).__name__}: {exc}"
+
+
 def detect_format(path: Path) -> Optional[str]:
     return EXT_TO_FMT.get(path.suffix.lower())
+
+
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="dataconv",
@@ -1048,12 +1217,16 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="parallel workers for multiple inputs",
     )
     return parser.parse_args(argv)
+
+
 def _resolve_target(args: argparse.Namespace) -> str:
     for fmt in WRITERS:
         if getattr(args, fmt, False):
             return fmt
     msg = "no output format specified"
     raise SystemExit(msg)
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     logger.remove()
     logger.add(sys.stderr, format="<level>{level: <8}</level> | {message}")
@@ -1091,5 +1264,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             logger.error(f"{src}: {msg}")
     logger.info(f"done: {len(results) - failures} ok, {failures} failed")
     return 1 if failures else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

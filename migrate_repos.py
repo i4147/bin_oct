@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"
 DEFAULT_NEW_USERNAME = "i4147"
@@ -73,6 +74,8 @@ _file_handler.setLevel(logging.DEBUG)
 _file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
 logger.addHandler(_console)
 logger.addHandler(_file_handler)
+
+
 class C:
     RESET = "\033[0m"
     RED = "\033[91m"
@@ -80,10 +83,14 @@ class C:
     YELLOW = "\033[93m"
     BLUE = "\033[94m"
     BOLD = "\033[1m"
+
+
 def color(text, c):
     if not sys.stdout.isatty():
         return text
     return f"{c}{text}{C.RESET}"
+
+
 def is_probably_text_file(path: Path) -> bool:
     try:
         with open(path, "rb") as f:
@@ -91,17 +98,25 @@ def is_probably_text_file(path: Path) -> bool:
         return b"\x00" not in chunk
     except OSError:
         return False
+
+
 def should_skip_dir(dirname: str) -> bool:
     return dirname in SKIP_DIRS or dirname.startswith(".git")
+
+
 def matches_target_file(path: Path) -> bool:
     if path.name in TEXT_FILENAMES:
         return True
     return path.suffix in TEXT_EXTENSIONS
+
+
 def backup_file(path: Path) -> Path:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_path = path.with_name(f"{path.name}.{ts}.bak")
     shutil.copy2(path, backup_path)
     return backup_path
+
+
 def run_cmd(cmd, input_text=None, check=False):
     logger.debug(f"Running command: {' '.join(cmd)}")
     result = subprocess.run(
@@ -113,6 +128,8 @@ def run_cmd(cmd, input_text=None, check=False):
     if check and result.returncode != 0:
         logger.error(f"Command failed: {' '.join(cmd)}\n{result.stderr}")
     return result
+
+
 def update_global_git_config(new_username, new_email, apply_changes):
     logger.info(color("\n=== Step 1: Global git config ===", C.BOLD))
     result = run_cmd(["git", "config", "--global", "--get", "user.name"])
@@ -129,6 +146,8 @@ def update_global_git_config(new_username, new_email, apply_changes):
     run_cmd(["git", "config", "--global", "user.name", new_username], check=True)
     run_cmd(["git", "config", "--global", "user.email", new_email], check=True)
     logger.info(color("[APPLIED] Global git config updated.", C.GREEN))
+
+
 def find_local_git_configs(home_dir: Path):
     configs = []
     for root, dirs, files in os.walk(home_dir):
@@ -136,6 +155,8 @@ def find_local_git_configs(home_dir: Path):
         if Path(root).name == ".git" and "config" in files:
             configs.append(Path(root) / "config")
     return configs
+
+
 def update_local_git_configs(home_dir, old_username, old_email, new_username, new_email, apply_changes):
     logger.info(color("\n=== Step 1b: Local repo .git/config files ===", C.BOLD))
     configs = find_local_git_configs(home_dir)
@@ -165,6 +186,8 @@ def update_local_git_configs(home_dir, old_username, old_email, new_username, ne
                 C.YELLOW,
             )
         )
+
+
 def scan_files(home_dir: Path):
     matches = []
     for root, dirs, files in os.walk(home_dir):
@@ -174,6 +197,8 @@ def scan_files(home_dir: Path):
             if matches_target_file(fpath):
                 matches.append(fpath)
     return matches
+
+
 def preview_and_replace(home_dir, old_username, old_email, new_username, new_email, apply_changes):
     logger.info(color("\n=== Step 2: Scanning files under home folder ===", C.BOLD))
     logger.info(f"Home directory: {home_dir}")
@@ -239,6 +264,8 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
         backup_path = backup_file(fpath)
         fpath.write_text(new_content, encoding="utf-8")
         logger.info(color(f"[APPLIED] Updated {fpath} (backup: {backup_path})", C.GREEN))
+
+
 def create_new_ssh_key(new_email, key_path: Path, apply_changes):
     logger.info(color("\n=== Step 3: Create new SSH key ===", C.BOLD))
     logger.info(f"Target key path: {key_path}")
@@ -254,6 +281,7 @@ def create_new_ssh_key(new_email, key_path: Path, apply_changes):
     passphrase = ""
     if use_passphrase == "y":
         import getpass
+
         passphrase = getpass.getpass("Enter passphrase: ")
         confirm_pass = getpass.getpass("Confirm passphrase: ")
         if passphrase != confirm_pass:
@@ -286,6 +314,8 @@ def create_new_ssh_key(new_email, key_path: Path, apply_changes):
         run_cmd(["ssh-add", str(key_path)])
         logger.info(color("[APPLIED] Key added to ssh-agent.", C.GREEN))
     return pub_path
+
+
 def find_old_ssh_keys(ssh_dir: Path, old_username, old_email):
     matches = []
     if not ssh_dir.exists():
@@ -299,6 +329,8 @@ def find_old_ssh_keys(ssh_dir: Path, old_username, old_email):
             private_key = pub_file.with_suffix("")
             matches.append((pub_file, private_key if private_key.exists() else None))
     return matches
+
+
 def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
     logger.info(color("\n=== Step 4: Find & remove old SSH keys ===", C.BOLD))
     logger.info(f"SSH directory: {ssh_dir}")
@@ -346,6 +378,8 @@ def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
                 logger.info(color(f"[APPLIED] Removed public key  {pub} (backup: {bak})", C.GREEN))
         except OSError as e:
             logger.error(f"Failed to remove key files: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Migrate local GitHub identity (git config, files, SSH keys). "
@@ -451,5 +485,7 @@ def main():
                 C.YELLOW,
             )
         )
+
+
 if __name__ == "__main__":
     main()

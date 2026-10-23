@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 import sys
+
+
 def get_created_files(n_commits: int) -> list:
     try:
         cmd = [
@@ -32,6 +34,8 @@ def get_created_files(n_commits: int) -> list:
     except Exception as e:
         print(f"✗ Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 list_commits.py <N>")
@@ -57,5 +61,7 @@ def main():
     except ValueError:
         print(f"✗ Error: '{sys.argv[1]}' is not a valid integer", file=sys.stderr)
         sys.exit(1)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

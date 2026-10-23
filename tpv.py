@@ -11,6 +11,7 @@ import sys
 import tempfile
 import termios
 import tty
+
 RESET = "\x1b[0m"
 HOME = "\x1b[H"
 CLEAR = "\x1b[2J"
@@ -24,6 +25,8 @@ DEVNULL = subprocess.DEVNULL
 WHITESPACE = b" \t\r\n\v\f"
 PAGES_RE = re.compile(rb"^Pages:\s*(\d+)", re.MULTILINE)
 NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
+
+
 def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
     if len(data) < 2 or data[:2] != b"P6":
         msg = "renderer did not produce a P6 PPM image"
@@ -60,8 +63,12 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
         msg = "truncated PPM raster"
         raise RuntimeError(msg)
     return w, h, raster
+
+
 class RenderError(RuntimeError):
     pass
+
+
 class Renderer:
     CACHE_LIMIT = 6
     BACKENDS = ("gs", "pdftoppm", "mutool")
@@ -70,6 +77,7 @@ class Renderer:
         "pdftoppm": "poppler",
         "mutool": "mupdf-tools",
     }
+
     def __init__(self, path: str, backend: str | None = None) -> None:
         self.path = path
         self.tool = self._detect_tool(backend)
@@ -77,6 +85,7 @@ class Renderer:
         self._cache: dict[tuple[int, int], tuple[int, int, bytes]] = {}
         self._pt_cache: dict[int, tuple[float, float]] = {}
         self._count: int | None = None
+
     @classmethod
     def _detect_tool(cls, backend: str | None) -> str:
         if backend:
@@ -95,8 +104,10 @@ class Renderer:
             "    pkg install poppler        (provides pdftoppm + pdfinfo)\n"
             "    pkg install mupdf-tools    (provides mutool)"
         )
+
     def close(self) -> None:
         shutil.rmtree(self._tmp, ignore_errors=True)
+
     def page_count(self) -> int:
         if self._count is not None:
             return self._count
@@ -150,9 +161,11 @@ class Renderer:
                 pass
         msg = "could not determine the page count"
         raise RenderError(msg)
+
     @staticmethod
     def _ps_string(s: str) -> str:
         return "(" + "".join("\\" + c if c in "()\\" else c for c in s) + ")"
+
     def _gs_page_points(self, index: int) -> tuple[float, float]:
         hit = self._pt_cache.get(index)
         if hit is not None:
@@ -202,10 +215,12 @@ class Renderer:
             raise RenderError(msg_0)
         self._pt_cache[index] = (w, h)
         return w, h
+
     def _wipe_tmp(self) -> None:
         for name in os.listdir(self._tmp):
             with contextlib.suppress(OSError):
                 os.unlink(os.path.join(self._tmp, name))
+
     def _run_gs(self, index: int, width: int) -> bytes:
         pw, _ph = self._gs_page_points(index)
         dpi = max(4.0, width * 72.0 / pw)
@@ -234,6 +249,7 @@ class Renderer:
         except OSError:
             msg = "gs produced no output"
             raise RenderError(msg) from None
+
     def _run_pdftoppm(self, index: int, width: int) -> bytes:
         self._wipe_tmp()
         root = os.path.join(self._tmp, "page")
@@ -263,6 +279,7 @@ class Renderer:
             out = leftovers[0]
         with open(out, "rb") as fh:
             return fh.read()
+
     def _run_mutool(self, index: int, width: int) -> bytes:
         out = os.path.join(self._tmp, "page.ppm")
         argv = [
@@ -286,6 +303,7 @@ class Renderer:
         except OSError:
             msg = "mutool draw produced no output"
             raise RenderError(msg) from None
+
     def page(self, index: int, width: int) -> tuple[int, int, bytes]:
         key = (index, width)
         hit = self._cache.get(key)
@@ -306,6 +324,8 @@ class Renderer:
             self._cache.clear()
         self._cache[key] = result
         return result
+
+
 def read_key(fd: int, timeout: float | None = None) -> str | None:
     ready, _, _ = select.select([fd], [], [], timeout)
     if not ready:
@@ -324,11 +344,14 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
         if seq[-1:].isalpha() or seq[-1:] == b"~":
             break
     return seq.decode("latin-1")
+
+
 class Viewer:
     MIN_ZOOM = 0.25
     MAX_ZOOM = 8.0
     ZOOM_STEP = 1.25
     MAX_RENDER_WIDTH = 4000
+
     def __init__(self, path: str, page: int = 1, zoom: float = 1.0, backend: str | None = None) -> None:
         self.path = path
         self.renderer = Renderer(path, backend)
@@ -341,18 +364,23 @@ class Viewer:
         self.x = 0
         self.y = 0
         self.running = True
+
     def term_size(self) -> tuple[int, int]:
         size = shutil.get_terminal_size((80, 24))
         return size.columns, size.lines
+
     def view_rows(self) -> int:
         _, lines = self.term_size()
         return max(1, lines - 1)
+
     def render_width(self) -> int:
         cols, _ = self.term_size()
         return max(1, min(self.MAX_RENDER_WIDTH, round(cols * self.zoom)))
+
     def page_px_size(self) -> tuple[int, int]:
         w, h, _ = self.renderer.page(self.page_index, self.render_width())
         return w, h
+
     @staticmethod
     def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
         bottom = top + 1
@@ -393,6 +421,7 @@ class Viewer:
             out.append(HALF_BLOCK)
         out.append(RESET)
         return "".join(out)
+
     def _status(self, cols: int, note: str = "") -> str:
         name = os.path.basename(self.path)
         if note:
@@ -411,6 +440,7 @@ class Viewer:
         if len(line) + len(hint) <= cols:
             line = line + " " * (cols - len(line) - len(hint)) + hint
         return REVERSE + line[:cols].ljust(cols) + RESET
+
     def draw(self) -> None:
         cols, _ = self.term_size()
         rows = self.view_rows()
@@ -445,10 +475,12 @@ class Viewer:
         buf.append(self._status(cols, error or ""))
         sys.stdout.write("".join(buf))
         sys.stdout.flush()
+
     def goto_page(self, index: int) -> None:
         if 0 <= index < self.page_count:
             self.page_index = index
             self.x = self.y = 0
+
     def screen_down(self) -> None:
         step = self.view_rows() * 2
         _, h = self.page_px_size()
@@ -459,6 +491,7 @@ class Viewer:
                 self.x = self.y = 0
         else:
             self.y = min(self.y + step, max_y)
+
     def screen_up(self) -> None:
         step = self.view_rows() * 2
         if self.y <= 0:
@@ -469,6 +502,7 @@ class Viewer:
                 self.y = max(0, h - step)
         else:
             self.y = max(0, self.y - step)
+
     def set_zoom(self, value: float) -> None:
         value = max(self.MIN_ZOOM, min(self.MAX_ZOOM, value))
         if value == self.zoom:
@@ -480,6 +514,7 @@ class Viewer:
         new_w = self.render_width()
         new_h = max(1, round(old_h * new_w / old_w))
         self.y = int(frac * new_h)
+
     def handle(self, key: str) -> None:
         if key in ("q", "Q", "\x03") or key == "\x1b":
             self.running = False
@@ -510,6 +545,7 @@ class Viewer:
         elif key == "0":
             self.zoom = 1.0
             self.x = self.y = 0
+
     def run(self, fd: int) -> None:
         dirty = True
         last_size = (0, 0)
@@ -528,6 +564,8 @@ class Viewer:
                 continue
             self.handle(key)
             dirty = True
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="tpv",
@@ -579,5 +617,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.flush()
         viewer.renderer.close()
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

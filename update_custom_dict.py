@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from collections import Counter
@@ -10,7 +8,6 @@ import multiprocessing as mp
 import os
 from pathlib import Path
 import re
-
 
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"

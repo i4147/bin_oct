@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 from collections import Counter
 import json
@@ -8,10 +6,8 @@ from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any
-
 from dh import get_nobinary
 from loguru import logger
-
 
 MAX_WORKERS: int = 8
 WORD_PATTERN: re.Pattern[str] = re.compile(r"\b[a-z]+\b")

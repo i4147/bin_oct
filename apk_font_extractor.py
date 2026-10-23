@@ -10,10 +10,13 @@ import sys
 import zipfile
 from fontTools.ttLib import TTFont
 from loguru import logger
+
 WORKERS: int = 8
 DEFAULT_OUTPUT_DIR: Path = Path("/sdcard/_static/fonts")
 FONT_EXTENSIONS: frozenset[str] = frozenset({".ttf", ".woff", ".woff2"})
 APK_TIMEOUT_SECONDS: int = 600
+
+
 @dataclass
 class FontInfo:
     family_name: str
@@ -22,8 +25,11 @@ class FontInfo:
     is_italic: bool
     extension: str
     original_path: Path = field(default_factory=Path)
+
+
 class APKFontExtractor:
     FONT_EXTENSIONS: frozenset[str] = FONT_EXTENSIONS
+
     def __init__(self, output_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
         self.output_dir: Path = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -33,6 +39,7 @@ class APKFontExtractor:
             self.output_dir,
             WORKERS,
         )
+
     def _find_apk_files(self, paths: list[Path]) -> list[Path]:
         apk_files: list[Path] = []
         for path in paths:
@@ -45,6 +52,7 @@ class APKFontExtractor:
                     logger.debug("Found APK file: {}", apk_path)
         print("Found {} APK file(s) to process", len(apk_files))
         return apk_files
+
     def _extract_fonts_from_apk(self, apk_path: Path) -> list[tuple[Path, bytes, str]]:
         fonts: list[tuple[Path, bytes, str]] = []
         try:
@@ -78,6 +86,7 @@ class APKFontExtractor:
         except Exception as exc:
             logger.error("Error processing {}: {}", apk_path, exc)
         return fonts
+
     def _get_font_metadata(self, font_data: bytes) -> FontInfo | None:
         font: TTFont | None = None
         try:
@@ -138,6 +147,7 @@ class APKFontExtractor:
             if font is not None:
                 with contextlib.suppress(Exception):
                     font.close()
+
     def _generate_font_filename(self, font_info: FontInfo) -> str:
         family_name = re.sub(r"[^\w\s-]", "", font_info.family_name)
         family_name = re.sub(r"\s+", "-", family_name.strip())
@@ -154,6 +164,7 @@ class APKFontExtractor:
         if font_info.is_italic and "italic" not in style_str.lower():
             style_str = f"{style_str}-Italic"
         return f"{family_name}-{style_str}{font_info.extension}"
+
     def _handle_duplicate_filename(self, filename: str, source_apk: Path, font_data: bytes) -> str:
         base_name = Path(filename).stem
         extension = Path(filename).suffix
@@ -167,6 +178,7 @@ class APKFontExtractor:
                 print("Font already exists: {}", new_filename)
                 return new_filename
             counter += 1
+
     def _is_same_font(self, existing_path: Path, source_apk: Path, font_data: bytes) -> bool:
         try:
             existing_size = existing_path.stat().st_size
@@ -176,6 +188,7 @@ class APKFontExtractor:
             return False
         key = f"{source_apk.name}-{existing_size}"
         return key in self.processed_fonts
+
     def _save_font(self, font_data: bytes, filename: str, source_apk: Path) -> Path | None:
         final_filename = self._handle_duplicate_filename(filename, source_apk, font_data)
         output_path = self.output_dir / final_filename
@@ -187,6 +200,7 @@ class APKFontExtractor:
         except Exception as exc:
             logger.error("Failed to save font {}: {}", final_filename, exc)
             return None
+
     def _process_apk(self, apk_path: Path) -> int:
         print("Processing APK: {}", apk_path.name)
         fonts = self._extract_fonts_from_apk(apk_path)
@@ -203,6 +217,7 @@ class APKFontExtractor:
                 extracted_count += 1
         print("Extracted {} font(s) from {}", extracted_count, apk_path.name)
         return extracted_count
+
     def process(self, input_paths: list[Path] | None = None) -> int:
         if input_paths is None:
             input_paths = [Path.cwd()]
@@ -231,6 +246,8 @@ class APKFontExtractor:
             logger.error("Error in parallel processing: {}", exc)
         print("Total fonts extracted: {}", total_extracted)
         return total_extracted
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=("Extract .ttf, .woff, and .woff2 fonts from APK files using a fixed pool of 8 workers."),
@@ -266,6 +283,8 @@ Examples:
         help="Enable verbose logging",
     )
     return parser.parse_args()
+
+
 def main() -> int:
     args = parse_arguments()
     if args.verbose:
@@ -293,5 +312,7 @@ def main() -> int:
     except Exception as exc:
         logger.error("Fatal error: {}", exc)
         return 1
+
+
 if __name__ == "__main__":
     sys.exit(main())

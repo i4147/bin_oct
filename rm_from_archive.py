@@ -6,6 +6,8 @@ import sys
 import tarfile
 import tempfile
 import zstandard as zstd
+
+
 def delete_from_tar_zst(archive_path, file_to_delete):
     if not os.path.exists(archive_path):
         print(f"Error: Archive '{archive_path}' not found", file=sys.stderr)
@@ -59,6 +61,8 @@ def delete_from_tar_zst(archive_path, file_to_delete):
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
 def main():
     if len(sys.argv) != 3:
         print("Usage: python script.py <archive.tar.zst> <file-to-delete>")
@@ -67,5 +71,7 @@ def main():
     archive_path = sys.argv[1]
     file_to_delete = sys.argv[2]
     delete_from_tar_zst(archive_path, file_to_delete)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

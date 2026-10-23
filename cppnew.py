@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 import sys
+
 TEMPLATE = """\
 #include <bits/stdc++.h>
 using namespace std;
@@ -13,6 +14,8 @@ int main() {
     return 0;
 }
 """
+
+
 def cppnew(*args):
     if not args:
         print("Usage: cppnew <filename.cpp>")
@@ -33,5 +36,7 @@ def cppnew(*args):
         return 1
     except KeyboardInterrupt:
         return 130
+
+
 if __name__ == "__main__":
     sys.exit(cppnew(*sys.argv[1:]))

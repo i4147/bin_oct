@@ -3,9 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from faprint import faprint as pp
+
+
 def ylines(path: Path):
     with path.open(encoding="utf-8") as f:
         yield from f
+
+
 if __name__ == "__main__":
     fn = Path(sys.argv[1])
     for k in ylines(fn):

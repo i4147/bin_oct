@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Iterable
-
 import rarfile
 
 
@@ -66,7 +63,6 @@ def main(root: str = ".") -> None:
     with mp.Pool(processes=mp.cpu_count()) as pool:
         results: Iterable[tuple[Path, bool, str, int, int]] = pool.map(extract_one, rar_files)
     results = list(results)
-
     max_len = max(len(p.name) for p, _, _, _, _ in results)
     for path, ok, msg, in_size, out_size in results:
         if not ok:

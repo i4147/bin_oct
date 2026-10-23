@@ -9,6 +9,7 @@ import shlex
 import subprocess
 import sys
 import time
+
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 CLIPBOARD_MAX_BYTES = 1 * 1024 * 1024
 COLORS = {
@@ -22,12 +23,16 @@ COLORS = {
     "cyan": "\033[36m",
     "gray": "\033[90m",
 }
+
+
 def supports_color() -> bool:
     if os.environ.get("NO_COLOR"):
         return False
     if os.environ.get("TERM") == "dumb":
         return False
     return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+
 def color(text: str, color_name: str = "reset", bold: bool = False) -> str:
     if not supports_color():
         return text
@@ -35,6 +40,8 @@ def color(text: str, color_name: str = "reset", bold: bool = False) -> str:
     if bold:
         prefix += COLORS["bold"]
     return f"{prefix}{text}{COLORS['reset']}"
+
+
 def expand_glob_args(args: list[str]) -> list[str]:
     expanded = []
     for arg in args:
@@ -47,6 +54,8 @@ def expand_glob_args(args: list[str]) -> list[str]:
         else:
             expanded.append(arg)
     return expanded
+
+
 def create_log_file(name: str) -> Path:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -57,6 +66,8 @@ def create_log_file(name: str) -> Path:
         log_file = LOG_DIR / f"{name}_{timestamp}_{milliseconds:03d}_{counter}.log"
         counter += 1
     return log_file
+
+
 def write_log_header(log_file: Path, command: list[str], cwd: str) -> None:
     timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a", encoding="utf-8") as f:
@@ -65,6 +76,8 @@ def write_log_header(log_file: Path, command: list[str], cwd: str) -> None:
         f.write(f"Timestamp: {timestamp}\n")
         f.write(f"Cwd: {cwd}\n")
         f.write(f"{'=' * 50}\n\n")
+
+
 def write_log_footer(log_file: Path, exit_code: int) -> None:
     timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a", encoding="utf-8") as f:
@@ -72,6 +85,8 @@ def write_log_footer(log_file: Path, exit_code: int) -> None:
         f.write(f"Exit Code: {exit_code}\n")
         f.write(f"Completed: {timestamp}\n")
         f.write(f"{'=' * 50}\n")
+
+
 def copy_to_clipboard(data: str) -> bool:
     try:
         proc = subprocess.run(
@@ -84,6 +99,8 @@ def copy_to_clipboard(data: str) -> bool:
         return proc.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
+
+
 def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
     parser = argparse.ArgumentParser(
         description="Universal command wrapper with logging, colors, and clipboard",
@@ -107,6 +124,8 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
         msg = "error: provide a command to wrap, e.g. wrapper.py ls -la *.py"
         raise SystemExit(msg)
     return rest[0], rest[1:], known
+
+
 def main() -> None:
     name, command_args, opts = parse_args(sys.argv[1:])
     command_args = expand_glob_args(command_args)
@@ -180,10 +199,15 @@ def main() -> None:
         write_log_footer(log_file, exit_code)
         print(color(f"Log saved to: {log_file}", "cyan"), file=sys.stderr)
     raise SystemExit(exit_code)
+
+
 class nullcontext:
     def __enter__(self):
         return None
+
     def __exit__(self, *args):
         return False
+
+
 if __name__ == "__main__":
     main()

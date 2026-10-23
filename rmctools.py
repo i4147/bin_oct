@@ -12,9 +12,11 @@ import sys
 import tokenize
 import traceback
 from typing import Callable, Iterable, NamedTuple, Sequence
+
 try:
     import libcst as cst
     from libcst import matchers as _m
+
     _HAS_LIBCST = True
 except ImportError:
     cst = None
@@ -22,21 +24,29 @@ except ImportError:
     _HAS_LIBCST = False
 try:
     import astor
+
     _HAS_ASTOR = True
 except ImportError:
     astor = None
     _HAS_ASTOR = False
 try:
     from loguru import logger as _loguru
+
     def log_error(msg: str) -> None:
         _loguru.error(msg)
+
     def log_warning(msg: str) -> None:
         _loguru.warning(msg)
+
 except ImportError:
+
     def log_error(msg: str) -> None:
         print(f"ERROR: {msg}", file=sys.stderr)
+
     def log_warning(msg: str) -> None:
         print(f"WARNING: {msg}", file=sys.stderr)
+
+
 DEFAULT_WORKERS: int = 8
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({
     ".git",
@@ -53,6 +63,8 @@ DEFAULT_EXCLUDES: frozenset[str] = frozenset({
     "dist",
 })
 FILE_COMMENT_KEYWORDS: tuple[str, ...] = ("coding", "encoding", "type:", "fmt:")
+
+
 def _looks_like_python_script(path: Path) -> bool:
     try:
         with path.open("r", encoding="utf-8") as fh:
@@ -60,6 +72,8 @@ def _looks_like_python_script(path: Path) -> bool:
     except OSError:
         return False
     return first.startswith("#!") and "python" in first.lower()
+
+
 def gather_python_files(
     paths: Sequence[str | Path],
     excludes: Iterable[str] = DEFAULT_EXCLUDES,
@@ -84,14 +98,20 @@ def gather_python_files(
         else:
             log_warning(f"Skipping non-existent path: {p}")
     return sorted(seen)
+
+
 def safe_read_text(path: Path) -> tuple[str | None, str | None]:
     try:
         with tokenize.open(path) as fh:
             return fh.read(), None
     except Exception as exc:
         return None, f"read-error: {exc}"
+
+
 def write_text_preserving_newlines(path: Path, text: str, encoding: str = "utf-8") -> None:
     path.write_text(text, encoding=encoding, newline="\n")
+
+
 def run_parallel(
     func: Callable[[Path], object],
     files: Sequence[Path],
@@ -111,6 +131,8 @@ def run_parallel(
                 log_error(f"Worker error on {f}: {exc}")
                 results.append((f, ("worker-exception", str(exc))))
     return results
+
+
 def split_leading_comments(src: str) -> tuple[str, str]:
     lines = src.splitlines(keepends=True)
     header: list[str] = []
@@ -132,7 +154,10 @@ def split_leading_comments(src: str) -> tuple[str, str]:
             break
         break
     return "".join(header), "".join(lines[i:]) if i < len(lines) else ""
+
+
 if _HAS_LIBCST:
+
     def _is_plain_string(stmt: "cst.BaseStatement", binary_check: bool) -> bool:
         if not isinstance(stmt, cst.SimpleStatementLine):
             return False
@@ -142,6 +167,7 @@ if _HAS_LIBCST:
         if not isinstance(val, cst.SimpleString):
             return False
         return not (binary_check and "b" in val.prefix.lower())
+
     class _LibCSTStripper(cst.CSTTransformer):
         def __init__(
             self,
@@ -161,6 +187,7 @@ if _HAS_LIBCST:
             self.binary_check = binary_check
             self.comments_removed = 0
             self.docstrings_removed = 0
+
         def leave_Comment(self, original: "cst.Comment", updated: "cst.Comment") -> "cst.Comment | cst.RemovalSentinel":
             if not self.strip_comments:
                 return updated
@@ -173,6 +200,7 @@ if _HAS_LIBCST:
                     return updated
             self.comments_removed += 1
             return cst.RemoveFromParent()
+
         def _strip_body(self, body: Sequence["cst.BaseStatement"]) -> tuple["cst.BaseStatement", ...]:
             body = tuple(body)
             if not body:
@@ -181,6 +209,7 @@ if _HAS_LIBCST:
                 self.docstrings_removed += 1
                 return body[1:]
             return body
+
         def leave_Module(self, original: "cst.Module", updated: "cst.Module") -> "cst.Module":
             if not self.strip_docstrings or self.preserve_module_docstring:
                 return updated
@@ -188,6 +217,7 @@ if _HAS_LIBCST:
             if not new_body:
                 new_body = (cst.SimpleStatementLine(body=[cst.Pass()]),)
             return updated.with_changes(body=new_body)
+
         def leave_ClassDef(self, original: "cst.ClassDef", updated: "cst.ClassDef") -> "cst.ClassDef":
             if not self.strip_docstrings:
                 return updated
@@ -205,6 +235,7 @@ if _HAS_LIBCST:
                     body = (cst.Pass(),)
                 return updated.with_changes(body=updated.body.with_changes(body=body))
             return updated
+
         def leave_FunctionDef(self, original: "cst.FunctionDef", updated: "cst.FunctionDef") -> "cst.FunctionDef":
             if not self.strip_docstrings:
                 return updated
@@ -222,14 +253,17 @@ if _HAS_LIBCST:
                     body = (cst.Pass(),)
                 return updated.with_changes(body=updated.body.with_changes(body=body))
             return updated
+
     def _wrap_suite(stmt: "cst.BaseSmallStatement") -> "cst.SimpleStatementLine":
         return cst.SimpleStatementLine(body=[stmt])
+
     class _LibCSTResult(NamedTuple):
         path: Path
         comments_removed: int
         docstrings_removed: int
         error: str | None
         changed: bool
+
     def _libcst_process_file(
         args: tuple[
             Path,
@@ -287,6 +321,7 @@ if _HAS_LIBCST:
             except Exception as exc:
                 return _LibCSTResult(path, 0, 0, f"write-error: {exc}", False)
         return _LibCSTResult(path, stripper.comments_removed, stripper.docstrings_removed, None, True)
+
     def cmd_libcst(args: argparse.Namespace) -> int:
         if not _HAS_LIBCST:
             print(
@@ -333,12 +368,14 @@ if _HAS_LIBCST:
                 total_err += int(bool(res.error))
         _libcst_summary(len(files), total_changed, total_c, total_d, total_err, args.dry_run)
         return 2 if total_err else 0
+
     def _libcst_report(res: _LibCSTResult) -> None:
         if res.error:
             print(f"[ERROR] {res.path}: {res.error}")
         elif res.changed:
             tag = "UPDATED"
             print(f"[{tag}] {res.path} -> {res.comments_removed} comment(s), {res.docstrings_removed} docstring(s)")
+
     def _libcst_summary(n: int, changed: int, c: int, d: int, errs: int, dry: bool) -> None:
         print("-" * 60)
         print(f"Files scanned       : {n}")
@@ -347,10 +384,13 @@ if _HAS_LIBCST:
         print(f"Docstrings removed  : {d}")
         if errs:
             print(f"Errors              : {errs}")
+
+
 class _DocstringStripper(ast.NodeTransformer):
     def __init__(self) -> None:
         super().__init__()
         self.docstrings_removed = 0
+
     def _strip_first(self, node: ast.AST) -> ast.AST:
         body = getattr(node, "body", None)
         if not body:
@@ -366,18 +406,24 @@ class _DocstringStripper(ast.NodeTransformer):
             if not body:
                 body.append(ast.Pass())
         return node
+
     def visit_Module(self, node: ast.Module) -> ast.AST:
         self.generic_visit(node)
         return self._strip_first(node)
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         self.generic_visit(node)
         return self._strip_first(node)
+
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
         self.generic_visit(node)
         return self._strip_first(node)
+
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
         return self._strip_first(node)
+
+
 def _extract_kept_comments(src: str, keep_noqa: bool) -> tuple[dict[int, list[str]], int]:
     kept: dict[int, list[str]] = {}
     hash_only = 0
@@ -395,6 +441,8 @@ def _extract_kept_comments(src: str, keep_noqa: bool) -> tuple[dict[int, list[st
     except tokenize.TokenError:
         pass
     return kept, hash_only
+
+
 def _reapply_kept_comments(new_src: str, kept: dict[int, list[str]]) -> str:
     if not kept:
         return new_src
@@ -415,12 +463,16 @@ def _reapply_kept_comments(new_src: str, kept: dict[int, list[str]]) -> str:
     if new_src.endswith("\n") and not out.endswith("\n"):
         out += "\n"
     return out
+
+
 class _ASTResult(NamedTuple):
     path: Path
     changed: bool
     error: str | None
     docstrings_removed: int
     comments_removed: int
+
+
 def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTResult:
     path, unparser, preserve_shebang, preserve_file_comments, keep_noqa, dry_run = args
     src, err = safe_read_text(path)
@@ -469,6 +521,8 @@ def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTRes
         except Exception as exc:
             return _ASTResult(path, False, f"write-error: {exc}", 0, 0)
     return _ASTResult(path, True, None, stripper.docstrings_removed, comment_count)
+
+
 def cmd_ast(args: argparse.Namespace) -> int:
     if args.unparser == "astor" and not _HAS_ASTOR:
         print("Error: astor not installed. pip install astor", file=sys.stderr)
@@ -509,6 +563,8 @@ def cmd_ast(args: argparse.Namespace) -> int:
     if errs:
         print(f"Errors             : {errs}")
     return 2 if errs else 0
+
+
 _LANG_EXTS: dict[str, str] = {
     "c": "c",
     "cpp": "cpp",
@@ -517,6 +573,8 @@ _LANG_EXTS: dict[str, str] = {
     "py": "py",
     "sh": "sh",
 }
+
+
 def _regex_strip_text(src: str, ext: str, keep_strings: bool) -> str:
     if ext in {"c", "cpp", "h", "hpp"}:
         src = re.sub(r"//.*", "", src)
@@ -537,10 +595,14 @@ def _regex_strip_text(src: str, ext: str, keep_strings: bool) -> str:
             src = re.sub(r'"[^"]*"', "", src)
             src = re.sub(r"'[^']*'", "", src)
     return src
+
+
 class _RegexResult(NamedTuple):
     path: Path
     changed: bool
     error: str | None
+
+
 def _regex_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _RegexResult:
     path, lang_override, keep_strings, hash_only, dry_run, validate_python = args
     src, err = safe_read_text(path)
@@ -566,6 +628,8 @@ def _regex_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _Rege
         except Exception as exc:
             return _RegexResult(path, False, f"write-error: {exc}")
     return _RegexResult(path, True, None)
+
+
 def cmd_regex(args: argparse.Namespace) -> int:
     if args.lang == "all":
         files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
@@ -605,6 +669,8 @@ def cmd_regex(args: argparse.Namespace) -> int:
     if errs:
         print(f"Errors        : {errs}")
     return 2 if errs else 0
+
+
 class _UnusedCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.func_defs: set[str] = set()
@@ -615,18 +681,22 @@ class _UnusedCollector(ast.NodeVisitor):
         self.class_uses: set[str] = set()
         self.imports: dict[str, ast.AST] = {}
         self.import_uses: set[str] = set()
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.func_defs.add(node.name)
         self.generic_visit(node)
+
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.class_defs.add(node.name)
         self.generic_visit(node)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if isinstance(getattr(node, "parent", None), ast.Module):
             for tgt in node.targets:
                 if isinstance(tgt, ast.Name):
                     self.var_defs.add(tgt.id)
         self.generic_visit(node)
+
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, ast.Load):
             self.var_uses.add(node.id)
@@ -634,18 +704,24 @@ class _UnusedCollector(ast.NodeVisitor):
             self.class_uses.add(node.id)
             self.import_uses.add(node.id)
         self.generic_visit(node)
+
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
             self.imports[alias.asname or alias.name] = node
         self.generic_visit(node)
+
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         for alias in node.names:
             self.imports[alias.asname or alias.name] = node
         self.generic_visit(node)
+
+
 def _attach_parents(tree: ast.AST) -> None:
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
             child.parent = node
+
+
 def _collect_unused(src: str) -> tuple[dict[str, object], list[str]]:
     try:
         tree = ast.parse(src)
@@ -661,6 +737,8 @@ def _collect_unused(src: str) -> tuple[dict[str, object], list[str]]:
         "imports": {k: v for k, v in c.imports.items() if k not in c.import_uses},
     }
     return info, []
+
+
 def _rewrite_without_unused(src: str, info: dict[str, object]) -> str:
     tree = ast.parse(src)
     _attach_parents(tree)
@@ -685,11 +763,15 @@ def _rewrite_without_unused(src: str, info: dict[str, object]) -> str:
         kept.append(stmt)
     tree.body = kept
     return ast.unparse(tree)
+
+
 class _UnusedResult(NamedTuple):
     path: Path
     info: dict
     errors: list[str]
     changed: bool
+
+
 def _unused_process_file(args: tuple[Path, bool]) -> _UnusedResult:
     path, dry_run = args
     src, err = safe_read_text(path)
@@ -712,6 +794,8 @@ def _unused_process_file(args: tuple[Path, bool]) -> _UnusedResult:
         except Exception as exc:
             return _UnusedResult(path, info, [f"write-error: {exc}"], False)
     return _UnusedResult(path, info, errs, True)
+
+
 def cmd_unused(args: argparse.Namespace) -> int:
     files = gather_python_files(args.paths, args.exclude)
     if not files:
@@ -736,6 +820,8 @@ def cmd_unused(args: argparse.Namespace) -> int:
         for err in res.errors:
             print(f"[ERROR] {res.path}: {err}")
     return 0
+
+
 def _detect_jtc_language(path: Path, override: str) -> str | None:
     if override == "python":
         return "python"
@@ -744,6 +830,8 @@ def _detect_jtc_language(path: Path, override: str) -> str | None:
     if override == "auto":
         return "python" if path.suffix == ".py" else None
     return None
+
+
 def _run_just_the_code(path: Path, language: str | None) -> tuple[bool, str | None]:
     cmd = ["just-the-code", "-s"]
     if language:
@@ -756,10 +844,14 @@ def _run_just_the_code(path: Path, language: str | None) -> tuple[bool, str | No
     if res.returncode != 0:
         return False, res.stderr.strip() or f"exit code {res.returncode}"
     return True, res.stdout
+
+
 class _JTCResult(NamedTuple):
     path: Path
     changed: bool
     error: str | None
+
+
 def _jtc_process_file(args: tuple[Path, str, bool]) -> _JTCResult:
     path, language_override, dry_run = args
     lang = _detect_jtc_language(path, language_override)
@@ -781,6 +873,8 @@ def _jtc_process_file(args: tuple[Path, str, bool]) -> _JTCResult:
         except Exception as exc:
             return _JTCResult(path, False, f"write-error: {exc}")
     return _JTCResult(path, True, None)
+
+
 def cmd_jtc(args: argparse.Namespace) -> int:
     if args.language == "python":
         files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
@@ -814,6 +908,8 @@ def cmd_jtc(args: argparse.Namespace) -> int:
     if errs:
         print(f"Errors        : {errs}")
     return 2 if errs else 0
+
+
 def _add_common_options(p: argparse.ArgumentParser) -> None:
     p.add_argument("paths", nargs="*", default=["."], help="Files or directories (default: cwd).")
     p.add_argument(
@@ -829,6 +925,8 @@ def _add_common_options(p: argparse.ArgumentParser) -> None:
         help="Directory names to skip (default: VCS/build/cache dirs).",
     )
     p.add_argument("--dry-run", action="store_true", help="Report changes without writing.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
@@ -913,6 +1011,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_jtc.set_defaults(func=cmd_jtc)
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -925,6 +1025,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 130
     except BrokenPipeError:
         return 1
+
+
 if __name__ == "__main__":
     mp.freeze_support()
     raise SystemExit(main())

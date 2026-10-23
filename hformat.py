@@ -4,6 +4,8 @@ from pathlib import Path
 import sys
 from bs4 import BeautifulSoup
 from dh import get_files, mpf
+
+
 def process_file(path) -> bool:
     try:
         with open(path, encoding="utf-8") as file:
@@ -17,6 +19,8 @@ def process_file(path) -> bool:
         print(f"Error beautifying HTML file {path}: {e}")
         return False
     return True
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     cwd = Path.cwd()

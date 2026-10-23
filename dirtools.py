@@ -9,6 +9,8 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterable, Optional, Sequence
+
+
 def human_size(n: int) -> str:
     if n < 0:
         return "-" + human_size(-n)
@@ -21,6 +23,8 @@ def human_size(n: int) -> str:
     if n < 1_000_000_000_000:
         return f"{n / 1_000_000_000:.1f}G"
     return f"{n / 1_000_000_000_000:.1f}T"
+
+
 def iter_files(
     root: Path,
     recursive: bool = True,
@@ -39,6 +43,8 @@ def iter_files(
             continue
         out.append(p)
     return out
+
+
 def dir_size(path: Path, include_hidden: bool = False) -> int:
     total = 0
     try:
@@ -52,6 +58,8 @@ def dir_size(path: Path, include_hidden: bool = False) -> int:
     except OSError:
         pass
     return total
+
+
 def unique_path(p: Path) -> Path:
     if not p.exists():
         return p
@@ -62,8 +70,12 @@ def unique_path(p: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
+
+
 def _safe_folder_name(name: str) -> str:
     return "".join(c for c in name if c not in '<>:"/\\|?*')
+
+
 def cmd_info(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -145,6 +157,8 @@ def cmd_info(args: argparse.Namespace) -> int:
         finally:
             plt.close(fig)
     return 0
+
+
 def cmd_subdirs(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -226,6 +240,8 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     finally:
         plt.close(fig)
     return 0
+
+
 def cmd_list(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -248,17 +264,21 @@ def cmd_list(args: argparse.Namespace) -> int:
         print(f"{name_color}{p.name:25}{reset}  {size_color}{human_size(sz):>10}{reset}")
     print(f"total size : \x1b[5;94m{human_size(total)}\x1b[0m")
     return 0
+
+
 def cmd_tree(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.exists():
         print(f"Error: {root} does not exist", file=sys.stderr)
         return 1
+
     def visible(p: Path) -> bool:
         if not args.include_hidden and p.name.startswith("."):
             return False
         if ".git" in p.parts:
             return False
         return not (args.dirs_only and not p.is_dir())
+
     def walk(d: Path, prefix: str = "") -> None:
         entries = sorted(d.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
         entries = [e for e in entries if visible(e)]
@@ -281,9 +301,12 @@ def cmd_tree(args: argparse.Namespace) -> int:
             if e.is_dir():
                 ext = "    " if last else "│   "
                 walk(e, prefix + ext)
+
     print(root.name)
     walk(root)
     return 0
+
+
 def cmd_split_range(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -351,17 +374,23 @@ def cmd_split_range(args: argparse.Namespace) -> int:
             print(f"No folder match for {p.name} ({sz:,} bytes)")
     print(f"Folderization complete! Moved {moved} file(s).")
     return 0
+
+
 _COUNT_THRESHOLDS: tuple[tuple[int, int], ...] = (
     (100, 10),
     (500, 25),
     (1000, 50),
     (5000, 100),
 )
+
+
 def _files_per_folder(count: int) -> int:
     for limit, per in _COUNT_THRESHOLDS:
         if count <= limit:
             return per
     return 200
+
+
 def cmd_split_count(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -433,6 +462,8 @@ def cmd_split_count(args: argparse.Namespace) -> int:
             print(f"  Error creating folder {name}: {e}")
     print("✓ Organization complete!")
     return 0
+
+
 def cmd_split_greedy(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -499,6 +530,8 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
     for name, n, sz in sorted(created, key=lambda x: x[2]):
         print(f"{name:<20} {n:>8} {sz:>14,}")
     return 0
+
+
 def cmd_split_even(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -563,6 +596,8 @@ def cmd_split_even(args: argparse.Namespace) -> int:
         print(f"{name:<20} {end - start:>8}")
     print(f"\nTotal directories: {len(plan)}")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dir_tools.py",
@@ -678,9 +713,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_even)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

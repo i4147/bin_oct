@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 from typing import Any, Iterable, Optional, Self, Sequence
+
 try:
     from deep_translator import GoogleTranslator
 except ImportError:
@@ -24,36 +25,53 @@ except ImportError:
 try:
     from tqdm import tqdm
 except ImportError:
+
     class _DummyTqdm:
         def __init__(self, *_: Any, **__: Any) -> None:
             pass
+
         def update(self, _n: int = 1) -> None:
             pass
+
         def close(self) -> None:
             pass
+
         def __enter__(self) -> Self:
             return self
+
         def __exit__(self, *_: object) -> None:
             return None
+
     def tqdm(iterable: Any = None, *_: Any, **__: Any) -> Any:
         if iterable is not None and hasattr(iterable, "__iter__"):
             return iterable
         return _DummyTqdm()
+
+
 try:
     import readline
+
     _HAVE_READLINE = True
 except ImportError:
     _HAVE_READLINE = False
 log = logging.getLogger("merged_translator")
+
+
 def setup_logging(verbose: bool = False) -> None:
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S",
     )
+
+
 PERSIAN_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
+
+
 def is_persian(text: str) -> bool:
     return bool(PERSIAN_RE.search(text))
+
+
 def load_json_dict(path: Path) -> dict[str, str]:
     with path.open(encoding="utf-8") as fh:
         data = json.load(fh)
@@ -61,12 +79,16 @@ def load_json_dict(path: Path) -> dict[str, str]:
         msg = f"{path} does not contain a JSON object"
         raise ValueError(msg)
     return {str(k).strip(): str(v).strip() for k, v in data.items()}
+
+
 def save_json(data: Any, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     with tmp.open("w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, indent=2)
     tmp.replace(path)
+
+
 def translate_google(
     text: str,
     source: str = "auto",
@@ -94,6 +116,8 @@ def translate_google(
             if attempt < retries - 1:
                 time.sleep(delay)
     return None
+
+
 def translate_pypackage(
     text: str,
     source: str = "en",
@@ -121,6 +145,8 @@ def translate_pypackage(
             if attempt < retries - 1:
                 time.sleep(delay)
     return None
+
+
 def translate_cli(
     text: str,
     source: str = "en",
@@ -143,17 +169,23 @@ def translate_cli(
         if attempt < retries - 1:
             time.sleep(delay)
     return f"__ERROR__: {last_err}"
+
+
 _BACKENDS = {
     "deep-translator": translate_google,
     "translate-package": translate_pypackage,
     "translate-cli": translate_cli,
 }
+
+
 def get_backend(name: str):
     try:
         return _BACKENDS[name]
     except KeyError:
         msg = f"unknown backend: {name!r} (choose from {sorted(_BACKENDS)})"
         raise ValueError(msg) from None
+
+
 def _translate_item(
     item: tuple[str, str, str, str, int, float],
 ) -> tuple[str, Optional[str]]:
@@ -165,6 +197,8 @@ def _translate_item(
         log.warning("worker error for %r: %s", text[:40], exc)
         result = None
     return text, result
+
+
 def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, str]]:
     chunks: list[tuple[int, int, str]] = []
     buf: list[str] = []
@@ -187,6 +221,8 @@ def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, 
     if buf:
         chunks.append((start, len(lines) - 1, "\n".join(buf)))
     return chunks
+
+
 def cmd_file(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     if not input_path.is_file():
@@ -296,6 +332,8 @@ def cmd_file(args: argparse.Namespace) -> int:
             log.error("Error updating input file: %s", exc)
             return 1
     return 0
+
+
 def cmd_words(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     if not input_path.is_file():
@@ -371,16 +409,22 @@ def cmd_words(args: argparse.Namespace) -> int:
     if failures:
         log.warning("%d entr(ies) failed.", failures)
     return 0
+
+
 def _setup_readline(candidates: list[str]) -> None:
     if not _HAVE_READLINE:
         return
     words = sorted(candidates)
+
     def completer(text: str, state: int) -> Optional[str]:
         matches = [w for w in words if w.startswith(text)]
         return matches[state] if state < len(matches) else None
+
     readline.set_completer(completer)
     readline.parse_and_bind("tab: complete")
     readline.set_completer_delims(" \t\n")
+
+
 def _load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     if not path.exists():
         log.error("Dictionary file not found: %s", path)
@@ -392,6 +436,8 @@ def _load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
         sys.exit(1)
     rev = {v: k for k, v in fwd.items()}
     return fwd, rev
+
+
 def _fuzzy(
     word: str,
     candidates: Iterable[str],
@@ -399,6 +445,8 @@ def _fuzzy(
     cutoff: float = 0.6,
 ) -> list[str]:
     return get_close_matches(word, list(candidates), n=n, cutoff=cutoff)
+
+
 def _fzf_select(candidates: Iterable[str], prompt: str = "Select word: ") -> Optional[str]:
     if not shutil.which("fzf"):
         return None
@@ -421,6 +469,8 @@ def _fzf_select(candidates: Iterable[str], prompt: str = "Select word: ") -> Opt
         return None
     out = proc.stdout.strip()
     return out or None
+
+
 def _interactive_loop(fwd: dict[str, str], rev: dict[str, str]) -> int:
     candidates = set(fwd) | set(rev)
     _setup_readline(list(candidates))
@@ -443,6 +493,8 @@ def _interactive_loop(fwd: dict[str, str], rev: dict[str, str]) -> int:
             print(f"❓ Not found. Did you mean: {', '.join(matches)}?")
         else:
             print("❌ Not found")
+
+
 def cmd_lookup(args: argparse.Namespace) -> int:
     dict_path = Path(os.path.expanduser(args.dict))
     fwd, rev = _load_dictionary(dict_path)
@@ -485,6 +537,8 @@ def cmd_lookup(args: argparse.Namespace) -> int:
         if shutil.which("fzf"):
             return 0
     return _interactive_loop(fwd, rev)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_translator.py",
@@ -637,10 +691,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_lookup.set_defaults(func=cmd_lookup)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     setup_logging(args.verbose)
     return int(args.func(args))
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

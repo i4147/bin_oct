@@ -7,18 +7,25 @@ from pathlib import Path
 import shutil
 from typing import Any
 from loguru import logger
+
 TESTS_DIR: Path = Path.home() / "tmp" / "tests"
 MOVED_FILES_LOG: Path = Path.home() / "tmp" / "moved_files.json"
 POOL_WORKERS: int = 8
 MoveResult = tuple[str, bool, str]
+
+
 def is_test_file(path: Path) -> bool:
     stem: str = path.stem
     return "_test" in stem or "test_" in stem
+
+
 def get_relative_path(path: Path, base_dir: Path) -> Path:
     try:
         return path.relative_to(base_dir)
     except ValueError:
         return path
+
+
 def move_file(source: Path, dest: Path) -> MoveResult:
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -26,12 +33,16 @@ def move_file(source: Path, dest: Path) -> MoveResult:
         return str(source), True, f"Moved to {dest}"
     except Exception as e:
         return str(source), False, f"Error: {e!s}"
+
+
 def find_test_files(base_dir: Path) -> list[Path]:
     test_files: list[Path] = []
     for py_file in base_dir.rglob("*.py"):
         if is_test_file(py_file):
             test_files.append(py_file)
     return test_files
+
+
 def move_files_parallel(
     test_files: list[Path],
     base_dir: Path,
@@ -59,6 +70,8 @@ def move_files_parallel(
         pool.close()
         pool.join()
     return file_mapping, results
+
+
 def reverse_move(moved_files_log: Path) -> tuple[dict[str, str], list[tuple[str, str]]]:
     if not moved_files_log.exists():
         msg = f"Log file not found: {moved_files_log}"
@@ -87,11 +100,15 @@ def reverse_move(moved_files_log: Path) -> tuple[dict[str, str], list[tuple[str,
         pool.close()
         pool.join()
     return file_mapping, results
+
+
 def save_log(file_mapping: dict[str, str], log_path: Path) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "w") as f:
         json.dump(file_mapping, f, indent=2)
     print(f"📋 Log saved to: {log_path}")
+
+
 def cleanup_empty_dirs(root: Path) -> None:
     try:
         for parent in sorted(root.rglob("*"), reverse=True):
@@ -103,6 +120,8 @@ def cleanup_empty_dirs(root: Path) -> None:
                     continue
     except OSError:
         pass
+
+
 def main() -> int:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description=("Move Python test files to ~/tmp/tests with directory structure preservation.")
@@ -149,5 +168,7 @@ def main() -> int:
         logger.error(f"❌ Unexpected error: {e}")
         return 1
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

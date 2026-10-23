@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+
 cv2 = None
 np = None
 ski_io = None
@@ -22,6 +23,7 @@ _HAS: Dict[str, bool] = {
 try:
     import cv2 as _cv2
     import numpy as _np
+
     cv2 = _cv2
     np = _np
     _HAS["cv2"] = True
@@ -31,6 +33,7 @@ try:
     from skimage import io as _ski_io
     from skimage import color as _ski_color
     import numpy as _np
+
     ski_io = _ski_io
     ski_color = _ski_color
     if np is None:
@@ -40,6 +43,7 @@ except ImportError:
     pass
 try:
     from PIL import Image as _Image
+
     Image = _Image
     _HAS["pillow"] = True
 except ImportError:
@@ -53,6 +57,8 @@ TARGET_EXTS: Dict[str, Set[str]] = {
     "imagemagick": {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif", ".avif", ".heic"},
 }
 PRIORITY = ("cv2", "skimage", "pillow", "imagemagick")
+
+
 def detect_backend(preferred: Optional[str] = None) -> str:
     if preferred:
         preferred = preferred.lower()
@@ -65,6 +71,8 @@ def detect_backend(preferred: Optional[str] = None) -> str:
         if _HAS[name]:
             return name
     return "none"
+
+
 def human_size(nbytes: int) -> str:
     if nbytes < 0:
         nbytes = -nbytes
@@ -78,6 +86,8 @@ def human_size(nbytes: int) -> str:
             return f"{sign}{size:.1f}{u}" if u != "B" else f"{sign}{int(size)}{u}"
         size /= 1024.0
     return f"{sign}{size:.1f}TB"
+
+
 def get_dir_size(path: Path) -> int:
     total = 0
     try:
@@ -93,6 +103,8 @@ def get_dir_size(path: Path) -> int:
     except OSError:
         pass
     return total
+
+
 def unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -104,6 +116,8 @@ def unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         n += 1
+
+
 def collect_images(
     paths: Sequence[Path],
     exts: Sequence[str],
@@ -134,6 +148,8 @@ def collect_images(
                 except OSError:
                     pass
     return found
+
+
 def _normalize_to(to: str) -> str:
     to = to.lower().lstrip(".")
     if to in ("jpg", "jpeg"):
@@ -141,6 +157,8 @@ def _normalize_to(to: str) -> str:
     if to in ("tif", "tiff"):
         return ".tiff"
     return f".{to}"
+
+
 def process_cv2(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
     img = cv2.imread(str(src), cv2.IMREAD_UNCHANGED)
     if img is None:
@@ -165,6 +183,8 @@ def process_cv2(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
     elif to_ext == ".webp":
         params = [int(cv2.IMWRITE_WEBP_QUALITY), quality]
     return bool(cv2.imwrite(str(dst), final, params))
+
+
 def process_skimage(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
     img = ski_io.imread(str(src))
     if img is None:
@@ -181,6 +201,8 @@ def process_skimage(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
         kwargs["quality"] = quality
     ski_io.imsave(str(dst), rgb, **kwargs)
     return True
+
+
 def process_pillow(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
     with Image.open(src) as img:
         if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
@@ -216,6 +238,8 @@ def process_pillow(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
         }.get(to_ext, to_ext[1:].upper())
         final.save(dst, fmt, **save_kwargs)
     return True
+
+
 def process_imagemagick(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
     cmd = shutil.which("magick") or shutil.which("convert")
     if not cmd:
@@ -238,6 +262,8 @@ def process_imagemagick(src: Path, dst: Path, quality: int, to_ext: str) -> bool
         return dst.is_file()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         return False
+
+
 def process_file(
     path: Union[str, Path],
     backend: str,
@@ -283,6 +309,8 @@ def process_file(
         except OSError:
             pass
     return (f"ok: {path.name} → {out.name} ({human_size(before)} → {human_size(after)})", before, after)
+
+
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     installed = [n for n in PRIORITY if _HAS[n]]
     installed_str = " ".join(installed) or "(none)"
@@ -376,6 +404,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="print installed backends and exit",
     )
     return p.parse_args(argv)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     if args.list_backends:
@@ -469,5 +499,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if freed:
             print(f"cwd space freed: {human_size(freed)}")
     return 1 if err else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

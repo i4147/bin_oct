@@ -4,6 +4,8 @@ import argparse
 from io import StringIO
 from pathlib import Path
 import re
+
+
 class Extractor(object):
     def __init__(
         self,
@@ -16,11 +18,13 @@ class Extractor(object):
         self.password = password
         self.encoding = encoding
         self.normalize_spaces = normalize_spaces
+
     def extract_pages(self, pdf_path):
         pdf_path = Path(pdf_path)
         pages = []
         if self.backend == "fitz":
             import fitz
+
             doc = fitz.open(pdf_path)
             if self.password:
                 doc.authenticate(self.password)
@@ -29,11 +33,13 @@ class Extractor(object):
             doc.close()
         elif self.backend == "pypdf":
             from pypdf import PdfReader
+
             reader = PdfReader(pdf_path, password=self.password) if self.password else PdfReader(pdf_path)
             for page in reader.pages:
                 pages.append(page.extract_text() or "")
         elif self.backend == "pdfplumber":
             import pdfplumber
+
             kwargs = {"password": self.password} if self.password else {}
             with pdfplumber.open(pdf_path, **kwargs) as pdf:
                 for page in pdf.pages:
@@ -43,6 +49,7 @@ class Extractor(object):
             from pdfminer.layout import LAParams
             from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
             from pdfminer.pdfpage import PDFPage
+
             rsrcmgr = PDFResourceManager(caching=True)
             laparams = LAParams(detect_vertical=True, char_margin=1.0, line_margin=0.3, word_margin=0.3)
             with open(pdf_path, "rb") as fp:
@@ -60,8 +67,11 @@ class Extractor(object):
         if self.normalize_spaces:
             pages = [re.sub(r" +", " ", page) for page in pages]
         return pages
+
     def __call__(self, pdf_path):
         return "\n".join(self.extract_pages(pdf_path))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("pdffiles", nargs="+")
@@ -91,5 +101,7 @@ def main():
                 out_file.write_text(page_text, encoding="utf-8")
         else:
             print("\n".join(pages))
+
+
 if __name__ == "__main__":
     main()

@@ -2,6 +2,8 @@
 from __future__ import annotations
 from pathlib import Path
 import shutil
+
+
 def has_module_docstring(path: Path) -> bool:
     code = path.read_text(encoding="utf-8")
     if not code.startswith("#!"):
@@ -9,6 +11,8 @@ def has_module_docstring(path: Path) -> bool:
         return s.startswith(('"""', "'''"))
     else:
         return False
+
+
 def main() -> None:
     source_dir = Path()
     dest_dir = Path.home() / "tmp" / "notannotated"
@@ -20,5 +24,7 @@ def main() -> None:
             dest = dest_dir / py_file.name
             shutil.move(py_file, dest)
             print(f"moved: {py_file} -> {dest}")
+
+
 if __name__ == "__main__":
     main()

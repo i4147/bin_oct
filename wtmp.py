@@ -1,16 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import os
 import pathlib
 import shutil
 import sys
 import time
-
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-
 
 DEST_DIR = pathlib.Path("~/tmp/tgz").expanduser()
 ALLOWED_EXTENSIONS = (

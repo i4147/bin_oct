@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import importlib.metadata
@@ -14,7 +12,6 @@ import sys
 import textwrap
 from typing import Optional, Sequence
 import zipfile
-
 
 try:
     from packaging.tags import parse_tag

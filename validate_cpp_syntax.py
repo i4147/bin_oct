@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import multiprocessing as mp
 from pathlib import Path
 import subprocess
 import sys
-
 
 CPP_EXTS = {".cpp", ".cc", ".cxx"}
 C_EXTS = {".c"}

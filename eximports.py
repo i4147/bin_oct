@@ -8,16 +8,21 @@ from typing import TYPE_CHECKING, Final
 from loguru import logger
 from tree_sitter import Language, Parser
 import tree_sitter_python as tsp
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 POOL_SIZE: Final[int] = 8
 OUTPUT_FILE: Final[str] = "importz.txt"
 VALID_NODE_TYPES: Final[frozenset[str]] = frozenset({"import_statement", "import_from_statement"})
 STDLIB: Final[frozenset[str]] = frozenset(getattr(sys, "stdlib_module_names", ()))
+
+
 def _make_parser() -> Parser:
     parser: Parser = Parser()
     parser.language = Language(tsp.language())
     return parser
+
+
 def process_file(path: Path) -> list[str]:
     file_path: Path = Path(path)
     src: bytes = file_path.read_bytes()
@@ -30,6 +35,8 @@ def process_file(path: Path) -> list[str]:
         if child.type in VALID_NODE_TYPES:
             results.append(src[child.start_byte : child.end_byte].decode())
     return results
+
+
 def normalize_import(import_line: str) -> str | None:
     line: str = import_line.lower().strip()
     if line.startswith("import "):
@@ -51,6 +58,8 @@ def normalize_import(import_line: str) -> str | None:
             module = module[: module.index(".")]
         return module if module and not module.startswith("_") else None
     return None
+
+
 def _get_installed_pkgs() -> set[str]:
     pkgs: set[str] = set()
     dist = None
@@ -63,6 +72,8 @@ def _get_installed_pkgs() -> set[str]:
         if name:
             pkgs.add(name.replace("-", "_").lower())
     return pkgs
+
+
 def process_files_parallel(files: list[Path]) -> set[str]:
     all_imports: set[str] = set()
     if not files:
@@ -72,6 +83,8 @@ def process_files_parallel(files: list[Path]) -> set[str]:
         for result in pool.imap_unordered(process_file, files):
             all_imports.update(result)
     return all_imports
+
+
 def filter_imports(imports: set[str]) -> list[str]:
     installed_pkgs: set[str] = _get_installed_pkgs()
     excluded: set[str] = set(STDLIB) | installed_pkgs
@@ -82,8 +95,12 @@ def filter_imports(imports: set[str]) -> list[str]:
         if normalized and normalized not in excluded:
             filtered.append(normalized + "\n")
     return sorted(set(filtered))
+
+
 def get_pyfiles(root: Path) -> list[Path]:
     return [p for p in root.rglob("*.py") if p.is_file()]
+
+
 def main(argv: Iterable[str] | None = None) -> int:
     _ = list(argv) if argv is not None else sys.argv[1:]
     outfile: Path = Path(OUTPUT_FILE)
@@ -97,5 +114,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     for imp in filtered_imports:
         logger.info("{}", imp.strip())
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

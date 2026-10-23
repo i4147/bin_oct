@@ -11,6 +11,7 @@ import re
 import subprocess
 import tempfile
 from typing import Any, Callable, Iterable, Sequence
+
 try:
     from tqdm import tqdm
 except ImportError:
@@ -49,6 +50,8 @@ EMBED_KIND_MIME = {
 EMBED_DATA_RE = re.compile(
     r"data:(?P<mime>image/(?:png|jpe?g|webp|svg\+xml)|text/css|(?:application|text)/javascript);base64,(?P<data>[A-Za-z0-9+/=]+)"
 )
+
+
 def human_size(n: int) -> str:
     value = float(n)
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -58,6 +61,8 @@ def human_size(n: int) -> str:
             return f"{value:.1f} {unit}"
         value /= 1024.0
     return f"{value:.1f} PB"
+
+
 def dir_size(path: Path) -> int:
     total = 0
     for f in path.rglob("*"):
@@ -65,12 +70,16 @@ def dir_size(path: Path) -> int:
             with contextlib.suppress(OSError):
                 total += f.stat().st_size
     return total
+
+
 def parse_extensions(value: str | Sequence[str]) -> set[str]:
     if isinstance(value, str):
         parts = value.split(",")
     else:
         parts = list(value)
     return {p if p.startswith(".") else f".{p}" for p in parts if p}
+
+
 def iter_files(
     paths: Sequence[Path],
     extensions: set[str],
@@ -98,6 +107,8 @@ def iter_files(
             seen.add(r)
             out.append(f)
     return out
+
+
 def run_command(
     cmd: list[str],
     timeout: int | None = None,
@@ -110,6 +121,8 @@ def run_command(
         timeout=timeout,
     )
     return res.returncode, res.stdout or "", res.stderr or ""
+
+
 def parallel_map(
     func: Callable[[Any], Any],
     items: Sequence[Any],
@@ -133,21 +146,29 @@ def parallel_map(
             except Exception as exc:
                 results.append(exc)
     return results
+
+
 def _import_cv2():
     try:
         import cv2
         import numpy as np
+
         return cv2, np
     except ImportError as exc:
         msg = "opencv-python and numpy are required for this command"
         raise SystemExit(msg) from exc
+
+
 def _import_pil():
     try:
         from PIL import Image, ImageEnhance
+
         return Image, ImageEnhance
     except ImportError as exc:
         msg = "Pillow is required for this command"
         raise SystemExit(msg) from exc
+
+
 def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
     path, verbose = task
     cv2, np = _import_cv2()
@@ -177,6 +198,8 @@ def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
     except Exception as exc:
         print(f"[FAILED] Error processing {path.name}: {exc}")
         return False
+
+
 def cmd_auto_enhance(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path()]
     files = iter_files(inputs, DEFAULT_IMAGE_EXTS, recursive=True)
@@ -201,6 +224,8 @@ def cmd_auto_enhance(args: argparse.Namespace) -> int:
     ok = sum(1 for r in results if r is True)
     print(f"[FINISHED] Done. Success: {ok}/{len(files)}")
     return 0
+
+
 def _downscale_one(task: tuple[Path, float]) -> tuple[Path, bool, str]:
     path, scale = task
     cv2, _ = _import_cv2()
@@ -220,6 +245,8 @@ def _downscale_one(task: tuple[Path, float]) -> tuple[Path, bool, str]:
         return path, True, f"{w}x{h} -> {new_w}x{new_h}"
     except Exception as exc:
         return path, False, f"Error: {exc}"
+
+
 def cmd_downscale(args: argparse.Namespace) -> int:
     if not 0 < args.scale_factor <= 1.0:
         print("[ERROR] Scale factor must be between 0 (exclusive) and 1.0 (inclusive)")
@@ -264,6 +291,8 @@ def cmd_downscale(args: argparse.Namespace) -> int:
     print("\n" + "=" * 40)
     print("PROCESS COMPLETE - Images updated in-place")
     return 0
+
+
 def _run_embed_tool(cmd: list[str], name: str, timeout: int) -> bool:
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
@@ -280,6 +309,8 @@ def _run_embed_tool(cmd: list[str], name: str, timeout: int) -> bool:
     except Exception as exc:
         print(f"{name}: {exc}")
         return False
+
+
 def _optimize_embedded_resource(
     mime: str,
     data: bytes,
@@ -342,6 +373,8 @@ def _optimize_embedded_resource(
         for f in temp_paths:
             with contextlib.suppress(OSError):
                 f.unlink(missing_ok=True)
+
+
 def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     stats: dict[str, Any] = {
         "file": path,
@@ -400,9 +433,13 @@ def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         print(f"[ERROR] Error processing {path}: {exc}")
         stats["error"] = str(exc)
     return stats
+
+
 def _process_embed_file_task(task: tuple[Path, argparse.Namespace]) -> dict[str, Any]:
     path, args = task
     return _process_embed_file(path, args)
+
+
 def collect_embed_files(paths: Sequence[Path]) -> list[Path]:
     found: list[Path] = []
     for p in paths:
@@ -423,6 +460,8 @@ def collect_embed_files(paths: Sequence[Path]) -> list[Path]:
             seen.add(r)
             out.append(f)
     return out
+
+
 def _print_embed_result(stats: dict[str, Any]) -> None:
     name = stats["file"].name
     if stats["error"]:
@@ -437,6 +476,8 @@ def _print_embed_result(stats: dict[str, Any]) -> None:
         print(f"  · {name} — {found} resource(s), none optimized")
     else:
         print(f"  ✓ {name} — {optimized}/{found} optimized, freed {human_size(freed)}")
+
+
 def cmd_embed_optimize(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     files = collect_embed_files(inputs)
@@ -473,6 +514,8 @@ def cmd_embed_optimize(args: argparse.Namespace) -> int:
     print(f"  Total space freed    : {human_size(freed)}")
     print("=" * 40)
     return 0
+
+
 def _optimize_png_one(
     task: tuple[Path, str, str, str, bool],
 ) -> tuple[Path, bool, str | int]:
@@ -509,6 +552,8 @@ def _optimize_png_one(
         return path, True, original_size - new_size
     except Exception as exc:
         return path, False, str(exc)
+
+
 def cmd_optimize_png(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     files = iter_files(inputs, DEFAULT_PNG_EXTS, recursive=args.recursive)
@@ -539,6 +584,8 @@ def cmd_optimize_png(args: argparse.Namespace) -> int:
     print(f"\nOptimization complete. Success: {ok}/{len(files)} files.")
     print(f"Total space freed: {total_freed / 1048576:.2f} MB")
     return 0
+
+
 def _pil_enhance_one(
     task: tuple[Path, float, float, float, float],
 ) -> bool:
@@ -556,6 +603,8 @@ def _pil_enhance_one(
     except Exception as exc:
         print(f"Error enhancing {path.name}: {exc}")
         return False
+
+
 def cmd_pil_enhance(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     exts = parse_extensions(args.extensions)
@@ -569,6 +618,8 @@ def cmd_pil_enhance(args: argparse.Namespace) -> int:
     parallel_map(_pil_enhance_one, tasks, workers=workers, desc="Enhancing")
     print("All images processed!")
     return 0
+
+
 def _resize_one(task: tuple[Path, float, int]) -> bool:
     path, scale, quality = task
     Image, _ = _import_pil()
@@ -583,6 +634,8 @@ def _resize_one(task: tuple[Path, float, int]) -> bool:
     except Exception as exc:
         print(f"Error processing {path}: {exc}")
         return False
+
+
 def cmd_resize(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     exts = parse_extensions(args.extensions)
@@ -596,6 +649,8 @@ def cmd_resize(args: argparse.Namespace) -> int:
     parallel_map(_resize_one, tasks, workers=workers, desc="Resizing")
     print("All images processed!")
     return 0
+
+
 def _strip_exif_one(task: tuple[Path, bool, bool]) -> dict[str, Any]:
     path, backup, verbose = task
     Image, _ = _import_pil()
@@ -645,6 +700,8 @@ def _strip_exif_one(task: tuple[Path, bool, bool]) -> dict[str, Any]:
         if verbose:
             print(f"❌ {path.name}: {exc}")
     return stats
+
+
 def cmd_strip_exif(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path()]
     extensions = parse_extensions(args.extensions)
@@ -710,6 +767,8 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
     if backups:
         print(f"💾 Backups created for {len(backups)} file(s)")
     return 0
+
+
 def _upscale_one(path: Path) -> bool:
     cv2, _ = _import_cv2()
     try:
@@ -741,6 +800,8 @@ def _upscale_one(path: Path) -> bool:
         return True
     except Exception:
         return False
+
+
 def cmd_upscale(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     exts = parse_extensions(args.extensions)
@@ -752,6 +813,8 @@ def cmd_upscale(args: argparse.Namespace) -> int:
         print(f"{i}/{len(files)}")
         _upscale_one(f)
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="imgtool.py",
@@ -920,9 +983,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-recursive", dest="recursive", action="store_false", help="Do not recurse.")
     p.set_defaults(func=cmd_upscale)
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

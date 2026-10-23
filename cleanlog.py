@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+
 ANSI_ESCAPE_RE = re.compile(
     r"""
     \x1B
@@ -16,6 +17,8 @@ ANSI_ESCAPE_RE = re.compile(
     re.VERBOSE,
 )
 CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")
+
+
 def apply_carriage_returns(text):
     out_lines = []
     for line in text.split("\n"):
@@ -27,6 +30,8 @@ def apply_carriage_returns(text):
             rendered = chunk + rendered[len(chunk) :]
         out_lines.append(rendered)
     return "\n".join(out_lines)
+
+
 def apply_backspaces(text):
     prev = None
     while prev != text:
@@ -34,6 +39,8 @@ def apply_backspaces(text):
         text = re.sub(r"[^\n]\x08", "", text)
         text = text.replace("\x08", "")
     return text
+
+
 def clean(text):
     text = text.replace("\r\n", "\n")
     text = ANSI_ESCAPE_RE.sub("", text)
@@ -41,6 +48,8 @@ def clean(text):
     text = apply_backspaces(text)
     text = CONTROL_CHARS_RE.sub("", text)
     return text
+
+
 def clean_file(path):
     try:
         original = path.read_text(encoding="utf-8", errors="replace")
@@ -55,6 +64,8 @@ def clean_file(path):
         return False
     print(f"cleaned: {path}")
     return True
+
+
 def main():
     args = sys.argv[1:]
     if args:
@@ -74,5 +85,7 @@ def main():
         if not clean_file(p):
             failures += 1
     return 1 if failures else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

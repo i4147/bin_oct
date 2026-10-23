@@ -5,6 +5,7 @@ import ast
 from collections.abc import Iterator
 from pathlib import Path
 from loguru import logger
+
 SKIP_DIRS: set[str] = {
     ".git",
     ".hg",
@@ -27,6 +28,8 @@ SKIP_DIRS: set[str] = {
     ".vscode",
 }
 ICONS = {"functions": "🔧", "classes": "🏛️ ", "constants": "📌"}
+
+
 def extract_definitions(path: Path) -> dict[str, list[str]]:
     defs: dict[str, list[str]] = {"functions": [], "classes": [], "constants": []}
     try:
@@ -54,6 +57,8 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
             if n.isupper() and not n.startswith("_"):
                 defs["constants"].append(n)
     return defs
+
+
 def extract_exports(init_path: Path) -> set[str]:
     exported: set[str] = set()
     try:
@@ -83,6 +88,8 @@ def extract_exports(init_path: Path) -> set[str]:
             for a in node.names:
                 exported.add(a.asname or a.name.split(".")[0])
     return exported
+
+
 def iter_py_files(target: Path) -> Iterator[Path]:
     """Yield .py files under `target`.
     A file target is yielded as-is (even if it is a symlink — the user
@@ -113,6 +120,8 @@ def iter_py_files(target: Path) -> Iterator[Path]:
             if entry.name in SKIP_DIRS or entry.name.endswith(".dist-info"):
                 continue
             yield from iter_py_files(entry)
+
+
 def collect_files(paths: list[Path]) -> list[Path]:
     files: list[Path] = []
     seen: set[Path] = set()
@@ -126,6 +135,8 @@ def collect_files(paths: list[Path]) -> list[Path]:
                 seen.add(rp)
                 files.append(f)
     return sorted(files)
+
+
 def autofix_init(
     init_path: Path,
     missing: dict[str, list[str]],
@@ -219,6 +230,8 @@ def autofix_init(
     except OSError as e:
         logger.error(f"Failed to write {init_path}: {e}")
         return False
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
@@ -246,6 +259,8 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     return p.parse_args()
+
+
 def main() -> int:
     args = parse_args()
     logger.remove()
@@ -310,5 +325,7 @@ def main() -> int:
         return 0 if ok else 1
     print("Run with -a to add missing exports to __init__.py")
     return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

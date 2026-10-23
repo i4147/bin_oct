@@ -7,9 +7,14 @@ import re
 import sys
 from dh import get_random_filename
 from loguru import logger
+
 ENGLISH_RE = re.compile(r"^[A-Za-z][A-Za-z\s\-'.]*$")
+
+
 def looks_english(text: str) -> bool:
     return bool(ENGLISH_RE.match(text))
+
+
 def load_json(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
@@ -17,6 +22,8 @@ def load_json(path: Path) -> dict:
         msg = f"{path} does not contain a JSON object (dict)."
         raise ValueError(msg)
     return data
+
+
 def detect_direction(data: dict, path: Path) -> str:
     if not data:
         msg = f"{path} is empty."
@@ -30,6 +37,8 @@ def detect_direction(data: dict, path: Path) -> str:
         return "fa"
     msg = f"{path} has mixed key languages ({en_count}/{total} English-looking keys). Refusing to merge ambiguous file."
     raise ValueError(msg)
+
+
 def unique_path(base: Path) -> Path:
     if not base.exists():
         return base
@@ -41,8 +50,12 @@ def unique_path(base: Path) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
+
+
 def discover_inputs() -> list[Path]:
     return sorted(Path.cwd().glob("*.json"))
+
+
 def collect_inputs(argv: list[str]) -> list[Path]:
     if not argv:
         paths = discover_inputs()
@@ -59,10 +72,14 @@ def collect_inputs(argv: list[str]) -> list[Path]:
             sys.exit(1)
         paths.append(path)
     return paths
+
+
 def normalize_value(value) -> list:
     if isinstance(value, list):
         return list(value)
     return [value]
+
+
 def main():
     input_paths = collect_inputs(sys.argv[1:])
     merged: dict[str, list] = defaultdict(list)
@@ -118,5 +135,7 @@ def main():
         except OSError as e:
             logger.error(f"Failed to delete {path}: {e}")
     logger.success(f"Removed {len(input_paths)} input file(s).")
+
+
 if __name__ == "__main__":
     main()

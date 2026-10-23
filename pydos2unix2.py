@@ -8,6 +8,8 @@ from multiprocessing import Pool
 import os
 from pathlib import Path
 from tqdm import tqdm
+
+
 def is_binary(path: Path) -> bool:
     try:
         with path.open("rb") as f:
@@ -19,6 +21,8 @@ def is_binary(path: Path) -> bool:
         return nontext / max(len(chunk), 1) > 0.30
     except Exception:
         return True
+
+
 def needs_conversion(path: Path) -> bool:
     try:
         with (
@@ -28,6 +32,8 @@ def needs_conversion(path: Path) -> bool:
             return mm.find(b"\r\n") != -1
     except Exception:
         return False
+
+
 def convert_in_place(path: Path) -> None:
     with path.open("r+b") as f, mmap.mmap(f.fileno(), 0) as mm:
         data = mm[:]
@@ -38,6 +44,8 @@ def convert_in_place(path: Path) -> None:
         mm.write(new)
         mm.flush()
         f.truncate(len(new))
+
+
 def convert_with_temp(path: Path) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     with (
@@ -47,6 +55,8 @@ def convert_with_temp(path: Path) -> None:
         for line in src:
             dst.write(line.replace("\r\n", "\n"))
     os.replace(tmp, path)
+
+
 def safe_convert(path: Path, dry_run: bool = False) -> str:
     if not path.is_file():
         return "SKIP_NOT_FILE"
@@ -65,6 +75,8 @@ def safe_convert(path: Path, dry_run: bool = False) -> str:
             return "CONVERTED_TEMP"
         except Exception:
             return "ERROR"
+
+
 def scan_paths(inputs, recursive: bool, excludes) -> list[Path]:
     result = []
     for inp in inputs:
@@ -82,12 +94,16 @@ def scan_paths(inputs, recursive: bool, excludes) -> list[Path]:
             continue
         out.append(p)
     return out
+
+
 def worker(args):
     path, dry = args
     res = safe_convert(path, dry_run=dry)
     if res == "ERROR":
         logging.error(f"Failed to convert: {path}")
     return res
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Fast dos2unix converter with mmap, tqdm, error logging.")
     parser.add_argument("paths", nargs="*", help="Files or directories.")
@@ -98,6 +114,8 @@ def parse_args():
     parser.add_argument("--exclude", nargs="*", default=[])
     parser.add_argument("--verbose", action="store_true")
     return parser.parse_args()
+
+
 def main():
     args = parse_args()
     if not args.paths:
@@ -120,5 +138,7 @@ def main():
     else:
         for task in tqdm(tasks, unit="file"):
             worker(task)
+
+
 if __name__ == "__main__":
     main()

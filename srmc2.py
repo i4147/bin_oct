@@ -21,6 +21,7 @@ import textwrap
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 import libcst as cst
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 VERSION: Final = "1.0.0"
@@ -47,11 +48,15 @@ _SKIP_DIRS: Final = frozenset({
     "site-packages",
 })
 _TRIVIAL: Final = (ast.Name, ast.Constant, ast.Attribute)
+
+
 class Status(enum.StrEnum):
     MODIFIED = "modified"
     UNCHANGED = "unchanged"
     SKIPPED = "skipped"
     FAILED = "failed"
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class Mode:
     own_line: bool
@@ -59,11 +64,15 @@ class Mode:
     module_docstring: bool
     annotations: bool
     strip_special: bool
+
+
 @dataclasses.dataclass(slots=True)
 class Counts:
     comments: int = 0
     docstrings: int = 0
     annotations: int = 0
+
+
 @dataclasses.dataclass(slots=True)
 class FileResult:
     path: Path
@@ -74,9 +83,12 @@ class FileResult:
     diff: str = ""
     reason: str = ""
     written: bool = False
+
     @property
     def bytes_saved(self) -> int:
         return self.original_size - self.new_size
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class Job:
     path: Path
@@ -85,6 +97,8 @@ class Job:
     want_diff: bool
     backup: bool
     backup_dir: Path | None
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class Options:
     paths: tuple[Path, ...]
@@ -103,9 +117,12 @@ class Options:
     excludes: tuple[str, ...]
     recursive: bool
     json_output: bool
+
     @property
     def write(self) -> bool:
         return not (self.dry_run or self.check or self.diff)
+
+
 @dataclasses.dataclass(slots=True)
 class Summary:
     scanned: int = 0
@@ -114,12 +131,16 @@ class Summary:
     skipped: int = 0
     failed: int = 0
     saved: int = 0
+
+
 def _is_trivial(node: ast.stmt) -> bool:
     if isinstance(node, ast.Expr):
         return isinstance(node.value, _TRIVIAL)
     if isinstance(node, ast.AnnAssign):
         return node.value is None and isinstance(node.annotation, _TRIVIAL)
     return False
+
+
 def _looks_like_code(values: Sequence[str]) -> bool:
     lines: list[str] = []
     for value in values:
@@ -133,6 +154,8 @@ def _looks_like_code(values: Sequence[str]) -> bool:
     except (SyntaxError, ValueError, RecursionError):
         return False
     return any(not _is_trivial(statement) for statement in tree.body)
+
+
 class Stripper(cst.CSTTransformer):
     def __init__(self, mode: Mode, keep_cookie: bool) -> None:
         super().__init__()
@@ -140,6 +163,7 @@ class Stripper(cst.CSTTransformer):
         self._keep_cookie = keep_cookie
         self._doc_suites: set[int] = set()
         self.counts = Counts()
+
     def on_leave[N: cst.CSTNode](
         self, original_node: N, updated_node: N
     ) -> N | cst.RemovalSentinel | cst.FlattenSentinel[N]:
@@ -160,6 +184,7 @@ class Stripper(cst.CSTTransformer):
         if not changes:
             return result
         return result.with_changes(**changes)
+
     def _is_special(self, index: int, value: str, header: bool) -> bool:
         if header and index < 2 and _COOKIE_RE.match(value):
             return self._keep_cookie or not self._mode.strip_special
@@ -168,6 +193,7 @@ class Stripper(cst.CSTTransformer):
         if header and index == 0 and value.startswith("#!"):
             return True
         return _DIRECTIVE_RE.match(value) is not None
+
     def _filter_lines(self, lines: tuple[cst.EmptyLine, ...], *, header: bool) -> tuple[cst.EmptyLine, ...]:
         if all(line.comment is None for line in lines):
             return lines
@@ -203,6 +229,7 @@ class Stripper(cst.CSTTransformer):
                 skipping_blanks = False
             index = end
         return tuple(kept)
+
     def leave_TrailingWhitespace(
         self,
         original_node: cst.TrailingWhitespace,
@@ -215,6 +242,7 @@ class Stripper(cst.CSTTransformer):
             return updated_node
         self.counts.comments += 1
         return updated_node.with_changes(whitespace=cst.SimpleWhitespace(""), comment=None)
+
     def leave_Param(self, original_node: cst.Param, updated_node: cst.Param) -> cst.Param:
         if not self._mode.annotations or updated_node.annotation is None:
             return updated_node
@@ -222,20 +250,25 @@ class Stripper(cst.CSTTransformer):
         if updated_node.default is None:
             return updated_node.with_changes(annotation=None)
         return updated_node.with_changes(annotation=None, equal=cst.MaybeSentinel.DEFAULT)
+
     def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
         if not self._mode.annotations or updated_node.returns is None:
             return updated_node
         self.counts.annotations += 1
         return updated_node.with_changes(returns=None)
+
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
         self._register(node.body)
         return True
+
     def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
         self._register(node.body)
         return True
+
     def _register(self, body: cst.BaseSuite) -> None:
         if self._mode.docstrings:
             self._doc_suites.add(id(body))
+
     @staticmethod
     def _is_docstring(small: cst.BaseSmallStatement) -> bool:
         if not isinstance(small, cst.Expr):
@@ -244,6 +277,7 @@ class Stripper(cst.CSTTransformer):
         if isinstance(value, cst.SimpleString | cst.ConcatenatedString):
             return isinstance(value.evaluated_value, str)
         return False
+
     def _rewrite_smalls(
         self,
         smalls: Sequence[cst.BaseSmallStatement],
@@ -273,6 +307,7 @@ class Stripper(cst.CSTTransformer):
         if changed and out:
             out[-1] = out[-1].with_changes(semicolon=cst.MaybeSentinel.DEFAULT)
         return out, changed
+
     def _rewrite(
         self,
         body: Sequence[cst.BaseStatement],
@@ -295,6 +330,7 @@ class Stripper(cst.CSTTransformer):
                 pending = []
             out.append(current)
         return out, pending
+
     def leave_IndentedBlock(
         self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock
     ) -> cst.IndentedBlock:
@@ -306,6 +342,7 @@ class Stripper(cst.CSTTransformer):
             body = [cst.SimpleStatementLine(body=[cst.Pass()], leading_lines=pending)]
             pending = []
         return updated_node.with_changes(body=body, footer=[*pending, *updated_node.footer])
+
     def leave_SimpleStatementSuite(
         self,
         original_node: cst.SimpleStatementSuite,
@@ -316,11 +353,14 @@ class Stripper(cst.CSTTransformer):
         if not changed:
             return updated_node
         return updated_node.with_changes(body=smalls or [cst.Pass()])
+
     def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         if not (self._mode.annotations or self._mode.module_docstring):
             return updated_node
         body, pending = self._rewrite(updated_node.body, drop_docstring=self._mode.module_docstring)
         return updated_node.with_changes(body=body, footer=[*pending, *updated_node.footer])
+
+
 def _decode(payload: bytes) -> tuple[str, str] | None:
     for encoding in ("utf-8", "cp1252"):
         try:
@@ -328,6 +368,8 @@ def _decode(payload: bytes) -> tuple[str, str] | None:
         except UnicodeDecodeError:
             continue
     return None
+
+
 def _atomic_write(path: Path, data: bytes, mode: int) -> None:
     target = path.resolve()
     descriptor, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
@@ -342,15 +384,21 @@ def _atomic_write(path: Path, data: bytes, mode: int) -> None:
     except BaseException:
         temporary.unlink(missing_ok=True)
         raise
+
+
 def _backup_target(path: Path, backup_dir: Path | None) -> Path:
     if backup_dir is None:
         return path.with_name(f"{path.name}.bak")
     resolved = path.resolve()
     return backup_dir / resolved.relative_to(resolved.anchor)
+
+
 def _make_backup(path: Path, backup_dir: Path | None) -> None:
     target = _backup_target(path, backup_dir)
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(path, target)
+
+
 def _build_diff(path: Path, before: str, after: str) -> str:
     return "".join(
         difflib.unified_diff(
@@ -360,6 +408,8 @@ def _build_diff(path: Path, before: str, after: str) -> str:
             tofile=f"b/{path.as_posix()}",
         )
     )
+
+
 def _process(job: Job) -> FileResult:
     path = job.path
     if job.write and not os.access(path, os.W_OK):
@@ -436,6 +486,8 @@ def _process(job: Job) -> FileResult:
         diff=diff,
         written=written,
     )
+
+
 def process_file(job: Job) -> FileResult:
     try:
         return _process(job)
@@ -445,9 +497,13 @@ def process_file(job: Job) -> FileResult:
             status=Status.FAILED,
             reason=f"{type(exc).__name__}: {exc}",
         )
+
+
 def _init_worker() -> None:
     logger.remove()
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
 def run_jobs(jobs: Sequence[Job], workers: int, method: PoolMethod) -> list[FileResult]:
     if workers <= 1 or len(jobs) <= 1:
         return [process_file(job) for job in jobs]
@@ -466,12 +522,16 @@ def run_jobs(jobs: Sequence[Job], workers: int, method: PoolMethod) -> list[File
                 return pool.map(process_file, jobs, chunksize=chunk)
             case _:
                 return list(pool.imap_unordered(process_file, jobs, chunksize=chunk))
+
+
 def _matches(path: Path, patterns: Sequence[str]) -> bool:
     posix = path.as_posix()
     return any(
         fnmatch.fnmatchcase(posix, pattern) or any(fnmatch.fnmatchcase(part, pattern) for part in path.parts)
         for pattern in patterns
     )
+
+
 def _has_python_shebang(path: Path) -> bool:
     try:
         with path.open("rb") as handle:
@@ -479,12 +539,16 @@ def _has_python_shebang(path: Path) -> bool:
     except OSError:
         return False
     return first.startswith(b"#!") and b"python" in first
+
+
 def _wanted(path: Path, relative: Path, includes: Sequence[str]) -> bool:
     if includes:
         return _matches(relative, includes)
     if path.suffix in _SUFFIXES:
         return True
     return path.suffix == "" and _has_python_shebang(path)
+
+
 def _walk(directory: Path, recursive: bool) -> Iterator[Path]:
     try:
         entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
@@ -500,6 +564,8 @@ def _walk(directory: Path, recursive: bool) -> Iterator[Path]:
                 yield from _walk(entry, recursive)
         elif entry.is_file():
             yield entry
+
+
 def discover(options: Options) -> tuple[list[Path], bool]:
     found: dict[Path, Path] = {}
     missing = False
@@ -528,6 +594,8 @@ def discover(options: Options) -> tuple[list[Path], bool]:
             found.setdefault(resolved, candidate)
     ordered = sorted(found.values(), key=lambda item: item.as_posix())
     return ordered, missing
+
+
 def summarize(results: Sequence[FileResult]) -> Summary:
     summary = Summary(scanned=len(results))
     for result in results:
@@ -542,6 +610,8 @@ def summarize(results: Sequence[FileResult]) -> Summary:
             case Status.FAILED:
                 summary.failed += 1
     return summary
+
+
 def log_results(results: Sequence[FileResult]) -> None:
     for result in results:
         match result.status:
@@ -559,6 +629,8 @@ def log_results(results: Sequence[FileResult]) -> None:
                     result.counts.docstrings,
                     result.counts.annotations,
                 )
+
+
 def render_text(results: Sequence[FileResult], summary: Summary, options: Options) -> None:
     verb = "saved" if options.write else "would save"
     for result in results:
@@ -582,6 +654,8 @@ def render_text(results: Sequence[FileResult], summary: Summary, options: Option
         f"unchanged {summary.unchanged} | skipped {summary.skipped} | "
         f"failed {summary.failed} | {verb} {summary.saved:,} bytes{suffix}"
     )
+
+
 def render_json(results: Sequence[FileResult], summary: Summary, options: Options) -> None:
     entries: list[dict[str, object]] = []
     for result in results:
@@ -606,12 +680,16 @@ def render_json(results: Sequence[FileResult], summary: Summary, options: Option
         "summary": dataclasses.asdict(summary),
     }
     print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
 def exit_code(summary: Summary, options: Options, missing: bool) -> int:
     if summary.failed or missing:
         return 2
     if options.check and summary.modified:
         return 1
     return 0
+
+
 def _positive_int(value: str) -> int:
     try:
         number = int(value)
@@ -622,6 +700,8 @@ def _positive_int(value: str) -> int:
         msg = "must be >= 1"
         raise argparse.ArgumentTypeError(msg)
     return number
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pystrip",
@@ -682,6 +762,8 @@ def build_parser() -> argparse.ArgumentParser:
     verbosity.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     return parser
+
+
 def parse_args(argv: Sequence[str] | None) -> Options:
     args = build_parser().parse_args(argv)
     everything: bool = args.all
@@ -711,10 +793,14 @@ def parse_args(argv: Sequence[str] | None) -> Options:
         recursive=not args.no_recursive,
         json_output=args.json,
     )
+
+
 def configure_logging(options: Options) -> None:
     logger.remove()
     level = "ERROR" if options.quiet else "DEBUG" if options.verbose else "INFO"
     logger.add(sys.stderr, level=level, format="<level>{level: <8}</level> {message}")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     options = parse_args(argv)
     configure_logging(options)
@@ -745,5 +831,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif not options.quiet:
         render_text(results, summary, options)
     return exit_code(summary, options, missing)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -2,7 +2,10 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 DEFAULT_LIST = "list.txt"
+
+
 def main() -> int:
     list_name = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LIST
     list_file = Path(list_name)
@@ -32,5 +35,7 @@ def main() -> int:
         print(f"removed list file: {list_file.name}")
     print(f"\nDone. {removed} removed, {missing} not found.")
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

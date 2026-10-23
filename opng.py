@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -13,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 from typing import TYPE_CHECKING, Final, NamedTuple
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

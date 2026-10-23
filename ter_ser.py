@@ -1,12 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 from pathlib import Path
 import sys
-
 from dh import get_files, gsz, mpf, rrs, runcmd
-
 
 EXT = [".js", ".jsx", ".jsm", ".jsc"]
 

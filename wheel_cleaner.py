@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import csv
@@ -12,7 +10,6 @@ import sysconfig
 import textwrap
 from typing import Callable, Iterable, Optional, Sequence
 import zipfile
-
 
 __all__ = ["main"]
 DEFAULT_DEST = "empty_wheels"

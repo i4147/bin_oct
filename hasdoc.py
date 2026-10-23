@@ -4,6 +4,8 @@ import argparse
 import ast
 import multiprocessing as mp
 from pathlib import Path
+
+
 def find_docstring_lines(source_bytes: bytes) -> set[int]:
     docstring_lines = set()
     try:
@@ -18,6 +20,8 @@ def find_docstring_lines(source_bytes: bytes) -> set[int]:
             if doc and node.body and isinstance(node.body[0], ast.Expr):
                 docstring_lines.add(node.body[0].lineno)
     return docstring_lines
+
+
 def check_file(path: Path) -> tuple[Path, list[str]]:
     issues = []
     try:
@@ -25,6 +29,7 @@ def check_file(path: Path) -> tuple[Path, list[str]]:
         docstring_lines = find_docstring_lines(source_bytes)
         import io
         import tokenize
+
         tokens = list(tokenize.tokenize(io.BytesIO(source_bytes).readline))
         for tok in tokens:
             start_line = tok.start[0]
@@ -40,6 +45,8 @@ def check_file(path: Path) -> tuple[Path, list[str]]:
     except Exception as e:
         issues.append(f"  [ERROR] Failed to parse file: {e}")
     return path, issues
+
+
 def collect_files(inputs: list[str]) -> list[Path]:
     files = set()
     if not inputs:
@@ -51,6 +58,8 @@ def collect_files(inputs: list[str]) -> list[Path]:
         elif p.is_dir():
             files.update(p.rglob("*.py"))
     return list(files)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Check Python files for unstripped comments/docstrings.")
     parser.add_argument(
@@ -81,5 +90,7 @@ def main():
         print(f"SUCCESS: All {len(files)} Python files are clean!")
     else:
         print(f"RESULT: Found issues in {dirty_files} of {len(files)} files.")
+
+
 if __name__ == "__main__":
     main()

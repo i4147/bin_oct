@@ -4,12 +4,15 @@ import json
 import logging
 import os
 from pathlib import Path
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+
 def load_existing_translations(json_path: str) -> dict[str, str]:
     if os.path.exists(json_path):
         try:
@@ -23,6 +26,8 @@ def load_existing_translations(json_path: str) -> dict[str, str]:
         except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"Could not load existing JSON file: {e}")
     return {}
+
+
 def load_failed_words(failed_path: str) -> set[str]:
     if os.path.exists(failed_path):
         try:
@@ -33,6 +38,8 @@ def load_failed_words(failed_path: str) -> set[str]:
         except OSError as e:
             logger.warning(f"Could not load failed words file: {e}")
     return set()
+
+
 def process_file_pair(fa_path: Path, en_path: Path) -> tuple[dict[str, str], set[str], list[str]]:
     translations = {}
     failed = set()
@@ -66,6 +73,8 @@ def process_file_pair(fa_path: Path, en_path: Path) -> tuple[dict[str, str], set
     except Exception as e:
         logger.error(f"Unexpected error processing {fa_path.name}: {e}")
         return {}, set(), [f"Unexpected error: {e}"]
+
+
 def merge_translations(src_dir: str = "."):
     output_json = "dic_fa_en.json"
     output_failed = "failed-fa.txt"
@@ -134,8 +143,11 @@ def merge_translations(src_dir: str = "."):
     print(f"Total translations in dictionary: {len(translations)}")
     print(f"Total failed words: {len(failed_words)}")
     print("=" * 40)
+
+
 if __name__ == "__main__":
     import time
+
     start_time = time.time()
     try:
         merge_translations()

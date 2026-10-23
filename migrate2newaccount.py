@@ -2,8 +2,11 @@
 from __future__ import annotations
 import os
 import subprocess
+
 NEW_USER = "i4147"
 IGNORE = {"cpython", "neovim-source", ".git"}
+
+
 def migrate():
     for repo in [d for d in os.listdir(".") if os.path.isdir(d) and d not in IGNORE]:
         os.chdir(repo)
@@ -31,5 +34,7 @@ def migrate():
         subprocess.run(["git", "push", "-u", "origin", "--all"], capture_output=True)
         subprocess.run(["git", "push", "-u", "origin", "--tags"], capture_output=True)
         os.chdir("..")
+
+
 if __name__ == "__main__":
     migrate()

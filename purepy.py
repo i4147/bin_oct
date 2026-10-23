@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, TypeAlias
 from loguru import logger
 import requests
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 POOL_WORKERS: Final[int] = 8
@@ -29,6 +30,8 @@ PURE_OUTPUT: Final[Path] = Path("pure_python.txt")
 NATIVE_OUTPUT: Final[Path] = Path("native_extensions.txt")
 MISSING_OUTPUT: Final[Path] = Path("not_found.txt")
 PackageResult: TypeAlias = tuple[str, str]
+
+
 def has_native_wheels(info: dict[str, Any]) -> bool:
     urls = info.get("urls", [])
     if not isinstance(urls, list):
@@ -40,6 +43,8 @@ def has_native_wheels(info: dict[str, Any]) -> bool:
         if any(marker in filename for marker in NATIVE_MARKERS):
             return True
     return False
+
+
 def check_package(name: str) -> PackageResult:
     url = PYPI_URL.format(name=name)
     try:
@@ -55,8 +60,12 @@ def check_package(name: str) -> PackageResult:
     except Exception as exc:
         logger.debug(f"Error querying {name}: {exc}")
         return name, "not_found"
+
+
 def _check_package_tuple(item: tuple[str]) -> PackageResult:
     return check_package(item[0])
+
+
 def _run_pool(packages: Sequence[str], method: str) -> list[PackageResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
@@ -72,17 +81,23 @@ def _run_pool(packages: Sequence[str], method: str) -> list[PackageResult]:
             return [result.get() for result in async_results]
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
+
+
 def load_packages(path: Path) -> list[str]:
     try:
         return [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     except OSError as exc:
         logger.error(f"Error reading {path}: {exc}")
         return []
+
+
 def write_lines(path: Path, lines: Sequence[str]) -> None:
     try:
         path.write_text("\n".join(lines), encoding="utf-8")
     except OSError as exc:
         logger.error(f"Error writing {path}: {exc}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package_list", help="Path to a file with one package per line.")
@@ -93,6 +108,8 @@ def parse_args() -> argparse.Namespace:
         help="Multiprocessing pool method to use for PyPI queries.",
     )
     return parser.parse_args()
+
+
 def main() -> int:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
@@ -122,5 +139,7 @@ def main() -> int:
     logger.info(f"Native-required: {len(native)}")
     logger.info(f"Not found: {len(missing)}")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

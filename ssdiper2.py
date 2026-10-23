@@ -6,6 +6,8 @@ import operator
 from pathlib import Path
 from dh import get_files
 import ssdeep
+
+
 def X(h, M=1):
     try:
         if h.stat().st_size < M:
@@ -24,6 +26,8 @@ def X(h, M=1):
     except Exception as c:
         print(f"An unexpected error occurred for {h}: {c}")
         return None
+
+
 def Z(ag, ai=70):
     t = {}
     for h in ag:
@@ -53,19 +57,27 @@ def Z(ag, ai=70):
                 print(f"An unexpected error occurred during comparison for {u} and {v}: {c}")
     D.sort(key=operator.itemgetter("similarity_score"), reverse=True)
     return D
+
+
 def ah(s, J="simz.json"):
     try:
         with Path(J).open("w", encoding="utf-8") as d:
             json.dump(s, d, indent=2, ensure_ascii=False)
     except Exception as c:
         print(f"Error saving data to JSON file '{J}': {c}")
+
+
 def U(name):
     C = Path(name)
     if C.stem.endswith("_1"):
         return C.stem[:-2] + C.suffix
     return name
+
+
 def V(k, l):
     return U(k) == l or U(l) == k
+
+
 def group_similar(ae="simz.json"):
     cwd = Path.cwd()
     y = cwd / ae
@@ -82,6 +94,7 @@ def group_similar(ae="simz.json"):
         m.add(q["file1"])
         m.add(q["file2"])
     o = {d: d for d in m}
+
     def B(r):
         n = r
         while o[n] != n:
@@ -89,10 +102,12 @@ def group_similar(ae="simz.json"):
         while o[r] != n:
             o[r], r = (n, o[r])
         return n
+
     def aj(k, l):
         O, P = (B(k), B(l))
         if O != P:
             o[O] = P
+
     for q in Q:
         k, l = (q["file1"], q["file2"])
         if V(k, l):
@@ -117,6 +132,8 @@ def group_similar(ae="simz.json"):
             T.rename(A)
             print(f"[move] {name} -> {E.name}/")
     print(f"\nDone. Created {len(z)} group(s).")
+
+
 def af():
     N = argparse.ArgumentParser()
     N.add_argument(
@@ -140,5 +157,7 @@ def af():
             print(f"\nNo files found with similarity >= {F}%.")
     if W.group_similar:
         group_similar(G)
+
+
 if __name__ == "__main__":
     af()

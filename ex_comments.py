@@ -4,14 +4,19 @@ from collections import defaultdict
 from pathlib import Path
 from tree_sitter import Language, Parser, Tree
 import tree_sitter_python as tsp
+
 parser = Parser()
 parser.language = Language(tsp.language())
 OUT_DIR = Path("output")
 OUT_DIR.mkdir(exist_ok=True)
 VALID = {"comment", "expression_statements"}
+
+
 def extract_file(src: bytes, tree: Tree) -> list[str]:
     root = tree.root_node
     return [src[node.start_byte : node.end_byte].decode() for node in root.children if node.type in VALID]
+
+
 folder_imports = defaultdict(list)
 for py in Path().rglob("*.py"):
     if any(part.startswith(".") for part in py.parts) or "site-packages" in py.parts:

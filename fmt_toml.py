@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
@@ -9,7 +7,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 import sys
 from typing import Any, Optional
-
 from tree_sitter import Language, Parser
 
 

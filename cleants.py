@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import Counter
@@ -15,7 +14,6 @@ import shlex
 import shutil
 import sys
 from typing import Iterator
-
 from tree_sitter import Language, Node, Parser, Tree
 
 

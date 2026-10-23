@@ -3,11 +3,14 @@ import os
 from collections import defaultdict
 from PIL import Image
 import imagehash
+
 # CONFIGURATION
 # Set to False to actually delete the duplicate files!
 DRY_RUN = True
 # Supported image formats
 IMAGE_EXTENSIONS = (".webp", ".jpg", ".jpeg", ".png", ".tiff", ".tif")
+
+
 def main():
     # Map to group paths by their calculated visual hash
     # Key: ImageHash object, Value: list of tuples (file_path, total_pixels, file_size)
@@ -66,5 +69,7 @@ def main():
                 print(f"Deleted: {dup}")
             except Exception as e:
                 print(f"📁 Error deleting {dup}: {e}")
+
+
 if __name__ == "__main__":
     main()

@@ -4,6 +4,8 @@ import csv
 from pathlib import Path
 import sysconfig
 import zipfile
+
+
 def is_empty_package(dist_info_path) -> bool:
     dist_info_path = Path(dist_info_path)
     record_file = dist_info_path / "RECORD"
@@ -19,6 +21,8 @@ def is_empty_package(dist_info_path) -> bool:
             if not str(abs_path).startswith(str(dist_info_path.resolve()) + "/"):
                 return False
     return True
+
+
 def is_empty_whl(whl_path: Path) -> bool:
     try:
         with zipfile.ZipFile(whl_path, "r") as zf:
@@ -35,6 +39,8 @@ def is_empty_whl(whl_path: Path) -> bool:
     except zipfile.BadZipFile:
         print(f"Warning: {whl_path} is not a valid zip file")
         return False
+
+
 def find_empty_packages(site_packages: str):
     site_packages_path = Path(site_packages)
     empty = []
@@ -44,12 +50,16 @@ def find_empty_packages(site_packages: str):
         if entry.name.endswith(".dist-info") and entry.is_dir() and is_empty_package(entry):
             empty.append(str(entry))
     return empty
+
+
 def find_empty_wheels(cwd: Path) -> list:
     empty_wheels = []
     for file in cwd.glob("*.whl"):
         if is_empty_whl(file):
             empty_wheels.append(str(file))
     return empty_wheels
+
+
 def main() -> None:
     site_packages = sysconfig.get_paths()["purelib"]
     empty_installed = find_empty_packages(site_packages)
@@ -69,5 +79,7 @@ def main() -> None:
         print("\nNo empty wheel files found in current directory.")
     if not empty_installed and not empty_wheels:
         print("\nNo empty packages or wheels found.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

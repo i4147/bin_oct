@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 from typing import Iterable, Iterator
+
 APPEND_TOOLS: dict[str, list[str]] = {
     "ty": ["ty", "check"],
     "pyright": ["pyright"],
@@ -25,9 +26,13 @@ DEFAULT_APPEND_TOOLS: list[str] = ["ty", "pyright", "pyrefly"]
 DEFAULT_WORKERS: int = 4
 DEFAULT_REPORT_DIR: str = "report"
 _DH_IMPORT_PATTERN = "error[unresolved-import]:cannot resolve imported module `dh`"
+
+
 def _run(cmd: list[str]) -> tuple[int, str]:
     proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
     return proc.returncode, proc.stdout + proc.stderr
+
+
 def _run_tool(name: str, base_cmd: list[str], target: Path) -> tuple[str, str | None]:
     try:
         _rc, out = _run(base_cmd + [str(target)])
@@ -36,6 +41,8 @@ def _run_tool(name: str, base_cmd: list[str], target: Path) -> tuple[str, str | 
     except Exception as exc:
         return name, f"ERROR:{exc!s}"
     return name, out if out.strip() else None
+
+
 def _iter_py_files(paths: Iterable[str]) -> Iterator[Path]:
     for raw in paths:
         p = Path(raw)
@@ -43,6 +50,8 @@ def _iter_py_files(paths: Iterable[str]) -> Iterator[Path]:
             yield p
         elif p.is_dir():
             yield from p.rglob("*.py")
+
+
 def _append_outputs(target: Path, results: dict[str, str | None]) -> None:
     with target.open("a", encoding="utf-8") as fh:
         fh.write("\n")
@@ -54,6 +63,8 @@ def _append_outputs(target: Path, results: dict[str, str | None]) -> None:
                         fh.write(f"# {line}\n")
             else:
                 fh.write("# (no issues)\n")
+
+
 def _process_append(target: Path, tools: list[str]) -> str:
     results: dict[str, str | None] = {}
     for name in tools:
@@ -65,6 +76,8 @@ def _process_append(target: Path, tools: list[str]) -> str:
         return f"✓ Skipped (ty:all checks passed):{target}"
     _append_outputs(target, results)
     return f"✓ Updated:{target}"
+
+
 def _process_report(target: Path, out_dir: Path) -> None:
     print(f"Processing:{target.name}")
     entry: dict = {
@@ -93,6 +106,8 @@ def _process_report(target: Path, out_dir: Path) -> None:
     report_path = out_dir / f"{target.stem}.json"
     report_path.write_text(json.dumps(entry, indent=2), encoding="utf-8")
     print(f"->Report saved:{report_path}")
+
+
 def _cmd_append(args: argparse.Namespace) -> int:
     paths = args.paths or ["."]
     if args.all:
@@ -119,6 +134,8 @@ def _cmd_append(args: argparse.Namespace) -> int:
         for fut in futures:
             print(fut.get())
     return 0
+
+
 def _cmd_report(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     out_dir = Path(args.output) if args.output else cwd / DEFAULT_REPORT_DIR
@@ -133,6 +150,8 @@ def _cmd_report(args: argparse.Namespace) -> int:
         _process_report(f, out_dir)
     print("\nCompleted analysis for all files.")
     return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run code checkers and either append outputs to Python files or generate JSON reports.",
@@ -189,9 +208,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     rp.set_defaults(func=_cmd_report)
     return parser
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

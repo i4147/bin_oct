@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 from dh import fsz
 import matplotlib.pyplot as plt
+
+
 def scan_directory(path: str = "."):
     total_size = 0
     file_count = 0
@@ -28,6 +30,8 @@ def scan_directory(path: str = "."):
             extensions.add(ext)
             size_by_ext[ext] += size
     return total_size, file_count, folder_count, extensions, size_by_ext
+
+
 def write_summary(filename: Path | None = None) -> None:
     total_size, file_count, folder_count, extensions, size_by_ext = scan_directory()
     summary_lines = []
@@ -57,6 +61,8 @@ def write_summary(filename: Path | None = None) -> None:
             print(f"Error saving summary to {filename}: {e}", file=sys.stderr)
     elif filename is None:
         print(summary_string)
+
+
 def create_bar_chart(chart_type: str, output_filename: str = "/sdcard/dirinfo.png") -> None:
     _, _, _, _, size_by_ext = scan_directory()
     sorted_items = sorted(
@@ -82,6 +88,8 @@ def create_bar_chart(chart_type: str, output_filename: str = "/sdcard/dirinfo.pn
         print(f"Bar chart saved to {output_filename}")
     except Exception as e:
         print(f"Error saving chart to {output_filename}: {e}", file=sys.stderr)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze directory information.")
     parser.add_argument(

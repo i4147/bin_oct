@@ -18,6 +18,7 @@ import tempfile
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
 if TYPE_CHECKING:
     from multiprocessing.pool import Pool
 Status = Literal["stripped", "unchanged", "skipped", "error"]
@@ -64,8 +65,14 @@ _JS_FAMILY: Final[str] = (
     r"|sourceMappingURL|sourceURL|@jsx|@flow|@vite-ignore|[@#]__(?:PURE|NO_SIDE_EFFECTS)__"
 )
 _SHELL_FAMILY: Final[str] = r"\A#!|shellcheck|shfmt"
+
+
 class SkipFile(Exception): ...
+
+
 class ValidationError(Exception): ...
+
+
 def _is_cgo_preamble(node: Node, src: bytes) -> bool:
     sibling = node.next_sibling
     while sibling is not None and sibling.type in COMMENT_TYPES:
@@ -75,6 +82,8 @@ def _is_cgo_preamble(node: Node, src: bytes) -> bool:
         and sibling.type == "import_declaration"
         and b'"C"' in src[sibling.start_byte : sibling.end_byte]
     )
+
+
 @dataclass(frozen=True, slots=True)
 class LangSpec:
     module: str
@@ -82,6 +91,8 @@ class LangSpec:
     suffixes: frozenset[str]
     keep: re.Pattern[str]
     veto: Veto | None = None
+
+
 def _spec(
     module: str,
     factory: str,
@@ -97,6 +108,8 @@ def _spec(
         keep=re.compile(pattern, re.IGNORECASE | re.DOTALL),
         veto=veto,
     )
+
+
 LANGS: Final[dict[str, LangSpec]] = {
     "bash": _spec("tree_sitter_bash", "language", ".sh .bash", _SHELL_FAMILY),
     "zsh": _spec("tree_sitter_zsh", "language", ".zsh", _SHELL_FAMILY),
@@ -164,11 +177,15 @@ AVAILABLE: Final[dict[str, LangSpec]] = {
     name: spec for name, spec in LANGS.items() if importlib.util.find_spec(spec.module) is not None
 }
 SUFFIX_TO_LANG: Final[dict[str, str]] = {suffix: name for name, spec in AVAILABLE.items() for suffix in spec.suffixes}
+
+
 class Task(NamedTuple):
     path: Path
     backup: bool
     max_size: int
     dry_run: bool
+
+
 @dataclass(frozen=True, slots=True)
 class Outcome:
     path: str
@@ -176,19 +193,25 @@ class Outcome:
     before: int = 0
     after: int = 0
     detail: str = ""
+
     @property
     def saved(self) -> int:
         return self.before - self.after
+
+
 @dataclass(slots=True)
 class Summary:
     counts: Counter[str] = field(default_factory=Counter)
     freed: int = 0
     stripped_before: int = 0
+
     def record(self, outcome: Outcome) -> None:
         self.counts[outcome.status] += 1
         if outcome.status == "stripped":
             self.freed += outcome.saved
             self.stripped_before += outcome.before
+
+
 def human(size: int) -> str:
     value = float(size)
     for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
@@ -196,6 +219,8 @@ def human(size: int) -> str:
             return f"{value:.1f} {unit}" if unit != "B" else f"{int(value)} B"
         value /= 1024
     raise AssertionError
+
+
 def iter_files(root: Path, skip_dirs: frozenset[str]) -> Iterator[Path]:
     stack: list[Path] = [root]
     while stack:
@@ -211,11 +236,15 @@ def iter_files(root: Path, skip_dirs: frozenset[str]) -> Iterator[Path]:
                     yield entry
         except OSError as exc:
             logger.error("{} | cannot list directory: {}", current, exc)
+
+
 @cache
 def _parser(name: str) -> Parser:
     spec = AVAILABLE[name]
     module = importlib.import_module(spec.module)
     return Parser(Language(getattr(module, spec.factory)()))
+
+
 def walk(root: Node) -> Iterator[Node]:
     stack: list[Node] = [root]
     while stack:
@@ -223,10 +252,14 @@ def walk(root: Node) -> Iterator[Node]:
         yield node
         if node.type not in COMMENT_TYPES:
             stack.extend(reversed(node.children))
+
+
 def _flush(digest: hashlib._Hash, pending: list[bytes]) -> None:
     if pending:
         digest.update(b"T\0" + b" ".join(b"".join(pending).split()) + b"\0")
         pending.clear()
+
+
 def fingerprint(root: Node, src: bytes) -> bytes:
     digest = hashlib.blake2b(digest_size=16)
     pending: list[bytes] = []
@@ -241,6 +274,8 @@ def fingerprint(root: Node, src: bytes) -> bytes:
         digest.update(node.type.encode() + b"\0" + chunk + b"\0")
     _flush(digest, pending)
     return digest.digest()
+
+
 def _expand(src: bytes, start: int, end: int) -> tuple[int, int]:
     line_start = src.rfind(b"\n", 0, start) + 1
     newline = src.find(b"\n", end)
@@ -252,6 +287,8 @@ def _expand(src: bytes, start: int, end: int) -> tuple[int, int]:
     if head.strip():
         return start - (len(head) - len(head.rstrip())), end
     return line_start, min(line_end + 1, len(src))
+
+
 def removal_spans(root: Node, src: bytes, spec: LangSpec) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
     floor = 0
@@ -271,6 +308,8 @@ def removal_spans(root: Node, src: bytes, spec: LangSpec) -> list[tuple[int, int
         spans.append((start, end))
         floor = end
     return spans
+
+
 def strip_comments(data: bytes, lang: str) -> bytes:
     spec = AVAILABLE[lang]
     parser = _parser(lang)
@@ -297,6 +336,8 @@ def strip_comments(data: bytes, lang: str) -> bytes:
         msg = "stripped result changed the token stream"
         raise ValidationError(msg)
     return result
+
+
 def commit(path: Path, payload: bytes, backup: bool, ref: os.stat_result) -> None:
     current = path.stat()
     if (current.st_mtime_ns, current.st_size) != (ref.st_mtime_ns, ref.st_size):
@@ -314,6 +355,8 @@ def commit(path: Path, payload: bytes, backup: bool, ref: os.stat_result) -> Non
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise
+
+
 def process_file(path: Path, backup: bool, max_size: int, dry_run: bool) -> Outcome:
     name = str(path)
     try:
@@ -339,8 +382,12 @@ def process_file(path: Path, backup: bool, max_size: int, dry_run: bool) -> Outc
         return Outcome(name, "skipped", detail=str(exc))
     except Exception as exc:
         return Outcome(name, "error", detail=f"{type(exc).__name__}: {exc}")
+
+
 def _worker(task: Task) -> Outcome:
     return process_file(*task)
+
+
 def run_pool(pool: Pool, method: PoolMethod, tasks: Iterable[Task], chunksize: int) -> Iterator[Outcome]:
     match method:
         case "imap_unordered":
@@ -361,6 +408,8 @@ def run_pool(pool: Pool, method: PoolMethod, tasks: Iterable[Task], chunksize: i
         case _:
             msg = f"unknown pool method: {method}"
             raise ValueError(msg)
+
+
 def report(outcome: Outcome) -> None:
     match outcome:
         case Outcome(status="stripped"):
@@ -377,6 +426,8 @@ def report(outcome: Outcome) -> None:
             logger.error("{} | {}", outcome.path, outcome.detail)
         case _:
             logger.debug("{} | unchanged", outcome.path)
+
+
 def configure_logging(verbose: bool, log_file: Path | None) -> None:
     logger.remove()
     logger.add(
@@ -386,6 +437,8 @@ def configure_logging(verbose: bool, log_file: Path | None) -> None:
     )
     if log_file is not None:
         logger.add(log_file, level="DEBUG", rotation="10 MB", encoding="utf-8")
+
+
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="strip_comments")
     parser.add_argument("root", nargs="?", type=Path, default=Path())
@@ -399,6 +452,8 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--skip-dir", action="append", default=[])
     parser.add_argument("--log-file", type=Path)
     return parser.parse_args(argv)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     configure_logging(args.verbose, args.log_file)
@@ -428,5 +483,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         human(summary.stripped_before),
     )
     return int(summary.counts["error"] > 0)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

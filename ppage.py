@@ -4,6 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
 import pymupdf
+
+
 def split_pdf_by_page(pdf_path: Path, output_dir: Path) -> None:
     with pymupdf.open(pdf_path) as document:
         stem: str = pdf_path.stem
@@ -16,6 +18,8 @@ def split_pdf_by_page(pdf_path: Path, output_dir: Path) -> None:
             output_path: Path = output_dir / f"{stem}_{padded_num}.pdf"
             new_doc.save(str(output_path))
             new_doc.close()
+
+
 def extract_text_by_page(pdf_path: Path, output_dir: Path) -> None:
     with pymupdf.open(pdf_path) as document:
         stem: str = pdf_path.stem
@@ -27,6 +31,8 @@ def extract_text_by_page(pdf_path: Path, output_dir: Path) -> None:
             padded_num: str = str(page_index + 1).zfill(padding)
             output_path: Path = output_dir / f"{stem}_{padded_num}.txt"
             output_path.write_text(text, encoding="utf-8")
+
+
 def process_pdfs(
     input_paths: list[str] | None = None,
     output_dir: Path | None = None,
@@ -53,6 +59,8 @@ def process_pdfs(
         for pdf_file in pdf_files:
             executor.submit(worker, pdf_file, output_dir)
     print(f"Processing complete. Output files in: {output_dir}")
+
+
 if __name__ == "__main__":
     raw_args: list[str] = sys.argv[1:]
     text_mode: bool = False

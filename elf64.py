@@ -8,6 +8,7 @@ from typing import Iterator
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
+
 WORKERS = 8
 ELF_TYPES = {
     "ET_NONE": "no file type",
@@ -28,6 +29,8 @@ ELF_MACHINES = {
     "EM_S390": "S/390",
     "EM_IA_64": "IA-64",
 }
+
+
 def analyze_file(path: Path) -> dict | None:
     try:
         if not is_binary(str(path)):
@@ -50,6 +53,8 @@ def analyze_file(path: Path) -> dict | None:
             return info
     except (ELFError, OSError, PermissionError, KeyError):
         return None
+
+
 def iter_files(root: Path, follow_symlinks: bool = False) -> Iterator[Path]:
     for path in root.rglob("*"):
         if not path.is_file():
@@ -57,12 +62,16 @@ def iter_files(root: Path, follow_symlinks: bool = False) -> Iterator[Path]:
         if path.is_symlink() and not follow_symlinks:
             continue
         yield path
+
+
 def scan(root: Path, follow_symlinks: bool = False) -> Iterator[dict]:
     paths = iter_files(root, follow_symlinks=follow_symlinks)
     with mp.Pool(processes=WORKERS) as pool:
         for result in pool.imap_unordered(analyze_file, paths, chunksize=1):
             if result is not None:
                 yield result
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Recursively find 64-bit ELF binaries.",
@@ -88,6 +97,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="follow symlinks during traversal",
     )
     return parser.parse_args(argv)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     root: Path = args.directory.resolve()
@@ -122,5 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     if count:
         print(f"Found {count} 64-bit ELF binary/binaries.")
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

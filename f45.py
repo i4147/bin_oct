@@ -5,6 +5,8 @@ from pathlib import Path
 import shutil
 import sys
 import textwrap
+
+
 def wrap_text_content(content: str, width: int) -> str:
     paragraphs = content.split("\n\n")
     wrapped_paragraphs = []
@@ -29,6 +31,8 @@ def wrap_text_content(content: str, width: int) -> str:
             wrapped_lines.append(wrapped)
         wrapped_paragraphs.append("\n".join(wrapped_lines))
     return "\n\n".join(wrapped_paragraphs)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Wrap text file content to match terminal width.")
     parser.add_argument("file", type=Path, help="Path to the target file")
@@ -74,5 +78,7 @@ def main() -> None:
     except Exception as e:
         print(f"Error writing file: {e}", file=sys.stderr)
         sys.exit(1)
+
+
 if __name__ == "__main__":
     main()

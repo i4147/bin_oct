@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
+
 NATO = {
     "A": "Alpha",
     "B": "Bravo",
@@ -31,9 +32,13 @@ NATO = {
     "Y": "Yankee",
     "Z": "Zulu",
 }
+
+
 def to_nato(text: str) -> str:
     words = [NATO[ch.upper()] for ch in text if ch.isalpha() and ch.upper() in NATO]
     return " ".join(words)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Replace letters with NATO phonetic alphabet words.")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -50,5 +55,7 @@ def main() -> int:
         content = args.text
     print(to_nato(content))
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

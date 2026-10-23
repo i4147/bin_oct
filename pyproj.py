@@ -10,6 +10,7 @@ from typing import Any, Final
 import urllib.error
 import urllib.request
 from dotenv import load_dotenv
+
 ENV_PATH: Final[Path] = Path.home() / ".env"
 """Location of the .env file that holds GITHUB_TOKEN."""
 GITHUB_API: Final[str] = "https://api.github.com"
@@ -208,9 +209,13 @@ def main() -> None:
     """Console-script entry point for the ``{pkgname}`` command."""
     print("Hello from {pkgname}")
 '''
+
+
 def run(cmd: list[str], cwd: Path) -> None:
     print(f"$ {' '.join(cmd)}")
     subprocess.run(cmd, cwd=cwd, check=True)
+
+
 def github_request(
     method: str,
     url: str,
@@ -232,15 +237,21 @@ def github_request(
         detail: str = e.read().decode(errors="replace")
         msg = f"GitHub API error {e.code} on {method} {url}:\n{detail}"
         raise SystemExit(msg) from e
+
+
 def get_github_token() -> str:
     token: str | None = os.environ.get("GITHUB_TOKEN")
     if not token:
         msg = f"GITHUB_TOKEN not found. Add it to {ENV_PATH}, e.g.\n    GITHUB_TOKEN=ghp_xxx"
         raise SystemExit(msg)
     return token
+
+
 def get_github_user(token: str) -> str:
     data: dict[str, Any] = github_request("GET", f"{GITHUB_API}/user", token)
     return str(data["login"])
+
+
 def create_github_repo(
     token: str,
     name: str,
@@ -259,6 +270,8 @@ def create_github_repo(
             "auto_init": False,
         },
     )
+
+
 def get_or_create_github_repo(
     token: str,
     user: str,
@@ -273,6 +286,8 @@ def get_or_create_github_repo(
             raise
     print(f"Repo {user}/{name} not found, creating ...")
     return create_github_repo(token, name, private=private)
+
+
 def render_package_files(pkgname: str) -> dict[Path, str]:
     src_pkg: Path = Path("src") / pkgname
     return {
@@ -284,6 +299,8 @@ def render_package_files(pkgname: str) -> dict[Path, str]:
         src_pkg / "__init__.py": INIT_PY_TMPL.format(version=VERSION),
         src_pkg / "cli.py": CLI_PY_TMPL.format(pkgname=pkgname),
     }
+
+
 def render_single_file_files(pkgname: str) -> dict[Path, str]:
     return {
         Path(".gitignore"): GITIGNORE,
@@ -293,6 +310,8 @@ def render_single_file_files(pkgname: str) -> dict[Path, str]:
         Path("setup.cfg"): SETUP_CFG_SINGLE_TMPL.format(pkgname=pkgname),
         Path(f"{pkgname}.py"): SINGLE_FILE_PY_TMPL.format(pkgname=pkgname, version=VERSION),
     }
+
+
 def render_cython_files(pkgname: str) -> dict[Path, str]:
     return {
         Path(".gitignore"): GITIGNORE,
@@ -302,9 +321,13 @@ def render_cython_files(pkgname: str) -> dict[Path, str]:
         Path("setup.cfg"): SETUP_CFG_CYTHON_TMPL,
         Path(f"{pkgname}.pyx"): CYTHON_PYX_TMPL.format(pkgname=pkgname, version=VERSION),
     }
+
+
 LAYOUT_PACKAGE: Final[str] = "package"
 LAYOUT_SINGLE: Final[str] = "single"
 LAYOUT_CYTHON: Final[str] = "cython"
+
+
 def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[Path]]:
     root: Path = Path.cwd() / pkgname
     root.mkdir(parents=True, exist_ok=True)
@@ -328,6 +351,8 @@ def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[P
         abs_path.write_text(content, encoding="utf-8")
         created.append(abs_path)
     return root, created, skipped
+
+
 def git_init_and_push(root: Path, remote_url: str) -> None:
     run(["git", "init", "-b", DEFAULT_BRANCH], cwd=root)
     run(["git", "add", "."], cwd=root)
@@ -347,9 +372,13 @@ def git_init_and_push(root: Path, remote_url: str) -> None:
     else:
         run(["git", "remote", "add", "origin", remote_url], cwd=root)
     run(["git", "push", "-u", "origin", DEFAULT_BRANCH], cwd=root)
+
+
 def scrub_remote_token(root: Path, user: str, pkgname: str) -> None:
     clean_url: str = f"https://github.com/{user}/{pkgname}.git"
     run(["git", "remote", "set-url", "origin", clean_url], cwd=root)
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog=Path(sys.argv[0]).name,
@@ -393,6 +422,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         ),
     )
     return parser.parse_args(argv)
+
+
 def main() -> None:
     args: argparse.Namespace = parse_args(sys.argv[1:])
     pkgname: str = args.pkgname
@@ -435,5 +466,7 @@ def main() -> None:
     git_init_and_push(root, push_url)
     scrub_remote_token(root, user, pkgname)
     print(f"\nDone: https://github.com/{user}/{pkgname}")
+
+
 if __name__ == "__main__":
     main()

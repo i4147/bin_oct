@@ -16,6 +16,7 @@ import tarfile
 import tokenize
 from typing import TYPE_CHECKING, Any, Callable
 import zipfile
+
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 try:
@@ -319,12 +320,16 @@ FILE_DESC2EXT: dict[str, str] = {
     "mpeg audio": ".mp3",
 }
 LOG = logging.getLogger("filefixer")
+
+
 @dataclass
 class Detection:
     ext: str
     desc: str
     engine: str
     mime: str | None = None
+
+
 @dataclass
 class FixResult:
     path: Path
@@ -335,8 +340,12 @@ class FixResult:
     target: Path | None = None
     reason: str | None = None
     engine: str | None = None
+
+
 def eprint(*args: Any, **kwargs: Any) -> None:
     print(*args, file=sys.stderr, **kwargs)
+
+
 def norm_ext(ext: str | None) -> str:
     if not ext:
         return ""
@@ -346,10 +355,14 @@ def norm_ext(ext: str | None) -> str:
     if not ext.startswith("."):
         ext = "." + ext
     return ALIASES.get(ext, ext)
+
+
 def parse_ext_set(value: str | None) -> set[str]:
     if not value:
         return set()
     return {norm_ext(part) for part in value.split(",") if part.strip()}
+
+
 def parse_engine_list(value: str | None) -> list[str]:
     if not value or value.lower() == "auto":
         return [
@@ -379,12 +392,16 @@ def parse_engine_list(value: str | None) -> list[str]:
         msg = f"Unknown engine(s): {', '.join(bad)}"
         raise argparse.ArgumentTypeError(msg)
     return engines
+
+
 def current_ext(path: Path) -> str:
     name = path.name.lower()
     for ext in COMPOUND_EXTS:
         if name.endswith(ext):
             return ext
     return path.suffix.lower()
+
+
 def mime_to_ext(mime: str | None) -> str | None:
     if not mime:
         return None
@@ -397,6 +414,8 @@ def mime_to_ext(mime: str | None) -> str | None:
     if isinstance(value, list):
         value = value[0] if value else None
     return norm_ext(value) if value else None
+
+
 def desc_to_ext(desc: str | None) -> str | None:
     if not desc:
         return None
@@ -409,6 +428,8 @@ def desc_to_ext(desc: str | None) -> str | None:
     if "text" in key:
         return ".txt"
     return None
+
+
 def is_binary_file(path: Path, sample_size: int = 8192) -> bool | None:
     try:
         with path.open("rb") as fh:
@@ -430,6 +451,8 @@ def is_binary_file(path: Path, sample_size: int = 8192) -> bool | None:
             except (UnicodeDecodeError, LookupError):
                 continue
         return True
+
+
 def iter_files(
     root: Path,
     *,
@@ -468,6 +491,8 @@ def iter_files(
                 yield path
         if not recursive:
             break
+
+
 def collect_files(
     paths: Sequence[str],
     *,
@@ -494,6 +519,8 @@ def collect_files(
         else:
             eprint(f"Warning: not found or unsupported: {path}")
     return list(dict.fromkeys(files))
+
+
 def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
     try:
         with path.open("rb") as fh:
@@ -534,6 +561,8 @@ def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
     except Exception:
         pass
     return None
+
+
 def detect_puremagic(path: Path) -> Detection | None:
     if puremagic is None:
         return None
@@ -552,6 +581,8 @@ def detect_puremagic(path: Path) -> Detection | None:
     if mapped:
         return Detection(mapped, f"puremagic MIME: {mime}", "puremagic", mime)
     return None
+
+
 def detect_magic(path: Path) -> Detection | None:
     if magic is None:
         return None
@@ -563,6 +594,8 @@ def detect_magic(path: Path) -> Detection | None:
     except Exception:
         return None
     return None
+
+
 def detect_filetype(path: Path) -> Detection | None:
     if filetype is None:
         return None
@@ -578,6 +611,8 @@ def detect_filetype(path: Path) -> Detection | None:
     except Exception:
         return None
     return None
+
+
 def detect_file_mime(path: Path) -> Detection | None:
     try:
         out = subprocess.check_output(
@@ -592,6 +627,8 @@ def detect_file_mime(path: Path) -> Detection | None:
     if ext:
         return Detection(ext, f"file MIME: {out}", "file-mime", out)
     return None
+
+
 def detect_file_b(path: Path) -> Detection | None:
     try:
         out = subprocess.check_output(
@@ -606,6 +643,8 @@ def detect_file_b(path: Path) -> Detection | None:
     if ext:
         return Detection(ext, f"file: {out}", "file-b")
     return None
+
+
 def detect_shebang(path: Path) -> Detection | None:
     try:
         with path.open("rb") as fh:
@@ -628,12 +667,16 @@ def detect_shebang(path: Path) -> Detection | None:
         if key in interp or interp in key:
             return Detection(norm_ext(ext), f"shebang: {line}", "shebang")
     return None
+
+
 def detect_mimetypes(path: Path) -> Detection | None:
     mime, _ = mimetypes.guess_type(str(path))
     ext = mime_to_ext(mime)
     if ext:
         return Detection(ext, f"mimetypes: {mime}", "mimetypes", mime)
     return None
+
+
 def guess_text_extension(text: str) -> str | None:
     text = text.strip()
     if not text:
@@ -661,6 +704,8 @@ def guess_text_extension(text: str) -> str | None:
     if text.startswith("<?xml"):
         return ".xml"
     return None
+
+
 def detect_text(path: Path) -> Detection | None:
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as fh:
@@ -675,6 +720,8 @@ def detect_text(path: Path) -> Detection | None:
         if printable / max(1, len(sample)) > 0.9:
             return Detection(".txt", "plain text heuristic", "text")
     return None
+
+
 DETECTORS: dict[str, Callable[[Path], Detection | None]] = {
     "signature": detect_signature,
     "puremagic": detect_puremagic,
@@ -686,6 +733,8 @@ DETECTORS: dict[str, Callable[[Path], Detection | None]] = {
     "mimetypes": detect_mimetypes,
     "text": detect_text,
 }
+
+
 def detect_extension(path: Path, engines: Sequence[str], *, debug: bool = False) -> Detection | None:
     for engine in engines:
         detector = DETECTORS.get(engine)
@@ -700,6 +749,8 @@ def detect_extension(path: Path, engines: Sequence[str], *, debug: bool = False)
         if detection and detection.ext:
             return detection
     return None
+
+
 def rename_with_policy(
     src: Path,
     dst: Path,
@@ -746,6 +797,8 @@ def rename_with_policy(
                 except Exception as exc:
                     return src, False, str(exc)
     return src, False, "failed to find non-conflicting name"
+
+
 def process_fix_file(
     path: Path,
     *,
@@ -843,6 +896,8 @@ def process_fix_file(
         reason=error,
         engine=detection.engine,
     )
+
+
 def run_fix_pass(files: Sequence[Path], args: argparse.Namespace, *, apply: bool) -> list[FixResult]:
     engines = parse_engine_list(args.engines)
     protect_ext = set() if args.no_protect else parse_ext_set(args.protect_ext)
@@ -871,6 +926,8 @@ def run_fix_pass(files: Sequence[Path], args: argparse.Namespace, *, apply: bool
             except Exception as exc:
                 eprint(f"Error processing file: {exc}")
     return results
+
+
 def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
     renamed = [r for r in results if r.action == "renamed"]
     would = [r for r in results if r.action == "would-rename"]
@@ -895,6 +952,8 @@ def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
         print("\nErrors:")
         for result in errors[:10]:
             print(f"  {result.path}: {result.reason}")
+
+
 def cmd_fix(args: argparse.Namespace) -> int:
     if args.scan_cwd:
         paths = [str(Path.cwd())]
@@ -928,6 +987,8 @@ def cmd_fix(args: argparse.Namespace) -> int:
         results = run_fix_pass(files, args, apply=args.apply)
     print_fix_summary(results, verbose=args.verbose or args.debug)
     return 1 if any(r.action == "error" for r in results) else 0
+
+
 def validate_one(path: Path, kind: str) -> tuple[Path, bool | None, str]:
     binary = is_binary_file(path)
     if binary is None:
@@ -935,6 +996,8 @@ def validate_one(path: Path, kind: str) -> tuple[Path, bool | None, str]:
     if kind == "binary":
         return path, binary, "binary" if binary else "text"
     return path, binary, "text" if not binary else "binary"
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     root = Path(args.path).expanduser()
     if not root.exists():
@@ -984,25 +1047,35 @@ def cmd_validate(args: argparse.Namespace) -> int:
         print("\nNo mismatches found.")
     print("=" * 40)
     return 1 if mismatches else 0
+
+
 PY_KEYWORDS = {"def", "class", "import", "from", "lambda", "yield", "async", "await"}
+
+
 def looks_like_python_line(line: str) -> bool:
     if any(keyword in line for keyword in PY_KEYWORDS):
         return True
     if re.search(r":\s*$", line):
         return True
     return bool(re.match(r"\s{4}", line))
+
+
 def is_valid_python_token_stream(text: str) -> bool:
     try:
         tokenize.generate_tokens(StringIO(text).readline)
         return True
     except tokenize.TokenError:
         return False
+
+
 def is_python_construct(line: str) -> bool:
     if re.match(r"\s*(def|class|if|elif|else|for|while|try|except|with)\b.*:", line):
         return True
     if re.match(r"\s*@[A-Za-z_]\w*", line):
         return True
     return bool(re.match(r"\s*import\b|\s*from\b", line))
+
+
 def cmd_extract_python(args: argparse.Namespace) -> int:
     source = Path(args.file)
     output = Path(args.output)
@@ -1028,6 +1101,8 @@ def cmd_extract_python(args: argparse.Namespace) -> int:
         return 1
     print(f"Wrote {len(kept)} lines to {output}")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="filefixer.py",
@@ -1128,6 +1203,8 @@ def build_parser() -> argparse.ArgumentParser:
     ext.add_argument("file", help="Input file.")
     ext.add_argument("-o", "--output", default="out.py", help="Output file. Default: out.py")
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -1146,5 +1223,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return cmd_extract_python(args)
     parser.print_help()
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

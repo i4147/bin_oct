@@ -2,6 +2,7 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python count_chars_of_input_file.py <input_file>")

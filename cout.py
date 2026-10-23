@@ -11,6 +11,7 @@ import sys
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 POOL_SIZE: int = 8
@@ -76,6 +77,8 @@ COMMENT_MAP: dict[str, str] = {
     ".tex": "%",
     ".m": "%",
 }
+
+
 @dataclass
 class ChunkResult:
     lines: list[str]
@@ -84,6 +87,8 @@ class ChunkResult:
     skipped: int = 0
     blanks: int = 0
     changed: int = 0
+
+
 def _normalize_ranges(
     ranges: Sequence[tuple[int, int | None]],
 ) -> list[tuple[int, int]]:
@@ -103,6 +108,8 @@ def _normalize_ranges(
         else:
             merged.append((s, e))
     return merged
+
+
 def parse_ranges(spec: str) -> list[tuple[int, int | None]]:
     ranges: list[tuple[int, int | None]] = []
     for part in spec.split(","):
@@ -118,6 +125,8 @@ def parse_ranges(spec: str) -> list[tuple[int, int | None]]:
             n = int(part)
             ranges.append((n, n))
     return ranges
+
+
 def process_chunk(
     lines: Sequence[str],
     start_line: int,
@@ -168,16 +177,22 @@ def process_chunk(
             out.append(f"{comment_char}{line}")
             commented += 1
     return ChunkResult(out, commented, uncommented, skipped, blanks, commented + uncommented)
+
+
 def _worker(
     args: tuple[Sequence[str], int, Sequence[tuple[int, int]], str, bool, bool],
 ) -> ChunkResult:
     return process_chunk(*args)
+
+
 def _chunk_iter(stream, chunk_size: int) -> Iterator[list[str]]:
     while True:
         chunk = list(islice(stream, chunk_size))
         if not chunk:
             return
         yield chunk
+
+
 def _arg_iter(
     chunks: Iterator[list[str]],
     ranges: Sequence[tuple[int, int]],
@@ -189,6 +204,8 @@ def _arg_iter(
     for chunk in chunks:
         yield (chunk, current, ranges, comment_char, remove, preserve_shebang)
         current += len(chunk)
+
+
 def _dispatch(arg_iter: Iterator[tuple], use_pool: bool) -> Iterator[ChunkResult]:
     if use_pool:
         with Pool(processes=POOL_SIZE) as pool:
@@ -196,6 +213,8 @@ def _dispatch(arg_iter: Iterator[tuple], use_pool: bool) -> Iterator[ChunkResult
     else:
         for args in arg_iter:
             yield _worker(args)
+
+
 def _resolve_comment_char(file_path: Path | None, override: str | None) -> str:
     if override:
         return override
@@ -211,18 +230,24 @@ def _resolve_comment_char(file_path: Path | None, override: str | None) -> str:
         )
         return DEFAULT_COMMENT
     return cc
+
+
 def _detect_bom(path: Path) -> bool:
     try:
         with path.open("rb") as f:
             return f.read(3) == b"\xef\xbb\xbf"
     except OSError:
         return False
+
+
 def _accumulate(total: ChunkResult, part: ChunkResult) -> None:
     total.commented += part.commented
     total.uncommented += part.uncommented
     total.skipped += part.skipped
     total.blanks += part.blanks
     total.changed += part.changed
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="commentout",
@@ -287,6 +312,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(stats=True)
     return p
+
+
 def _parse_args(
     argv: Sequence[str],
 ) -> tuple[argparse.Namespace, Path | None, list[tuple[int, int]]]:
@@ -328,6 +355,8 @@ def _parse_args(
         except OSError:
             pass
     return ns, file_path, _normalize_ranges(raw_ranges)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(argv) if argv is not None else sys.argv
     ns, file_path, ranges = _parse_args(args)
@@ -456,5 +485,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     total.blanks,
                 )
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

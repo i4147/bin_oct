@@ -5,6 +5,8 @@ import importlib.metadata
 import multiprocessing
 from pathlib import Path
 from pip._internal.commands import main as pip_main
+
+
 def installer(batch):
     """Reinstalls a batch of packages using pip internal main."""
     if not batch:
@@ -15,6 +17,8 @@ def installer(batch):
         pip_main(args)
     except TypeError:
         pip_main("install", "--no-deps", "--force-reinstall", *batch)
+
+
 def _inspect_distribution(dist):
     """Helper worker to inspect a single distribution for multiprocessing speedup."""
     try:
@@ -44,6 +48,8 @@ def _inspect_distribution(dist):
     except Exception:
         pass
     return None
+
+
 def get_pure_python_packages_sorted():
     """Finds pure Python packages, calculates installed size in parallel, and sorts smallest-first."""
     dists = list(importlib.metadata.distributions())
@@ -55,10 +61,14 @@ def get_pure_python_packages_sorted():
     # Sort by installed size ascending (smallest pkgs first)
     packages_info.sort(key=lambda x: x[1])
     return [pkg[0] for pkg in packages_info]
+
+
 def chunked(iterable, n):
     """Yield successive n-sized chunks from iterable."""
     for i in range(0, len(iterable), n):
         yield iterable[i : i + n]
+
+
 def parse_package_file(file_path):
     """Reads packages from a file, one per line, ignoring comments and empty lines."""
     path = Path(file_path)
@@ -74,6 +84,8 @@ def parse_package_file(file_path):
                 # Handle potential version specifiers or flags if necessary, keeping base name/spec
                 pkgs.append(line)
     return pkgs
+
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     parser = argparse.ArgumentParser(description="Reinstall pure Python packages or from a list file.")

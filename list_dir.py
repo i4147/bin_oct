@@ -11,6 +11,7 @@ import stat as statlib
 import subprocess
 import sys
 from typing import Sequence
+
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({".mypy_cache", ".ruff_cache", ".git", "__pycache__"})
 ICON_IMAGE_EXTS: frozenset[str] = frozenset({"png", "jpg", "jpeg", "gif", "webp"})
 ICON_CODE_EXTS: frozenset[str] = frozenset({"py", "sh"})
@@ -20,6 +21,8 @@ C_DIR: str = "\x1b[1;34m"
 C_LINK: str = "\x1b[36m"
 C_EXEC: str = "\x1b[1;32m"
 ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*m")
+
+
 @dataclass
 class LsOptions:
     recursive: bool = False
@@ -36,8 +39,11 @@ class LsOptions:
     git: bool = False
     icons: bool = False
     time_format: str = "%H:%M"
+
+
 class Entry:
     __slots__ = ("git", "link_target", "name", "path", "st")
+
     def __init__(
         self,
         path: str,
@@ -51,6 +57,8 @@ class Entry:
         self.st = st
         self.link_target = link_target
         self.git = git
+
+
 def human_size(size: int) -> str:
     size = abs(int(size))
     if size < 1024:
@@ -66,6 +74,8 @@ def human_size(size: int) -> str:
     else:
         s = f"{int(v)}"
     return f"{s} {units[i]}B"
+
+
 def dir_size(root: Path) -> int:
     total = 0
     seen: set[tuple[int, int]] = set()
@@ -93,10 +103,14 @@ def dir_size(root: Path) -> int:
         except OSError:
             continue
     return total
+
+
 def effective_size(e: Entry) -> int:
     if statlib.S_ISDIR(e.st.st_mode):
         return dir_size(Path(e.path))
     return e.st.st_size
+
+
 def colorize(text: str, st_mode: int, enabled: bool) -> str:
     if not enabled:
         return text
@@ -107,10 +121,16 @@ def colorize(text: str, st_mode: int, enabled: bool) -> str:
     if st_mode & statlib.S_IXUSR:
         return f"{C_EXEC}{text}{RESET}"
     return text
+
+
 def visible_len(s: str) -> int:
     return len(ANSI_RE.sub("", s))
+
+
 def format_time(ts: float, fmt: str) -> str:
     return dt.datetime.fromtimestamp(ts).strftime(fmt)
+
+
 def icon_for(e: Entry) -> str:
     m = e.st.st_mode
     if statlib.S_ISDIR(m):
@@ -126,12 +146,16 @@ def icon_for(e: Entry) -> str:
     if ext in ICON_ARCHIVE_EXTS:
         return "\U0001f4e6"
     return "\U0001f4c4"
+
+
 def resolve_color(mode: str) -> bool:
     if mode == "always":
         return True
     if mode == "never":
         return False
     return sys.stdout.isatty()
+
+
 def git_status_map(directory: Path) -> dict[str, str]:
     try:
         proc = subprocess.run(
@@ -153,6 +177,8 @@ def git_status_map(directory: Path) -> dict[str, str]:
         name = parts[-1].decode("utf-8", errors="ignore")
         result[name] = xy
     return result
+
+
 def list_entries(directory: Path, opts: LsOptions) -> list[Entry]:
     try:
         raw = list(directory.iterdir())
@@ -179,6 +205,8 @@ def list_entries(directory: Path, opts: LsOptions) -> list[Entry]:
                 link_target = None
         entries.append(Entry(str(p), name, st, link_target, git_map.get(name)))
     return entries
+
+
 def sort_entries(entries: list[Entry], opts: LsOptions) -> list[Entry]:
     keyfuncs = {
         "name": lambda e: e.name.lower(),
@@ -193,6 +221,8 @@ def sort_entries(entries: list[Entry], opts: LsOptions) -> list[Entry]:
     elif opts.dirs_first:
         result = sorted(result, key=lambda e: not statlib.S_ISDIR(e.st.st_mode))
     return result
+
+
 def render_flat(entries: list[Entry], opts: LsOptions) -> None:
     if not entries:
         return
@@ -215,12 +245,15 @@ def render_flat(entries: list[Entry], opts: LsOptions) -> None:
             print(f"{size_str.rjust(size_w)}  {colored}{pad}  {time_str}{git_str}")
         else:
             print(f"{colored}{pad}  {size_str.rjust(size_w)}  {time_str}{git_str}")
+
+
 def render_long(entries: list[Entry], opts: LsOptions) -> None:
     pwd = None
     grp = None
     try:
         import grp as _grp
         import pwd as _pwd
+
         pwd = _pwd
         grp = _grp
     except ImportError:
@@ -254,6 +287,8 @@ def render_long(entries: list[Entry], opts: LsOptions) -> None:
             name += f" -> {e.link_target}"
         suffix = f" {e.git}" if e.git else ""
         print(f"{mode} {nlink:>2} {uname:<8} {gname:<8} {size_str:>8} {time_str} {name}{suffix}")
+
+
 def render_json(entries: list[Entry], opts: LsOptions) -> None:
     out = []
     for e in entries:
@@ -273,6 +308,8 @@ def render_json(entries: list[Entry], opts: LsOptions) -> None:
             "type": kind,
         })
     print(jsonlib.dumps(out, indent=2))
+
+
 def dispatch_render(entries: list[Entry], opts: LsOptions) -> None:
     if opts.json:
         render_json(entries, opts)
@@ -280,6 +317,8 @@ def dispatch_render(entries: list[Entry], opts: LsOptions) -> None:
         render_long(entries, opts)
     else:
         render_flat(entries, opts)
+
+
 def render_tree(
     directory: Path,
     opts: LsOptions,
@@ -301,6 +340,8 @@ def render_tree(
         if statlib.S_ISDIR(e.st.st_mode) and not statlib.S_ISLNK(e.st.st_mode):
             child_prefix = prefix + ("    " if last else "\u2502   ")
             render_tree(Path(e.path), opts, child_prefix, is_root=False)
+
+
 def recursive_ls(root: Path, opts: LsOptions) -> None:
     all_entries: list[Entry] = []
     try:
@@ -331,6 +372,8 @@ def recursive_ls(root: Path, opts: LsOptions) -> None:
         all_entries.append(Entry(str(p), p.name, st, link))
     all_entries = sort_entries(all_entries, opts)
     dispatch_render(all_entries, opts)
+
+
 def run_stems(args: argparse.Namespace) -> int:
     root = Path(args.directory)
     try:
@@ -354,6 +397,8 @@ def run_stems(args: argparse.Namespace) -> int:
     if names:
         sys.stdout.write(args.sep)
     return 0
+
+
 def run_dirs(args: argparse.Namespace) -> int:
     root = Path(args.directory)
     try:
@@ -368,6 +413,8 @@ def run_dirs(args: argparse.Namespace) -> int:
         except OSError:
             continue
     return 0
+
+
 def run_ls(args: argparse.Namespace) -> int:
     opts = LsOptions(
         recursive=args.recursive,
@@ -424,6 +471,8 @@ def run_ls(args: argparse.Namespace) -> int:
         else:
             dispatch_render(sort_entries(list_entries(path, opts), opts), opts)
     return exit_code
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="listpy",
@@ -488,6 +537,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ls.add_argument("--time-format", default="%H:%M")
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -499,5 +550,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_ls(args)
     parser.print_help()
     return 2
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

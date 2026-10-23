@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import json
 from multiprocessing import Pool
 from pathlib import Path
 import re
-
 
 _BASE = (
     "\U0001f300-\U0001f5ff"

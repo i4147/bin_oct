@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+
 HOME = Path.home()
 ZSHRC = HOME / ".zshrc"
 CUSTOM_DIR = HOME / ".config" / "zsh.d"
@@ -15,6 +16,8 @@ FUNCTION_RE = re.compile(
     r"""^\s*(?:function\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(\s*\))?|"""
     r"""([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\))\s*\{"""
 )
+
+
 def config_files():
     files = []
     if ZSHRC.is_file():
@@ -24,6 +27,8 @@ def config_files():
     if OH_MY_ZSH.is_dir():
         files.extend(sorted(OH_MY_ZSH.rglob("*.zsh")))
     return list(dict.fromkeys(files))
+
+
 def collect_definitions(files):
     aliases = defaultdict(list)
     functions = defaultdict(list)
@@ -42,6 +47,8 @@ def collect_definitions(files):
                 name = function_match.group(1) or function_match.group(2)
                 functions[name].append((path, number))
     return aliases, functions
+
+
 def path_binaries():
     occurrences = defaultdict(list)
     path_dirs = []
@@ -59,8 +66,12 @@ def path_binaries():
         except OSError:
             pass
     return occurrences, path_dirs
+
+
 def show_locations(locations):
     return ", ".join(f"{path}:{line}" for path, line in locations)
+
+
 def main():
     files = config_files()
     aliases, functions = collect_definitions(files)
@@ -117,5 +128,7 @@ def main():
         print("None found.")
     print("\nNote: This is a static scan. It does not evaluate zsh conditionals,")
     print("sourced files, generated aliases, or runtime plugin behavior.")
+
+
 if __name__ == "__main__":
     main()

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import bz2
 import contextlib
@@ -14,7 +12,6 @@ import tarfile
 from typing import Callable
 import zipfile
 import zlib
-
 
 try:
     import brotli as _brotli_mod

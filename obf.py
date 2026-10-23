@@ -2,6 +2,8 @@
 from __future__ import annotations
 import string
 import sys
+
+
 def varnames():
     letters = string.ascii_letters
     for c in letters:
@@ -11,6 +13,8 @@ def varnames():
     for c in letters:
         for d in letters:
             yield c + d + "z"
+
+
 def obfuscate(src: str) -> str:
     names = varnames()
     out = []
@@ -24,6 +28,8 @@ def obfuscate(src: str) -> str:
         eval_parts.append(f"${name}")
     out.append('eval "' + "".join(eval_parts) + '"')
     return "\n".join(out)
+
+
 if __name__ == "__main__":
     src = open(sys.argv[1]).read()
     print(obfuscate(src))

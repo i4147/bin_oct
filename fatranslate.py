@@ -10,19 +10,30 @@ import time
 from typing import Final, Sequence
 from deep_translator import GoogleTranslator
 from loguru import logger
+
 PERSIAN_RE: Final = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
+
+
 def contains_persian(text: str) -> bool:
     return bool(PERSIAN_RE.search(text))
+
+
 def read_nonempty_lines(path: Path) -> list[str]:
     with path.open(encoding="utf-8") as file:
         return [line.strip() for line in file if line.strip()]
+
+
 def write_json(path: Path, data: dict[str, str]) -> None:
     with path.open("w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
+
+
 def rewrite_lines(path: Path, original_lines: Sequence[str], translations: dict[str, str]) -> None:
     with path.open("w", encoding="utf-8") as file:
         for line in original_lines:
             file.write(f"{translations.get(line, line)}\n")
+
+
 def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
     chunks: list[list[str]] = []
     current_chunk: list[str] = []
@@ -45,6 +56,8 @@ def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
     if current_chunk:
         chunks.append(current_chunk)
     return chunks
+
+
 def translate_with_retry(
     text: str,
     source: str,
@@ -71,6 +84,8 @@ def translate_with_retry(
             if attempt < retries - 1:
                 time.sleep(retry_delay)
     return None
+
+
 def _translate_chunk_worker(
     args: tuple[list[str], str, str, int, float],
 ) -> tuple[list[str], str | None]:
@@ -85,6 +100,8 @@ def _translate_chunk_worker(
         context="chunk starting with",
     )
     return lines, translated
+
+
 def _translate_word_worker(
     args: tuple[str, str, str, int, float],
 ) -> tuple[str, str | None]:
@@ -98,6 +115,8 @@ def _translate_word_worker(
         context="word",
     )
     return word, translated
+
+
 def translate_chunks(
     chunks: Sequence[Sequence[str]],
     source: str,
@@ -142,6 +161,8 @@ def translate_chunks(
         pool.close()
         pool.join()
     return translations
+
+
 def translate_words(
     words: Sequence[str],
     source: str,
@@ -169,6 +190,8 @@ def translate_words(
             else:
                 logger.error("Could not translate: {}", word)
     return translations
+
+
 def cmd_lines(args: argparse.Namespace) -> int:
     input_path: Path = args.input_file
     if not input_path.exists():
@@ -227,6 +250,8 @@ def cmd_lines(args: argparse.Namespace) -> int:
             logger.error("Error updating input file: {}", exc)
             return 1
     return 0
+
+
 def cmd_words(args: argparse.Namespace) -> int:
     input_path: Path = args.input_file
     if not input_path.exists():
@@ -265,6 +290,8 @@ def cmd_words(args: argparse.Namespace) -> int:
         logger.error("Error saving results: {}", exc)
         return 1
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -387,6 +414,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     words_parser.set_defaults(func=cmd_words)
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -396,5 +425,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     logger.remove()
     logger.add(sys.stderr, level=getattr(args, "log_level", "INFO"))
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

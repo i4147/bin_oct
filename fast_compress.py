@@ -12,6 +12,7 @@ import sys
 from typing import TYPE_CHECKING
 from loguru import logger
 import zstandard as zstd
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 try:
@@ -21,6 +22,7 @@ except ImportError:
 try:
     from dh import fsz
 except ImportError:
+
     def fsz(num: float) -> str:
         value = float(num)
         for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -28,6 +30,8 @@ except ImportError:
                 return f"{value:3.1f} {unit}"
             value /= 1024.0
         return f"{value:.1f} PB"
+
+
 DEFAULT_ZSTD_LEVEL = 3
 DEFAULT_ZSTD_THREADS = 4
 DEFAULT_ZSTD_POOL_WORKERS = 8
@@ -200,13 +204,17 @@ XZ_SKIP_EXTENSIONS = frozenset({
     ".xza",
 })
 XZ_EXCLUDED_DIR_NAMES = frozenset({".git", "__pycache__", ".venv", "venv", ".env", "node_modules"})
+
+
 @dataclass
 class Stats:
     original_size: int = 0
     compressed_size: int = 0
+
     def add(self, original: int, compressed: int) -> None:
         self.original_size += original
         self.compressed_size += compressed
+
     def savings(self, scale: float = 100.0) -> tuple[int, float, float]:
         if self.original_size == 0:
             return (0, 0.0, 0.0)
@@ -214,6 +222,8 @@ class Stats:
         compressed_pct = self.compressed_size / self.original_size * scale
         saved_pct = saved / self.original_size * scale
         return (saved, compressed_pct, saved_pct)
+
+
 @dataclass
 class ScanStats:
     dirs: int = 0
@@ -224,6 +234,8 @@ class ScanStats:
     skipped_dirs: int = 0
     skipped_media: int = 0
     skipped_existing: int = 0
+
+
 def resolve_directory(positional: str | None, flag: str | None) -> Path | None:
     if positional is not None and flag is not None and positional != flag:
         logger.error("Specify directory either positionally or with --dir, not both differently")
@@ -239,6 +251,8 @@ def resolve_directory(positional: str | None, flag: str | None) -> Path | None:
         logger.error(f"'{root}' is not a directory")
         return None
     return root
+
+
 def is_excluded_name(
     name: str,
     excluded_names: set[str] | frozenset[str],
@@ -247,6 +261,8 @@ def is_excluded_name(
     if name in excluded_names:
         return True
     return any(fnmatch.fnmatch(name, pattern) for pattern in excluded_patterns)
+
+
 def is_editable_package_dir(path: Path) -> bool:
     try:
         for child in path.iterdir():
@@ -265,6 +281,8 @@ def is_editable_package_dir(path: Path) -> bool:
         return False
     except (PermissionError, OSError):
         return False
+
+
 def collect_zstd_tasks(
     root: Path,
     compress: bool,
@@ -353,13 +371,17 @@ def collect_zstd_tasks(
                 stats.files += 1
                 tasks.append((path, out))
     if args.scan_order == "largest":
+
         def size_key(item: tuple[Path, Path]) -> int:
             try:
                 return item[0].stat().st_size
             except OSError:
                 return 0
+
         tasks.sort(key=size_key, reverse=True)
     return tasks, stats
+
+
 def zstd_compress_file(
     path: Path,
     out: Path,
@@ -396,6 +418,8 @@ def zstd_compress_file(
             if out.exists():
                 out.unlink()
         return (False, path, out, 0, 0, str(exc))
+
+
 def zstd_decompress_file(
     path: Path,
     out: Path,
@@ -421,6 +445,8 @@ def zstd_decompress_file(
             if out.exists():
                 out.unlink()
         return (False, path, out, 0, 0, str(exc))
+
+
 def _handle_zstd_result(
     result: tuple[bool, Path, Path, int, int, str | None],
     stats: Stats,
@@ -449,6 +475,8 @@ def _handle_zstd_result(
             print(f"\rProgress: [{bar}] {index}/{total} files", end="", flush=True)
     else:
         errors.append((path, error or "unknown error"))
+
+
 def run_zstd(args: argparse.Namespace) -> int:
     compress = args.compress or not args.decompress
     root = resolve_directory(args.directory, args.dir_flag)
@@ -560,6 +588,8 @@ def run_zstd(args: argparse.Namespace) -> int:
     else:
         logger.warning("No files were processed.")
     return 0
+
+
 def collect_xz_tasks(
     root: Path,
     compress: bool,
@@ -580,6 +610,8 @@ def collect_xz_tasks(
             continue
         tasks.append(path)
     return sorted(tasks)
+
+
 def xz_compress_file(
     path: Path,
     preset: int,
@@ -596,6 +628,8 @@ def xz_compress_file(
         return (True, path, out, len(data), len(compressed), None)
     except Exception as exc:
         return (False, path, path.parent / (path.name + ".xz"), 0, 0, str(exc))
+
+
 def xz_decompress_file(
     path: Path,
     remove_original: bool,
@@ -610,6 +644,8 @@ def xz_decompress_file(
         return (True, path, out, len(data), len(compressed), None)
     except Exception as exc:
         return (False, path, path.parent / path.stem, 0, 0, str(exc))
+
+
 def run_xz(args: argparse.Namespace) -> int:
     if lzma_mt is None:
         logger.error("lzma_mt is not installed; xz subcommand is unavailable")
@@ -682,6 +718,8 @@ def run_xz(args: argparse.Namespace) -> int:
     print(f"Total successful: {success}")
     print(f"Total failed: {len(errors)}")
     return 0 if not errors else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Recursively compress/decompress files with zstd or xz.",
@@ -854,6 +892,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     xz_parser.add_argument("--dry-run", action="store_true", help="Show actions without executing")
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args_list = list(sys.argv[1:] if argv is None else argv)
@@ -867,5 +907,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_xz(args)
     parser.print_help()
     return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

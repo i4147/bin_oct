@@ -1,14 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import InterpreterPoolExecutor
 from pathlib import Path
 import re
-
 from dh import SHEBANG_MAP, is_binary
-
 
 SKIP_DIRS = {
     ".git",

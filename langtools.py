@@ -9,6 +9,7 @@ import re
 import shutil
 import sys
 from typing import Iterator, Optional
+
 try:
     import pycld2
 except ImportError:
@@ -73,6 +74,8 @@ TXT_EXT = {
 DEFAULT_MOVE_TARGET = "chinese_files"
 DEFAULT_NONENG_FILE = "noneng.txt"
 PROGRESS = True
+
+
 def contains_chinese(text: str) -> bool:
     for ch in text:
         d = ord(ch)
@@ -80,6 +83,8 @@ def contains_chinese(text: str) -> bool:
             if lo <= d <= hi:
                 return True
     return False
+
+
 def read_text_any_encoding(path: Path) -> str:
     for enc in ENCODINGS:
         try:
@@ -87,6 +92,8 @@ def read_text_any_encoding(path: Path) -> str:
         except UnicodeDecodeError:
             continue
     return path.read_bytes().decode("utf-8", errors="replace")
+
+
 def safe_text_from_bytes(data: bytes) -> str:
     for enc in ENCODINGS + ("latin-1",):
         try:
@@ -94,6 +101,8 @@ def safe_text_from_bytes(data: bytes) -> str:
         except UnicodeDecodeError:
             continue
     return data.decode("utf-8", errors="replace")
+
+
 def unique_path(directory: Path, name: str) -> Path:
     target = directory / name
     if not target.exists():
@@ -105,6 +114,8 @@ def unique_path(directory: Path, name: str) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
+
+
 def is_probably_text_bytes(data: bytes) -> bool:
     if not data:
         return False
@@ -113,9 +124,13 @@ def is_probably_text_bytes(data: bytes) -> bool:
         return False
     good = sum(1 for b in sample if 9 <= b <= 13 or 32 <= b <= 126 or b >= 128)
     return good / len(sample) > 0.7
+
+
 def read_file_bytes(path: Path, max_bytes: Optional[int] = None) -> bytes:
     with open(path, "rb") as fh:
         return fh.read(max_bytes) if max_bytes else fh.read()
+
+
 def iter_files(
     root: Path,
     *,
@@ -140,10 +155,14 @@ def iter_files(
             p = base / fn
             if _matches_ext(p, exts):
                 yield p
+
+
 def _matches_ext(p: Path, exts: Optional[set[str]]) -> bool:
     if not exts:
         return True
     return p.suffix.lower().lstrip(".") in exts
+
+
 def _require_pycld2():
     if pycld2 is None:
         print(
@@ -154,6 +173,8 @@ def _require_pycld2():
         )
         sys.exit(1)
     return pycld2
+
+
 def _require_gcld3():
     if gcld3 is None:
         print(
@@ -162,6 +183,8 @@ def _require_gcld3():
         )
         sys.exit(1)
     return gcld3
+
+
 def detect_with_pycld2(text: str, min_bytes: int = 20):
     if not text or len(text) < min_bytes:
         return (None, None, 0)
@@ -173,6 +196,8 @@ def detect_with_pycld2(text: str, min_bytes: int = 20):
     except Exception:
         pass
     return (None, None, 0)
+
+
 def cmd_move_chinese(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     target_dir = (root / args.target).resolve()
@@ -196,6 +221,8 @@ def cmd_move_chinese(args: argparse.Namespace) -> int:
             moved += 1
     print(f'\n✅ Moved {moved} file(s) into "{target_dir.name}/".')
     return 0
+
+
 def _write_extraction(src: Path, kept: list[str], removed: list[str], out_name: str = DEFAULT_NONENG_FILE) -> None:
     if not removed:
         print("ℹ️  No non-English lines found to extract. Base file left unchanged.")
@@ -205,6 +232,8 @@ def _write_extraction(src: Path, kept: list[str], removed: list[str], out_name: 
     print(f"💾 Extracted lines written safely to: {out.resolve()}")
     src.write_text("\n".join(kept) + "\n", encoding="utf-8")
     print("🔄 Original file updated in-place (non-English elements removed).")
+
+
 def cmd_filter_lines(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
@@ -213,6 +242,8 @@ def cmd_filter_lines(args: argparse.Namespace) -> int:
     if args.strict:
         return _filter_strict(path, args.move, args.threshold, args.out)
     return _filter_simple(path, args.move, args.out)
+
+
 def _filter_simple(path: Path, move: bool, out_name: str) -> int:
     gcld3_mod = _require_gcld3()
     ident = gcld3_mod.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)
@@ -241,6 +272,8 @@ def _filter_simple(path: Path, move: bool, out_name: str) -> int:
     if move:
         _write_extraction(path, kept, removed, out_name)
     return 0
+
+
 def _filter_strict(path: Path, move: bool, threshold: float, out_name: str) -> int:
     gcld3_mod = _require_gcld3()
     try:
@@ -293,6 +326,8 @@ def _filter_strict(path: Path, move: bool, threshold: float, out_name: str) -> i
     if move:
         _write_extraction(path, kept, removed, out_name)
     return 0
+
+
 def cmd_find_files(args: argparse.Namespace) -> int:
     _require_pycld2()
     root = Path(args.directory).resolve()
@@ -306,6 +341,8 @@ def cmd_find_files(args: argparse.Namespace) -> int:
         stats = _scan_simple(root, args.min_bytes, args.max_bytes, show_progress=not args.no_progress)
         _report_simple(stats, only_non_english=not args.all)
     return 0
+
+
 def _scan_simple(root: Path, min_bytes: int, max_bytes: int, show_progress: bool) -> dict:
     stats = {
         "total_files": 0,
@@ -349,6 +386,8 @@ def _scan_simple(root: Path, min_bytes: int, max_bytes: int, show_progress: bool
     if show_progress:
         print()
     return stats
+
+
 def _report_simple(stats: dict, only_non_english: bool) -> None:
     print("\n" + "=" * 40)
     print("\n📊 SCAN RESULTS")
@@ -382,6 +421,8 @@ def _report_simple(stats: dict, only_non_english: bool) -> None:
                 print(f"    ... and {len(rows) - 10} more")
     else:
         print("\n✅ No non-English files found!")
+
+
 def _scan_detailed(root: Path, min_bytes: int, max_bytes: int) -> dict:
     stats = {
         "total_files": 0,
@@ -438,6 +479,8 @@ def _scan_detailed(root: Path, min_bytes: int, max_bytes: int) -> dict:
             stats["non_english"][name].append(f)
             stats["directory_stats"][rel_dir]["non_english"] += 1
     return stats
+
+
 def _report_detailed(stats: dict, show_files: bool) -> None:
     print("\n" + "=" * 40)
     print("📊 LANGUAGE DETECTION RESULTS")
@@ -486,6 +529,8 @@ def _report_detailed(stats: dict, show_files: bool) -> None:
         print("✅ All files appear to be in English! No translation needed.")
     else:
         print(f"📢 Found {non_en} non-English files that may need translation.")
+
+
 def cmd_find_lines(args: argparse.Namespace) -> int:
     _require_pycld2()
     root = Path(args.root)
@@ -525,6 +570,8 @@ def cmd_find_lines(args: argparse.Namespace) -> int:
                     hits += 1
     print(f"Scanned files: {scanned}; non-English lines found: {hits}; results saved to {out_path}")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="langtool.py",
@@ -665,6 +712,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fnd.set_defaults(func=cmd_find_lines)
     return p
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -675,5 +724,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\n⚠️  Interrupted by user", file=sys.stderr)
         return 130
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

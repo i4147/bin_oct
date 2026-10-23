@@ -8,8 +8,11 @@ from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
 import minify_html as mh
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable
+
+
 class _HTMLValidator(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -31,11 +34,14 @@ class _HTMLValidator(HTMLParser):
             "track",
             "wbr",
         }
+
     def handle_starttag(self, tag: str, attrs) -> None:
         if tag not in self._void:
             self._stack.append(tag)
+
     def handle_startendtag(self, tag: str, attrs) -> None:
         pass
+
     def handle_endtag(self, tag: str) -> None:
         if tag in self._void:
             return
@@ -52,10 +58,13 @@ class _HTMLValidator(HTMLParser):
                 self._stack.pop()
         else:
             self.errors.append(f"stray </{tag}>")
+
     def close(self) -> None:
         super().close()
         while self._stack:
             self.errors.append(f"unclosed <{self._stack.pop()}>")
+
+
 def validate_html(data: str) -> list[str]:
     v = _HTMLValidator()
     try:
@@ -64,14 +73,20 @@ def validate_html(data: str) -> list[str]:
     except Exception as e:
         return [f"parse error: {e}"]
     return v.errors
+
+
 def _minify_html_backend(data: str) -> str:
     return mh.minify(data)
+
+
 BACKENDS: dict[str, Callable[[str], str]] = {
     "minify-html": _minify_html_backend,
 }
 DEFAULT_BACKEND: str = "minify-html"
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "apply_async", "imap_unordered")
 DEFAULT_POOL_METHOD: str = "imap_unordered"
+
+
 def process_file(path: Path, backend: str) -> tuple[str, int, int, str]:
     rel = str(path)
     minify_fn = BACKENDS[backend]
@@ -95,6 +110,8 @@ def process_file(path: Path, backend: str) -> tuple[str, int, int, str]:
         return rel, before, before, f"write error: {e}"
     after = len(minified.encode("utf-8"))
     return rel, before, after, ""
+
+
 def iter_html_files(targets: Iterable[Path]) -> Generator[Path, None, None]:
     seen: set[Path] = set()
     for target in targets:
@@ -112,8 +129,12 @@ def iter_html_files(targets: Iterable[Path]) -> Generator[Path, None, None]:
                     if p.is_file() and p not in seen:
                         seen.add(p)
                         yield p
+
+
 def _starmap_adapter(backend: str) -> Callable[[Path], tuple[str, int, int, str]]:
     return partial(process_file, backend=backend)
+
+
 def run_pool(
     files: list[Path],
     backend: str,
@@ -136,6 +157,8 @@ def run_pool(
         else:
             msg = f"unknown pool method: {pool_method}"
             raise ValueError(msg)
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Minify HTML files in place using a pluggable backend.",
@@ -167,6 +190,8 @@ def parse_args() -> argparse.Namespace:
         help="Number of worker processes (default: CPU count).",
     )
     return ap.parse_args()
+
+
 def _fmt_bytes(n: int) -> str:
     sign = "-" if n < 0 else ""
     n = abs(n)
@@ -177,6 +202,8 @@ def _fmt_bytes(n: int) -> str:
             return f"{sign}{n:.2f} {unit}"
         n /= 1024
     return f"{sign}{n:.2f} GiB"
+
+
 def main() -> int:
     args = parse_args()
     targets: list[Path] = args.paths or [Path.cwd()]
@@ -204,6 +231,8 @@ def main() -> int:
     print(f"Total space freed: {_fmt_bytes(total_saved)}")
     print(f"Done: {changed_count}/{len(files)} file(s) minified, {error_count} error(s).")
     return 0 if error_count == 0 else 2
+
+
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     raise SystemExit(main())

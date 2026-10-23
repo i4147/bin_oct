@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import bz2
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -14,13 +12,10 @@ import shutil
 import sys
 import tarfile
 from typing import IO, Any, Final, Literal, cast
-
 from compression import zstd
 
 Compressor = Literal["xz", "gz", "bz2", "zstd", "lz4"]
-
 COMPRESSORS: Final[tuple[Compressor, ...]] = ("xz", "gz", "bz2", "zstd", "lz4")
-
 EXTENSIONS: Final[dict[Compressor, str]] = {
     "xz": ".tar.xz",
     "gz": ".tar.gz",
@@ -76,11 +71,9 @@ def _compress_one(args_tuple: tuple[Path, Compressor, bool, bool]) -> tuple[Path
         archive = directory.with_name(directory.name + EXTENSIONS[compressor])
         if archive.exists() and not force:
             return archive, False, "archive already exists (skipped)"
-
         with _open_writer(archive, compressor) as fh:
             with tarfile.open(fileobj=fh, mode="w", format=tarfile.PAX_FORMAT) as tar:
                 tar.add(directory, arcname=directory.name, recursive=True)
-
         removed = False
         if not keep:
             shutil.rmtree(directory)
@@ -96,7 +89,6 @@ def _decompress_one(args_tuple: tuple[Path, bool]) -> tuple[Path, bool, str | No
         with _open_reader(archive) as fh:
             with tarfile.open(fileobj=fh, mode="r:") as tar:
                 tar.extractall(path=archive.parent)
-
         removed = False
         if not keep:
             archive.unlink()
@@ -154,37 +146,29 @@ def main() -> None:
         help="Parallel execution backend method",
     )
     ns = parser.parse_args()
-
     root: Path = ns.directory.resolve()
     compressor: Compressor = cast(Compressor, ns.compressor)
     decompress: bool = bool(ns.decompress)
     force: bool = bool(ns.force)
     keep: bool = bool(ns.keep)
     mp_method: Literal["mp-map", "mp-imap", "process-pool", "thread-pool"] = ns.mp_method
-
     if not root.is_dir():
         print(f"error: not a directory: {root}", file=sys.stderr)
         raise SystemExit(2)
-
     cpu = os.cpu_count() or 4
-
     if decompress:
         subdirs = [p for p in root.iterdir() if p.is_dir()]
         if subdirs:
             print(f"error: subdirectories exist in {root}, refusing to decompress", file=sys.stderr)
             raise SystemExit(1)
-
         valid_suffixes = tuple(EXTENSIONS.values())
         targets: list[Path] = sorted(p for p in root.iterdir() if p.is_file() and p.name.endswith(valid_suffixes))
         if not targets:
             return
-
         max_workers: int = ns.jobs if isinstance(ns.jobs, int) and ns.jobs > 0 else min(len(targets), cpu)
         task_args = [(archive, keep) for archive in targets]
-
         print(f"Decompressing {len(targets)} archives using {mp_method} with {max_workers} worker(s)...")
         results = parallel_map(mp_method, _decompress_one, task_args, max_workers=max_workers)
-
         for res in results:
             archive, removed, err = res
             if err:
@@ -197,13 +181,10 @@ def main() -> None:
         if not targets:
             print(f"No top-level subdirectories found in {root}.")
             return
-
         max_workers: int = ns.jobs if isinstance(ns.jobs, int) and ns.jobs > 0 else min(len(targets), cpu)
         task_args = [(d, compressor, force, keep) for d in targets]
-
         print(f"Compressing {len(targets)} top-level subdirectories using {mp_method} with {max_workers} worker(s)...")
         results = parallel_map(mp_method, _compress_one, task_args, max_workers=max_workers)
-
         for res in results:
             target_path, removed, err = res
             if err:

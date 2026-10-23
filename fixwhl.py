@@ -5,6 +5,8 @@ from email.parser import Parser
 from pathlib import Path
 from zipfile import ZipFile
 from packaging.utils import canonicalize_name
+
+
 def parse_metadata_from_wheel(wheel_path: Path):
     with ZipFile(wheel_path) as zf:
         meta_name = next(
@@ -23,6 +25,8 @@ def parse_metadata_from_wheel(wheel_path: Path):
             raise ValueError(msg_0)
         dist = canonicalize_name(name).replace("-", "_")
         return dist, version
+
+
 def safe_target_path(dest: Path) -> Path:
     if not dest.exists():
         return dest
@@ -32,6 +36,8 @@ def safe_target_path(dest: Path) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
+
+
 def restore_wheel_names(folder: str | Path) -> None:
     folder = Path(folder)
     conflict_dir = folder / "_wheel_name_conflicts"
@@ -59,5 +65,7 @@ def restore_wheel_names(folder: str | Path) -> None:
     for pkg, versions in sorted(versions_by_pkg.items()):
         if len(versions) > 1:
             print(f"MULTIPLE VERSIONS: {pkg} -> {sorted(versions)}")
+
+
 if __name__ == "__main__":
     restore_wheel_names(".")

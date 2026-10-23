@@ -21,6 +21,7 @@ from loguru import logger
 import lz4.frame
 import py7zr
 import zstandard as zstd
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 CHUNK: int = 1024 * 1024
@@ -52,12 +53,16 @@ TAR_UID: int = 0
 TAR_GID: int = 0
 TAR_UNAME: str = "root"
 TAR_GNAME: str = "root"
+
+
 def fmt_size(n: float) -> str:
     for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
         if abs(n) < 1024.0:
             return f"{n:6.2f} {unit}"
         n /= 1024.0
     return f"{n:6.2f} PiB"
+
+
 def dir_total_size(root: Path) -> int:
     total = 0
     for p in root.rglob("*"):
@@ -67,9 +72,13 @@ def dir_total_size(root: Path) -> int:
         except OSError:
             pass
     return total
+
+
 def get_files(root: Path, exts: Iterable[str]) -> list[Path]:
     exts = tuple(exts)
     return sorted(p for p in root.iterdir() if p.is_file() and any(p.name.endswith(e) for e in exts))
+
+
 def unique_path(p: Path) -> Path:
     if not p.exists():
         return p
@@ -80,6 +89,8 @@ def unique_path(p: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
+
+
 def parallel_map(func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS) -> list[Any]:
     if not items:
         return []
@@ -87,6 +98,8 @@ def parallel_map(func: Callable, items: list[Any], workers: int = DEFAULT_WORKER
         return [func(x) for x in items]
     with Pool(processes=workers) as pool:
         return list(pool.map(func, items))
+
+
 def parallel_imap(func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS) -> list[Any]:
     if not items:
         return []
@@ -94,6 +107,8 @@ def parallel_imap(func: Callable, items: list[Any], workers: int = DEFAULT_WORKE
         return [func(x) for x in items]
     with Pool(processes=workers) as pool:
         return list(pool.imap_unordered(func, items))
+
+
 def _copy_stream(src: BinaryIO, dst: BinaryIO) -> int:
     total = 0
     while True:
@@ -103,6 +118,8 @@ def _copy_stream(src: BinaryIO, dst: BinaryIO) -> int:
         dst.write(chunk)
         total += len(chunk)
     return total
+
+
 @contextlib.contextmanager
 def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
     if codec == "gz":
@@ -128,6 +145,8 @@ def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
     else:
         msg = f"Unsupported source codec: {codec}"
         raise ValueError(msg)
+
+
 @contextlib.contextmanager
 def open_compressor(dst: Path, codec: str, level: int = DEFAULT_LEVEL) -> Iterator[BinaryIO]:
     if codec == "gz":
@@ -157,6 +176,8 @@ def open_compressor(dst: Path, codec: str, level: int = DEFAULT_LEVEL) -> Iterat
     else:
         msg = f"Unsupported target codec: {codec}"
         raise ValueError(msg)
+
+
 def _parse_tar_codec_name(p: Path) -> Optional[tuple[str, str]]:
     parts = p.name.split(".")
     if len(parts) < 3 or parts[-2] != "tar":
@@ -164,6 +185,8 @@ def _parse_tar_codec_name(p: Path) -> Optional[tuple[str, str]]:
     codec = parts[-1].lower()
     stem = ".".join(parts[:-2]) or "archive"
     return stem, codec
+
+
 def _extract_7z_to_tar(src: Path, dst: Path) -> None:
     tmp = Path(tempfile.mkdtemp(prefix="tar7z_dec_"))
     try:
@@ -184,6 +207,8 @@ def _extract_7z_to_tar(src: Path, dst: Path) -> None:
                     p.unlink()
         with contextlib.suppress(Exception):
             tmp.rmdir()
+
+
 def _tar_codec_job(job: tuple[str, str, int]) -> tuple[str, bool, str]:
     src_str, target, level = job
     src = Path(src_str)
@@ -220,6 +245,8 @@ def _tar_codec_job(job: tuple[str, str, int]) -> tuple[str, bool, str]:
         with contextlib.suppress(Exception):
             if tmp.exists():
                 tmp.unlink()
+
+
 def run_tar_codec(args: argparse.Namespace) -> int:
     root: Path = args.root
     target: str = args.target
@@ -251,12 +278,16 @@ def run_tar_codec(args: argparse.Namespace) -> int:
     else:
         print("No disk usage change (by summed file sizes).")
     return 0
+
+
 def detect_archive_ext(p: Path) -> Optional[str]:
     name = p.name.lower()
     for ext in _ARCHIVE_SUFFIXES:
         if name.endswith(ext):
             return ext
     return None
+
+
 def _iter_archive_members(src: Path, ext: str) -> Iterator[tuple[str, bytes]]:
     if ext in ZIP_FORMATS:
         with zipfile.ZipFile(src, "r") as zf:
@@ -308,6 +339,8 @@ def _iter_archive_members(src: Path, ext: str) -> Iterator[tuple[str, bytes]]:
         return
     msg = f"unsupported input extension: {ext}"
     raise ValueError(msg)
+
+
 def _write_archive(
     members: Iterable[tuple[str, bytes]],
     dst: Path,
@@ -346,6 +379,8 @@ def _write_archive(
         tarfile.open(fileobj=stream, mode="w|") as tf,
     ):
         return _tar_add_members(tf, members)
+
+
 def _tar_add_members(tf: tarfile.TarFile, members: Iterable[tuple[str, bytes]]) -> int:
     total = 0
     for name, data in members:
@@ -354,6 +389,8 @@ def _tar_add_members(tf: tarfile.TarFile, members: Iterable[tuple[str, bytes]]) 
         tf.addfile(info, io.BytesIO(data))
         total += len(data)
     return total
+
+
 def _archive_convert_job(job: tuple[str, str, int]) -> tuple[str, int, bool, str]:
     src_str, target_ext, level = job
     src = Path(src_str)
@@ -386,6 +423,8 @@ def _archive_convert_job(job: tuple[str, str, int]) -> tuple[str, int, bool, str
             if dst.exists():
                 dst.unlink()
         return src_str, 0, False, f"error: {e}"
+
+
 def run_archive_convert(args: argparse.Namespace) -> int:
     inputs: list[Path] = []
     if not args.inputs:
@@ -423,6 +462,8 @@ def run_archive_convert(args: argparse.Namespace) -> int:
     else:
         logger.info("Net disk usage change: none")
     return 0
+
+
 def run_br2zst(args: argparse.Namespace) -> int:
     root: Path = args.root
     files = sorted(p for p in root.rglob("*.json.br") if p.is_file())
@@ -467,6 +508,8 @@ def run_br2zst(args: argparse.Namespace) -> int:
         f"{fmt_size(total_out):>12} {fmt_size(diff):>12}  {pct:>6.2f}%"
     )
     return 0
+
+
 def _single_transcode(
     src: Path,
     dst_suffix: str,
@@ -503,6 +546,8 @@ def _single_transcode(
             if dst.exists():
                 dst.unlink()
         return (str(src), False, f"Error: {e!s}")
+
+
 def _report_single_transcode(results: list[tuple[str, bool, str]]) -> int:
     ok = fail = 0
     total_in = total_out = 0
@@ -532,6 +577,8 @@ def _report_single_transcode(results: list[tuple[str, bool, str]]) -> int:
     if ok > 0:
         print("\nNote: Original files have been removed.")
     return 0 if fail == 0 else 1
+
+
 def run_gz2xz(args: argparse.Namespace) -> int:
     files = get_files(args.root, [".gz"])
     if not files:
@@ -548,6 +595,8 @@ def run_gz2xz(args: argparse.Namespace) -> int:
         )
     )
     return _report_single_transcode(results)
+
+
 def run_xz2gz(args: argparse.Namespace) -> int:
     files = get_files(args.root, [".xz"])
     if not files:
@@ -570,22 +619,32 @@ def run_xz2gz(args: argparse.Namespace) -> int:
         )
     )
     return _report_single_transcode(results)
+
+
 def _zip_dt_to_ts(date_time: tuple[int, ...]) -> float:
     try:
         return datetime(*date_time).timestamp()
     except (ValueError, TypeError):
         return datetime.now().timestamp()
+
+
 def _tar_xz_name_for_whl(whl: Path) -> Path:
     return whl.with_suffix(".tar.xz")
+
+
 def _whl_name_for_tar_xz(src: Path) -> Path:
     name = src.name
     for suf in (".tar.xz", ".txz"):
         if name.lower().endswith(suf):
             return src.with_name(name[: -len(suf)] + ".whl")
     return src.with_suffix(".whl")
+
+
 def _is_tar_xz(p: Path) -> bool:
     n = p.name.lower()
     return n.endswith((".tar.xz", ".txz"))
+
+
 def _copy_zipinfo_to_tarinfo(zinfo: zipfile.ZipInfo, tinfo: tarfile.TarInfo) -> tarfile.TarInfo:
     tinfo.size = zinfo.file_size
     if zinfo.date_time:
@@ -601,6 +660,8 @@ def _copy_zipinfo_to_tarinfo(zinfo: zipfile.ZipInfo, tinfo: tarfile.TarInfo) -> 
     tinfo.uname = TAR_UNAME
     tinfo.gname = TAR_GNAME
     return tinfo
+
+
 def _copy_tarinfo_to_zipinfo(tinfo: tarfile.TarInfo, zinfo: zipfile.ZipInfo) -> zipfile.ZipInfo:
     if getattr(tinfo, "mtime", None):
         dt = datetime.fromtimestamp(tinfo.mtime)
@@ -608,6 +669,8 @@ def _copy_tarinfo_to_zipinfo(tinfo: tarfile.TarInfo, zinfo: zipfile.ZipInfo) -> 
     if getattr(tinfo, "mode", None):
         zinfo.external_attr = (tinfo.mode & 0xFFFF) << 16
     return zinfo
+
+
 def _whl_to_tar_xz(whl: Path, remove_original: bool) -> tuple[bool, str, Optional[Path]]:
     if not whl.exists() or not whl.is_file():
         return False, f"Invalid file: {whl}", None
@@ -644,6 +707,8 @@ def _whl_to_tar_xz(whl: Path, remove_original: bool) -> tuple[bool, str, Optiona
                 dst,
             )
     return True, f"Converted {count} files to tar.xz", dst
+
+
 def _tar_xz_to_whl(src: Path, remove_original: bool) -> tuple[bool, str, Optional[Path]]:
     if not src.exists() or not src.is_file():
         return False, f"Invalid file: {src}", None
@@ -695,6 +760,8 @@ def _tar_xz_to_whl(src: Path, remove_original: bool) -> tuple[bool, str, Optiona
                 dst,
             )
     return True, f"Converted {count} files to wheel", dst
+
+
 def _whl_txz_job(job: tuple[str, bool]) -> tuple[Path, bool, str, Optional[Path]]:
     p = Path(job[0])
     remove_original = job[1]
@@ -708,6 +775,8 @@ def _whl_txz_job(job: tuple[str, bool]) -> tuple[Path, bool, str, Optional[Path]
     else:
         return p, False, f"Unsupported file type: {p.suffix}", None
     return p, ok, msg, out
+
+
 def _setup_logger(verbose: bool, quiet: bool) -> None:
     logger.remove()
     if quiet:
@@ -721,6 +790,8 @@ def _setup_logger(verbose: bool, quiet: bool) -> None:
         level=level,
         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> - <level>{level}</level> - <level>{message}</level>",
     )
+
+
 def _collect_whl_txz_paths(paths: list[str], recursive: bool, to: str) -> list[Path]:
     out: list[Path] = []
     for raw in paths:
@@ -747,6 +818,8 @@ def _collect_whl_txz_paths(paths: list[str], recursive: bool, to: str) -> list[P
             out.extend(found)
             print(f"Found {len(found)} convertible files in {p}")
     return out
+
+
 def run_whl_txz(args: argparse.Namespace) -> int:
     _setup_logger(args.verbose, args.quiet)
     files = _collect_whl_txz_paths(args.paths, args.recursive, args.to)
@@ -783,6 +856,8 @@ def run_whl_txz(args: argparse.Namespace) -> int:
         lines.append("✓ Original files were removed after successful conversion")
     print("\n".join(lines))
     return 0 if fail == 0 else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_archive_tools",
@@ -856,6 +931,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-q", "--quiet", action="store_true")
     p.set_defaults(func=run_whl_txz)
     return parser
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -869,5 +946,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

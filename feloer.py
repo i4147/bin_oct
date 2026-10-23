@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 import warnings
 from dh import DOC_TH1, DOC_TH2
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 FELO_CLI: Path = Path(environ.get("FELO_CLI", "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"))
@@ -82,6 +83,8 @@ REFUSAL_MARKERS: tuple[str, ...] = (
     "cannot produce",
     "complete file",
 )
+
+
 @dataclass(frozen=True, slots=True)
 class Options:
     dry_run: bool
@@ -89,12 +92,16 @@ class Options:
     delay: float
     concurrency: int
     verbose: bool
+
+
 @dataclass(frozen=True, slots=True)
 class FeloOutput:
     stdout: str
     stderr: str
     returncode: int
     seconds: float
+
+
 def configure_logging(verbose: bool, log_file: Path) -> None:
     logger.remove()
     logger.add(
@@ -112,8 +119,12 @@ def configure_logging(verbose: bool, log_file: Path) -> None:
         backtrace=True,
         diagnose=False,
     )
+
+
 def log_block(label: str, title: str, text: str) -> None:
     logger.debug("[{}] {} ({} chars):\n{}", label, title, len(text), text)
+
+
 def drop_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
     if (
         body
@@ -123,6 +134,8 @@ def drop_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
     ):
         return body[1:]
     return body
+
+
 class Simplifier(ast.NodeTransformer):
     def visit_Module(self, node: ast.Module) -> ast.AST:
         node.body = [
@@ -131,6 +144,7 @@ class Simplifier(ast.NodeTransformer):
             if not (isinstance(stmt, ast.ImportFrom) and stmt.module == "__future__")
         ]
         return self.generic_visit(node)
+
     def simplify_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> ast.AST:
         node.body = drop_docstring(node.body) or [ast.Pass()]
         node.returns = None
@@ -140,18 +154,24 @@ class Simplifier(ast.NodeTransformer):
             if arg is not None:
                 arg.annotation = None
         return self.generic_visit(node)
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         return self.simplify_function(node)
+
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
         return self.simplify_function(node)
+
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         node.body = drop_docstring(node.body) or [ast.Pass()]
         node.type_params = []
         return self.generic_visit(node)
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
         if node.value is not None:
             return ast.copy_location(ast.Assign(targets=[node.target], value=node.value), node)
         return ast.copy_location(ast.Pass(), node)
+
+
 def simplify_source(code: str, label: str) -> str:
     try:
         with warnings.catch_warnings():
@@ -163,8 +183,12 @@ def simplify_source(code: str, label: str) -> str:
     except Exception as exc:
         logger.warning("[{}] could not simplify source, sending it as is: {}: {}", label, type(exc).__name__, exc)
         return code
+
+
 def build_prompt(code: str, label: str) -> str:
     return PROMPT_HEAD + simplify_source(code, label) + PROMPT_TAIL
+
+
 def clean_response(raw: str) -> tuple[str, str]:
     text = ANSI_RE.sub("", raw).replace("\r\n", "\n").replace("\r", "\n")
     match = RECEIVED_RE.search(text)
@@ -188,6 +212,8 @@ def clean_response(raw: str) -> tuple[str, str]:
         if marker is not None:
             return "", f"refusal marker {marker!r} in response head"
     return text, ""
+
+
 def to_docstring(text: str) -> str:
     quote = DOC_TH1[:1]
     escaped = text.replace("\\", "\\\\")
@@ -195,6 +221,8 @@ def to_docstring(text: str) -> str:
     if quote and escaped.endswith(quote):
         escaped = escaped[:-1] + "\\" + quote
     return DOC_TH1 + escaped + DOC_TH1 + "\n\n"
+
+
 def split_header(source: str) -> tuple[str, str]:
     lines = source.split("\n")
     count = 0
@@ -205,8 +233,12 @@ def split_header(source: str) -> tuple[str, str]:
     if count == 0:
         return "", source
     return "\n".join(lines[:count]) + "\n", "\n".join(lines[count:])
+
+
 def has_docstring_prefix(body: str) -> bool:
     return body.lstrip().startswith((DOC_TH1, DOC_TH2))
+
+
 def remove_docstring_prefix(body: str) -> str:
     stripped = body.lstrip()
     delimiter = DOC_TH1 if stripped.startswith(DOC_TH1) else DOC_TH2 if stripped.startswith(DOC_TH2) else ""
@@ -216,6 +248,8 @@ def remove_docstring_prefix(body: str) -> str:
     if end == -1:
         return body
     return stripped[end + len(delimiter) :].lstrip("\r\n")
+
+
 async def run_felo(prompt: str, label: str) -> FeloOutput:
     size = len(prompt.encode("utf-8"))
     if size > MAX_ARG_BYTES:
@@ -256,6 +290,8 @@ async def run_felo(prompt: str, label: str) -> FeloOutput:
         msg = f"felo exited {result.returncode}: {result.stderr.strip()[:300]}"
         raise RuntimeError(msg)
     return result
+
+
 async def process_one(
     path: Path, opts: Options, gate: asyncio.Semaphore, stats: Counter[str], abort: asyncio.Event
 ) -> None:
@@ -313,6 +349,8 @@ async def process_one(
             path.write_text(result, encoding="utf-8")
         stats["success"] += 1
         logger.info("[{}] done{}", label, " (dry run)" if opts.dry_run else "")
+
+
 async def guarded(
     path: Path, opts: Options, gate: asyncio.Semaphore, stats: Counter[str], abort: asyncio.Event
 ) -> None:
@@ -321,6 +359,8 @@ async def guarded(
     except Exception as exc:
         stats["errors"] += 1
         logger.opt(exception=exc).error("[{}] unexpected failure: {}: {}", path.name, type(exc).__name__, exc)
+
+
 def collect_files(targets: Sequence[str], pattern: str) -> list[Path]:
     self_path = Path(__file__).resolve()
     candidates: list[Path] = []
@@ -337,6 +377,8 @@ def collect_files(targets: Sequence[str], pattern: str) -> list[Path]:
     unique = {path.resolve() for path in candidates}
     unique.discard(self_path)
     return sorted(unique)
+
+
 async def run_all(paths: Sequence[Path], opts: Options) -> Counter[str]:
     gate = asyncio.Semaphore(opts.concurrency)
     abort = asyncio.Event()
@@ -348,6 +390,8 @@ async def run_all(paths: Sequence[Path], opts: Options) -> Counter[str]:
             await asyncio.sleep(opts.delay)
     await asyncio.gather(*tasks)
     return stats
+
+
 def print_summary(stats: Counter[str]) -> None:
     print("\n--- Execution Summary ---")
     print(f"Successfully processed:     {stats['success']}")
@@ -356,6 +400,8 @@ def print_summary(stats: Counter[str]) -> None:
     print(f"Skipped (ignored filename): {stats['skipped_ignored']}")
     print(f"Skipped (empty file):       {stats['skipped_empty']}")
     print(f"Errors / Empty responses:   {stats['errors']}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
@@ -375,6 +421,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--log-file", type=Path, default=Path(DEFAULT_LOG), help=f"Debug log file (default: {DEFAULT_LOG})."
     )
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -403,5 +451,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print_summary(stats)
     logger.info("summary: {}", dict(stats))
     return 1 if stats["errors"] else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

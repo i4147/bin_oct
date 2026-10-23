@@ -8,6 +8,7 @@ import shutil
 import sys
 import time
 from typing import Any, Iterable, Optional, Sequence
+
 SUPPORTED_EXTS = {
     ".jpg",
     ".jpeg",
@@ -45,12 +46,20 @@ _IMAGEHASH_METHODS = {
     "colorhash",
     "crop-resistant",
 }
+
+
 def info(msg: str) -> None:
     print(f"[INFO] {msg}")
+
+
 def warn(msg: str) -> None:
     print(f"[WARN] {msg}")
+
+
 def err(msg: str) -> None:
     print(f"[ERROR] {msg}", file=sys.stderr)
+
+
 def _require(modname: str, method: str) -> bool:
     try:
         __import__(modname)
@@ -58,11 +67,14 @@ def _require(modname: str, method: str) -> bool:
     except ImportError:
         err(f"Package {modname!r} is required for method {method!r}. Install with: pip install {modname}")
         return False
+
+
 def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
     if not _require("cv2", "dct-phash"):
         return None
     import cv2
     import numpy as np
+
     try:
         img = cv2.imread(str(path))
         if img is None:
@@ -78,10 +90,13 @@ def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
     except Exception as e:
         warn(f"dct-phash failed on {path.name}: {e}")
         return None
+
+
 def hash_dhash_custom(path: Path, hash_size: int = 8) -> Optional[int]:
     if not _require("cv2", "dhash-custom"):
         return None
     import cv2
+
     try:
         img = cv2.imread(str(path))
         if img is None:
@@ -93,11 +108,14 @@ def hash_dhash_custom(path: Path, hash_size: int = 8) -> Optional[int]:
     except Exception as e:
         warn(f"dhash-custom failed on {path.name}: {e}")
         return None
+
+
 def hash_imagehash(path: Path, method: str, hash_size: int = 8):
     if not (_require("PIL", method) and _require("imagehash", method)):
         return None
     import imagehash
     from PIL import Image
+
     try:
         with Image.open(path) as im:
             im = im.convert("RGB")
@@ -118,11 +136,14 @@ def hash_imagehash(path: Path, method: str, hash_size: int = 8):
     except Exception as e:
         warn(f"{method} failed on {path.name}: {e}")
         return None
+
+
 def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
     if not (_require("PIL", "multihash") and _require("imagehash", "multihash")):
         return None
     import imagehash
     from PIL import Image
+
     try:
         with Image.open(path) as im:
             im = im.convert("RGB")
@@ -134,11 +155,14 @@ def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
     except Exception as e:
         warn(f"multihash failed on {path.name}: {e}")
         return None
+
+
 def feature_hist(path: Path, size: tuple[int, int] = (64, 64)) -> Optional[Any]:
     if not (_require("cv2", "hist") and _require("numpy", "hist")):
         return None
     import cv2
     import numpy as np
+
     try:
         img = cv2.imread(str(path))
         if img is None or img.size == 0:
@@ -161,6 +185,8 @@ def feature_hist(path: Path, size: tuple[int, int] = (64, 64)) -> Optional[Any]:
     except Exception as e:
         warn(f"hist failed on {path.name}: {e}")
         return None
+
+
 def extract_feature(path: Path, method: str, hash_size: int) -> Optional[Any]:
     if method == "dct-phash":
         return hash_dct_phash(path, hash_size)
@@ -172,14 +198,20 @@ def extract_feature(path: Path, method: str, hash_size: int) -> Optional[Any]:
         return hash_multihash(path, hash_size)
     msg = f"Unknown method: {method!r}"
     raise ValueError(msg)
+
+
 def hamming_str(a: Any, b: Any) -> int:
     if a is None or b is None:
         return 10**9
     return sum(x != y for x, y in zip(a, b))
+
+
 def hamming_int(a: Any, b: Any) -> int:
     if a is None or b is None:
         return 10**9
     return (int(a) ^ int(b)).bit_count()
+
+
 def multihash_dist(a: Any, b: Any) -> float:
     if a is None or b is None:
         return float("inf")
@@ -187,6 +219,8 @@ def multihash_dist(a: Any, b: Any) -> float:
     for key, weight in MULTIHASH_W.items():
         d += abs(a[key] - b[key]) * weight
     return d
+
+
 def distance(method: str, a: Any, b: Any) -> float:
     if a is None or b is None:
         return float("inf")
@@ -200,6 +234,8 @@ def distance(method: str, a: Any, b: Any) -> float:
         return int(a - b)
     except Exception:
         return float("inf")
+
+
 def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
     if method == "dct-phash":
         return 64
@@ -212,6 +248,8 @@ def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
     if method == "colorhash":
         return 42
     return None
+
+
 def collect_images(root: Path, recursive: bool, exclude_parts: Iterable[str]) -> list[Path]:
     ex_set = {p for p in exclude_parts if p}
     iterator = root.rglob("*") if recursive else root.glob("*")
@@ -225,6 +263,8 @@ def collect_images(root: Path, recursive: bool, exclude_parts: Iterable[str]) ->
             continue
         out.append(p)
     return sorted(out)
+
+
 def compute_features(paths: Sequence[Path], method: str, hash_size: int, workers: int) -> list[tuple[Path, Any]]:
     items: list[tuple[Path, Any]] = []
     if workers <= 1 or len(paths) <= 1:
@@ -240,6 +280,8 @@ def compute_features(paths: Sequence[Path], method: str, hash_size: int, workers
             if f is not None:
                 items.append((p, f))
     return items
+
+
 def group_items(
     items: Sequence[tuple[Path, Any]],
     method: str,
@@ -273,21 +315,29 @@ def group_items(
                 assigned.add(pj)
         groups.append(g)
     return groups
+
+
 def file_size_mb(p: Path) -> float:
     try:
         return p.stat().st_size / 1048576
     except Exception:
         return 0.0
+
+
 def resolve_threshold(args: argparse.Namespace) -> float:
     if args.threshold is not None:
         return float(args.threshold)
     if args.mode == "similarity":
         return 0.9
     return DEFAULT_THRESHOLDS.get(args.method, 8)
+
+
 def resolve_hash_size(args: argparse.Namespace) -> int:
     if args.hash_size is not None:
         return args.hash_size
     return 16 if args.method == "dct-phash" else 8
+
+
 def _pipeline(args: argparse.Namespace):
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -318,6 +368,8 @@ def _pipeline(args: argparse.Namespace):
         return None
     multi = [g for g in groups if len(g) > 1]
     return root, multi, threshold
+
+
 def cmd_scan(args: argparse.Namespace) -> int:
     res = _pipeline(args)
     if res is None:
@@ -341,6 +393,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
             print(f"  • {rel}  ({file_size_mb(p):.2f} MB)")
         print()
     return 0
+
+
 def cmd_organize(args: argparse.Namespace) -> int:
     res = _pipeline(args)
     if res is None:
@@ -389,6 +443,8 @@ def cmd_organize(args: argparse.Namespace) -> int:
         print(f"✓ Created {created} folder(s) and {action}d {moved} file(s).")
     print(f"{'=' * 44}")
     return 0
+
+
 def cmd_dedup(args: argparse.Namespace) -> int:
     res = _pipeline(args)
     if res is None:
@@ -421,6 +477,8 @@ def cmd_dedup(args: argparse.Namespace) -> int:
         print(f"✓ Kept {kept} file(s), deleted {deleted} duplicate(s).")
     print(f"{'=' * 44}")
     return 0
+
+
 def cmd_keep_one(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -459,6 +517,8 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
         processed += 1
     print(f"✅ Completed! Processed {processed} folder(s).")
     return 0
+
+
 def cmd_cluster(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -467,6 +527,7 @@ def cmd_cluster(args: argparse.Namespace) -> int:
     if not (_require("cv2", "cluster") and _require("numpy", "cluster")):
         return 2
     import numpy as np
+
     paths = collect_images(root, recursive=True, exclude_parts={"organized_by_similarity"})
     print(f"Scanning directory: {root}")
     print(f"Found {len(paths)} images")
@@ -488,11 +549,13 @@ def cmd_cluster(args: argparse.Namespace) -> int:
         return 1
     feats_arr = np.array(features)
     k = min(args.clusters, len(feats_arr))
+
     def cosine(a: Any, b: Any) -> float:
         na, nb = np.linalg.norm(a), np.linalg.norm(b)
         if na == 0 or nb == 0:
             return 0.0
         return float(np.dot(a, b) / (na * nb))
+
     n = len(feats_arr)
     clusters: dict[int, list[int]] = {i: [i] for i in range(n)}
     centroids: dict[int, Any] = {i: feats_arr[i].copy() for i in range(n)}
@@ -546,6 +609,8 @@ def cmd_cluster(args: argparse.Namespace) -> int:
     print(f"\nDone! Photos organized in: {out_dir}")
     print(f"Organized {len(valid)} images into {num_groups} groups")
     return 0
+
+
 def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
     sp.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     sp.add_argument(
@@ -580,6 +645,8 @@ def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
         default=[],
         help="Subdirectory name to skip (repeatable)",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="img_similarity.py",
@@ -669,9 +736,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--move", action="store_true", help="Move files instead of copying")
     sp.set_defaults(func=cmd_cluster)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 NUM_WORKERS = 8
@@ -17,6 +18,8 @@ CSS_SUBDIR = "css"
 JS_SUBDIR = "js"
 HTML_EXTENSIONS = {".html", ".htm"}
 MIN_INLINE_SIZE = 0
+
+
 @dataclass
 class ExtractionResult:
     path: Path
@@ -24,11 +27,14 @@ class ExtractionResult:
     css_count: int = 0
     js_count: int = 0
     error: str | None = None
+
+
 class HTMLExtractor(html.parser.HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=False)
         self.reset_state()
         self.extractions: list[tuple[str, str, dict]] = []
+
     def reset_state(self):
         self.current_tag = None
         self.current_attrs = {}
@@ -36,6 +42,7 @@ class HTMLExtractor(html.parser.HTMLParser):
         self.in_style = False
         self.in_script = False
         self.script_has_src = False
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
         tag_lower = tag.lower()
         if tag_lower == "style":
@@ -51,6 +58,7 @@ class HTMLExtractor(html.parser.HTMLParser):
                 self.current_content = []
             else:
                 self.script_has_src = True
+
     def handle_endtag(self, tag: str):
         tag_lower = tag.lower()
         if tag_lower == "style" and self.in_style:
@@ -65,19 +73,27 @@ class HTMLExtractor(html.parser.HTMLParser):
                 self.extractions.append(("js", content, self.current_attrs))
             self.in_script = False
             self.current_content = []
+
     def handle_data(self, data: str):
         if self.in_style or self.in_script:
             self.current_content.append(data)
+
     def handle_entityref(self, name: str):
         if self.in_script:
             self.current_content.append(f"&{name};")
+
     def handle_charref(self, name: str):
         if self.in_script:
             self.current_content.append(f"&#{name};")
+
     def error(self, message: str):
         pass
+
+
 def compute_content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]
+
+
 def get_unique_filename(base_name: str, extension: str, assets_dir: Path) -> str:
     filename = f"{base_name}{extension}"
     counter = 1
@@ -85,6 +101,8 @@ def get_unique_filename(base_name: str, extension: str, assets_dir: Path) -> str
         filename = f"{base_name}_{counter}{extension}"
         counter += 1
     return filename
+
+
 def extract_assets_from_html(html_content: str, html_path: Path, assets_base_dir: Path) -> tuple[str, int, int]:
     parser = HTMLExtractor()
     try:
@@ -164,6 +182,8 @@ def extract_assets_from_html(html_content: str, html_path: Path, assets_base_dir
             except re.error:
                 continue
     return modified_html, css_count, js_count
+
+
 def process_html_file(path: Path) -> ExtractionResult:
     try:
         if not path.is_file():
@@ -197,6 +217,8 @@ def process_html_file(path: Path) -> ExtractionResult:
         return ExtractionResult(path=path, success=False, error=f"Permission denied: {e}")
     except Exception as e:
         return ExtractionResult(path=path, success=False, error=f"{type(e).__name__}: {e}")
+
+
 def find_html_files(paths: list[Path]) -> Iterator[Path]:
     seen = set()
     for path in paths:
@@ -214,8 +236,12 @@ def find_html_files(paths: list[Path]) -> Iterator[Path]:
                         yield resolved
         else:
             print(f"Warning: Path does not exist: {path}", file=sys.stderr)
+
+
 def get_default_paths() -> list[Path]:
     return [Path.cwd()]
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Extract inline CSS and JavaScript from HTML files.",
@@ -249,6 +275,8 @@ Examples:
         help=f"Minimum inline content size to extract (default: {MIN_INLINE_SIZE})",
     )
     return parser.parse_args()
+
+
 def main() -> int:
     args = parse_arguments()
     global MIN_INLINE_SIZE
@@ -299,5 +327,7 @@ def main() -> int:
         file=sys.stderr,
     )
     return 1 if total_errors > 0 else 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

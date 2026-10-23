@@ -3,10 +3,14 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 from typing import Iterator
+
+
 def walk_py_files(root: Path) -> Iterator[Path]:
     for path in root.rglob("*.py"):
         if path.is_file():
             yield path
+
+
 def is_docstring_only(
     node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef,
 ) -> bool:
@@ -18,6 +22,8 @@ def is_docstring_only(
         return False
     value = stmt.value
     return isinstance(value, ast.Constant) and isinstance(value.value, str)
+
+
 def scan_file(path: Path) -> list[tuple[str, str, int]]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -40,6 +46,8 @@ def scan_file(path: Path) -> list[tuple[str, str, int]]:
         if is_docstring_only(node):
             findings.append((kind, node.name, node.lineno))
     return findings
+
+
 def main() -> None:
     root = Path.cwd()
     for path in walk_py_files(root):
@@ -49,5 +57,7 @@ def main() -> None:
         rel = path.relative_to(root)
         for kind, name, lineno in findings:
             print(f"{rel}:{lineno}: {kind} {name}")
+
+
 if __name__ == "__main__":
     main()

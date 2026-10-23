@@ -10,6 +10,7 @@ import time
 from typing import Optional, Sequence
 from dh import fsz
 from loguru import logger
+
 try:
     from fontTools.ttLib import TTFont
     from fontTools.t1Lib import T1Font
@@ -21,6 +22,7 @@ except ImportError:
     sys.exit(1)
 try:
     import brotli
+
     HAS_BROTLI = True
 except ImportError:
     HAS_BROTLI = False
@@ -40,6 +42,8 @@ DEFAULT_OUTPUT_FORMAT = "woff2"
 WORKERS = 4
 CFF_TABLES = frozenset({"CFF ", "CFF2"})
 TRUETYPE_TABLE = "glyf"
+
+
 @dataclass
 class ConversionResult:
     input: Path
@@ -55,12 +59,17 @@ class ConversionResult:
     error: Optional[str] = None
     warning: Optional[str] = None
     removed_original: bool = False
+
     @property
     def failed(self) -> bool:
         return not self.success and not self.skipped
+
+
 def detect_format(path: Path) -> Optional[str]:
     ext = path.suffix.lower().lstrip(".")
     return ext if ext in INPUT_FORMATS else None
+
+
 def generate_output_path(
     input_path: Path,
     output_format: str,
@@ -69,6 +78,8 @@ def generate_output_path(
     if output_dir is not None:
         return output_dir / f"{input_path.stem}.{output_format}"
     return input_path.with_suffix(f".{output_format}")
+
+
 def _outline_kind(font: TTFont) -> str:
     tags = set(font.keys())
     if tags & CFF_TABLES:
@@ -76,6 +87,8 @@ def _outline_kind(font: TTFont) -> str:
     if TRUETYPE_TABLE in tags:
         return "truetype"
     return "unknown"
+
+
 def _t1_to_ttfont(input_path: Path) -> TTFont:
     t1 = T1Font(str(input_path))
     glyph_set = t1.getGlyphSet()
@@ -112,6 +125,8 @@ def _t1_to_ttfont(input_path: Path) -> TTFont:
     fb.setupOS2()
     fb.setupPost()
     return fb.font
+
+
 def convert_font(
     input_path: Path,
     output_format: str,
@@ -236,6 +251,8 @@ def convert_font(
     finally:
         result.time = time.perf_counter() - start
     return result
+
+
 def find_font_files(paths: Sequence[Path]) -> list[Path]:
     files: list[Path] = []
     for path in paths:
@@ -258,6 +275,8 @@ def find_font_files(paths: Sequence[Path]) -> list[Path]:
             seen.add(resolved)
             unique.append(f)
     return unique
+
+
 def print_file_stats(result: ConversionResult) -> None:
     name = result.input.name
     if result.success:
@@ -277,6 +296,8 @@ def print_file_stats(result: ConversionResult) -> None:
         print(f"  ↷ {name} — SKIPPED: {result.skipped_reason}")
     else:
         print(f"  ✗ {name} — ERROR: {result.error}", file=sys.stderr)
+
+
 def print_summary(results: Sequence[ConversionResult]) -> None:
     total = len(results)
     ok = sum(1 for r in results if r.success)
@@ -302,6 +323,8 @@ def print_summary(results: Sequence[ConversionResult]) -> None:
         if total > 1:
             print(f"  Avg per file    : {total_time / total:.3f}s")
     print("=" * 40)
+
+
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="fontconverter.py",
@@ -376,6 +399,8 @@ Examples:
         ),
     )
     return parser.parse_args(argv)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     logger.remove()
@@ -461,5 +486,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print_summary(all_results)
     failed = sum(1 for r in all_results if r.failed)
     return 1 if failed else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

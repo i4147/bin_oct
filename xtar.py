@@ -86,7 +86,6 @@ def check_integrity(archive_path: Path) -> bool:
                 if bad_file is not None:
                     return False
             return True
-
         if compression in {"gz", "xz", "zst", "br", "bz2", "lz4"}:
             mode_map: dict[str, str] = {
                 "gz": "r:gz",

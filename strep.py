@@ -9,11 +9,16 @@ from dh import fsz, runcmd
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 from dh import get_size
+
 SO_RE = re.compile(r"\.so(\.\d+)*$", re.IGNORECASE)
 WHL_SUFFIX = ".whl"
 console = Console()
+
+
 def process_file(path: Path) -> None:
     _ret, _, _ = runcmd(["strip", str(path)], show_output=True)
+
+
 def process_whl(whl_path: Path) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
@@ -26,22 +31,32 @@ def process_whl(whl_path: Path) -> None:
             for path in tmpdir_path.rglob("*"):
                 if path.is_file():
                     zf.write(path, path.relative_to(tmpdir_path))
+
+
 def collect_files(cwd: Path, args: list[str]) -> list[Path]:
     if args:
         return [Path(p) for p in args]
     so_files = [p for p in cwd.rglob("*") if SO_RE.search(p.name) and p.is_file()]
     whl_files = [p for p in cwd.rglob("*") if p.is_file() and p.suffix == WHL_SUFFIX]
     return so_files + whl_files
+
+
 def show_summary(files: list[Path]) -> int:
     return sum(f.stat().st_size for f in files if f.is_file())
+
+
 def process_whl_files(whl_files: list[Path]) -> None:
     for whl_file in whl_files:
         console.print(f"[bold blue]Processing wheel:[/] [bold yellow]{whl_file}[/]")
         process_whl(whl_file)
+
+
 def has_so(path: str | Path) -> bool:
     path = Path(path)
     with ZipFile(path, "r") as zf:
         return any(SO_RE.search(name) for name in zf.namelist())
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]

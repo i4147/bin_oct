@@ -10,6 +10,8 @@ import sys
 from typing import Sequence
 from dh import get_pyfiles
 from loguru import logger
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Check Python files for syntax errors and move invalid ones into per-directory 'error' folders."
@@ -40,6 +42,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Multiprocessing Pool method to use (default: starmap).",
     )
     return parser.parse_args(argv)
+
+
 def unique_destination(dest_dir: Path, filename: str) -> Path:
     candidate = dest_dir / filename
     if not candidate.exists():
@@ -52,6 +56,8 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
+
+
 def check_and_quarantine(path: Path, dry_run: bool, move: bool) -> bool:
     try:
         source = path.read_text(encoding="utf-8")
@@ -72,6 +78,8 @@ def check_and_quarantine(path: Path, dry_run: bool, move: bool) -> bool:
                 shutil.copy2(path, dest)
             logger.info("{} {} -> {}", action, path, dest)
         return True
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     paths: list[Path] = [p.resolve() for p in args.paths]
@@ -109,5 +117,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     invalid_count += 1
     logger.info("Finished. {} file(s) had syntax errors.", invalid_count)
     return invalid_count
+
+
 if __name__ == "__main__":
     sys.exit(main())

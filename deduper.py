@@ -16,9 +16,11 @@ import tarfile
 import tempfile
 import zipfile
 from loguru import logger
+
 try:
     from tree_sitter import Language, Parser
     import tree_sitter_python
+
     TREE_SITTER_AVAILABLE = True
 except Exception:
     TREE_SITTER_AVAILABLE = False
@@ -60,16 +62,24 @@ SKIP_DIRS = {
     ".eggs",
     "site-packages",
 }
+
+
 def sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def normalize_newlines(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def safe_read_text(path: Path) -> str | None:
     try:
         return normalize_newlines(path.read_text(encoding="utf-8"))
     except Exception as e:
         logger.error(f"Failed reading {path}: {e}")
         return None
+
+
 def safe_write_text(path: Path, content: str) -> bool:
     try:
         path.write_text(content, encoding="utf-8", newline="\n")
@@ -77,11 +87,17 @@ def safe_write_text(path: Path, content: str) -> bool:
     except Exception as e:
         logger.error(f"Failed writing {path}: {e}")
         return False
+
+
 def is_supported_archive(path: Path) -> bool:
     s = str(path).lower()
     return any(s.endswith(ext) for ext in SUPPORTED_ARCHIVES)
+
+
 def should_skip_dir(name: str) -> bool:
     return name in SKIP_DIRS
+
+
 def extract_archive(path: Path) -> str:
     tmpdir = tempfile.mkdtemp(prefix="dedup_py_")
     low = str(path).lower()
@@ -126,8 +142,11 @@ def extract_archive(path: Path) -> str:
     except Exception as e:
         logger.error(f"Failed extracting {path}: {e}")
     return tmpdir
+
+
 def collect_python_files(base: Path):
     files = []
+
     def walk(p: Path):
         if should_skip_dir(p.name):
             return
@@ -143,8 +162,11 @@ def collect_python_files(base: Path):
                         files.extend(Path(tmp).rglob("*.py"))
         except PermissionError:
             logger.warning(f"Permission denied: {p}")
+
     walk(base)
     return files
+
+
 def get_module_docstring_line_span(tree: ast.Module) -> tuple[int, int | None] | None:
     if not tree.body:
         return None
@@ -152,6 +174,8 @@ def get_module_docstring_line_span(tree: ast.Module) -> tuple[int, int | None] |
     if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
         return first.lineno, first.end_lineno
     return None
+
+
 def source_segment(code: str, node: Assign | AsyncFunctionDef | ClassDef | FunctionDef) -> str | None:
     seg = ast.get_source_segment(code, node)
     if seg is not None:
@@ -160,8 +184,12 @@ def source_segment(code: str, node: Assign | AsyncFunctionDef | ClassDef | Funct
         lines = code.splitlines(keepends=True)
         return "".join(lines[node.lineno - 1 : node.end_lineno])
     return None
+
+
 def is_simple_constant_assign(node: ast.Assign) -> bool:
     return len(node.targets) == 1 and isinstance(node.targets[0], ast.Name)
+
+
 def extract_with_ast(code: str):
     objects = []
     try:
@@ -207,6 +235,8 @@ def extract_with_ast(code: str):
                 "end_lineno": node.end_lineno,
             })
     return objects
+
+
 def extract_with_tree_sitter(code: str):
     if not TREE_SITTER_AVAILABLE:
         return extract_with_ast(code)
@@ -222,10 +252,14 @@ def extract_with_tree_sitter(code: str):
         logger.warning(f"Tree-sitter failed; falling back to AST: {e}")
         return extract_with_ast(code)
     return extract_with_ast(code)
+
+
 def extract_objects(code: str):
     if TREE_SITTER_AVAILABLE:
         return extract_with_tree_sitter(code)
     return extract_with_ast(code)
+
+
 def process_file(path_str: str):
     path = Path(path_str)
     code = safe_read_text(path)
@@ -247,6 +281,8 @@ def process_file(path_str: str):
             "end_lineno": obj["end_lineno"],
         })
     return out
+
+
 def get_utils_path(base: Path) -> Path:
     p = base / "utils.py"
     if not p.exists():
@@ -257,6 +293,8 @@ def get_utils_path(base: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
+
+
 def write_utils_file(path: Path, objects) -> bool:
     names_seen = set()
     parts = []
@@ -273,7 +311,11 @@ def write_utils_file(path: Path, objects) -> bool:
         logger.error(f"Generated {path.name} has syntax error: {e}")
         return False
     return safe_write_text(path, content)
+
+
 _ENCODING_RE = re.compile(r"^#.*coding[:=]\s*([-\w.]+)")
+
+
 def find_import_insertion_index(code: str) -> int:
     lines = code.splitlines(keepends=True)
     idx = 0
@@ -292,6 +334,8 @@ def find_import_insertion_index(code: str) -> int:
     except Exception:
         pass
     return idx
+
+
 def add_import_line(code: str, module_name: str, names) -> str:
     names = sorted(set(names))
     if not names:
@@ -303,6 +347,8 @@ def add_import_line(code: str, module_name: str, names) -> str:
     idx = find_import_insertion_index(code)
     lines.insert(idx, import_line)
     return "".join(lines)
+
+
 def merge_overlapping_ranges(ranges):
     if not ranges:
         return []
@@ -315,6 +361,8 @@ def merge_overlapping_ranges(ranges):
         else:
             merged.append([s, e])
     return [(s, e) for s, e in merged]
+
+
 def remove_line_ranges(code: str, ranges) -> str:
     lines = code.splitlines(keepends=True)
     zero_based = [(s - 1, e - 1) for s, e in ranges]
@@ -328,12 +376,16 @@ def remove_line_ranges(code: str, ranges) -> str:
     text = "".join(out)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text
+
+
 def file_is_under_base(path: Path, base: Path) -> bool:
     try:
         path.resolve().relative_to(base.resolve())
         return True
     except Exception:
         return False
+
+
 def update_file_for_move(path: Path, objects_to_remove, utils_module_name: str) -> bool:
     code = safe_read_text(path)
     if code is None:
@@ -360,6 +412,8 @@ def update_file_for_move(path: Path, objects_to_remove, utils_module_name: str) 
         logger.error(f"After adding import, {path} is invalid: {e}")
         return False
     return safe_write_text(path, new_code)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Find repeated top-level Python objects and optionally move/copy them to utils.py"
@@ -439,5 +493,7 @@ def main() -> None:
             print(f"Updated {file_str}")
         else:
             logger.error(f"Failed to update {file_str}")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

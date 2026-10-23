@@ -6,18 +6,25 @@ import shutil
 import sys
 from typing import Final, NamedTuple
 from loguru import logger
+
 MAX_WORKERS: Final[int] = 8
 SRC: Final[Path] = Path("/data/data/com.termux/files/usr/lib/python3.14/site-packages")
 DEST: Final[Path] = Path.home() / "tmp" / "tests_dirs"
 EXCLUDED: Final[tuple[str, ...]] = ("numpy", "pandas", "scipy", "numba")
 DRY_RUN: Final[bool] = "-d" in sys.argv
+
+
 class MoveResult(NamedTuple):
     path: Path
     success: bool
     message: str
+
+
 def _is_excluded(path: Path) -> bool:
     parts: tuple[str, ...] = path.parts
     return any(name in parts for name in EXCLUDED)
+
+
 def move_tests_folder(
     tests_path: Path,
     base_src: Path,
@@ -36,6 +43,8 @@ def move_tests_folder(
         return MoveResult(tests_path, True, f"moved: {tests_path} -> {dst_path}")
     except Exception as e:
         return MoveResult(tests_path, False, f"error moving {tests_path}: {e}")
+
+
 def move_tests_recursive(
     source_dir: Path = SRC,
     destination_dir: Path = DEST,
@@ -69,7 +78,11 @@ def move_tests_recursive(
         len(tests_folders),
     )
     return moved_count
+
+
 def main() -> None:
     move_tests_recursive()
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

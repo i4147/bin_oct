@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
+
+
 def process_file(path) -> bool | None:
     path = Path(path)
     before = gsz(path)
@@ -23,6 +25,8 @@ def process_file(path) -> bool | None:
         return None
     cprint("[ERROR]", "red")
     return None
+
+
 def main() -> None:
     args = sys.argv[1:]
     cwd = Path.cwd()
@@ -31,5 +35,7 @@ def main() -> None:
     _ = mpf(process_file, files)
     diff_size = before - gsz(cwd)
     cprint(f"space freed : {fsz(diff_size)}", "green")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -10,51 +10,66 @@ import re
 import sys
 import time
 import tokenize
+
 STRING_RE = re.compile(r'^([rufbRUFB]*)([\'"]{3}|[\'"]{1})(.*)\2$', flags=re.DOTALL)
 COMMENT_RE = re.compile(r"^(#+)(\s*)(.*)$", flags=re.DOTALL)
 STATE_FILE = Path(".translation_state.json")
+
+
 class TargetFinder(ast.NodeVisitor):
     def __init__(self):
         self.target_lines = set()
+
     def visit_Call(self, node):
         if isinstance(node.func, ast.Name) and node.func.id == "print":
             for arg in ast.walk(node):
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
                     self.target_lines.add(arg.lineno)
         self.generic_visit(node)
+
     def visit_FunctionDef(self, node):
         self._add_docstring(node)
         self.generic_visit(node)
+
     def visit_AsyncFunctionDef(self, node):
         self._add_docstring(node)
         self.generic_visit(node)
+
     def visit_ClassDef(self, node):
         self._add_docstring(node)
         self.generic_visit(node)
+
     def visit_Module(self, node):
         self._add_docstring(node)
         self.generic_visit(node)
+
     def _add_docstring(self, node):
         if node.body and isinstance(node.body[0], ast.Expr):
             val = node.body[0].value
             if isinstance(val, ast.Constant) and isinstance(val.value, str):
                 self.target_lines.add(val.lineno)
+
+
 def get_translator_func(backend_name):
     try:
         if backend_name == "deep_translator":
             from deep_translator import GoogleTranslator
+
             translator = GoogleTranslator(source="auto", target="en")
             return translator.translate
         elif backend_name == "googletrans":
             from googletrans import Translator
+
             translator = Translator()
             return lambda text: translator.translate(text, dest="en").text
         elif backend_name == "translate":
             from translate import Translator
+
             translator = Translator(to_lang="en")
             return translator.translate
         elif backend_name == "translators":
             import translators as ts
+
             return lambda text: ts.translate_text(text, translator="google", to_language="en")
         else:
             msg = f"Unknown backend: {backend_name}"
@@ -63,6 +78,8 @@ def get_translator_func(backend_name):
         print(f"Error: Required package for backend '{backend_name}' is missing.")
         print(f"Please install it (e.g., `pip install {backend_name.replace('_', '-')}`)")
         sys.exit(1)
+
+
 def safe_translate(text, translate_func, retries=3):
     if not text.strip():
         return text
@@ -73,6 +90,8 @@ def safe_translate(text, translate_func, retries=3):
         except Exception as e:
             time.sleep((attempt + 1) * 2)
     return text
+
+
 def batch_translate(items, translate_func):
     batch_size = 4
     for i in range(0, len(items), batch_size):
@@ -88,6 +107,8 @@ def batch_translate(items, translate_func):
         for item, translated_content in zip(batch, batch_results):
             item["translated_content"] = translated_content
         time.sleep(1.0)
+
+
 def apply_replacements(source_code, replacements):
     lines = source_code.splitlines(keepends=True)
     replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
@@ -102,6 +123,8 @@ def apply_replacements(source_code, replacements):
             for i in range(r1 + 1, r2 + 1):
                 lines[i] = ""
     return "".join(lines)
+
+
 def process_file(filepath, translate_func):
     try:
         source_code = filepath.read_text(encoding="utf-8")
@@ -172,12 +195,18 @@ def process_file(filepath, translate_func):
             print(f"  -> Validation failed after translation: {e}. Reverting changes.")
             return False
     return True
+
+
 def load_state():
     if STATE_FILE.exists():
         return json.loads(STATE_FILE.read_text(encoding="utf-8"))
     return {"processed_files": []}
+
+
 def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description="In-place Python Comment, Docstring, and Print Statement Translator")
     parser.add_argument(
@@ -219,5 +248,7 @@ def main():
             state["processed_files"].append(str(p))
             save_state(state)
     print("\nAll tasks completed!")
+
+
 if __name__ == "__main__":
     main()

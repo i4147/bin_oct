@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 import sys
+
+
 class Module:
     def __init__(self, name: str, path: Path):
         self.name = name
@@ -16,6 +18,8 @@ class Module:
         self.assignments = []
         self.main_body = []
         self.dunder_all = None
+
+
 def parse_module(module: Module):
     source = module.path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(module.path))
@@ -38,6 +42,8 @@ def parse_module(module: Module):
             module.classes.append(node)
         else:
             module.assignments.append(node)
+
+
 def resolve_imports(modules: dict, root_pkg_name: str) -> list:
     final_imports = []
     for mod in modules.values():
@@ -66,6 +72,8 @@ def resolve_imports(modules: dict, root_pkg_name: str) -> list:
             final_imports.append(imp)
         mod.imports = []
     return final_imports
+
+
 def package_assets(asset_dir: Path, root_pkg_name: str) -> tuple:
     assets = {}
     for root, _, files in os.walk(asset_dir):
@@ -94,6 +102,8 @@ import builtins
 builtins.open = _patched_open
 """
     return ast.parse(loader_code).body
+
+
 def merge_package(project_dir: str, output_file: str):
     project_path = Path(project_dir).resolve()
     root_pkg_name = project_path.name
@@ -130,6 +140,8 @@ def merge_package(project_dir: str, output_file: str):
     final_code = header + ast.unparse(ast.Module(body=final_body, type_ignores=[]))
     Path(output_file).write_text(final_code, encoding="utf-8")
     print(f"Successfully merged {root_pkg_name} into {output_file}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python merge_package.py <project_dir> <output_file>")

@@ -11,13 +11,17 @@ import zipfile
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
+
 try:
     from packaging.tags import Tag, sys_tags
 except ImportError:
     Tag = Any  # type: ignore
     sys_tags = None  # type: ignore
+
+
 class WheelBuilder:
     """Build wheel packages from installed distributions in a virtual environment."""
+
     def __init__(
         self,
         site_packages: Union[str, Path],
@@ -36,6 +40,7 @@ class WheelBuilder:
         self.bin_dir: Optional[Path] = self._find_bin_dir()
         self.share_dir: Optional[Path] = self.venv_root / "share" if self.venv_root else None
         self.processed_packages: Set[str] = set()
+
     def _find_venv_root(self) -> Optional[Path]:
         """Locate the virtual environment root directory."""
         current = self.site_packages
@@ -48,6 +53,7 @@ class WheelBuilder:
                 return current
             current = current.parent
         return None
+
     def _find_bin_dir(self) -> Optional[Path]:
         """Find the bin/Scripts directory in the virtual environment."""
         if not self.venv_root:
@@ -57,6 +63,7 @@ class WheelBuilder:
             if d.exists() and d.is_dir():
                 return d
         return None
+
     def _compute_hash(self, path: Path) -> str:
         """Compute SHA256 hash in PEP 376 format (urlsafe base64, no padding)."""
         h = hashlib.sha256()
@@ -65,6 +72,7 @@ class WheelBuilder:
                 h.update(chunk)
         digest = h.digest()
         return f"sha256={base64.urlsafe_b64encode(digest).decode().rstrip('=')}"
+
     def _read_record(self, dist_info: Path) -> Dict[str, Dict[str, str]]:
         """Parse RECORD file from a .dist-info directory."""
         record_file = dist_info / "RECORD"
@@ -82,6 +90,7 @@ class WheelBuilder:
                     "size": row[2] if len(row) > 2 else "",
                 }
         return records
+
     def _find_scripts_for_package(self, records: Dict[str, Dict[str, str]]) -> List[Path]:
         """Discover console scripts declared in entry_points.txt."""
         if not self.bin_dir or not self.bin_dir.exists():
@@ -113,6 +122,7 @@ class WheelBuilder:
                     scripts.append(script_path)
                     break
         return scripts
+
     def _find_data_for_package(self, package_name: str) -> List[Tuple[Path, str]]:
         """Find data files in share/ directory belonging to the package."""
         if not self.share_dir or not self.share_dir.exists():
@@ -129,6 +139,7 @@ class WheelBuilder:
                 except ValueError:
                     pass
         return data_files
+
     def _get_wheel_tags(self) -> Tuple[str, str, str]:
         """Determine wheel compatibility tags (interpreter, abi, platform)."""
         if sys_tags is not None:
@@ -145,9 +156,11 @@ class WheelBuilder:
         machine = platform.machine().lower()
         platform_tag = f"{plat}_{machine}"
         return (python_tag, abi_tag, platform_tag)
+
     def _detect_purity(self, records: Dict[str, Dict[str, str]]) -> bool:
         """Check if package is pure Python (no binary extensions)."""
         return all(not path.endswith((".so", ".pyd", ".dll")) for path in records)
+
     def build_wheel(self, dist_info_dir: Path) -> Optional[Path]:
         """Build a wheel from a .dist-info directory."""
         if not dist_info_dir.is_dir():
@@ -266,6 +279,7 @@ class WheelBuilder:
             if wheel_path.exists():
                 wheel_path.unlink(missing_ok=True)
             return None
+
     def build_all(self) -> List[Path]:
         """Build wheels for all packages in site-packages."""
         wheels: List[Path] = []
@@ -274,6 +288,8 @@ class WheelBuilder:
             if wheel:
                 wheels.append(wheel)
         return wheels
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build wheel packages from a virtual environment's site-packages.")
     parser.add_argument(
@@ -313,5 +329,7 @@ def main() -> int:
     wheels = builder.build_all()
     print(f"\n🎉 Built {len(wheels)} wheel(s)")
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

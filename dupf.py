@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, TypeAlias
 from dh import fsz, gsz
 from loguru import logger
 from xxhash import xxh64
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 CHUNKSIZE: int = 32768
@@ -15,6 +16,8 @@ POOL_WORKERS: int = 8
 SKIP_PARTS: tuple[str, ...] = (".git", "__pycache__", ".mypy_cache", ".ruff_cache")
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "imap_unordered", "apply_async")
 HashResult: TypeAlias = tuple[str | None, Path]
+
+
 def should_skip(path: Path) -> bool:
     if path.is_symlink():
         return True
@@ -24,6 +27,8 @@ def should_skip(path: Path) -> bool:
     except OSError:
         return True
     return any(part in SKIP_PARTS for part in path.parts)
+
+
 def get_hash_file(path: Path) -> HashResult:
     try:
         if not path.exists() or path.stat().st_size == 0:
@@ -35,6 +40,8 @@ def get_hash_file(path: Path) -> HashResult:
         return (h.hexdigest(), path)
     except OSError:
         return (None, path)
+
+
 def hash_paths(paths: Sequence[Path], method: str) -> list[HashResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
@@ -48,6 +55,8 @@ def hash_paths(paths: Sequence[Path], method: str) -> list[HashResult]:
             return [result.get() for result in async_results]
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
+
+
 def find_duplicates(pool_method: str = "map") -> None:
     cwd = Path.cwd()
     files_by_hash: defaultdict[str, list[Path]] = defaultdict(list)
@@ -82,6 +91,8 @@ def find_duplicates(pool_method: str = "map") -> None:
         logger.info(f"total : {fsz(total)}")
     else:
         logger.info("NO DUPS")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -91,9 +102,13 @@ def parse_args() -> argparse.Namespace:
         help="Multiprocessing pool method to use for hashing.",
     )
     return parser.parse_args()
+
+
 def main() -> None:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     find_duplicates(pool_method)
+
+
 if __name__ == "__main__":
     main()

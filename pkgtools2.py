@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 from typing import Any, Iterable, Optional, Sequence
+
 DEFAULT_CHUNK_SIZE = 8192
 DEFAULT_DEB_EXCLUDES = frozenset({
     "llvm",
@@ -31,6 +32,8 @@ DEFAULT_DEB_EXCLUDES = frozenset({
     "rust-analyzer",
     "cargo-c",
 })
+
+
 def run_cmd(
     cmd: Sequence[str],
     *,
@@ -44,6 +47,8 @@ def run_cmd(
         timeout=timeout,
         check=check,
     )
+
+
 def human_size(num: int) -> str:
     if num < 1024:
         return f"{num} B"
@@ -53,7 +58,11 @@ def human_size(num: int) -> str:
         if value < 1024:
             return f"{value:.1f} {unit}"
     return f"{value:.1f} PB"
+
+
 _SIZE_RE = re.compile(r"([\d.]+)\s*([KMGT]?)B?", re.IGNORECASE)
+
+
 def parse_size(text: str) -> int:
     match = _SIZE_RE.match(text.strip())
     if not match:
@@ -68,6 +77,8 @@ def parse_size(text: str) -> int:
         "T": 1024**4,
     }
     return int(value * multipliers.get(unit, 1))
+
+
 def sha256_file(path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Optional[str]:
     digest = hashlib.sha256()
     try:
@@ -77,9 +88,13 @@ def sha256_file(path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Optional[st
         return digest.hexdigest()
     except (OSError, PermissionError):
         return None
+
+
 def ensure_parent(path: Path) -> None:
     if path.parent and path.parent != Path():
         path.parent.mkdir(parents=True, exist_ok=True)
+
+
 def cmd_check_system_bin(args: argparse.Namespace) -> int:
     system_dir = Path(args.system_bin)
     if not system_dir.exists():
@@ -142,6 +157,8 @@ def cmd_check_system_bin(args: argparse.Namespace) -> int:
         print("✅ No matching files found.")
     print("-" * 40)
     return 0
+
+
 def get_dpkg_installed_packages() -> list[str]:
     try:
         result = run_cmd(["dpkg", "-l"], check=False)
@@ -156,6 +173,8 @@ def get_dpkg_installed_packages() -> list[str]:
             if len(parts) >= 2:
                 packages.append(parts[1])
     return packages
+
+
 def is_doc_path(path_str: str, mode: str) -> bool:
     if mode == "none":
         return False
@@ -180,6 +199,8 @@ def is_doc_path(path_str: str, mode: str) -> bool:
         )
     msg = f"Unknown filter mode: {mode}"
     raise ValueError(msg)
+
+
 def check_package_missing_full(pkg: str, filter_mode: str, timeout: float) -> dict[str, Any]:
     try:
         result = run_cmd(["dpkg", "-L", pkg], timeout=timeout, check=False)
@@ -226,6 +247,8 @@ def check_package_missing_full(pkg: str, filter_mode: str, timeout: float) -> di
         "missing_count": len(missing),
         "missing_files": missing,
     }
+
+
 def cmd_missing_files(args: argparse.Namespace) -> int:
     packages = get_dpkg_installed_packages()
     if not packages:
@@ -279,6 +302,8 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
     print(f"\nReport: {payload['summary']}")
     print(f"Saved to: {output_path}")
     return 0
+
+
 def get_package_files(pkg: str) -> list[str]:
     for cmd in (["dpkg", "-L", pkg], ["rpm", "-ql", pkg]):
         try:
@@ -288,6 +313,8 @@ def get_package_files(pkg: str) -> list[str]:
             continue
     msg = f"Error: could not find package '{pkg}' via dpkg or rpm."
     raise SystemExit(msg)
+
+
 def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
     pkg = args.package
     dest_root = Path(args.dest_root).expanduser() / pkg
@@ -314,6 +341,8 @@ def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
     print(f"Copied files:  {copied}")
     print(f"Skipped:       {skipped} (missing or non-file entries)")
     return 0
+
+
 def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
     packages: dict[str, dict[str, list[str]]] = {}
     for block in re.split(r"\n\s*\n", status_text.strip()):
@@ -346,6 +375,8 @@ def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
                     provides.append(match.group(1))
         packages[name] = {"depends": depends, "provides": provides}
     return packages
+
+
 def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
     status_path = Path(args.status_file)
     if not status_path.exists():
@@ -367,14 +398,20 @@ def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
     for pkg in orphans:
         print(pkg)
     return 0
+
+
 def load_keep_file(path: Path) -> set[str]:
     try:
         return {line.strip() for line in path.read_text().splitlines() if line.strip()}
     except FileNotFoundError:
         return set()
+
+
 def save_keep_file(path: Path, keep: Iterable[str]) -> None:
     ensure_parent(path)
     path.write_text("\n".join(sorted(keep)) + ("\n" if keep else ""), encoding="utf-8")
+
+
 def termux_get_installed(pkg_cmd: str) -> set[str]:
     result = run_cmd([pkg_cmd, "list-installed"], check=False)
     installed: set[str] = set()
@@ -382,6 +419,8 @@ def termux_get_installed(pkg_cmd: str) -> set[str]:
         if line:
             installed.add(line.split("/")[0])
     return installed
+
+
 def termux_get_deps(pkg: str, pkg_cmd: str) -> set[str]:
     result = run_cmd([pkg_cmd, "show", pkg], check=False)
     deps: set[str] = set()
@@ -393,6 +432,8 @@ def termux_get_deps(pkg: str, pkg_cmd: str) -> set[str]:
                 if name:
                     deps.add(name)
     return deps
+
+
 def analyze_termux_orphans(pkg_cmd: str, keep_file: Path) -> tuple[list[str], set[str]]:
     installed = termux_get_installed(pkg_cmd)
     keep = load_keep_file(keep_file)
@@ -403,6 +444,8 @@ def analyze_termux_orphans(pkg_cmd: str, keep_file: Path) -> tuple[list[str], se
                 depended.add(dep)
     orphans = sorted(pkg for pkg in installed if pkg not in depended and pkg not in keep)
     return orphans, keep
+
+
 def cmd_orphan_pkgs_termux(args: argparse.Namespace) -> int:
     keep_file = Path(args.keep_file).expanduser()
     orphans, keep = analyze_termux_orphans(args.pkg_cmd, keep_file)
@@ -447,6 +490,8 @@ def cmd_orphan_pkgs_termux(args: argparse.Namespace) -> int:
         else:
             print("Unknown command")
     return 0
+
+
 def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
     try:
         result = run_cmd(["apt", "list", "--installed"], check=False)
@@ -482,9 +527,12 @@ def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
     print("-" * 40)
     print(f"{'TOTAL':<30} {human_size(total):>20}")
     return 0
+
+
 def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
     try:
         import apt
+
         out_dir = Path(out_dir_str)
         out_dir.mkdir(parents=True, exist_ok=True)
         deb_path = out_dir / f"{pkg}.deb"
@@ -516,6 +564,8 @@ def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
         with open(log_path, "a", encoding="utf-8") as handle:
             handle.write(f"Error creating {pkg}.deb: {exc}\n")
         return False
+
+
 def cmd_make_deb(args: argparse.Namespace) -> int:
     try:
         import apt
@@ -538,11 +588,13 @@ def cmd_make_deb(args: argparse.Namespace) -> int:
     )
     exact_excludes = {item.strip().lower() for item in args.exclude_exact.split(",") if item.strip()}
     substring_excludes = [item.strip().lower() for item in args.exclude_substrings.split(",") if item.strip()]
+
     def excluded(name: str) -> bool:
         lowered = name.lower()
         if lowered in exact_excludes:
             return True
         return any(sub in lowered for sub in substring_excludes)
+
     if args.packages:
         packages = args.packages
         print(f"Processing specified packages: {', '.join(packages)}")
@@ -571,6 +623,8 @@ def cmd_make_deb(args: argparse.Namespace) -> int:
         logger.warning(f"Some packages failed. Check {log_path} for details.")
         return 1
     return 0
+
+
 def cmd_suggest_removals(args: argparse.Namespace) -> int:
     try:
         result = run_cmd(
@@ -619,6 +673,8 @@ def cmd_suggest_removals(args: argparse.Namespace) -> int:
         if shown >= args.top:
             break
     return 0
+
+
 def cmd_save_deb_names(args: argparse.Namespace) -> int:
     try:
         result = run_cmd(
@@ -636,6 +692,8 @@ def cmd_save_deb_names(args: argparse.Namespace) -> int:
     output_path.write_text(result.stdout, encoding="utf-8")
     print(f"Installed package names saved to '{output_path}'")
     return 0
+
+
 def _show_big_worker(pkg: str) -> tuple[str, int, bool]:
     try:
         result = run_cmd(["apt", "show", pkg], timeout=10, check=False)
@@ -648,6 +706,8 @@ def _show_big_worker(pkg: str) -> tuple[str, int, bool]:
         return (pkg, 0, False)
     except Exception:
         return (pkg, 0, False)
+
+
 def _save_package_json(path: str, payload: dict[str, Any]) -> bool:
     try:
         output_path = Path(path)
@@ -660,6 +720,8 @@ def _save_package_json(path: str, payload: dict[str, Any]) -> bool:
     except Exception as exc:
         print(f"Error saving JSON: {exc}")
         return False
+
+
 def cmd_show_big_packages(args: argparse.Namespace) -> int:
     threshold_bytes = int(args.threshold_mb * 1024 * 1024)
     print(f"🔍 Scanning ALL available packages larger than {args.threshold_mb}MB...")
@@ -769,6 +831,8 @@ def cmd_show_big_packages(args: argparse.Namespace) -> int:
         except Exception as exc:
             print(f"Error saving simple JSON: {exc}")
     return 0
+
+
 def cmd_sort_csv(args: argparse.Namespace) -> int:
     csv_path = Path(args.csvfile)
     with csv_path.open(newline="", encoding="utf-8") as handle:
@@ -785,6 +849,8 @@ def cmd_sort_csv(args: argparse.Namespace) -> int:
         writer.writerows(rows)
     print(f"File '{csv_path}' sorted by Installed-Size and overwritten.")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Merged Debian/Termux package and system-bin toolkit.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -900,6 +966,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("csvfile")
     p.set_defaults(func=cmd_sort_csv)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -907,6 +975,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         parser.print_help()
         return 2
     return args.func(args)
+
+
 if __name__ == "__main__":
     freeze_support()
     raise SystemExit(main())

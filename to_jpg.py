@@ -14,7 +14,10 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+
 VERSION = "2.0.0"
+
+
 @dataclass
 class ConvertOptions:
     quality: int = 85
@@ -30,6 +33,8 @@ class ConvertOptions:
     progressive: bool = False
     target_size: Optional[int] = None
     min_quality: int = 30
+
+
 @dataclass
 class Backend:
     name: str
@@ -38,7 +43,11 @@ class Backend:
     write: Set[str]
     fn: Callable[[Path, Path, str, int, ConvertOptions], bool]
     available: bool = False
+
+
 _REGISTRY: List[Backend] = []
+
+
 def _register(
     name: str,
     priority: int,
@@ -53,21 +62,31 @@ def _register(
         ok = False
     _REGISTRY.append(Backend(name, priority, {e.lower() for e in read}, {e.lower() for e in write}, fn, ok))
     _REGISTRY.sort(key=lambda b: b.priority)
+
+
 def available_backends() -> List[Backend]:
     return [b for b in _REGISTRY if b.available]
+
+
 def backend_by_name(name: str) -> Optional[Backend]:
     for b in _REGISTRY:
         if b.name == name:
             return b
     return None
+
+
 def all_known_targets() -> Set[str]:
     out: Set[str] = set()
     for b in available_backends():
         out |= b.write
     return out
+
+
 def backends_for(src_ext: str, to_ext: str) -> List[Backend]:
     src_ext, to_ext = src_ext.lower(), to_ext.lower()
     return [b for b in available_backends() if src_ext in b.read and to_ext in b.write]
+
+
 _NAMED = {
     "white": (255, 255, 255, 255),
     "black": (0, 0, 0, 255),
@@ -78,6 +97,8 @@ _NAMED = {
     "grey": (128, 128, 128, 255),
     "transparent": (0, 0, 0, 0),
 }
+
+
 def _parse_color(s: str) -> Tuple[int, int, int, int]:
     s = (s or "white").strip().lower()
     if s in _NAMED:
@@ -91,6 +112,8 @@ def _parse_color(s: str) -> Tuple[int, int, int, int]:
         if len(h) == 8:
             return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), int(h[6:8], 16))
     return (255, 255, 255, 255)
+
+
 def _parse_size(s: Union[str, int]) -> int:
     if isinstance(s, int):
         return s
@@ -111,6 +134,8 @@ def _parse_size(s: Union[str, int]) -> int:
     elif t.endswith("B"):
         t = t[:-1]
     return int(float(t) * mult)
+
+
 def _geometry(s: str) -> Tuple[Optional[int], Optional[int], str]:
     s = s.strip().lower()
     fit_hint = ""
@@ -126,6 +151,8 @@ def _geometry(s: str) -> Tuple[Optional[int], Optional[int], str]:
     if s:
         return (int(s), None, fit_hint)
     return (None, None, fit_hint)
+
+
 def _human_size(nbytes: int) -> str:
     sign = "-" if nbytes < 0 else ""
     nbytes = abs(nbytes)
@@ -135,6 +162,8 @@ def _human_size(nbytes: int) -> str:
             return f"{sign}{int(size)}{u}" if u == "B" else f"{sign}{size:.1f}{u}"
         size /= 1024.0
     return f"{sign}{size:.1f}TB"
+
+
 def _unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -145,6 +174,8 @@ def _unique_path(path: Path) -> Path:
         if not cand.exists():
             return cand
         n += 1
+
+
 def _normalize_to(to: str) -> str:
     to = to.lower().lstrip(".")
     if to in ("jpg", "jpeg"):
@@ -154,10 +185,13 @@ def _normalize_to(to: str) -> str:
     if to in ("heif", "heic"):
         return ".heic"
     return f".{to}"
+
+
 def _remove_original(path: Path, use_trash: bool) -> None:
     if use_trash:
         try:
             from send2trash import send2trash
+
             send2trash(str(path))
             return
         except Exception:
@@ -166,6 +200,8 @@ def _remove_original(path: Path, use_trash: bool) -> None:
         path.unlink()
     except OSError:
         pass
+
+
 def _target_size(w: int, h: int, opts: ConvertOptions) -> Tuple[int, int]:
     if opts.scale is not None:
         return (max(1, int(round(w * opts.scale))), max(1, int(round(h * opts.scale))))
@@ -192,6 +228,8 @@ def _target_size(w: int, h: int, opts: ConvertOptions) -> Tuple[int, int]:
     else:
         scale = min(scales)
     return (max(1, int(round(w * scale))), max(1, int(round(h * scale))))
+
+
 def _gravity_offset(sw: int, sh: int, cw: int, ch: int, gravity: str) -> Tuple[int, int]:
     g = gravity.lower()
     left, top = (sw - cw) // 2, (sh - ch) // 2
@@ -212,12 +250,17 @@ def _gravity_offset(sw: int, sh: int, cw: int, ch: int, gravity: str) -> Tuple[i
     if g in ("southeast", "se"):
         left, top = sw - cw, sh - ch
     return (max(0, left), max(0, top))
+
+
 def _pil_probe() -> bool:
     try:
         import PIL  # noqa
+
         return True
     except ImportError:
         return False
+
+
 def _pil_exts() -> Set[str]:
     base = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif", ".ico", ".ppm", ".pgm", ".pbm", ".pnm"}
     for mod, exts in (
@@ -231,8 +274,11 @@ def _pil_exts() -> Set[str]:
         except ImportError:
             pass
     return base
+
+
 def _pil_resize(img, opts: ConvertOptions):
     from PIL import Image
+
     if opts.scale is None and opts.max_width is None and opts.max_height is None:
         return img
     w, h = img.size
@@ -249,8 +295,11 @@ def _pil_resize(img, opts: ConvertOptions):
         left, top = _gravity_offset(sw, sh, cw, ch, opts.gravity)
         return img.crop((left, top, left + cw, top + ch))
     return img.resize((nw, nh), Image.LANCZOS)
+
+
 def _pil_flatten(img, background: Tuple[int, int, int, int]):
     from PIL import Image
+
     if img.mode in ("RGBA", "LA"):
         if img.mode == "LA":
             img = img.convert("RGBA")
@@ -263,6 +312,8 @@ def _pil_flatten(img, background: Tuple[int, int, int, int]):
         bg.paste(img, mask=img.split()[-1])
         return bg
     return img.convert("RGB")
+
+
 def _pil_target_mode(img, to_ext: str) -> str:
     if to_ext in (".jpg", ".jpeg", ".bmp"):
         return "RGB"
@@ -271,6 +322,8 @@ def _pil_target_mode(img, to_ext: str) -> str:
             return "RGBA"
         return "RGB"
     return img.mode
+
+
 def _pil_save_kwargs(to_ext: str, quality: int, opts: ConvertOptions) -> Dict[str, Any]:
     if to_ext in (".jpg", ".jpeg"):
         return {"quality": quality, "optimize": True, "progressive": opts.progressive}
@@ -287,6 +340,8 @@ def _pil_save_kwargs(to_ext: str, quality: int, opts: ConvertOptions) -> Dict[st
     if to_ext == ".jxl":
         return {"quality": 100 if opts.lossless else quality}
     return {}
+
+
 _META_FORMATS = {".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".avif", ".heic", ".heif", ".jxl"}
 _PIL_FMT = {
     ".jpg": "JPEG",
@@ -304,8 +359,11 @@ _PIL_FMT = {
     ".jxl": "JXL",
     ".ppm": "PPM",
 }
+
+
 def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     from PIL import Image, ImageOps, ImageFile
+
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     with Image.open(str(src)) as img:
         if opts.auto_orient:
@@ -355,13 +413,18 @@ def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
             safe = {k: v for k, v in kw.items() if k in ("quality", "lossless", "method", "optimize")}
             img.save(str(dst), format=fmt, **safe)
     return dst.is_file()
+
+
 _register("pillow", 20, _pil_exts(), _pil_exts(), _pil_convert, _pil_probe)
 try:
     import cv2 as _cv2
     import numpy as _np
+
     _HAS_CV2 = True
 except ImportError:
     _cv2, _np, _HAS_CV2 = None, None, False
+
+
 def _cv2_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     if not _HAS_CV2:
         return False
@@ -397,6 +460,8 @@ def _cv2_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
     elif to_ext == ".webp":
         params = [int(_cv2.IMWRITE_WEBP_QUALITY), quality]
     return bool(_cv2.imwrite(str(dst), img, params))
+
+
 _register(
     "cv2",
     30,
@@ -407,10 +472,13 @@ _register(
 )
 try:
     from skimage import io as _ski_io, color as _ski_color
+
     _HAS_SKI = True
 except ImportError:
     _ski_io = _ski_color = None
     _HAS_SKI = False
+
+
 def _ski_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     if not _HAS_SKI:
         return False
@@ -419,6 +487,7 @@ def _ski_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
         return False
     if opts.max_width or opts.max_height or opts.scale:
         from skimage.transform import resize as _skresize
+
         h, w = img.shape[:2]
         nw, nh = _target_size(w, h, opts)
         if (nw, nh) != (w, h):
@@ -433,6 +502,8 @@ def _ski_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertO
     kw = {"quality": quality} if to_ext in (".jpg", ".jpeg") else {}
     _ski_io.imsave(str(dst), img, **kw)
     return dst.is_file()
+
+
 _register(
     "skimage",
     50,
@@ -441,14 +512,20 @@ _register(
     _ski_convert,
     lambda: _HAS_SKI,
 )
+
+
 def _probe_vips() -> bool:
     try:
         import pyvips  # noqa
+
         return True
     except Exception:
         return False
+
+
 def _vips_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     import pyvips
+
     img = pyvips.Image.new_from_file(str(src), access="sequential", fail_on="error")
     if opts.auto_orient and to_ext not in (".png", ".tiff", ".tif"):
         try:
@@ -499,6 +576,8 @@ def _vips_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Convert
     else:
         img.write_to_file(str(dst), Q=quality)
     return dst.is_file()
+
+
 _register(
     "vips",
     10,
@@ -527,15 +606,21 @@ _register(
     _vips_convert,
     _probe_vips,
 )
+
+
 def _probe_wand() -> bool:
     try:
         from wand.image import Image as _WI  # noqa
+
         return True
     except Exception:
         return False
+
+
 def _wand_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     from wand.image import Image as WImage
     from wand.color import Color
+
     with WImage(filename=str(src)) as img:
         if opts.auto_orient:
             try:
@@ -581,6 +666,8 @@ def _wand_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Convert
                 pass
         img.save(filename=str(dst))
     return dst.is_file()
+
+
 _register(
     "wand",
     40,
@@ -633,8 +720,12 @@ _register(
     _wand_convert,
     _probe_wand,
 )
+
+
 def _probe_magick() -> bool:
     return bool(shutil.which("magick") or shutil.which("convert"))
+
+
 def _magick_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     cmd = shutil.which("magick") or shutil.which("convert")
     if not cmd:
@@ -664,6 +755,8 @@ def _magick_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Conve
         return dst.is_file()
     except Exception:
         return False
+
+
 _register(
     "imagemagick",
     45,
@@ -717,8 +810,12 @@ _register(
     _magick_convert,
     _probe_magick,
 )
+
+
 def _probe_ffmpeg() -> bool:
     return bool(shutil.which("ffmpeg"))
+
+
 def _ffmpeg_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     cmd = shutil.which("ffmpeg")
     if not cmd:
@@ -741,6 +838,8 @@ def _ffmpeg_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Conve
         return dst.is_file()
     except Exception:
         return False
+
+
 _register(
     "ffmpeg",
     60,
@@ -772,15 +871,21 @@ _register(
     _ffmpeg_convert,
     _probe_ffmpeg,
 )
+
+
 def _probe_pymupdf() -> bool:
     try:
         import fitz  # noqa
+
         return True
     except ImportError:
         return False
+
+
 def _pymupdf_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
     import fitz
     from PIL import Image
+
     doc = fitz.open(str(src))
     try:
         if doc.page_count == 0:
@@ -803,6 +908,8 @@ def _pymupdf_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: Conv
     finally:
         doc.close()
     return dst.is_file()
+
+
 _register(
     "pymupdf",
     5,
@@ -811,6 +918,8 @@ _register(
     _pymupdf_convert,
     _probe_pymupdf,
 )
+
+
 def _try_backends_to_file(
     src: Path,
     dst: Path,
@@ -869,6 +978,8 @@ def _try_backends_to_file(
             except OSError:
                 pass
     return (False, None, "; ".join(errors) or "no backend could convert this file")
+
+
 def _encode_with_target_size(
     src: Path,
     dst: Path,
@@ -934,6 +1045,8 @@ def _encode_with_target_size(
     except OSError as exc:
         return (False, None, f"move failed: {exc}")
     return (True, used_backend, "")
+
+
 @dataclass
 class FileResult:
     src: Path
@@ -943,12 +1056,16 @@ class FileResult:
     before: Optional[int] = None
     after: Optional[int] = None
     message: str = ""
+
+
 def _would_change(src: Path, to_ext: str, opts: ConvertOptions) -> bool:
     if src.suffix.lower() != to_ext:
         return True
     if opts.max_width or opts.max_height or opts.scale or opts.target_size:
         return True
     return False
+
+
 def _determine_dst(src: Path, to_ext: str, out_dir: Optional[Path], preserve_tree: bool) -> Path:
     if out_dir is None:
         return src.with_suffix(to_ext)
@@ -959,6 +1076,8 @@ def _determine_dst(src: Path, to_ext: str, out_dir: Optional[Path], preserve_tre
             rel = Path(src.name)
         return out_dir / rel.with_suffix(to_ext)
     return out_dir / (src.stem + to_ext)
+
+
 def process_file(
     src: Path,
     to_ext: str,
@@ -1013,10 +1132,12 @@ def process_file(
                 pass
         _remove_original(src, trash)
     return FileResult(src, dst, "ok", used, before, after, message=f"{_human_size(before)} → {_human_size(after)}")
+
+
 def collect_images(
     paths: Sequence[Path],
     exts: Sequence[str],
-    recursive: bool,
+    recursive: bool = True,
     include: Sequence[str] = (),
     exclude: Sequence[str] = (),
     min_size: Optional[int] = None,
@@ -1024,6 +1145,7 @@ def collect_images(
 ) -> List[Path]:
     ext_set = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in exts}
     found: List[Path] = []
+
     def accept(p: Path) -> bool:
         if p.suffix.lower() not in ext_set:
             return False
@@ -1041,6 +1163,7 @@ def collect_images(
         if max_size is not None and sz > max_size:
             return False
         return True
+
     for p in paths:
         try:
             p = p.resolve()
@@ -1067,6 +1190,8 @@ def collect_images(
                 except OSError:
                     pass
     return found
+
+
 _PRESETS: Dict[str, Dict[str, Any]] = {
     "web": {
         "to": "webp",
@@ -1096,6 +1221,8 @@ _PRESETS: Dict[str, Dict[str, Any]] = {
     "archive": {"to": "png", "lossless": True, "strip_metadata": False},
     "print": {"to": "tiff", "quality": 95, "strip_metadata": False},
 }
+
+
 def _apply_preset(args: argparse.Namespace) -> None:
     if not args.preset:
         return
@@ -1109,6 +1236,8 @@ def _apply_preset(args: argparse.Namespace) -> None:
         elif k in ("max_width", "max_height", "fit", "quality", "lossless", "strip_metadata"):
             if getattr(args, k, None) is None:
                 setattr(args, k, v)
+
+
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     installed = " ".join(b.name for b in available_backends()) or "(none)"
     p = argparse.ArgumentParser(
@@ -1124,9 +1253,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--backends", default=None, metavar="LIST", help="comma-separated preferred backends (fallback still applies)"
     )
     p.add_argument("-o", "--to", default=None, metavar="EXT")
-    p.add_argument("-j", "--jobs", type=int, default=1, metavar="N", help="parallel workers (0 = cpu_count)")
-    p.add_argument("-q", "--quality", type=int, default=None, metavar="Q")
-    p.add_argument("-r", "--recursive", action="store_true")
+    p.add_argument("-j", "--jobs", type=int, default=4, metavar="N", help="parallel workers (0 = cpu_count)")
+    p.add_argument("-q", "--quality", type=int, default=70, metavar="Q")
+    p.add_argument("-r", "--recursive", default=True, action="store_true")
     p.add_argument("-k", "--keep", action="store_true")
     p.add_argument("-f", "--force", action="store_true", help="overwrite / reconvert even if already target format")
     p.add_argument("--no-clobber", dest="no_clobber", action="store_true", default=True)
@@ -1172,6 +1301,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p.add_argument("--preset", default=None, choices=list(_PRESETS.keys()))
     p.add_argument("-V", "--version", action="version", version=f"%(prog)s {VERSION}")
     return p.parse_args(argv)
+
+
 def _resolve_defaults(args: argparse.Namespace) -> None:
     _apply_preset(args)
     if args.to is None:
@@ -1216,6 +1347,8 @@ def _resolve_defaults(args: argparse.Namespace) -> None:
                 args.fit = "inside"
             elif hint == "<":
                 args.fit = "outside"
+
+
 def _build_opts(args: argparse.Namespace) -> ConvertOptions:
     return ConvertOptions(
         quality=max(1, min(100, args.quality)),
@@ -1232,6 +1365,8 @@ def _build_opts(args: argparse.Namespace) -> ConvertOptions:
         target_size=_parse_size(args.target_size) if args.target_size else None,
         min_quality=max(1, min(100, args.min_quality)),
     )
+
+
 def _benchmark(files: List[Path], to_ext: str, opts: ConvertOptions) -> None:
     if not files:
         print("no files to benchmark")
@@ -1253,6 +1388,8 @@ def _benchmark(files: List[Path], to_ext: str, opts: ConvertOptions) -> None:
                 print(f"{b.name:<14}{'ok':<10}{_human_size(tmp.stat().st_size):>10}{dt:>9.3f}s")
             else:
                 print(f"{b.name:<14}{'failed':<10}")
+
+
 _DEFAULT_INPUT_EXTS = [
     ".jpg",
     ".jpeg",
@@ -1280,6 +1417,8 @@ _DEFAULT_INPUT_EXTS = [
     ".dds",
     ".psd",
 ]
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     if args.list_backends:
@@ -1327,6 +1466,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if b and b.available:
                 preferred = b.name
                 break
+
     def worker(f: Path) -> FileResult:
         try:
             return process_file(
@@ -1345,11 +1485,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         except Exception as exc:
             return FileResult(f, None, "error", message=f"unhandled: {exc}")
+
     results: List[FileResult] = []
     progress = None
     if args.progress:
         try:
             from tqdm import tqdm
+
             progress = tqdm(total=len(files), unit="file")
         except ImportError:
             progress = None
@@ -1425,5 +1567,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         label = "predicted space change" if pred else "space change"
         print(f"{label}: {_human_size(total_saved)}")
     return 1 if err else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

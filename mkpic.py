@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import compileall
 import os
 from pathlib import Path
 import sys
-
 from dh import get_pyfiles, mpf
-
 
 REMOVE_ORIG = False
 LEGACY_MODE = False

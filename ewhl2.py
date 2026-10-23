@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import sys
 import zipfile
+
+
 def is_empty_wheel(wheel_path: Path) -> bool:
     try:
         with zipfile.ZipFile(wheel_path, "r") as zip_ref:
@@ -21,6 +23,8 @@ def is_empty_wheel(wheel_path: Path) -> bool:
     except Exception as e:
         print(f"  Error reading {wheel_path}: {e}")
         return False
+
+
 def extract_package_info(wheel_path: Path) -> tuple[str, str] | tuple[None, None]:
     wheel_name = wheel_path.stem
     parts = wheel_name.split("-")
@@ -30,6 +34,8 @@ def extract_package_info(wheel_path: Path) -> tuple[str, str] | tuple[None, None
         name = name.replace("_", "-")
         return name, version
     return None, None
+
+
 def get_installed_packages():
     try:
         result = subprocess.run(
@@ -47,6 +53,8 @@ def get_installed_packages():
     except Exception as e:
         print(f"Warning: Could not get installed packages: {e}")
         return {}
+
+
 def check_pip_show(package_name):
     try:
         result = subprocess.run(
@@ -64,6 +72,8 @@ def check_pip_show(package_name):
     except Exception:
         pass
     return None
+
+
 def check_package_location(
     package_name: str,
 ) -> tuple[str | None, bool] | tuple[None, bool]:
@@ -88,6 +98,8 @@ def check_package_location(
     except Exception:
         pass
     return None, False
+
+
 def analyze_wheels(source_dir, dest_dir_name: str = "empty_wheels", check_installed=True) -> None:
     source_path = Path(source_dir)
     dest_path = source_path / dest_dir_name
@@ -191,6 +203,8 @@ Move all {len(empty_wheels)} empty wheels to '{dest_dir_name}/'? (y/n): """)
             "\n3. Or completely remove them: pip uninstall "
             + " ".join([item["package"] for item in installed_empty_wheels])
         )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Identify and move empty .whl files, with detection of potentially installed ones"
@@ -223,6 +237,8 @@ def main() -> None:
         print(f"Error: Directory '{args.directory}' does not exist")
         return
     analyze_wheels(args.directory, args.dest, check_installed=not args.no_install_check)
+
+
 if __name__ == "__main__":
     try:
         pass

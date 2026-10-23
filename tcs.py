@@ -9,6 +9,7 @@ from pathlib import Path
 import string
 import subprocess
 import sys
+
 TEXT1 = "Return full type-annotated code in one markdown block, no docstrings & no comments"
 USAGE = """\
 Usage: {prog} <path> [start [end]] [-m|--mangle | -x]
@@ -37,9 +38,13 @@ BLOCK_NODES = (
     ast.Try,
     ast.ExceptHandler,
 )
+
+
 def die(msg: str, code: int = 1) -> None:
     print(msg, file=sys.stderr)
     sys.exit(code)
+
+
 def send_to_clipboard(text: str) -> bool:
     try:
         proc = subprocess.run(
@@ -59,6 +64,8 @@ def send_to_clipboard(text: str) -> bool:
         print(f"Warning: failed to copy to clipboard: {err}", file=sys.stderr)
         return False
     return True
+
+
 class Stripper(ast.NodeTransformer):
     def _drop_docstring(self, node) -> None:
         if node.body:
@@ -69,30 +76,41 @@ class Stripper(ast.NodeTransformer):
                 and isinstance(first.value.value, str)
             ):
                 node.body = node.body[1:]
+
     def _scope(self, node):
         self._drop_docstring(node)
         return self.generic_visit(node)
+
     visit_Module = _scope
     visit_ClassDef = _scope
+
     def visit_FunctionDef(self, node):
         node.returns = None
         return self._scope(node)
+
     visit_AsyncFunctionDef = visit_FunctionDef
+
     def visit_arg(self, node):
         node.annotation = None
         return node
+
     def visit_AnnAssign(self, node):
         if node.value is None:
             return None
         return ast.copy_location(ast.Assign(targets=[node.target], value=node.value), node)
+
     def visit_ImportFrom(self, node):
         if node.module == "__future__":
             return None
         return node
+
+
 def _fill_empty_blocks(tree: ast.AST) -> None:
     for node in ast.walk(tree):
         if isinstance(node, BLOCK_NODES) and not node.body:
             node.body = [ast.Pass()]
+
+
 def _all_identifiers(tree: ast.AST) -> set[str]:
     names: set[str] = set()
     for node in ast.walk(tree):
@@ -115,6 +133,8 @@ def _all_identifiers(tree: ast.AST) -> set[str]:
         elif isinstance(node, ast.ExceptHandler) and node.name:
             names.add(node.name)
     return names
+
+
 def _unsafe_names(tree: ast.AST) -> set[str]:
     unsafe: set[str] = set()
     for node in ast.walk(tree):
@@ -140,6 +160,8 @@ def _unsafe_names(tree: ast.AST) -> set[str]:
         elif isinstance(node, ast.MatchMapping) and node.rest:
             unsafe.add(node.rest)
     return unsafe
+
+
 def _name_stats(tree: ast.AST) -> tuple[set[str], Counter]:
     defined: set[str] = set()
     freq: Counter = Counter()
@@ -158,38 +180,53 @@ def _name_stats(tree: ast.AST) -> tuple[set[str], Counter]:
             freq[node.name] += 1
             defined.add(node.name)
     return defined, freq
+
+
 def _short_names(taken: set[str]):
     for size in count(1):
         for chars in product(string.ascii_letters, repeat=size):
             name = "".join(chars)
             if name not in taken:
                 yield name
+
+
 class Renamer(ast.NodeTransformer):
     def __init__(self, mapping: dict[str, str]):
         self.m = mapping
+
     def _r(self, name: str) -> str:
         return self.m.get(name, name)
+
     def visit_Name(self, node):
         node.id = self._r(node.id)
         return node
+
     def visit_arg(self, node):
         node.arg = self._r(node.arg)
         return self.generic_visit(node)
+
     def visit_FunctionDef(self, node):
         node.name = self._r(node.name)
         return self.generic_visit(node)
+
     visit_AsyncFunctionDef = visit_FunctionDef
+
     def visit_ClassDef(self, node):
         node.name = self._r(node.name)
         return self.generic_visit(node)
+
     def visit_ExceptHandler(self, node):
         if node.name:
             node.name = self._r(node.name)
         return self.generic_visit(node)
+
     def visit_Global(self, node):
         node.names = [self._r(n) for n in node.names]
         return node
+
     visit_Nonlocal = visit_Global
+
+
 def rename_identifiers(tree: ast.AST) -> ast.AST:
     defined, freq = _name_stats(tree)
     unsafe = _unsafe_names(tree)
@@ -199,6 +236,8 @@ def rename_identifiers(tree: ast.AST) -> ast.AST:
     gen = _short_names(taken)
     mapping = {old: next(gen) for old in targets}
     return Renamer(mapping).visit(tree)
+
+
 def _shrink_indent(code: str) -> str:
     out = []
     for line in code.splitlines():
@@ -206,6 +245,8 @@ def _shrink_indent(code: str) -> str:
         if stripped:
             out.append(" " * ((len(line) - len(stripped)) // 4) + stripped)
     return "\n".join(out) + "\n" if out else ""
+
+
 def compress_source(source: str) -> str | None:
     try:
         tree = ast.parse(source)
@@ -220,6 +261,8 @@ def compress_source(source: str) -> str | None:
     except SyntaxError:
         return None
     return code
+
+
 def is_python_file(path: Path, source: str) -> bool:
     if path.suffix.lower() == ".py":
         return True
@@ -230,21 +273,27 @@ def is_python_file(path: Path, source: str) -> bool:
         except (SyntaxError, ValueError):
             return False
     return False
+
+
 def strip_x(source: str) -> str | None:
     try:
         import libcst as cst
         from libcst import RemovalSentinel
     except ImportError:
         return None
+
     def is_string_expr(expr) -> bool:
         return isinstance(expr.value, (cst.SimpleString, cst.ConcatenatedString))
+
     def is_docstring_stmt(stmt) -> bool:
         if not isinstance(stmt, cst.SimpleStatementLine) or len(stmt.body) != 1:
             return False
         s = stmt.body[0]
         return isinstance(s, cst.Expr) and is_string_expr(s)
+
     def is_docstring_small(s) -> bool:
         return isinstance(s, cst.Expr) and is_string_expr(s)
+
     def is_future_import_line(stmt) -> bool:
         if not isinstance(stmt, cst.SimpleStatementLine) or len(stmt.body) != 1:
             return False
@@ -253,6 +302,7 @@ def strip_x(source: str) -> str | None:
             return False
         m = s.module
         return isinstance(m, cst.Name) and m.value == "__future__"
+
     def strip_suite(suite):
         if isinstance(suite, cst.IndentedBlock):
             body = list(suite.body)
@@ -269,6 +319,7 @@ def strip_x(source: str) -> str | None:
                 body = [cst.Pass()]
             return suite.with_changes(body=body)
         return suite
+
     class XStripper(cst.CSTTransformer):
         def leave_TrailingWhitespace(self, orig, updated):
             if updated.comment is not None:
@@ -277,8 +328,10 @@ def strip_x(source: str) -> str | None:
                     whitespace=cst.SimpleWhitespace(""),
                 )
             return updated
+
         def leave_EmptyLine(self, orig, updated):
             return RemovalSentinel.REMOVE
+
         def leave_Module(self, orig, updated):
             body = list(updated.body)
             if body and is_docstring_stmt(body[0]):
@@ -289,16 +342,22 @@ def strip_x(source: str) -> str | None:
                 header=[],
                 footer=[],
             )
+
         def leave_ClassDef(self, orig, updated):
             return updated.with_changes(body=strip_suite(updated.body))
+
         def leave_FunctionDef(self, orig, updated):
             return updated.with_changes(body=strip_suite(updated.body))
+
         leave_AsyncFunctionDef = leave_FunctionDef
+
     try:
         module = cst.parse_module(source)
         return module.visit(XStripper()).code
     except Exception:
         return None
+
+
 def build_payload(
     path: Path,
     source: str,
@@ -329,6 +388,8 @@ def build_payload(
         else:
             print("Warning: could not parse file; copied as-is.", file=sys.stderr)
     return source
+
+
 def main(argv: list[str]) -> None:
     raw = argv[1:]
     mangle = False
@@ -388,5 +449,7 @@ def main(argv: list[str]) -> None:
         f"Processed {len(payload)} chars (original {len(source)}); {status}.",
         file=sys.stderr,
     )
+
+
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))

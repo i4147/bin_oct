@@ -2,8 +2,11 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
+
 PIP_LIST = Path("/sdcard/data/pip.txt")
 TARGET_DIR = Path.cwd()
+
+
 def load_third_party(path: Path) -> set[str]:
     names: set[str] = set()
     if not path.is_file():
@@ -19,6 +22,8 @@ def load_third_party(path: Path) -> set[str]:
         if name:
             names.add(name)
     return names
+
+
 def main() -> int:
     stdlib = {n.lower() for n in getattr(sys, "stdlib_module_names", set())}
     third_party = load_third_party(PIP_LIST)
@@ -46,5 +51,7 @@ def main() -> int:
     else:
         print(f"\n⚠️  {conflicts} conflicting file(s).")
     return 1 if conflicts else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

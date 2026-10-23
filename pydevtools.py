@@ -14,6 +14,7 @@ import sys
 import tempfile
 from typing import Any, Iterable, Sequence
 import zipfile
+
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -23,16 +24,24 @@ except ModuleNotFoundError:
         tomllib = None
 README_SUFFIXES = {".md", ".markdown", ".mdown", ".mkdn"}
 BINARY_SUFFIXES = (".so", ".pyd", ".dll")
+
+
 def die(msg: str, code: int = 1) -> "NoReturn":
     print(f"error: {msg}", file=sys.stderr)
     raise SystemExit(code)
+
+
 def info(msg: str) -> None:
     print(msg)
+
+
 def read_text(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8")
     except OSError:
         return None
+
+
 def write_text(path: Path, content: str, *, force: bool = False) -> bool:
     if path.exists() and not force:
         info(f"warning: {path} exists; use --force to overwrite.")
@@ -40,6 +49,8 @@ def write_text(path: Path, content: str, *, force: bool = False) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8", newline="\n")
     return True
+
+
 def load_toml(path: Path) -> dict[str, Any]:
     if tomllib is None:
         die("TOML support requires Python >=3.11 or the 'tomli' package.")
@@ -51,10 +62,16 @@ def load_toml(path: Path) -> dict[str, Any]:
     except Exception as exc:
         die(f"invalid TOML in {path}: {exc}")
     return {}
+
+
 def py_repr(value: Any) -> str:
     return pprint.pformat(value, indent=4, width=88, sort_dicts=False)
+
+
 def module_from_name(name: str) -> str:
     return name.replace("-", "_").replace(".", "_").lower()
+
+
 def load_user_info() -> dict[str, str]:
     info_path = Path.home() / ".myinfo"
     if not info_path.exists():
@@ -74,6 +91,8 @@ def load_user_info() -> dict[str, str]:
         k, v = line.split("=", 1)
         out[k.strip()] = v.strip()
     return out
+
+
 def parse_cargo_lock(text: str) -> dict[str, Any]:
     m = re.search(r"^version\s*=\s*(\d+)", text, re.MULTILINE)
     version = int(m.group(1)) if m else 3
@@ -84,6 +103,8 @@ def parse_cargo_lock(text: str) -> dict[str, Any]:
         if pkg:
             packages.append(pkg)
     return {"version": version, "packages": packages}
+
+
 def _parse_lock_pkg_v2(chunk: str) -> dict[str, Any] | None:
     name = re.search(r'^name\s*=\s*"([^"]*)"', chunk, re.MULTILINE)
     version = re.search(r'^version\s*=\s*"([^"]*)"', chunk, re.MULTILINE)
@@ -108,6 +129,8 @@ def _parse_lock_pkg_v2(chunk: str) -> dict[str, Any] | None:
     if deps:
         pkg["dependencies"] = deps
     return pkg
+
+
 def _parse_lock_pkg_v1(chunk: str) -> dict[str, Any] | None:
     name = re.search(r'^name\s*=\s*"([^"]*)"', chunk, re.MULTILINE)
     version = re.search(r'^version\s*=\s*"([^"]*)"', chunk, re.MULTILINE)
@@ -122,6 +145,8 @@ def _parse_lock_pkg_v1(chunk: str) -> dict[str, Any] | None:
     if deps:
         pkg["dependencies"] = deps
     return pkg
+
+
 def render_cargo_toml(
     packages: list[dict[str, Any]],
     *,
@@ -154,6 +179,8 @@ def render_cargo_toml(
             for pkg in packages[1:]:
                 out.append(f'{pkg["name"]} = "{pkg["version"]}"')
     return "\n".join(out)
+
+
 def cmd_cargo_toml(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -175,14 +202,19 @@ def cmd_cargo_toml(args: argparse.Namespace) -> int:
         info("\nPreview:\n" + "-" * 40)
         info(rendered)
     return 0
+
+
 @dataclass
 class Author:
     name: str | None = None
     email: str | None = None
+
     def to_string(self) -> str:
         if self.name and self.email:
             return f"{self.name} <{self.email}>"
         return self.name or self.email or ""
+
+
 def _authors_from_pep621(raw: Iterable[Any]) -> list[Author]:
     out: list[Author] = []
     for item in raw:
@@ -195,11 +227,15 @@ def _authors_from_pep621(raw: Iterable[Any]) -> list[Author]:
             else:
                 out.append(Author(name=item))
     return out
+
+
 def _read_optional_file(p: Path) -> str:
     try:
         return p.read_text(encoding="utf-8")
     except OSError:
         return ""
+
+
 def _readme_content(readme: Any, root: Path) -> tuple[str, str]:
     if isinstance(readme, dict):
         content_type = readme.get("content-type", "text/markdown")
@@ -211,6 +247,8 @@ def _readme_content(readme: Any, root: Path) -> tuple[str, str]:
         ctype = "text/markdown" if suffix in README_SUFFIXES else ("text/x-rst" if suffix == ".rst" else "text/plain")
         return _read_optional_file(root / readme), ctype
     return "", "text/plain"
+
+
 @dataclass
 class ProjectMeta:
     name: str = ""
@@ -235,6 +273,8 @@ class ProjectMeta:
     build_backend: str = ""
     build_requires: list[str] = field(default_factory=list)
     tool: dict[str, Any] = field(default_factory=dict)
+
+
 def extract_pep621_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
     v1 = pyproject.get("project", {})
     bs = pyproject.get("build-system", {})
@@ -288,6 +328,8 @@ def extract_pep621_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
         build_requires=list(bs.get("requires", []) or []),
         tool=tool,
     )
+
+
 def extract_poetry_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
     poetry = pyproject.get("tool", {}).get("poetry", {})
     if not isinstance(poetry, dict):
@@ -331,6 +373,8 @@ def extract_poetry_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
         build_requires=["poetry-core"],
         tool=pyproject.get("tool", {}) or {},
     )
+
+
 def parse_setup_cfg(path: Path) -> configparser.ConfigParser:
     cfg = configparser.ConfigParser(interpolation=None, delimiters=("=",))
     if path.is_file():
@@ -340,6 +384,8 @@ def parse_setup_cfg(path: Path) -> configparser.ConfigParser:
             msg = f"invalid setup.cfg: {exc}"
             raise ValueError(msg) from exc
     return cfg
+
+
 def render_package_finder(package_name: str | None) -> str:
     if package_name:
         return (
@@ -374,6 +420,8 @@ def render_package_finder(package_name: str | None) -> str:
         "    packages = find_packages(where=str(_project_root))\n"
         "    package_dir = {}\n"
     )
+
+
 def _setup_kwargs_simple(meta: ProjectMeta, package_name: str | None, *, use_src: bool) -> str:
     lines: list[str] = []
     lines.append(f"    name={meta.name!r},")
@@ -420,6 +468,8 @@ def _setup_kwargs_simple(meta: ProjectMeta, package_name: str | None, *, use_src
     lines.append("    packages=packages,")
     lines.append("    package_dir=package_dir,")
     return "\n".join(lines)
+
+
 def render_setup_py_simple(meta: ProjectMeta, root: Path) -> str:
     finder = render_package_finder(meta.name)
     header = (
@@ -437,6 +487,8 @@ def render_setup_py_simple(meta: ProjectMeta, root: Path) -> str:
     )
     kwargs = _setup_kwargs_simple(meta, meta.name, use_src=True)
     return header + readme_helper + finder + "\nsetup(\n" + kwargs + "\n)\n"
+
+
 def render_setup_py_detailed(
     meta: ProjectMeta,
     root: Path,
@@ -526,6 +578,8 @@ def render_setup_py_detailed(
             exts.append(f"Extension({ext['name']!r}, sources={ext.get('sources', [])!r})")
         ext_block = f"ext_modules = [\n    " + ",\n    ".join(exts) + "\n]\n\n"
     return header + ext_block + "setup(\n" + "\n".join(lines) + "\n)\n"
+
+
 def _detect_ext_backend(meta: ProjectMeta) -> str:
     if meta.tool.get("setuptools", {}).get("ext-modules"):
         return "setuptools"
@@ -537,6 +591,8 @@ def _detect_ext_backend(meta: ProjectMeta) -> str:
     if "cmake" in lowered:
         return "cmake"
     return "none"
+
+
 def render_setup_py_runtime(meta: ProjectMeta) -> str:
     return textwrap.dedent('''\
         #!/usr/bin/env python3
@@ -591,12 +647,15 @@ def render_setup_py_runtime(meta: ProjectMeta) -> str:
         if __name__ == "__main__":
             raise SystemExit(main())
         ''')
+
+
 def detect_entry_points(project_dir: Path, package_name: str) -> list[dict[str, str]]:
     entry: list[dict[str, str]] = []
     pkg_main = project_dir / package_name / "__main__.py"
     pkg_cli = project_dir / package_name / "cli.py"
     root_main = project_dir / "__main__.py"
     root_cli = project_dir / "cli.py"
+
     def guess_func(path: Path) -> str:
         text = read_text(path) or ""
         if re.search(r"def main\(", text) or "import click" in text:
@@ -604,6 +663,7 @@ def detect_entry_points(project_dir: Path, package_name: str) -> list[dict[str, 
         if re.search(r"def cli\(", text):
             return "cli"
         return "main"
+
     if pkg_main.exists():
         entry.append({
             "module": f"{package_name}.__main__",
@@ -625,6 +685,8 @@ def detect_entry_points(project_dir: Path, package_name: str) -> list[dict[str, 
             "script_name": package_name,
         })
     return entry
+
+
 def parse_requirements(project_dir: Path) -> list[str]:
     for name in ("requirements.txt", "requirements.in", "Pipfile"):
         p = project_dir / name
@@ -642,6 +704,8 @@ def parse_requirements(project_dir: Path) -> list[str]:
                 deps.append(line)
         return deps
     return []
+
+
 def render_setup_py_for_dir(project_dir: Path, package_name: str) -> str:
     entry_points = detect_entry_points(project_dir, package_name)
     requirements = parse_requirements(project_dir)
@@ -681,6 +745,8 @@ def render_setup_py_for_dir(project_dir: Path, package_name: str) -> str:
         "    ],\n"
         ")\n"
     )
+
+
 def _read_wheel_metadata(root: Path) -> dict[str, Any]:
     dist_info = next(root.glob("*.dist-info"), None)
     if dist_info is None:
@@ -693,6 +759,8 @@ def _read_wheel_metadata(root: Path) -> dict[str, Any]:
         "summary": meta.get("Summary", ""),
         "install_requires": meta.get_all("Requires-Dist") or [],
     }
+
+
 def _read_wheel_entry_points(root: Path) -> dict[str, list[str]]:
     dist_info = next(root.glob("*.dist-info"), None)
     if dist_info is None:
@@ -712,6 +780,8 @@ def _read_wheel_entry_points(root: Path) -> dict[str, list[str]]:
         elif section:
             groups[section].append(line)
     return groups
+
+
 def _find_extensions(root: Path) -> list[str]:
     out: list[str] = []
     for path in root.rglob("*"):
@@ -719,6 +789,8 @@ def _find_extensions(root: Path) -> list[str]:
             dotted = ".".join(path.relative_to(root).with_suffix("").parts)
             out.append(dotted)
     return out
+
+
 def render_setup_py_from_wheel(meta: dict[str, Any], ext_modules: list[str], entry_points: dict[str, list[str]]) -> str:
     ext_block = ""
     if ext_modules:
@@ -749,6 +821,8 @@ def render_setup_py_from_wheel(meta: dict[str, Any], ext_modules: list[str], ent
         f"{ep_block}"
         ")\n"
     )
+
+
 GITIGNORE_DEFAULT = (
     "__pycache__/\n*.py[cod]\n*.egg-info/\ndist/\nbuild/\n.venv/\nvenv/\nenv/\n"
     ".mypy_cache/\n.ruff_cache/\n.pytest_cache/\n.coverage\n"
@@ -882,6 +956,8 @@ python_requires = >=3.11
 console_scripts =
     {name} = {name}:main
 """
+
+
 def scaffold_setuptools_src(args: argparse.Namespace, target: Path) -> None:
     name = args.name
     module = module_from_name(name)
@@ -933,6 +1009,8 @@ def scaffold_setuptools_src(args: argparse.Namespace, target: Path) -> None:
         f'def test_version():\n    from {module} import __version__\n    assert __version__ == "{version}"\n',
         encoding="utf-8",
     )
+
+
 def scaffold_hatchling_typer(args: argparse.Namespace, target: Path) -> None:
     name = args.name
     module = module_from_name(name)
@@ -999,6 +1077,8 @@ def scaffold_hatchling_typer(args: argparse.Namespace, target: Path) -> None:
         '    assert "Hello Tester!" in result.stdout\n',
         encoding="utf-8",
     )
+
+
 def scaffold_setuptools_cfg(args: argparse.Namespace, target: Path) -> None:
     name = args.name
     user = load_user_info()
@@ -1031,6 +1111,8 @@ def scaffold_setuptools_cfg(args: argparse.Namespace, target: Path) -> None:
         "    main()\n",
         encoding="utf-8",
     )
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     target = Path(args.name)
     if target.exists() and not args.force:
@@ -1046,6 +1128,8 @@ def cmd_init(args: argparse.Namespace) -> int:
         die(f"unknown style: {args.style}")
     info(f"Project '{args.name}' initialized in {target}")
     return 0
+
+
 def cmd_make_setup(args: argparse.Namespace) -> int:
     source = args.source
     target = Path(args.path).expanduser().resolve()
@@ -1116,6 +1200,8 @@ def cmd_make_setup(args: argparse.Namespace) -> int:
         return 0
     die(f"unknown --from value: {source}")
     return 1
+
+
 PRE_COMMIT_CONFIG = textwrap.dedent("""\
     repos:
       - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -1205,6 +1291,8 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 """
+
+
 def cmd_dev(args: argparse.Namespace) -> int:
     project = Path(args.path).expanduser().resolve()
     if not project.exists():
@@ -1256,6 +1344,8 @@ def cmd_dev(args: argparse.Namespace) -> int:
     info("  python -m venv .venv && source .venv/bin/activate")
     info("  pip install -e '.[dev]'")
     return 0
+
+
 NEW_SCRIPT_TEMPLATE = '''#!/usr/bin/env python3
 """Standalone script scaffold."""
 from pathlib import Path
@@ -1281,6 +1371,8 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 '''
+
+
 def cmd_new_script(args: argparse.Namespace) -> int:
     target = Path(args.path)
     if target.exists() and not args.force:
@@ -1289,6 +1381,8 @@ def cmd_new_script(args: argparse.Namespace) -> int:
     target.chmod(target.stat().st_mode | 0o111)
     info(f"{target.name} created.")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pydevkit",
@@ -1366,6 +1460,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_ns.add_argument("--force", action="store_true")
     p_ns.set_defaults(func=cmd_new_script)
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -1383,5 +1479,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ) as exc:
         die(str(exc))
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

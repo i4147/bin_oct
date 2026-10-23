@@ -3,6 +3,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 from dh import get_files, mpf, unique_path
+
+
 def process_file(path):
     Path(path)
     imports = set()
@@ -17,6 +19,8 @@ def process_file(path):
     except (SyntaxError, UnicodeDecodeError):
         pass
     return imports
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     files = get_files(cwd, ext=[".py"])

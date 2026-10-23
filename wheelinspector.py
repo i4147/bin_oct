@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import csv
@@ -11,7 +9,6 @@ import sys
 import sysconfig
 from typing import Optional
 import zipfile
-
 
 WheelInfo = dict[str, object]
 PackageInfo = dict[str, str]

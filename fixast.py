@@ -15,6 +15,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
+
 __version__ = "1.1.0"
 DEPRECATED_FAMILY: Final[dict[str, str]] = {
     "Str": "str",
@@ -63,6 +64,8 @@ DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset({
 DEFAULT_INCLUDES: Final[list[str]] = ["*.py"]
 DRY_RUN_HINT: Final[str] = "dry run: no files were modified - re-run with -a/--apply to write changes"
 _DEF_NAME_RE: Final[re.Pattern[str]] = re.compile(r"(?:async[ \t]+)?def[ \t]+([A-Za-z_][A-Za-z0-9_]*)")
+
+
 @dataclass(frozen=True, slots=True)
 class Edit:
     start: int
@@ -71,6 +74,8 @@ class Edit:
     line: int
     col: int
     message: str
+
+
 @dataclass(slots=True)
 class FileResult:
     path: Path
@@ -79,12 +84,16 @@ class FileResult:
     error: str | None = None
     diff: str | None = None
     written: bool = False
+
+
 def _flatten_and(expr: ast.expr) -> Iterator[ast.expr]:
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.And):
         for value in expr.values:
             yield from _flatten_and(value)
     else:
         yield expr
+
+
 def resolve_overlaps(edits: list[Edit]) -> list[Edit]:
     kept: list[Edit] = []
     for edit in sorted(edits, key=lambda e: (e.start, -e.end)):
@@ -92,11 +101,15 @@ def resolve_overlaps(edits: list[Edit]) -> list[Edit]:
             continue
         kept.append(edit)
     return kept
+
+
 def apply_edits(source: str, edits: Sequence[Edit]) -> str:
     result = source
     for edit in sorted(edits, key=lambda e: e.start, reverse=True):
         result = result[: edit.start] + edit.replacement + result[edit.end :]
     return result
+
+
 class DeprecatedFinder:
     def __init__(self, source: str) -> None:
         self.source = source
@@ -113,9 +126,11 @@ class DeprecatedFinder:
         self.local_deprecated: dict[str, str] = {}
         self.visitor_renames: dict[str, str] = {}
         self.dep_guard_segments: set[str] = set()
+
     def scan(self, tree: ast.Module) -> None:
         self._prescan(tree)
         self._visit_body(tree.body, frozenset())
+
     def _prescan(self, tree: ast.AST) -> None:
         bound: set[str] = set()
         func_names: set[str] = set()
@@ -177,6 +192,7 @@ class DeprecatedFinder:
                     node,
                     "deprecated visitor method not auto-renamed (visit_Constant already defined or multiple deprecated visitors) - merge into visit_Constant manually",
                 )
+
     def _abs(self, lineno: int, col: int) -> int:
         base = self.line_starts[lineno - 1]
         line = self.lines[lineno - 1]
@@ -185,30 +201,37 @@ class DeprecatedFinder:
         except UnicodeDecodeError:
             char_col = len(line)
         return base + min(char_col, len(line))
+
     def _line_col(self, pos: int) -> tuple[int, int]:
         idx = bisect.bisect_right(self.line_starts, pos) - 1
         return idx + 1, pos - self.line_starts[idx] + 1
+
     def _seg(self, node: ast.AST) -> str | None:
         return ast.get_source_segment(self.source, node)
+
     def _add_edit(self, node: ast.AST, replacement: str, message: str) -> None:
         start = self._abs(node.lineno, node.col_offset)
         end = self._abs(node.end_lineno, node.end_col_offset)
         line, col = self._line_col(start)
         self.edits.append(Edit(start, end, replacement, line, col, message))
+
     def _add_attr_rename(self, value_node: ast.expr, attr_node: ast.Attribute, replacement: str, message: str) -> None:
         start = self._abs(value_node.end_lineno, value_node.end_col_offset)
         end = self._abs(attr_node.end_lineno, attr_node.end_col_offset)
         line, col = self._line_col(start)
         self.edits.append(Edit(start, end, replacement, line, col, message))
+
     def _add_token_rename(self, node: ast.AST, token_len: int, replacement: str, message: str) -> None:
         start = self._abs(node.lineno, node.col_offset)
         end = self._abs(node.lineno, node.col_offset + token_len)
         line, col = self._line_col(start)
         self.edits.append(Edit(start, end, replacement, line, col, message))
+
     def _flag(self, node: ast.AST, message: str) -> None:
         start = self._abs(node.lineno, node.col_offset)
         line, col = self._line_col(start)
         self.flags.append(Edit(start, start, "", line, col, message))
+
     def _family_of(self, expr: ast.expr) -> str | None:
         if isinstance(expr, ast.Attribute):
             if (
@@ -221,6 +244,7 @@ class DeprecatedFinder:
         if isinstance(expr, ast.Name):
             return self.local_deprecated.get(expr.id)
         return None
+
     def _families_of(self, expr: ast.expr) -> tuple[str, ...] | None:
         if isinstance(expr, ast.Tuple):
             fams = tuple(self._family_of(e) for e in expr.elts)
@@ -229,10 +253,12 @@ class DeprecatedFinder:
             return None
         fam = self._family_of(expr)
         return (fam,) if fam else None
+
     def _constant_ref(self, expr: ast.expr) -> str:
         if isinstance(expr, ast.Attribute):
             return f"{expr.value.id}.Constant"
         return "Constant"
+
     def _guard_name(self, test: ast.expr) -> str | None:
         if (
             isinstance(test, ast.Call)
@@ -246,6 +272,7 @@ class DeprecatedFinder:
         if isinstance(test, ast.Compare) and len(test.ops) == 1:
             return self._compare_guard_name(test)
         return None
+
     def _compare_guard_name(self, node: ast.Compare) -> str | None:
         if not isinstance(node.ops[0], (ast.Is, ast.Eq)):
             return None
@@ -259,6 +286,7 @@ class DeprecatedFinder:
             ):
                 return self._seg(typ_call.args[0])
         return None
+
     def _guard_names(self, test: ast.expr) -> frozenset[str]:
         out: set[str] = set()
         for sub in _flatten_and(test):
@@ -266,14 +294,17 @@ class DeprecatedFinder:
             if name:
                 out.add(name)
         return frozenset(out)
+
     def _neg_guard_names(self, test: ast.expr) -> frozenset[str]:
         if isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not):
             name = self._guard_name(test.operand)
             if name:
                 return frozenset({name})
         return frozenset()
+
     def _target_names(self, node: ast.AST) -> set[str]:
         return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)}
+
     def _rebound(self, stmt: ast.stmt) -> set[str] | None:
         if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             return {stmt.name}
@@ -284,6 +315,7 @@ class DeprecatedFinder:
             if isinstance(sub, ast.ExceptHandler) and sub.name:
                 out.add(sub.name)
         return out
+
     def _visit_body(self, stmts: list[ast.stmt], narrowed: frozenset[str]) -> None:
         for stmt in stmts:
             self._visit(stmt, narrowed)
@@ -298,6 +330,7 @@ class DeprecatedFinder:
                 seg = self._guard_name(stmt.test)
                 if seg:
                     narrowed = narrowed | {seg}
+
     def _visit(self, node: ast.AST, narrowed: frozenset[str], annotation: bool = False) -> None:
         if isinstance(node, ast.Call):
             self._on_call(node, narrowed, annotation)
@@ -376,6 +409,7 @@ class DeprecatedFinder:
             return
         for child in ast.iter_child_nodes(node):
             self._visit(child, narrowed, annotation and isinstance(child, ast.expr))
+
     def _on_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef, narrowed: frozenset[str]) -> None:
         if node.name in self.visitor_renames:
             self._rename_def(node, self.visitor_renames[node.name])
@@ -387,6 +421,7 @@ class DeprecatedFinder:
         if node.returns is not None:
             self._visit(node.returns, narrowed, True)
         self._visit_body(node.body, frozenset())
+
     def _rename_def(self, node: ast.FunctionDef | ast.AsyncFunctionDef, new_name: str) -> None:
         start = self._abs(node.lineno, node.col_offset)
         match = _DEF_NAME_RE.match(self.source, start)
@@ -397,6 +432,7 @@ class DeprecatedFinder:
         self.edits.append(
             Edit(match.start(1), match.end(1), new_name, line, col, f"visitor dispatch '{node.name}' -> '{new_name}'")
         )
+
     def _on_comprehension(
         self, node: ast.ListComp | ast.SetComp | ast.GeneratorExp | ast.DictComp, narrowed: frozenset[str]
     ) -> None:
@@ -412,6 +448,7 @@ class DeprecatedFinder:
             self._visit(node.value, cur)
         else:
             self._visit(node.elt, cur)
+
     def _on_call(self, node: ast.Call, narrowed: frozenset[str], annotation: bool) -> None:
         if (
             isinstance(node.func, ast.Name)
@@ -458,6 +495,7 @@ class DeprecatedFinder:
             self._visit(arg, narrowed, annotation)
         for kw in node.keywords:
             self._visit(kw.value, narrowed, annotation)
+
     def _try_isinstance(self, call: ast.Call) -> bool:
         target, second = call.args
         seg_t = self._seg(target)
@@ -505,6 +543,7 @@ class DeprecatedFinder:
         repl = f"(isinstance({seg_t}, {base}) and isinstance({seg_t}.value, {vt}))"
         self._add_edit(call, repl, f"isinstance(..., ast.{FAMILY_NAMES[fam]}) -> ast.Constant value check")
         return True
+
     def _try_type_compare(self, node: ast.Compare) -> bool:
         positive = isinstance(node.ops[0], (ast.Is, ast.Eq))
         negative = isinstance(node.ops[0], (ast.IsNot, ast.NotEq))
@@ -537,6 +576,7 @@ class DeprecatedFinder:
                 self._add_edit(node, repl, f"type(...) {word} ast.{FAMILY_NAMES[fam]} -> ast.Constant value check")
                 return True
         return False
+
     def _fix_constructor(self, call: ast.Call, fam: str) -> None:
         old = f"ast.{FAMILY_NAMES[fam]}" if isinstance(call.func, ast.Attribute) else FAMILY_NAMES[fam]
         if fam == "ellipsis":
@@ -550,6 +590,7 @@ class DeprecatedFinder:
                 self._add_token_rename(kw, len(kw.arg.encode("utf-8")), "value", f"keyword '{kw.arg}=' -> 'value='")
         repl = self._constant_ref(call.func)
         self._add_edit(call.func, repl, f"{old}(...) -> {repl}(...)")
+
     def _try_getattr(self, call: ast.Call, narrowed: frozenset[str]) -> bool:
         target, name = call.args
         if isinstance(name, ast.Constant) and isinstance(name.value, str) and name.value in ATTR_TO_VALUE:
@@ -558,6 +599,7 @@ class DeprecatedFinder:
                 self._add_edit(call, f"{seg}.value", f"getattr({seg}, '{name.value}') -> {seg}.value")
                 return True
         return False
+
     def _on_attribute(self, node: ast.Attribute, narrowed: frozenset[str], annotation: bool) -> None:
         fam = self._family_of(node)
         if fam is not None:
@@ -589,6 +631,7 @@ class DeprecatedFinder:
                     )
                     return
         self._visit(node.value, narrowed, annotation)
+
     def _on_name(self, node: ast.Name, narrowed: frozenset[str], annotation: bool) -> None:
         if node.id in self.visitor_renames:
             self._add_token_rename(
@@ -605,6 +648,7 @@ class DeprecatedFinder:
             self._add_edit(node, "Constant", f"annotation {node.id} -> Constant")
         else:
             self._flag(node, f"ambiguous reference to '{node.id}' (ast.{FAMILY_NAMES[fam]}) - manual fix needed")
+
     def _on_import_from(self, node: ast.ImportFrom) -> None:
         if node.module != "ast" or node.level != 0:
             return
@@ -631,6 +675,8 @@ class DeprecatedFinder:
         self.edits.append(
             Edit(start, end, ", ".join(entries), line, col, "import: deprecated ast constant classes -> ast.Constant")
         )
+
+
 def process_file(path: Path, args: argparse.Namespace) -> FileResult:
     result = FileResult(path=path)
     try:
@@ -673,8 +719,12 @@ def process_file(path: Path, args: argparse.Namespace) -> FileResult:
             return result
         result.written = True
     return result
+
+
 def _matches(name: str, rel: str, patterns: Sequence[str]) -> bool:
     return any(fnmatch.fnmatch(name, pat) or fnmatch.fnmatch(rel, pat) for pat in patterns)
+
+
 def discover_files(root: Path, include: Sequence[str], exclude: Sequence[str], follow: bool) -> list[Path]:
     if root.is_file():
         return [root]
@@ -698,6 +748,8 @@ def discover_files(root: Path, include: Sequence[str], exclude: Sequence[str], f
             if _matches(name, rel, include):
                 files.append(path)
     return files
+
+
 def run_stdin(args: argparse.Namespace) -> int:
     source = sys.stdin.read()
     try:
@@ -724,6 +776,8 @@ def run_stdin(args: argparse.Namespace) -> int:
     sys.stdout.write(fixed)
     print(f"<stdin>: fixes={len(fixes)} ambiguous={len(finder.flags)} mode=stream", file=sys.stderr)
     return 1 if finder.flags else 0
+
+
 def print_report(results: Sequence[FileResult], args: argparse.Namespace) -> int:
     total_fixes = sum(len(r.fixes) for r in results)
     total_flags = sum(len(r.flags) for r in results)
@@ -771,6 +825,8 @@ def print_report(results: Sequence[FileResult], args: argparse.Namespace) -> int
         return 2
     pending = any(r.fixes and not r.written for r in results) or total_flags > 0
     return 1 if pending else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fix-ast-str",
@@ -812,6 +868,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--follow-symlinks", action="store_true", help="follow symlinked directories and files")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__} (target: CPython 3.14)")
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.stdin:
@@ -824,5 +882,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     files = discover_files(root, includes, args.exclude, args.follow_symlinks)
     results = [process_file(path, args) for path in files]
     return print_report(results, args)
+
+
 if __name__ == "__main__":
     sys.exit(main())

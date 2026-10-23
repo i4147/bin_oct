@@ -6,6 +6,7 @@ from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
 POOL_SIZE: int = 8
 DEFAULT_OUTPUT_NAME: str = "repeated_functions.py"
 IMPORT_MODULE_NAME: str = "dh"
@@ -13,12 +14,18 @@ DefinitionKey = tuple[str, str]
 DefinitionMap = dict[DefinitionKey, list[str]]
 SourceMap = dict[DefinitionKey, str]
 RepeatedItem = dict[str, Any]
+
+
 def get_source(node: ast.AST, content: str) -> str:
     return ast.get_source_segment(content, node) or ""
+
+
 def normalize_source(source: str) -> str:
     if not source:
         return ""
     return "\n".join(line.rstrip() for line in source.strip().splitlines())
+
+
 def analyze_file(path: Path) -> dict[str, Any]:
     definitions: defaultdict[DefinitionKey, list[str]] = defaultdict(list)
     source_map: SourceMap = {}
@@ -36,6 +43,8 @@ def analyze_file(path: Path) -> dict[str, Any]:
     except Exception:
         pass
     return {"definitions": dict(definitions), "source_map": dict(source_map)}
+
+
 def analyze_files(target_dirs: list[Path] | None = None) -> list[RepeatedItem]:
     resolved_dirs: list[Path] = target_dirs or [Path.cwd()]
     py_files: list[Path] = []
@@ -65,6 +74,8 @@ def analyze_files(target_dirs: list[Path] | None = None) -> list[RepeatedItem]:
             })
     repeated.sort(key=lambda x: x["count"], reverse=True)
     return repeated
+
+
 def save_dh_module(
     repeated: list[RepeatedItem],
     output_path: Path = Path(DEFAULT_OUTPUT_NAME),
@@ -75,6 +86,8 @@ def save_dh_module(
         lines.append(source)
         lines.append("")
     output_path.write_text("\n".join(lines), encoding="utf-8")
+
+
 def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
     try:
         content: str = path.read_text(encoding="utf-8")
@@ -111,6 +124,8 @@ def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
             break
     lines_to_keep.insert(insert_pos, import_stmt)
     path.write_text("".join(lines_to_keep), encoding="utf-8")
+
+
 def apply_refactoring(
     repeated: list[RepeatedItem],
     target_dirs: list[Path] | None = None,
@@ -124,6 +139,8 @@ def apply_refactoring(
         async_results = [pool.apply_async(refactor_file, (f, repeated)) for f in py_files]
         for r in async_results:
             r.get()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Detect and refactor duplicate functions")
     parser.add_argument(
@@ -146,5 +163,7 @@ def main() -> None:
         print(f"Saved {len(repeated)} functions to {DEFAULT_OUTPUT_NAME}")
     else:
         print(f"Found {len(repeated)} repeated functions. Saved to {DEFAULT_OUTPUT_NAME}")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

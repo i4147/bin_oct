@@ -8,6 +8,7 @@ import shutil
 import sys
 import termios
 import tty
+
 try:
     import fitz
 except ImportError:
@@ -24,6 +25,8 @@ ENTER_ALT = "\x1b[?1049h"
 LEAVE_ALT = "\x1b[?1049l"
 REVERSE = "\x1b[7m"
 HALF_BLOCK = "\u2580"
+
+
 def read_key(fd: int, timeout: float | None = None) -> str | None:
     ready, _, _ = select.select([fd], [], [], timeout)
     if not ready:
@@ -42,11 +45,14 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
         if seq[-1:].isalpha() or seq[-1:] == b"~":
             break
     return seq.decode("latin-1")
+
+
 class Viewer:
     MIN_ZOOM = 0.25
     MAX_ZOOM = 8.0
     ZOOM_STEP = 1.25
     CACHE_LIMIT = 6
+
     def __init__(self, path: str, page: int = 1, zoom: float = 1.0) -> None:
         self.path = path
         self.doc = fitz.open(path)
@@ -59,21 +65,26 @@ class Viewer:
         self.y = 0
         self.running = True
         self._cache: dict[tuple[int, int], tuple[int, int, bytes]] = {}
+
     def term_size(self) -> tuple[int, int]:
         size = shutil.get_terminal_size((80, 24))
         return size.columns, size.lines
+
     def view_rows(self) -> int:
         _, lines = self.term_size()
         return max(1, lines - 1)
+
     def render_width(self) -> int:
         cols, _ = self.term_size()
         return max(1, round(cols * self.zoom))
+
     def page_px_size(self, index: int | None = None) -> tuple[int, int]:
         index = self.page_index if index is None else index
         width = self.render_width()
         rect = self.doc[index].rect
         scale = width / rect.width if rect.width else 1.0
         return width, max(1, math.ceil(rect.height * scale))
+
     def pixmap(self, index: int, width: int) -> tuple[int, int, bytes]:
         key = (index, width)
         hit = self._cache.get(key)
@@ -91,6 +102,7 @@ class Viewer:
             self._cache.clear()
         self._cache[key] = data
         return data
+
     @staticmethod
     def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
         bottom = top + 1
@@ -131,6 +143,7 @@ class Viewer:
             out.append(HALF_BLOCK)
         out.append(RESET)
         return "".join(out)
+
     def _status(self, cols: int) -> str:
         name = os.path.basename(self.path)
         total = self.doc.page_count
@@ -144,6 +157,7 @@ class Viewer:
         else:
             line = left
         return REVERSE + line[:cols].ljust(cols) + RESET
+
     def draw(self) -> None:
         cols, _ = self.term_size()
         rows = self.view_rows()
@@ -163,10 +177,12 @@ class Viewer:
         buf.append(self._status(cols))
         sys.stdout.write("".join(buf))
         sys.stdout.flush()
+
     def goto_page(self, index: int) -> None:
         if 0 <= index < self.doc.page_count:
             self.page_index = index
             self.x = self.y = 0
+
     def screen_down(self) -> None:
         rows = self.view_rows()
         step = rows * 2
@@ -178,6 +194,7 @@ class Viewer:
                 self.x = self.y = 0
         else:
             self.y = min(self.y + step, max_y)
+
     def screen_up(self) -> None:
         rows = self.view_rows()
         step = rows * 2
@@ -189,6 +206,7 @@ class Viewer:
                 self.y = max(0, h - step)
         else:
             self.y = max(0, self.y - step)
+
     def set_zoom(self, value: float) -> None:
         value = max(self.MIN_ZOOM, min(self.MAX_ZOOM, value))
         if value == self.zoom:
@@ -198,6 +216,7 @@ class Viewer:
         self.zoom = value
         _, new_h = self.page_px_size()
         self.y = int(frac * new_h)
+
     def handle(self, key: str) -> None:
         if key in ("q", "Q", "\x03") or key == "\x1b":
             self.running = False
@@ -228,6 +247,7 @@ class Viewer:
         elif key == "0":
             self.zoom = 1.0
             self.x = self.y = 0
+
     def run(self, fd: int) -> None:
         dirty = True
         last_size = (0, 0)
@@ -245,6 +265,8 @@ class Viewer:
                 continue
             self.handle(key)
             dirty = True
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="tpv",
@@ -288,5 +310,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(RESET + SHOW_CURSOR + LEAVE_ALT)
         sys.stdout.flush()
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

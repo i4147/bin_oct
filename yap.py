@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import ast
@@ -21,9 +19,7 @@ import tempfile
 from time import perf_counter as pff
 import tokenize
 from typing import Any, Protocol, Sequence, runtime_checkable
-
 from dh import cprint, format_time, fsz, get_pyfiles, atomic_write
-
 
 __version__ = "2.0.0"
 DEFAULT_LINE_LENGTH = 88

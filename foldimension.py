@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 import shutil
 import sys
+
 try:
     from PIL import Image
 except ImportError:
@@ -20,6 +21,8 @@ IMAGE_EXTENSIONS = {
     ".webp",
     ".ico",
 }
+
+
 def collect_images(root: Path):
     size_to_files = defaultdict(list)
     for path in root.rglob("*"):
@@ -34,6 +37,8 @@ def collect_images(root: Path):
         except Exception as e:
             print(f"Warning: Skipping {path} - {e}")
     return size_to_files
+
+
 def unique_destination(dest: Path) -> Path:
     if not dest.exists():
         return dest
@@ -46,6 +51,8 @@ def unique_destination(dest: Path) -> Path:
         if not new_dest.exists():
             return new_dest
         counter += 1
+
+
 def organize_images(root: Path, size_to_files: dict) -> None:
     for (width, height), files in size_to_files.items():
         if len(files) == 1:
@@ -59,6 +66,8 @@ def organize_images(root: Path, size_to_files: dict) -> None:
             dest = unique_destination(dest)
             shutil.move(src, dest)
             print(f"Moved: {src} -> {dest}")
+
+
 def main() -> None:
     root = Path.cwd()
     print(f"Scanning {root} for image files...")
@@ -70,5 +79,7 @@ def main() -> None:
     print(f"Found {total_files} image(s) in {len(size_to_files)} resolution group(s).")
     organize_images(root, size_to_files)
     print("Done.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

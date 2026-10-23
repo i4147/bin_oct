@@ -4,14 +4,21 @@ import argparse
 import os
 from pathlib import Path
 import sys
+
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
+
+
 def is_image_file(path: Path) -> bool:
     return path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
+
+
 def get_terminal_width() -> int:
     try:
         return os.get_terminal_size().columns
     except OSError:
         return 80
+
+
 def load_ppm(path: Path):
     with path.open("rb") as f:
         header = []
@@ -37,6 +44,8 @@ def load_ppm(path: Path):
         for i in range(0, len(numbers), 3):
             pixels.append((numbers[i], numbers[i + 1], numbers[i + 2]))
     return width, height, pixels
+
+
 def render_half_blocks(width: int, height: int, pixels: list[tuple[int, int, int]], max_width: int):
     scale = max(1, width // max_width)
     scaled_w = width // scale
@@ -60,10 +69,13 @@ def render_half_blocks(width: int, height: int, pixels: list[tuple[int, int, int
             row_str.append(cell)
         lines.append("".join(row_str))
     return "\n".join(lines)
+
+
 def render_file(path: Path, max_width: int):
     print(f"\n--- {path} ---")
     try:
         from PIL import Image
+
         with Image.open(path) as img:
             img = img.convert("RGB")
             w, h = img.size
@@ -81,12 +93,16 @@ def render_file(path: Path, max_width: int):
             print(f"Error reading PPM file {path}: {e}")
             return
     print(f"Unable to render '{path.name}'. Install 'Pillow' (`pip install pillow`) to view PNG/JPG/WebP/GIF formats.")
+
+
 def traverse_directory(root_dir: Path) -> list[Path]:
     images = []
     for path in root_dir.rglob("*"):
         if is_image_file(path):
             images.append(path)
     return sorted(images)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Termimage in Python: Render images in your terminal.")
     parser.add_argument(
@@ -124,5 +140,7 @@ def main():
         sys.exit(0)
     for img_path in target_images:
         render_file(img_path, max_width)
+
+
 if __name__ == "__main__":
     main()

@@ -7,17 +7,22 @@ from pathlib import Path
 import shutil
 import sys
 import ssdeep
+
 try:
     from tabulate import tabulate
+
     USE_TABULATE = True
 except ImportError:
     USE_TABULATE = False
 try:
     from colorama import Fore, Style, init
+
     init(autoreset=True)
     USE_COLOR = True
 except ImportError:
     USE_COLOR = False
+
+
 def get_all_files(root: str = "."):
     paths = []
     for dirpath, _, filenames in os.walk(root):
@@ -25,6 +30,8 @@ def get_all_files(root: str = "."):
             full_path = os.path.join(dirpath, f)
             paths.append(full_path)
     return paths
+
+
 def compute_hashes(files):
     hashes = {}
     for f in files:
@@ -34,6 +41,8 @@ def compute_hashes(files):
         except Exception as e:
             print(f"Skipping {f}: {e}")
     return hashes
+
+
 def group_similar_files(hashes, threshold: int):
     visited = set()
     groups = []
@@ -53,6 +62,8 @@ def group_similar_files(hashes, threshold: int):
         if len(group) > 1:
             groups.append(group)
     return groups
+
+
 def copy_groups(groups, output_dir="output") -> None:
     Path(output_dir).mkdir(exist_ok=True, parents=True)
     for idx, group in enumerate(groups, start=1):
@@ -63,6 +74,8 @@ def copy_groups(groups, output_dir="output") -> None:
                 shutil.move(f, group_dir)
             except Exception as e:
                 print(f"Failed to copy {f}: {e}")
+
+
 def write_report(groups, furmat="json", output_dir="output") -> None:
     Path(output_dir).mkdir(exist_ok=True, parents=True)
     if furmat == "csv":
@@ -80,6 +93,8 @@ def write_report(groups, furmat="json", output_dir="output") -> None:
         with Path(report_file).open("w", encoding="utf-8") as jf:
             json.dump(data, jf, indent=2)
         print(f"JSON report written to {report_file}")
+
+
 def colorize_score(score, threshold) -> str:
     if not USE_COLOR or not score:
         return str(score)
@@ -88,6 +103,8 @@ def colorize_score(score, threshold) -> str:
     if score >= threshold:
         return Fore.YELLOW + str(score) + Style.RESET_ALL
     return Fore.RED + str(score) + Style.RESET_ALL
+
+
 def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> None:
     Path(output_dir).mkdir(exist_ok=True, parents=True)
     files = list(hashes.keys())
@@ -122,6 +139,8 @@ def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> N
             for row in table[1:]:
                 formatted = [row[0]] + [colorize_score(cell, threshold) for cell in row[1:]]
                 print(" | ".join(str(x) if x else "." for x in formatted))
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <threshold> [copy|csv|json|matrix]")
@@ -150,5 +169,7 @@ def main() -> None:
         write_matrix(hashes, threshold, pretty=True)
     else:
         print("Unknown mode. Use 'copy', 'csv', 'json', or 'matrix'.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

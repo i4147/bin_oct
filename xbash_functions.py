@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -10,7 +8,6 @@ from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING, Final, Protocol
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

@@ -6,12 +6,16 @@ from pathlib import Path
 import subprocess
 import sys
 from typing import Callable, Sequence
+
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen
     from fontTools.ttLib import TTFont, woff2
+
     HAS_FONTTOOLS = True
 except ImportError:
     HAS_FONTTOOLS = False
+
+
 def unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -24,6 +28,8 @@ def unique_path(path: Path) -> Path:
         if not new_path.exists():
             return new_path
         counter += 1
+
+
 def collect_files(
     paths: Sequence[str],
     extensions: Sequence[str],
@@ -55,6 +61,8 @@ def collect_files(
             seen.add(f)
             unique.append(f)
     return unique
+
+
 def run_parallel(
     func: Callable,
     items: list,
@@ -65,6 +73,8 @@ def run_parallel(
         return [func(item, *args) for item in items]
     with multiprocessing.Pool(processes=workers) as pool:
         return pool.starmap(func, [(item, *args) for item in items])
+
+
 def _convert_worker(src: Path, target_ext: str, remove_source: bool) -> None:
     if not HAS_FONTTOOLS:
         print(
@@ -90,6 +100,8 @@ def _convert_worker(src: Path, target_ext: str, remove_source: bool) -> None:
             src.unlink()
     except Exception as exc:
         print(f"Error converting {src.name}: {exc}", file=sys.stderr)
+
+
 def cmd_convert(args: argparse.Namespace) -> int:
     if not HAS_FONTTOOLS:
         print(
@@ -106,6 +118,8 @@ def cmd_convert(args: argparse.Namespace) -> int:
         return 1
     run_parallel(_convert_worker, files, args.workers, args.to, args.rm)
     return 0
+
+
 def _otf2ttf_worker(src: Path, keep_source: bool) -> dict:
     if not HAS_FONTTOOLS:
         return {"status": "failed", "error": "fontTools not installed", "otf": str(src)}
@@ -152,6 +166,8 @@ def _otf2ttf_worker(src: Path, keep_source: bool) -> dict:
         if dst.exists():
             dst.unlink()
     return status
+
+
 def cmd_otf2ttf(args: argparse.Namespace) -> int:
     if not HAS_FONTTOOLS:
         print(
@@ -196,6 +212,8 @@ def cmd_otf2ttf(args: argparse.Namespace) -> int:
     print(f"  Skipped (already TrueType): {summary['skipped_already_ttf']}")
     print(f"  Failed: {summary['failed']}")
     return 0 if summary["failed"] == 0 else 1
+
+
 def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> tuple[str, str]:
     try:
         import fontforge
@@ -213,6 +231,8 @@ def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> tuple[str, str]:
         return ("success", str(dst))
     except Exception as exc:
         return ("error", str(exc))
+
+
 def cmd_otf2ttf_fontforge(args: argparse.Namespace) -> int:
     try:
         import fontforge
@@ -241,6 +261,8 @@ def cmd_otf2ttf_fontforge(args: argparse.Namespace) -> int:
     print(f"\n{'=' * 40}")
     print(f"Summary: {summary['success']} converted, {summary['skipped']} skipped, {summary['error']} failed")
     return 0 if summary["error"] == 0 else 1
+
+
 def _tottf_worker(src: Path, remove_source: bool) -> bool:
     dst = src.with_suffix(".ttf")
     cmd = [
@@ -264,6 +286,8 @@ def _tottf_worker(src: Path, remove_source: bool) -> bool:
     except Exception as exc:
         print(f"Error processing {src.name}: {exc}", file=sys.stderr)
         return False
+
+
 def cmd_tottf(args: argparse.Namespace) -> int:
     extensions = [".svg", ".woff", ".eot", ".otf", ".ttc"]
     files = collect_files(args.paths, extensions)
@@ -276,6 +300,8 @@ def cmd_tottf(args: argparse.Namespace) -> int:
             success += 1
     print(f"\nConverted {success}/{len(files)} files.")
     return 0
+
+
 def _woff22ttf_worker(src: Path, keep_source: bool) -> bool:
     if not HAS_FONTTOOLS:
         print(
@@ -296,6 +322,8 @@ def _woff22ttf_worker(src: Path, keep_source: bool) -> bool:
     except Exception as exc:
         print(f"Error converting {src.name}: {exc}", file=sys.stderr)
         return False
+
+
 def cmd_woff22ttf(args: argparse.Namespace) -> int:
     if not HAS_FONTTOOLS:
         print(
@@ -310,6 +338,8 @@ def cmd_woff22ttf(args: argparse.Namespace) -> int:
     print(f"Found {len(files)} WOFF2 file(s)")
     run_parallel(_woff22ttf_worker, files, args.workers, args.keep_source)
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="font_toolkit.py",
@@ -401,6 +431,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_woff22.set_defaults(func=cmd_woff22ttf)
     return parser
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -409,5 +441,7 @@ def main() -> int:
     except KeyboardInterrupt:
         print("\nConversion interrupted by user.", file=sys.stderr)
         return 1
+
+
 if __name__ == "__main__":
     sys.exit(main())

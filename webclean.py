@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -12,7 +10,6 @@ import re
 import sys
 from typing import Optional
 import urllib.request
-
 
 DEFAULT_WORKERS: int = 8
 EXT_TO_LANG: dict[str, str] = {

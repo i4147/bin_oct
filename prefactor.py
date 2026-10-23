@@ -7,13 +7,18 @@ from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 import sys
+
 MAX_DEFAULT = 10
+
+
 @dataclass
 class ModuleInfo:
     path: Path
     fullname: str
     source: str
     deps: set[str]
+
+
 def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
     files = []
     for p in sorted(root.rglob("*.py")):
@@ -28,6 +33,8 @@ def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
                     continue
         files.append(p)
     return files
+
+
 def module_fullname_for_path(root: Path, path: Path, package_mode: bool, package_name: str | None) -> str:
     rel = path.relative_to(root)
     parts = list(rel.with_suffix("").parts)
@@ -42,6 +49,8 @@ def module_fullname_for_path(root: Path, path: Path, package_mode: bool, package
         return ".".join([prefix] + parts)
     else:
         return ".".join(parts)
+
+
 def resolve_relative_import(curr_fullname: str, module: str | None, level: int) -> str | None:
     if level == 0:
         return module
@@ -55,6 +64,8 @@ def resolve_relative_import(curr_fullname: str, module: str | None, level: int) 
     if not target_parts:
         return None
     return ".".join(target_parts)
+
+
 def analyze_file(args) -> ModuleInfo:
     path, root, package_mode, package_name, full_map = args
     src = path.read_text(encoding="utf8")
@@ -95,6 +106,8 @@ def analyze_file(args) -> ModuleInfo:
                 if candidate == d or candidate.startswith(d + ".") or d.startswith(candidate + "."):
                     normalized.add(candidate)
     return ModuleInfo(path=path, fullname=fullname, source=src, deps=normalized)
+
+
 def topological_sort(
     modules: dict[str, ModuleInfo],
 ) -> tuple[list[str], list[set[str]]]:
@@ -119,6 +132,8 @@ def topological_sort(
         ordered += sorted(remaining)
         cycles = [remaining]
     return ordered, cycles
+
+
 def build_merged_source(modules: dict[str, ModuleInfo], ordered: list[str], out_module_name: str) -> str:
     lines: list[str] = []
     lines.append("# Auto-generated single-file package by merge_to_single.py")
@@ -166,6 +181,8 @@ def build_merged_source(modules: dict[str, ModuleInfo], ordered: list[str], out_
     lines.append("")
     lines.append("# End of merged package")
     return "\n".join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Merge a small Python library into a single-file package.")
     parser.add_argument(
@@ -264,5 +281,7 @@ def main():
     print(f"Modules merged ({len(modules)}): {', '.join(ordered)}")
     if cycles:
         print("Cycles (approx):", cycles)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

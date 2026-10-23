@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import sys
 from dh import cprint
+
 major, minor, _, _, _ = sys.version_info
 py_version = f"{major}.{minor}"
 ALLOWED = ["METADATA", "RECORD", "WHEEL", "top_level.txt"]
@@ -46,6 +47,8 @@ NOT_ALLOWED = [
     "LICENSE.md",
     "LICENSE.txt",
 ]
+
+
 def process_lic(path: Path) -> None:
     lic_dir = path / "licenses"
     if lic_dir.exists() and "dist-info" in lic_dir.parent.name:
@@ -56,6 +59,8 @@ def process_lic(path: Path) -> None:
         if nap.exists():
             print(nap)
             nap.unlink()
+
+
 def main() -> None:
     cwd = Path.cwd()
     for path in cwd.rglob("*"):
@@ -63,5 +68,7 @@ def main() -> None:
             process_lic(path)
             if len(list(path.iterdir())) < 2:
                 cprint(f"{path.name} empty pkg", "cyan")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

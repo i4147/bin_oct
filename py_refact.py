@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 import re
 import sys
+
 WORKERS: int = 6
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP: dict[str, str] = {
@@ -74,8 +75,12 @@ PICKLE_METHOD_BLOCK_RE = re.compile(
     r"(?:^\s*def _(?:un)?pickle_method\b.*(?:\n(?:[ \t].*)?)*\n?)*",
     re.MULTILINE,
 )
+
+
 def find_source_files(root: Path) -> list[Path]:
     return sorted(p for p in root.rglob("*.py") if p.is_file())
+
+
 def parse_merged_file(merged_path: Path) -> dict[str, str]:
     files: dict[str, list[str]] = {}
     current: str | None = None
@@ -88,6 +93,8 @@ def parse_merged_file(merged_path: Path) -> dict[str, str]:
         if current is not None:
             files[current].append(line)
     return {name: "\n".join(lines) for name, lines in files.items()}
+
+
 def load_sources(args: argparse.Namespace) -> dict[str, str]:
     if args.file:
         merged_path = Path(args.file).expanduser().resolve()
@@ -102,6 +109,8 @@ def load_sources(args: argparse.Namespace) -> dict[str, str]:
     if not py_files:
         sys.exit(f"error: no .py files found under {root}")
     return {str(p.relative_to(root)): p.read_text(encoding="utf-8") for p in py_files}
+
+
 def strip_six_and_py2(text: str) -> str:
     for pattern, repl in TEXT_REWRITES:
         text = pattern.sub(repl, text)
@@ -109,6 +118,8 @@ def strip_six_and_py2(text: str) -> str:
         text = text.replace(six_path, native)
     text = PICKLE_METHOD_BLOCK_RE.sub("", text)
     return text
+
+
 def flag_ambiguous_paths(text: str) -> str:
     lines = text.splitlines()
     out = []
@@ -121,22 +132,30 @@ def flag_ambiguous_paths(text: str) -> str:
         else:
             out.append(line)
     return "\n".join(out)
+
+
 def rewrite_os_path(text: str) -> str:
     for pattern, repl in OS_PATH_REWRITES:
         text = pattern.sub(repl, text)
     return flag_ambiguous_paths(text)
+
+
 def rewrite_parallelism(text: str) -> str:
     text = re.sub(r"^from concurrent\.futures import[^\n]*\n", "", text, flags=re.MULTILINE)
+
     def _replace_pool_block(match: re.Match) -> str:
         _loop_var, _body, item_var, fn_name, iterable = match.groups()
         return (
             f"with mp.Pool(WORKERS) as pool:\n"
             f"    for {item_var} in pool.imap_unordered({fn_name.strip()}, {iterable.strip()}):"
         )
+
     text = POOL_BLOCK_RE.sub(_replace_pool_block, text)
     text = WORKERS_CLI_LINE_RE.sub("", text)
     text = WORKERS_ARG_RE.sub("", text)
     return text
+
+
 def rewrite_logging(text: str) -> str:
     text = LOGGING_IMPORT_RE.sub("from loguru import logger\n", text)
     text = LOGGER_GETLOGGER_RE.sub("", text)
@@ -147,10 +166,14 @@ def rewrite_logging(text: str) -> str:
         text,
     )
     return text
+
+
 def strip_relative_imports(text: str) -> str:
     text = re.sub(r"^\s*from \.+\S*\s+import[^\n]*\n", "", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*import \.+\S*\n", "", text, flags=re.MULTILINE)
     return text
+
+
 def apply_all_rewrites(text: str) -> str:
     text = strip_six_and_py2(text)
     text = rewrite_os_path(text)
@@ -158,11 +181,16 @@ def apply_all_rewrites(text: str) -> str:
     text = rewrite_logging(text)
     text = strip_relative_imports(text)
     return text
+
+
 def block_hash(node_source: str) -> str:
     normalized = "\n".join(line.rstrip() for line in node_source.strip().splitlines())
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 class CollectedItem:
     __slots__ = ("hash", "kind", "name", "node", "origin", "source")
+
     def __init__(self, name: str, kind: str, source: str, origin: str, node: ast.AST) -> None:
         self.name = name
         self.kind = kind
@@ -170,6 +198,8 @@ class CollectedItem:
         self.hash = block_hash(source)
         self.origin = origin
         self.node = node
+
+
 def collect_top_level_items(filename: str, text: str) -> tuple[list[str], list[CollectedItem]]:
     try:
         tree = ast.parse(text, filename=filename)
@@ -205,6 +235,8 @@ def collect_top_level_items(filename: str, text: str) -> tuple[list[str], list[C
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
             items.append(CollectedItem(node.target.id, "constant", source, filename, node))
     return imports, items
+
+
 def dedup_by_hash(items: list[CollectedItem]) -> list[CollectedItem]:
     seen_hashes: set[str] = set()
     result: list[CollectedItem] = []
@@ -214,6 +246,8 @@ def dedup_by_hash(items: list[CollectedItem]) -> list[CollectedItem]:
         seen_hashes.add(item.hash)
         result.append(item)
     return result
+
+
 def resolve_name_collisions(items: list[CollectedItem]) -> list[CollectedItem]:
     by_name: dict[str, list[CollectedItem]] = {}
     for item in items:
@@ -238,8 +272,12 @@ def resolve_name_collisions(items: list[CollectedItem]) -> list[CollectedItem]:
             item.name = new_name
             resolved.append(item)
     return resolved
+
+
 def extract_referenced_names(source: str) -> set[str]:
     return set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\b", source))
+
+
 def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
     names = {item.name for item in items}
     by_name = {item.name: item for item in items}
@@ -268,6 +306,8 @@ def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
         remaining = sorted(set(by_name) - set(ordered))
         ordered.extend(remaining)
     return [by_name[name] for name in ordered]
+
+
 def optimize_imports(raw_imports: list[str]) -> str:
     unique = sorted({line for line in raw_imports if line.strip()})
     stdlib_modules = set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
@@ -298,6 +338,8 @@ def optimize_imports(raw_imports: list[str]) -> str:
     if thirdparty_lines:
         parts.append("\n".join(sorted(thirdparty_lines)))
     return "\n\n".join(parts)
+
+
 def build_module_docstring(
     filenames: list[str],
     n_constants: int,
@@ -326,6 +368,8 @@ def build_module_docstring(
         f"Infrastructure: {feature_text}.",
     ]
     return '"""\n' + "\n".join(lines) + '\n"""\n'
+
+
 def strip_docstrings_and_comments(source: str) -> str:
     try:
         tree = ast.parse(source)
@@ -344,6 +388,8 @@ def strip_docstrings_and_comments(source: str) -> str:
                 if not body:
                     body.append(ast.Pass())
     return ast.unparse(tree)
+
+
 def determine_output_path(requested: str | None) -> Path:
     candidate = Path(requested) if requested else Path("out.py")
     if not candidate.exists():
@@ -358,6 +404,8 @@ def determine_output_path(requested: str | None) -> Path:
             )
             return alt
         n += 1
+
+
 def build_output(sources: dict[str, str]) -> str:
     all_imports: list[str] = []
     all_items: list[CollectedItem] = []
@@ -406,6 +454,8 @@ def build_output(sources: dict[str, str]) -> str:
         used_loguru=used_loguru,
     )
     return docstring + "\n" + imports_block.strip() + "\n\n\n" + all_decl + "\n\n" + stripped_body + "\n"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-f", "--file", help="merged input file with '# File: relpath' sentinels")
@@ -426,5 +476,7 @@ def main() -> None:
         f"wrote {out_path} ({len(sources)} source files merged, "
         f"{output_src.count('TODO(manual-review)')} manual-review markers)"
     )
+
+
 if __name__ == "__main__":
     main()

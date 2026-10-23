@@ -2,10 +2,14 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
+
+
 def read_lines(path):
     with path.open(encoding="utf-8") as f:
         for line in f:
             yield line
+
+
 if __name__ == "__main__":
     file_name = Path(sys.argv[1])
     nl = []

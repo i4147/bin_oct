@@ -6,9 +6,12 @@ from io import StringIO
 import re
 from typing import TYPE_CHECKING, Any
 from loguru import logger
+
 if TYPE_CHECKING:
     from pathlib import Path
 logger.enable("__main__")
+
+
 class TokenType(Enum):
     EOF = auto()
     NEWLINE = auto()
@@ -29,12 +32,16 @@ class TokenType(Enum):
     BOOLEAN = auto()
     DATETIME = auto()
     WHITESPACE = auto()
+
+
 @dataclass(frozen=True)
 class Token:
     type: TokenType
     value: str
     line: int
     col: int
+
+
 @dataclass
 class FormatConfig:
     indent_size: int = 2
@@ -44,6 +51,8 @@ class FormatConfig:
     array_trailing_comma: bool = False
     column_align_equals: bool = False
     max_inline_table_width: int = 120
+
+
 class Tokenizer:
     def __init__(self, source: str) -> None:
         self.source: str = source
@@ -51,11 +60,14 @@ class Tokenizer:
         self.line: int = 1
         self.col: int = 1
         self.tokens: list[Token] = []
+
     def current_char(self) -> str | None:
         return self.source[self.pos] if self.pos < len(self.source) else None
+
     def peek_char(self, offset: int = 1) -> str | None:
         p = self.pos + offset
         return self.source[p] if p < len(self.source) else None
+
     def advance(self) -> None:
         if self.pos < len(self.source):
             if self.source[self.pos] == "\n":
@@ -64,9 +76,11 @@ class Tokenizer:
             else:
                 self.col += 1
             self.pos += 1
+
     def skip_whitespace_inline(self) -> None:
         while self.current_char() in (" ", "\t"):
             self.advance()
+
     def read_string(self, quote: str) -> str:
         start_pos = self.pos
         self.advance()
@@ -117,6 +131,7 @@ class Tokenizer:
             if self.current_char() == quote:
                 self.advance()
         return quote + "".join(result) + quote if is_multiline else quote + "".join(result) + quote
+
     def read_number(self) -> tuple[TokenType, str]:
         start = self.pos
         has_dot = False
@@ -137,11 +152,13 @@ class Tokenizer:
             self.advance()
         num_str = self.source[start : self.pos]
         return (TokenType.FLOAT if has_dot or has_e else TokenType.INTEGER, num_str)
+
     def read_key(self) -> str:
         start = self.pos
         while self.current_char() and (self.current_char().isalnum() or self.current_char() in "_-"):
             self.advance()
         return self.source[start : self.pos]
+
     def tokenize(self) -> list[Token]:
         while self.pos < len(self.source):
             line, col = self.line, self.col
@@ -213,27 +230,36 @@ class Tokenizer:
                 self.advance()
         self.tokens.append(Token(TokenType.EOF, "", self.line, self.col))
         return self.tokens
+
     def _is_datetime(self, s: str) -> bool:
         iso_pattern = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$"
         return bool(re.match(iso_pattern, s))
+
+
 @dataclass
 class AST:
     root: dict[str, Any] = field(default_factory=dict)
     comments: dict[str, str] = field(default_factory=dict)
     order: list[str] = field(default_factory=list)
+
+
 class Parser:
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens: list[Token] = tokens
         self.pos: int = 0
+
     def current(self) -> Token:
         return self.tokens[self.pos] if self.pos < len(self.tokens) else self.tokens[-1]
+
     def peek(self, offset: int = 1) -> Token:
         p = self.pos + offset
         return self.tokens[p] if p < len(self.tokens) else self.tokens[-1]
+
     def advance(self) -> Token:
         token = self.current()
         self.pos += 1
         return token
+
     def skip_whitespace_and_comments(self) -> None:
         while self.current().type in (
             TokenType.WHITESPACE,
@@ -241,11 +267,13 @@ class Parser:
             TokenType.NEWLINE,
         ):
             self.advance()
+
     def expect(self, tt: TokenType) -> Token:
         if self.current().type != tt:
             msg = f"Expected {tt}, got {self.current().type} at line {self.current().line}"
             raise SyntaxError(msg)
         return self.advance()
+
     def parse_key(self) -> list[str]:
         keys: list[str] = []
         while True:
@@ -263,6 +291,7 @@ class Parser:
             else:
                 break
         return keys
+
     def parse_value(self) -> Any:
         self.skip_whitespace_and_comments()
         token = self.current()
@@ -283,6 +312,7 @@ class Parser:
         else:
             msg = f"Unexpected token {token.type} at line {token.line}"
             raise SyntaxError(msg)
+
     def parse_array(self) -> list[Any]:
         self.expect(TokenType.LSQUARE)
         result: list[Any] = []
@@ -299,6 +329,7 @@ class Parser:
                 msg = f"Expected ',' or ']' at line {self.current().line}"
                 raise SyntaxError(msg)
         return result
+
     def parse_inline_table(self) -> dict[str, Any]:
         self.expect(TokenType.LBRACE)
         result: dict[str, Any] = {}
@@ -322,6 +353,7 @@ class Parser:
                 msg = f"Expected ',' or '}}' at line {self.current().line}"
                 raise SyntaxError(msg)
         return result
+
     def parse_document(self) -> AST:
         ast = AST()
         while self.current().type != TokenType.EOF:
@@ -371,16 +403,21 @@ class Parser:
             else:
                 self.advance()
         return ast
+
+
 class Formatter:
     def __init__(self, config: FormatConfig = FormatConfig()) -> None:
         self.config = config
         self.output = StringIO()
         self.indent_level = 0
+
     def format(self, ast: AST) -> str:
         self._format_table(ast.root, [], is_root=True)
         return self.output.getvalue().rstrip() + "\n"
+
     def _indent(self) -> str:
         return " " * (self.indent_level * self.config.indent_size)
+
     def _format_table(self, table: dict[str, Any], path: list[str], is_root: bool = False) -> None:
         if not is_root and table:
             if path:
@@ -417,6 +454,7 @@ class Formatter:
             elif isinstance(val, list) and val and isinstance(val[0], dict):
                 for i, item in enumerate(val):
                     self._format_array_table(item, path + [key])
+
     def _format_array_table(self, table: dict[str, Any], path: list[str]) -> None:
         self.output.write("\n[[" + ".".join(path) + "]]\n")
         self.indent_level += 1
@@ -447,8 +485,10 @@ class Formatter:
             val = table[key]
             if isinstance(val, dict) and not self._is_inline_table(val):
                 self._format_table(val, path + [key])
+
     def _is_inline_table(self, val: dict[str, Any]) -> bool:
         return all(not isinstance(v, (dict, list)) for v in val.values())
+
     def _format_inline_table(self, table: dict[str, Any]) -> str:
         if not table:
             return "{}" if self.config.spaces_in_braces else "{}"
@@ -464,6 +504,7 @@ class Formatter:
             return "{ " + content + " }"
         else:
             return "{" + content + "}"
+
     def _format_array(self, arr: list[Any]) -> str:
         if not arr:
             return "[]"
@@ -482,6 +523,7 @@ class Formatter:
                 result.append(f"  {formatted}")
         result.append("]")
         return "\n".join(result)
+
     def _format_value(self, val: Any) -> str:
         if isinstance(val, bool):
             return "true" if val else "false"
@@ -495,24 +537,32 @@ class Formatter:
             return self._format_array(val)
         else:
             return str(val)
+
+
 class TOMLFormatter:
     def __init__(self, config: FormatConfig = FormatConfig()) -> None:
         self.config = config
+
     def format_string(self, source: str) -> str:
         tokens = Tokenizer(source).tokenize()
         ast = Parser(tokens).parse_document()
         formatter = Formatter(self.config)
         return formatter.format(ast)
+
     def format_file(self, path: Path) -> str:
         source = path.read_text(encoding="utf-8")
         return self.format_string(source)
+
     def format_file_inplace(self, path: Path) -> None:
         formatted = self.format_file(path)
         path.write_text(formatted, encoding="utf-8")
+
     def stream_format(self, input_path: Path, output_path: Path, chunk_size: int = 8192) -> None:
         source = input_path.read_text(encoding="utf-8")
         formatted = self.format_string(source)
         output_path.write_text(formatted, encoding="utf-8")
+
+
 def main() -> None:
     test_toml = """# Legacy config
 [database]
@@ -534,5 +584,7 @@ ssl=true
     result = formatter.format_string(test_toml)
     logger.info("Formatted TOML:")
     print(result)
+
+
 if __name__ == "__main__":
     main()

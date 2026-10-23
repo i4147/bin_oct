@@ -1,324 +1,296 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-from __future__ import annotations
-
 import argparse
-import difflib
+import contextlib
+import functools
 import os
+import re
 import shutil
-import sys
-from multiprocessing import Pool
+import tempfile
+from collections import deque
+from collections.abc import Iterable, Iterator
+from concurrent.futures import Future, ProcessPoolExecutor
+from dataclasses import dataclass
+from difflib import unified_diff
 from pathlib import Path
 from typing import NamedTuple
 
-from loguru import logger
+import tree_sitter_rust as tsrs
+from dh import SKIP_DIRS
+from rich.console import Console
+from rich.text import Text
 from tree_sitter import Language, Node, Parser
-import tree_sitter_rust
+
+Edit = tuple[int, int, bytes]
+
+SAFETY = re.compile(r"^(?://|/\*)\s*SAFETY\s*:")
+COMMENTS = {"line_comment", "block_comment"}
+STRINGS = {"string_literal", "raw_string_literal", "byte_string_literal", "raw_byte_string_literal"}
 
 
-# tree-sitter-rust emits line_comment / block_comment, not "comment".
-# Accept all spellings so this works across grammar versions.
-_COMMENT_TYPES = frozenset({"comment", "line_comment", "block_comment"})
-
-_PARSER: Parser | None = None
+@functools.cache
+def ts_parser() -> Parser:
+    return Parser(Language(tsrs.language()))
 
 
-def get_parser() -> Parser:
-    global _PARSER
-    if _PARSER is None:
-        _PARSER = Parser(Language(tree_sitter_rust.language()))
-    return _PARSER
+@dataclass(frozen=True)
+class Options:
+    diff: bool = False
 
 
-# ---------- comment classification ----------------------------------------
+class Result(NamedTuple):
+    path: str
+    delta: int
+    error: str | None = None
+    diff: str = ""
 
 
-def is_doc_comment(text: bytes) -> bool:
-    """True for ///, //!, /** … */ and /*! … */.
-
-    Explicitly false for ////, /***/ and /**/ (Rust treats those as
-    ordinary comments, per the reference).
-    """
-    if text.startswith(b"///"):
-        return len(text) < 4 or text[3:4] != b"/"
-    if text.startswith(b"//!"):
-        return True
-    if text.startswith(b"/**"):
-        return len(text) < 4 or text[3:4] not in (b"/", b"*")
-    if text.startswith(b"/*!"):
-        return True
-    return False
+def is_doc(text: str) -> bool:
+    return text.startswith(("///", "//!", "/**", "/*!")) and not text.startswith(("////", "/***", "/**/"))
 
 
-def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
-    """Byte ranges of non-doc comments, grown to swallow adjacent blanks."""
-    ranges: list[tuple[int, int]] = []
+def keep(text: str) -> bool:
+    return is_doc(text) or bool(SAFETY.match(text))
+
+
+def iter_nodes(root: Node) -> Iterator[Node]:
     stack = [root]
     while stack:
         node = stack.pop()
-        if node.type in _COMMENT_TYPES:
-            text = content[node.start_byte : node.end_byte].lstrip()
-            if is_doc_comment(text):
-                continue
-            start, end = node.start_byte, node.end_byte
-            # swallow spaces/tabs immediately before the comment on the same line
-            while start > 0 and content[start - 1 : start] in (b" ", b"\t"):
-                start -= 1
-            # if the rest of the line is empty, swallow the newline too
-            nl = content.find(b"\n", end)
-            if nl >= 0:
-                if content[end:nl].strip(b" \t\r") == b"":
-                    end = nl + 1
-            elif content[end:].strip(b" \t\r") == b"":
-                end = len(content)
-            ranges.append((start, end))
+        yield node
+        if node.type not in COMMENTS:
+            stack.extend(node.children)
+
+
+def span(node: Node) -> range:
+    return range(node.start_point[0] + 1, node.end_point[0] + 1)
+
+
+def blank_edits(lines: list[bytes], protected: set[int]) -> Iterator[Edit]:
+    pos = 0
+    last = len(lines) - 1
+    for i, line in enumerate(lines):
+        if i not in protected and not line.strip() and not (i == last and not line):
+            yield pos, pos + len(line) + 1, b""
+        pos += len(line) + 1
+
+
+def apply_edits(src: bytes, edits: list[Edit]) -> bytes:
+    out: list[bytes] = []
+    pos = 0
+    for start, end, text in sorted(edits):
+        if start < pos:
             continue
-        for child in reversed(node.children):
-            stack.append(child)
-    # merge adjacent/overlapping ranges (can happen after extension)
-    ranges.sort()
-    merged: list[tuple[int, int]] = []
-    for s, e in ranges:
-        if merged and s <= merged[-1][1]:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
-        else:
-            merged.append((s, e))
-    return merged
+        out.extend((src[pos:start], text))
+        pos = end
+    out.append(src[pos:])
+    return b"".join(out)
 
 
-def strip_comments(content: bytes) -> tuple[bytes, int, bool]:
-    """Return (stripped, removed_count, original_had_syntax_error)."""
-    tree = get_parser().parse(content)
-    ranges = collect_comment_ranges(tree.root_node, content)
-    if not ranges:
-        return content, 0, tree.root_node.has_error
-    out = bytearray()
-    last = 0
-    for s, e in ranges:
-        out.extend(content[last:s])
-        last = e
-    out.extend(content[last:])
-    return bytes(out), len(ranges), tree.root_node.has_error
+def is_valid(new: bytes) -> bool:
+    return not ts_parser().parse(new).root_node.has_error
 
 
-# ---------- whitespace tidy ------------------------------------------------
-
-
-def remove_blank_lines(content: bytes) -> bytes:
-    """Drop lines that are entirely whitespace. Never touches other lines."""
-    return b"".join(line for line in content.splitlines(keepends=True) if line.strip(b" \t\r\n"))
-
-
-def validate_rust(content: bytes) -> bool:
-    return not get_parser().parse(content).root_node.has_error
-
-
-# ---------- per-file worker ------------------------------------------------
-
-
-class FileResult(NamedTuple):
-    name: str
-    reduced: int
-    count: int
-    changed: bool
-    error: str
-    old_text: str
-    new_text: str
-
-
-def process_file(task: tuple[str, bool, bool]) -> FileResult:
-    path_str, dry_run, backup = task
-    path = Path(path_str)
-    name = path.name
-    try:
-        content = path.read_bytes()
-    except OSError as exc:
-        return FileResult(name, 0, 0, False, str(exc), "", "")
-
-    orig_size = len(content)
-    try:
-        new_content, count, orig_has_error = strip_comments(content)
-        if count > 0:
-            new_content = remove_blank_lines(new_content)
-            # validate the exact bytes we intend to write
-            if not orig_has_error and not validate_rust(new_content):
-                return FileResult(
-                    name,
-                    0,
-                    count,
-                    False,
-                    "stripping comments introduced syntax errors",
-                    "",
-                    "",
-                )
-    except Exception as exc:  # noqa: BLE001 — one bad file must not kill the run
-        return FileResult(name, 0, 0, False, f"{type(exc).__name__}: {exc}", "", "")
-
-    if new_content == content:
-        return FileResult(name, 0, count, False, "", "", "")
-
-    reduced = orig_size - len(new_content)
-    old_text = content.decode("utf-8", errors="replace")
-    new_text = new_content.decode("utf-8", errors="replace")
-    if not dry_run:
-        try:
-            if backup:
-                shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
-            path.write_bytes(new_content)
-        except OSError as exc:
-            return FileResult(name, 0, count, False, str(exc), old_text, new_text)
-    return FileResult(name, reduced, count, True, "", old_text, new_text)
-
-
-# ---------- traversal ------------------------------------------------------
-
-
-def iter_rust_files(paths):
-    seen: set[Path] = set()
-    for p in paths:
-        if p.is_symlink():
-            logger.warning(f"Skipping symlink: {p}")
-            continue
-        if p.is_file():
-            if p.suffix.lower() != ".rs" or p.name.startswith("."):
-                logger.warning(f"Skipping non-Rust file: {p}")
-                continue
-            rp = p.resolve()
-            if rp not in seen:
-                seen.add(rp)
-                yield p
-        elif p.is_dir():
-            for dirpath, dirnames, filenames in os.walk(p, followlinks=False):
-                dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
-                for fname in sorted(filenames):
-                    if fname.startswith(".") or not fname.lower().endswith(".rs"):
-                        continue
-                    fp = Path(dirpath) / fname
-                    if fp.is_symlink():
-                        continue
-                    rp = fp.resolve()
-                    if rp in seen:
-                        continue
-                    seen.add(rp)
-                    yield fp
-        else:
-            logger.warning(f"Path not found: {p}")
-
-
-# ---------- output ---------------------------------------------------------
-
-
-def _color(code: str, text: str) -> str:
-    return f"\033[{code}m{text}\033[0m" if sys.stdout.isatty() else text
-
-
-def _truncate(s: str, width: int) -> str:
-    if width <= 0:
-        return ""
-    if len(s) <= width:
-        return s
-    return s[: width - 1] + "…" if width > 1 else "…"
-
-
-def format_result(index: int, total: int, r: FileResult, term_width: int) -> str:
-    idx_w = len(str(total))
-    prefix = f"[{index:>{idx_w}}]  "
-    bytes_w = 9  # len("unchanged")
-    name_w = max(10, term_width - len(prefix) - 2 - bytes_w)
-    name = _truncate(r.name, name_w).ljust(name_w)
-    if r.changed:
-        val = _color("32", str(r.reduced))  # green
-    else:
-        val = _color("2", "unchanged")  # dim
-    return f"{prefix}{name}  {val}"
-
-
-def print_diff(old: str, new: str, name: str) -> None:
-    use_color = sys.stdout.isatty()
-    for line in difflib.unified_diff(
-        old.splitlines(keepends=True),
-        new.splitlines(keepends=True),
-        fromfile=f"a/{name}",
-        tofile=f"b/{name}",
-    ):
-        if use_color:
-            if line.startswith("+") and not line.startswith("+++"):
-                sys.stdout.write(f"\033[32m{line}\033[0m")
-                continue
-            if line.startswith("-") and not line.startswith("---"):
-                sys.stdout.write(f"\033[31m{line}\033[0m")
-                continue
-            if line.startswith("@@"):
-                sys.stdout.write(f"\033[36m{line}\033[0m")
-                continue
-        sys.stdout.write(line)
-
-
-# ---------- CLI ------------------------------------------------------------
-
-
-def main() -> int:
-    ap = argparse.ArgumentParser(description="Strip non-doc comments from Rust sources.")
-    ap.add_argument("paths", nargs="*", type=Path)
-    ap.add_argument("-n", "--dry-run", action="store_true", help="Report changes (implies --diff), do not write.")
-    ap.add_argument("-d", "--diff", action="store_true", help="Show unified diff.")
-    ap.add_argument("-b", "--backup", action="store_true", help="Write <file>.bak before overwriting.")
-    ap.add_argument("-w", "--workers", type=int, default=os.cpu_count() or 4)
-    ap.add_argument("-v", "--verbose", action="count", default=0)
-    ap.add_argument("-q", "--quiet", action="store_true")
-    args = ap.parse_args()
-
-    level = "ERROR" if args.quiet else "DEBUG" if args.verbose >= 2 else "INFO" if args.verbose else "WARNING"
-    logger.remove()
-    logger.add(sys.stderr, level=level)
-
-    show_diff = args.diff or args.dry_run
-    inputs = list(args.paths) if args.paths else [Path()]
-    files = list(iter_rust_files(inputs))
-    if not files:
-        logger.error("No Rust files to process.")
-        return 1
-
-    term_width = shutil.get_terminal_size((100, 24)).columns
-    total = len(files)
-    workers = max(1, args.workers)
-    tasks = [(str(p), args.dry_run, args.backup) for p in files]
-
-    scanned = changed = skipped = failed = total_reduced = 0
-
-    def emit(i: int, r: FileResult) -> None:
-        nonlocal scanned, changed, skipped, failed, total_reduced
-        scanned += 1
-        if r.error:
-            failed += 1
-            logger.error(f"{r.name}: {r.error}")
-            return
-        if r.changed:
-            changed += 1
-            total_reduced += r.reduced
-        else:
-            skipped += 1
-        if not args.quiet:
-            print(format_result(i, total, r, term_width))
-            if show_diff and r.changed:
-                print_diff(r.old_text, r.new_text, r.name)
-
-    if total == 1 or workers == 1:
-        for i, task in enumerate(tasks, 1):
-            emit(i, process_file(task))
-    else:
-        with Pool(processes=workers) as pool:
-            for i, result in enumerate(pool.imap(process_file, tasks), 1):
-                emit(i, result)
-
-    if not args.quiet:
-        print(
-            f"\nScanned {scanned} file(s): {changed} changed, "
-            f"{skipped} unchanged, {failed} failed; {total_reduced} bytes freed.",
-            file=sys.stderr,
+def diff_text(path: str, old: bytes, new: bytes) -> str:
+    return "\n".join(
+        unified_diff(
+            old.decode("utf-8", "replace").splitlines(),
+            new.decode("utf-8", "replace").splitlines(),
+            fromfile=path,
+            tofile=path,
+            lineterm="",
         )
-    return 1 if failed else 0
+    )
+
+
+def diff_style(line: str) -> str:
+    for prefix, style in (("+++", "bold"), ("---", "bold"), ("@@", "cyan"), ("+", "green"), ("-", "red")):
+        if line.startswith(prefix):
+            return style
+    return ""
+
+
+def atomic_write(path: str, data: bytes) -> None:
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".rsstrip-", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        shutil.copymode(path, tmp)
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
+
+
+class Stripper:
+    def __init__(self, opts: Options) -> None:
+        self.opts = opts
+
+    def strip(self, src: bytes) -> bytes:
+        while True:
+            new = self.strip_once(src)
+            if new == src:
+                return new
+            src = new
+
+    def strip_once(self, src: bytes) -> bytes:
+        root = ts_parser().parse(src).root_node
+        if root.has_error:
+            raise ValueError("syntax error (tree-sitter)")
+        lines = src.split(b"\n")
+        edits: list[Edit] = []
+        protected: set[int] = set()
+        for node in iter_nodes(root):
+            if node.type in COMMENTS:
+                self.comment_edit(src, node, edits, protected)
+            elif node.type in STRINGS:
+                protected.update(span(node))
+        edits.extend(blank_edits(lines, protected))
+        return apply_edits(src, edits)
+
+    def comment_edit(self, src: bytes, node: Node, edits: list[Edit], protected: set[int]) -> None:
+        text = src[node.start_byte : node.end_byte].decode("utf-8", "replace")
+        if keep(text):
+            protected.update(span(node))
+            return
+        start, end = node.start_byte, node.end_byte
+        line_start = start - node.start_point[1]
+        line_end = src.find(b"\n", end)
+        if line_end < 0:
+            line_end = len(src)
+        before = src[line_start:start]
+        after = src[end:line_end]
+        if before.strip():
+            edits.append((line_start + len(before.rstrip()), end, b""))
+        elif after.strip():
+            edits.append((start, end + len(after) - len(after.lstrip()), b""))
+        else:
+            edits.append((line_start, min(line_end + 1, len(src)), b""))
+
+    def run(self, path: str) -> Result:
+        real = os.path.realpath(path)
+        try:
+            src = Path(real).read_bytes()
+            new = self.strip(src)
+            if new == src:
+                return Result(path, 0)
+            if not is_valid(new):
+                return Result(path, 0, "result failed validation, file untouched")
+            delta = len(src) - len(new)
+            if self.opts.diff:
+                return Result(path, delta, diff=diff_text(path, src, new))
+            atomic_write(real, new)
+            return Result(path, delta)
+        except Exception as e:
+            return Result(path, 0, f"{type(e).__name__}: {e}")
+
+
+class Walker:
+    def __init__(self, roots: list[str], err: Console) -> None:
+        self.roots = roots
+        self.err = err
+        self.seen: set[str] = set()
+
+    def __iter__(self) -> Iterator[str]:
+        for root in self.roots:
+            if os.path.isdir(root):
+                for folder, dirs, names in os.walk(root):
+                    dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.endswith(".dist-info"))
+                    for name in sorted(names):
+                        path = os.path.join(folder, name)
+                        if name.endswith(".rs") and not os.path.islink(path) and self.fresh(path):
+                            yield path
+            elif os.path.isfile(root):
+                if self.fresh(root):
+                    yield root
+            else:
+                self.err.print(Text(f"warning: {root}: not found", style="yellow"))
+
+    def fresh(self, path: str) -> bool:
+        real = os.path.realpath(path)
+        if real in self.seen:
+            return False
+        self.seen.add(real)
+        return True
+
+
+class App:
+    def __init__(self, argv: list[str] | None = None) -> None:
+        args = self.parser().parse_args(argv)
+        self.paths: list[str] = args.paths
+        self.workers: int = max(1, args.j)
+        self.stripper = Stripper(Options(diff=args.diff))
+        self.out = Console(highlight=False)
+        self.err = Console(stderr=True, highlight=False)
+
+    @staticmethod
+    def parser() -> argparse.ArgumentParser:
+        ap = argparse.ArgumentParser(
+            description="Strip comments from Rust files in place, keeping doc and SAFETY comments."
+        )
+        ap.add_argument("paths", nargs="*", default=[os.getcwd()], help="files or directories")
+        ap.add_argument("-diff", action="store_true", help="show colored diff and leave files untouched")
+        ap.add_argument("-j", type=int, default=1, help="worker processes (>1 enables ProcessPoolExecutor)")
+        return ap
+
+    def results(self) -> Iterator[Result]:
+        paths = Walker(self.paths, self.err)
+        if self.workers == 1:
+            for path in paths:
+                yield self.stripper.run(path)
+        else:
+            yield from self.parallel(paths)
+
+    def parallel(self, paths: Iterable[str]) -> Iterator[Result]:
+        pending: deque[Future[Result]] = deque()
+        pool = ProcessPoolExecutor(max_workers=self.workers)
+        try:
+            for path in paths:
+                pending.append(pool.submit(self.stripper.run, path))
+                if len(pending) >= 4 * self.workers:
+                    yield pending.popleft().result()
+            while pending:
+                yield pending.popleft().result()
+        finally:
+            pool.shutdown(cancel_futures=True)
+
+    def row(self, idx: int, name: str, tail: str, style: str) -> Text:
+        head = f"[{idx}]   "
+        room = max(8, self.out.width - len(head) - len(tail) - 3)
+        short = name if len(name) <= room else name[: room - 1] + "…"
+        return Text.assemble(head, short, "   ", (tail, style))
+
+    def show(self, idx: int, res: Result) -> None:
+        if res.error:
+            tail, style = "error", "cyan"
+        else:
+            tail, style = f"{res.delta:,}", "green" if res.delta else "dim"
+        self.out.print(self.row(idx, Path(res.path).name, tail, style))
+        for line in res.diff.splitlines():
+            self.out.print(Text(line, style=diff_style(line)), soft_wrap=True)
+
+    def run(self) -> int:
+        count = changed = total = 0
+        errors: list[Result] = []
+        try:
+            for count, res in enumerate(self.results(), 1):
+                if res.error:
+                    errors.append(res)
+                else:
+                    total += res.delta
+                    changed += int(res.delta > 0)
+                self.show(count, res)
+        except KeyboardInterrupt:
+            self.err.print(Text("warning: interrupted by user, exiting", style="yellow"))
+        if not count:
+            self.err.print(Text("warning: no files", style="yellow"))
+            return 1
+        verb = "would reduce" if self.stripper.opts.diff else "reduced"
+        self.out.print(Text.assemble(f"\n{changed}/{count} files changed, ", (f"{total:,}", "green"), f" bytes {verb}"))
+        for res in errors:
+            self.err.print(Text(f"error: {res.path}: {res.error}", style="cyan"))
+        return 1 if errors else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(App().run())

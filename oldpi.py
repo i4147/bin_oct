@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import tokenize
 from dh import mpf
+
+
 def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
     path = Path(path)
     skip_dirs = {
@@ -33,22 +35,32 @@ def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
             elif item.is_file() and (ext is None or item.suffix in ext):
                 files.append(item)
     return files
+
+
 SIZE_THRESHOLD = 1 * 1024 * 1024
 OLD_PRINT_RE = re.compile(r"(?m)^[ \t]*print[ \t]+[^(\n]")
+
+
 def _open_source(path: str):
     size = Path(path).stat().st_size
     f = Path(path).open("rb")
     if size > SIZE_THRESHOLD:
         return mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
     return f
+
+
 def _read_text(path: str) -> str | None:
     try:
         with Path(path).open(encoding="utf-8", errors="ignore") as f:
             return f.read()
     except Exception:
         return None
+
+
 def _has_rich_print_import(text: str) -> bool:
     return "from rich import print" in text
+
+
 def _is_in_commented_code(text: str, line_start: int) -> bool:
     lines = text.splitlines(True)
     if line_start >= len(lines):
@@ -72,6 +84,8 @@ def _is_in_commented_code(text: str, line_start: int) -> bool:
                     multiline_delimiter = quote
                 break
     return in_multiline
+
+
 def regex_flag(path: str) -> bool:
     text = _read_text(path)
     if not text:
@@ -79,6 +93,8 @@ def regex_flag(path: str) -> bool:
     if _has_rich_print_import(text):
         return False
     return bool(OLD_PRINT_RE.search(text))
+
+
 def tokenizer_confirm(path: str) -> tuple[str, int] | None:
     try:
         src = _open_source(path)
@@ -109,6 +125,8 @@ def tokenizer_confirm(path: str) -> tuple[str, int] | None:
                     continue
                 return (line, line_num)
     return None
+
+
 def autofix_file(path: str) -> bool:
     try:
         with Path(path).open(encoding="utf-8") as f:
@@ -135,6 +153,8 @@ def autofix_file(path: str) -> bool:
         return changed
     except Exception:
         return False
+
+
 def process_file(path: str, autofix: bool = False) -> str | None:
     if not regex_flag(path):
         return None
@@ -149,8 +169,11 @@ def process_file(path: str, autofix: bool = False) -> str | None:
             return f"{path} (could not fix)\n  Line {line_num}: {line}"
     else:
         return f"{path}\n  Line {line_num}: {line}"
+
+
 def main() -> None:
     import argparse
+
     parser = argparse.ArgumentParser(description="Detect and fix Python 2 print statements")
     parser.add_argument("path", nargs="?", default=".", help="Path to file or directory to scan")
     parser.add_argument(
@@ -180,5 +203,7 @@ def main() -> None:
         print("\n✓ Files with issues have been automatically fixed.")
     else:
         print("\nRun with --autofix to automatically fix these issues.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

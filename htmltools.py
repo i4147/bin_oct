@@ -16,8 +16,10 @@ from typing import Any, Iterable
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 from bs4 import BeautifulSoup, Tag
 import requests
+
 try:
     from loguru import logger
+
     logger.remove()
     logger.add(
         sys.stderr,
@@ -26,6 +28,7 @@ try:
     )
 except ImportError:
     import logging
+
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s | %(message)s")
     logger = logging.getLogger("htmltool")
 try:
@@ -55,6 +58,8 @@ DATA_URI_RE = re.compile(r"data:(.*?);base64,(.*)", re.DOTALL)
 DATA_URI_CSS_RE = re.compile(r'url\("(data:.*?)"\)')
 SRC_HREF_DATA_URI_RE = re.compile(r'(src|href)=["\'](data:[^"\']+)["\']', re.IGNORECASE)
 CID_RE = re.compile(r'(src|href)=["\']cid:([^"\']+)["\']', re.IGNORECASE)
+
+
 def guess_mime(name: str) -> str:
     mime, _ = mimetypes.guess_type(name)
     if mime:
@@ -67,8 +72,12 @@ def guess_mime(name: str) -> str:
         ".otf": "font/otf",
         ".eot": "application/vnd.ms-fontobject",
     }.get(ext, "application/octet-stream")
+
+
 def to_data_uri(data: bytes, mime: str) -> str:
     return f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+
+
 def decode_data_uri(uri: str) -> tuple[bytes, str] | None:
     m = DATA_URI_RE.match(uri)
     if not m:
@@ -78,16 +87,26 @@ def decode_data_uri(uri: str) -> tuple[bytes, str] | None:
         return base64.b64decode(b64), mime
     except Exception:
         return None
+
+
 def is_remote(url: str) -> bool:
     return url.startswith(("http://", "https://", "//"))
+
+
 def is_image_url(url: str) -> bool:
     return Path(urlparse(url).path).suffix.lower() in IMAGE_EXTS
+
+
 def strip_query_fragment(url: str) -> str:
     return url.split("?", maxsplit=1)[0].split("#", maxsplit=1)[0]
+
+
 def safe_filename(name: str) -> str:
     name = name.strip().strip('"').strip("'")
     name = name.replace("\\", "/").split("/")[-1]
     return re.sub(r"[^A-Za-z0-9._-]+", "_", name) or "resource"
+
+
 def unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -97,10 +116,14 @@ def unique_path(path: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
+
+
 def discover_html(root: Path, recursive: bool = True) -> list[Path]:
     return [
         p for p in (root.rglob("*") if recursive else root.iterdir()) if p.is_file() and p.suffix.lower() in HTML_EXTS
     ]
+
+
 def fetch_remote(url: str, timeout: int) -> bytes | None:
     if url.startswith("//"):
         url = "https:" + url
@@ -111,6 +134,8 @@ def fetch_remote(url: str, timeout: int) -> bytes | None:
     except Exception as exc:
         logger.warning(f"Failed to fetch {url}: {exc}")
         return None
+
+
 def cmd_bundle(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     out_dir = cwd / args.output_dir
@@ -118,6 +143,7 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     assets_dir.mkdir(parents=True, exist_ok=True)
     cache: dict[str, Path] = {}
+
     def save_asset(data: bytes, mime: str) -> Path:
         key = hashlib.sha256(data).hexdigest()
         if key in cache:
@@ -127,6 +153,7 @@ def cmd_bundle(args: argparse.Namespace) -> int:
         p.write_bytes(data)
         cache[key] = p
         return p
+
     def curl_fetch(url: str) -> Path | None:
         if pycurl is None:
             body = fetch_remote(url, args.timeout)
@@ -159,7 +186,9 @@ def cmd_bundle(args: argparse.Namespace) -> int:
                 c.close()
             logger.warning(f"curl failed for {url}: {exc}")
             return None
+
     soups: list[BeautifulSoup] = []
+
     def process_html(path: Path) -> None:
         soup = BeautifulSoup(path.read_text(encoding="utf-8", errors="ignore"), "html.parser")
         soups.append(soup)
@@ -199,6 +228,7 @@ def cmd_bundle(args: argparse.Namespace) -> int:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(str(soup), encoding="utf-8")
         print(f"Processed: {path}")
+
     for path in cwd.rglob("*"):
         if path.suffix.lower() in HTML_EXTS and "output" not in path.parts:
             try:
@@ -230,10 +260,13 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     out.write_text(str(merged), encoding="utf-8")
     print(f"\nCreated: {out}")
     return 0
+
+
 def _inline_urls_in_css(
     css: str, base_file: Path | str | None, remote_base: str | None, timeout: int
 ) -> tuple[str, int, int]:
     local = remote = 0
+
     def repl(m: re.Match) -> str:
         nonlocal local, remote
         quote, url = m.group(1), m.group(2)
@@ -257,7 +290,10 @@ def _inline_urls_in_css(
         uri = to_data_uri(target.read_bytes(), guess_mime(str(target)))
         local += 1
         return f"url({quote}{uri}{quote})"
+
     return CSS_URL_RE.sub(repl, css), local, remote
+
+
 def _inline_html_file(path: Path, timeout: int) -> dict[str, Any]:
     result = {
         "path": str(path),
@@ -343,6 +379,8 @@ def _inline_html_file(path: Path, timeout: int) -> dict[str, Any]:
         logger.error(f"{path}: {exc}")
     result["time"] = time.perf_counter() - t0
     return result
+
+
 def _inline_css_file(path: Path, timeout: int) -> dict[str, Any]:
     result = {
         "path": str(path),
@@ -362,6 +400,8 @@ def _inline_css_file(path: Path, timeout: int) -> dict[str, Any]:
         logger.error(f"{path}: {exc}")
     result["time"] = time.perf_counter() - t0
     return result
+
+
 def _inline_dispatch(args: tuple[Path, int]) -> dict[str, Any]:
     path, timeout = args
     if path.suffix.lower() == ".html":
@@ -375,6 +415,8 @@ def _inline_dispatch(args: tuple[Path, int]) -> dict[str, Any]:
         "time": 0.0,
         "status": "skipped",
     }
+
+
 def cmd_inline(args: argparse.Namespace) -> int:
     files: list[Path] = []
     for raw in args.paths:
@@ -409,14 +451,18 @@ def cmd_inline(args: argparse.Namespace) -> int:
     print(f"\nBuild Complete in {time.perf_counter() - t0:.2f}s!")
     print(f"Total globally embedded resources: {total_l} local, {total_r} remote.")
     return 0
+
+
 class _Isolator:
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.embedded = 0
         self.warnings = 0
+
     def log(self, msg: str, level: str = "INFO") -> None:
         if self.verbose or level == "ERROR":
             print(f"[{level}] {msg}")
+
     def _find(self, ref: str, base: Path) -> Path | None:
         url_p = urlparse(ref)
         stripped = url_p.path.lstrip("/")
@@ -434,9 +480,11 @@ class _Isolator:
         self.log(f"Resource '{ref}' not found", "WARNING")
         self.warnings += 1
         return None
+
     def _embed_css_urls(self, css: str, base: Path) -> str:
         if not css:
             return css
+
         def repl(m: re.Match) -> str:
             ref = m.group(1)
             if ref.startswith(("http://", "https://", "data:")):
@@ -448,7 +496,9 @@ class _Isolator:
             self.embedded += 1
             self.log(f"Embedded font: {p.name}")
             return f"url('{uri}')"
+
         return CSS_URL_RE.sub(repl, css)
+
     def _img(self, tag: Tag, base: Path) -> None:
         src = tag.get("src")
         if not src or src.startswith(("http://", "https://", "data:")):
@@ -460,6 +510,7 @@ class _Isolator:
         tag["src"] = to_data_uri(p.read_bytes(), guess_mime(str(p)))
         self.embedded += 1
         self.log(f"Embedded image: {p.name}")
+
     def _link(self, tag: Tag, base: Path) -> None:
         if tag.get("rel") != ["stylesheet"]:
             return
@@ -475,6 +526,7 @@ class _Isolator:
         s.string = css
         tag.replace_with(s)
         self.log(f"Embedded CSS: {p.name}")
+
     def _script(self, tag: Tag, base: Path) -> None:
         src = tag.get("src")
         if not src:
@@ -490,9 +542,11 @@ class _Isolator:
         tag.string = p.read_text(encoding="utf-8")
         del tag["src"]
         self.log(f"Embedded script: {p.name}")
+
     def _style(self, tag: Tag, base: Path) -> None:
         if tag.string:
             tag.string = self._embed_css_urls(tag.string, base)
+
     def isolate(self, html_path: Path) -> str | None:
         try:
             text = html_path.read_text(encoding="utf-8")
@@ -511,6 +565,7 @@ class _Isolator:
             self._style(style, base)
         self.log(f"Embedded {self.embedded}, warnings {self.warnings}")
         return soup.prettify()
+
     def save(self, html_path: Path, out_path: Path | None = None) -> bool:
         html = self.isolate(html_path)
         if html is None:
@@ -520,6 +575,8 @@ class _Isolator:
         out_path.write_text(html, encoding="utf-8")
         self.log(f"Standalone HTML saved to: {out_path}")
         return True
+
+
 def cmd_isolate(args: argparse.Namespace) -> int:
     inp = Path(args.input)
     if not inp.exists():
@@ -528,10 +585,16 @@ def cmd_isolate(args: argparse.Namespace) -> int:
     out = Path(args.output) if args.output else inp.with_name(inp.stem + "_standalone.html")
     iso = _Isolator(verbose=args.verbose)
     return 0 if iso.save(inp, out) else 1
+
+
 _STANDALONE_ASSET_CACHE: dict[str, tuple[bytes, str]] = {}
+
+
 def _init_standalone_worker(cache: dict[str, tuple[bytes, str]]) -> None:
     global _STANDALONE_ASSET_CACHE
     _STANDALONE_ASSET_CACHE = cache
+
+
 def _resolve_url(ref: str, base: Path | str) -> str:
     ref = ref.strip()
     ref, _ = urldefrag(ref)
@@ -544,6 +607,8 @@ def _resolve_url(ref: str, base: Path | str) -> str:
             return str(Path(ref).resolve())
         return str((base / unquote(ref)).resolve())
     return urljoin(str(base), ref)
+
+
 def _scan_css_refs(css: str, base: Path | str, urls: set[str]) -> None:
     for m in CSS_URL_RE.finditer(css):
         ref = m.group(2).strip().strip("'\"")
@@ -552,6 +617,8 @@ def _scan_css_refs(css: str, base: Path | str, urls: set[str]) -> None:
         full = _resolve_url(ref, base)
         if is_remote(full):
             urls.add(full)
+
+
 def _collect_remote_urls(html_path: Path) -> set[str]:
     urls: set[str] = set()
     css_queue: list[tuple[str, Path | str]] = []
@@ -618,6 +685,8 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
                 if p.is_file():
                     css_queue.append((str(p), p.parent))
     return urls
+
+
 def _download_remote_batch(
     urls: Iterable[str], timeout: int, max_size: int, prompt: bool
 ) -> dict[str, tuple[bytes, str]]:
@@ -650,6 +719,8 @@ def _download_remote_batch(
         cache[str(r.url)] = (body, mime)
         print(f"  ↓ downloaded once: {url}")
     return cache
+
+
 def _asset_bytes(ref: str, base: Path | str, cache: dict[str, tuple[bytes, str]]) -> tuple[bytes, str] | None:
     if not ref or ref.startswith(("data:", "#")):
         return None
@@ -664,6 +735,8 @@ def _asset_bytes(ref: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
         print(f"  ⚠ local file not found: {p}")
         return None
     return p.read_bytes(), guess_mime(str(p))
+
+
 def _rewrite_css(css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]) -> str:
     def import_repl(m: re.Match) -> str:
         ref = m.group(1).strip()
@@ -677,7 +750,9 @@ def _rewrite_css(css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
         else:
             inner_base = Path(_resolve_url(ref, base)).parent
         return _rewrite_css(body.decode("utf-8", errors="replace"), inner_base, cache)
+
     css = CSS_IMPORT_RE.sub(import_repl, css)
+
     def url_repl(m: re.Match) -> str:
         ref = m.group(2).strip()
         if ref.startswith(("#", "data:")):
@@ -687,7 +762,10 @@ def _rewrite_css(css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
             return m.group(0)
         body, mime = got
         return f'url("{to_data_uri(body, mime)}")'
+
     return CSS_URL_RE.sub(url_repl, css)
+
+
 def _process_standalone_html(html_str: str) -> bool:
     html_path = Path(html_str).resolve()
     base = html_path.parent
@@ -757,6 +835,8 @@ def _process_standalone_html(html_str: str) -> bool:
         return False
     print(f"✓ Done: {html_path}")
     return True
+
+
 def cmd_standalone(args: argparse.Namespace) -> int:
     paths = [Path(p).resolve() for p in (args.paths or ["."])]
     files: set[Path] = set()
@@ -787,6 +867,8 @@ def cmd_standalone(args: argparse.Namespace) -> int:
     ok = sum(bool(r) for r in results)
     print(f"\nProcessed {ok}/{len(files)} file(s).")
     return 0 if ok == len(files) else 1
+
+
 def _decode_data_uri_to_file(uri: str, dest_dir: Path) -> str | None:
     dec = decode_data_uri(uri)
     if not dec:
@@ -801,6 +883,8 @@ def _decode_data_uri_to_file(uri: str, dest_dir: Path) -> str | None:
     fname = f"data_resource_{abs(hash(uri)) % 10**8}.{ext or 'bin'}"
     (dest_dir / fname).write_bytes(body)
     return fname
+
+
 def cmd_mhtml(args: argparse.Namespace) -> int:
     inputs = args.inputs or [str(p) for p in Path.cwd().rglob("*.mhtml")]
     if not inputs:
@@ -816,11 +900,13 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
         out_files.mkdir(parents=True, exist_ok=True)
         msg = BytesParser(policy=policy.default).parsebytes(mhtml_path.read_bytes())
         parts: list[Any] = []
+
         def walk(m: Any) -> None:
             for p in m.iter_parts():
                 parts.append(p)
                 if p.is_multipart():
                     walk(p)
+
         if msg.is_multipart():
             walk(msg)
         else:
@@ -867,23 +953,29 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
             target.write_bytes(body)
             if cid:
                 cid_map[cid] = fname
+
         def cid_repl(m: re.Match) -> str:
             attr, cid = m.group(1), m.group(2)
             if cid in cid_map:
                 return f'{attr}="{out_files.name}/{cid_map[cid]}"'
             return m.group(0)
+
         html_text = CID_RE.sub(cid_repl, html_text)
+
         def data_repl(m: re.Match) -> str:
             attr, uri = m.group(1), m.group(2)
             fname = _decode_data_uri_to_file(uri, out_files)
             if not fname:
                 return m.group(0)
             return f'{attr}="{out_files.name}/{fname}"'
+
         html_text = SRC_HREF_DATA_URI_RE.sub(data_repl, html_text)
         out_html = unique_path(out_html) if out_html.exists() else out_html
         out_html.write_text(html_text, encoding="utf-8")
         print(f"Done: {out_html}  ({len(cid_map)} CID items)")
     return 0
+
+
 def _find_in_static(filename: str, static_root: Path) -> Path | None:
     if not static_root.is_dir():
         return None
@@ -891,6 +983,8 @@ def _find_in_static(filename: str, static_root: Path) -> Path | None:
         if filename in files:
             return Path(root) / filename
     return None
+
+
 def _font_mime(ext: str) -> str | None:
     return {
         ".eot": "application/vnd.ms-fontobject",
@@ -899,6 +993,8 @@ def _font_mime(ext: str) -> str | None:
         ".woff2": "font/woff2",
         ".svg": "image/svg+xml",
     }.get(ext)
+
+
 def _font_to_data_uri(path_or_url: str, static_root: Path, timeout: int) -> str | None:
     ext = Path(urlparse(path_or_url).path).suffix.lower()
     mime = _font_mime(ext)
@@ -920,6 +1016,8 @@ def _font_to_data_uri(path_or_url: str, static_root: Path, timeout: int) -> str 
     if not body:
         return None
     return to_data_uri(body, mime)
+
+
 def cmd_css(args: argparse.Namespace) -> int:
     inp = Path(args.input).resolve()
     if not inp.is_file():
@@ -956,6 +1054,7 @@ def cmd_css(args: argparse.Namespace) -> int:
             queue.append(m.group(1))
         sub_css = CSS_IMPORT_RE.sub("", sub_css)
         merged += f"\n/* Imported from: {sub_path} */\n{sub_css}\n"
+
     def font_repl(m: re.Match) -> str:
         quote, ref = m.group(1), m.group(2)
         base = inp.parent if not is_remote(ref) else None
@@ -964,11 +1063,14 @@ def cmd_css(args: argparse.Namespace) -> int:
         if not uri:
             return m.group(0)
         return f"url({quote}{uri}{quote})" if quote else f'url("{uri}")'
+
     merged = CSS_URL_RE.sub(font_repl, merged)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(merged, encoding="utf-8")
     print(f"Standalone CSS file created at: {out}")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="htmltool.py",
@@ -1029,9 +1131,13 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--timeout", type=int, default=15)
     c.set_defaults(func=cmd_css)
     return p
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
+
+
 if __name__ == "__main__":
     sys.exit(main())

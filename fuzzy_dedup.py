@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Iterable, Iterator, Mapping, Sequence
+
 try:
     import ssdeep
 except ImportError as exc:
@@ -39,11 +40,15 @@ try:
 except ImportError:
     tqdm = None
 DEFAULT_IGNORED_DIRECTORIES: frozenset[str] = frozenset({".git", "__pycache__", "node_modules"})
+
+
 @dataclass(frozen=True)
 class FileHash:
     path: Path
     exact: str
     fuzzy: str
+
+
 @dataclass(frozen=True)
 class ScanOptions:
     root: Path
@@ -51,6 +56,8 @@ class ScanOptions:
     ignored_directories: frozenset[str]
     min_size: int
     max_bytes: int | None
+
+
 def progress(
     values: Iterable[Path],
     *,
@@ -60,6 +67,8 @@ def progress(
     if tqdm is None:
         return values
     return tqdm(values, total=total, desc=description)
+
+
 def iter_files(options: ScanOptions) -> Iterator[Path]:
     root = options.root.resolve()
     if not root.exists():
@@ -84,11 +93,15 @@ def iter_files(options: ScanOptions) -> Iterator[Path]:
                     yield path
             except OSError as exc:
                 print(f"Error accessing {path}: {exc}", file=sys.stderr)
+
+
 def read_for_hash(path: Path, max_bytes: int | None) -> bytes:
     with path.open("rb") as file:
         if max_bytes is None:
             return file.read()
         return file.read(max_bytes)
+
+
 def hash_file(path: Path, max_bytes: int | None) -> FileHash | None:
     try:
         data = read_for_hash(path, max_bytes)
@@ -100,6 +113,8 @@ def hash_file(path: Path, max_bytes: int | None) -> FileHash | None:
     except Exception as exc:
         print(f"Error hashing file {path}: {exc}", file=sys.stderr)
     return None
+
+
 def hash_files(
     paths: Sequence[Path],
     *,
@@ -111,6 +126,8 @@ def hash_files(
         if hashed is not None:
             result[path] = hashed
     return result
+
+
 def exact_duplicate_groups(
     hashes: Mapping[Path, FileHash],
 ) -> dict[str, list[Path]]:
@@ -118,6 +135,8 @@ def exact_duplicate_groups(
     for item in hashes.values():
         groups[item.exact].append(item.path)
     return {digest: paths for digest, paths in groups.items() if len(paths) > 1}
+
+
 def fuzzy_groups(
     hashes: Mapping[Path, FileHash],
     threshold: int,
@@ -167,6 +186,8 @@ def fuzzy_groups(
         elif mark_on_match:
             matched.discard(first)
     return groups
+
+
 def print_exact_duplicates(
     exact_groups: Mapping[str, Sequence[Path]],
 ) -> None:
@@ -179,10 +200,14 @@ def print_exact_duplicates(
         for path in paths:
             print(f"- {path}")
     print("-" * 40)
+
+
 def destination_group(output: Path, number: int, prefix: str) -> Path:
     directory = output / f"{prefix}_{number}"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
+
+
 def copy_groups(
     groups: Sequence[Sequence[Path]],
     output: Path,
@@ -199,6 +224,8 @@ def copy_groups(
                 print(f"Copied {source} to {directory}")
             except OSError as exc:
                 print(f"Failed to copy {source}: {exc}", file=sys.stderr)
+
+
 def move_groups(
     groups: Sequence[Sequence[Path]],
     output: Path,
@@ -230,6 +257,8 @@ def move_groups(
                 print(f"Moved {source} to {directory}")
             except OSError as exc:
                 print(f"Failed to move {source}: {exc}", file=sys.stderr)
+
+
 def print_pair_report(
     groups: Sequence[Sequence[Path]],
     *,
@@ -247,6 +276,8 @@ def print_pair_report(
                 hashes[other].fuzzy,
             )
             print(f"- Similar: {other.relative_to(root)} (Score: {score})")
+
+
 def write_group_report(
     groups: Sequence[Sequence[Path]],
     output: Path,
@@ -276,6 +307,8 @@ def write_group_report(
         return
     msg = f"Unsupported report format: {report_format}"
     raise ValueError(msg)
+
+
 def score_text(score: int | str, threshold: int) -> str:
     text = str(score)
     if Fore is None or Style is None:
@@ -285,6 +318,8 @@ def score_text(score: int | str, threshold: int) -> str:
     if isinstance(score, int) and score >= threshold:
         return f"{Fore.YELLOW}{text}{Style.RESET_ALL}"
     return f"{Fore.RED}{text}{Style.RESET_ALL}"
+
+
 def write_similarity_matrix(
     hashes: Mapping[Path, FileHash],
     threshold: int,
@@ -332,6 +367,8 @@ def write_similarity_matrix(
     print("-" * len("|".join(str(value) for value in rows[0])))
     for row in display_rows:
         print("|".join(str(value) if value else "." for value in row))
+
+
 def make_scan_options(
     args: argparse.Namespace,
     *,
@@ -367,6 +404,8 @@ def make_scan_options(
         min_size=min_size,
         max_bytes=max_bytes,
     )
+
+
 def run_scan(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
         msg = "Threshold must be an integer from 0 through 100."
@@ -408,6 +447,8 @@ def run_scan(args: argparse.Namespace) -> int:
         )
     print(f"Processed {len(groups)} similarity groups.")
     return 0
+
+
 def run_report(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
         msg = "Threshold must be an integer from 0 through 100."
@@ -440,6 +481,8 @@ def run_report(args: argparse.Namespace) -> int:
         print("No similar files found.")
     write_group_report(groups, Path(args.output), args.format)
     return 0
+
+
 def run_move(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
         msg = "Threshold must be an integer from 0 through 100."
@@ -472,6 +515,8 @@ def run_move(args: argparse.Namespace) -> int:
     print(f"Moved {moved_count} files into {len(groups)} groups.")
     print(f"Similar files have been moved to: {Path(args.output)}")
     return 0
+
+
 def add_common_scan_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "threshold",
@@ -554,6 +599,8 @@ def add_common_scan_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Print exact duplicate groups.",
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Find and manage exact and fuzzy duplicate files.")
     subparsers = parser.add_subparsers(dest="command")
@@ -614,6 +661,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     move_parser.set_defaults(handler=run_move)
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -625,5 +674,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if hasattr(args, "min_size_for_group"):
         args.min_group_size_for_group = args.min_size_for_group
     return int(args.handler(args))
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

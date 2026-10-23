@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 import re
 import sys
+
 STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
+
+
 def fix_content(content: str) -> str:
     out = []
     i, n = 0, len(content)
@@ -43,9 +46,13 @@ def fix_content(content: str) -> str:
     elif closes > opens:
         s = "(" * (closes - opens) + s
     return s
+
+
 def fix_literal(match: re.Match) -> str:
     raw = match.group(0)
     return '"' + fix_content(raw[1:-1]) + '"'
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit(f"usage: {Path(sys.argv[0]).name} <json-file>")
@@ -63,5 +70,7 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"fixed and updated: {path}")
+
+
 if __name__ == "__main__":
     main()

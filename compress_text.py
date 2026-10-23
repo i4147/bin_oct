@@ -37,6 +37,7 @@ from rich.progress import (
 )
 from rich.table import Table
 from rich.text import Text
+
 CHUNK: Final[int] = 1 << 20
 REPORT_INTERVAL: Final[float] = 0.1
 POLL_INTERVAL: Final[float] = 0.05
@@ -88,14 +89,20 @@ LEVELS: Final[dict[str, dict[str, int]]] = {
 }
 Message: TypeAlias = tuple[str, int, int | None, str]
 _queue: MPQueue[Message] | None = None
+
+
 class CliError(Exception):
     pass
+
+
 @dataclass(frozen=True, slots=True)
 class Codec:
     feed: Callable[[bytes], bytes]
     finish: Callable[[], bytes]
     header: bytes = b""
     skip: int = 0
+
+
 @dataclass(frozen=True, slots=True)
 class Job:
     name: str
@@ -104,6 +111,8 @@ class Job:
     size: int
     level: int
     digest: str | None
+
+
 @dataclass(slots=True)
 class Result:
     name: str
@@ -112,13 +121,18 @@ class Result:
     seconds: float
     verified: bool | None
     error: str | None
+
+
 def _init_worker(q: MPQueue[Message]) -> None:
     global _queue
     _queue = q
+
+
 class Reporter:
     def __init__(self, name: str) -> None:
         self.name = name
         self._last = 0.0
+
     def __call__(
         self,
         done: int,
@@ -131,16 +145,23 @@ class Reporter:
             self._last = now
             if _queue is not None:
                 _queue.put((self.name, done, total, status))
+
+
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
         while chunk := f.read(CHUNK):
             h.update(chunk)
     return h.hexdigest()
+
+
 def part_path(dst: Path) -> Path:
     return dst.with_name(dst.name + ".part")
+
+
 def zstd_encoder(level: int, size: int) -> Codec:
     import zstandard as zstd
+
     cctx: zstd.ZstdCompressor | None = None
     if level >= 20:
         try:
@@ -152,44 +173,69 @@ def zstd_encoder(level: int, size: int) -> Codec:
         cctx = zstd.ZstdCompressor(level=level)
     obj = cctx.compressobj(size=size)
     return Codec(obj.compress, obj.flush)
+
+
 def zstd_decoder(path: Path) -> Codec:
     import zstandard as zstd
+
     obj = zstd.ZstdDecompressor(max_window_size=1 << 31).decompressobj()
     return Codec(obj.decompress, lambda: b"")
+
+
 def brotli_encoder(level: int, size: int) -> Codec:
     import brotli
+
     comp = brotli.Compressor(quality=level, lgwin=24, mode=brotli.MODE_TEXT)
     return Codec(comp.process, comp.finish)
+
+
 def brotli_decoder(path: Path) -> Codec:
     import brotli
+
     dec = brotli.Decompressor()
     return Codec(dec.process, lambda: b"")
+
+
 def bz2_encoder(level: int, size: int) -> Codec:
     comp = bz2.BZ2Compressor(level)
     return Codec(comp.compress, comp.flush)
+
+
 def bz2_decoder(path: Path) -> Codec:
     dec = bz2.BZ2Decompressor()
     return Codec(dec.decompress, lambda: b"")
+
+
 def xz_encoder(level: int, size: int) -> Codec:
     comp = lzma.LZMACompressor(format=lzma.FORMAT_XZ, check=lzma.CHECK_CRC64, preset=level)
     return Codec(comp.compress, comp.flush)
+
+
 def xz_decoder(path: Path) -> Codec:
     dec = lzma.LZMADecompressor()
     return Codec(dec.decompress, lambda: b"")
+
+
 def ppmd_encoder(level: int, size: int) -> Codec:
     import pyppmd
+
     mem = min(max(16 << 20, size), 256 << 20)
     enc = pyppmd.Ppmd7Encoder(level, mem)
     header = PPMD_HEADER.pack(PPMD_MAGIC, level, mem, size)
     return Codec(enc.encode, lambda: enc.flush(endmark=True), header)
+
+
 def ppmd_decoder(path: Path) -> Codec:
     import pyppmd
+
     with path.open("rb") as f:
         magic, order, mem, _ = PPMD_HEADER.unpack(f.read(PPMD_HEADER.size))
     if magic != PPMD_MAGIC:
         raise ValueError("invalid ppmd header")
     dec = pyppmd.Ppmd7Decoder(order, mem)
     return Codec(dec.decode, dec.flush, skip=PPMD_HEADER.size)
+
+
 ENCODERS: Final[dict[str, Callable[[int, int], Codec]]] = {
     "zstd": zstd_encoder,
     "brotli": brotli_encoder,
@@ -204,6 +250,8 @@ DECODERS: Final[dict[str, Callable[[Path], Codec]]] = {
     "xz": xz_decoder,
     "pyppmd": ppmd_decoder,
 }
+
+
 def stream_compress(src: Path, dst: Path, codec: Codec, total: int, report: Reporter) -> None:
     done = 0
     with src.open("rb") as fi, dst.open("wb") as fo:
@@ -214,18 +262,24 @@ def stream_compress(src: Path, dst: Path, codec: Codec, total: int, report: Repo
             report(done, total)
         fo.write(codec.finish())
     report(total, total, force=True)
+
+
 def compress_7z(src: Path, dst: Path, level: int, report: Reporter) -> None:
     import py7zr
+
     filters = [{"id": py7zr.FILTER_LZMA2, "preset": level}]
     report(0, None, force=True)
     with py7zr.SevenZipFile(dst, "w", filters=filters) as z:
         z.write(src, arcname=src.name)
+
+
 def verify_output(job: Job, path: Path, report: Reporter) -> bool:
     expected = job.digest
     if expected is None:
         raise ValueError("no digest available for verification")
     if job.name == "py7zr":
         import py7zr
+
         report(0, job.size, "verifying", force=True)
         with tempfile.TemporaryDirectory(dir=path.parent) as tmp:
             with py7zr.SevenZipFile(path) as z:
@@ -243,6 +297,8 @@ def verify_output(job: Job, path: Path, report: Reporter) -> bool:
             report(done, job.size, f"verifying {done * 100 // max(job.size, 1)}%")
         h.update(codec.finish())
     return h.hexdigest() == expected
+
+
 def run_job(job: Job) -> Result:
     report = Reporter(job.name)
     part = part_path(job.dst)
@@ -274,6 +330,8 @@ def run_job(job: Job) -> Result:
             verified,
             traceback.format_exc(),
         )
+
+
 def drain(
     q: MPQueue[Message],
     progress: Progress,
@@ -296,6 +354,8 @@ def drain(
             progress.update(tid, completed=done, total=total, status="[cyan]running[/]")
         else:
             progress.update(tid, status=f"[yellow]{status}[/]")
+
+
 def run_jobs(jobs: list[Job], workers: int, progress: Progress) -> list[Result]:
     ctx = mp.get_context("spawn")
     q: MPQueue[Message] = ctx.Queue()
@@ -353,10 +413,14 @@ def run_jobs(jobs: list[Job], workers: int, progress: Progress) -> list[Result]:
         raise
     executor.shutdown(wait=True)
     return [results[j.name] for j in jobs]
+
+
 def ensure_space(directory: Path, needed: int) -> None:
     free = shutil.disk_usage(directory).free
     if free < needed + (needed >> 5) + (1 << 20):
         raise CliError(f"not enough free space in {directory}: need ~{needed / 1e6:,.0f} MB, have {free / 1e6:,.0f} MB")
+
+
 def build_tar(folder: Path, dest: Path, root_name: str, console: Console) -> list[str]:
     entries = sorted(folder.rglob("*"))
     total = 0
@@ -391,6 +455,8 @@ def build_tar(folder: Path, dest: Path, root_name: str, console: Console) -> lis
                 except OSError as exc:
                     skipped.append(f"{p}: {exc}")
     return skipped
+
+
 def resolve_algos(requested: Sequence[str], console: Console) -> list[str]:
     wanted = [a for a in ORDER if a in set(requested)]
     available: list[str] = []
@@ -402,6 +468,8 @@ def resolve_algos(requested: Sequence[str], console: Console) -> list[str]:
     if not available:
         raise CliError("no usable algorithms")
     return available
+
+
 def print_report(console: Console, results: list[Result], orig: int, wall: float) -> None:
     ok = sorted((r for r in results if not r.error), key=lambda r: r.size)
     bad = [r for r in results if r.error]
@@ -444,6 +512,8 @@ def print_report(console: Console, results: list[Result], orig: int, wall: float
     for r in bad:
         console.print(Panel(Text(r.error or ""), title=r.name, border_style="red"))
     console.print(f"Wall time: {wall:.1f}s")
+
+
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="compress_txt.py")
     p.add_argument("path", type=Path)
@@ -457,6 +527,8 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--tmp-dir", type=Path)
     p.add_argument("--json", type=Path, dest="json_path")
     return p.parse_args(argv)
+
+
 def run(args: argparse.Namespace, console: Console) -> int:
     src: Path = args.path.expanduser().resolve()
     if not src.exists():
@@ -525,6 +597,8 @@ def run(args: argparse.Namespace, console: Console) -> int:
         }
         args.json_path.write_text(json.dumps(payload, indent=2))
     return 0 if all(r.error is None for r in results) else 2
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     console = Console()
@@ -536,5 +610,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         console.print("[yellow]interrupted[/]")
         return 130
+
+
 if __name__ == "__main__":
     sys.exit(main())

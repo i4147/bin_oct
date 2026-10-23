@@ -6,6 +6,7 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Optional
+
 try:
     from fontTools.ttLib import TTFont
 except ImportError:
@@ -16,6 +17,8 @@ try:
 except ImportError:
     InterpreterPoolExecutor = None
 SUPPORTED_EXTENSIONS = {".ttf", ".otf", ".woff", ".woff2", ".eot"}
+
+
 def convert_font(
     input_path: Path, target_format: str, output_dir: Optional[Path] = None, remove_original: bool = False
 ) -> None:
@@ -70,12 +73,18 @@ def convert_font(
         except Exception as rm_err:
             print(f"    [!] Warning: Could not remove original file: {rm_err}")
     print()
+
+
 def _worker_wrapper(args: tuple[Path, str, Optional[Path], bool]) -> None:
     convert_font(*args)
+
+
 def find_fonts_in_current_dir() -> list[Path]:
     current_dir = Path.cwd()
     found_fonts = [f for f in current_dir.rglob("*") if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS]
     return found_fonts
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert font files between formats using fonttools with multiprocessing / concurrent.futures."
@@ -158,5 +167,7 @@ def main() -> None:
         print(f"[-] Execution error during parallel batch processing: {err}")
         sys.exit(1)
     print("=== Conversion Complete ===")
+
+
 if __name__ == "__main__":
     main()

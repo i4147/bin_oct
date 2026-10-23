@@ -2,8 +2,11 @@
 from __future__ import annotations
 from pathlib import Path
 from dh import get_files, is_binary
+
 SIZE_THRESHOLD = 100
 LINE_THRESHOLD = 3
+
+
 def process_file(path: Path) -> None:
     path = Path(path)
     if not path.exists():
@@ -14,6 +17,8 @@ def process_file(path: Path) -> None:
         del content, number_of_lines
         path.unlink()
         print(f"{path.name} removed")
+
+
 def main() -> None:
     cwd = Path.cwd()
     files = get_files(cwd)
@@ -22,5 +27,7 @@ def main() -> None:
             print(f"{path.name} is binary")
             continue
         process_file(path)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

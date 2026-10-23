@@ -8,12 +8,15 @@ import json
 import multiprocessing
 import os
 import sys
+
 try:
     from rapidfuzz import fuzz
     import ssdeep
 except ImportError:
     print("Please install dependencies: pip install ssdeep rapidfuzz")
     sys.exit(1)
+
+
 def get_py_files(directory):
     py_files = []
     for root, _, files in os.walk(directory):
@@ -21,6 +24,8 @@ def get_py_files(directory):
             if f.endswith(".py") and f != "utils.py":
                 py_files.append(os.path.join(root, f))
     return py_files
+
+
 def extract_objects(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -60,8 +65,12 @@ def extract_objects(path):
                 "ssdeep_hash": ssdeep.hash(src_code),
             })
     return objects
+
+
 def process_file(path):
     return extract_objects(path)
+
+
 def save_exact_duplicates(
     all_objects,
     output_file="exact_duplicates.json",
@@ -93,9 +102,11 @@ def save_exact_duplicates(
             obj["reference_file"],
         )
     )
+
     def write_json(path: str, data: list[dict]) -> None:
         with open(path, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4)
+
     write_json(output_file, duplicate_objects)
     output_files = {
         "function": "function_duplicates.json",
@@ -108,6 +119,8 @@ def save_exact_duplicates(
         print(f"[+] Saved {len(type_duplicates)} {object_type} duplicate instances to {path}")
     print(f"[+] Saved {len(duplicate_objects)} exact duplicate instances to {output_file}")
     return hash_groups
+
+
 def refactor_duplicates(hash_groups):
     utils_path = "utils.py"
     utils_content = ""
@@ -147,6 +160,8 @@ def refactor_duplicates(hash_groups):
         with open(path, "w", encoding="utf-8") as f:
             f.writelines(lines)
     print(f"[+] Refactored {len(file_imports)} files.")
+
+
 def generate_fuzzy_report(all_objects, output_file="fuzzy_duplicates.json"):
     report = []
     n = len(all_objects)
@@ -180,6 +195,8 @@ def generate_fuzzy_report(all_objects, output_file="fuzzy_duplicates.json"):
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=4)
     print(f"[+] Saved {len(report)} fuzzy duplicate pairs to {output_file}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Detect and refactor duplicate Python objects.")
     parser.add_argument(
@@ -208,6 +225,8 @@ def main():
         refactor_duplicates(hash_groups)
     if args.fuzzy:
         generate_fuzzy_report(all_objects)
+
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     main()

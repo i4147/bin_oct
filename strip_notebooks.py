@@ -7,10 +7,13 @@ from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Final
 from loguru import logger
+
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
 MAX_WORKERS: Final[int] = 8
 StripResult = tuple[Path, bool, str]
+
+
 def find_notebook_files(paths: list[Path]) -> set[Path]:
     notebook_files: set[Path] = set()
     for path in paths:
@@ -27,6 +30,8 @@ def find_notebook_files(paths: list[Path]) -> set[Path]:
                 if ".ipynb_checkpoints" not in str(nb_file):
                     notebook_files.add(nb_file.resolve())
     return notebook_files
+
+
 def strip_notebook_output(notebook_path: Path) -> StripResult:
     try:
         with notebook_path.open("r", encoding="utf-8") as f:
@@ -61,6 +66,8 @@ def strip_notebook_output(notebook_path: Path) -> StripResult:
         return (notebook_path, False, f"Invalid JSON: {exc}")
     except Exception as exc:
         return (notebook_path, False, f"Error: {exc}")
+
+
 def process_notebooks(paths: list[Path]) -> None:
     notebook_files: set[Path] = find_notebook_files(paths)
     if not notebook_files:
@@ -85,6 +92,8 @@ def process_notebooks(paths: list[Path]) -> None:
         logger.warning(f"Processed: {successful} succeeded, {failed} failed")
     else:
         print(f"Successfully processed {successful} notebook(s)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Strip outputs from Jupyter notebook (.ipynb) files",
@@ -111,5 +120,7 @@ Examples:
     except KeyboardInterrupt:
         logger.warning("Interrupted by user")
         sys.exit(1)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

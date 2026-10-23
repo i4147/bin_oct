@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 POOL_WORKERS: Final[int] = 8
@@ -18,6 +19,8 @@ POOL_METHODS: Final[tuple[str, ...]] = (
 DEFAULT_OUTPUT_DIR: Final[str] = "output"
 SplitTask: TypeAlias = tuple[Path, Path, bool]
 SplitResult: TypeAlias = tuple[Path, int]
+
+
 def split_pdf_by_page(pdf_path: Path, output_dir: Path) -> int:
     reader = PdfReader(pdf_path)
     stem = pdf_path.stem
@@ -31,6 +34,8 @@ def split_pdf_by_page(pdf_path: Path, output_dir: Path) -> int:
         with output_path.open("wb") as f:
             writer.write(f)
     return total_pages
+
+
 def extract_text_by_page(pdf_path: Path, output_dir: Path) -> int:
     reader = PdfReader(pdf_path)
     stem = pdf_path.stem
@@ -42,6 +47,8 @@ def extract_text_by_page(pdf_path: Path, output_dir: Path) -> int:
         text = page.extract_text() or ""
         output_path.write_text(text, encoding="utf-8")
     return total_pages
+
+
 def _process_pdf(task: SplitTask) -> SplitResult:
     pdf_path, output_dir, text_mode = task
     try:
@@ -53,8 +60,12 @@ def _process_pdf(task: SplitTask) -> SplitResult:
     except Exception as exc:
         logger.error(f"Error processing {pdf_path}: {exc}")
         return (pdf_path, 0)
+
+
 def _process_pdf_tuple(item: tuple[SplitTask]) -> SplitResult:
     return _process_pdf(item[0])
+
+
 def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
@@ -68,6 +79,8 @@ def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
             return [result.get() for result in async_results]
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
+
+
 def collect_pdfs(input_paths: Sequence[str]) -> list[Path]:
     if not input_paths:
         return [p for p in Path.cwd().rglob("*.pdf") if p.is_file()]
@@ -79,6 +92,8 @@ def collect_pdfs(input_paths: Sequence[str]) -> list[Path]:
         elif p.is_dir():
             pdf_files.extend(x for x in p.rglob("*.pdf") if x.is_file())
     return pdf_files
+
+
 def process_pdfs(
     input_paths: Sequence[str] | None,
     output_dir: Path | None,
@@ -99,6 +114,8 @@ def process_pdfs(
             logger.info(f"{pdf_path}: processed {page_count} pages")
     logger.info(f"Processing complete. Output files in: {output_dir}")
     return len(results)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -125,6 +142,8 @@ def parse_args() -> argparse.Namespace:
         help="Multiprocessing pool method to use for processing.",
     )
     return parser.parse_args()
+
+
 def main() -> int:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
@@ -138,5 +157,7 @@ def main() -> int:
         text_mode=text_mode,
     )
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -2,12 +2,16 @@
 from __future__ import annotations
 from pathlib import Path
 import shutil
+
+
 def find_whl(subdir: Path):
     for location in (subdir, subdir / "dist"):
         if location.is_dir():
             for whl in location.glob("*.whl"):
                 return whl
     return None
+
+
 def clean_subdir(subdir: Path) -> None:
     whl = find_whl(subdir)
     if whl is None:
@@ -26,6 +30,8 @@ def clean_subdir(subdir: Path) -> None:
             entry.unlink()
         print(f"[rm]    {subdir.name}/{entry.name}")
     print(f"[done]  {subdir.name}: kept {target.name}")
+
+
 def main() -> None:
     cwd = Path.cwd()
     subdirs = [p for p in cwd.iterdir() if p.is_dir() and not p.name.startswith(".")]
@@ -34,5 +40,7 @@ def main() -> None:
         return
     for subdir in subdirs:
         clean_subdir(subdir)
+
+
 if __name__ == "__main__":
     main()

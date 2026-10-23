@@ -2,6 +2,8 @@
 from __future__ import annotations
 import sys
 from dh import runcmd
+
+
 def get_installed_packages() -> list[str]:
     try:
         _ret, txt, _err = runcmd(
@@ -12,6 +14,8 @@ def get_installed_packages() -> list[str]:
     except:
         print("Error listing installed packages")
         sys.exit(1)
+
+
 def check_package_health(package_name: str):
     try:
         _ret, txt, _err = runcmd(["dpkg", "-l", package_name], show_output=True)
@@ -24,12 +28,16 @@ def check_package_health(package_name: str):
                 return (False, f"Status: {status}")
     except:
         return (False, "Error checking package")
+
+
 def check_for_updates() -> str:
     try:
         _res, txt, _err = runcmd(["apt-get", "-s", "upgrade"], show_output=True)
         return txt
     except:
         return "Error checking for updates"
+
+
 def main() -> None:
     print("=== Installed Packages Sanity Check ===")
     installed_pkgs = get_installed_packages()
@@ -56,5 +64,7 @@ def main() -> None:
         print("All packages are properly installed.")
     else:
         print("Some packages may need attention.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

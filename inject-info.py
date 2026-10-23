@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import difflib
 import json
@@ -10,9 +8,7 @@ import re
 import sys
 from pathlib import Path
 
-
 DEFAULT_INFO = Path.home() / ".myinfo"
-
 TARGET_FILENAMES = {
     "setup.py",
     "setup.cfg",
@@ -21,7 +17,6 @@ TARGET_FILENAMES = {
     "tox.ini",
     "Pipfile",
 }
-
 SKIP_DIRS = {
     ".git",
     ".hg",
@@ -41,7 +36,6 @@ SKIP_DIRS = {
     ".idea",
     ".vscode",
 }
-
 REQUIRED_KEYS = ("name", "email", "github_username")
 
 
@@ -52,14 +46,11 @@ def load_info(path: Path) -> dict:
         data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         sys.exit(f"error: {path}: {e}")
-
     for key in REQUIRED_KEYS:
         if not data.get(key):
             sys.exit(f"error: '{key}' is empty or missing in {path}")
-
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", data["github_username"]):
         sys.exit(f"error: invalid github_username: {data['github_username']!r}")
-
     return data
 
 
@@ -82,7 +73,6 @@ def build_transformations(info: dict) -> dict:
         (re.compile(r"(?<!git\+)(\bgithub\.com/)([A-Za-z0-9_.-]+)/"), _gh_user),
         (re.compile(r"\b([A-Za-z0-9_.-]+)\.github\.io\b"), _gh_io),
     ]
-
     py = [
         (re.compile(r'(?<![.\w])(author[ \t]*=[ \t]*)(["\'])(?:[^"\'\\]|\\.)*\2'), lit(name)),
         (re.compile(r'(?<![.\w])(author_email[ \t]*=[ \t]*)(["\'])(?:[^"\'\\]|\\.)*\2'), lit(email)),
@@ -118,7 +108,6 @@ def build_transformations(info: dict) -> dict:
         ),
         (re.compile(r"(\b(?:authors|maintainers)\s*=\s*\[)([^\]]*)(\])"), _poetry_author),
     ]
-
     return {
         ".py": py + common,
         ".cfg": cfg + common,
@@ -141,14 +130,11 @@ def process_file(path: Path, transforms, *, dry_run: bool, show_diff: bool) -> b
     except (UnicodeDecodeError, OSError) as e:
         print(f"  skipped {path}: {e}", file=sys.stderr)
         return False
-
     new = original
     for pattern, repl in transforms:
         new = pattern.sub(repl, new)
-
     if new == original:
         return False
-
     if show_diff:
         sys.stdout.writelines(
             difflib.unified_diff(
@@ -159,7 +145,6 @@ def process_file(path: Path, transforms, *, dry_run: bool, show_diff: bool) -> b
             )
         )
         print()
-
     if not dry_run:
         path.write_text(new, encoding="utf-8")
     return True
@@ -172,13 +157,10 @@ def main(argv=None) -> int:
     parser.add_argument("--diff", action="store_true", help="Print a unified diff of every change")
     parser.add_argument("--info", type=Path, default=DEFAULT_INFO, help=f"Path to info file (default: {DEFAULT_INFO})")
     args = parser.parse_args(argv)
-
     if not args.project_dir.is_dir():
         sys.exit(f"error: {args.project_dir} is not a directory")
-
     info = load_info(args.info)
     table = build_transformations(info)
-
     changed = 0
     scanned = 0
     for path in find_target_files(args.project_dir):
@@ -191,7 +173,6 @@ def main(argv=None) -> int:
             if not args.diff:
                 action = "would update" if args.dry_run else "updated"
                 print(f"{action}: {path}")
-
     print()
     print(f"Scanned {scanned} file(s), {changed} changed" + (" (dry-run)" if args.dry_run else ""))
     return 0

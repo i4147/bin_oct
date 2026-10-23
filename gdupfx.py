@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 import time
 from typing import Optional
+
 try:
     import xxhash
 except ImportError:
@@ -37,6 +38,8 @@ DEFAULT_SKIP_DIRS: set[str] = {
     ".mypy_cache",
     ".pytest_cache",
 }
+
+
 def format_size(size_bytes: int) -> str:
     if size_bytes == 0:
         return "0 B"
@@ -47,6 +50,8 @@ def format_size(size_bytes: int) -> str:
         size /= 1024.0
         i += 1
     return f"{size:.2f} {units[i]}"
+
+
 def get_partial_hash(filepath: str) -> tuple[str, Optional[str]]:
     try:
         with open(filepath, "rb") as f:
@@ -54,6 +59,8 @@ def get_partial_hash(filepath: str) -> tuple[str, Optional[str]]:
             return filepath, xxhash.xxh64(header_chunk).hexdigest()
     except (OSError, PermissionError):
         return filepath, None
+
+
 def get_full_hash(filepath: str) -> tuple[str, Optional[str]]:
     try:
         hasher = xxhash.xxh64()
@@ -63,6 +70,8 @@ def get_full_hash(filepath: str) -> tuple[str, Optional[str]]:
         return filepath, hasher.hexdigest()
     except (OSError, PermissionError):
         return filepath, None
+
+
 def get_full_hashlib_md5(filepath: str) -> tuple[str, Optional[str]]:
     try:
         with open(filepath, "rb") as f:
@@ -74,6 +83,8 @@ def get_full_hashlib_md5(filepath: str) -> tuple[str, Optional[str]]:
             return filepath, hasher.hexdigest()
     except (OSError, PermissionError):
         return filepath, None
+
+
 @dataclass
 class Finder:
     path: Path
@@ -83,6 +94,7 @@ class Finder:
     total_files_size: int = 0
     dup_count: int = 0
     dup_size: int = 0
+
     def scan_and_find_duplicates(self) -> list[str]:
         target_path = self.path.expanduser().resolve()
         file_sizes: dict[int, list[str]] = defaultdict(list)
@@ -160,10 +172,12 @@ class Finder:
                     self.dup_size += (len(paths) - 1) * sample_size
         self.print_summary()
         return all_full_candidates
+
     def print_summary(self) -> None:
         print("\n=== Scan Complete ===")
         print(f"Total files scanned: {self.total_files_count} ({format_size(self.total_files_size)})")
         print(f"Duplicates found:    {self.dup_count} file(s) wasting {format_size(self.dup_size)}")
+
     def list_duplicates(self) -> None:
         if not self.same_content:
             print("\nNo duplicates found to list.")
@@ -175,6 +189,7 @@ class Finder:
             print(f"  Original (Kept): {sorted_files[0]}")
             for dup in sorted_files[1:]:
                 print(f"  Duplicate (Target): {dup}")
+
     def process_deletions(self, remove: bool = False) -> None:
         if not self.same_content:
             print("\nNo duplicates found to process.")
@@ -199,6 +214,7 @@ class Finder:
             print("\n[DRY-RUN COMPLETE] No files were deleted. Pass '-r' or '--remove' to execute removal.")
         else:
             print(f"\n[REMOVAL COMPLETE] Successfully deleted {removed_count} duplicate file(s).")
+
     def run_benchmark(self, candidate_files: list[str]) -> None:
         sample_files = candidate_files
         if not sample_files:
@@ -237,6 +253,8 @@ class Finder:
         print(f"  hashlib (MD5)     {t_md5:8.4f}s       {mb_md5:10.2f} MB/s")
         print(f"  ---------------------------------------------------")
         print(f"  Result: xxHash was {speedup:.2f}x faster than hashlib MD5\n")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fast duplicate file finder powered by xxHash (Parallel I/O, Dry-Run default)."
@@ -277,5 +295,7 @@ def main():
     finder.process_deletions(remove=args.remove)
     if args.benchmark:
         finder.run_benchmark(candidates)
+
+
 if __name__ == "__main__":
     main()

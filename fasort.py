@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 import sys
+
+
 def persian_sort_key(word):
     persian_order = {
         "آ": "ا",
@@ -82,6 +84,8 @@ def persian_sort_key(word):
         rank = char_rank.get(mapped_char, len(custom_order))
         sort_key.append(rank)
     return tuple(sort_key)
+
+
 def sort_persian_dict(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -97,6 +101,8 @@ def sort_persian_dict(path):
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python persian_sort.py <filename>")

@@ -1,8 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 import os
 from fontTools.ttLib import TTFont
+
 DRY_RUN = False
 FONT_EXTENSIONS = (".ttf", ".woff2", ".woff")
+
+
 def get_font_ps_name(file_path):
     """Extracts the unique PostScript name from a TTF or WOFF2 font file."""
     try:
@@ -19,6 +22,8 @@ def get_font_ps_name(file_path):
     except Exception:
         # Skips corrupted files or font fragments safely
         return None
+
+
 def main():
     seen_fonts = {}
     duplicates = []
@@ -69,5 +74,7 @@ def main():
                 print(f"❌ Deleted: {dup}")
             except Exception as e:
                 print(f"📁 Error deleting {dup}: {e}")
+
+
 if __name__ == "__main__":
     main()

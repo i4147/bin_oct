@@ -5,9 +5,12 @@ import sys
 from typing import TYPE_CHECKING
 from bs4 import BeautifulSoup
 from dh import cprint, get_files, get_random_filename, mpf
+
 if TYPE_CHECKING:
     from bs4.element import PageElement
 MAX_QUEUE = 16
+
+
 def save_script(str1: list[PageElement]) -> bool:
     fn = "js/"
     fn += get_random_filename(10)
@@ -20,6 +23,8 @@ def save_script(str1: list[PageElement]) -> bool:
         fn.write_text("\n".join(list(str1)), encoding="utf-8")
         cprint(f"{[fn]} created.", "cyan")
     return True
+
+
 def process_file(path) -> bool:
     path = Path(path)
     html_content = path.read_text(encoding="utf-8")
@@ -31,6 +36,8 @@ def process_file(path) -> bool:
         for script in scripts:
             save_script(script.contents)
     return True
+
+
 def main() -> None:
     if not Path("js").exists():
         Path("js").mkdir()
@@ -38,5 +45,7 @@ def main() -> None:
     args = sys.argv[1:]
     files = [Path(f) for f in args] if args else get_files(cwd, ext=[".html", "htm"])
     mpf(process_file, files)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

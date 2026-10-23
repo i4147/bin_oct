@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
-
 import argparse
 import ast
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -15,22 +13,18 @@ import sys
 import time
 from tokenize import generate_tokens, COMMENT, NL, NEWLINE, ENDMARKER
 from typing import Any, NamedTuple
-
 from loguru import logger
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from rich.table import Table
 
 console = Console()
-
-
 try:
     import ssdeep
 
     HAS_SSDEEP = True
 except ImportError:
     HAS_SSDEEP = False
-
 try:
     import tlsh
 
@@ -118,12 +112,10 @@ class CodeNormalizer(ast.NodeTransformer):
 
 
 def normalize_source(code_text: str) -> tuple[str, list[str]]:
-
     lines = code_text.splitlines()
     if lines and lines[0].startswith("#!"):
         lines = lines[1:]
     clean_code = "\n".join(lines)
-
     tokens: list[str] = []
     try:
         for tok in generate_tokens(io.StringIO(clean_code).readline):
@@ -132,7 +124,6 @@ def normalize_source(code_text: str) -> tuple[str, list[str]]:
     except Exception as e:
         logger.debug(f"Tokenization warning: {e}")
         tokens = clean_code.split()
-
     try:
         parsed_ast = ast.parse(clean_code)
         normalizer = CodeNormalizer()
@@ -144,7 +135,6 @@ def normalize_source(code_text: str) -> tuple[str, list[str]]:
     except Exception as exc:
         logger.error(f"Unexpected normalization error: {exc}")
         normalized_text = clean_code
-
     return normalized_text, tokens
 
 
@@ -152,24 +142,19 @@ def process_single_file(file_path: Path) -> FileRecord | None:
     try:
         if not file_path.is_file():
             return None
-
         try:
             raw_code = file_path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             raw_code = file_path.read_text(encoding="latin-1", errors="ignore")
-
         size = file_path.stat().st_size
         normalized_code, tokens = normalize_source(raw_code)
-
         exact_hash = hashlib.sha256(normalized_code.encode("utf-8", errors="ignore")).hexdigest()
-
         ssdeep_hash = ssdeep.hash(normalized_code) if HAS_SSDEEP else None
         tlsh_hash = (
             tlsh.hash(normalized_code.encode("utf-8", errors="ignore"))
             if HAS_TLSH and len(normalized_code) > 50
             else None
         )
-
         return FileRecord(
             path=str(file_path.resolve()),
             size=size,
@@ -186,40 +171,31 @@ def process_single_file(file_path: Path) -> FileRecord | None:
 
 
 def compute_similarity(f1: FileRecord, f2: FileRecord) -> dict[str, Any]:
-
     exact_match = f1.exact_hash == f2.exact_hash
-
     seq_matcher = difflib.SequenceMatcher(None, f1.normalized_code, f2.normalized_code)
     sequence_score = round(seq_matcher.ratio() * 100.0, 2)
-
     set1, set2 = set(f1.tokens), set(f2.tokens)
     union_len = len(set1 | set2)
     jaccard_score = round((len(set1 & set2) / union_len * 100.0) if union_len > 0 else 0.0, 2)
-
     ssdeep_score = 0.0
     if HAS_SSDEEP and f1.ssdeep_hash and f2.ssdeep_hash:
         try:
             ssdeep_score = float(ssdeep.compare(f1.ssdeep_hash, f2.ssdeep_hash))
         except Exception:
             pass
-
     tlsh_score = 0.0
     if HAS_TLSH and f1.tlsh_hash and f2.tlsh_hash:
         try:
             diff = tlsh.diff(f1.tlsh_hash, f2.tlsh_hash)
-
             tlsh_score = round(max(0.0, 100.0 - (diff / 2.0)), 2)
         except Exception:
             pass
-
     scores = [sequence_score, jaccard_score]
     if HAS_SSDEEP and ssdeep_score > 0:
         scores.append(ssdeep_score)
     if HAS_TLSH and tlsh_score > 0:
         scores.append(tlsh_score)
-
     composite_score = round(sum(scores) / len(scores), 2)
-
     return {
         "file_a": f1.path,
         "file_b": f2.path,
@@ -269,30 +245,22 @@ def main() -> None:
         default=[".git", "__pycache__", ".venv", "venv", "build", "dist"],
         help="Directories to exclude",
     )
-
     args = parser.parse_args()
-
     root_dir = Path(args.dir).resolve()
     if not root_dir.exists():
         console.print(f"[bold red]Error:[/] Directory '{root_dir}' does not exist.", style="red")
         sys.exit(1)
-
     console.print(f"[bold cyan]Scanning directory:[/] {root_dir} recursively...")
-
     py_files: list[Path] = []
     for p in root_dir.rglob("*.py"):
         if any(exc in p.parts for exc in args.exclude_dir):
             continue
         py_files.append(p)
-
     if not py_files:
         console.print("[yellow]No Python files found matching criteria.[/yellow]")
         sys.exit(0)
-
     console.print(f"[green]Found {len(py_files)} Python files. Processing in parallel ({args.mp_method})...[/green]")
-
     start_time = time.time()
-
     records: list[FileRecord | None] = []
     with Progress(
         SpinnerColumn(),
@@ -302,31 +270,22 @@ def main() -> None:
         console=console,
     ) as progress:
         task = progress.add_task("[cyan]Normalizing and hashing files...", total=len(py_files))
-
         results = parallel_map(args.mp_method, process_single_file, py_files)
         records = [r for r in results if r is not None]
         progress.update(task, completed=len(py_files))
-
     console.print(f"[green]Successfully processed {len(records)} files in {time.time() - start_time:.2f}s.[/green]")
-
     exact_clusters: dict[str, list[str]] = {}
     for rec in records:
         exact_clusters.setdefault(rec.exact_hash, []).append(rec.path)
-
     identical_groups = {h: paths for h, paths in exact_clusters.items() if len(paths) > 1}
-
     console.print("[cyan]Performing pairwise fuzzy similarity analysis...[/cyan]")
     similar_pairs: list[dict[str, Any]] = []
-
     pairs = [(records[i], records[j]) for i in range(len(records)) for j in range(i + 1, len(records))]
-
     for f1, f2 in pairs:
         res = compute_similarity(f1, f2)
         if res["composite_similarity"] >= args.threshold:
             similar_pairs.append(res)
-
     similar_pairs.sort(key=lambda x: x["composite_similarity"], reverse=True)
-
     report_data = {
         "scan_metadata": {
             "root_directory": str(root_dir),
@@ -343,14 +302,11 @@ def main() -> None:
         "identical_groups": [{"sha256": h, "files": paths} for h, paths in identical_groups.items()],
         "similar_pairs": similar_pairs,
     }
-
     output_path = Path(args.output)
     output_path.write_text(json.dumps(report_data, indent=2), encoding="utf-8")
     console.print(f"[bold green]JSON report successfully saved to:[/] {output_path.resolve()}")
-
     console.print("\n")
     console.print(f"[bold underline]Summary Report (Threshold >= {args.threshold}%)[/bold underline]")
-
     if identical_groups:
         console.print(f"\n[bold yellow]Found {len(identical_groups)} Identical File Group(s):[/bold yellow]")
         for idx, (h, paths) in enumerate(identical_groups.items(), 1):
@@ -361,14 +317,12 @@ def main() -> None:
                 )
     else:
         console.print("\n[green]No completely identical files found.[/green]")
-
     if similar_pairs:
         table = Table(title=f"Similar File Pairs (>= {args.threshold}%)", show_header=True, header_style="bold magenta")
         table.add_column("File A", style="dim")
         table.add_column("File B", style="dim")
         table.add_column("Exact", justify="center")
         table.add_column("Similarity", justify="right", style="bold green")
-
         for pair in similar_pairs[:20]:
             rel_a = Path(pair["file_a"]).name
             rel_b = Path(pair["file_b"]).name

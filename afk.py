@@ -23,6 +23,7 @@ import tokenize
 from typing import IO, Any, Callable, Iterator, Sequence, Union
 import warnings
 import zipfile
+
 MAX_FILE_BYTES: int = 8 * 1024 * 1024
 LINE_LIMIT: int = 88
 ZSTD_HINT: str = "zstandard support is unavailable (pip install zstandard)"
@@ -61,6 +62,8 @@ exit status:
   1  --check found unused imports
   2  at least one file could not be read, parsed or written
 """
+
+
 @dataclass(frozen=True)
 class SourceItem:
     display: str
@@ -68,11 +71,15 @@ class SourceItem:
     data: bytes | None = None
     error: str | None = None
     is_init: bool = False
+
+
 @dataclass(frozen=True)
 class UnusedImport:
     lineno: int
     name: str
     fixable: bool
+
+
 @dataclass
 class FileResult:
     display: str
@@ -82,6 +89,8 @@ class FileResult:
     diff: str = ""
     new_bytes: bytes | None = None
     error: str | None = None
+
+
 @dataclass
 class Totals:
     scanned: int = 0
@@ -91,25 +100,36 @@ class Totals:
     removed: int = 0
     modified: int = 0
     errors: int = 0
+
+
 class Style:
     def __init__(self, enabled: bool) -> None:
         self.enabled = enabled
+
     def wrap(self, code: str, text: str) -> str:
         if not self.enabled:
             return text
         return f"\033[{code}m{text}\033[0m"
+
     def bold(self, text: str) -> str:
         return self.wrap("1", text)
+
     def dim(self, text: str) -> str:
         return self.wrap("2", text)
+
     def red(self, text: str) -> str:
         return self.wrap("31", text)
+
     def green(self, text: str) -> str:
         return self.wrap("32", text)
+
     def yellow(self, text: str) -> str:
         return self.wrap("33", text)
+
     def cyan(self, text: str) -> str:
         return self.wrap("36", text)
+
+
 def color_enabled(mode: str, stream: IO[str]) -> bool:
     if mode == "always":
         return True
@@ -118,12 +138,16 @@ def color_enabled(mode: str, stream: IO[str]) -> bool:
     if "NO_COLOR" in os.environ or os.environ.get("TERM") == "dumb":
         return False
     return stream.isatty()
+
+
 class UsageCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.names: set[str] = set()
+
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, (ast.Load, ast.Del)):
             self.names.add(node.id)
+
     def add_expression_text(self, text: str) -> None:
         try:
             parsed = ast.parse(text.strip(), mode="eval")
@@ -132,22 +156,28 @@ class UsageCollector(ast.NodeVisitor):
         for child in ast.walk(parsed):
             if isinstance(child, ast.Name):
                 self.names.add(child.id)
+
     def add_string_annotation(self, node: ast.AST | None) -> None:
         if node is None:
             return
         for child in ast.walk(node):
             if isinstance(child, ast.Constant) and isinstance(child.value, str):
                 self.add_expression_text(child.value)
+
     def visit_arg(self, node: ast.arg) -> None:
         self.add_string_annotation(node.annotation)
         self.generic_visit(node)
+
     def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         self.add_string_annotation(node.returns)
         self.generic_visit(node)
+
     visit_AsyncFunctionDef = visit_FunctionDef
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         self.add_string_annotation(node.annotation)
         self.generic_visit(node)
+
     def visit_Call(self, node: ast.Call) -> None:
         func = node.func
         if isinstance(func, ast.Attribute):
@@ -159,6 +189,8 @@ class UsageCollector(ast.NodeVisitor):
         if target == "cast" and node.args:
             self.add_string_annotation(node.args[0])
         self.generic_visit(node)
+
+
 def exported_names(tree: ast.AST) -> set[str]:
     names: set[str] = set()
     for node in ast.walk(tree):
@@ -177,12 +209,16 @@ def exported_names(tree: ast.AST) -> set[str]:
                 if isinstance(element, ast.Constant) and isinstance(element.value, str):
                     names.add(element.value)
     return names
+
+
 def build_parents(tree: ast.AST) -> dict[int, ast.AST]:
     parents: dict[int, ast.AST] = {}
     for parent in ast.walk(tree):
         for child in ast.iter_child_nodes(parent):
             parents[id(child)] = parent
     return parents
+
+
 def inside_try(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
     current = parents.get(id(node))
     while current is not None:
@@ -190,6 +226,8 @@ def inside_try(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
             return True
         current = parents.get(id(current))
     return False
+
+
 def containing_list(node: ast.AST, parents: dict[int, ast.AST]) -> list[ast.stmt] | None:
     parent = parents.get(id(node))
     if parent is None:
@@ -199,9 +237,13 @@ def containing_list(node: ast.AST, parents: dict[int, ast.AST]) -> list[ast.stmt
         if isinstance(value, list) and any(item is node for item in value):
             return value
     return None
+
+
 def has_noqa(lines: list[str], node: ImportNode) -> bool:
     end = node.end_lineno or node.lineno
     return any("noqa" in line.lower() for line in lines[node.lineno - 1 : end])
+
+
 def is_unused(node: ImportNode, alias: ast.alias, used: set[str]) -> bool:
     if alias.name == "*":
         return False
@@ -212,6 +254,8 @@ def is_unused(node: ImportNode, alias: ast.alias, used: set[str]) -> bool:
     else:
         bound = alias.asname or alias.name
     return bound not in used
+
+
 def alias_display(node: ImportNode, alias: ast.alias) -> str:
     if isinstance(node, ast.Import):
         base = alias.name
@@ -221,14 +265,20 @@ def alias_display(node: ImportNode, alias: ast.alias) -> str:
     if alias.asname:
         return f"{base} as {alias.asname}"
     return base
+
+
 def char_index(line: str, byte_offset: int) -> int:
     return len(line.encode("utf-8")[:byte_offset].decode("utf-8", errors="ignore"))
+
+
 def line_ending(line: str) -> str:
     if line.endswith("\r\n"):
         return "\r\n"
     if line.endswith(("\n", "\r")):
         return line[-1]
     return ""
+
+
 def statement_span(lines: list[str], node: ImportNode) -> tuple[str, str, bool]:
     first = lines[node.lineno - 1]
     last = lines[(node.end_lineno or node.lineno) - 1]
@@ -238,6 +288,8 @@ def statement_span(lines: list[str], node: ImportNode) -> tuple[str, str, bool]:
     tail = last[end:].strip()
     fixable = indent.strip() == "" and (tail == "" or tail.startswith("#"))
     return indent, tail, fixable
+
+
 def render_import(node: ImportNode, kept: list[ast.alias], indent: str, newline: str) -> str:
     parts = [a.name + (f" as {a.asname}" if a.asname else "") for a in kept]
     if isinstance(node, ast.Import):
@@ -249,6 +301,8 @@ def render_import(node: ImportNode, kept: list[ast.alias], indent: str, newline:
     inner = indent + "    "
     body = "".join(inner + part + "," + newline for part in parts)
     return indent + head + "(" + newline + body + indent + ")"
+
+
 def analyze_source(source: str) -> tuple[list[UnusedImport], str | None, int]:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -316,9 +370,13 @@ def analyze_source(source: str) -> tuple[list[UnusedImport], str | None, int]:
     except (SyntaxError, ValueError, RecursionError):
         return [replace(item, fixable=False) for item in unused], None, 0
     return unused, new_source, removable
+
+
 def decode_source(data: bytes) -> tuple[str, str]:
     encoding, _ = tokenize.detect_encoding(io.BytesIO(data).readline)
     return data.decode(encoding), encoding
+
+
 def make_diff(display: str, old: str, new: str) -> str:
     return "\n".join(
         difflib.unified_diff(
@@ -329,6 +387,8 @@ def make_diff(display: str, old: str, new: str) -> str:
             lineterm="",
         )
     )
+
+
 def process_item(item: SourceItem, include_init: bool) -> FileResult:
     result = FileResult(display=item.display, path=item.path)
     if item.error is not None:
@@ -365,6 +425,8 @@ def process_item(item: SourceItem, include_init: bool) -> FileResult:
     except Exception as exc:
         result.error = f"internal error: {exc!r}"
     return result
+
+
 def matches_any(relative: str, patterns: Sequence[str]) -> bool:
     normalized = relative.replace("\\", "/")
     parts = normalized.split("/")
@@ -377,12 +439,16 @@ def matches_any(relative: str, patterns: Sequence[str]) -> bool:
         if any(fnmatch.fnmatchcase(part, cleaned) for part in parts):
             return True
     return False
+
+
 def load_zstd() -> Any:
     try:
         import zstandard
     except ImportError:
         return None
     return zstandard
+
+
 def read_limited(handle: IO[bytes]) -> bytes:
     chunks: list[bytes] = []
     total = 0
@@ -396,6 +462,8 @@ def read_limited(handle: IO[bytes]) -> bytes:
             raise ValueError(msg)
         chunks.append(chunk)
     return b"".join(chunks)
+
+
 def read_single_compressed(path: Path) -> bytes:
     suffix = path.suffix.lower()
     if suffix in {".zst", ".zstd"}:
@@ -412,6 +480,8 @@ def read_single_compressed(path: Path) -> bytes:
     }
     with openers[suffix](path, "rb") as handle:
         return read_limited(handle)
+
+
 def classify(path: Path) -> str:
     name = path.name.lower()
     if name.endswith((".tar.zst", ".tar.zstd", ".tzst")):
@@ -428,6 +498,8 @@ def classify(path: Path) -> str:
     except OSError:
         return "py"
     return "py"
+
+
 def iter_directory(root: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
     for current, dirs, files in os.walk(root):
         base = Path(current)
@@ -440,6 +512,8 @@ def iter_directory(root: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
                 continue
             path = base / name
             yield SourceItem(display=str(path), path=path, is_init=name == "__init__.py")
+
+
 def iter_zip(path: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
     try:
         archive = zipfile.ZipFile(path)
@@ -466,6 +540,8 @@ def iter_zip(path: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
                 data=data,
                 is_init=PurePosixPath(info.filename).name == "__init__.py",
             )
+
+
 def iter_tar_members(tar: tarfile.TarFile, label: str, patterns: Sequence[str]) -> Iterator[SourceItem]:
     for member in tar:
         if not member.isfile() or not member.name.endswith(".py"):
@@ -491,6 +567,8 @@ def iter_tar_members(tar: tarfile.TarFile, label: str, patterns: Sequence[str]) 
             data=data,
             is_init=PurePosixPath(name).name == "__init__.py",
         )
+
+
 def iter_tar(path: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
     try:
         tar = tarfile.open(path, mode="r:*")
@@ -502,6 +580,8 @@ def iter_tar(path: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
             yield from iter_tar_members(tar, str(path), patterns)
         except (tarfile.TarError, OSError, EOFError) as exc:
             yield SourceItem(display=str(path), error=f"archive read error: {exc}")
+
+
 def iter_tar_zstd(path: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
     module = load_zstd()
     if module is None:
@@ -514,6 +594,8 @@ def iter_tar_zstd(path: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
                 yield from iter_tar_members(tar, str(path), patterns)
     except Exception as exc:
         yield SourceItem(display=str(path), error=f"archive read error: {exc}")
+
+
 def iter_single_compressed(path: Path) -> Iterator[SourceItem]:
     inner = path.name[: path.name.rfind(".")]
     try:
@@ -522,6 +604,8 @@ def iter_single_compressed(path: Path) -> Iterator[SourceItem]:
         yield SourceItem(display=str(path), error=f"cannot decompress: {exc}")
         return
     yield SourceItem(display=str(path), data=data, is_init=inner == "__init__.py")
+
+
 def discover(target: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
     if target.is_dir():
         yield from iter_directory(target, patterns)
@@ -537,6 +621,8 @@ def discover(target: Path, patterns: Sequence[str]) -> Iterator[SourceItem]:
         yield from iter_single_compressed(target)
     else:
         yield SourceItem(display=str(target), path=target, is_init=target.name == "__init__.py")
+
+
 def run_analysis(items: list[SourceItem], include_init: bool, workers: int) -> Iterator[FileResult]:
     if workers <= 1 or len(items) < 2:
         for item in items:
@@ -545,6 +631,8 @@ def run_analysis(items: list[SourceItem], include_init: bool, workers: int) -> I
     chunk = max(1, len(items) // (workers * 4))
     with ProcessPoolExecutor(max_workers=workers) as pool:
         yield from pool.map(process_item, items, itertools.repeat(include_init), chunksize=chunk)
+
+
 def write_atomic(path: Path, data: bytes) -> None:
     real = path.resolve()
     mode = stat.S_IMODE(real.stat().st_mode)
@@ -558,6 +646,8 @@ def write_atomic(path: Path, data: bytes) -> None:
         with contextlib.suppress(OSError):
             os.unlink(temp_name)
         raise
+
+
 def format_diff(diff: str, style: Style) -> str:
     rendered: list[str] = []
     for line in diff.splitlines():
@@ -572,6 +662,8 @@ def format_diff(diff: str, style: Style) -> str:
         else:
             rendered.append(line)
     return "\n".join(rendered)
+
+
 def print_file_report(result: FileResult, style: Style, show_diff: bool, out: IO[str]) -> None:
     count_label = style.dim(f"({len(result.unused)} unused)")
     print(f"{style.bold(result.display)} {count_label}", file=out)
@@ -584,6 +676,8 @@ def print_file_report(result: FileResult, style: Style, show_diff: bool, out: IO
         print(file=out)
         print(format_diff(result.diff, style), file=out)
     print(file=out)
+
+
 def emit(
     result: FileResult,
     totals: Totals,
@@ -620,6 +714,8 @@ def emit(
         else:
             totals.removed += result.removable
             totals.modified += 1
+
+
 def print_summary(totals: Totals, will_write: bool, style: Style, out: IO[str]) -> None:
     if will_write:
         action_row = ("Imports removed", totals.removed)
@@ -643,6 +739,8 @@ def print_summary(totals: Totals, will_write: bool, style: Style, out: IO[str]) 
         elif label == "Unused imports found" and value:
             number = style.yellow(number)
         print(f"  {label:<{width}}  {number}", file=out)
+
+
 def positive_int(text: str) -> int:
     try:
         value = int(text)
@@ -653,6 +751,8 @@ def positive_int(text: str) -> int:
         msg = "must be at least 1"
         raise argparse.ArgumentTypeError(msg)
     return value
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="unused_imports.py",
@@ -732,6 +832,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="print only errors and the summary",
     )
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -770,5 +872,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.check and totals.found:
         return 1
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -8,11 +7,9 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Optional
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
-
 
 NAME_HINTS: dict[str, str] = {
     "name": "str",

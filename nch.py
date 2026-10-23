@@ -10,18 +10,26 @@ import stat as st
 import sys
 import time
 from typing import Iterator, Optional, Sequence
+
 try:
     from tqdm import tqdm
 except Exception:
+
     def tqdm(it, **_kwargs):
         return it
+
+
 try:
     from dh import is_binary as _is_binary
+
     _HAVE_DH = True
 except Exception:
     _HAVE_DH = False
+
     def _is_binary(_p: Path) -> bool:
         return False
+
+
 DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644
 EXEC_MODE: int = 0o755
@@ -46,39 +54,53 @@ DEFAULT_EXEC_DIRS: frozenset[str] = frozenset({
 DEFAULT_SUFFIX_EXEC: tuple[str, ...] = (".sh", ".so")
 DEFAULT_DEEXEC_PATTERNS: tuple[str, ...] = ("*.py",)
 DEFAULT_KEEP_EXEC_PARENTS: frozenset[str] = frozenset({"bin", "sbin"})
+
+
 def mode_of(p: Path) -> Optional[int]:
     try:
         return st.S_IMODE(p.stat().st_mode)
     except (OSError, PermissionError):
         return None
+
+
 def is_symlink(p: Path) -> bool:
     try:
         return p.is_symlink()
     except OSError:
         return False
+
+
 def has_shebang(p: Path) -> bool:
     try:
         with p.open("rb") as fh:
             return fh.readline().startswith(b"#!")
     except OSError:
         return False
+
+
 def is_executable(p: Path) -> bool:
     try:
         return bool(p.stat().st_mode & EXEC_BITS)
     except OSError:
         return False
+
+
 def parent_writable(p: Path) -> bool:
     try:
         parent = p.parent
         return parent.exists() and os.access(str(parent), os.W_OK)
     except (OSError, PermissionError):
         return False
+
+
 def chmod_safe(p: Path, mode: int) -> bool:
     try:
         p.chmod(mode)
         return True
     except (OSError, PermissionError):
         return False
+
+
 def chmod_add_x(p: Path) -> bool:
     try:
         base = p.stat().st_mode
@@ -95,6 +117,8 @@ def chmod_add_x(p: Path) -> bool:
         except OSError:
             continue
     return False
+
+
 def chmod_remove_x(p: Path) -> bool:
     try:
         base = p.stat().st_mode
@@ -106,6 +130,8 @@ def chmod_remove_x(p: Path) -> bool:
         return True
     except OSError:
         return False
+
+
 @dataclass
 class Config:
     root: Path
@@ -119,10 +145,13 @@ class Config:
     exec_mode: int = EXEC_MODE
     deexec_patterns: tuple[str, ...] = DEFAULT_DEEXEC_PATTERNS
     keep_exec_parents: frozenset[str] = DEFAULT_KEEP_EXEC_PARENTS
+
     def is_skipped(self, p: Path) -> bool:
         return any(part in self.skip_dirs for part in p.parts)
+
     def in_exec_dir(self, p: Path) -> bool:
         return any(part in self.exec_dirs for part in p.parts)
+
     def looks_executable_special(self, p: Path) -> bool:
         if p.suffix in self.suffix_exec:
             return True
@@ -131,14 +160,18 @@ class Config:
         if self.use_binary_check and _HAVE_DH and _is_binary(p):
             return True
         return bool(self.in_exec_dir(p))
+
     def matches_deexec(self, p: Path) -> bool:
         name = p.name
         return any(fnmatch.fnmatch(name, pat) for pat in self.deexec_patterns)
+
     def keeps_exec_by_parent(self, p: Path) -> bool:
         try:
             return p.parent.name in self.keep_exec_parents
         except (OSError, IndexError):
             return False
+
+
 def walk_items(cfg: Config, include_dirs: bool = True, include_files: bool = True) -> Iterator[tuple[str, Path]]:
     for dirpath, dirnames, filenames in os.walk(str(cfg.root), topdown=True, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in cfg.skip_dirs]
@@ -151,6 +184,8 @@ def walk_items(cfg: Config, include_dirs: bool = True, include_files: bool = Tru
                 if is_symlink(p):
                     continue
                 yield ("file", p)
+
+
 @dataclass
 class Decision:
     kind: str
@@ -158,6 +193,8 @@ class Decision:
     current: Optional[int]
     target: Optional[int]
     reason: str = ""
+
+
 def decide(cfg: Config, kind: str, path: Path) -> Decision:
     if kind == "dir":
         cur = mode_of(path)
@@ -181,6 +218,8 @@ def decide(cfg: Config, kind: str, path: Path) -> Decision:
     if cur == target:
         return Decision("skip_correct", path, cur, target)
     return Decision("change", path, cur, target)
+
+
 @dataclass
 class Stats:
     total: int = 0
@@ -194,6 +233,7 @@ class Stats:
     permission_errors: int = 0
     other_errors: int = 0
     messages: list[str] = field(default_factory=list)
+
     def merge(self, other: "Stats") -> None:
         for f in (
             "total",
@@ -209,6 +249,8 @@ class Stats:
         ):
             setattr(self, f, getattr(self, f) + getattr(other, f))
         self.messages.extend(other.messages)
+
+
 def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
     s = Stats(total=1)
     try:
@@ -254,6 +296,8 @@ def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
         s.other_errors += 1
         s.messages.append(f"[ERR]  {path}: {type(exc).__name__}: {exc}")
     return s
+
+
 def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     s = Stats()
     items = list(walk_items(cfg))
@@ -292,6 +336,8 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
             s.errors += 1
             s.permission_errors += 1
     return s
+
+
 def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     s = Stats()
     items = list(walk_items(cfg, include_dirs=False, include_files=True))
@@ -332,22 +378,30 @@ def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
             s.permission_errors += 1
             s.messages.append(f"[PERM] {path}: chmod -x failed")
     return s
+
+
 def run_parallel(cfg: Config, items: list[tuple[str, Path]], jobs: int) -> Stats:
     jobs = max(1, min(jobs, os.cpu_count() or 1, 32))
     chunk = max(1000, len(items) // (jobs * 10) or 1)
+
     def _work(pair):
         return apply_one(cfg, *pair)
+
     total = Stats()
     with mp.Pool(processes=jobs) as pool, tqdm(total=len(items), desc="parallel", unit="items") as bar:
         for st_ in pool.imap_unordered(_work, items, chunksize=chunk):
             total.merge(st_)
             bar.update(1)
     return total
+
+
 def run_serial(cfg: Config, items: list[tuple[str, Path]], verbose: bool) -> Stats:
     total = Stats()
     for kind, path in tqdm(items, desc="scanning", unit="items"):
         total.merge(apply_one(cfg, kind, path))
     return total
+
+
 def report(s: Stats, elapsed: float, verbose: bool) -> None:
     bar = "=" * 44
     print(f"\n{bar}\n📊 PERMISSION NORMALIZATION SUMMARY\n{'-' * 44}")
@@ -408,6 +462,8 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
                     print(f"  {m}")
                 if len(buckets[key]) > 50:
                     print(f"  ... and {len(buckets[key]) - 50} more")
+
+
 def show_examples(cfg: Config, items: list[tuple[str, Path]], per_bucket: int = 5) -> None:
     buckets: dict[str, list[Path]] = {
         "dirs": [],
@@ -432,6 +488,7 @@ def show_examples(cfg: Config, items: list[tuple[str, Path]], per_bucket: int = 
                 buckets["make_exec"].append(path)
             else:
                 buckets["normalize"].append(path)
+
     def dump(label: str, key: str) -> None:
         rows = buckets[key]
         if not rows:
@@ -441,17 +498,22 @@ def show_examples(cfg: Config, items: list[tuple[str, Path]], per_bucket: int = 
             print(f"  {p}")
         if len(rows) > per_bucket:
             print(f"  ... and {len(rows) - per_bucket} more")
+
     dump("Directories to change", "dirs")
     dump("Files to make executable", "make_exec")
     dump("Files to normalize to 0644", "normalize")
     dump("Already-executable files (skipped)", "skip_exec")
     dump("Errors during analysis", "errors")
+
+
 def parse_mode(s: str) -> int:
     try:
         return int(s, 8)
     except ValueError:
         msg = f"invalid octal mode: {s!r}"
         raise argparse.ArgumentTypeError(msg)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="chmodnorm.py",
@@ -554,6 +616,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--parallel", action="store_true", help="use multiprocessing (chmodi.py style)")
     return p
+
+
 def build_config(args: argparse.Namespace) -> Config:
     skip = frozenset(args.skip_dir) if args.skip_dir else DEFAULT_SKIP_DIRS
     execd = frozenset(args.exec_dir) if args.exec_dir else DEFAULT_EXEC_DIRS
@@ -579,6 +643,8 @@ def build_config(args: argparse.Namespace) -> Config:
         deexec_patterns=patterns,
         keep_exec_parents=keep,
     )
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -641,5 +707,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     report(s, time.time() - t0, verbose=args.verbose)
     print("\n✅ Done!")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

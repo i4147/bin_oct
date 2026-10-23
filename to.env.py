@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 import re
+
 MODEL_MAPPINGS = {
     "COBUDDY_TOKEN": "baidu/cobuddy:free",
     "CLAUDE_TOKEN": "claude-opus-4-7",
@@ -35,6 +36,8 @@ MODEL_MAPPINGS = {
     "GROK_TOKEN": "x-ai/grok-4.3",
 }
 MODEL_TO_TOKEN_NAME = {v: k for k, v in MODEL_MAPPINGS.items()}
+
+
 def extract_tokens_with_models(text):
     sections = re.split(r"###\s+", text)
     tokens_with_models = []
@@ -54,6 +57,8 @@ def extract_tokens_with_models(text):
         for token in tokens:
             tokens_with_models.append((model_name or "unknown", token))
     return tokens_with_models
+
+
 def get_model_variable_name(model_name):
     if model_name in MODEL_TO_TOKEN_NAME:
         return MODEL_TO_TOKEN_NAME[model_name]
@@ -64,6 +69,8 @@ def get_model_variable_name(model_name):
     safe_name = model_name.upper().replace(" ", "_").replace("-", "_").replace(".", "_")
     safe_name = re.sub(r"[^A-Z0-9_]", "", safe_name)
     return f"{safe_name}_TOKEN"
+
+
 def save_tokens_to_files(tokens_data):
     if not tokens_data:
         print("No tokens found in README.md")
@@ -115,6 +122,8 @@ def save_tokens_to_files(tokens_data):
     except Exception as e:
         print(f"❌ Error saving .env file: {e}")
         return False
+
+
 def main():
     input_file = "README.md"
     if not Path(input_file).exists():
@@ -133,6 +142,8 @@ def main():
         print("⚠️  No tokens found in README.md")
         return False
     return save_tokens_to_files(tokens_data)
+
+
 if __name__ == "__main__":
     print("🚀 Extracting API tokens from README.md...\n")
     success = main()

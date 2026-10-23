@@ -8,6 +8,8 @@ import sys
 from typing import Any, Final
 from dh import is_binary, runcmd, unique_path
 from loguru import logger
+
+
 class Color:
     BLACK: Final[int] = 30
     RED: Final[int] = 31
@@ -43,6 +45,7 @@ class Color:
     CONCEALED: Final[int] = 8
     STRIKETHROUGH: Final[int] = 9
     _enabled: bool = True
+
     @classmethod
     def _build_code(
         cls,
@@ -65,15 +68,19 @@ class Color:
         escape = f"\x1b[{';'.join(codes)}m"
         reset = "\x1b[0m"
         return f"{escape}{text}{reset}"
+
     @classmethod
     def disable(cls) -> None:
         cls._enabled = False
+
     @classmethod
     def enable(cls) -> None:
         cls._enabled = True
+
     @classmethod
     def can_colorize(cls) -> bool:
         import os
+
         if os.environ.get("NO_COLOR"):
             return False
         if os.environ.get("ANSI_COLORS_DISABLED"):
@@ -81,6 +88,8 @@ class Color:
         if os.environ.get("FORCE_COLOR"):
             return True
         return sys.stdout.isatty()
+
+
 def colored(
     text: str,
     fg: int | None = None,
@@ -88,6 +97,8 @@ def colored(
     attrs: list[int] | None = None,
 ) -> str:
     return Color._build_code(text, fg, bg, attrs)
+
+
 MIME_TO_EXTENSIONS: Final[dict[str, list[str]]] = {
     "application/pdf": [".pdf"],
     "application/msword": [".doc"],
@@ -349,10 +360,14 @@ SKIP_EXTENSIONS: Final[set[str]] = {".css", ".js", ".ts", ".jsx", ".tsx"}
 SKIP_MIME_TYPES: Final[set[str]] = {"text/plain", "application/octet-stream"}
 SKIP_DIRECTORIES: Final[frozenset[str]] = frozenset({".git", "__pycache__", ".venv", "node_modules", ".env"})
 WORKER_COUNT: Final[int] = 8
+
+
 @dataclass
 class MimeResult:
     mime_type: str | None
     error: str | None = None
+
+
 @dataclass
 class MismatchResult:
     path: Path
@@ -361,6 +376,8 @@ class MismatchResult:
     expected_exts: list[str]
     new_path: Path | None = None
     error: str | None = None
+
+
 def fix_by_shebang(path: Path) -> str | None:
     if is_binary(path):
         return None
@@ -389,6 +406,8 @@ def fix_by_shebang(path: Path) -> str | None:
     if "lua" in shebang:
         return ".lua"
     return None
+
+
 def get_file_mime(path: Path) -> MimeResult:
     try:
         exit_code: int
@@ -405,6 +424,8 @@ def get_file_mime(path: Path) -> MimeResult:
         return MimeResult(None, "No MIME type detected")
     except Exception as e:
         return MimeResult(None, f"Exception: {e}")
+
+
 def safe_rename(old_path: Path, new_path: Path) -> bool:
     try:
         if new_path.exists():
@@ -413,6 +434,8 @@ def safe_rename(old_path: Path, new_path: Path) -> bool:
         return True
     except OSError:
         return False
+
+
 def detect_mismatch(base_dir: Path, path: Path) -> MismatchResult | None:
     if path.suffix.lower() in SKIP_EXTENSIONS:
         return None
@@ -447,6 +470,8 @@ def detect_mismatch(base_dir: Path, path: Path) -> MismatchResult | None:
         expected_exts=expected_exts,
         new_path=unique_path(new_path),
     )
+
+
 def process_file_worker(args: tuple[Path, Path]) -> MismatchResult | None:
     base_dir, path = args
     try:
@@ -455,6 +480,8 @@ def process_file_worker(args: tuple[Path, Path]) -> MismatchResult | None:
     except OSError:
         return None
     return detect_mismatch(base_dir, path)
+
+
 def scan_directory(directory: str) -> list[MismatchResult]:
     base_dir: Path = Path(directory).resolve()
     if not base_dir.is_dir():
@@ -490,6 +517,8 @@ def scan_directory(directory: str) -> list[MismatchResult]:
                 results.append(result)
     print(f"Processed: {completed:,}/{len(files):,}")
     return results
+
+
 def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> int:
     if not mismatches:
         logger.success("✓ No file extension mismatches found!")
@@ -517,6 +546,8 @@ def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> in
         print()
     print(f"Summary: {renamed_count} file(s) renamed")
     return renamed_count
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Detect and fix file extension mismatches by analyzing MIME types",
@@ -547,6 +578,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Disable colored output",
     )
     return parser
+
+
 def main() -> int:
     parser: argparse.ArgumentParser = build_arg_parser()
     args: argparse.Namespace = parser.parse_args()
@@ -562,5 +595,7 @@ def main() -> int:
     mismatches: list[MismatchResult] = scan_directory(args.directory)
     renamed: int = print_results(mismatches, confirm=args.interactive)
     return 0 if renamed >= 0 else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

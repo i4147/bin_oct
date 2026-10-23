@@ -11,6 +11,8 @@ import threading
 import time
 from typing import Callable, Optional
 from loguru import logger
+
+
 def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
     logger.remove()
     logger.add(
@@ -26,6 +28,8 @@ def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
             level="ERROR",
             format="{time:HH:mm:ss} | {level: <8} | {message}",
         )
+
+
 LANGUAGE_CODES = {
     "deep_translator": {
         "en": "en",
@@ -93,11 +97,15 @@ LANGUAGE_CODES = {
         "ar": "ar",
     },
 }
+
+
 def map_language_code(backend: str, code: str) -> str:
     if backend not in LANGUAGE_CODES:
         msg = f"Unknown backend: {backend}"
         raise ValueError(msg)
     return LANGUAGE_CODES[backend].get(code, code)
+
+
 def _make_deep_translator(source: str, target: str) -> Callable:
     try:
         from deep_translator import GoogleTranslator
@@ -106,10 +114,14 @@ def _make_deep_translator(source: str, target: str) -> Callable:
         raise ImportError(msg)
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
+
     def translate_chunk(text: str) -> str:
         translator = GoogleTranslator(source_language=source, target_language=target)
         return translator.translate(text)
+
     return translate_chunk
+
+
 def _make_deepl(source: str, target: str) -> Callable:
     try:
         import deepl
@@ -117,6 +129,7 @@ def _make_deepl(source: str, target: str) -> Callable:
         msg = "deepl not installed. Run: pip install deepl"
         raise ImportError(msg)
     import os
+
     api_key = os.getenv("DEEPL_API_KEY")
     if not api_key:
         msg = "DEEPL_API_KEY environment variable not set"
@@ -124,10 +137,14 @@ def _make_deepl(source: str, target: str) -> Callable:
     source = map_language_code("deepl", source).upper()
     target = map_language_code("deepl", target).upper()
     translator = deepl.Translator(api_key)
+
     def translate_chunk(text: str) -> str:
         result = translator.translate_text(text, source_lang=source, target_lang=target)
         return result.text
+
     return translate_chunk
+
+
 def _make_translate(source: str, target: str) -> Callable:
     try:
         from translate import Translator
@@ -137,9 +154,13 @@ def _make_translate(source: str, target: str) -> Callable:
     source = map_language_code("translate", source)
     target = map_language_code("translate", target)
     translator = Translator(from_lang=source, to_lang=target)
+
     def translate_chunk(text: str) -> str:
         return translator.translate(text)
+
     return translate_chunk
+
+
 def _make_translators_bing(source: str, target: str) -> Callable:
     try:
         import translators
@@ -148,9 +169,13 @@ def _make_translators_bing(source: str, target: str) -> Callable:
         raise ImportError(msg)
     source = map_language_code("translators_bing", source)
     target = map_language_code("translators_bing", target)
+
     def translate_chunk(text: str) -> str:
         return translators.translate_text(text, from_language=source, to_language=target, service="bing")
+
     return translate_chunk
+
+
 def _make_googletrans(source: str, target: str) -> Callable:
     try:
         from googletrans import Translator
@@ -161,11 +186,15 @@ def _make_googletrans(source: str, target: str) -> Callable:
     target = map_language_code("googletrans", target)
     lock = threading.Lock()
     translator = Translator()
+
     def translate_chunk(text: str) -> str:
         with lock:
             result = translator.translate(text, src_language=source, dest_language=target)
             return result["text"]
+
     return translate_chunk
+
+
 def _make_pygoogletranslation(source: str, target: str) -> Callable:
     try:
         from pygoogletranslation import Translator
@@ -176,11 +205,15 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
     target = map_language_code("googletrans", target)
     lock = threading.Lock()
     translator = Translator()
+
     def translate_chunk(text: str) -> str:
         with lock:
             result = translator.translate(text, src_language=source, dest_language=target)
             return result["text"]
+
     return translate_chunk
+
+
 def _make_boto3(source: str, target: str) -> Callable:
     try:
         import boto3
@@ -190,6 +223,7 @@ def _make_boto3(source: str, target: str) -> Callable:
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
     client = boto3.client("translate", region_name="us-east-1")
+
     def translate_chunk(text: str) -> str:
         response = client.translate_text(
             Text=text,
@@ -197,7 +231,10 @@ def _make_boto3(source: str, target: str) -> Callable:
             TargetLanguageCode=target,
         )
         return response["TranslatedText"]
+
     return translate_chunk
+
+
 BACKEND_FACTORIES = {
     "deep_translator": _make_deep_translator,
     "deepl": _make_deepl,
@@ -215,6 +252,8 @@ DEFAULT_BACKEND_ORDER = [
     "googletrans",
     "pygoogletranslation",
 ]
+
+
 def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
     if not text or not text.strip():
         return []
@@ -235,6 +274,8 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
             chunks.append(chunk)
         pos = end
     return chunks
+
+
 def is_identity_translation(original: str, translated: str, threshold: float = 0.98) -> bool:
     if translated is None:
         return True
@@ -247,8 +288,11 @@ def is_identity_translation(original: str, translated: str, threshold: float = 0
     if abs(len(a) - len(b)) > max(4, int(0.05 * len(a))):
         return False
     import difflib
+
     ratio = difflib.SequenceMatcher(None, a, b).ratio()
     return ratio >= threshold
+
+
 @dataclass
 class TranslationState:
     source_file: str
@@ -259,6 +303,7 @@ class TranslationState:
     failed: dict[int, str] = field(default_factory=dict)
     backend_used: dict[int, str] = field(default_factory=dict)
     completed_at: Optional[float] = None
+
     def to_json(self) -> dict:
         return {
             "source_file": self.source_file,
@@ -270,6 +315,7 @@ class TranslationState:
             "backend_used": {str(k): v for k, v in self.backend_used.items()},
             "completed_at": self.completed_at,
         }
+
     @classmethod
     def from_json(cls, data: dict) -> "TranslationState":
         return cls(
@@ -282,6 +328,8 @@ class TranslationState:
             backend_used={int(k): v for k, v in data.get("backend_used", {}).items()},
             completed_at=data.get("completed_at"),
         )
+
+
 def atomic_write_json(path: Path, payload: dict) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.parent.mkdir(parents=True, exist_ok=True)
@@ -290,10 +338,13 @@ def atomic_write_json(path: Path, payload: dict) -> None:
         f.flush()
         try:
             import os
+
             os.fsync(f.fileno())
         except OSError:
             pass
     tmp.replace(path)
+
+
 def load_state(path: Path) -> Optional[TranslationState]:
     if not path.exists():
         return None
@@ -306,11 +357,15 @@ def load_state(path: Path) -> Optional[TranslationState]:
     except (json.JSONDecodeError, OSError, ValueError) as e:
         logger.warning(f"Could not load state from {path}: {e}")
         return None
+
+
 def save_state(path: Path, state: TranslationState) -> None:
     try:
         atomic_write_json(path, state.to_json())
     except OSError as e:
         logger.error(f"Failed to save state: {e}")
+
+
 def append_failed_chunk(path: Path, index: int, text: str, error: str) -> None:
     record = {"index": index, "text": text, "error": error, "ts": time.time()}
     try:
@@ -318,6 +373,8 @@ def append_failed_chunk(path: Path, index: int, text: str, error: str) -> None:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
     except OSError as e:
         logger.error(f"Could not append failed chunk: {e}")
+
+
 def retry_with_backoff(
     fn: Callable[[], str],
     attempts: int = 3,
@@ -337,6 +394,8 @@ def retry_with_backoff(
             time.sleep(delay)
     assert last_exc is not None
     raise last_exc
+
+
 class TranslatorEngine:
     def __init__(
         self,
@@ -369,6 +428,7 @@ class TranslatorEngine:
                 "googletrans, pygoogletranslation, boto3"
             )
             raise RuntimeError(msg)
+
     def translate_chunk(self, text: str) -> tuple[str, str]:
         errors: list[str] = []
         for name, fn in self.backends:
@@ -390,11 +450,14 @@ class TranslatorEngine:
                 continue
             return result, name
         raise RuntimeError("All backends failed. " + " | ".join(errors))
+
+
 class GracefulShutdown:
     def __init__(self):
         self.event = threading.Event()
         self._prev_int = None
         self._prev_term = None
+
     def __enter__(self):
         def handler(signum, frame):
             if not self.event.is_set():
@@ -404,18 +467,22 @@ class GracefulShutdown:
                     file=sys.stderr,
                 )
             self.event.set()
+
         self._prev_int = signal.signal(signal.SIGINT, handler)
         try:
             self._prev_term = signal.signal(signal.SIGTERM, handler)
         except (ValueError, AttributeError):
             self._prev_term = None
         return self
+
     def __exit__(self, exc_type, exc, tb):
         if self._prev_int is not None:
             signal.signal(signal.SIGINT, self._prev_int)
         if self._prev_term is not None:
             signal.signal(signal.SIGTERM, self._prev_term)
         return False
+
+
 def run_translation(
     input_path: Path,
     output_path: Path,
@@ -469,6 +536,7 @@ def run_translation(
     state_lock = threading.Lock()
     stop_event = threading.Event()
     done_since_save = 0
+
     def worker(idx: int) -> tuple[int, Optional[str], Optional[str], Optional[str]]:
         if stop_event.is_set():
             return idx, None, None, "cancelled"
@@ -478,6 +546,7 @@ def run_translation(
             return idx, translated, backend, None
         except Exception as e:
             return idx, None, None, repr(e)
+
     completed_count = 0
     try:
         with GracefulShutdown() as shutdown, ThreadPoolExecutor(max_workers=max_workers) as pool:
@@ -514,6 +583,8 @@ def run_translation(
         state.completed_at = time.time()
         save_state(output_path, state)
     return state
+
+
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="translate_chunks",
@@ -555,6 +626,8 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="List known backends and exit",
     )
     return parser.parse_args(argv)
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     if args.list_backends:
@@ -603,5 +676,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     if bad:
         print(f"Failures: {output.with_suffix(output.suffix + '.failed.jsonl')}")
     return 0 if bad == 0 else 4
+
+
 if __name__ == "__main__":
     sys.exit(main())

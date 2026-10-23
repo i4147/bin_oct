@@ -12,23 +12,32 @@ import shutil
 import tarfile
 from typing import Sequence
 import brotli
+
 try:
     from loguru import logger
+
     if not hasattr(logger, "success"):
         logger.success = logger.info
 except ImportError:
     import logging
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     logger = logging.getLogger("br")
     logger.success = logger.info
+
+
 def human_size(size: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if size < 1024.0 or unit == "TB":
             return f"{int(size)}B" if unit == "B" else f"{size:.1f}{unit}"
         size /= 1024.0
     return f"{size:.1f}TB"
+
+
 def _compress_bytes(data: bytes, quality: int, lgwin: int) -> bytes:
     return brotli.compress(data, quality=quality, lgwin=lgwin, mode=brotli.MODE_GENERIC)
+
+
 def _stream_compress(src: Path, dst: Path, buffer_size: int, quality: int, lgwin: int) -> bool:
     try:
         comp = brotli.Compressor(quality=quality, lgwin=lgwin)
@@ -43,6 +52,8 @@ def _stream_compress(src: Path, dst: Path, buffer_size: int, quality: int, lgwin
     except Exception as e:
         logger.error(f"Error compressing to {dst.name}: {e}")
         return False
+
+
 def _stream_decompress(src: Path, dst: Path, buffer_size: int) -> bool:
     try:
         dec = brotli.Decompressor()
@@ -56,6 +67,8 @@ def _stream_decompress(src: Path, dst: Path, buffer_size: int) -> bool:
     except Exception as e:
         logger.error(f"Error decompressing {src.name}: {e}")
         return False
+
+
 def _chunked_compress(src: Path, dst: Path, size: int, chunk_size: int, quality: int, lgwin: int, workers: int) -> bool:
     try:
         n = (size + chunk_size - 1) // chunk_size
@@ -84,6 +97,8 @@ def _chunked_compress(src: Path, dst: Path, size: int, chunk_size: int, quality:
     except Exception as e:
         logger.error(f"Chunked compression failed for {src.name}: {e}")
         return False
+
+
 def _tar(src_dir: Path, tar_path: Path) -> bool:
     try:
         with tarfile.open(tar_path, "w") as tar:
@@ -94,6 +109,8 @@ def _tar(src_dir: Path, tar_path: Path) -> bool:
     except Exception as e:
         logger.error(f"Failed to create tar archive: {e}")
         return False
+
+
 def _untar(tar_path: Path, dest: Path) -> bool:
     try:
         with tarfile.open(tar_path, "r") as tar:
@@ -102,11 +119,15 @@ def _untar(tar_path: Path, dest: Path) -> bool:
     except Exception as e:
         logger.error(f"Failed to extract tar archive: {e}")
         return False
+
+
 def _compress_to(src: Path, dst: Path, args) -> bool:
     size = src.stat().st_size
     if args.chunk_threshold > 0 and size >= args.chunk_threshold:
         return _chunked_compress(src, dst, size, args.chunk_size, args.quality, args.lgwin, args.workers)
     return _stream_compress(src, dst, args.buffer_size, args.quality, args.lgwin)
+
+
 def _finish_compress(src: Path, dst: Path, args, label: str) -> bool:
     if not dst.exists() or dst.stat().st_size == 0:
         dst.unlink(missing_ok=True)
@@ -125,6 +146,8 @@ def _finish_compress(src: Path, dst: Path, args, label: str) -> bool:
     print(f"  ✗ {label}: no space saved, keeping original")
     dst.unlink()
     return False
+
+
 def compress_file(src: Path, args) -> bool:
     if src.stat().st_size < args.min_size:
         return False
@@ -135,6 +158,8 @@ def compress_file(src: Path, args) -> bool:
     if not _compress_to(src, dst, args):
         return False
     return _finish_compress(src, dst, args, src.name)
+
+
 def compress_dir(src_dir: Path, args) -> bool:
     tmp_tar = src_dir.with_name(f"{src_dir.name}.tar")
     dst = src_dir.with_name(f"{src_dir.name}.tar.br")
@@ -159,6 +184,8 @@ def compress_dir(src_dir: Path, args) -> bool:
     saved = (src_size - dst_size) / src_size * 100 if src_size else 0.0
     print(f"  ✓ {src_dir.name}: {saved:.1f}% saved ({human_size(src_size)} -> {human_size(dst_size)})")
     return True
+
+
 def decompress_br(src: Path, args) -> bool:
     if src.name.endswith(".tar.br"):
         return False
@@ -173,6 +200,8 @@ def decompress_br(src: Path, args) -> bool:
     print(f"  ✓ Decompressed {src.name}: {human_size(old)} -> {human_size(new)}")
     src.unlink()
     return True
+
+
 def decompress_tar_br(src: Path, args) -> bool:
     dst_dir = src.with_name(src.name[: -len(".tar.br")])
     tmp_tar = src.with_name(src.name[: -len(".br")])
@@ -185,8 +214,12 @@ def decompress_tar_br(src: Path, args) -> bool:
     src.unlink()
     print(f"  ✓ Extracted {src.name} -> {dst_dir.name}/")
     return True
+
+
 def _iter_dirs(root: Path) -> list[Path]:
     return [p for p in root.iterdir() if p.is_dir() and not p.is_symlink() and not p.name.startswith(".")]
+
+
 def _iter_files(root: Path, self_name: str, skip_ext: Sequence[str], min_size: int) -> list[Path]:
     out: list[Path] = []
     for p in root.iterdir():
@@ -203,12 +236,16 @@ def _iter_files(root: Path, self_name: str, skip_ext: Sequence[str], min_size: i
             continue
         out.append(p)
     return out
+
+
 def _iter_archives(root: Path) -> list[Path]:
     return [
         p
         for p in root.rglob("*")
         if p.is_file() and not p.is_symlink() and (p.name.endswith(".tar.br") or p.suffix == ".br")
     ]
+
+
 def cmd_compress(args) -> int:
     root = Path.cwd()
     self_name = Path(__file__).name
@@ -231,6 +268,8 @@ def cmd_compress(args) -> int:
                 logger.error(f"Task failed: {e}")
     logger.success("Compression completed.")
     return 0
+
+
 def cmd_decompress(args) -> int:
     root = Path.cwd()
     archives = _iter_archives(root)
@@ -250,6 +289,8 @@ def cmd_decompress(args) -> int:
                 logger.error(f"Task failed: {e}")
     logger.success("Decompression completed.")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
@@ -289,6 +330,8 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers. Default 8.")
     d.add_argument("--buffer-size", type=int, default=65536, help="Stream buffer size (bytes). Default 65536.")
     return parser
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -298,5 +341,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return cmd_decompress(args)
     parser.print_help()
     return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

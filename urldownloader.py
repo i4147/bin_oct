@@ -9,9 +9,12 @@ from tempfile import gettempdir
 from time import sleep
 from typing import Any, Callable, Optional
 from requests import Response, get
+
 __all__ = ["SaveToDisk", "get_resource", "save_file"]
 __name__ = "url_downloader"
 __version__ = "1.0.5"
+
+
 class SaveToDisk:
     def __init__(self, file_path: Path, url: str) -> None:
         self._temp_path: Path = Path(
@@ -19,6 +22,7 @@ class SaveToDisk:
             sha224(bytes(url, encoding="UTF-8")).hexdigest() + file_path.suffix,
         )
         self._file_path: Path = file_path
+
     def _move_temporary(self, url: str) -> bool:
         if self._file_path.exists():
             info("File already exists")
@@ -26,6 +30,7 @@ class SaveToDisk:
         move(self._temp_path, self._file_path)
         info("DOWNLOADED: %s TO %s" % (url, self._file_path))
         return True
+
     def get(self, url: str, headers: dict[str, str], timeout: int) -> bool:
         resume_byte_pos: int = self._temp_path.stat().st_size if self._temp_path.exists() else 0
         headers["Range"] = "bytes=%d-" % resume_byte_pos
@@ -38,6 +43,8 @@ class SaveToDisk:
                 with open(self._temp_path, "ab") as f:
                     f.write(chunk)
         return self._move_temporary(url)
+
+
 def _get_url_data(
     url: str,
     get_function: Callable[..., Any],
@@ -58,12 +65,16 @@ def _get_url_data(
                 error("Error on try %s" % i)
                 exception(e)
     return None
+
+
 def _get_file_name(url: str) -> str:
     url = url.strip("/")
     result = findall(r"/(\w+\.\w+)[?|$]", url)
     if result:
         return result[-1]
     return url.split("/")[-1]
+
+
 def save_file(
     url: str,
     file_path: str,
@@ -86,6 +97,8 @@ def save_file(
         timeout=timeout,
         wait=wait,
     )
+
+
 def get_resource(
     url: str,
     timeout: int = 4,

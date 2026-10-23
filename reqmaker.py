@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+
 REQ = Path("requirements.txt")
 BLACKLIST = {
     "pydantic-core",
@@ -26,8 +27,12 @@ BLACKLIST = {
     "jupyter-ydoc",
     "tensorflow",
 }
+
+
 def save_to_req(packages) -> None:
     REQ.write_text("\n".join(packages) + "\n", encoding="utf-8")
+
+
 def run_pip_check():
     try:
         result = subprocess.run(
@@ -39,6 +44,8 @@ def run_pip_check():
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         return e.stdout.strip() if e.stdout else ""
+
+
 def parse_pip_check(output):
     pattern = re.compile(r"^(\S+)\s+.*requires\s+([^,]+),\s+which is not installed\.$", re.MULTILINE)
     missing_deps = defaultdict(list)
@@ -51,6 +58,8 @@ def parse_pip_check(output):
                 continue
             missing_deps[missing_pkg].append(requirer)
     return missing_deps
+
+
 def format_deptree(missing_deps) -> None:
     if not missing_deps:
         print("No missing dependencies found.")
@@ -60,6 +69,8 @@ def format_deptree(missing_deps) -> None:
         unique_requirers = sorted(set(requirers))
         requirers_str = ", ".join(unique_requirers)
         print(f"  - {pkg} --> {requirers_str}")
+
+
 def main() -> None:
     output = run_pip_check()
     if not output:
@@ -68,5 +79,7 @@ def main() -> None:
     missing_deps = parse_pip_check(output)
     format_deptree(missing_deps)
     save_to_req(sorted(missing_deps.keys()))
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

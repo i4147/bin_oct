@@ -21,18 +21,22 @@ from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 from loguru import logger
+
 try:
     from concurrent.futures import InterpreterPoolExecutor as _IPE
+
     _HAS_IPE: bool = True
 except ImportError:
     _IPE = None
     _HAS_IPE = False
 try:
     from unidecode import unidecode as _translit
+
     _HAS_TRANSLIT: bool = True
 except ImportError:
     try:
         from anyascii import anyascii as _translit
+
         _HAS_TRANSLIT = True
     except ImportError:
         _HAS_TRANSLIT = False
@@ -73,6 +77,8 @@ DIM: str = "\x1b[2m"
 RESET: str = "\x1b[0m"
 DEFAULT_EXECUTOR: str = "interpreter"
 MAX_SLUG_LEN: int = 200
+
+
 @dataclass(frozen=True, slots=True)
 class Job:
     path: str
@@ -84,6 +90,8 @@ class Job:
     backup_suffix: str | None
     fsync: bool
     preserve_mtime: bool
+
+
 @dataclass(frozen=True, slots=True)
 class Result:
     path: str
@@ -92,11 +100,15 @@ class Result:
     error: str | None
     skip_reason: str | None
     duration_ms: float
+
+
 @dataclass(frozen=True, slots=True)
 class Rename:
     src: str
     dst: str
     status: str
+
+
 def _job_to_tuple(j: Job) -> JobTuple:
     return (
         j.path,
@@ -109,14 +121,24 @@ def _job_to_tuple(j: Job) -> JobTuple:
         j.fsync,
         j.preserve_mtime,
     )
+
+
 def _tuple_to_job(t: JobTuple) -> Job:
     return Job(*t)
+
+
 def _result_to_tuple(r: Result) -> ResultTuple:
     return (r.path, r.original, r.new, r.error, r.skip_reason, r.duration_ms)
+
+
 def _tuple_to_result(t: ResultTuple) -> Result:
     return Result(*t)
+
+
 def _worker_entry(job_tuple: JobTuple) -> ResultTuple:
     return _result_to_tuple(_worker(_tuple_to_job(job_tuple)))
+
+
 def _slugify_stem(stem: str, lowercase: bool, transliterate: bool) -> str:
     if transliterate and _HAS_TRANSLIT and _translit is not None:
         try:
@@ -137,6 +159,8 @@ def _slugify_stem(stem: str, lowercase: bool, transliterate: bool) -> str:
     if len(s) > MAX_SLUG_LEN:
         s = s[:MAX_SLUG_LEN].rstrip("_")
     return s or "file"
+
+
 def _slugify_path(p: Path, lowercase: bool, transliterate: bool) -> Path:
     if not p.suffix:
         return p
@@ -144,6 +168,8 @@ def _slugify_path(p: Path, lowercase: bool, transliterate: bool) -> Path:
     if new_stem == p.stem:
         return p
     return p.with_name(new_stem + p.suffix)
+
+
 def _plan_renames(
     files: list[Path],
     slugify: bool,
@@ -169,11 +195,15 @@ def _plan_renames(
             logger.warning(f"slug target exists, skipping: {src.name} -> {name}")
             collisions.add(src)
     return {f: (f if f in collisions else plans[f]) for f in files}
+
+
 def _worker(job: Job) -> Result:
     path = Path(job.path)
     t0 = time.perf_counter()
+
     def done(err: str | None = None, skip: str | None = None, orig: int = 0, new: int = 0) -> Result:
         return Result(str(path), orig, new, err, skip, (time.perf_counter() - t0) * 1000.0)
+
     try:
         if path.is_symlink():
             return done(err="unresolved symlink")
@@ -221,12 +251,10 @@ def _worker(job: Job) -> Result:
             if job.fsync:
                 with open(tmp_file, "rb") as f:
                     os.fsync(f.fileno())
-            # --- ATOMIC WRITE WITH TERMUX FALLBACK ---
             try:
                 os.chmod(tmp_file, stat.S_IMODE(st.st_mode))
                 os.replace(tmp_file, path)
             except OSError:
-                # Fallback for Termux scoped storage / external SD cards where replace/chmod fails
                 path.write_bytes(new_data)
                 tmp_file.unlink(missing_ok=True)
             tmp_file = None
@@ -242,6 +270,8 @@ def _worker(job: Job) -> Result:
                     pass
     except Exception as e:
         return done(err=f"{type(e).__name__}: {e}")
+
+
 def _make_executor(kind: str, workers: int) -> Executor:
     if kind == "interpreter":
         if not _HAS_IPE or _IPE is None:
@@ -250,6 +280,8 @@ def _make_executor(kind: str, workers: int) -> Executor:
     if kind == "process":
         return ProcessPoolExecutor(max_workers=workers)
     raise ValueError(f"unknown executor: {kind!r}")
+
+
 def _resolve_minhtml_args(args: argparse.Namespace) -> tuple[str, ...]:
     base = list(DEFAULT_BASE_ARGS)
     if args.no_preserve_braces:
@@ -259,6 +291,8 @@ def _resolve_minhtml_args(args: argparse.Namespace) -> tuple[str, ...]:
     if args.no_minify_js:
         base.remove("--minify-js")
     return tuple(base + list(args.minhtml_arg))
+
+
 def _parse_duration(s: str) -> timedelta:
     s = s.strip().lower()
     units = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
@@ -271,14 +305,20 @@ def _parse_duration(s: str) -> timedelta:
     if n < 0:
         raise ValueError(f"bad duration: {s!r}")
     return timedelta(seconds=n * units[s[-1]])
+
+
 def _matches_any(rel: str, patterns: Sequence[str]) -> bool:
     return any(fnmatch.fnmatch(rel, p) for p in patterns)
+
+
 def _expand_arg(raw: str) -> list[Path]:
     p = os.path.expanduser(raw)
     m = _glob.glob(p, recursive=True)
     if m:
         return [Path(x) for x in m]
     return [Path(p)]
+
+
 def _collect(args: argparse.Namespace, cutoff: float | None) -> list[Path]:
     exclude_dirs: set[str] = set()
     if not args.no_default_excludes:
@@ -286,6 +326,7 @@ def _collect(args: argparse.Namespace, cutoff: float | None) -> list[Path]:
     exclude_dirs.update(args.exclude_dir)
     seen: set[Path] = set()
     out: list[Path] = []
+
     def accept(p: Path, base: Path, explicit: bool) -> bool:
         if not p.is_file():
             return False
@@ -311,6 +352,7 @@ def _collect(args: argparse.Namespace, cutoff: float | None) -> list[Path]:
         if cutoff is not None and st.st_mtime < cutoff:
             return False
         return True
+
     for raw in args.paths:
         for entry in _expand_arg(raw):
             if entry.is_file():
@@ -347,6 +389,8 @@ def _collect(args: argparse.Namespace, cutoff: float | None) -> list[Path]:
                 logger.warning(f"input not found: {raw}")
     out.sort(key=lambda x: x.name)
     return out
+
+
 def _apply_renames(
     files: list[Path],
     rename_plans: dict[Path, Path],
@@ -375,8 +419,12 @@ def _apply_renames(
             log.append(Rename(str(src), str(dst), "error"))
             final.append(src)
     return final, log
+
+
 def _colorize(text: str, color: str, enabled: bool) -> str:
     return f"{color}{text}{RESET}" if enabled else text
+
+
 def _human_bytes(n: int) -> str:
     sign = "-" if n < 0 else ""
     a = abs(n)
@@ -388,6 +436,8 @@ def _human_bytes(n: int) -> str:
         if v < 1024.0:
             return f"{sign}{v:.2f} {unit}"
     return f"{sign}{v:.2f} EiB"
+
+
 def _format_result(r: Result, idx: int, total: int, fn_w: int, bytes_w: int, cw: int, use_color: bool) -> str:
     name = Path(r.path).name
     if len(name) > fn_w:
@@ -414,6 +464,8 @@ def _format_result(r: Result, idx: int, total: int, fn_w: int, bytes_w: int, cw:
     value_col = _colorize(value, color, use_color)
     pad = " " * max(0, bytes_w - len(value))
     return f"{counter}   {name:<{fn_w}}  {pad}{value_col}"
+
+
 def _print_top(results: list[Result], n: int, use_color: bool) -> None:
     changed = [r for r in results if r.error is None and r.skip_reason is None and r.new < r.original]
     if not changed:
@@ -426,6 +478,8 @@ def _print_top(results: list[Result], n: int, use_color: bool) -> None:
         pct = (delta / r.original * 100.0) if r.original else 0.0
         d = _colorize(f"{delta}", GREEN, use_color)
         print(f"  {Path(r.path).name:<40}  {d:>10}  ({pct:.1f}%)")
+
+
 def _emit_json(results: list[Result], renames: list[Rename], summary: dict, dry_run: bool) -> None:
     payload = {
         "version": __version__,
@@ -448,6 +502,8 @@ def _emit_json(results: list[Result], renames: list[Rename], summary: dict, dry_
     json.dump(payload, sys.stdout, indent=2)
     sys.stdout.write("\n")
     sys.stdout.flush()
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="minhtml-all",
@@ -527,6 +583,8 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument("-q", "--quiet", action="store_true", help="suppress per-file lines")
     g.add_argument("-v", "--verbose", action="store_true")
     return p
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     logger.remove()
@@ -616,9 +674,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.error(f"cannot create executor: {e}")
         return 2
     interrupted = {"v": False}
+
     def _on_sigterm(signum: int, frame: object) -> None:
         interrupted["v"] = True
         raise KeyboardInterrupt()
+
     prev_handler = None
     if hasattr(signal, "SIGTERM"):
         try:
@@ -720,5 +780,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.check and (changed > 0 or would_rename > 0):
         exit_code = 1
     return exit_code
+
+
 if __name__ == "__main__":
     sys.exit(main())

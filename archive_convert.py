@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 import zipfile
 import brotli
 from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
@@ -39,6 +40,8 @@ BROTLI_QUALITY_DEFAULT: int = 11
 BROTLI_QUALITY_BIG: int = 3
 DEFAULT_JOBS: int = 8
 ProcResult = tuple[Path, Path | None, int, int, str | None]
+
+
 def human(n: int) -> str:
     sign = "-" if n < 0 else ""
     v = float(abs(n))
@@ -47,11 +50,15 @@ def human(n: int) -> str:
             return f"{sign}{v:.2f}{unit}"
         v /= 1024.0
     return f"{sign}{v:.2f}PiB"
+
+
 def relpath(p: Path, base: Path) -> str:
     try:
         return os.path.relpath(p, base)
     except ValueError:
         return str(p)
+
+
 def find_archives(root: Path) -> Iterator[Path]:
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
@@ -63,6 +70,8 @@ def find_archives(root: Path) -> Iterator[Path]:
             if p.is_symlink():
                 continue
             yield p
+
+
 def target_path(src: Path) -> Path:
     low = src.name.lower()
     for sfx in SUFFIXES_BY_LENGTH:
@@ -70,6 +79,8 @@ def target_path(src: Path) -> Path:
             return src.with_name(src.name[: -len(sfx)] + ".tar.br")
     msg = f"no known archive suffix: {src.name}"
     raise ValueError(msg)
+
+
 def _zip_to_tar(src: Path, workdir: Path, tar_path: Path) -> None:
     extract_dir = workdir / "extracted"
     extract_dir.mkdir()
@@ -85,6 +96,8 @@ def _zip_to_tar(src: Path, workdir: Path, tar_path: Path) -> None:
                 recursive=False,
             )
     shutil.rmtree(extract_dir)
+
+
 def _to_tar(src: Path, workdir: Path) -> Path:
     low = src.name.lower()
     tar_path = workdir / "stream.tar"
@@ -115,6 +128,8 @@ def _to_tar(src: Path, workdir: Path) -> Path:
             msg = f"unsupported archive: {src.name}"
             raise ValueError(msg)
     return tar_path
+
+
 def _brotli_stream(src: Path, dst: Path) -> None:
     size = src.stat().st_size
     quality = BROTLI_QUALITY_BIG if size > BIG_TAR_THRESHOLD else BROTLI_QUALITY_DEFAULT
@@ -136,6 +151,8 @@ def _brotli_stream(src: Path, dst: Path) -> None:
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise
+
+
 def process(src: Path) -> ProcResult:
     try:
         src_size = src.stat().st_size
@@ -160,6 +177,8 @@ def process(src: Path) -> ProcResult:
         with contextlib.suppress(OSError):
             dst.unlink(missing_ok=True)
         return src, dst, src_size, 0, f"{type(exc).__name__}: {exc}"
+
+
 def decompress_one(src: Path) -> tuple[Path, int, int]:
     if not src.name.endswith(".tar.br"):
         msg = f"not a .tar.br file: {src.name}"
@@ -188,6 +207,8 @@ def decompress_one(src: Path) -> tuple[Path, int, int]:
         tmp.unlink(missing_ok=True)
         raise
     return dst, src_size, dst.stat().st_size
+
+
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Convert tar/zip archives to .tar.br recursively, or decompress .tar.br with -d.",
@@ -212,6 +233,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Decompress the given .tar.br file(s) back to .tar.",
     )
     return parser.parse_args(argv)
+
+
 def collect_targets(paths: list[Path]) -> list[Path]:
     roots = paths or [Path.cwd()]
     found: list[Path] = []
@@ -233,6 +256,8 @@ def collect_targets(paths: list[Path]) -> list[Path]:
             seen.add(f)
             unique.append(f)
     return unique
+
+
 def run_decompress(paths: list[Path], cwd: Path) -> int:
     if not paths:
         msg = "no archive given for -d"
@@ -256,6 +281,8 @@ def run_decompress(paths: list[Path], cwd: Path) -> int:
             f"ok {relpath(rp, cwd)} -> {relpath(dst, cwd)}: {human(src_size)} -> {human(dst_size)} ({human(-saved)})"
         )
     return 0 if not failures else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     cwd = Path.cwd()
@@ -297,5 +324,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         logger.info(f"totals: ok=0 fail={failures}")
     return 0 if not failures else 1
+
+
 if __name__ == "__main__":
     sys.exit(main())

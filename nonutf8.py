@@ -4,6 +4,7 @@ import argparse
 import codecs
 from pathlib import Path
 from typing import Iterator, Optional
+
 BOMS: tuple[tuple[bytes, str], ...] = (
     (codecs.BOM_UTF8, "utf-8"),
     (codecs.BOM_UTF32_LE, "utf-32"),
@@ -11,6 +12,8 @@ BOMS: tuple[tuple[bytes, str], ...] = (
     (codecs.BOM_UTF16_LE, "utf-16"),
     (codecs.BOM_UTF16_BE, "utf-16"),
 )
+
+
 def detect_encoding(data: bytes) -> Optional[str]:
     for bom, enc in BOMS:
         if data.startswith(bom):
@@ -24,12 +27,16 @@ def detect_encoding(data: bytes) -> Optional[str]:
             continue
         return enc
     return None
+
+
 def iter_files(root: Path) -> Iterator[Path]:
     for p in root.rglob("*"):
         if p.is_symlink() or ".git" in p.parts:
             continue
         if p.is_file() and not p.is_symlink():
             yield p
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="encoding-report",
@@ -68,5 +75,7 @@ def main() -> int:
     else:
         print(f"scanned {root}, non-utf8 found: {found}")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

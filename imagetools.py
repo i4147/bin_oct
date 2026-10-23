@@ -6,8 +6,10 @@ import logging
 from pathlib import Path
 import sys
 from typing import Iterable, Optional, Sequence
+
 try:
     from PIL import Image, UnidentifiedImageError
+
     _HAS_PIL = True
 except ImportError:
     Image = None
@@ -15,41 +17,49 @@ except ImportError:
     _HAS_PIL = False
 try:
     import numpy as np
+
     _HAS_NUMPY = True
 except ImportError:
     np = None
     _HAS_NUMPY = False
 try:
     import cv2
+
     _HAS_CV2 = True
 except ImportError:
     cv2 = None
     _HAS_CV2 = False
 try:
     import pillow_heif
+
     pillow_heif.register_heif_opener()
     _HAS_HEIF = True
 except ImportError:
     _HAS_HEIF = False
 try:
     import cairosvg
+
     _HAS_CAIROSVG = True
 except ImportError:
     cairosvg = None
     _HAS_CAIROSVG = False
 try:
     from weasyprint import HTML
+
     _HAS_WEASYPRINT = True
 except ImportError:
     HTML = None
     _HAS_WEASYPRINT = False
 try:
     from pdf2image import convert_from_bytes
+
     _HAS_PDF2IMAGE = True
 except ImportError:
     convert_from_bytes = None
     _HAS_PDF2IMAGE = False
 LOG = logging.getLogger("imgtool")
+
+
 def setup_logging(verbose: bool = False) -> None:
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
@@ -57,6 +67,8 @@ def setup_logging(verbose: bool = False) -> None:
         datefmt="%H:%M:%S",
         stream=sys.stdout,
     )
+
+
 DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
     ".git",
     ".hg",
@@ -110,6 +122,8 @@ INVERT_EXTS: frozenset[str] = frozenset({
     ".webp",
     ".gif",
 })
+
+
 def find_files(
     roots: Sequence[Path],
     extensions: Optional[Iterable[str]] = None,
@@ -119,6 +133,7 @@ def find_files(
     exts = {e.lower() for e in extensions} if extensions else None
     results: list[Path] = []
     seen: set[Path] = set()
+
     def _add(p: Path) -> None:
         try:
             rp = p.resolve()
@@ -128,6 +143,7 @@ def find_files(
             return
         seen.add(rp)
         results.append(p)
+
     for root in roots:
         if root.is_file():
             if exts is None or root.suffix.lower() in exts:
@@ -150,6 +166,8 @@ def find_files(
             _add(f)
     results.sort()
     return results
+
+
 def dir_size(path: Path) -> int:
     if path.is_file():
         try:
@@ -164,6 +182,8 @@ def dir_size(path: Path) -> int:
         except OSError:
             continue
     return total
+
+
 def human_size(n: int) -> str:
     sign = "-" if n < 0 else ""
     n = abs(n)
@@ -172,6 +192,8 @@ def human_size(n: int) -> str:
             return f"{sign}{n:.2f} {unit}"
         n /= 1024.0
     return f"{sign}{n:.2f} PB"
+
+
 def _run_parallel(
     worker,
     tasks: list,
@@ -190,6 +212,8 @@ def _run_parallel(
             except Exception as exc:
                 LOG.error("Worker raised: %s", exc)
     return results
+
+
 def flatten_to_rgb(im: "Image.Image", bg=(255, 255, 255)) -> "Image.Image":
     if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
         im = im.convert("RGBA")
@@ -199,6 +223,8 @@ def flatten_to_rgb(im: "Image.Image", bg=(255, 255, 255)) -> "Image.Image":
     if im.mode != "RGB":
         return im.convert("RGB")
     return im
+
+
 def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") -> None:
     if backend in ("auto", "cv2") and _HAS_CV2:
         img = cv2.imread(str(src), cv2.IMREAD_UNCHANGED)
@@ -223,6 +249,8 @@ def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") ->
     with Image.open(src) as im:
         im = flatten_to_rgb(im)
         im.save(dst, "JPEG", quality=quality, optimize=True)
+
+
 def save_png(src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool = False) -> None:
     if src.suffix.lower() == ".svg":
         if not _HAS_CAIROSVG:
@@ -255,6 +283,8 @@ def save_png(src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool =
         elif im.mode not in ("RGB", "RGBA", "L", "LA", "P"):
             im = im.convert("RGBA")
         im.save(dst, "PNG")
+
+
 def _worker_jpg(task):
     src, dst, quality, backend, delete_source = task
     try:
@@ -271,6 +301,8 @@ def _worker_jpg(task):
                 f"wrote {dst.name} but could not delete {src.name}: {exc}",
             )
     return (str(src), True, f"{src.name} -> {dst.name}")
+
+
 def _worker_png(task):
     src, dst, backend, delete_source, preserve_alpha = task
     try:
@@ -287,6 +319,8 @@ def _worker_png(task):
                 f"wrote {dst.name} but could not delete {src.name}: {exc}",
             )
     return (str(src), True, f"{src.name} -> {dst.name}")
+
+
 def _worker_invert(task):
     src, dry_run = task
     if dry_run:
@@ -302,15 +336,19 @@ def _worker_invert(task):
         return (str(src), True, f"inverted {src}")
     except Exception as exc:
         return (str(src), False, f"failed {src}: {exc}")
+
+
 def _extract_gif_frames(path: Path, dup_mean: float, dup_frac: float) -> list["np.ndarray"]:
     if not (_HAS_PIL and _HAS_NUMPY):
         msg = "Pillow + numpy are required for GIF extraction"
         raise RuntimeError(msg)
+
     def is_dup(a, b) -> bool:
         if a.shape != b.shape:
             return False
         diff = np.abs(a.astype(np.int16) - b.astype(np.int16))
         return diff.mean() < dup_mean and (diff > 10).any(axis=-1).mean() < dup_frac
+
     frames: list = []
     try:
         with Image.open(path) as img:
@@ -343,6 +381,8 @@ def _extract_gif_frames(path: Path, dup_mean: float, dup_frac: float) -> list["n
     except (UnidentifiedImageError, OSError) as exc:
         LOG.error("Cannot open %s: %s", path, exc)
     return frames
+
+
 def _worker_gif(task):
     src, quality, dup_mean, dup_frac, overwrite = task
     try:
@@ -369,6 +409,8 @@ def _worker_gif(task):
         except OSError as exc:
             LOG.error("Failed to save %s: %s", dst, exc)
     return (str(src), True, f"{src.name}: {written} frame(s) -> JPG")
+
+
 def cmd_to_jpg(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     exts = {e.lower() for e in args.ext} if args.ext else set(JPG_INPUT_EXTS)
@@ -397,6 +439,8 @@ def cmd_to_jpg(args: argparse.Namespace) -> int:
     fail = len(results) - ok
     LOG.info("Done. %d succeeded, %d failed.", ok, fail)
     return 0 if fail == 0 else 1
+
+
 def cmd_to_png(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     exts = {e.lower() for e in args.ext} if args.ext else set(PNG_INPUT_EXTS)
@@ -425,6 +469,8 @@ def cmd_to_png(args: argparse.Namespace) -> int:
     fail = len(results) - ok
     LOG.info("Done. %d succeeded, %d failed.", ok, fail)
     return 0 if fail == 0 else 1
+
+
 def cmd_gif_to_jpg(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     files = find_files(paths, {".gif"}, recursive=args.recursive)
@@ -438,6 +484,8 @@ def cmd_gif_to_jpg(args: argparse.Namespace) -> int:
     fail = len(results) - ok
     LOG.info("Done. %d GIF(s) processed, %d failed.", ok, fail)
     return 0 if fail == 0 else 1
+
+
 def cmd_invert(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     exts = {e.lower() for e in args.ext} if args.ext else set(INVERT_EXTS)
@@ -457,6 +505,8 @@ def cmd_invert(args: argparse.Namespace) -> int:
     fail = len(results) - ok
     LOG.info("Done. %d succeeded, %d failed.", ok, fail)
     return 0 if fail == 0 else 1
+
+
 def _html_to_png(src: str, dst: Path, method: str, width: Optional[int], dpi: int, scale: float) -> None:
     if not _HAS_WEASYPRINT:
         msg = "weasyprint is required for HTML rendering"
@@ -490,6 +540,8 @@ def _html_to_png(src: str, dst: Path, method: str, width: Optional[int], dpi: in
     else:
         msg = f"Unknown HTML render method: {method}"
         raise ValueError(msg)
+
+
 def cmd_html_to_png(args: argparse.Namespace) -> int:
     if not _HAS_WEASYPRINT:
         LOG.error("weasyprint is required for html-to-png (pip install weasyprint)")
@@ -526,6 +578,8 @@ def cmd_html_to_png(args: argparse.Namespace) -> int:
             fail += 1
     LOG.info("Done. %d succeeded, %d failed.", ok, fail)
     return 0 if fail == 0 else 1
+
+
 def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("paths", nargs="*", help="Files or directories (default: current directory).")
     p.add_argument(
@@ -556,6 +610,8 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         help="Worker processes (0 = CPU count, 1 = sequential).",
     )
     p.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="imgtool",
@@ -690,6 +746,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_html_to_png)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -699,6 +757,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if hasattr(args, "workers") and (args.workers is None or args.workers <= 0):
         try:
             import os
+
             args.workers = os.cpu_count() or 1
         except Exception:
             args.workers = 1
@@ -708,5 +767,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         LOG.warning("Interrupted.")
         return 130
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

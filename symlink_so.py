@@ -4,6 +4,8 @@ import glob
 import os
 from pathlib import Path
 import re
+
+
 def should_skip(so_path):
     if so_path.is_symlink():
         return True
@@ -11,12 +13,16 @@ def should_skip(so_path):
     if name.endswith((".0", ".1")):
         return True
     return bool(re.search(r"\.so\.\d+(\.\d+)+$", name))
+
+
 def get_base_name(so_path):
     name = so_path.name
     match = re.match(r"(.+\.so)(?:\.\d+)*$", name)
     if match:
         return match.group(1)
     return name
+
+
 def create_symlinks():
     lib_dir = Path.home() / ".local" / "lib"
     if not lib_dir.exists():
@@ -52,5 +58,7 @@ def create_symlinks():
                 print(f"Created: {symlink_path} -> {relative_path}")
             except Exception as e:
                 print(f"Failed to create {symlink_path}: {e}")
+
+
 if __name__ == "__main__":
     create_symlinks()

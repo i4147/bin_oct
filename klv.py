@@ -9,6 +9,7 @@ import re
 import shutil
 import sys
 from typing import Any, Optional, Sequence
+
 logger = logging.getLogger(__name__)
 ANDROID_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+)-py3-none-android_24_([^/]+)\.whl")
 LINUX_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+(?:\.\d+)?)-cp\d+-cp\d+-linux_([^/]+)\.whl")
@@ -18,6 +19,8 @@ NORMALIZE_RE = re.compile(r"[-_.]+")
 DEFAULT_ARM_KEYWORDS = ["armeabi_v7a", "armv7l", "linux_arm", "arm"]
 DEFAULT_WORKERS = 8
 DEFAULT_BATCH_SIZE = 100
+
+
 def fallback_version_key(v: str) -> tuple[Any, ...]:
     parts = re.split(r"[._-]", v)
     key: list[tuple[Any, ...]] = []
@@ -32,9 +35,12 @@ def fallback_version_key(v: str) -> tuple[Any, ...]:
             else:
                 key.append((2, part, "", 0))
     return tuple(key)
+
+
 def compare_versions(a: str, b: str) -> int:
     try:
         from packaging.version import parse
+
         v1 = parse(a)
         v2 = parse(b)
         if v1 < v2:
@@ -56,6 +62,8 @@ def compare_versions(a: str, b: str) -> int:
         if a > b:
             return 1
         return 0
+
+
 def parse_wheel_or_metadata(name: str) -> Optional[tuple[str, str]]:
     if name.endswith(".whl"):
         stem = name[:-4]
@@ -83,6 +91,8 @@ def parse_wheel_or_metadata(name: str) -> Optional[tuple[str, str]]:
     if pkg_parts and ver_parts:
         return "-".join(pkg_parts), "-".join(ver_parts)
     return None
+
+
 def parse_targz(name: str) -> Optional[tuple[str, str]]:
     if name.endswith(".tar.gz"):
         stem = name[:-7]
@@ -99,13 +109,19 @@ def parse_targz(name: str) -> Optional[tuple[str, str]]:
             if pkg and ver:
                 return pkg, ver
     return None
+
+
 def parse_deb(name: str) -> Optional[tuple[str, str]]:
     parts = name.split("_")
     if len(parts) >= 2:
         return parts[0], parts[1]
     return None
+
+
 def normalize_package_name(name: str) -> str:
     return NORMALIZE_RE.sub("-", name).lower()
+
+
 def parse_metadata_filename(path: Path) -> tuple[str, str, Path]:
     stem = path.stem
     m = METADATA_RE.match(stem)
@@ -115,6 +131,8 @@ def parse_metadata_filename(path: Path) -> tuple[str, str, Path]:
     pkg = m.group(1).lower()
     ver = m.group(2).replace("_", ".")
     return pkg, ver, path
+
+
 def parse_url(url: str) -> Optional[tuple[str, str, tuple[int, ...], str, str]]:
     m = ANDROID_RE.search(url)
     if m:
@@ -131,6 +149,8 @@ def parse_url(url: str) -> Optional[tuple[str, str, tuple[int, ...], str, str]]:
         py = py_m.group(1) if py_m else "unknown"
         return pkg, py, ver, arch, url
     return None
+
+
 def extensions_for_type(file_type: str) -> tuple[str, ...]:
     if file_type == "wheel":
         return (".whl", ".metadata")
@@ -141,9 +161,13 @@ def extensions_for_type(file_type: str) -> tuple[str, ...]:
     if file_type == "all":
         return (".whl", ".metadata", ".deb", ".tar.gz", ".tgz")
     return (".whl", ".metadata")
+
+
 def find_files(directory: Path, extensions: Sequence[str], recursive: bool) -> list[Path]:
     iterator = directory.rglob("*") if recursive else directory.glob("*")
     return [p for p in iterator if p.is_file() and any(p.name.endswith(ext) for ext in extensions)]
+
+
 def process_clean_file(path: Path) -> Optional[tuple[str, str, Path]]:
     name = path.name
     parsed: Optional[tuple[str, str]] = None
@@ -157,6 +181,8 @@ def process_clean_file(path: Path) -> Optional[tuple[str, str, Path]]:
         pkg, ver = parsed
         return pkg, ver, path
     return None
+
+
 def process_clean_files(files: list[Path], workers: int) -> dict[str, list[tuple[str, Path]]]:
     if workers <= 1:
         results = [process_clean_file(f) for f in files]
@@ -169,6 +195,8 @@ def process_clean_files(files: list[Path], workers: int) -> dict[str, list[tuple
             pkg, ver, path = rec
             package_map[pkg].append((ver, path))
     return dict(package_map)
+
+
 def process_metadata_files(files: list[Path], workers: int) -> dict[str, list[tuple[str, Path]]]:
     if workers <= 1:
         results = [parse_metadata_filename(f) for f in files]
@@ -180,6 +208,8 @@ def process_metadata_files(files: list[Path], workers: int) -> dict[str, list[tu
         norm = normalize_package_name(pkg)
         package_map[norm].append((ver, path))
     return dict(package_map)
+
+
 def process_metadata_batches(files: list[Path], workers: int, batch_size: int) -> dict[str, list[tuple[str, Path]]]:
     batches = [files[i : i + batch_size] for i in range(0, len(files), batch_size)]
     all_map: dict[str, list[tuple[str, Path]]] = defaultdict(list)
@@ -188,6 +218,8 @@ def process_metadata_batches(files: list[Path], workers: int, batch_size: int) -
         for k, v in batch_map.items():
             all_map[k].extend(v)
     return dict(all_map)
+
+
 def find_latest_version(versions: list[tuple[str, Path]]) -> Optional[tuple[str, Path]]:
     if not versions:
         return None
@@ -196,6 +228,8 @@ def find_latest_version(versions: list[tuple[str, Path]]) -> Optional[tuple[str,
         if compare_versions(ver, best[0]) > 0:
             best = (ver, path)
     return best
+
+
 def remove_old_versions(
     package_map: dict[str, list[tuple[str, Path]]],
     dry_run: bool,
@@ -235,6 +269,8 @@ def remove_old_versions(
                     logger.error("  Error deleting %s: %s", path.name, e)
         kept += 1
     return deleted, kept
+
+
 def cmd_urls(args: argparse.Namespace) -> int:
     lines: list[str] = []
     if args.input:
@@ -292,6 +328,8 @@ def cmd_urls(args: argparse.Namespace) -> int:
         print("\n✓ Download script created: download_armv7.sh")
         print("  Run: chmod +x download_armv7.sh && ./download_armv7.sh")
     return 0
+
+
 def cmd_clean(args: argparse.Namespace) -> int:
     directory = Path(args.dir).resolve()
     if not directory.exists():
@@ -330,6 +368,8 @@ def cmd_clean(args: argparse.Namespace) -> int:
     else:
         print(f"Cleanup complete. Deleted {deleted} file(s), kept {kept} file(s).")
     return 0
+
+
 def cmd_metadata(args: argparse.Namespace) -> int:
     directory = Path(args.directory).resolve()
     if not directory.exists():
@@ -365,6 +405,8 @@ def cmd_metadata(args: argparse.Namespace) -> int:
     else:
         print("No duplicate versions found. All packages have single versions.")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Unified package/version cleanup and ARMv7 wheel URL filtering tool.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -403,10 +445,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_meta.add_argument("--verbose", action="store_true", help="Show detailed information")
     p_meta.set_defaults(func=cmd_metadata)
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     return args.func(args)
+
+
 if __name__ == "__main__":
     sys.exit(main())

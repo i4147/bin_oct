@@ -5,12 +5,17 @@ from pathlib import Path
 import shutil
 from typing import Final, NamedTuple
 from loguru import logger
+
 MAX_WORKERS: Final[int] = 8
 REPLACED_LOG_NAME: Final[str] = "replaced.txt"
 ERRORS_LOG_NAME: Final[str] = "errors.txt"
+
+
 class ProcessResult(NamedTuple):
     status: str
     msg: str
+
+
 def process_symlink(symlink_path: Path) -> ProcessResult | None:
     try:
         raw_target: Path = symlink_path.readlink()
@@ -38,6 +43,8 @@ def process_symlink(symlink_path: Path) -> ProcessResult | None:
             "error",
             f"Failed to process {symlink_path}: {e!s}",
         )
+
+
 def main() -> None:
     current_dir: Path = Path.cwd()
     replaced_log: Path = current_dir / REPLACED_LOG_NAME
@@ -72,5 +79,7 @@ def main() -> None:
             len(errors_list),
             ERRORS_LOG_NAME,
         )
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

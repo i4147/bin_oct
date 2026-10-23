@@ -2,6 +2,8 @@
 from __future__ import annotations
 import sys
 import regex as re
+
+
 def clean1(text: str) -> str:
     ansi_escape = re.compile(r"\x1b(\[[0-9;]*[mABCDEFGHJKSTfhilmnprsu]|\][^\x07]*\x07|[()][AB012])")
     content = ansi_escape.sub("", text)
@@ -14,6 +16,8 @@ def clean1(text: str) -> str:
     content = re.sub(r"\n{3,}", "\n\n", content)
     content = "\n".join(line.rstrip() for line in content.splitlines())
     return content.rstrip("\n") + "\n"
+
+
 def clean2(text: str) -> str:
     text = ANSI_RE.sub("", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
@@ -40,6 +44,8 @@ def clean2(text: str) -> str:
         text = "\n".join(p.strip() for p in parts if p.strip())
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text
+
+
 def clean_terminal_transcript(path):
     with open(path, encoding="utf-8", errors="replace") as f:
         content = f.read()
@@ -56,6 +62,8 @@ def clean_terminal_transcript(path):
     with open(path, "w", encoding="utf-8") as f:
         f.write(final)
     print(f"Cleaned: {path}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <transcript_file>")

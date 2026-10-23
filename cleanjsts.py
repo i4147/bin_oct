@@ -9,6 +9,7 @@ import tree_sitter
 from tree_sitter import Language, Parser
 import tree_sitter_javascript
 import tree_sitter_typescript
+
 MAX_WORKERS: Final[int] = 8
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")
 _JS_LANGUAGE: Final[Language] = Language(tree_sitter_javascript.language())
@@ -20,16 +21,22 @@ _LANGUAGE_BY_EXTENSION: Final[dict[str, Language]] = {
     ".ts": _TS_LANGUAGE,
     ".tsx": _TSX_LANGUAGE,
 }
+
+
 def _collect_comment_ranges(node: tree_sitter.Node, out: list[tuple[int, int]]) -> None:
     if node.type == "comment":
         out.append((node.start_byte, node.end_byte))
         return
     for child in node.children:
         _collect_comment_ranges(child, out)
+
+
 def _has_error(node: tree_sitter.Node) -> bool:
     if node.is_error or node.is_missing:
         return True
     return any(_has_error(child) for child in node.children)
+
+
 def _remove_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes:
     ranges.sort()
     parts: list[bytes] = []
@@ -41,6 +48,8 @@ def _remove_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes:
         prev = end
     parts.append(source[prev:])
     return b"".join(parts)
+
+
 def process_file(file_path: Path) -> str | None:
     try:
         language: Language | None = _LANGUAGE_BY_EXTENSION.get(file_path.suffix)
@@ -63,6 +72,8 @@ def process_file(file_path: Path) -> str | None:
         return None
     except Exception as e:
         return f"Error processing {file_path}: {e}"
+
+
 def _gather_files(paths: list[Path]) -> list[Path]:
     files: list[Path] = []
     for path in paths:
@@ -73,6 +84,8 @@ def _gather_files(paths: list[Path]) -> list[Path]:
             for ext in SUPPORTED_EXTENSIONS:
                 files.extend(path.rglob(f"*{ext}"))
     return files
+
+
 def main() -> None:
     if len(sys.argv) > 1:
         paths: list[Path] = [Path(arg) for arg in sys.argv[1:]]
@@ -90,5 +103,7 @@ def main() -> None:
             logger.error(error)
         sys.exit(1)
     logger.info("Processed {} file(s)", len(files_to_process))
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

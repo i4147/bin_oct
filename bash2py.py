@@ -5,12 +5,15 @@ from pathlib import Path
 import re
 import sys
 import tokenize
+
 HEREDOC_START_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^;\n]*?)"
     r"<<(?P<dash>-)?[ \t]*"
     r'(?P<quote>["\']?)(?P<delim>[A-Za-z_][A-Za-z0-9_]*)(?P=quote)[ \t]*$',
     re.MULTILINE,
 )
+
+
 def extract_python_heredocs(bash_text: str) -> list[str]:
     blocks: list[str] = []
     lines = bash_text.splitlines(keepends=True)
@@ -43,6 +46,8 @@ def extract_python_heredocs(bash_text: str) -> list[str]:
             blocks.append("".join(lines[i + 1 :]))
             i = n
     return blocks
+
+
 def format_python_code(code: str) -> str:
     if not code.endswith("\n"):
         code += "\n"
@@ -55,15 +60,18 @@ def format_python_code(code: str) -> str:
     at_line_start = True
     paren_depth = 0
     previous = None
+
     def append(text: str) -> None:
         nonlocal at_line_start
         if at_line_start:
             result.append("    " * indent_level)
             at_line_start = False
         result.append(text)
+
     def add_space() -> None:
         if result and not result[-1].endswith((" ", "\n")):
             result.append(" ")
+
     def newline() -> None:
         nonlocal at_line_start
         while result and result[-1] == " ":
@@ -71,6 +79,7 @@ def format_python_code(code: str) -> str:
         if result and not result[-1].endswith("\n"):
             result.append("\n")
         at_line_start = True
+
     for token in tokens:
         token_type = token.type
         text = token.string
@@ -181,6 +190,8 @@ def format_python_code(code: str) -> str:
             append(text)
         previous = token
     return "".join(result).rstrip() + "\n"
+
+
 def get_output_path(input_path: Path, idx: int, total: int) -> Path:
     stem = input_path.stem or "extracted"
     if total == 1:
@@ -197,6 +208,8 @@ def get_output_path(input_path: Path, idx: int, total: int) -> Path:
             output = Path.cwd() / f"{stem}_{idx}_{number}.py"
             number += 1
         return output
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: python script.py <bash_script_path>", file=sys.stderr)
@@ -223,5 +236,7 @@ def main() -> None:
     except Exception as error:
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
+
+
 if __name__ == "__main__":
     main()

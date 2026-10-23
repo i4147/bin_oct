@@ -10,6 +10,7 @@ import sys
 from typing import Iterable, Iterator, Optional
 import urllib.error
 import urllib.request
+
 try:
     STDLIB: set[str] = set(sys.stdlib_module_names)
 except AttributeError:
@@ -261,8 +262,12 @@ IGNORES_OFFLINE_FULL: set[str] = {
     "dist",
     ".eggs",
 }
+
+
 def _norm(name: str) -> str:
     return name.lower().replace("_", "-")
+
+
 def parse_imports_lines(lines: Iterable[str]) -> Iterator[str]:
     for raw in lines:
         line = raw.strip()
@@ -282,6 +287,8 @@ def parse_imports_lines(lines: Iterable[str]) -> Iterator[str]:
             name = parts[1].strip().split(".")[0]
             if name:
                 yield name
+
+
 def parse_imports_ast(source: str) -> set[str]:
     result: set[str] = set()
     try:
@@ -295,6 +302,8 @@ def parse_imports_ast(source: str) -> set[str]:
         elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
             result.add(node.module.split(".")[0])
     return result
+
+
 def read_notebook(path: str, encoding: str = "utf-8") -> str:
     with open(path, "r", encoding=encoding) as f:
         nb = json.load(f)
@@ -307,6 +316,8 @@ def read_notebook(path: str, encoding: str = "utf-8") -> str:
             chunks.append(src)
         chunks.append("\n")
     return "".join(chunks)
+
+
 def scan_project(
     root: str,
     encoding: str = "utf-8",
@@ -349,6 +360,8 @@ def scan_project(
                     ordered.append(name)
                     print(f"found {name} in {fname}")
     return ordered
+
+
 def load_offline_list(path: str) -> set[str]:
     result: set[str] = set()
     with open(path, "r", encoding="utf-8") as f:
@@ -358,6 +371,8 @@ def load_offline_list(path: str) -> set[str]:
                 continue
             result.add(_norm(line))
     return result
+
+
 def get_installed(pip_cmd: str = "pip3") -> tuple[list[str], set[str]]:
     try:
         proc = subprocess.Popen(
@@ -379,6 +394,8 @@ def get_installed(pip_cmd: str = "pip3") -> tuple[list[str], set[str]]:
         name = line.split("==")[0].split("@")[0].strip()
         names.add(_norm(name))
     return raw, names
+
+
 def detect_local_modules(root: str) -> set[str]:
     local: set[str] = set()
     root_abs = os.path.realpath(root)
@@ -401,6 +418,8 @@ def detect_local_modules(root: str) -> set[str]:
     if base and base not in {".", "/"}:
         local.add(_norm(base))
     return local
+
+
 def detect_local_names(root: str) -> set[str]:
     names: set[str] = set()
     for dirpath, _dirnames, filenames in os.walk(root):
@@ -409,11 +428,15 @@ def detect_local_names(root: str) -> set[str]:
             if os.path.splitext(fname)[1] in (".py", ".pyw"):
                 names.add(os.path.splitext(fname)[0])
     return names
+
+
 def map_imports_to_pypi(names: Iterable[str]) -> list[str]:
     mapped: set[str] = set()
     for name in names:
         mapped.add(IMPORT_MAPPING.get(name, name))
     return sorted(mapped, key=lambda s: s.lower())
+
+
 def get_local_packages(encoding: str = "utf-8") -> dict[str, dict[str, Optional[str]]]:
     result: dict[str, dict[str, Optional[str]]] = {}
     skip = {"tests", "_tests", "egg", "EGG", "info"}
@@ -438,6 +461,8 @@ def get_local_packages(encoding: str = "utf-8") -> dict[str, dict[str, Optional[
                     if name and name not in skip and parts[0] not in skip:
                         result[name.lower()] = {"name": parts[0], "version": version}
     return result
+
+
 def match_local(
     pkgs: Iterable[str],
     local: dict[str, dict[str, Optional[str]]],
@@ -455,6 +480,8 @@ def match_local(
             seen.add(key)
             uniq.append(entry)
     return uniq
+
+
 def resolve_from_pypi(
     names: list[str],
     server: str = "https://pypi.python.org/pypi/",
@@ -483,6 +510,8 @@ def resolve_from_pypi(
         results.append({"name": name, "version": version})
         print(f'[i] Resolved "{name}" -> {name}:{version}')
     return results
+
+
 def parse_requirements_file(path: str) -> list[dict[str, Optional[str]]]:
     try:
         with open(path, "r") as f:
@@ -509,11 +538,15 @@ def parse_requirements_file(path: str) -> list[dict[str, Optional[str]]]:
             if entry not in result:
                 result.append(entry)
     return result
+
+
 def show_diff(req_file: str, resolved: list[dict[str, Optional[str]]]) -> None:
     existing = {r["name"] for r in parse_requirements_file(req_file)}
     imported = {r["name"] for r in resolved}
     diff = existing - imported
     print(f"[i] The following modules are in {req_file} but do not seem to be imported: {','.join(diff)}")
+
+
 def clean_file(req_file: str, resolved: list[dict[str, Optional[str]]]) -> None:
     existing = {r["name"] for r in parse_requirements_file(req_file)}
     imported = {r["name"] for r in resolved}
@@ -532,6 +565,8 @@ def clean_file(req_file: str, resolved: list[dict[str, Optional[str]]]) -> None:
         print(f"[!] Failed on file: {req_file}")
         raise
     print(f"[i] Successfully cleaned up requirements in {req_file}")
+
+
 def write_requirements(
     out_path: str,
     pkgs: list[dict[str, Optional[str]]],
@@ -549,6 +584,8 @@ def write_requirements(
     else:
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(content)
+
+
 def run_offline(args: argparse.Namespace) -> int:
     path = args.path or os.curdir
     known = load_offline_list(args.pypi_list)
@@ -604,6 +641,8 @@ def run_offline(args: argparse.Namespace) -> int:
             f.write("\n".join(final) + "\n")
     print(f"\n[\u2713] Wrote {len(final)} packages to {out_path}")
     return 0
+
+
 def run_online(args: argparse.Namespace) -> int:
     path = os.path.abspath(args.path or os.curdir)
     imports = scan_project(
@@ -661,6 +700,8 @@ def run_online(args: argparse.Namespace) -> int:
         write_requirements(out_path, resolved, delim)
         print(f"[i] Successfully saved requirements file in {out_path}")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
@@ -735,6 +776,8 @@ def build_parser() -> argparse.ArgumentParser:
     on.add_argument("--debug", action="store_true")
     on.set_defaults(func=run_online)
     return parser
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -742,5 +785,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return args.func(args)
     except KeyboardInterrupt:
         return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

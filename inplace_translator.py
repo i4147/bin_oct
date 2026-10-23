@@ -5,6 +5,7 @@ import glob
 import os
 from pathlib import Path
 import sys
+
 try:
     from openai import OpenAI
 except ImportError:
@@ -14,6 +15,8 @@ try:
     from google.genai import types
 except ImportError:
     genai = None
+
+
 def load_env_file(env_path):
     if not env_path.exists():
         return
@@ -26,6 +29,8 @@ def load_env_file(env_path):
             key = key.strip()
             val = val.strip().strip("'\"")
             os.environ[key] = val
+
+
 class UniversalTranslator:
     def __init__(self):
         home_env = Path.home() / ".env"
@@ -38,8 +43,10 @@ class UniversalTranslator:
             self.openai_client = OpenAI(api_key=self.openai_key)
         elif self.gemini_key and genai:
             self.gemini_client = genai.Client(api_key=self.gemini_key)
+
     def is_configured(self):
         return self.openai_client is not None or self.gemini_client is not None
+
     def translate_text(self, text, target_lang="English"):
         if not text.strip():
             return text
@@ -83,6 +90,8 @@ class UniversalTranslator:
                 print(f"❌ Gemini translation error: {e}", file=sys.stderr)
         msg = "No operational translation client or fallback API routes available."
         raise RuntimeError(msg)
+
+
 def process_file(file_path, translator, target_lang):
     print(f"📄 Processing: {file_path}...")
     try:
@@ -97,6 +106,8 @@ def process_file(file_path, translator, target_lang):
         print(f"   ✅ Done.")
     except Exception as e:
         print(f"   ❌ Error processing {file_path}: {e}", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Inplace file translator using ChatGPT (with Gemini fallback).")
     parser.add_argument(
@@ -139,5 +150,7 @@ def main():
     print(f"Found {len(files_to_translate)} target file(s) for inplace translation.")
     for path in files_to_translate:
         process_file(path, translator, args.lang)
+
+
 if __name__ == "__main__":
     main()

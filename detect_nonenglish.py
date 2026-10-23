@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import sys
 from typing import Optional, Sequence
+
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".txt",
     ".csv",
@@ -84,12 +85,16 @@ DEFAULT_WORKERS = 8
 DEFAULT_MIN_CONFIDENCE = 0.5
 SAMPLE_CHARS = 10_000
 MIN_LINE_LEN = 3
+
+
 @dataclass
 class LineFinding:
     line_num: int
     text: str
     lang: str
     confidence: float
+
+
 @dataclass
 class FileResult:
     path: str
@@ -97,15 +102,23 @@ class FileResult:
     confidence: float = 0.0
     non_english_lines: list[LineFinding] = field(default_factory=list)
     error: Optional[str] = None
+
+
 class Backend:
     name: str = "base"
+
     def detect(self, text: str) -> tuple[str, float, bool]:
         raise NotImplementedError
+
+
 class Gcld3Backend(Backend):
     name = "gcld3"
+
     def __init__(self) -> None:
         import gcld3
+
         self._det = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=10_000)
+
     def detect(self, text: str) -> tuple[str, float, bool]:
         if not text or not text.strip():
             return "und", 0.0, False
@@ -118,11 +131,16 @@ class Gcld3Backend(Backend):
             float(r.probability or 0.0),
             bool(r.is_reliable),
         )
+
+
 class Pycld2Backend(Backend):
     name = "pycld2"
+
     def __init__(self) -> None:
         import pycld2 as cld2
+
         self._cld2 = cld2
+
     def detect(self, text: str) -> tuple[str, float, bool]:
         if not text or not text.strip():
             return "un", 0.0, False
@@ -134,12 +152,17 @@ class Pycld2Backend(Backend):
             return "un", 0.0, False
         _name, code, _lang, conf = details[0]
         return (code or "un").lower(), float(conf or 0.0) / 100.0, bool(reliable)
+
+
 class LangdetectBackend(Backend):
     name = "langdetect"
+
     def __init__(self) -> None:
         from langdetect import DetectorFactory, detect_langs
+
         DetectorFactory.seed = 0
         self._detect_langs = detect_langs
+
     def detect(self, text: str) -> tuple[str, float, bool]:
         if not text or len(text.strip()) < 3:
             return "und", 0.0, False
@@ -151,11 +174,16 @@ class LangdetectBackend(Backend):
             return "und", 0.0, False
         top = langs[0]
         return top.lang, float(top.prob), True
+
+
 class LinguaBackend(Backend):
     name = "lingua"
+
     def __init__(self) -> None:
         from lingua import LanguageDetectorBuilder
+
         self._det = LanguageDetectorBuilder.from_all_languages().build()
+
     def detect(self, text: str) -> tuple[str, float, bool]:
         if not text or len(text.strip()) < 3:
             return "und", 0.0, False
@@ -169,11 +197,16 @@ class LinguaBackend(Backend):
         iso = getattr(top.language, "iso_code_639_1", None)
         code = iso.name.lower() if iso is not None else "und"
         return code, float(top.value), True
+
+
 class FastLangdetectBackend(Backend):
     name = "fast_langdetect"
+
     def __init__(self) -> None:
         from fast_langdetect import detect
+
         self._detect = detect
+
     def detect(self, text: str) -> tuple[str, float, bool]:
         if not text or not text.strip():
             return "und", 0.0, False
@@ -192,6 +225,8 @@ class FastLangdetectBackend(Backend):
             float(r.get("score", 0.0)),
             True,
         )
+
+
 BACKEND_REGISTRY: dict[str, type[Backend]] = {
     Gcld3Backend.name: Gcld3Backend,
     Pycld2Backend.name: Pycld2Backend,
@@ -200,12 +235,16 @@ BACKEND_REGISTRY: dict[str, type[Backend]] = {
     FastLangdetectBackend.name: FastLangdetectBackend,
 }
 _BACKEND_CACHE: dict[str, Backend] = {}
+
+
 def _get_backend(name: str) -> Backend:
     backend = _BACKEND_CACHE.get(name)
     if backend is None:
         backend = BACKEND_REGISTRY[name]()
         _BACKEND_CACHE[name] = backend
     return backend
+
+
 def _backend_status(name: str) -> str:
     try:
         BACKEND_REGISTRY[name]()
@@ -214,6 +253,8 @@ def _backend_status(name: str) -> str:
         return "not installed"
     except Exception as exc:
         return f"error: {exc}"
+
+
 def _is_finding(lang: str, confidence: float, min_confidence: float) -> bool:
     if not lang:
         return False
@@ -221,6 +262,8 @@ def _is_finding(lang: str, confidence: float, min_confidence: float) -> bool:
     if base in ("en", "und", "un", "unknown"):
         return False
     return confidence >= min_confidence
+
+
 def _read_text(path: Path) -> Optional[str]:
     for enc in ("utf-8", "latin-1", "cp1252"):
         try:
@@ -230,6 +273,8 @@ def _read_text(path: Path) -> Optional[str]:
         except OSError:
             return None
     return None
+
+
 def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
     path_str, backend_name, detailed, min_conf, max_bytes = task
     path = Path(path_str)
@@ -280,6 +325,8 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
         result.language = lang
         result.confidence = conf
     return result
+
+
 def _discover_files(
     paths: Sequence[str],
     extensions: set[str],
@@ -307,6 +354,8 @@ def _discover_files(
                 continue
             found.add(candidate.resolve())
     return sorted(found)
+
+
 def _build_report(
     backend_name: str,
     paths: Sequence[str],
@@ -328,6 +377,8 @@ def _build_report(
         "results": [asdict(r) for r in results],
         "errors": [{"path": r.path, "error": r.error} for r in errors],
     }
+
+
 def _write_text_report(output_path: Path, report: dict) -> None:
     bar = "=" * 60
     with output_path.open("w", encoding="utf-8") as fh:
@@ -365,9 +416,13 @@ def _write_text_report(output_path: Path, report: dict) -> None:
             fh.write(f"{bar}\n")
             for e in errors:
                 fh.write(f"  {e['path']}: {e['error']}\n")
+
+
 def _write_json_report(output_path: Path, report: dict) -> None:
     with output_path.open("w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2, ensure_ascii=False)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="detect_nonenglish.py",
@@ -448,6 +503,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="List available backends and exit.",
     )
     return parser
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -539,5 +596,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"Report written to: {output_path.resolve()}")
     print(bar)
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

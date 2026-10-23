@@ -2,6 +2,8 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
+
+
 def main() -> int:
     if len(sys.argv) < 3:
         print(
@@ -42,5 +44,7 @@ Usage: {sys.argv[0]} <filename> <start_line> [end_line]""",
         return 1
     print(f"Saved to {outname}")
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

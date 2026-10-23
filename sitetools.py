@@ -14,21 +14,30 @@ import re
 import shutil
 import sys
 import tarfile
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s", stream=sys.stderr)
 logger = logging.getLogger(__name__)
+
+
 def cprint(text: str, color: str = "reset") -> None:
     colors = {"cyan": "\033[96m", "green": "\033[92m", "yellow": "\033[93m", "red": "\033[91m", "reset": "\033[0m"}
     print(f"{colors.get(color, '')}{text}{colors['reset']}")
+
+
 def fsz(size: int) -> str:
     for unit in ["B", "KB", "MB", "GB"]:
         if size < 1024.0:
             return f"{size:.2f} {unit}"
         size /= 1024.0
     return f"{size:.2f} TB"
+
+
 def gsz(path: Path) -> int:
     if path.is_file():
         return path.stat().st_size
     return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+
+
 def unique_path(path: Path) -> Path:
     if not path.exists():
         return path
@@ -41,6 +50,8 @@ def unique_path(path: Path) -> Path:
         if not new_path.exists():
             return new_path
         counter += 1
+
+
 def get_files(path: Path, ext=None):
     if path.is_file():
         yield path
@@ -48,6 +59,8 @@ def get_files(path: Path, ext=None):
     for p in path.rglob("*"):
         if p.is_file() and (ext is None or p.suffix in ext):
             yield p
+
+
 def cmd_clean_meta(args):
     img_regex = re.compile(r"^\s*(\.\.\s+image::|:target:|:alt:)", re.IGNORECASE)
     paths = [Path(p) for p in args.paths] if args.paths else []
@@ -107,6 +120,8 @@ def cmd_clean_meta(args):
         cprint(f" {a}", "cyan")
     final_sz = gsz(target_dir)
     print(f"space saved : {fsz(initial_sz - final_sz)}")
+
+
 def cmd_clean_record(args):
     allowed = {"METADATA", "RECORD", "WHEEL", "entry_points.txt", "top_level.txt"}
     for e in Path().glob("*.dist-info"):
@@ -127,6 +142,8 @@ def cmd_clean_record(args):
                 f_list.append(k)
             d_file.write_text("\n".join(f_list) + ("\n" if f_list else ""), encoding="utf-8")
             print(f"record file in {d_file.parent.name} cleaned.")
+
+
 def cmd_clean_distinfo(args):
     py_ver = f"{sys.version_info.major}.{sys.version_info.minor}"
     default_sp = Path(f"/data/data/com.termux/files/usr/lib/python{py_ver}/site-packages")
@@ -140,6 +157,8 @@ def cmd_clean_distinfo(args):
                 if k.name in {"top_level.txt", "entry_points.txt"}:
                     cprint(f"{h} removed", "cyan")
                     shutil.rmtree(h)
+
+
 def cmd_fix_targz(args):
     target_dir = Path(args.directory)
     for l in target_dir.glob("*.tar.gz"):
@@ -155,6 +174,8 @@ def cmd_fix_targz(args):
                     print(f"RENAMED:{l.name}->{new_name}")
         else:
             print(f"ERROR: Could not determine name/version for {l.name}")
+
+
 def _extract_targz_meta(l):
     with tarfile.open(l, "r:gz") as w:
         members = w.getmembers()
@@ -187,6 +208,8 @@ def _extract_targz_meta(l):
         if s_match:
             return s_match.group(1), s_match.group(2)
     return None, None
+
+
 def cmd_rename_json(args):
     for b in [f for f in os.listdir(".") if f.endswith(".json")]:
         try:
@@ -211,6 +234,8 @@ def cmd_rename_json(args):
             print(f"Error:{b} is not a valid JSON file.")
         except Exception as e:
             print(f"An error occurred with {b}:{e}")
+
+
 def cmd_rename_meta(args):
     target_c = Path(args.target_dir)
     target_c.mkdir(parents=True, exist_ok=True)
@@ -218,6 +243,8 @@ def cmd_rename_meta(args):
     for o_file in get_files(p_path):
         if o_file.is_file() and (o_file.name == "METADATA" or o_file.suffix == ".metadata"):
             _process_meta_file(o_file, target_c)
+
+
 def _process_meta_file(o, c):
     if not o.exists():
         return
@@ -252,14 +279,19 @@ def _process_meta_file(o, c):
         cprint(f"no data{o}", "cyan")
         with contextlib.suppress(EOFError):
             input("what u wanna do?")
+
+
 def cmd_clean_pyc_record(args):
     import sysconfig
+
     lib_path = Path(sysconfig.get_paths()["purelib"])
     for e in lib_path.glob("*.dist-info"):
         h_file = e / "RECORD"
         if h_file.exists():
             _clean_record_pyc_file(h_file)
     print("Removed .pyc references from all RECORD files.")
+
+
 def _clean_record_pyc_file(d):
     i_lines = d.read_text(encoding="utf-8").splitlines()
     g_list = [k for k in i_lines if ".pyc" not in k]
@@ -268,6 +300,8 @@ def _clean_record_pyc_file(d):
     g_list = [k for k in g_list if "license.txt" not in k.lower()]
     d.write_text("\n".join(g_list) + "\n", encoding="utf-8")
     print(f"{d.name} in {d.parent.name} cleaned")
+
+
 def cmd_update_record(args):
     m_path = Path.cwd()
     h_dirs = sorted(m_path.glob("*.dist-info"))
@@ -283,6 +317,8 @@ def cmd_update_record(args):
             else:
                 g_cnt += 1
     print(f"Summary:{e_cnt} updated,{g_cnt} failed")
+
+
 def _hash_file(q: Path) -> str:
     r = hashlib.sha256()
     try:
@@ -295,12 +331,16 @@ def _hash_file(q: Path) -> str:
     except Exception:
         logger.exception("Error hashing %s", q)
         return ""
+
+
 def _get_size(q: Path) -> int:
     try:
         return q.stat().st_size
     except Exception:
         logger.exception("Error getting size for %s", q)
         return 0
+
+
 def _parse_record_line(line: str):
     parts = line.strip().split(",")
     if len(parts) == 3:
@@ -308,9 +348,13 @@ def _parse_record_line(line: str):
     if len(parts) == 2:
         return parts[0], parts[1], ""
     return parts[0], "", ""
+
+
 def _is_valid_record_file(q: Path) -> bool:
     p_name = q.name
     return not (q.suffix == ".pyc" or p_name.endswith(".pyc") or p_name in ("direct_url.json", "INSTALLER", "RECORD"))
+
+
 def _update_single_record(i_dir: Path) -> bool:
     p_file = i_dir / "RECORD"
     print(f"Processing {p_file}")
@@ -371,6 +415,8 @@ def _update_single_record(i_dir: Path) -> bool:
     except Exception:
         logger.exception("Failed to update self-hash for %s", p_file)
     return True
+
+
 def cmd_clean_urecord(args):
     site_dirs = args.site_dir or _get_default_site_packages()
     if not site_dirs:
@@ -383,8 +429,11 @@ def cmd_clean_urecord(args):
     print("Summary:")
     print(f"  Total RECORD files found: {total_found}")
     print(f"  Files that would be/are updated: {total_updated}")
+
+
 def _get_default_site_packages():
     import site
+
     try:
         paths = site.getsitepackages()
         valid = [Path(p) for p in paths if p is not None and Path(p).exists()]
@@ -395,6 +444,8 @@ def _get_default_site_packages():
         return valid
     except Exception:
         return []
+
+
 def _clean_single_urecord_file(k_path: Path, verbose: bool) -> bool:
     try:
         with k_path.open(encoding="utf-8") as f:
@@ -418,6 +469,8 @@ def _clean_single_urecord_file(k_path: Path, verbose: bool) -> bool:
     except Exception as e:
         print(f"  Error processing {k_path}:{e}", file=sys.stderr)
         return False
+
+
 def _scan_and_clean_urecord(site_dirs, verbose):
     total_found = 0
     total_updated = 0
@@ -433,6 +486,8 @@ def _scan_and_clean_urecord(site_dirs, verbose):
                 if _clean_single_urecord_file(y_path, verbose):
                     total_updated += 1
     return total_found, total_updated
+
+
 def main():
     parser = argparse.ArgumentParser(description="Unified Python Package and Metadata Manager")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -472,5 +527,7 @@ def main():
         cmd_update_record(args)
     elif args.command == "clean-urecord":
         cmd_clean_urecord(args)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 import subprocess
 import sys
+
+
 def check_msgunfmt() -> bool:
     try:
         subprocess.run(
@@ -15,6 +17,8 @@ def check_msgunfmt() -> bool:
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
+
 def mo_to_po(mo_path, remove_orig: bool = True, verbose: bool = False) -> bool:
     mo_path = Path(mo_path)
     if not mo_path.exists():
@@ -53,8 +57,11 @@ def mo_to_po(mo_path, remove_orig: bool = True, verbose: bool = False) -> bool:
         if po_path.exists():
             po_path.unlink()
         return False
+
+
 def mo_to_po_python_only(mo_path, remove_orig: bool = True, verbose: bool = False) -> bool:
     import struct
+
     mo_path = Path(mo_path)
     po_path = mo_path.with_suffix(".po")
     try:
@@ -113,6 +120,8 @@ def mo_to_po_python_only(mo_path, remove_orig: bool = True, verbose: bool = Fals
         if po_path.exists():
             po_path.unlink()
         return False
+
+
 def process_directory(
     directory: Path,
     recursive: bool = False,
@@ -140,6 +149,8 @@ def process_directory(
         else:
             fail_count += 1
     print(f"\nSummary: {success_count} converted, {fail_count} failed")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Convert .mo files to .po files in-place",
@@ -185,5 +196,7 @@ Examples:
     else:
         print(f"Error: Path does not exist: {path}")
         sys.exit(1)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

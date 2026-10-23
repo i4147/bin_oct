@@ -14,6 +14,7 @@ from typing import Any, Callable, Optional, Sequence
 import urllib.error
 import urllib.request
 import zipfile
+
 try:
     from rapidfuzz import fuzz as _rapidfuzz
 except ImportError:
@@ -38,11 +39,15 @@ _ANSI = {
     "reset": "\033[0m",
 }
 _COLOR_ON = sys.stdout.isatty()
+
+
 def cprint(msg: str, color: str = "white", end: str = "\n") -> None:
     if _COLOR_ON and color in _ANSI:
         print(f"{_ANSI[color]}{msg}{_ANSI['reset']}", end=end)
     else:
         print(msg, end=end)
+
+
 def human_size(n: float) -> str:
     sign = "-" if n < 0 else ""
     n = abs(float(n))
@@ -51,6 +56,8 @@ def human_size(n: float) -> str:
             return f"{sign}{n:.2f}{unit}"
         n /= 1024
     return f"{sign}{n:.2f}TB"
+
+
 def path_size(p: Path | str) -> int:
     p = Path(p)
     if p.is_file():
@@ -58,6 +65,8 @@ def path_size(p: Path | str) -> int:
     if not p.is_dir():
         return 0
     return sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+
+
 def find_files(root: Path | str, extensions: Sequence[str]) -> list[Path]:
     root = Path(root)
     exts = tuple(e.lower() for e in extensions)
@@ -66,6 +75,8 @@ def find_files(root: Path | str, extensions: Sequence[str]) -> list[Path]:
     if not root.is_dir():
         return []
     return sorted(f for f in root.rglob("*") if f.is_file() and any(f.name.lower().endswith(e) for e in exts))
+
+
 def run_cmd(
     cmd: Sequence[str],
     show_output: bool = False,
@@ -89,6 +100,8 @@ def run_cmd(
         return 127, "", str(exc)
     except subprocess.TimeoutExpired as exc:
         return 124, "", f"timeout: {exc}"
+
+
 def read_package_list(path: Path | str) -> list[str]:
     path = Path(path).expanduser()
     try:
@@ -105,8 +118,12 @@ def read_package_list(path: Path | str) -> list[str]:
         if line and not line.startswith("#"):
             out.append(line)
     return out
+
+
 def default_workers() -> int:
     return min(max(1, (os.cpu_count() or 2) // 2), 8)
+
+
 def parallel_map(
     func: Callable[[Any], Any],
     items: Sequence[Any],
@@ -118,11 +135,16 @@ def parallel_map(
         return [func(i) for i in items]
     with ProcessPoolExecutor(max_workers=workers) as ex:
         return list(ex.map(func, items))
+
+
 def fuzzy_partial_ratio(query: str, candidate: str) -> float:
     if _rapidfuzz is not None:
         return float(_rapidfuzz.partial_ratio(query, candidate))
     import difflib
+
     return difflib.SequenceMatcher(None, query, candidate).ratio() * 100.0
+
+
 def confirm(prompt: str) -> bool:
     try:
         answer = input(prompt).strip().lower()
@@ -130,8 +152,12 @@ def confirm(prompt: str) -> bool:
         print()
         return False
     return answer in {"y", "yes"}
+
+
 def pip_run_subprocess(args: Sequence[str], timeout: Optional[int] = None) -> tuple[int, str, str]:
     return run_cmd([sys.executable, "-m", "pip", *args], timeout=timeout)
+
+
 def pip_run_api(args: Sequence[str]) -> tuple[int, str, str]:
     try:
         from pip._internal.cli.main import main as pip_main
@@ -148,10 +174,14 @@ def pip_run_api(args: Sequence[str]) -> tuple[int, str, str]:
     finally:
         sys.stdout, sys.stderr = old_out, old_err
     return int(rc), out_buf.getvalue(), err_buf.getvalue()
+
+
 def pip_run(args: Sequence[str], backend: str, timeout: Optional[int] = None) -> tuple[int, str, str]:
     if backend == "api":
         return pip_run_api(args)
     return pip_run_subprocess(args, timeout=timeout)
+
+
 def _apt_list_all() -> list[str]:
     rc, out, _ = run_cmd(["pkg", "list-all"])
     if rc == 0:
@@ -167,11 +197,15 @@ def _apt_list_all() -> list[str]:
     if rc == 0:
         return [line.split("/")[0] for line in out.split("\n") if "/" in line]
     return []
+
+
 def _wildcard_to_regex(pattern: str) -> re.Pattern[str]:
     return re.compile(
         pattern.replace("*", ".*").replace("?", "."),
         re.IGNORECASE,
     )
+
+
 def cmd_apt_install(args: argparse.Namespace) -> int:
     print(f"Searching for packages matching '{args.pattern}'...")
     rx = _wildcard_to_regex(args.pattern)
@@ -191,6 +225,8 @@ def cmd_apt_install(args: argparse.Namespace) -> int:
         return 0
     cprint(f"\n✗ Installation failed: {err}", "red")
     return 1
+
+
 def _apt_reinstall_one(pkg: str) -> bool:
     print(f"Reinstalling: {pkg}")
     rc, _, err = run_cmd(["apt", "install", "--reinstall", "-y", pkg], show_output=True)
@@ -201,6 +237,8 @@ def _apt_reinstall_one(pkg: str) -> bool:
     if err:
         print(f"  Error: {err.strip()}")
     return False
+
+
 def cmd_apt_reinstall(args: argparse.Namespace) -> int:
     path = Path(args.file).expanduser()
     print(f"Reading packages from: {path}")
@@ -222,8 +260,12 @@ def cmd_apt_reinstall(args: argparse.Namespace) -> int:
     print("-" * 40)
     print(f"Summary: {ok} successful, {fail} failed")
     return 0 if fail == 0 else 1
+
+
 _PLATFORM_EXTS = (".so", ".pyd", ".dll", ".dylib")
 _WHEEL_META_SUFFIXES = (".dist-info/WHEEL", ".dist-info/METADATA")
+
+
 def is_pure_wheel(path: Path) -> bool:
     if "-none-any" in path.stem:
         return True
@@ -249,6 +291,8 @@ def is_pure_wheel(path: Path) -> bool:
         return True
     except (zipfile.BadZipFile, OSError):
         return False
+
+
 def describe_wheel(path: Path) -> str:
     stem = path.stem
     parts = stem.split("-")
@@ -263,6 +307,8 @@ def describe_wheel(path: Path) -> str:
             return f"Linux-specific ({tag})"
         return f"Platform-specific ({tag})"
     return "Unknown"
+
+
 def _install_one_wheel(arg: tuple[str, bool]) -> tuple[str, bool, str]:
     path_str, is_pure = arg
     cmd = [sys.executable, "-m", "pip", "install"]
@@ -274,6 +320,8 @@ def _install_one_wheel(arg: tuple[str, bool]) -> tuple[str, bool, str]:
     if rc == 0:
         return path_str, True, f"✓ {Path(path_str).name} -> {target}"
     return path_str, False, f"✗ {Path(path_str).name}: {err.strip() or 'pip failed'}"
+
+
 def cmd_wheel_install(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     wheels = sorted(root.glob("*.whl"))
@@ -309,6 +357,8 @@ def cmd_wheel_install(args: argparse.Namespace) -> int:
             print(f"  {m}")
     print("Done!")
     return 0 if not failures else 1
+
+
 def cmd_wheel_install_local(args: argparse.Namespace) -> int:
     pip_args: list[str] = ["install"]
     if not args.no_user:
@@ -329,6 +379,8 @@ def cmd_wheel_install_local(args: argparse.Namespace) -> int:
                 fp.unlink()
                 print(f"{fp.name} removed")
     return 0
+
+
 DEFAULT_WHEEL_EXCLUDES: tuple[str, ...] = (
     "pybind11",
     "dh",
@@ -343,6 +395,8 @@ DEFAULT_WHEEL_EXCLUDES: tuple[str, ...] = (
     "setuptools_scm",
     "setuptools_rust",
 )
+
+
 def _installed_versions() -> dict[str, Any]:
     out: dict[str, Any] = {}
     for dist in _im.distributions():
@@ -354,6 +408,8 @@ def _installed_versions() -> dict[str, Any]:
         if name and Version is not None:
             out[name.lower().replace("-", "_")] = Version(ver)
     return out
+
+
 def cmd_wheel_move_installed(args: argparse.Namespace) -> int:
     if parse_wheel_filename is None or Version is None:
         print("Error: 'packaging' is required for this subcommand.", file=sys.stderr)
@@ -393,6 +449,8 @@ def cmd_wheel_move_installed(args: argparse.Namespace) -> int:
                 print(f"[DIFF VERSION] {dist} (installed {current}, wheel {ver}) -> removed")
     print(f"\nDone. Removed {removed} wheel(s).")
     return 0
+
+
 def _list_installed_packages() -> list[str]:
     rc, out, _ = run_cmd([sys.executable, "-m", "pip", "freeze"])
     if rc != 0:
@@ -404,6 +462,8 @@ def _list_installed_packages() -> list[str]:
             continue
         pkgs.append(re.split(r"[=<>!]", line, 1)[0].strip())
     return pkgs
+
+
 def _cached_installed_list(cache_file: Path, max_age: float) -> list[str]:
     if cache_file.exists() and (time.time() - cache_file.stat().st_mtime) < max_age:
         return [l.strip() for l in cache_file.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -411,6 +471,8 @@ def _cached_installed_list(cache_file: Path, max_age: float) -> list[str]:
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_text("\n".join(fresh), encoding="utf-8")
     return fresh
+
+
 def cmd_pip_uninstall(args: argparse.Namespace) -> int:
     pattern = args.pattern.lower()
     cache = Path(args.cache_file)
@@ -439,8 +501,12 @@ def cmd_pip_uninstall(args: argparse.Namespace) -> int:
         else:
             print(f"Skipped {pkg} (not installed or error): {err.strip()}")
     return 0
+
+
 _FLAKE8_GROUPS = ("flake8.extension", "flake8.report")
 _FLAKE8_NAME_RX = re.compile(r"^flake8-", re.IGNORECASE)
+
+
 def _find_flake8_plugins() -> list[str]:
     found: set[str] = set()
     for dist in _im.distributions():
@@ -458,6 +524,8 @@ def _find_flake8_plugins() -> list[str]:
         if _FLAKE8_NAME_RX.match(name):
             found.add(name)
     return sorted(found)
+
+
 def cmd_pip_uninstall_flake8(args: argparse.Namespace) -> int:
     print("Scanning for flake8 plugins...")
     plugins = _find_flake8_plugins()
@@ -485,6 +553,8 @@ def cmd_pip_uninstall_flake8(args: argparse.Namespace) -> int:
             cprint(f"✗ Failed to uninstall {p}: {err}", "red")
             fail += 1
     return 0 if fail == 0 else 1
+
+
 def _reinstall_one_subprocess(
     arg: tuple[str, str, int, bool, bool],
 ) -> tuple[str, bool, str]:
@@ -506,6 +576,8 @@ def _reinstall_one_subprocess(
         return pkg, True, "OK"
     err = (proc.stderr or proc.stdout).strip()
     return pkg, False, err[:200]
+
+
 def cmd_pip_reinstall_list(args: argparse.Namespace) -> int:
     path = Path(args.file).expanduser()
     print(f"Reading packages from: {path}")
@@ -544,6 +616,8 @@ def cmd_pip_reinstall_list(args: argparse.Namespace) -> int:
         for p in failed_names:
             print(f"- {p}")
     return 0 if fail == 0 else 1
+
+
 def _pypi_exists(name: str, timeout: int = 5) -> bool:
     url = f"https://pypi.org/pypi/{name}/json"
     req = urllib.request.Request(url, headers={"User-Agent": "pkgtool/1.0"})
@@ -552,6 +626,8 @@ def _pypi_exists(name: str, timeout: int = 5) -> bool:
             return resp.status == 200
     except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
         return False
+
+
 def _reinstall_pypi_one(arg: tuple[str, bool, bool]) -> tuple[str, bool]:
     pkg, with_deps, skip_check = arg
     if not skip_check and not _pypi_exists(pkg):
@@ -568,6 +644,8 @@ def _reinstall_pypi_one(arg: tuple[str, bool, bool]) -> tuple[str, bool]:
         return pkg, True
     print(f"[FAIL] Could not reinstall {pkg}")
     return pkg, False
+
+
 def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
     path = Path(args.file).expanduser()
     if not path.exists():
@@ -591,6 +669,8 @@ def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
         path.write_text(text + ("\n" if text else ""), encoding="utf-8")
     print(f"Done! Remaining in {path.name}: {len(remaining)}")
     return 0
+
+
 def _dist_entry_point_groups(dist: Any) -> set[str]:
     try:
         eps = dist.entry_points
@@ -607,6 +687,8 @@ def _dist_entry_point_groups(dist: Any) -> set[str]:
     else:
         groups.update(getattr(ep, "group", "") for ep in eps)
     return {g for g in groups if g}
+
+
 def _packages_with_entry_points(excludes: set[str]) -> dict[str, dict[str, Any]]:
     found: dict[str, dict[str, Any]] = {}
     for dist in _im.distributions():
@@ -625,6 +707,8 @@ def _packages_with_entry_points(excludes: set[str]) -> dict[str, dict[str, Any]]
             "groups": sorted(groups),
         }
     return found
+
+
 def _reinstall_one_api(arg: tuple[str, bool]) -> tuple[str, bool, str]:
     pkg, with_deps = arg
     cmd = ["install", "--force-reinstall", "--no-cache-dir"]
@@ -635,6 +719,8 @@ def _reinstall_one_api(arg: tuple[str, bool]) -> tuple[str, bool, str]:
     if rc == 0:
         return pkg, True, "Successfully reinstalled"
     return pkg, False, (err or "pip error").strip()[:200]
+
+
 def _prompt_reinstall(pkg: str, info: dict[str, Any], with_deps: bool) -> str:
     print("\n" + "=" * 40)
     print(f"📦 Package: {pkg}")
@@ -664,6 +750,8 @@ def _prompt_reinstall(pkg: str, info: dict[str, Any], with_deps: bool) -> str:
             print("  ? — this help")
             continue
         print("Invalid response.")
+
+
 def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
     excludes = set(args.exclude)
     all_pkgs = _packages_with_entry_points(excludes)
@@ -721,6 +809,8 @@ def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
         for name, msg in failures:
             print(f"  ✗ {name}: {msg[:100]}")
     return 0 if not failures else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pkgtool.py",
@@ -892,6 +982,8 @@ def build_parser() -> argparse.ArgumentParser:
     j.add_argument("-v", "--verbose", action="store_true", help="More verbose output.")
     j.set_defaults(func=cmd_pip_reinstall_entry_points)
     return p
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -903,5 +995,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

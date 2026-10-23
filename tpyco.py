@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from loguru import logger
+
 WORKER_COUNT: Final[int] = 8
 DEFAULT_CHUNK_SIZE: Final[int] = 2500
 DEFAULT_DELAY: Final[float] = 1.5
@@ -73,16 +74,22 @@ _WORKER_TIMEOUT: float
 _WORKER_DELAY: float
 _WORKER_NEXT_REQUEST: Value
 _WORKER_RATE_LOCK: Lock
+
+
 @dataclass(frozen=True)
 class TextEdit:
     start: int
     end: int
     replacement: str
+
+
 @dataclass(frozen=True)
 class TranslationJob:
     text: str
     start: int
     end: int
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Translate detectable non-English Python comments and strings.")
     parser.add_argument(
@@ -132,6 +139,8 @@ def parse_arguments() -> argparse.Namespace:
         help="Validate and report changes without writing files.",
     )
     return parser.parse_args()
+
+
 def discover_python_files(inputs: list[Path]) -> list[Path]:
     roots = inputs or [Path.cwd()]
     discovered: set[Path] = set()
@@ -149,6 +158,8 @@ def discover_python_files(inputs: list[Path]) -> list[Path]:
             msg = f"Input path is neither a regular file nor directory: {path}"
             raise OSError(msg)
     return sorted(discovered)
+
+
 def contains_probable_non_english(text: str) -> bool:
     if not text.strip():
         return False
@@ -156,6 +167,8 @@ def contains_probable_non_english(text: str) -> bool:
         return True
     normalized = f" {text.casefold()} "
     return any(marker in normalized for marker in _NON_ENGLISH_WORDS)
+
+
 def split_text(text: str, limit: int) -> list[tuple[int, int, str]]:
     if limit <= 0:
         msg = "chunk size must be greater than zero"
@@ -173,8 +186,12 @@ def split_text(text: str, limit: int) -> list[tuple[int, int, str]]:
             chunks.append((start, end, piece))
         start = end
     return chunks
+
+
 def position_to_offset(line_offsets: list[int], row: int, column: int) -> int:
     return line_offsets[row - 1] + column
+
+
 def token_payload_bounds(token_text: str, token_start: int) -> tuple[int, int] | None:
     match = re.match(r"(?is)^([rubf]*)(\"\"\"|'''|\"|')", token_text)
     if match is None:
@@ -189,6 +206,8 @@ def token_payload_bounds(token_text: str, token_start: int) -> tuple[int, int] |
     if payload_end < payload_start:
         return None
     return token_start + payload_start, token_start + payload_end
+
+
 def extract_jobs(
     source: str,
     chunk_size: int,
@@ -251,6 +270,8 @@ def extract_jobs(
                         )
                     )
     return jobs
+
+
 def acquire_rate_slot() -> None:
     while True:
         with _WORKER_RATE_LOCK:
@@ -260,12 +281,16 @@ def acquire_rate_slot() -> None:
                 _WORKER_NEXT_REQUEST.value = now + _WORKER_DELAY
                 return
         time.sleep(min(wait_for, 0.25))
+
+
 def http_json_request(
     request: Request,
     timeout: float,
 ) -> object:
     with urlopen(request, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
 def translate_google(text: str, timeout: float) -> str:
     query = urlencode({
         "client": "gtx",
@@ -287,6 +312,8 @@ def translate_google(text: str, timeout: float) -> str:
         msg = "Google returned empty translation"
         raise ValueError(msg)
     return translated
+
+
 def translate_libretranslate(text: str, url: str, timeout: float) -> str:
     body = json.dumps({"q": text, "source": "auto", "target": "en", "format": "text"}).encode("utf-8")
     request = Request(
@@ -308,6 +335,8 @@ def translate_libretranslate(text: str, url: str, timeout: float) -> str:
         msg = "LibreTranslate returned empty translation"
         raise ValueError(msg)
     return translated
+
+
 def translate_with_retry(text: str) -> str:
     last_error: Exception | None = None
     for attempt in range(MAX_RETRIES):
@@ -329,6 +358,8 @@ def translate_with_retry(text: str) -> str:
             time.sleep(wait)
     msg = f"Translation failed after {MAX_RETRIES} attempts: {last_error}"
     raise RuntimeError(msg)
+
+
 def worker_initializer(
     backend: str,
     libre_url: str,
@@ -349,8 +380,12 @@ def worker_initializer(
     _WORKER_DELAY = delay
     _WORKER_NEXT_REQUEST = next_request
     _WORKER_RATE_LOCK = rate_lock
+
+
 def translate_job(job: TranslationJob) -> tuple[TranslationJob, str]:
     return job, translate_with_retry(job.text)
+
+
 def apply_translations(
     source: str,
     results: list[tuple[TranslationJob, str]],
@@ -366,6 +401,8 @@ def apply_translations(
         output = output[: edit.start] + edit.replacement + output[edit.end :]
         previous_start = edit.start
     return output
+
+
 def validate_python(source: str, path: Path) -> None:
     try:
         ast.parse(source, filename=str(path))
@@ -373,6 +410,8 @@ def validate_python(source: str, path: Path) -> None:
     except SyntaxError as error:
         msg = f"Translated source is invalid for {path}: {error}"
         raise SyntaxError(msg) from error
+
+
 def atomic_write(path: Path, content: str, encoding: str) -> None:
     original_mode = path.stat().st_mode
     with NamedTemporaryFile(
@@ -393,6 +432,8 @@ def atomic_write(path: Path, content: str, encoding: str) -> None:
     except Exception:
         temporary_path.unlink(missing_ok=True)
         raise
+
+
 def process_file(
     path: Path,
     pool: Pool,
@@ -420,6 +461,8 @@ def process_file(
         atomic_write(path, translated_source, encoding)
         logger.success("Updated {}", path)
     return True
+
+
 def main() -> int:
     args = parse_arguments()
     if args.chunk_size <= 0:
@@ -478,6 +521,8 @@ def main() -> int:
         logger.error("One or more files failed; no failure was silently ignored")
         return 1
     return 0
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main())

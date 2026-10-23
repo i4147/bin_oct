@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
-
 from __future__ import annotations
 import argparse
 import os
@@ -9,11 +7,9 @@ from queue import Queue
 import sys
 import threading
 from typing import Optional
-
 import cv2
 from PIL import Image
 import pytesseract
-
 
 _ANSI = {"cyan": "\033[36m", "blue": "\033[34m", "reset": "\033[0m"}
 

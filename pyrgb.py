@@ -4,6 +4,7 @@ import select
 import sys
 import termios
 import tty
+
 RESET = "\033[0m"
 SEQ_MAP = {
     b"\x1b[5~": "pgup",
@@ -19,6 +20,8 @@ SEQ_MAP = {
 # Plus 2 spaces gap between cells -> pitch 17.
 CELL_W = 15
 CELL_PITCH = 17
+
+
 # ---- arg parsing ----
 def parse_args(argv):
     demo = False
@@ -62,6 +65,8 @@ def parse_args(argv):
         if not 0 <= v <= 255:
             sys.exit(f"error: {name}={v} out of range 0-255")
     return {"demo": False, "rgb": (r, g, b)}
+
+
 def print_usage():
     print("usage: rgb.py R G B           show one color")
     print("       rgb.py -d [--step N]    browse all colors page by page")
@@ -80,6 +85,8 @@ def print_usage():
     print("  b / space      previous / next page")
     print("  g / G          first / last page")
     print("  q / Esc        quit")
+
+
 # ---- terminal size / layout ----
 def get_terminal_size():
     try:
@@ -87,12 +94,16 @@ def get_terminal_size():
         return sz.columns, sz.lines
     except OSError:
         return 80, 24
+
+
 def compute_layout():
     """Return (cols_per_row, page_size). Everything fits the screen."""
     term_w, term_h = get_terminal_size()
     cols = max(1, term_w // CELL_PITCH)
     rows = max(1, term_h - 4)  # header (1) + blank (1) + footer (2)
     return cols, cols * rows
+
+
 # ---- single color ----
 def show_color(r, g, b):
     hexcode = f"#{r:02x}{g:02x}{b:02x}"
@@ -107,15 +118,21 @@ def show_color(r, g, b):
     print(f"  {bg}{text}    {hexcode}    {RESET}  labeled block")
     print(f"  {fg}████████████████████{RESET}  foreground text")
     print()
+
+
 # ---- demo mode ----
 def get_values(step):
     vals = list(range(0, 256, step))
     if vals[-1] != 255:
         vals.append(255)
     return vals
+
+
 def color_at(idx, vals):
     n = len(vals)
     return vals[idx // (n * n)], vals[(idx // n) % n], vals[idx % n]
+
+
 def render_page(vals, page, total_pages, step, cols, page_size):
     n = len(vals)
     total = n**3
@@ -142,6 +159,8 @@ def render_page(vals, page, total_pages, step, cols, page_size):
     out.append("\033[2m[PgUp/PgDn] page  [↑/↓] page  [g] first  [G] last  [q] quit\033[0m")
     sys.stdout.write("\n".join(out) + "\n")
     sys.stdout.flush()
+
+
 def read_key(fd):
     ch = os.read(fd, 1)
     if ch == b"\x1b":
@@ -168,6 +187,8 @@ def read_key(fd):
         return ch.decode("utf-8")
     except UnicodeDecodeError:
         return "unknown"
+
+
 def run_demo(step):
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         sys.exit("error: demo mode needs an interactive terminal")
@@ -211,6 +232,8 @@ def run_demo(step):
         sys.stdout.write("\033[?25h\033[?1049l")
         sys.stdout.flush()
         termios.tcsetattr(fd, termios.TCSADRAIN, old_attrs)
+
+
 # ---- entry ----
 def main(argv):
     opts = parse_args(argv)
@@ -218,6 +241,8 @@ def main(argv):
         run_demo(opts["step"])
     else:
         show_color(*opts["rgb"])
+
+
 if __name__ == "__main__":
     try:
         main(sys.argv[1:])

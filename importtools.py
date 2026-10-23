@@ -13,6 +13,7 @@ import sys
 import textwrap
 import traceback
 from typing import Any, Iterable, Iterator
+
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8
 DEFAULT_PY2_THRESHOLD: int = 85
@@ -425,15 +426,23 @@ STDLIB_MEMBER_MAP: dict[str, set[str]] = {
     "glob": {"glob"},
     "time": {"time", "sleep", "ctime", "localtime", "gmtime", "strftime", "strptime"},
 }
+
+
 def _make_logger():
     try:
         from loguru import logger as _log
+
         return _log
     except ImportError:
         import logging
+
         logging.basicConfig(level=logging.INFO, format="%(message)s")
         return logging.getLogger("import_tools")
+
+
 LOG = _make_logger()
+
+
 def iter_py_files(root: Path, *, skip_dirs: Iterable[str] = SKIP_DIRS) -> Iterator[Path]:
     root = Path(root)
     skip = set(skip_dirs)
@@ -447,23 +456,32 @@ def iter_py_files(root: Path, *, skip_dirs: Iterable[str] = SKIP_DIRS) -> Iterat
             p = Path(dirpath) / name
             if p.suffix == ".py" and not p.is_symlink():
                 yield p
+
+
 def parse_file(path: Path) -> ast.Module | None:
     try:
         src = path.read_text(encoding="utf-8", errors="ignore")
         return ast.parse(src, filename=str(path))
     except (SyntaxError, UnicodeDecodeError, OSError):
         return None
+
+
 def read_source(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return None
+
+
 def write_lines(path: Path, lines: list[str]) -> None:
     path.write_text("\n".join(lines), encoding="utf-8")
+
+
 def collect_names_from_tree(tree: ast.Module) -> tuple[set[str], set[str], set[str]]:
     imported: set[str] = set()
     assigned: set[str] = set()
     used: set[str] = set()
+
     def add_target(t: ast.AST) -> None:
         if isinstance(t, ast.Name):
             assigned.add(t.id)
@@ -471,6 +489,7 @@ def collect_names_from_tree(tree: ast.Module) -> tuple[set[str], set[str], set[s
             for elt in ast.walk(t):
                 if isinstance(elt, ast.Name):
                     assigned.add(elt.id)
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for n in node.names:
@@ -501,6 +520,8 @@ def collect_names_from_tree(tree: ast.Module) -> tuple[set[str], set[str], set[s
         elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
             used.add(node.value.id)
     return imported, assigned, used
+
+
 def top_import_block_end(lines: list[str]) -> int:
     end = 0
     in_doc = False
@@ -525,6 +546,8 @@ def top_import_block_end(lines: list[str]) -> int:
             continue
         break
     return end
+
+
 def insert_imports(path: Path, imports: list[str]) -> bool:
     src = read_source(path)
     if src is None:
@@ -535,11 +558,15 @@ def insert_imports(path: Path, imports: list[str]) -> bool:
     new = "\n".join(lines[:pos] + [imp.rstrip("\n") for imp in imports] + lines[pos:])
     path.write_text(new, encoding="utf-8")
     return True
+
+
 def rel(path: Path, root: Path) -> str:
     try:
         return str(path.relative_to(root))
     except ValueError:
         return str(path)
+
+
 def _detect_missing(path: Path, strategy: str) -> list[str]:
     tree = parse_file(path)
     if tree is None:
@@ -578,13 +605,19 @@ def _detect_missing(path: Path, strategy: str) -> list[str]:
             seen.add(s)
             out.append(s)
     return out
+
+
 def _fix_missing(path: Path, missing: list[str]) -> bool:
     if not missing:
         return False
     return insert_imports(path, missing)
+
+
 def _worker_check_missing(args: tuple[Path, str]) -> tuple[Path, list[str]]:
     path, strategy = args
     return path, _detect_missing(path, strategy)
+
+
 def cmd_check_missing(ns: argparse.Namespace) -> int:
     root: Path = ns.directory.resolve()
     if not root.is_dir():
@@ -617,6 +650,8 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
     if ns.autofix:
         print(f"Files fixed: {fixed}")
     return 1 if total and not ns.autofix else 0
+
+
 def _position_basic(path: Path) -> list[str]:
     src = read_source(path)
     if src is None:
@@ -635,13 +670,18 @@ def _position_basic(path: Path) -> list[str]:
             continue
         seen_non_import = True
     return offenders
+
+
 class _ParentMapper(ast.NodeVisitor):
     def __init__(self) -> None:
         self.parents: dict[ast.AST, ast.AST] = {}
+
     def visit(self, node: ast.AST) -> Any:
         for child in ast.iter_child_nodes(node):
             self.parents[child] = node
         return super().visit(node)
+
+
 _NESTING_NODES = (
     ast.Try,
     ast.If,
@@ -655,6 +695,8 @@ _NESTING_NODES = (
     ast.AsyncFor,
     ast.While,
 )
+
+
 def _is_nested(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> bool:
     cur: ast.AST | None = node
     while cur in parents:
@@ -662,6 +704,8 @@ def _is_nested(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> bool:
         if isinstance(cur, _NESTING_NODES):
             return True
     return False
+
+
 def _position_deep(path: Path) -> list[tuple[int, int, str]]:
     src = read_source(path)
     if src is None:
@@ -686,6 +730,8 @@ def _position_deep(path: Path) -> list[tuple[int, int, str]]:
         text = "\n".join(lines[node.lineno - 1 : end])
         offenders.append((node.lineno, end, text))
     return offenders
+
+
 def _autofix_position(path: Path, offenders: list[tuple[int, int, str]]) -> bool:
     src = read_source(path)
     if src is None:
@@ -698,6 +744,8 @@ def _autofix_position(path: Path, offenders: list[tuple[int, int, str]]) -> bool
     new = lines[:pos] + imports_text + [""] + lines[pos:]
     path.write_text("\n".join(new), encoding="utf-8")
     return True
+
+
 def cmd_check_position(ns: argparse.Namespace) -> int:
     root: Path = ns.directory.resolve()
     if not root.exists():
@@ -741,6 +789,8 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
             out.write_text("No misplaced imports found!\n", encoding="utf-8")
         print(f"Report saved to: {out}")
     return 1 if offenders_files and not ns.autofix else 0
+
+
 def _add_import_to_file(path: Path, name: str, shebang: str) -> None:
     if not path.exists() or path.is_symlink():
         return
@@ -754,11 +804,15 @@ def _add_import_to_file(path: Path, name: str, shebang: str) -> None:
     else:
         new = [shebang, f"import {name}\n"] + lines
     path.write_text("".join(new), encoding="utf-8")
+
+
 def cmd_add_import(ns: argparse.Namespace) -> int:
     root: Path = ns.directory.resolve()
     for p in iter_py_files(root):
         _add_import_to_file(p, ns.name, ns.shebang)
     return 0
+
+
 def cmd_check_load(ns: argparse.Namespace) -> int:
     had_error = False
     for p in ns.files:
@@ -771,6 +825,8 @@ def cmd_check_load(ns: argparse.Namespace) -> int:
             traceback.print_exc()
             print()
     return 1 if had_error else 0
+
+
 def _cprint(text: str, color: str = "cyan", *, enabled: bool = True) -> None:
     if not enabled:
         print(text)
@@ -784,8 +840,12 @@ def _cprint(text: str, color: str = "cyan", *, enabled: bool = True) -> None:
     code = palette.get(color, "")
     reset = "\033[0m" if code else ""
     print(f"{code}{text}{reset}")
+
+
 def _should_skip(path: Path) -> bool:
     return any(part in SKIP_DIRS for part in path.parts)
+
+
 def cmd_find_py2(ns: argparse.Namespace) -> int:
     try:
         from rapidfuzz import fuzz
@@ -851,6 +911,8 @@ def cmd_find_py2(ns: argparse.Namespace) -> int:
                     )
                     break
     return 0
+
+
 def _extract_module_name(text: str) -> str:
     text = text.strip()
     if text.startswith("import "):
@@ -865,12 +927,15 @@ def _extract_module_name(text: str) -> str:
         if sep in name:
             name = name.split(sep)[0]
     return name.strip()
+
+
 class _ImportTransformer(ast.NodeTransformer):
     def __init__(self, tree: ast.Module) -> None:
         self.tree = tree
         self.module_to_names: dict[str, set[str]] = {}
         self.modified = False
         self._analyze()
+
     def _analyze(self) -> None:
         bare_modules: set[str] = set()
         for node in ast.walk(self.tree):
@@ -883,6 +948,7 @@ class _ImportTransformer(ast.NodeTransformer):
         for node in ast.walk(self.tree):
             if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id in bare_modules:
                 self.module_to_names.setdefault(node.value.id, set()).add(node.attr)
+
     def visit_Import(self, node: ast.Import) -> Any:
         new_nodes: list[ast.stmt] = []
         for alias in node.names:
@@ -901,11 +967,14 @@ class _ImportTransformer(ast.NodeTransformer):
         if not new_nodes:
             return None
         return new_nodes if len(new_nodes) > 1 else new_nodes[0]
+
     def visit_Attribute(self, node: ast.Attribute) -> Any:
         if isinstance(node.value, ast.Name) and node.value.id in self.module_to_names:
             self.modified = True
             return ast.copy_location(ast.Name(id=node.attr, ctx=node.ctx), node)
         return self.generic_visit(node)
+
+
 def cmd_transform(ns: argparse.Namespace) -> int:
     path = Path(ns.file)
     if not path.exists() or path.suffix != ".py":
@@ -929,6 +998,8 @@ def cmd_transform(ns: argparse.Namespace) -> int:
     else:
         print(f"No transformations needed for '{path}'.")
     return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="import_tools.py",
@@ -1002,9 +1073,13 @@ def build_parser() -> argparse.ArgumentParser:
     tr.add_argument("file")
     tr.set_defaults(func=cmd_transform)
     return p
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     ns = parser.parse_args(argv)
     return ns.func(ns)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
