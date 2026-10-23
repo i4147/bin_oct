@@ -6,9 +6,7 @@ import importlib.metadata
 import importlib.util
 from pathlib import Path
 import sys
-
 from dh import is_python_file
-
 
 PACKAGE_MAPPING = {
     "cv2": "opencv-python",

@@ -5,9 +5,7 @@ import os
 from pathlib import Path
 import stat
 import sys
-
 import sh
-
 
 COMPILERS = {
     ".c": ("clang", ("clang", "gcc")),

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import json
@@ -7,7 +6,6 @@ import operator
 from pathlib import Path
 import shutil
 import sys
-
 from dh import get_files
 import ssdeep
 

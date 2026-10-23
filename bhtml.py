@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -10,9 +9,7 @@ import shutil
 import subprocess
 import sys
 from typing import Iterable, Iterator
-
 from loguru import logger
-
 
 BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
 DEFAULT_SUFFIXES: tuple[str, ...] = (".html", ".htm", ".xhtml")

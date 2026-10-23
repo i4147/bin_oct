@@ -5,13 +5,11 @@ from multiprocessing.pool import Pool
 from pathlib import Path
 import sys
 from typing import Final
-
 from loguru import logger
 import tree_sitter
 from tree_sitter import Language, Parser
 import tree_sitter_javascript
 import tree_sitter_typescript
-
 
 MAX_WORKERS: Final[int] = 8
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")

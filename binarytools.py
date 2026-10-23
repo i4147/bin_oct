@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import concurrent.futures as _futures
@@ -12,7 +11,6 @@ import subprocess
 import sys
 import time
 from typing import Iterator, Optional, Sequence
-
 
 SKIP_DIR_NAMES = {
     ".git",

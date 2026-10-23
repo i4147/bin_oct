@@ -14,16 +14,14 @@ import sys
 import time
 from typing import TYPE_CHECKING
 import warnings
-
 from dh import DOC_TH1, DOC_TH2
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 FELO_CLI: Path = Path(environ.get("FELO_CLI", "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"))
 TIMEOUT: int = int(environ.get("FELO_TIMEOUT", "300"))
-MAX_SIZE: int = 70 * 1024
+MAX_SIZE: int = 80 * 1024
 MAX_ARG_BYTES: int = 120_000
 DEFAULT_LOG: str = "felo-docstrings.log"
 IGNORED_NAMES: frozenset[str] = frozenset({
@@ -33,7 +31,10 @@ IGNORED_NAMES: frozenset[str] = frozenset({
     "main.py",
     "test.py",
     "conf.py",
+    "const.p",
+    "constants.py",
     "tests.py",
+    "conftest.py",
 })
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -56,7 +57,6 @@ PROMPT_HEAD: str = (
     "generated prompt in English without explanations or preamble.\n\n<python_code>\n"
 )
 PROMPT_TAIL: str = "\n</python_code>\n"
-
 ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 FENCE_RE: re.Pattern[str] = re.compile(r"^\s*```.*$", re.MULTILINE)
 SHELL_RE: re.Pattern[str] = re.compile(r"^\s*(?:\$|>|>>>)\s.*$", re.MULTILINE)
@@ -77,6 +77,7 @@ REFUSAL_MARKERS: tuple[str, ...] = (
     "truncated",
     "cut off",
     "paste",
+    "No content in stream",
     "mid-line",
     "can't produce",
     "cannot produce",
@@ -394,7 +395,7 @@ async def run_all(paths: Sequence[Path], opts: Options) -> Counter[str]:
 def print_summary(stats: Counter[str]) -> None:
     print("\n--- Execution Summary ---")
     print(f"Successfully processed:     {stats['success']}")
-    print(f"Skipped (>30KB limit):      {stats['skipped_size']}")
+    print(f"Skipped (>50KB limit):      {stats['skipped_size']}")
     print(f"Skipped (docstring exists): {stats['skipped_docstring']}")
     print(f"Skipped (ignored filename): {stats['skipped_ignored']}")
     print(f"Skipped (empty file):       {stats['skipped_empty']}")

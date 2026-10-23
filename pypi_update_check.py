@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import importlib.metadata
@@ -15,10 +14,8 @@ import sys
 import sysconfig
 import time
 from typing import Any, Optional, Sequence
-
 from packaging import version
 import requests
-
 
 try:
     import pycurl

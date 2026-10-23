@@ -11,9 +11,7 @@ import shutil
 import sys
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
-
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

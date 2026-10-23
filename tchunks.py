@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -11,10 +10,8 @@ import sys
 import threading
 import time
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-
 
 if TYPE_CHECKING:
     from collections.abc import Callable

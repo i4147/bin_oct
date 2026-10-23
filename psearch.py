@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import json
 import sys
-
 import requests
 
 

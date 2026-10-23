@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import (
@@ -12,9 +11,7 @@ from pathlib import Path
 import shutil
 import tarfile
 from typing import Sequence
-
 import brotli
-
 
 try:
     from loguru import logger

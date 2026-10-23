@@ -10,9 +10,7 @@ import string
 import subprocess
 import sys
 
-
 TEXT1 = "Return full type-annotated code in one markdown block, no docstrings & no comments"
-
 USAGE = """\
 Usage: {prog} <path> [start [end]] [-m|--mangle | -x]
        {prog} <path> -s <line> [<line> ...] [-m|--mangle | -x]
@@ -25,7 +23,6 @@ Usage: {prog} <path> [start [end]] [-m|--mangle | -x]
              from a Python file using libcst (formatting preserved).
              Requires libcst; only applies to Python files.
 Without -m/-x, content is copied as-is."""
-
 RESERVED = set(dir(builtins)) | set(keyword.kwlist)
 SCOPE_NODES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 BLOCK_NODES = (
@@ -380,10 +377,8 @@ def build_payload(
             )
             return source
         return cleaned.rstrip("\n") + "\n\n" + TEXT1 + "\n"
-
     if not mangle:
         return source
-
     if ranged or is_python_file(path, source):
         compressed = compress_source(source)
         if compressed is not None:
@@ -397,7 +392,6 @@ def build_payload(
 
 def main(argv: list[str]) -> None:
     raw = argv[1:]
-
     mangle = False
     strip = False
     rest: list[str] = []
@@ -408,33 +402,25 @@ def main(argv: list[str]) -> None:
             strip = True
         else:
             rest.append(a)
-
     if mangle and strip:
         die("Error: -m/--mangle and -x are mutually exclusive.")
-
     args = [a for a in rest if a != "-s"]
     selective = len(args) != len(rest)
-
     if not args:
         die(USAGE.format(prog=Path(argv[0]).name))
-
     path = Path(args[0])
     if not path.is_file():
         die(f"Error: File not found at '{path}'")
-
     try:
         nums = [int(a) for a in args[1:]]
     except ValueError:
         die("Error: line numbers must be integers.")
-
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as e:
         die(f"Error reading '{path}': {e}")
-
     lines = text.splitlines(keepends=True)
     total = len(lines)
-
     if selective:
         if not nums:
             die("Error: -s needs at least one line number.")
@@ -454,10 +440,8 @@ def main(argv: list[str]) -> None:
         source, ranged = "".join(lines[start - 1 : end]), True
     else:
         die(USAGE.format(prog=Path(argv[0]).name))
-
     if not source:
         die("No content selected to copy.")
-
     payload = build_payload(path, source, ranged, mangle, strip)
     ok = send_to_clipboard(payload)
     status = "clipboard OK" if ok else "clipboard unavailable"

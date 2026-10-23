@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -12,7 +11,6 @@ import sys
 import tempfile
 import termios
 import tty
-
 
 RESET = "\x1b[0m"
 HOME = "\x1b[H"

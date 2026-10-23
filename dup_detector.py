@@ -10,7 +10,6 @@ import multiprocessing
 import os
 import sys
 
-
 try:
     from rapidfuzz import fuzz
     import ssdeep

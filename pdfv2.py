@@ -13,7 +13,6 @@ import tempfile
 import termios
 import tty
 
-
 RESET = "\x1b[0m"
 HOME = "\x1b[H"
 CLEAR = "\x1b[2J"

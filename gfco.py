@@ -8,7 +8,6 @@ from pathlib import Path
 import sys
 from typing import Optional
 
-
 try:
     from fontTools.ttLib import TTFont
 except ImportError:

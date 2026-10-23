@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
-
 from dh import get_files, mpf, unique_path
 from tree_sitter import Language, Parser
 import tree_sitter_python as tsp
-
 
 OUTPUT_DIR = Path.home() / "tmp" / "output"
 parser = Parser()

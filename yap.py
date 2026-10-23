@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 import argparse
 import ast
@@ -21,7 +22,7 @@ from time import perf_counter as pff
 import tokenize
 from typing import Any, Protocol, Sequence, runtime_checkable
 
-from dh import cprint, format_time, fsz, get_pyfiles
+from dh import cprint, format_time, fsz, get_pyfiles,atomic_write
 
 
 __version__ = "2.0.0"
@@ -213,18 +214,6 @@ class FileResult:
     size: int
 
 
-def _atomic_write(path: Path, data: bytes) -> None:
-    st = path.stat()
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=path.name + ".", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-        os.chmod(tmp, st.st_mode)
-        os.replace(tmp, path)
-    except Exception:
-        with contextlib.suppress(OSError):
-            os.unlink(tmp)
-        raise
 
 
 def _read_source(path: Path) -> tuple[str, str, str]:
@@ -297,7 +286,7 @@ def process_file(
                 if cfg.backup:
                     shutil.copy2(path, path.with_suffix(path.suffix + cfg.backup))
                 out = formatted if newline == "\n" else formatted.replace("\n", newline)
-                _atomic_write(path, out.encode(enc))
+                atomic_write(path, out.encode(enc))
                 if cfg.preserve_stat:
                     os.utime(path, (st.st_atime, st.st_mtime))
                 status = "changed"

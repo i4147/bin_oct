@@ -12,7 +12,6 @@ import sys
 import time
 from typing import Iterator, Optional, Sequence
 
-
 try:
     from tqdm import tqdm
 except Exception:

@@ -10,7 +10,6 @@ from pathlib import Path
 import sys
 from typing import Iterable, Iterator
 
-
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16
 DIGEST_BYTES = 16

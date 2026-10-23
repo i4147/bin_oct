@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any, Final
-
 
 SHEBANG_PATTERN: Final[re.Pattern[str]] = re.compile(r"^#!.*python[23]?(?:\.\d+)?(?:[ \t]+.*)?$", re.MULTILINE)
 PY_SHEBANG: Final[str] = "#!/data/data/com.termux/files/usr/bin/python"
@@ -51,7 +49,7 @@ def main() -> int:
     current_dir = Path.cwd()
     print(f"📁 Scanning directory: {current_dir}")
     print("-" * 40)
-    python_files = find_python_files(current_dir)
+    python_files = list(find_python_files(current_dir))
     if not python_files:
         print("No Python files found.")
         return 0

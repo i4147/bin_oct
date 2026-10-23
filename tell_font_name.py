@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
-
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.ttFont import TTFont
@@ -85,7 +83,7 @@ def process_file(fn: Path) -> int:
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
-    files = (
+    files = list(
         [Path(arg) for arg in args]
         if args
         else get_files(cwd, extensions=[".ttf", ".woff", ".woff2", ".bin", ".otf", ".eot"])

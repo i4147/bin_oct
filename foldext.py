@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import contextlib
 from pathlib import Path
 import shutil
-
 from dh import gsz
 
 
@@ -12,7 +10,7 @@ def folderize_by_extension(cwd: Path):
     root_path = Path(cwd)
     extension_stats = {}
     for path in root_path.rglob("*"):
-        if path.name == ".gitignore":
+        if path.name.startswith("."):
             continue
         if ".git" in path.parts:
             continue

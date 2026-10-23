@@ -4,7 +4,6 @@ from __future__ import annotations
 import os
 import subprocess
 
-
 NEW_USER = "i4147"
 IGNORE = {"cpython", "neovim-source", ".git"}
 

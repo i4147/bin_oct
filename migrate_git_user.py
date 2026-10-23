@@ -7,7 +7,6 @@ from pathlib import Path
 import re
 import subprocess
 
-
 OLD_USERNAME = "iho147"
 OLD_EMAIL = "isaacaunegh@gmail.com"
 NEW_USERNAME = "i4147"

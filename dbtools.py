@@ -22,7 +22,6 @@ import tempfile
 import traceback
 from typing import TYPE_CHECKING, Any
 
-
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 try:

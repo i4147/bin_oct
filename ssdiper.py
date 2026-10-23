@@ -5,20 +5,16 @@ import json
 import operator
 from pathlib import Path
 from typing import Callable, Optional
-
 from dh import get_files
-
 
 try:
     import tlsh
 except ImportError:
     tlsh = None
-
 try:
     import ssdeep
 except ImportError:
     ssdeep = None
-
 try:
     from sdhash import (
         compare as _sdhash_compare,
@@ -27,18 +23,14 @@ try:
 except ImportError:
     _sdhash_hash = None
     _sdhash_compare = None
-
 try:
     from simhash import Simhash
 except ImportError:
     Simhash = None
-
 try:
     from datasketch import MinHash
 except ImportError:
     MinHash = None
-
-
 TLSH_MIN_DATA_LENGTH = 50
 MINHASH_NUM_PERM = 128
 MINHASH_SHINGLE_SIZE = 5
@@ -214,8 +206,6 @@ def compare_simhash(hash1: str, hash2: str) -> int:
 
 HashFn = Callable[[Path], Optional[str]]
 CompareFn = Callable[[str, str], int]
-
-
 ALGORITHMS: dict[str, tuple[HashFn, CompareFn, Optional[object]]] = {
     "tlsh": (calculate_tlsh_hash, compare_tlsh, tlsh),
     "ssdeep": (calculate_ssdeep_hash, compare_ssdeep, ssdeep),
@@ -249,7 +239,6 @@ def compare_files(
         file_hash = calculate_hash(path, alg)
         if file_hash:
             file_hashes[str(path)] = file_hash
-
     similarities: list[dict[str, object]] = []
     cwd = Path.cwd()
     paths_list = list(file_hashes.keys())
@@ -269,7 +258,6 @@ def compare_files(
                     })
             except Exception as e:
                 print(f"Error comparing hashes for {path1_str} and {path2_str}: {e}")
-
     similarities.sort(key=operator.itemgetter("similarity_score"), reverse=True)
     return similarities
 
@@ -361,18 +349,16 @@ def main() -> None:
         "-a",
         "--alg",
         choices=list(ALGORITHMS.keys()),
-        default="tlsh",
+        default="ssdeep",
         help="Hashing algorithm to use (default: tlsh)",
     )
     args = parser.parse_args()
-
     _, _, module = ALGORITHMS[args.alg]
     if module is None:
         parser.error(
             f"{args.alg} is not installed. "
             f"Install it with `pip install {args.alg if args.alg != 'sdhash' else 'pysdhash'}`."
         )
-
     cwd = Path.cwd()
     MIN_SIMILARITY_THRESHOLD = 0
     OUTPUT_JSON_FILE = "simz.json"

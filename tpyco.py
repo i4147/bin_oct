@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -16,9 +15,7 @@ from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
-
 from loguru import logger
-
 
 WORKER_COUNT: Final[int] = 8
 DEFAULT_CHUNK_SIZE: Final[int] = 2500

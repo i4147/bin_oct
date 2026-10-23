@@ -7,9 +7,7 @@ from pathlib import Path
 import re
 import sys
 import time
-
 from dh import STDLIB
-
 
 PIP_JSON = Path("/sdcard/data/pip.json")
 DEFAULT_REPORT = Path("conflict_report.json")

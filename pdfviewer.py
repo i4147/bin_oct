@@ -10,7 +10,6 @@ import sys
 import termios
 import tty
 
-
 try:
     import fitz
 except ImportError:

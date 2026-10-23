@@ -6,10 +6,8 @@ from collections import Counter
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
-
 from dh import BIN_EXT
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

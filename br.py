@@ -13,9 +13,7 @@ import tarfile
 import tempfile
 import time
 from typing import Callable, Iterator, Optional, Sequence
-
 import brotli
-
 
 try:
     from rich import box
@@ -29,10 +27,8 @@ try:
 except ImportError:
     RICH_AVAILABLE = False
     print("💡 Tip: Install 'rich' for prettier output: pip install rich")
-
 DEFAULT_CHUNK_SIZE: int = 4 * 1024 * 1024
 MIN_CHUNK_SIZE: int = 64 * 1024
-
 EXCLUDED_EXTENSIONS: set[str] = {
     ".br",
     ".xz",
@@ -112,7 +108,6 @@ EXCLUDED_EXTENSIONS: set[str] = {
     ".vmdk",
     ".qcow2",
 }
-
 EXCLUDED_DIRS: set[str] = {
     ".git",
     ".svn",

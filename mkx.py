@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import re
 
-
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}
 SO_RE = re.compile(r".*\.so(?:\.\d+)*$")

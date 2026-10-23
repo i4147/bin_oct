@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import namedtuple
@@ -12,11 +11,9 @@ import subprocess
 import sys
 from traceback import print_exc
 from urllib.parse import urljoin
-
 from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
 import upyun
-
 
 SYSTEM = platform.system()
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".upimg_config.pkl")
@@ -108,7 +105,6 @@ def set_config():
     if SYSTEM == "Windows":
         try:
             import winreg
-
             import pythoncom
             from win32com.shell import shell
 

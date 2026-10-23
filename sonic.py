@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import Counter
@@ -13,9 +12,7 @@ import sys
 import tempfile
 import time
 from typing import TYPE_CHECKING
-
 from dh import fsz
-
 
 if TYPE_CHECKING:
     from collections.abc import Generator

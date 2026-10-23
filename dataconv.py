@@ -14,9 +14,7 @@ import re
 import sqlite3
 import sys
 from typing import Any, Callable, Optional
-
 from loguru import logger
-
 
 Tables = dict[str, list[dict[str, Any]]]
 MMAP_THRESHOLD = 5 * 1024 * 1024

@@ -7,7 +7,6 @@ from pathlib import Path
 import re
 from typing import Any, Sequence
 
-
 LOGGER = logging.getLogger(__name__)
 DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]
 DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"

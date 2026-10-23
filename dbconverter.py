@@ -7,9 +7,7 @@ from pathlib import Path
 import pickle
 import sqlite3
 import sys
-
 import pandas as pd
-
 
 SQLITE_MAGIC = b"SQLite format 3\x00"
 

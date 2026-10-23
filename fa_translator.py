@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
@@ -14,7 +13,6 @@ import subprocess
 import sys
 import time
 from typing import Any, Iterable, Optional, Self, Sequence
-
 
 try:
     from deep_translator import GoogleTranslator

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 from pathlib import Path
 import sys
@@ -58,7 +59,7 @@ def main():
     cwd = Path.cwd()
     before = gsz(cwd)
     args = sys.argv[1:]
-    files = [Path(p) for p in args] if args else get_files(cwd, ext=[".pdf"])
+    files = list([Path(p) for p in args] if args else get_files(cwd, ext=[".pdf"]))
     if len(files) == 1:
         process_file(files[0])
         sys.exit(0)

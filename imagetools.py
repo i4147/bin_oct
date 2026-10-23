@@ -8,7 +8,6 @@ from pathlib import Path
 import sys
 from typing import Iterable, Optional, Sequence
 
-
 try:
     from PIL import Image, UnidentifiedImageError
 

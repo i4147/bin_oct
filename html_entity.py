@@ -5,9 +5,7 @@ import multiprocessing as mp
 from pathlib import Path
 import re
 import sys
-
 from dh import get_nobinary
-
 
 HTML_ENTITIES = {
     "&lt;": "<",

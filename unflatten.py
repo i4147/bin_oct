@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -9,8 +8,6 @@ from pathlib import Path
 import re
 import sys
 
-
-# ----------------------------------------------------------------- lexer ---
 _S = (
     r'(?:"""(?:\\.|[^\\])*?"""'
     r"|'''(?:\\.|[^\\])*?'''"
@@ -31,7 +28,6 @@ TOKEN_RE = re.compile(
     ]),
     re.S,
 )
-
 OPEN, CLOSE = "([{", ")]}"
 COMPOUND = {"def", "class", "if", "elif", "else", "for", "while", "try", "except", "finally", "with", "async"}
 ALWAYS_START = {
@@ -64,7 +60,7 @@ CONT = {
     "finally": {"try", "except", "else"},
 }
 IFISH = {"if", "elif", "else", "except", "finally"}
-SCOPED = {"for", "with", "ndef"}  # blocks closed when their names stop being used
+SCOPED = {"for", "with", "ndef"}
 
 
 @dataclass
@@ -86,7 +82,6 @@ def lex(src: str) -> list[Tok]:
     return toks
 
 
-# ------------------------------------------------------- statement split ---
 @dataclass
 class Stmt:
     toks: list[Tok]
@@ -117,7 +112,6 @@ def operand_end(t: Tok) -> bool:
 
 
 def is_ternary_if(toks: list[Tok], i: int) -> bool:
-    """`x = a if b else c` (ternary) vs. `if cond:` (statement)."""
     d = 0
     for t in toks[i + 1 :]:
         if t.kind == "nl" and d == 0:
@@ -156,10 +150,10 @@ def begins_new(toks: list[Tok], i: int, cur: list[Tok], tern: int) -> bool:
     if t.kind == "number":
         return True
     if t.kind == "string":
-        return prev.kind != "string"  # adjacent strings = implicit concat
+        return prev.kind != "string"
     if t.kind == "op":
         if s in ("(", "["):
-            return t.start != prev.end  # "f(x)(y)" call vs "f(x) (y)" new stmt
+            return t.start != prev.end
         return s == "@"
     return False
 
@@ -210,7 +204,6 @@ def split_statements(toks: list[Tok]) -> list[Stmt]:
     return stmts
 
 
-# ------------------------------------------------------- name analysis ----
 def referenced(st: Stmt) -> set[str]:
     out, depth, tk = set(), 0, st.toks
     for i, t in enumerate(tk):
@@ -220,7 +213,7 @@ def referenced(st: Stmt) -> set[str]:
             if i and tk[i - 1].s == ".":
                 continue
             if depth > 0 and i + 1 < len(tk) and tk[i + 1].s == "=":
-                continue  # keyword argument name
+                continue
             out.add(t.s)
     return out
 
@@ -261,7 +254,6 @@ def header_names(st: Stmt) -> set[str]:
     return out
 
 
-# ---------------------------------------------------- indent rebuilding ----
 @dataclass
 class Frame:
     kind: str
@@ -331,7 +323,6 @@ def rebuild_python(source: str) -> str:
             elif prev == "str" and len(out) == 1:
                 ensure_blank(1)
         out.append("    " * indent + text)
-
         asg = assigned(st)
         for f in stack:
             f.body += 1
@@ -366,7 +357,6 @@ def polish(code: str, use_black: bool) -> str:
     return code
 
 
-# --------------------------------------------------------- shell layer -----
 HEREDOC_RE = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
 PY_CMD_RE = re.compile(r"\bpython[\d.]*\b")
 TARGET_RE = re.compile(r"(?:>>?|\btee(?:\s+-a)?)\s+(\S+)")
@@ -393,7 +383,6 @@ def convert(text: str, use_black: bool = True) -> tuple[str, list[tuple[str, str
         end = re.compile(r"(?<!\S)" + re.escape(tag) + r"(?!\S)").search(text, m.end())
         body = text[m.end() : end.start() if end else len(text)].strip()
         pos = end.end() if end else len(text)
-
         target = TARGET_RE.search(cmd)
         target = target.group(1) if target else None
         is_py = bool(PY_CMD_RE.search(cmd)) or bool(target and target.endswith(".py"))
@@ -415,10 +404,8 @@ def main() -> None:
     ap.add_argument("--extract", metavar="DIR", help="also write each heredoc body as a file")
     ap.add_argument("--no-black", action="store_true", help="skip black formatting")
     a = ap.parse_args()
-
     text = Path(a.input).read_text(encoding="utf-8") if a.input else sys.stdin.read()
     script, files = convert(text, not a.no_black)
-
     if a.output:
         Path(a.output).write_text(script, encoding="utf-8")
     else:

@@ -6,11 +6,9 @@ from pathlib import Path
 import shutil
 import subprocess
 from typing import TYPE_CHECKING, Final, Optional, Protocol
-
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from github.Repository import Repository

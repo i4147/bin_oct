@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -7,7 +6,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Optional
-
 
 WORKERS = 6
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"

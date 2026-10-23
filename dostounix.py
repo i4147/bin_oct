@@ -4,9 +4,7 @@ from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import sys
-
 from dh import is_binary, should_skip
-
 
 WORKERS = 8
 CHUNK_SIZE = 64

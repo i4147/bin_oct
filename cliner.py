@@ -4,9 +4,7 @@ from __future__ import annotations
 import mmap
 from pathlib import Path
 import re
-
 from dh import mpf
-
 
 LOG_EXT = ".log"
 MMAP_THRESHOLD = 1 * 1024 * 1024

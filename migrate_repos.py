@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import sys
 
-
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"
 DEFAULT_NEW_USERNAME = "i4147"

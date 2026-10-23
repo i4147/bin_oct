@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -20,10 +19,8 @@ import sys
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Sequence
 from urllib.parse import unquote, urljoin
 from urllib.request import Request, urlopen
-
 from loguru import logger
 from lxml import html as lh
-
 
 if TYPE_CHECKING:
     import os

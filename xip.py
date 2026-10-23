@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 from pathlib import Path
 import os
@@ -12,9 +13,6 @@ if __name__ == "__main__":
     token = os.environ.get("IPINFO_TOKEN")
     handler = ipinfo.getHandler(token)
     details = handler.getDetails()
-    print(type(details))
     print(f"ip: {cyan}{details.ip}{reset}")
     print(f"country: {cyan}{details.country}{reset}")
     print(f"city: {cyan}{details.city}{reset}")
-#    print(f"loc: {cyan}{details.loc}{reset}")
-#    print(f"hostname: {cyan}{details.hostname}{reset}")

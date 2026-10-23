@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -9,10 +8,8 @@ from pathlib import Path
 import re
 import sys
 import zipfile
-
 from fontTools.ttLib import TTFont
 from loguru import logger
-
 
 WORKERS: int = 8
 DEFAULT_OUTPUT_DIR: Path = Path("/sdcard/_static/fonts")

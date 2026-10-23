@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import argparse
@@ -11,7 +12,6 @@ import random
 import re
 import sys
 from typing import Callable, Iterable, Sequence
-
 
 __all__ = [
     "DEFAULT_METRICS",
@@ -48,7 +48,6 @@ __all__ = [
     "nysiis",
     "soundex",
 ]
-
 _WS_RE = re.compile(r"\s+")
 _PUNCT_RE = re.compile(r"[^\w\s]", re.UNICODE)
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
@@ -90,7 +89,6 @@ class SimilarityMetric(ABC):
 
     @abstractmethod
     def similarity(self, a: str, b: str) -> float: ...
-
     def distance(self, a: str, b: str) -> float:
         return 1.0 - self.similarity(a, b)
 
@@ -104,7 +102,6 @@ class SimilarityMetric(ABC):
 class EditDistanceMetric(SimilarityMetric):
     @abstractmethod
     def edit_distance(self, a: str, b: str) -> int: ...
-
     def similarity(self, a: str, b: str) -> float:
         if a == b:
             return 1.0
@@ -940,7 +937,6 @@ def align_lines(
             i += 1
             j += 1
             continue
-
         best: tuple[str, int] | None = None
         for di in range(1, min(window, n - i)):
             if _score(lines_a[i + di], lines_b[j]) >= threshold:
@@ -951,7 +947,6 @@ def align_lines(
                 if best is None or dj < best[1]:
                     best = ("insert", dj)
                 break
-
         if best is None:
             ops.append(DiffOp("replace", lines_a[i], lines_b[j], i, j, score))
             i += 1
@@ -964,14 +959,12 @@ def align_lines(
             for k in range(best[1]):
                 ops.append(DiffOp("insert", None, lines_b[j + k], -1, j + k, 0.0))
             j += best[1]
-
     while i < n:
         ops.append(DiffOp("delete", lines_a[i], None, i, -1, 0.0))
         i += 1
     while j < m:
         ops.append(DiffOp("insert", None, lines_b[j], -1, j, 0.0))
         j += 1
-
     return ops
 
 
@@ -1069,20 +1062,16 @@ class FileComparator:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="fuzzycmp", description="Fuzzy text comparison CLI")
     parser.add_argument("--version", action="version", version="fuzzycmp 1.0.0")
-
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_sim = sub.add_parser("similarity", help="Compare two strings with one metric")
     p_sim.add_argument("--metric", required=True, choices=sorted(DEFAULT_METRICS))
     p_sim.add_argument("--a", required=True)
     p_sim.add_argument("--b", required=True)
     p_sim.add_argument("--normalize", action="store_true")
-
     p_all = sub.add_parser("compare-all", help="Score two strings with every metric")
     p_all.add_argument("--a", required=True)
     p_all.add_argument("--b", required=True)
     p_all.add_argument("--normalize", action="store_true")
-
     p_best = sub.add_parser("best-match", help="Find the best candidate for a query")
     p_best.add_argument("--metric", required=True, choices=sorted(DEFAULT_METRICS))
     p_best.add_argument("--query", required=True)
@@ -1090,7 +1079,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_best.add_argument("--threshold", type=float, default=0.0)
     p_best.add_argument("--normalize", action="store_true")
     p_best.add_argument("--rank", action="store_true")
-
     p_files = sub.add_parser("files", help="Compare two files")
     p_files.add_argument("--metric", required=True, choices=sorted(DEFAULT_METRICS))
     p_files.add_argument("--a", required=True)
@@ -1102,7 +1090,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_files.add_argument("--normalize", action="store_true")
     p_files.add_argument("--normalize-lines", action="store_true")
     p_files.add_argument("--json", action="store_true")
-
     p_grep = sub.add_parser("grep", help="Fuzzy-grep a file for a query")
     p_grep.add_argument("--metric", required=True, choices=sorted(DEFAULT_METRICS))
     p_grep.add_argument("--file", required=True)
@@ -1110,10 +1097,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_grep.add_argument("--threshold", type=float, default=0.7)
     p_grep.add_argument("--encoding", default="utf-8")
     p_grep.add_argument("--normalize", action="store_true")
-
     p_phon = sub.add_parser("phonetic", help="Show phonetic codes for a word")
     p_phon.add_argument("--word", required=True)
-
     return parser
 
 

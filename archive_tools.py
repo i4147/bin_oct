@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import bz2
@@ -17,7 +16,6 @@ import tempfile
 import time
 from typing import Iterable, Iterator, Optional, Sequence
 import zipfile
-
 
 try:
     import py7zr

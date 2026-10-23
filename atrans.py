@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -8,9 +7,7 @@ import os
 import sys
 import threading
 import time
-
 from loguru import logger
-
 
 logger.remove()
 logger.add(

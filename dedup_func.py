@@ -13,7 +13,6 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Optional
 
-
 try:
     from loguru import logger
 except ImportError:

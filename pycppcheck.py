@@ -1,13 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
 import sys
-
 from dh import cprint, get_files
-
 
 c_files = {".c", ".h", ".inc"}
 cpp_files = {".cpp", ".cc", ".cxx", ".hpp", ".hpp11", ".hh", ".hxx"}
@@ -26,7 +23,7 @@ def validate_cpp(path: Path) -> tuple[bool, str]:
 if __name__ == "__main__":
     args = sys.argv[1:]
     cwd = Path.cwd()
-    files = (
+    files = list(
         [Path(p) for p in args]
         if args
         else get_files(

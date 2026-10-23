@@ -5,11 +5,9 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
-
 from loguru import logger
 import nbformat
 from nbformat import NotebookNode
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

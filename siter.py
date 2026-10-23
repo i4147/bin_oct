@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -223,7 +222,7 @@ class WheelBuilder:
                     for src, rel_data_path in data_files:
                         dest = data_data_dir / rel_data_path
                         dest.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(src, dest)
+                        shutil.move(src, dest)
                         rel_path = dest.relative_to(tmp_path)
                         file_hash = self._compute_hash(dest)
                         file_size = dest.stat().st_size

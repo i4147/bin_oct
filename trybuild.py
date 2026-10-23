@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -14,9 +13,7 @@ import subprocess
 import sys
 import tempfile
 import time
-
 from loguru import logger
-
 
 try:
     import tomllib

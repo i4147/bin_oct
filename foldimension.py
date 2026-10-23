@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 import shutil
 import sys
-
 
 try:
     from PIL import Image

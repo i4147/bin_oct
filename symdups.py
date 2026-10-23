@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
 from datetime import UTC, datetime
 import json
 from pathlib import Path
-
 from xxhash import xxh64
-
 
 BACKUP_FILE = ".symlink_backup.json"
 MIN_FILE_SIZE = 1

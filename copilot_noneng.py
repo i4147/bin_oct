@@ -8,12 +8,10 @@ from pathlib import Path
 import sys
 import threading
 from typing import TYPE_CHECKING, Any
-
 from dh import is_binary
 import gcld3
 from langdetect import DetectorFactory, detect_langs
 import pycld2 as cld2
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

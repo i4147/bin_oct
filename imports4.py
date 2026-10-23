@@ -14,12 +14,10 @@ import re
 import subprocess
 import sys
 import time
-
 from dh import PKG_MAPPING, STDLIB
 import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
-
 
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
 CACHE_DIR = Path.home() / ".cache" / "piplist"

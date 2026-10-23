@@ -7,13 +7,11 @@ import bz2
 import gzip
 from pathlib import Path
 import sys
-
 import brotlicffi as brotli
 from dh import fsz, get_dirs, get_files
 import lz4.frame
 import py7zr
 import zstandard as zstd
-
 
 MAX_WORKERS = 4
 CHUNK_SIZE = 1024 * 1024

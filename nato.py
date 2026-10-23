@@ -5,7 +5,6 @@ import argparse
 from pathlib import Path
 import sys
 
-
 NATO = {
     "A": "Alpha",
     "B": "Bravo",

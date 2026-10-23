@@ -6,7 +6,6 @@ from pathlib import Path
 import sys
 import time
 
-
 try:
     from tree_sitter import Language, Parser
     import tree_sitter_rust

@@ -15,7 +15,6 @@ import sys
 import time
 from typing import Iterable, Optional, Sequence
 
-
 try:
     import xxhash
 

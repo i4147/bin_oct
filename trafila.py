@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 from pathlib import Path
 import sys
@@ -48,7 +49,7 @@ def process_file(path: str | Path) -> tuple[Path, bool]:
 if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]
-    files = (
+    files = list(
         [Path(p) for p in args if p.strip() != "-r"]
         if args and len(args) > 1
         else get_files(cwd, [".html", ".htm", ".xhtml", ".xhtm"])

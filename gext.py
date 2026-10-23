@@ -6,7 +6,6 @@ import multiprocessing as mp
 import os
 import sys
 
-
 OUTPUT_DIR = "output"
 CLASSES_DIR = os.path.join(OUTPUT_DIR, "classes")
 FUNCTIONS_DIR = os.path.join(OUTPUT_DIR, "functions")

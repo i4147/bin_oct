@@ -17,9 +17,7 @@ DEFAULT_RULES: list[tuple[str, str]] = [
     (r"\(\d+\)", ""),
     (r" +", "_"),
 ]
-
 DEFAULT_EXCLUDES: set[str] = {".git", "node_modules", "__pycache__", ".venv", ".idea", ".vscode"}
-
 _SEP_COLLAPSE: re.Pattern[str] = re.compile(r"_+")
 _DASH_COLLAPSE: re.Pattern[str] = re.compile(r"-+")
 _SANITIZE: re.Pattern[str] = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
@@ -141,13 +139,10 @@ def build_plan(files: list[Path], cfg: CleanConfig) -> list[tuple[Path, Path]]:
     else:
         with Pool(cfg.workers) as pool:
             proposals = dict(pool.map(_clean_worker, [(f, cfg) for f in files]))
-
     moving = {s: t for s, t in proposals.items() if s != t}
     moving_sources = set(moving)
-
     result: list[tuple[Path, Path]] = []
     assigned: set[Path] = set()
-
     for source in sorted(moving):
         proposed = moving[source]
         final: Optional[Path] = proposed
@@ -170,7 +165,6 @@ def build_plan(files: list[Path], cfg: CleanConfig) -> list[tuple[Path, Path]]:
 def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[RenameResult]:
     if cfg.dry_run:
         return [RenameResult(s, t, "planned", "dry-run") for s, t in plan]
-
     results: list[RenameResult] = []
     all_sources = {s for s, t in plan}
     pending: list[tuple[Path, Path, Path]] = []
@@ -192,7 +186,6 @@ def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[Rename
                 pending.append((temp, target, source))
         except OSError as e:
             results.append(RenameResult(source, target, "error", str(e)))
-
     for temp, target, source in pending:
         try:
             os.rename(temp, target)
@@ -204,7 +197,6 @@ def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[Rename
             except OSError:
                 pass
             results.append(RenameResult(source, target, "error", str(e)))
-
     if cfg.log_path and rename_log:
         try:
             data: list[dict] = []
@@ -214,7 +206,6 @@ def execute_plan(plan: list[tuple[Path, Path]], cfg: CleanConfig) -> list[Rename
             cfg.log_path.write_text(json.dumps(data, indent=2))
         except (OSError, json.JSONDecodeError):
             pass
-
     return results
 
 
@@ -297,17 +288,14 @@ def cli(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--log", default=None, help="path to rename log json (enables undo)")
     p.add_argument("--undo", default=None, help="undo renames from log file")
     args = p.parse_args(argv)
-
     if args.undo:
         results = undo_renames(Path(args.undo))
         _print_summary(results)
         return 0
-
     root = Path(args.root)
     if not root.is_dir():
         print(f"Not a directory: {root}", file=sys.stderr)
         return 2
-
     cfg = CleanConfig(
         trailing_only=args.trailing_only,
         collapse_sep=args.collapse,
@@ -327,23 +315,19 @@ def cli(argv: Optional[list[str]] = None) -> int:
     )
     if args.exclude:
         cfg.exclude_dirs = set(args.exclude)
-
     try:
         plan = plan_renames(root, cfg)
     except ConflictError as e:
         print(f"Conflict: {e}", file=sys.stderr)
         return 2
-
     if not plan:
         print("No files to rename.")
         return 0
-
     if cfg.dry_run:
         for s, t in plan:
             print(f"  {s.name} -> {t.name}")
         print(f"\n[dry-run] {len(plan)} file(s) would be renamed.")
         return 0
-
     if not args.yes:
         for s, t in plan:
             print(f"  {s.name} -> {t.name}")
@@ -354,7 +338,6 @@ def cli(argv: Optional[list[str]] = None) -> int:
         if resp.strip().lower() not in ("y", "yes"):
             print("Cancelled.")
             return 1
-
     results = execute_plan(plan, cfg)
     _print_summary(results)
     return 0

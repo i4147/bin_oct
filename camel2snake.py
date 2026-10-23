@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -17,10 +16,8 @@ import sys
 import tempfile
 import tokenize
 from typing import Iterator, NamedTuple
-
 import libcst as cst
 from loguru import logger
-
 
 SKIP_DIRS = frozenset({
     ".git",

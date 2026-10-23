@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
@@ -7,7 +6,6 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import Any, Final
-
 from dh import is_binary, runcmd, unique_path
 from loguru import logger
 

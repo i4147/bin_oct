@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import operator
 import os
 from pathlib import Path
 import shutil
 import sys
-
 from dh import fsz, should_skip, unique_path
 
 

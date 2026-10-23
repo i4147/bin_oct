@@ -482,13 +482,22 @@ def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
             tmp.write(text)
             tmp.flush()
             os.fsync(tmp.fileno())
+
         with contextlib.suppress(OSError):
             shutil.copymode(path, tmp_name)
-        shutil.move(tmp_name, path)
+
+        try:
+            shutil.move(tmp_name, path)
+        except OSError:
+            # Fallback for Termux storage permission restrictions
+            path.write_text(text, encoding=encoding)
+            if tmp_name and os.path.exists(tmp_name):
+                os.unlink(tmp_name)
         tmp_name = None
     finally:
         if tmp_name and os.path.exists(tmp_name):
-            os.unlink(tmp_name)
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name)
 
 
 def _print_diff(path: Path, before: str, after: str) -> None:

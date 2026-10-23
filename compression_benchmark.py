@@ -13,7 +13,6 @@ import time
 from typing import Callable, Optional
 import zipfile
 
-
 try:
     import brotli
 except ImportError:

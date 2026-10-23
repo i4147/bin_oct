@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import os
 from pathlib import Path
 import stat
-
 
 HOME = Path.home()
 cwd = Path.cwd()

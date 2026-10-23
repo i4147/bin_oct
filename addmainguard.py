@@ -10,7 +10,6 @@ import re
 import sys
 from typing import Sequence
 
-
 logger = logging.getLogger("add_main_guard")
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",

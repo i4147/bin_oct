@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
@@ -7,7 +6,6 @@ import hashlib
 from pathlib import Path
 import sys
 from urllib.parse import unquote, urljoin, urlparse
-
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
@@ -21,7 +19,6 @@ from packaging.utils import (
     parse_wheel_filename,
 )
 from packaging.version import InvalidVersion, Version
-
 
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"

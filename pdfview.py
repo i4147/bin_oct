@@ -13,9 +13,7 @@ import termios
 import textwrap
 import tty
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
-
 from loguru import logger
-
 
 if TYPE_CHECKING:
     import os
@@ -266,7 +264,6 @@ def get_page_count(path: Path, backend: str) -> int:
 
 def extract_pdfminer_page(path: Path, page_number: int) -> str:
     from io import StringIO
-
     from pdfminer.high_level import extract_text_to_fp
     from pdfminer.layout import LAParams
     from pdfminer.pdfpage import PDFPage

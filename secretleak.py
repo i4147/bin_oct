@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import re
 import sys
 from typing import Any
-
 from loguru import logger
-
 
 SECRET_PATTERNS: dict[str, str] = {
     "AWS Key": "AKIA[0-9A-Z]{16}",

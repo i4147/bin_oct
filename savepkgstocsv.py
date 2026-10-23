@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import csv
 from pathlib import Path
 import subprocess
 import sys
-
 
 OUTPUT_DIR = Path("/sdcard/backups")
 TSV_FILE = OUTPUT_DIR / "installed.tsv"

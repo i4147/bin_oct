@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-
 import argparse
 import ast
 import csv
 import difflib
 import fnmatch
+import functools
 import hashlib
 import importlib.util
 import io
 import json
 import logging
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -40,7 +41,22 @@ try:
     import pathspec as _pathspec
 except ImportError:
     _pathspec = None
-
+try:
+    import ssdeep as _ssdeep
+except ImportError:
+    _ssdeep = None
+try:
+    import tlsh as _tlsh
+except ImportError:
+    _tlsh = None
+try:
+    from concurrent.futures import InterpreterPoolExecutor as _InterpreterPoolExecutor
+except ImportError:
+    _InterpreterPoolExecutor = None
+try:
+    from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor
+except ImportError:
+    _ThreadPoolExecutor = None
 try:
     import tomllib as _tomllib
 except ImportError:
@@ -48,11 +64,8 @@ except ImportError:
         import tomli as _tomllib
     except ImportError:
         _tomllib = None
-
 __version__ = "1.0.0"
-
 LOGGER = logging.getLogger("pydup")
-
 DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
     ".venv",
     ".git",
@@ -65,6 +78,15 @@ DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
 PYTHON_SUFFIXES: frozenset[str] = frozenset({".py", ".pyi"})
 NOTEBOOK_SUFFIX: str = ".ipynb"
 CACHE_FILENAME: str = ".pydup-cache.json"
+SIMILAR_FILENAME: str = "simz.json"
+SIMILARITY_THRESHOLD: int = 70
+MINHASH_SIG_BITS: int = 128
+MINHASH_BANDS: int = 32
+MINHASH_ROWS: int = MINHASH_SIG_BITS // MINHASH_BANDS
+MASK64: int = (1 << 64) - 1
+_MINHASH_SEED = random.Random(0x5EED)
+_MINHASH_A: tuple[int, ...] = tuple(_MINHASH_SEED.getrandbits(64) | 1 for _ in range(MINHASH_SIG_BITS))
+_MINHASH_B: tuple[int, ...] = tuple(_MINHASH_SEED.getrandbits(64) for _ in range(MINHASH_SIG_BITS))
 CACHE_VERSION: int = 1
 NGRAM_SIZE: int = 3
 SKIP_TOKEN_TYPES: frozenset[int] = frozenset({
@@ -75,7 +97,6 @@ SKIP_TOKEN_TYPES: frozenset[int] = frozenset({
     tokenize.INDENT,
     tokenize.DEDENT,
 })
-
 ScanIssue: TypeAlias = tuple[str, str]
 Failure: TypeAlias = tuple[str, str]
 
@@ -101,6 +122,19 @@ class DefinitionRef:
     name: str
     kind: str
 
+    def __getstate__(self) -> dict[str, object]:
+        return {
+            "digest": self.digest,
+            "path": self.path,
+            "lineno": self.lineno,
+            "name": self.name,
+            "kind": self.kind,
+        }
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        for name, value in state.items():
+            object.__setattr__(self, name, value)
+
 
 @dataclass(slots=True)
 class WorkerResult:
@@ -112,7 +146,32 @@ class WorkerResult:
     token_hash: str | None = None
     ngrams: list[int] | None = None
     definitions: list[DefinitionRef] | None = None
+    fuzzy: str | None = None
+    tlsh_hash: str | None = None
+    minhash_sig: list[int] | None = None
+    simhash_hash: int | None = None
     from_cache: bool = False
+
+    def __getstate__(self) -> dict[str, object]:
+        return {
+            "path": self.path,
+            "digest": self.digest,
+            "error": self.error,
+            "skipped": self.skipped,
+            "ast_hash": self.ast_hash,
+            "token_hash": self.token_hash,
+            "ngrams": self.ngrams,
+            "definitions": self.definitions,
+            "fuzzy": self.fuzzy,
+            "tlsh_hash": self.tlsh_hash,
+            "minhash_sig": self.minhash_sig,
+            "simhash_hash": self.simhash_hash,
+            "from_cache": self.from_cache,
+        }
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        for name, value in state.items():
+            object.__setattr__(self, name, value)
 
 
 @dataclass(slots=True)
@@ -136,6 +195,13 @@ class DefinitionGroup:
 
 
 @dataclass(slots=True)
+class SimilarPair:
+    paths: tuple[str, str]
+    score: int
+    method: str
+
+
+@dataclass(slots=True)
 class RunStats:
     scanned: int = 0
     parsed: int = 0
@@ -154,6 +220,7 @@ class ScanOutcome:
     groups: list[DuplicateGroup]
     near_pairs: list[NearPair]
     definition_groups: list[DefinitionGroup]
+    similar_pairs: list[SimilarPair]
     failures: list[Failure]
     stats: RunStats
 
@@ -165,6 +232,10 @@ class CacheEntry:
     digest: str
     ast_hash: str | None
     token_hash: str | None
+    fuzzy: str | None = None
+    tlsh_hash: str | None = None
+    minhash_sig: list[int] | None = None
+    simhash_hash: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +246,28 @@ class WorkerConfig:
     min_lines: int
     need_ngrams: bool
     need_definitions: bool
+    need_ssdeep: bool = False
+    need_tlsh: bool = False
+    need_minhash: bool = False
+    need_simhash: bool = False
+
+    def __getstate__(self) -> dict[str, object]:
+        return {
+            "mode": self.mode,
+            "ignore_imports": self.ignore_imports,
+            "skip_empty": self.skip_empty,
+            "min_lines": self.min_lines,
+            "need_ngrams": self.need_ngrams,
+            "need_definitions": self.need_definitions,
+            "need_ssdeep": self.need_ssdeep,
+            "need_tlsh": self.need_tlsh,
+            "need_minhash": self.need_minhash,
+            "need_simhash": self.need_simhash,
+        }
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        for name, value in state.items():
+            object.__setattr__(self, name, value)
 
 
 @dataclass(slots=True)
@@ -367,7 +460,7 @@ class _PathMatcher:
 
             self._spec = GitIgnoreSpec.from_lines(cleaned)
         else:
-            self._spec = _pathspec.PathSpec.from_lines("gitwildmatch", cleaned)
+            self._spec = _pathspec.PathSpec.from_lines("gitignore", cleaned)
 
     def matches(self, rel: str, is_dir: bool) -> bool:
         if self._simple is not None:
@@ -664,12 +757,95 @@ def _definition_refs(tree: ast.Module, mode: str, path_text: str) -> list[Defini
     return refs
 
 
+def _hash_fuzzy(raw: bytes) -> str | None:
+    if _ssdeep is None:
+        return None
+    try:
+        return str(_ssdeep.hash(raw))
+    except Exception:
+        return None
+
+
+def _hash_tlsh(raw: bytes) -> str | None:
+    if _tlsh is None:
+        return None
+    try:
+        value = str(_tlsh.hash(raw))
+    except Exception:
+        return None
+    if not value or value.upper().endswith("NULL"):
+        return None
+    return value
+
+
+def _shingle_values(tokens: Sequence[str]) -> set[int]:
+    shingle_strings: list[str] = []
+    if len(tokens) >= MINHASH_ROWS:
+        for index in range(len(tokens) - MINHASH_ROWS + 1):
+            shingle_strings.append("\x1f".join(tokens[index : index + MINHASH_ROWS]))
+    elif len(tokens) >= 2:
+        for index in range(len(tokens) - 1):
+            shingle_strings.append("\x1f".join(tokens[index : index + 2]))
+    else:
+        shingle_strings.extend(tokens)
+    values = {
+        int.from_bytes(
+            hashlib.blake2b(text.encode("utf-8", "replace"), digest_size=16).digest(),
+            "big",
+        )
+        for text in shingle_strings
+    }
+    return values
+
+
+def _minhash_signature(shingles: set[int]) -> list[int] | None:
+    if not shingles:
+        return None
+    return [
+        min((coeff_a * value + coeff_b) & MASK64 for value in shingles)
+        for coeff_a, coeff_b in zip(_MINHASH_A, _MINHASH_B)
+    ]
+
+
+def _simhash64(shingles: set[int]) -> int | None:
+    if not shingles:
+        return None
+    counts = [0] * 64
+    for value in shingles:
+        feature = (value ^ (value >> 64)) & MASK64
+        for bit in range(64):
+            counts[bit] += 1 if (feature >> bit) & 1 else -1
+    result = 0
+    for bit, count in enumerate(counts):
+        if count > 0:
+            result |= 1 << bit
+    return result
+
+
 def process_file(path_text: str, cfg: WorkerConfig) -> WorkerResult:
     path = Path(path_text)
     try:
         raw = path.read_bytes()
     except Exception as error:
         return WorkerResult(path=path_text, error=f"{type(error).__name__}: {error}")
+    result = _process_source(path_text, raw, cfg)
+    if cfg.need_ssdeep:
+        result.fuzzy = _hash_fuzzy(raw)
+    if cfg.need_tlsh:
+        result.tlsh_hash = _hash_tlsh(raw)
+    if cfg.need_minhash or cfg.need_simhash:
+        source, decode_error = _decode_source(path, raw)
+        if source is not None:
+            shingles = _shingle_values(significant_tokens(source))
+            if cfg.need_minhash:
+                result.minhash_sig = _minhash_signature(shingles)
+            if cfg.need_simhash:
+                result.simhash_hash = _simhash64(shingles)
+    return result
+
+
+def _process_source(path_text: str, raw: bytes, cfg: WorkerConfig) -> WorkerResult:
+    path = Path(path_text)
     source, decode_error = _decode_source(path, raw)
     if source is None:
         return WorkerResult(path=path_text, error=decode_error or "decode failed")
@@ -723,32 +899,149 @@ def _print_progress_line(message: str, previous_width: int) -> int:
     return len(message)
 
 
-def _run_jobs(
+def _notify(on_complete: Callable[[], None] | None, count: int = 1) -> None:
+    if on_complete is None:
+        return
+    for _ in range(count):
+        on_complete()
+
+
+def _run_serial(
+    paths: Sequence[str],
+    cfg: WorkerConfig,
+    on_complete: Callable[[], None] | None,
+) -> list[WorkerResult]:
+    results: list[WorkerResult] = []
+    for path_text in paths:
+        results.append(process_file(path_text, cfg))
+        _notify(on_complete)
+    return results
+
+
+def _executor_class(method: str) -> type:
+    if method == "cf.ThreadPoolExecutor":
+        if _ThreadPoolExecutor is None:
+            raise RuntimeError("ThreadPoolExecutor is unavailable")
+        return _ThreadPoolExecutor
+    if method == "cf.InterpreterPoolExecutor":
+        if _InterpreterPoolExecutor is None:
+            raise RuntimeError("--mp-method cf.InterpreterPoolExecutor requires Python 3.14+")
+        return _InterpreterPoolExecutor
+    return ProcessPoolExecutor
+
+
+def _run_executor(
+    executor_cls: type,
     paths: Sequence[str],
     cfg: WorkerConfig,
     workers: int,
-    on_complete: Callable[[], None] | None = None,
+    on_complete: Callable[[], None] | None,
 ) -> list[WorkerResult]:
     results: list[WorkerResult] = []
-    if workers <= 1:
-        for path_text in paths:
-            results.append(process_file(path_text, cfg))
-            if on_complete is not None:
-                on_complete()
-        return results
-    executor = ProcessPoolExecutor(max_workers=workers)
+    executor = executor_cls(max_workers=workers)
     try:
         futures = [executor.submit(process_file, path_text, cfg) for path_text in paths]
         for future in as_completed(futures):
             results.append(future.result())
-            if on_complete is not None:
-                on_complete()
+            _notify(on_complete)
     except BaseException:
         executor.shutdown(wait=False, cancel_futures=True)
         raise
     else:
         executor.shutdown(wait=True)
     return results
+
+
+def _run_mp_pool(
+    paths: Sequence[str],
+    cfg: WorkerConfig,
+    workers: int,
+    operation: str,
+    on_complete: Callable[[], None] | None,
+) -> list[WorkerResult]:
+    import multiprocessing
+
+    results: list[WorkerResult] = []
+    pool = multiprocessing.Pool(processes=workers)
+    worker = functools.partial(process_file, cfg=cfg)
+    try:
+        if operation == "map":
+            results = list(pool.map(worker, paths))
+            _notify(on_complete, len(results))
+        elif operation == "imap":
+            for item in pool.imap(worker, paths):
+                results.append(item)
+                _notify(on_complete)
+        elif operation == "imap_unordered":
+            for item in pool.imap_unordered(worker, paths):
+                results.append(item)
+                _notify(on_complete)
+        elif operation == "starmap":
+            results = list(pool.starmap(process_file, [(path, cfg) for path in paths]))
+            _notify(on_complete, len(results))
+        elif operation == "starmap_async":
+            results = list(pool.starmap_async(process_file, [(path, cfg) for path in paths]).get())
+            _notify(on_complete, len(results))
+        elif operation == "map_async":
+            results = list(pool.map_async(worker, paths).get())
+            _notify(on_complete, len(results))
+        elif operation == "apply":
+            for path_text in paths:
+                results.append(pool.apply(process_file, (path_text, cfg)))
+                _notify(on_complete)
+        elif operation == "apply_async":
+            pending = [pool.apply_async(process_file, (path_text, cfg)) for path_text in paths]
+            for async_result in pending:
+                results.append(async_result.get())
+                _notify(on_complete)
+        else:
+            raise ValueError(f"unknown mp.pool operation: {operation}")
+    except BaseException:
+        pool.terminate()
+        raise
+    else:
+        pool.close()
+    finally:
+        pool.join()
+    return results
+
+
+def _run_joblib(
+    paths: Sequence[str],
+    cfg: WorkerConfig,
+    workers: int,
+    on_complete: Callable[[], None] | None,
+) -> list[WorkerResult]:
+    try:
+        from joblib import Parallel, delayed
+    except ImportError as error:
+        raise RuntimeError("--mp-method joblib requires the joblib package (pip install joblib)") from error
+    absolute_paths = [os.path.abspath(path_text) for path_text in paths]
+    results = list(
+        Parallel(n_jobs=workers, prefer="processes")(
+            delayed(process_file)(abs_path, cfg) for abs_path in absolute_paths
+        )
+    )
+    for original_path, result in zip(paths, results):
+        result.path = original_path
+    _notify(on_complete, len(results))
+    return results
+
+
+def _run_jobs(
+    paths: Sequence[str],
+    cfg: WorkerConfig,
+    workers: int,
+    method: str,
+    on_complete: Callable[[], None] | None = None,
+) -> list[WorkerResult]:
+    if workers <= 1 and method == "cf.ProcessPoolExecutor":
+        return _run_serial(paths, cfg, on_complete)
+    if method.startswith("mp.pool."):
+        return _run_mp_pool(paths, cfg, workers, method[len("mp.pool.") :], on_complete)
+    if method == "joblib":
+        return _run_joblib(paths, cfg, workers, on_complete)
+    return _run_executor(_executor_class(method), paths, cfg, workers, on_complete)
 
 
 def process_files(
@@ -758,6 +1051,7 @@ def process_files(
     use_cache: bool,
     workers: int,
     show_progress: bool,
+    method: str = "cf.ProcessPoolExecutor",
 ) -> tuple[list[WorkerResult], int]:
     pending: list[FileEntry] = []
     results: list[WorkerResult] = []
@@ -765,13 +1059,26 @@ def process_files(
     for entry in entries:
         key = os.path.abspath(str(entry.path))
         cached = cache.get(key) if use_cache else None
-        if cached is not None and cached.mtime_ns == entry.mtime_ns and cached.size == entry.size and cached.digest:
+        if (
+            cached is not None
+            and cached.mtime_ns == entry.mtime_ns
+            and cached.size == entry.size
+            and cached.digest
+            and (not cfg.need_ssdeep or cached.fuzzy is not None)
+            and (not cfg.need_tlsh or cached.tlsh_hash is not None)
+            and (not cfg.need_minhash or cached.minhash_sig is not None)
+            and (not cfg.need_simhash or cached.simhash_hash is not None)
+        ):
             results.append(
                 WorkerResult(
                     path=str(entry.path),
                     digest=cached.digest,
                     ast_hash=cached.ast_hash,
                     token_hash=cached.token_hash,
+                    fuzzy=cached.fuzzy,
+                    tlsh_hash=cached.tlsh_hash,
+                    minhash_sig=cached.minhash_sig,
+                    simhash_hash=cached.simhash_hash,
                     from_cache=True,
                 )
             )
@@ -784,11 +1091,9 @@ def process_files(
     available = os.cpu_count() or 1
     worker_count = max(1, min(total, workers if workers > 0 else available))
     path_texts = [str(entry.path) for entry in pending]
-
     if not show_progress:
-        results.extend(_run_jobs(path_texts, cfg, worker_count))
+        results.extend(_run_jobs(path_texts, cfg, worker_count, method))
         return results, cache_hits
-
     try:
         from rich.progress import (
             BarColumn,
@@ -801,7 +1106,7 @@ def process_files(
     except ImportError:
         LOGGER.warning("rich is unavailable; falling back to basic progress output")
         if not sys.stderr.isatty():
-            results.extend(_run_jobs(path_texts, cfg, worker_count))
+            results.extend(_run_jobs(path_texts, cfg, worker_count, method))
             return results, cache_hits
         completed = 0
         width = 0
@@ -812,12 +1117,11 @@ def process_files(
             width = _print_progress_line(f"Processing Python files: {completed}/{total}", width)
 
         try:
-            results.extend(_run_jobs(path_texts, cfg, worker_count, update_progress))
+            results.extend(_run_jobs(path_texts, cfg, worker_count, method, update_progress))
         finally:
             sys.stderr.write("\n")
             sys.stderr.flush()
         return results, cache_hits
-
     from rich.console import Console as RichConsole
 
     with Progress(
@@ -835,6 +1139,7 @@ def process_files(
                 path_texts,
                 cfg,
                 worker_count,
+                method,
                 lambda: progress.update(task_id, advance=1),
             )
         )
@@ -925,9 +1230,22 @@ def _build_groups(
         if key is not None:
             buckets[key].append(result.path)
     candidate_paths: set[str] = set()
-    for members in buckets.values():
-        if len(members) > 1:
-            candidate_paths.update(members)
+    if mode == "structural":
+        ast_buckets: dict[str, list[str]] = defaultdict(list)
+        token_buckets: dict[str, list[str]] = defaultdict(list)
+        for result in usable:
+            if result.ast_hash is not None:
+                ast_buckets[result.ast_hash].append(result.path)
+            if result.token_hash is not None:
+                token_buckets[result.token_hash].append(result.path)
+        for bucket_map in (ast_buckets, token_buckets):
+            for members in bucket_map.values():
+                if len(members) > 1:
+                    candidate_paths.update(members)
+    else:
+        for members in buckets.values():
+            if len(members) > 1:
+                candidate_paths.update(members)
     verified: dict[str, WorkerResult] = dict(results_by_path)
     failures: list[Failure] = []
     if candidate_paths:
@@ -941,8 +1259,8 @@ def _build_groups(
     if mode == "structural":
         index_by_path = {result.path: index for index, result in enumerate(kept_results)}
         parent = _union_find(len(kept_results))
-        ast_buckets: dict[str, list[str]] = defaultdict(list)
-        token_buckets: dict[str, list[str]] = defaultdict(list)
+        ast_buckets = defaultdict(list)
+        token_buckets = defaultdict(list)
         for result in kept_results:
             if result.ast_hash is not None:
                 ast_buckets[result.ast_hash].append(result.path)
@@ -1040,6 +1358,190 @@ def _build_near_pairs(
     return pairs
 
 
+def _sized_results(
+    results: Sequence[WorkerResult],
+    entries: dict[str, FileEntry],
+) -> list[tuple[str, WorkerResult, int]]:
+    items: list[tuple[str, WorkerResult, int]] = []
+    for result in results:
+        entry = entries.get(result.path)
+        if entry is not None:
+            items.append((result.path, result, entry.size))
+    items.sort(key=lambda item: item[2])
+    return items
+
+
+def _ssdeep_pairs(
+    results: Sequence[WorkerResult],
+    entries: dict[str, FileEntry],
+    threshold: int,
+) -> list[SimilarPair]:
+    if _ssdeep is None:
+        return []
+    buckets: dict[str, list[WorkerResult]] = defaultdict(list)
+    for result in results:
+        if result.fuzzy:
+            buckets[result.fuzzy.split(":", 1)[0]].append(result)
+    pairs: list[SimilarPair] = []
+    for members in buckets.values():
+        for left_index in range(len(members)):
+            for right_index in range(left_index + 1, len(members)):
+                left = members[left_index]
+                right = members[right_index]
+                left_entry = entries.get(left.path)
+                right_entry = entries.get(right.path)
+                if left_entry is not None and right_entry is not None:
+                    low_size = min(left_entry.size, right_entry.size)
+                    high_size = max(left_entry.size, right_entry.size)
+                    if high_size > 0 and low_size / high_size < 0.5:
+                        continue
+                try:
+                    score = int(_ssdeep.compare(left.fuzzy, right.fuzzy))
+                except Exception:
+                    continue
+                if score > threshold:
+                    pairs.append(
+                        SimilarPair(
+                            paths=tuple(sorted((left.path, right.path))),
+                            score=score,
+                            method="ssdeep",
+                        )
+                    )
+    return pairs
+
+
+def _sweep_pairs(
+    results: Sequence[WorkerResult],
+    entries: dict[str, FileEntry],
+    max_ratio: float,
+) -> list[tuple[WorkerResult, WorkerResult]]:
+    items = _sized_results(results, entries)
+    pairs: list[tuple[WorkerResult, WorkerResult]] = []
+    for left_index in range(len(items)):
+        for right_index in range(left_index + 1, len(items)):
+            left_size = items[left_index][2]
+            right_size = items[right_index][2]
+            if left_size <= 0 or right_size / left_size > max_ratio:
+                break
+            pairs.append((items[left_index][1], items[right_index][1]))
+    return pairs
+
+
+def _tlsh_pairs(
+    results: Sequence[WorkerResult],
+    entries: dict[str, FileEntry],
+    threshold: int,
+) -> list[SimilarPair]:
+    if _tlsh is None:
+        return []
+    pairs: list[SimilarPair] = []
+    for left, right in _sweep_pairs(results, entries, 2.0):
+        if not left.tlsh_hash or not right.tlsh_hash:
+            continue
+        try:
+            diff = int(_tlsh.diff(left.tlsh_hash, right.tlsh_hash))
+        except Exception:
+            continue
+        score = 100 - diff
+        if score > threshold:
+            pairs.append(
+                SimilarPair(
+                    paths=tuple(sorted((left.path, right.path))),
+                    score=score,
+                    method="tlsh",
+                )
+            )
+    return pairs
+
+
+def _simhash_pairs(
+    results: Sequence[WorkerResult],
+    entries: dict[str, FileEntry],
+    threshold: int,
+) -> list[SimilarPair]:
+    pairs: list[SimilarPair] = []
+    for left, right in _sweep_pairs(results, entries, 4.0):
+        if left.simhash_hash is None or right.simhash_hash is None:
+            continue
+        distance = (left.simhash_hash ^ right.simhash_hash).bit_count()
+        score = round(100 * (64 - distance) / 64)
+        if score > threshold:
+            pairs.append(
+                SimilarPair(
+                    paths=tuple(sorted((left.path, right.path))),
+                    score=score,
+                    method="simhash",
+                )
+            )
+    return pairs
+
+
+def _minhash_pairs(
+    results: Sequence[WorkerResult],
+    threshold: int,
+) -> list[SimilarPair]:
+    signatures = {result.path: result.minhash_sig for result in results if result.minhash_sig is not None}
+    band_buckets: dict[tuple[int, ...], list[str]] = defaultdict(list)
+    for path, signature in signatures.items():
+        for band_index in range(MINHASH_BANDS):
+            start = band_index * MINHASH_ROWS
+            key = tuple(signature[start : start + MINHASH_ROWS])
+            band_buckets[(band_index, *key)].append(path)
+    candidates: set[tuple[str, str]] = set()
+    for members in band_buckets.values():
+        if len(members) < 2:
+            continue
+        ordered = sorted(set(members))
+        for left_index in range(len(ordered)):
+            for right_index in range(left_index + 1, len(ordered)):
+                candidates.add((ordered[left_index], ordered[right_index]))
+    pairs: list[SimilarPair] = []
+    for left_path, right_path in sorted(candidates):
+        left_sig = signatures[left_path]
+        right_sig = signatures[right_path]
+        if len(left_sig) != len(right_sig):
+            continue
+        matching = sum(1 for a, b in zip(left_sig, right_sig) if a == b)
+        score = round(100 * matching / len(left_sig))
+        if score > threshold:
+            pairs.append(SimilarPair(paths=(left_path, right_path), score=score, method="minhash"))
+    return pairs
+
+
+def _build_similar_pairs(
+    results: Sequence[WorkerResult],
+    entries: dict[str, FileEntry],
+    methods: Sequence[str],
+    threshold: int,
+) -> list[SimilarPair]:
+    pairs: list[SimilarPair] = []
+    if "ssdeep" in methods:
+        pairs.extend(_ssdeep_pairs(results, entries, threshold))
+    if "tlsh" in methods:
+        pairs.extend(_tlsh_pairs(results, entries, threshold))
+    if "minhash" in methods:
+        pairs.extend(_minhash_pairs(results, threshold))
+    if "simhash" in methods:
+        pairs.extend(_simhash_pairs(results, entries, threshold))
+    pairs.sort(key=lambda pair: (-pair.score, pair.method, pair.paths))
+    return pairs
+
+
+def _write_simz(
+    path: Path,
+    pairs: Sequence[SimilarPair],
+    methods: Sequence[str],
+) -> None:
+    payload = {
+        "version": 2,
+        "threshold": SIMILARITY_THRESHOLD,
+        "generated": datetime.now(timezone.utc).isoformat(),
+        "methods": list(methods),
+        "pairs": [{"method": pair.method, "paths": list(pair.paths), "score": pair.score} for pair in pairs],
+    }
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
 def _load_cache(cache_path: Path, mode_key: str) -> dict[str, CacheEntry]:
     if not cache_path.is_file():
         return {}
@@ -1062,6 +1564,10 @@ def _load_cache(cache_path: Path, mode_key: str) -> dict[str, CacheEntry]:
                     digest=str(value["digest"]),
                     ast_hash=value.get("ast_hash"),
                     token_hash=value.get("token_hash"),
+                    fuzzy=value.get("fuzzy"),
+                    tlsh_hash=value.get("tlsh_hash"),
+                    minhash_sig=value.get("minhash_sig"),
+                    simhash_hash=value.get("simhash_hash"),
                 )
             except (KeyError, TypeError, ValueError):
                 continue
@@ -1087,6 +1593,10 @@ def _save_cache(
             digest=result.digest,
             ast_hash=result.ast_hash,
             token_hash=result.token_hash,
+            fuzzy=result.fuzzy,
+            tlsh_hash=result.tlsh_hash,
+            minhash_sig=result.minhash_sig,
+            simhash_hash=result.simhash_hash,
         )
     for key in [key for key in cache if not os.path.exists(key)]:
         del cache[key]
@@ -1100,6 +1610,10 @@ def _save_cache(
                 "digest": value.digest,
                 "ast_hash": value.ast_hash,
                 "token_hash": value.token_hash,
+                "fuzzy": value.fuzzy,
+                "tlsh_hash": value.tlsh_hash,
+                "minhash_sig": value.minhash_sig,
+                "simhash_hash": value.simhash_hash,
             }
             for key, value in cache.items()
         },
@@ -1120,6 +1634,45 @@ def _nonneg_int(value: str) -> int:
     if number < 0:
         raise argparse.ArgumentTypeError("must be a non-negative integer")
     return number
+
+
+MP_METHOD_CANONICAL: tuple[str, ...] = (
+    "cf.ProcessPoolExecutor",
+    "cf.ThreadPoolExecutor",
+    "cf.InterpreterPoolExecutor",
+    "mp.pool.map",
+    "mp.pool.imap",
+    "mp.pool.imap_unordered",
+    "mp.pool.apply",
+    "mp.pool.apply_async",
+    "mp.pool.map_async",
+    "mp.pool.starmap",
+    "mp.pool.starmap_async",
+    "joblib",
+)
+_MP_METHOD_ALIASES: dict[str, str] = {canonical.lower(): canonical for canonical in MP_METHOD_CANONICAL}
+for _mp_name in MP_METHOD_CANONICAL:
+    if _mp_name.startswith("mp.pool."):
+        _MP_METHOD_ALIASES["mp." + _mp_name.split("mp.pool.")[1]] = _mp_name
+_MP_METHOD_ALIASES.update({
+    "cf.process": "cf.ProcessPoolExecutor",
+    "cf.thread": "cf.ThreadPoolExecutor",
+    "cf.interpreter": "cf.InterpreterPoolExecutor",
+    "cf.proceszpoolexecutor": "cf.ProcessPoolExecutor",
+    "processpoolexecutor": "cf.ProcessPoolExecutor",
+    "threadpoolexecutor": "cf.ThreadPoolExecutor",
+    "interpreterpoolexecutor": "cf.InterpreterPoolExecutor",
+    "mp.pool.starmao_async": "mp.pool.starmap_async",
+    "mp.pool.imap_async": "mp.pool.imap_unordered",
+    "joblib.parallel": "joblib",
+})
+
+
+def _mp_method_value(value: str) -> str:
+    canonical = _MP_METHOD_ALIASES.get(value.strip().lower())
+    if canonical is None:
+        raise argparse.ArgumentTypeError(f"unknown mp method {value!r}; available: " + ", ".join(MP_METHOD_CANONICAL))
+    return canonical
 
 
 def _similarity_value(value: str) -> float:
@@ -1162,7 +1715,39 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="print the exact deletion plan without removing anything",
+        help="print a verbose deletion plan (keepers, removals, sizes, totals) without removing anything",
+    )
+    parser.add_argument(
+        "-s",
+        "--save-similar",
+        action="store_true",
+        dest="save_similar",
+        help="compare ssdeep fuzzy hashes of all scanned files and save pairs scoring above 70 to simz.json",
+    )
+    parser.add_argument(
+        "--tlsh",
+        action="store_true",
+        help="also compare TLSH fuzzy hashes and include pairs scoring above 70 in simz.json",
+    )
+    parser.add_argument(
+        "--minhash",
+        action="store_true",
+        help="also compare 128-bit MinHash signatures (LSH-banded token shingles) and include pairs scoring above 70 in simz.json",
+    )
+    parser.add_argument(
+        "--simhash",
+        action="store_true",
+        help="also compare 64-bit SimHash fingerprints (token shingles) and include pairs scoring above 70 in simz.json",
+    )
+    parser.add_argument(
+        "--mp-method",
+        type=_mp_method_value,
+        default="cf.ProcessPoolExecutor",
+        metavar="NAME",
+        help=(
+            "parallel engine: cf.{Process,Thread,Interpreter}PoolExecutor (default), "
+            "mp.pool.{map,imap,imap_unordered,apply,apply_async,map_async,starmap,starmap_async}, joblib"
+        ),
     )
     trash_group = parser.add_mutually_exclusive_group()
     trash_group.add_argument(
@@ -1655,17 +2240,21 @@ def _report_text(outcome: ScanOutcome, args: argparse.Namespace) -> None:
         print(f"\nNear duplicates (similarity >= {args.similarity}):")
         for pair in outcome.near_pairs:
             print(f"  {pair.similarity:.4f}  {pair.paths[0]} ~ {pair.paths[1]}")
+    fuzzy_enabled = args.save_similar or args.tlsh or args.minhash or args.simhash
+    if fuzzy_enabled:
+        enabled_methods = ", ".join(getattr(args, "fuzzy_methods", []) or ["ssdeep"])
+        print(
+            f"\nMost similar (score > {SIMILARITY_THRESHOLD}, via {enabled_methods}): "
+            f"{len(outcome.similar_pairs)} pair(s) -> {SIMILAR_FILENAME}"
+        )
+        for pair in outcome.similar_pairs:
+            print(f"  {pair.score:>3}  {pair.method:<8} {pair.paths[0]} ~ {pair.paths[1]}")
     total_files = sum(len(group.paths) for group in groups)
     total_wasted = sum(_group_wasted(group) for group in groups)
     if not args.quiet:
         print(f"\n{len(groups)} groups, {total_files} files, {_human_bytes(total_wasted)} recoverable")
     if args.dry_run:
-        print("Dry run: no files will be removed. Planned deletions:")
-        for index, group in enumerate(groups, start=1):
-            others = [str(path) for path in group.paths if path != group.keeper]
-            print(f"  [{index}] keep {group.keeper}")
-            for other in others:
-                print(f"      rm {other}")
+        _print_verbose_dry_run(groups, args)
     elif not args.remove and groups:
         print("No files removed. Re-run with -r to remove duplicates.")
     if args.stats:
@@ -1679,6 +2268,62 @@ def _report_text(outcome: ScanOutcome, args: argparse.Namespace) -> None:
         print(f"  duplicate groups: {stats.duplicate_groups}")
         print(f"  wasted bytes:    {stats.wasted_bytes} ({_human_bytes(stats.wasted_bytes)})")
         print(f"  elapsed:         {stats.elapsed_seconds:.2f}s")
+
+
+def _print_verbose_dry_run(groups: Sequence[DuplicateGroup], args: argparse.Namespace) -> None:
+    if args.quarantine is not None:
+        action = f"move to {args.quarantine.expanduser()}"
+    elif args.to_trash:
+        action = "send to system trash (send2trash)"
+    else:
+        action = "unlink (delete)"
+    policy = args.keep
+    if args.keep == "pattern" and args.pattern:
+        policy = f"pattern {args.pattern}"
+    elif args.keep == "prefer" and args.prefer:
+        policy = f"prefer {args.prefer}"
+    if not args.remove:
+        confirmation = "--remove not set: nothing would be deleted (add -r)"
+    elif args.yes:
+        confirmation = "auto-confirmed (-y)"
+    elif _interactive():
+        confirmation = "interactive prompt [y/N/a/q] per group"
+    else:
+        confirmation = "non-TTY stdin: deletions would be skipped (pass -y)"
+    print()
+    print("DRY RUN: verbose deletion plan (no files will be removed)")
+    print(f"  action:       {action}")
+    print(f"  keep policy:  {policy}")
+    print(f"  confirmation: {confirmation}")
+    total_removed = 0
+    total_reclaimed = 0
+    for index, group in enumerate(groups, start=1):
+        wasted = _group_wasted(group)
+        keeper_size = group.sizes.get(str(group.keeper), 0) if group.keeper else 0
+        print(f"  [{index}] {len(group.paths)} file(s), {_human_bytes(wasted)} recoverable, digest {group.digest[:16]}")
+        print(f"      keep   {group.keeper} ({_human_bytes(keeper_size)})")
+        removed_here = 0
+        for path in group.paths:
+            if path == group.keeper:
+                continue
+            size = group.sizes.get(str(path), 0)
+            suffix = ""
+            if args.quarantine is not None:
+                suffix = f" -> {args.quarantine.expanduser() / path.name}"
+            elif args.to_trash:
+                suffix = " -> trash"
+            print(f"      remove {path} ({_human_bytes(size)}){suffix}")
+            removed_here += 1
+        total_removed += removed_here
+        total_reclaimed += wasted
+    print(
+        f"  totals: {len(groups)} group(s), {total_removed} file(s) would be "
+        f"removed, {_human_bytes(total_reclaimed)} reclaimed"
+    )
+    if args.remove:
+        print("  re-run without --dry-run to perform deletion")
+    else:
+        print("  re-run with -r (and -y to skip prompts) to delete")
 
 
 def _report_json(outcome: ScanOutcome, args: argparse.Namespace) -> None:
@@ -2025,6 +2670,28 @@ def _run_diff(args: argparse.Namespace) -> int:
     return 1
 
 
+def _resolve_fuzzy_methods(args: argparse.Namespace) -> tuple[list[str], str | None]:
+    methods: list[str] = []
+    if args.save_similar:
+        methods.append("ssdeep")
+    if args.tlsh:
+        methods.append("tlsh")
+    if args.minhash:
+        methods.append("minhash")
+    if args.simhash:
+        methods.append("simhash")
+    if not methods:
+        return [], None
+    if "ssdeep" in methods and _ssdeep is None:
+        if len(methods) == 1:
+            return [], "-s/--save-similar requires the ssdeep package (pip install ssdeep)"
+        LOGGER.warning("ssdeep is unavailable; skipping ssdeep similarity pairs")
+        methods.remove("ssdeep")
+    if "tlsh" in methods and _tlsh is None:
+        return [], "--tlsh requires the tlsh package (pip install py-tlsh)"
+    return methods, None
+
+
 def _scan(args: argparse.Namespace) -> ScanOutcome | None:
     started = time.monotonic()
     issues: list[ScanIssue] = []
@@ -2035,6 +2702,9 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
         min_bytes=args.min_bytes,
         exclude_patterns=list(args.exclude),
     )
+    fuzzy_methods = getattr(args, "fuzzy_methods", None)
+    if fuzzy_methods is None:
+        fuzzy_methods, _resolve_error = _resolve_fuzzy_methods(args)
     worker_cfg = WorkerConfig(
         mode=args.mode,
         ignore_imports=args.ignore_imports,
@@ -2042,6 +2712,10 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
         min_lines=args.min_lines,
         need_ngrams=args.similarity is not None,
         need_definitions=args.functions,
+        need_ssdeep="ssdeep" in fuzzy_methods,
+        need_tlsh="tlsh" in fuzzy_methods,
+        need_minhash="minhash" in fuzzy_methods,
+        need_simhash="simhash" in fuzzy_methods,
     )
     try:
         entries, scan_skipped = _collect_entries(args, cfg, issues)
@@ -2067,14 +2741,19 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
     use_cache = not args.no_cache and args.similarity is None and not args.functions
     if not args.no_cache:
         cache = _load_cache(cache_path, mode_key)
-    results, cache_hits = process_files(
-        entries,
-        worker_cfg,
-        cache,
-        use_cache,
-        args.workers,
-        args.rich,
-    )
+    try:
+        results, cache_hits = process_files(
+            entries,
+            worker_cfg,
+            cache,
+            use_cache,
+            args.workers,
+            args.rich,
+            args.mp_method,
+        )
+    except Exception as error:
+        LOGGER.error("processing failed: %s", error)
+        return None
     stats.cache_hits = cache_hits
     failures: list[Failure] = list(issues)
     for result in results:
@@ -2098,6 +2777,13 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
     if args.similarity is not None:
         exact_pairs = _iter_group_pairs(groups)
         near_pairs = _build_near_pairs(results, args.similarity, exact_pairs)
+    similar_pairs: list[SimilarPair] = []
+    if fuzzy_methods:
+        similar_pairs = _build_similar_pairs(results, entries_map, fuzzy_methods, SIMILARITY_THRESHOLD)
+        try:
+            _write_simz(Path.cwd() / SIMILAR_FILENAME, similar_pairs, fuzzy_methods)
+        except OSError as error:
+            LOGGER.error("cannot write %s: %s", SIMILAR_FILENAME, error)
     failures.sort()
     stats.failures = len(failures)
     stats.duplicate_groups = len(groups)
@@ -2111,12 +2797,21 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
         groups=groups,
         near_pairs=near_pairs,
         definition_groups=definition_groups,
+        similar_pairs=similar_pairs,
         failures=failures,
         stats=stats,
     )
 
 
 def _validate_args(args: argparse.Namespace) -> str | None:
+    methods, methods_error = _resolve_fuzzy_methods(args)
+    if methods_error is not None:
+        return methods_error
+    args.fuzzy_methods = methods
+    if args.mp_method == "cf.InterpreterPoolExecutor" and _InterpreterPoolExecutor is None:
+        return "--mp-method cf.InterpreterPoolExecutor requires Python 3.14+"
+    if args.mp_method == "joblib" and importlib.util.find_spec("joblib") is None:
+        return "--mp-method joblib requires the joblib package (pip install joblib)"
     if args.keep == "pattern" and not args.pattern:
         return "--keep pattern requires --pattern GLOB"
     if args.keep == "prefer" and not args.prefer:

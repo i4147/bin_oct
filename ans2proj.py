@@ -4,9 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
-
 from loguru import logger
-
 
 HEADER_RE: re.Pattern[str] = re.compile(r"^##\s+`([^`]+)`\s*$", re.MULTILINE)
 OPEN_FENCE_RE: re.Pattern[str] = re.compile(r"```[^\n]*\n")

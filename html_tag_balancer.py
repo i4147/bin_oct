@@ -7,7 +7,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 import sys
 
-
 VOID_ELEMENTS = frozenset({
     "area",
     "base",

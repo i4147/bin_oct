@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import asyncio
@@ -8,10 +7,8 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterator
-
 from dotenv import load_dotenv
 from telethon import TelegramClient
-
 
 PATTERN_PRESETS: dict[str, str] = {
     "coc": r"https://link\.clashofclans\.com/[a-zA-Z0-9\?\=\&_]+",

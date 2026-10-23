@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -11,9 +10,7 @@ import re
 import sys
 from typing import Any
 import unicodedata
-
 from loguru import logger
-
 
 try:
     TREE_SITTER_AVAILABLE = True

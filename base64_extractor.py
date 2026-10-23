@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64 as _b64
@@ -12,7 +11,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator, Optional
-
 
 MIME2EXT: dict[str, str] = {
     "image/png": ".png",
@@ -679,7 +677,7 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
             print(f"WARN: failed to download {url}: {e}")
             return None
 
-    html_files = (
+    html_files = list(
         [Path(p) for p in args.files]
         if args.files
         else [p for p in iter_files(root, [".html", ".htm"]) if "output" not in p.parts]

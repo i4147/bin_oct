@@ -5,10 +5,8 @@ from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING
-
 from dh import get_files, mpf
 from lxml import html as lxml_html
-
 
 if TYPE_CHECKING:
     from lxml.html import HtmlElement

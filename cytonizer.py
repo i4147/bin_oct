@@ -5,9 +5,7 @@ import os
 from os import chdir as os_chdir
 from pathlib import Path
 import sys
-
 from dh import get_files, mpf
-
 
 START_DIR = Path.cwd()
 NUM_PROCESSES = 4

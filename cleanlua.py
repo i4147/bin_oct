@@ -5,11 +5,9 @@ import argparse
 import multiprocessing as mp
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_lua
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

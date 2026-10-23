@@ -5,10 +5,8 @@ import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
-
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

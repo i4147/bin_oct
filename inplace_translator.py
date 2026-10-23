@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 import sys
 
-
 try:
     from openai import OpenAI
 except ImportError:

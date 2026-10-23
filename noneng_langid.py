@@ -4,9 +4,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 import sys
-
 import py3langid as langid
-
 
 ROOT = Path.cwd()
 SKIP_DIRS = {

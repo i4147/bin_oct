@@ -5,9 +5,7 @@ from pathlib import Path
 import shutil
 import site
 import zipfile
-
 from google.colab import drive
-
 
 drive.mount("/content/drive")
 site_pkgs = Path(site.getsitepackages()[0])

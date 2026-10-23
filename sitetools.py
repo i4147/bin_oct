@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -15,7 +14,6 @@ import re
 import shutil
 import sys
 import tarfile
-
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s", stream=sys.stderr)
 logger = logging.getLogger(__name__)

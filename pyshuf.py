@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import mmap
@@ -9,7 +8,6 @@ import random
 import secrets
 import sys
 from typing import Any
-
 
 MMAP_THRESHOLD_BYTES: int = 5 * 1024 * 1024
 

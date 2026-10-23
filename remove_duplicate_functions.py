@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -7,9 +6,7 @@ import hashlib
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

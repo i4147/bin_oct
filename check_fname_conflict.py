@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-
 PIP_LIST = Path("/sdcard/data/pip.txt")
 TARGET_DIR = Path.cwd()
 

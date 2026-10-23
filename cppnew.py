@@ -5,7 +5,6 @@ from pathlib import Path
 import subprocess
 import sys
 
-
 TEMPLATE = """\
 #include <bits/stdc++.h>
 using namespace std;

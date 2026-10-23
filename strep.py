@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
+
 from pathlib import Path
 import re
 import sys
 import tempfile
 from zipfile import ZipFile
-
 from dh import fsz, runcmd
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
+from dh import get_size
 
-
-SO_PATTERN = re.compile(r"\.so(\.\d+)*$")
+SO_RE = re.compile(r"\.so(\.\d+)*$", re.IGNORECASE)
 WHL_SUFFIX = ".whl"
 console = Console()
 
@@ -24,7 +25,7 @@ def process_whl(whl_path: Path) -> None:
         tmpdir_path = Path(tmpdir)
         with ZipFile(whl_path, "r") as zf:
             zf.extractall(tmpdir_path)
-        so_files = [p for p in tmpdir_path.rglob("*") if SO_PATTERN.search(p.name) and p.is_file()]
+        so_files = [p for p in tmpdir_path.rglob("*") if SO_RE.search(p.name) and p.is_file()]
         for so_file in so_files:
             process_file(so_file)
         with ZipFile(whl_path, "w") as zf:
@@ -36,15 +37,13 @@ def process_whl(whl_path: Path) -> None:
 def collect_files(cwd: Path, args: list[str]) -> list[Path]:
     if args:
         return [Path(p) for p in args]
-    so_files = [p for p in cwd.rglob("*") if SO_PATTERN.search(p.name) and p.is_file()]
+    so_files = [p for p in cwd.rglob("*") if SO_RE.search(p.name) and p.is_file()]
     whl_files = [p for p in cwd.rglob("*") if p.is_file() and p.suffix == WHL_SUFFIX]
     return so_files + whl_files
 
 
-def show_summary(files: list[Path]) -> None:
-    total_size = sum(f.stat().st_size for f in files if f.is_file())
-    console.print(f"[bold cyan]Total number of files:[/] [bold yellow]{len(files)}[/]")
-    console.print(f"[bold cyan]Total size of files:[/] [bold yellow]{fsz(total_size)}[/]")
+def show_summary(files: list[Path]) -> int:
+    return sum(f.stat().st_size for f in files if f.is_file())
 
 
 def process_whl_files(whl_files: list[Path]) -> None:
@@ -53,15 +52,20 @@ def process_whl_files(whl_files: list[Path]) -> None:
         process_whl(whl_file)
 
 
+def has_so(path: str | Path) -> bool:
+    path = Path(path)
+    with ZipFile(path, "r") as zf:
+        return any(SO_RE.search(name) for name in zf.namelist())
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]
     files = collect_files(cwd, args)
-    so_files = [f for f in files if SO_PATTERN.search(f.name) and f.is_file() and f.suffix != WHL_SUFFIX]
-    whl_files = [f for f in files if f.is_file() and f.suffix == WHL_SUFFIX]
-
-    console.print("[bold green]Starting .so stripping process...[/]")
-    show_summary(so_files + whl_files)
+    so_files = [f for f in files if SO_RE.search(f.name) and f.is_file() and f.suffix != WHL_SUFFIX]
+    whl_files = [f for f in files if f.is_file() and f.suffix == WHL_SUFFIX and has_so(f)]
+    files_to_process = so_files + whl_files
+    before = get_size(files_to_process)
 
     with Progress(
         TextColumn("[bold blue]{task.description}[/]"),
@@ -77,12 +81,11 @@ if __name__ == "__main__":
         for so_file in so_files:
             process_file(so_file)
             progress.update(task, advance=1)
+
         for whl_file in whl_files:
             process_whl(whl_file)
             progress.update(task, advance=1)
-
-    console.print(
-        f"[bold green]Done![/] Processed [bold yellow]{len(so_files)}[/] .so files "
-        f"and [bold yellow]{len(whl_files)}[/] .whl archives."
-    )
-    show_summary(so_files + whl_files)
+    after = get_size(files_to_process)
+    space_freed = before - after
+    console.print(f"[bold cyan]Num:[/] [bold yellow]{len(files_to_process)}[/]")
+    console.print(f"[bold cyan]Size:[/] [bold yellow]{fsz(space_freed)}[/]")

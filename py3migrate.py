@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -16,7 +15,6 @@ import tarfile
 import tempfile
 from typing import Iterable, Sequence
 import zipfile
-
 
 log = logging.getLogger("py3migrate")
 DEFAULT_EXT: tuple[str, ...] = (".py",)

@@ -7,7 +7,6 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Final, Iterable, Iterator, Optional
-
 import libcst as cst
 from libcst import (
     BaseStatement,
@@ -19,7 +18,6 @@ from libcst import (
     TrailingWhitespace,
 )
 from loguru import logger
-
 
 DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")

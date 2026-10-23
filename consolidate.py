@@ -9,15 +9,12 @@ import sys
 import time
 from typing import NoReturn, Optional, Union
 import warnings
-
 from loguru import logger
-
 
 WORKERS: int = 8
 LOGURU_LOGFORMAT: str = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
 MERGED_FILE_HEADER_RE: re.Pattern[str] = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
 STDLIB_MODULES: frozenset[str] = frozenset(getattr(sys, "stdlib_module_names", ()))
-
 ModuleKey = tuple[str, ...]
 Renames = dict[tuple[ModuleKey, str], str]
 FuncNode = Union[ast.FunctionDef, ast.AsyncFunctionDef]
@@ -31,7 +28,6 @@ _STANDARD_HEADER: list[str] = [
     "from pathlib import Path",
     "from loguru import logger",
 ]
-
 SIX_ATTR_MAP: dict[str, str] = {
     "text_type": "str",
     "binary_type": "bytes",

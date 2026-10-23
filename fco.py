@@ -8,10 +8,8 @@ from pathlib import Path
 import sys
 import time
 from typing import Optional, Sequence
-
 from dh import fsz
 from loguru import logger
-
 
 try:
     from fontTools.ttLib import TTFont
@@ -28,7 +26,6 @@ try:
     HAS_BROTLI = True
 except ImportError:
     HAS_BROTLI = False
-
 INPUT_FORMATS = frozenset({"ttf", "otf", "woff", "woff2", "pfa", "pfb"})
 OUTPUT_FORMATS = frozenset({"ttf", "otf", "woff", "woff2"})
 TYPE1_FORMATS = frozenset({"pfa", "pfb"})

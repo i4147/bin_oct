@@ -11,7 +11,6 @@ import shutil
 import sys
 from typing import Any, Optional, Sequence
 
-
 logger = logging.getLogger(__name__)
 ANDROID_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+)-py3-none-android_24_([^/]+)\.whl")
 LINUX_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+(?:\.\d+)?)-cp\d+-cp\d+-linux_([^/]+)\.whl")

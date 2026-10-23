@@ -11,7 +11,6 @@ import subprocess
 import sys
 from typing import Optional, Sequence
 
-
 PLUGIN_PATTERNS: dict[str, list[str]] = {
     "lazy.nvim": [
         r"lazy\.setup",

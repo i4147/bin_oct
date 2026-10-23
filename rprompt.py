@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import io
 from pathlib import Path
 import re
 import sys
 import tokenize
-
 from dh import get_pyfiles, mpf
 
 

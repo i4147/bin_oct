@@ -9,7 +9,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import zipfile
-
 from pip._internal.utils.compatibility_tags import (
     interpreter_name,
     interpreter_version,

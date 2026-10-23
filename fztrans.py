@@ -11,9 +11,7 @@ import shutil
 import subprocess
 import sys
 from typing import Final
-
 from faprint import faprint
-
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)

@@ -16,7 +16,6 @@ import subprocess
 import sys
 from typing import Any, Iterable, Optional, Sequence
 
-
 DEFAULT_CHUNK_SIZE = 8192
 DEFAULT_DEB_EXCLUDES = frozenset({
     "llvm",

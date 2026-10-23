@@ -6,12 +6,10 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_c
 import tree_sitter_cpp
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

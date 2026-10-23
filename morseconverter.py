@@ -5,7 +5,6 @@ import argparse
 from pathlib import Path
 import sys
 
-
 MORSE_CODE_DICT = {
     "A": ".-",
     "B": "-...",

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import Counter
@@ -17,10 +16,8 @@ import shutil
 import sys
 import tempfile
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
-
 from loguru import logger
 from tree_sitter import Language, Node, Parser
-
 
 if TYPE_CHECKING:
     from multiprocessing.pool import Pool

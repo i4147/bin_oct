@@ -11,7 +11,6 @@ import shutil
 import sys
 from typing import Iterator, Optional
 
-
 try:
     import pycld2
 except ImportError:

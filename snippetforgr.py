@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass
@@ -9,7 +8,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Iterable, Iterator, Sequence
-
 
 SOURCE_CODE_EXTS: frozenset[str] = frozenset({
     ".py",

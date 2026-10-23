@@ -3,7 +3,6 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
-
 from bs4 import BeautifulSoup
 from dh import get_files, mpf
 

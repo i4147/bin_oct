@@ -7,7 +7,6 @@ from pathlib import Path
 import re
 from typing import Iterable, Optional, Sequence
 
-
 try:
     from bs4 import BeautifulSoup
 

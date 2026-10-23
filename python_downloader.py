@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -14,7 +13,6 @@ import time
 from typing import Iterator, Optional, Self
 import urllib.parse
 import urllib.request
-
 
 __version__ = "2.0.0"
 CHUNK = 64 * 1024

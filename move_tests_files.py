@@ -7,9 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import shutil
 from typing import Any
-
 from loguru import logger
-
 
 TESTS_DIR: Path = Path.home() / "tmp" / "tests"
 MOVED_FILES_LOG: Path = Path.home() / "tmp" / "moved_files.json"

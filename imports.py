@@ -10,9 +10,7 @@ from multiprocessing import Pool
 import numbers
 from pathlib import Path
 import time
-
 from dh import STDLIB, get_installed_pkgs
-
 
 NUM_WORKERS = 8
 SKIP_DIRS: set[str] = {

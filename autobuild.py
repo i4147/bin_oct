@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import subprocess
 import sys
-
 
 NUM_WORKERS = 8
 CURRENT_DIR = Path.cwd()

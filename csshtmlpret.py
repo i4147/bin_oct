@@ -12,7 +12,6 @@ from subprocess import getoutput
 import sys
 from time import sleep
 
-
 try:
     from bs4 import BeautifulSoup
 except ImportError:

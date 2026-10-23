@@ -30,9 +30,7 @@ ENTER_ALT = "\x1b[?1049h"
 LEAVE_ALT = "\x1b[?1049l"
 REVERSE = "\x1b[7m"
 
-# Sentinel returned by our getchar_fn when no byte arrives within the
-# sequence-assembly timeout.  It is \x00 so readchar's ord() checks treat
-# it as a non-'[' continuation byte and return ESC + sentinel for a lone Esc.
+
 TIMEOUT_SENTINEL = "\x00"
 
 
@@ -113,8 +111,6 @@ class TextExtractor:
 
 
 def _timed_getchar() -> str:
-    """One-byte reader with a short timeout, used by readchar.readkey()
-    so a lone ESC does not block waiting for a continuation byte."""
     ready, _, _ = select.select([sys.stdin], [], [], 0.05)
     if not ready:
         return TIMEOUT_SENTINEL
@@ -213,7 +209,7 @@ class Viewer:
         if key in ("q", "Q", rk.CTRL_C):
             self.running = False
             return
-        # Lone Escape (with no continuation byte within the timeout).
+
         if key == rk.ESC or key == rk.ESC + TIMEOUT_SENTINEL:
             self.running = False
             return

@@ -7,7 +7,6 @@ import sys
 from typing import TYPE_CHECKING
 import warnings
 
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
 warnings.filterwarnings("ignore")

@@ -6,7 +6,6 @@ import os
 import re
 import sys
 from typing import Final
-
 import click
 import ecstasy
 

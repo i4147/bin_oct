@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -11,9 +10,7 @@ import shutil
 import tempfile
 from typing import Final
 import zipfile
-
 from loguru import logger
-
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",

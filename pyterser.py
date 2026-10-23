@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import contextlib
@@ -12,7 +11,6 @@ import subprocess
 import sys
 import tempfile
 from typing import Final, Iterator, NamedTuple, Sequence
-
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",

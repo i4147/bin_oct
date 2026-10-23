@@ -7,9 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Final
-
 import libcst as cst
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

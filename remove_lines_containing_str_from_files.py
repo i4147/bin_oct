@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing import Pool
 from pathlib import Path
 import sys
-
 from dh import fsz, get_nobinary, gsz
 
 

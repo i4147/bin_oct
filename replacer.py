@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
 import re
 import sys
-
 from dh import is_binary
-
 
 MAX_CONTEXT_DISPLAY = 3
 

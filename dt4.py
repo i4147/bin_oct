@@ -11,11 +11,9 @@ import sys
 from threading import Lock
 import time
 from typing import Callable, Optional
-
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from loguru import logger
-
 
 DEFAULT_INPUT = "input.txt"
 DEFAULT_OUTPUT = "chunks.json"

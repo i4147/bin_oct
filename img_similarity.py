@@ -10,7 +10,6 @@ import sys
 import time
 from typing import Any, Iterable, Optional, Sequence
 
-
 SUPPORTED_EXTS = {
     ".jpg",
     ".jpeg",

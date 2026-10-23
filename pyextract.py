@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -17,7 +16,6 @@ import sqlite3
 import tarfile
 from typing import Iterable, Iterator, Optional
 import zipfile
-
 
 try:
     import tree_sitter

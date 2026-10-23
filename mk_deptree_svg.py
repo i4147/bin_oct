@@ -7,9 +7,7 @@ import html
 from importlib import metadata
 from pathlib import Path
 import re
-
 from joblib import Parallel, delayed
-
 
 WORKERS = 8
 

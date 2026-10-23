@@ -9,7 +9,6 @@ import re
 import sys
 from typing import Final
 
-
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 try:

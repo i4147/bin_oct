@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import curses
 import logging
@@ -12,13 +11,8 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
-
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
 
-
-# ---------------------------------------------------------------------------
-# Settings
-# ---------------------------------------------------------------------------
 DEBUG = True
 USE_COLORS = True
 DATABASE_NAME = "data/crawler.sqlite"
@@ -29,9 +23,6 @@ LOG_DIR = Path("logs")
 MAX_SEARCH_RESULTS = 150
 
 
-# ---------------------------------------------------------------------------
-# ColorStreamHandler
-# ---------------------------------------------------------------------------
 class ColorStreamHandler(logging.Handler):
     def __init__(self, use_colors: bool = True):
         super().__init__()
@@ -45,7 +36,6 @@ class ColorStreamHandler(logging.Handler):
             self.COLOR_WARNING = curses.tparm(fcap, curses.COLOR_YELLOW) if fcap else b""
             self.COLOR_DEBUG = curses.tparm(fcap, curses.COLOR_BLUE) if fcap else b""
         except Exception:
-            # Fallback when curses is unavailable (Windows, non-TTY, etc.)
             self.use_colors = False
             self.COLOR_NORMAL = self.COLOR_INFO = self.COLOR_ERROR = b""
             self.COLOR_WARNING = self.COLOR_DEBUG = b""
@@ -68,7 +58,6 @@ class ColorStreamHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         try:
             msg = self.format(record)
-            # Shorten the timestamp: keep only HH:MM:SS
             if "]" in msg:
                 temp = msg.split("]", 1)
                 time_part = temp[0].split(" ")[-1].split(",")[0]
@@ -80,9 +69,6 @@ class ColorStreamHandler(logging.Handler):
             self.handleError(record)
 
 
-# ---------------------------------------------------------------------------
-# Logging configuration
-# ---------------------------------------------------------------------------
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
@@ -127,9 +113,6 @@ logging.config.dictConfig(LOGGING)
 logger = logging.getLogger("crawler_logger")
 
 
-# ---------------------------------------------------------------------------
-# Database layer
-# ---------------------------------------------------------------------------
 class CrawlerDb:
     def __init__(self) -> None:
         self.connected = False
@@ -161,7 +144,7 @@ class CrawlerDb:
         s = select(self.website_table).where(self.website_table.c.url == url)
         result = self.connection.execute(s).fetchall()
         if result:
-            return False  # already present
+            return False
         values = {"url": str(url)}
         if emails is not None:
             values["has_crawled"] = True
@@ -211,7 +194,6 @@ class CrawlerDb:
             if not parsed.hostname:
                 continue
             parts = parsed.hostname.split(".")
-            # simplistic public-suffix handling
             if len(parts) >= 3 and len(parts[-2]) < 4:
                 domain = ".".join(parts[-3:])
             else:
@@ -232,9 +214,6 @@ class CrawlerDb:
         self.connected = False
 
 
-# ---------------------------------------------------------------------------
-# Crawler logic
-# ---------------------------------------------------------------------------
 google_adurl_regex = re.compile(r'adurl=(.*?)"', re.IGNORECASE)
 google_url_regex = re.compile(r"url\?q=(.*?)&amp;sa=", re.IGNORECASE)
 email_regex = re.compile(r"([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,24})", re.IGNORECASE)
@@ -244,13 +223,11 @@ db.connect()
 
 
 def retrieve_html(url: str) -> str | None:
-    """Fetch a URL and return the body as str, or None on any error."""
     req = urllib.request.Request(url, headers={"User-Agent": "Just-Crawling/0.2"})
     try:
         logger.info("Crawling %s", url)
         with urllib.request.urlopen(req, timeout=15) as resp:
             raw = resp.read()
-            # try to decode sensibly
             charset = resp.headers.get_content_charset() or "utf-8"
             return raw.decode(charset, errors="replace")
     except Exception as exc:
@@ -284,7 +261,6 @@ def find_links_in_html_with_same_hostname(url: str, html: str | None) -> set[str
 
 
 def find_emails_2_level_deep(url: str) -> set[str]:
-    """Level-1 page first; if no emails found, crawl same-host links (level 2)."""
     html = retrieve_html(url)
     emails = find_emails_in_html(html)
     if emails:
@@ -304,7 +280,6 @@ def crawl(keywords: str) -> None:
     logger.info("-" * 40)
     logger.info("Keywords to Google for: %s", keywords)
     logger.info("-" * 40)
-    # 1. Seed the queue from Google
     for start in range(0, MAX_SEARCH_RESULTS, 10):
         query = urllib.parse.urlencode({"q": keywords})
         search_url = f"https://www.google.com/search?{query}&start={start}"
@@ -315,7 +290,6 @@ def crawl(keywords: str) -> None:
             db.enqueue(urllib.parse.unquote(u))
         for u in google_adurl_regex.findall(data):
             db.enqueue(urllib.parse.unquote(u))
-    # 2. Process the queue
     while True:
         uncrawled = db.dequeue()
         if uncrawled is False:
@@ -324,9 +298,6 @@ def crawl(keywords: str) -> None:
         db.crawled(uncrawled, ",".join(email_set) if email_set else None)
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage:")

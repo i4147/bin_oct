@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import bz2
@@ -15,12 +14,10 @@ import tarfile
 import tempfile
 import time
 from typing import Any
-
 import brotli
 from loguru import logger
 import lz4.frame
 import zstandard as zstd
-
 
 EXTENSION_MAP: dict[str, dict[str, str | int]] = {
     ".txt": {"algo": "brotli", "level": 11},

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -14,7 +13,6 @@ import sqlite3
 import sys
 import tempfile
 from typing import Any, Callable
-
 
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"

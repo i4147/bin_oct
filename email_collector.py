@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import curses
 import logging
@@ -13,13 +12,8 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
-
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
 
-
-# ---------------------------------------------------------------------------
-# Configuration (matches original constants and logging contract)
-# ---------------------------------------------------------------------------
 DEBUG = True
 USE_COLORS = True
 DATABASE_NAME = "data/crawler.sqlite"
@@ -68,9 +62,6 @@ LOGGING = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Colored stream handler (same visual contract as original)
-# ---------------------------------------------------------------------------
 class ColorStreamHandler(logging.Handler):
     def __init__(self, use_colors=True):
         logging.Handler.__init__(self)
@@ -101,11 +92,9 @@ class ColorStreamHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            # Preserve original encoding behaviour
             if isinstance(record.msg, str):
                 record.msg = record.msg.encode("utf-8", "ignore").decode("utf-8", "ignore")
             msg = self.format(record)
-            # Original timestamp shortening
             temp = msg.split("]")
             if len(temp) > 1:
                 msg = "[" + temp[0].split(" ")[1].split(",")[0] + "]" + temp[1]
@@ -116,18 +105,13 @@ class ColorStreamHandler(logging.Handler):
             self.handleError(record)
 
 
-# Make the class visible to dictConfig
 import sys as _sys
-
 
 _sys.modules[__name__].ColorStreamHandler = ColorStreamHandler
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger("crawler_logger")
 
 
-# ---------------------------------------------------------------------------
-# Database (same schema, same method semantics)
-# ---------------------------------------------------------------------------
 class CrawlerDb:
     def __init__(self):
         self.connected = False
@@ -224,16 +208,12 @@ class CrawlerDb:
         self.connection.close()
 
     def save_html(self, filename, html):
-        # Kept for API compatibility; original never called it successfully
         Path(HTML_DIR).mkdir(parents=True, exist_ok=True)
         path = os.path.join(HTML_DIR, filename)
         with open(path, "w+", encoding="utf-8", errors="replace") as f:
             f.writelines(html)
 
 
-# ---------------------------------------------------------------------------
-# Regexes and helpers (identical patterns and logic)
-# ---------------------------------------------------------------------------
 google_adurl_regex = re.compile('adurl=(.*?)"')
 google_url_regex = re.compile("url\\?q=(.*?)&amp;sa=")
 email_regex = re.compile("([A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4})", re.IGNORECASE)
@@ -339,9 +319,6 @@ def crawl(keywords):
             db.crawled(uncrawled, None)
 
 
-# ---------------------------------------------------------------------------
-# Entry point – identical CLI contract
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     try:
         arg = sys.argv[1].lower()

@@ -14,13 +14,11 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-
 import brotli
 from loguru import logger
 from tree_sitter import Language, Parser
 import tree_sitter_python
 import zstandard as zstd
-
 
 TREE_SITTER_AVAILABLE = True
 SUPPORTED_ARCHIVES = (

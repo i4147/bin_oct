@@ -9,11 +9,9 @@ from pathlib import Path
 import sys
 import time
 from typing import Final
-
 from dh import fsz
 import ffmpeg
 from loguru import logger
-
 
 NUM_WORKERS: Final[int] = 8
 MIN_BITRATE_KBPS: Final[int] = 8

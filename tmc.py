@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 
 import argparse
@@ -511,7 +512,7 @@ class CSTStripper(ASTStripper):
 class FileOptions:
     comments: bool = False
     docstrings: bool = False
-    backend: str = "tree-sitter"
+    backend: str = "libcst"
     blank_lines: bool = False
     strip_all: bool = False
     dryrun: bool = False
@@ -612,32 +613,22 @@ def process_file_wire(payload: bytes) -> bytes:
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "node_modules",
     "__pycache__",
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
-    ".cache",
-    ".tox",
-    ".nox",
     ".ipynb_checkpoints",
     "build",
-    "dist",
-    "out",
-    "target",
-    ".eggs",
-    "site-packages",
+    "pip",
+    "numpy",
+    "scipy",
+    "pandas",
+    "setuptools",
     ".idea",
     ".vscode",
-    "htmlcov",
-    "coverage",
+    "packaging",
+    "lazy",
+    "numba",
 })
 
 
@@ -987,7 +978,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-b",
         "--backend",
         choices=("tree-sitter", "libcst", "ast"),
-        default="tree-sitter",
+        default="libcst",
         help="Stripping backend (default: tree-sitter)",
     )
     parser.add_argument("--remove-blank-lines", action="store_true", help="Remove blank lines outside strings")

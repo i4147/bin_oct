@@ -7,9 +7,7 @@ from pathlib import Path
 import shutil
 import sys
 import time
-
 from tqdm import tqdm
-
 
 logging.basicConfig(
     level=logging.INFO,

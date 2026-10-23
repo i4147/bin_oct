@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from multiprocessing.pool import Pool
 from pathlib import Path
 import shutil
 import subprocess
 from typing import Final, NamedTuple
-
 from loguru import logger
-
 
 MAX_WORKERS: Final[int] = 8
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900

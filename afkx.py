@@ -12,11 +12,9 @@ import shutil
 import subprocess
 import sys
 import tarfile
-from typing import List, Optional, Set, Tuple
+from typing import Optional
 import zipfile
 
-
-# Optional zstandard support
 try:
     import zstandard as zstd
 
@@ -25,9 +23,6 @@ except ImportError:
     HAS_ZSTD = False
 
 
-# ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
 @dataclass
 class UnusedImport:
     lineno: int
@@ -43,7 +38,6 @@ class FileResult:
     unused_imports: list[UnusedImport] = field(default_factory=list)
     error: Optional[str] = None
     size: int = 0
-    # only used in autoflake mode
     diff: str = ""
     fixed_source: str = ""
 
@@ -52,9 +46,6 @@ class FileResult:
         return bool(self.unused_imports) or bool(self.diff)
 
 
-# ---------------------------------------------------------------------------
-# ANSI colors
-# ---------------------------------------------------------------------------
 class Colors:
     BOLD = "\033[1m"
     CYAN = "\033[36m"
@@ -70,9 +61,6 @@ class Colors:
                 setattr(cls, name, "")
 
 
-# ---------------------------------------------------------------------------
-# Built-in AST analyzer
-# ---------------------------------------------------------------------------
 class ImportCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.imports: dict[str, tuple[int, int, str]] = {}
@@ -164,7 +152,6 @@ class NameCollector(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Constant(self, node: ast.Constant) -> None:
-        # crude support for string annotations / forward refs
         if isinstance(node.value, str):
             for match in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", node.value):
                 self.used_names.add(match)
@@ -213,9 +200,6 @@ def analyze_source(source: str, path: str = "") -> tuple[list[UnusedImport], Opt
     return results, None
 
 
-# ---------------------------------------------------------------------------
-# File / archive reading
-# ---------------------------------------------------------------------------
 def read_py_file(path: str) -> FileResult:
     p = Path(path)
     try:
@@ -285,9 +269,6 @@ def analyze_archive_member(item: tuple[str, str]) -> FileResult:
     )
 
 
-# ---------------------------------------------------------------------------
-# Autofix helpers (built-in mode)
-# ---------------------------------------------------------------------------
 def rewrite_imports(source: str, unused: list[UnusedImport]) -> tuple[str, bool]:
     lines = source.splitlines(keepends=True)
     by_line: dict[int, set[str]] = {}
@@ -357,9 +338,6 @@ def autofix_file(path: str, unused: list[UnusedImport], dry_run: bool = False) -
         return False, f"Write error: {exc}"
 
 
-# ---------------------------------------------------------------------------
-# autoflake mode
-# ---------------------------------------------------------------------------
 AUTOFLAKE_CMD = ["autoflake", "--remove-all-unused-imports", "--ignore-init-module-imports"]
 
 
@@ -421,9 +399,6 @@ def run_autoflake_on_source(item: tuple[str, str]) -> FileResult:
     return FileResult(path=path, diff=diff, fixed_source=fixed)
 
 
-# ---------------------------------------------------------------------------
-# Path collection
-# ---------------------------------------------------------------------------
 def collect_targets(paths: list[str], exclude_patterns: list[str]) -> tuple[list[str], list[tuple[str, str]]]:
     py_files: list[str] = []
     archive_members: list[tuple[str, str]] = []
@@ -473,9 +448,6 @@ def _handle_single_file(
                 archive_members.append((member, content))
 
 
-# ---------------------------------------------------------------------------
-# Reporting
-# ---------------------------------------------------------------------------
 def report_builtin(
     results: list[FileResult],
     *,
@@ -574,9 +546,6 @@ def report_autoflake(
             print(f"Skipped {skipped} file(s).")
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Detect and optionally remove unused imports from Python files and archives.",

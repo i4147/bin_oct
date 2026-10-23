@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import atexit
@@ -11,7 +10,6 @@ from pathlib import Path
 import re
 import sys
 import warnings
-
 
 __version__ = version = "1.14.0"
 __version_tuple__ = version_tuple = (1, 14, 0)
@@ -355,10 +353,8 @@ def system(package, os=None, **kwargs):
 
 
 import contextlib
-
 from platformdirs import user_cache_dir
 from slugify import slugify
-
 
 CACHE_DIR = Path(user_cache_dir("pypistats"))
 

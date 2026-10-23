@@ -4,9 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from urllib.parse import quote
-
 import httpx
-
 
 PREFERRED_EXTENSIONS = (".tar.gz", ".tar.bz2", ".zip")
 

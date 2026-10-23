@@ -1,9 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import shutil
-
 
 L1 = "[egg_info]"
 L2 = "tag_build = "

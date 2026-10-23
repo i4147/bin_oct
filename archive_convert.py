@@ -16,10 +16,8 @@ import tarfile
 import tempfile
 from typing import TYPE_CHECKING
 import zipfile
-
 import brotli
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

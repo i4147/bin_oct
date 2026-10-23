@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -11,9 +10,7 @@ from typing import TYPE_CHECKING, Final
 import urllib.error
 from urllib.parse import unquote, urldefrag
 import urllib.request
-
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 import re
-
 
 MODEL_MAPPINGS = {
     "COBUDDY_TOKEN": "baidu/cobuddy:free",

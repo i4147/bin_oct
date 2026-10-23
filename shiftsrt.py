@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -8,7 +7,6 @@ import re
 from re import Match
 import sys
 from typing import Optional, Sequence
-
 
 SHIFT_RE = re.compile(r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})")
 FALLBACK_ENCODINGS: tuple[str, ...] = ("utf-8", "cp1252", "latin1")

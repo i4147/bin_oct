@@ -13,7 +13,6 @@ import sys
 import tempfile
 from typing import Any, Iterator, Optional, Sequence
 
-
 _CUSTOM_RULE_RE = re.compile(r"^(?:(\d+?)>)?(\d+)=")
 
 

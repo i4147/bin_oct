@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import namedtuple
@@ -9,7 +8,6 @@ import html
 import logging
 from pathlib import Path
 from typing import Optional, Sequence
-
 
 LOG = logging.getLogger("fontpreview")
 FONT_EXTS: frozenset[str] = frozenset({

@@ -3,11 +3,9 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
-
 from dh import get_files, mpf
 import html2text
 from readability import Document
-
 
 remove_orig = True
 

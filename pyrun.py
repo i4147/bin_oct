@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from dataclasses import dataclass, field
@@ -9,9 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
-
 from loguru import logger
-
 
 WORKER_COUNT = 8
 DEFAULT_TIMEOUT = 30.0

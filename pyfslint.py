@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -14,7 +13,6 @@ import stat
 import subprocess
 import sys
 from typing import TYPE_CHECKING
-
 
 if TYPE_CHECKING:
     from collections.abc import Generator

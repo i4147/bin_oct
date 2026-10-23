@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import argparse
 import ctypes
@@ -13,9 +14,7 @@ import shutil
 import sys
 import time
 from typing import Final, Sequence
-
 from tqdm import tqdm
-
 
 SECONDS_PER_MINUTE: Final[float] = 60.0
 SECONDS_24H: Final[float] = 24 * 60 * 60
@@ -24,7 +23,6 @@ EXCLUDED_DIRS: Final[frozenset[str]] = frozenset({".git", "__pycache__"})
 POOL_WORKERS: Final[int] = 8
 AT_FDCWD: Final[int] = -100
 STATX_BTIME: Final[int] = 2048
-
 _ANSI: Final[dict[str, str]] = {
     "yellow": "\033[93m",
     "cyan": "\033[96m",
@@ -379,26 +377,20 @@ def cmd_btime(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="filetools")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_scan = sub.add_parser("scan-ctime")
     p_scan.set_defaults(func=cmd_scan_ctime)
-
     p_filter = sub.add_parser("filter")
     p_filter.add_argument("minutes", nargs="?", type=float, default=60.0)
     p_filter.set_defaults(func=cmd_filter)
-
     p_filter_r = sub.add_parser("filter-recursive")
     p_filter_r.add_argument("minutes", nargs="?", type=float, default=60.0)
     p_filter_r.set_defaults(func=cmd_filter_recursive)
-
     p_recent = sub.add_parser("recent-modified")
     p_recent.add_argument("minutes", type=int)
     p_recent.set_defaults(func=cmd_recent_modified)
-
     p_same = sub.add_parser("same-day")
     p_same.add_argument("filename")
     p_same.set_defaults(func=cmd_same_day)
-
     p_move = sub.add_parser("move")
     p_move.add_argument("--dir", default=".")
     p_move.add_argument("--minutes", type=int, default=8)
@@ -408,21 +400,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_move.add_argument("--old", action="store_true")
     p_move.add_argument("--dest", default="5min")
     p_move.set_defaults(func=cmd_move)
-
     p_newest = sub.add_parser("newest")
     p_newest.add_argument("-r", "--recursive", action="store_true")
     p_newest.add_argument("-n", "--count", type=int, default=20)
     p_newest.set_defaults(func=cmd_newest)
-
     p_oldest = sub.add_parser("oldest")
     p_oldest.add_argument("-r", "--recursive", action="store_true")
     p_oldest.add_argument("-n", "--count", type=int, default=10)
     p_oldest.set_defaults(func=cmd_oldest)
-
     p_btime = sub.add_parser("btime")
     p_btime.add_argument("path")
     p_btime.set_defaults(func=cmd_btime)
-
     return parser
 
 

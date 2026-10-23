@@ -4,19 +4,23 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from dh import read_lines
+
+def read_lines(path):
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            yield line
 
 
-THRESHOLD = 1048576
 if __name__ == "__main__":
     file_name = Path(sys.argv[1])
     nl = []
     target_char = sys.argv[2]
+
     for line in read_lines(file_name):
         stripped = line.strip()
         if stripped and target_char in stripped:
             indx = stripped.index(target_char)
-            cleaned = stripped[indx:]
+            cleaned = stripped[indx + 1 :]
             nl.append(cleaned)
         elif stripped:
             nl.append(stripped)

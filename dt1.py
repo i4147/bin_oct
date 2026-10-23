@@ -12,9 +12,7 @@ import tempfile
 import threading
 import time
 from typing import Callable
-
 from loguru import logger
-
 
 Translator = Callable[[str], str]
 FALLBACK_BACKENDS = (

@@ -1,9 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
-import os
 import shutil
 import subprocess
 import sys
@@ -70,7 +70,7 @@ def optimize_one(args: tuple[Path, int, bool]) -> Result:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("-q", "--quality", type=int, default=70)
     ap.add_argument("-n", "--dry-run", action="store_true")
     ap.add_argument("--root", default=".")

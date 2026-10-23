@@ -3,11 +3,9 @@
 from __future__ import annotations
 from pathlib import Path
 import sys
-
 import cv2
 from dh import cprint, get_files, mpf
 import nude
-
 
 nude_path = Path("nude")
 nude_path.mkdir(exist_ok=True)

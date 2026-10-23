@@ -15,10 +15,8 @@ from typing import Optional
 import urllib.error
 import urllib.parse
 import urllib.request
-
 import requests
 from tqdm import tqdm
-
 
 try:
     import pycurl

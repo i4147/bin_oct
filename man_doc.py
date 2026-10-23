@@ -6,7 +6,6 @@ import gzip
 from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
-
 from dh import cprint, mpf, runcmd
 
 

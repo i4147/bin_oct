@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import absolute_import, annotations
 import calendar
 import contextlib
@@ -11,12 +10,10 @@ import os
 import sys
 from typing import Optional
 from zoneinfo import ZoneInfo
-
 from dateutil.relativedelta import relativedelta
 import fire
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
-
 
 __version__ = "0.0.0"
 DATE_FIELDS = [

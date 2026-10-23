@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import asyncio
@@ -13,7 +12,6 @@ import subprocess
 import sys
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
-
 
 PYPI_BASE = "https://pypi.org"
 USER_AGENT = "pypi-user-packages/1.3"

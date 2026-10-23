@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import datetime as dt
@@ -10,7 +9,6 @@ import shlex
 import subprocess
 import sys
 import time
-
 
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 CLIPBOARD_MAX_BYTES = 1 * 1024 * 1024

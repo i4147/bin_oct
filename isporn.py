@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 from pathlib import Path
-
 from dh import cprint, get_files, mpf
 from nudenet import NudeDetector
-
 
 safe_path = Path("safe")
 sexy_path = Path("sexy")

@@ -5,7 +5,6 @@ import argparse
 from multiprocessing import Pool, cpu_count
 import re
 import sys
-
 import hunspell
 
 

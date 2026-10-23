@@ -14,7 +14,6 @@ import sys
 import tempfile
 from typing import Any, Callable, Iterable, Optional, Sequence
 
-
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000
 DEFAULT_ENCODING = "utf-8"

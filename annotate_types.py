@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor

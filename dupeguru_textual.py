@@ -8,7 +8,6 @@ import hashlib
 from pathlib import Path
 import sys
 from typing import ClassVar
-
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding

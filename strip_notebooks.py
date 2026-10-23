@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import json
@@ -7,9 +6,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, Final
-
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 import subprocess
 
-
 ERROR_DIR = Path("error")
 OK_DIR = Path("ok")
 

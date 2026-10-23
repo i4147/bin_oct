@@ -15,7 +15,6 @@ import stat
 import subprocess
 import sys
 from typing import Optional
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
@@ -98,7 +97,7 @@ def _ensure_tree_sitter() -> None:
     try:
         from tree_sitter import Parser
     except Exception as exc:
-        msg = "tree-sitter is required for --remove mode. Install with: pip install tree_sitter tree_sitter_languages"
+        msg = "tree-sitter not installed"
         raise RuntimeError(msg) from exc
     try:
         from tree_sitter_languages import get_language

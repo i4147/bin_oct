@@ -5,7 +5,6 @@ import argparse
 from multiprocessing import cpu_count
 from pathlib import Path
 import sys
-
 from bs4 import BeautifulSoup
 from html_to_markdown import Options, convert
 

@@ -13,9 +13,7 @@ from tempfile import NamedTemporaryFile
 import threading
 import time
 from typing import Callable, TypeAlias
-
 from loguru import logger
-
 
 Translator: TypeAlias = Callable[[str], str]
 LANGUAGE_CODES: dict[str, str] = {

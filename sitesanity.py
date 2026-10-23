@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from fnmatch import fnmatch
@@ -7,7 +6,6 @@ import importlib.metadata
 import logging
 from pathlib import Path
 import sys
-
 
 logging.basicConfig(
     level=logging.INFO,

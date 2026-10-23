@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -10,7 +9,6 @@ from pathlib import Path
 import sys
 import time
 from typing import Iterable, Sequence
-
 
 try:
     from tree_sitter import Language, Node, Parser, Query, QueryCursor

@@ -143,7 +143,7 @@ def iter_js_files(paths: list[str]) -> Iterator[str]:
             if not path.name.startswith(".") and path.suffix.lower() == ".js":
                 yield str(path.resolve())
         elif path.is_dir():
-            for root, dirs, files in os.walk(path, followlinks=False):
+            for root, dirs, files in path.walk(followlinks=False):
                 dirs[:] = [d for d in dirs if d not in _SKIP_DIRS and not d.startswith(".")]
                 for file in files:
                     if file.startswith("."):

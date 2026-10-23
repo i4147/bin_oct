@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
 
+from __future__ import annotations
 import argparse
 import multiprocessing as mp
 import os
@@ -12,13 +12,11 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
-
 from dh import walker
 
 GREEN = "\033[32m"
 DIM = "\033[2m"
 RESET = "\033[0m"
-
 ALL_EXTS = [".jpg", ".jpeg", ".png", ".svg"]
 KIND_BY_EXT = {".jpg": "jpg", ".jpeg": "jpg", ".png": "png", ".svg": "svg"}
 JPEG_MAGIC: Final[bytes] = b"\xff\xd8\xff"
@@ -99,7 +97,6 @@ def optimize_jpg(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
     elif opts["jpg_normal"] and not opts["jpg_progressive"]:
         flags.append("--all-normal")
     flags.extend(opts["jpegoptim_extra"])
-
     if dry_run:
         tmpdir = tempfile.mkdtemp()
         try:
@@ -121,7 +118,6 @@ def optimize_jpg(path: Path, before: int, opts: dict, dry_run: bool) -> Result:
             return Result(path, before, after, "optimized", "jpg", "", out, err)
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
-
     tmp_path: Path | None = None
     try:
         with tempfile.NamedTemporaryFile(suffix=path.suffix, dir=path.parent, delete=False) as tmp:
@@ -270,43 +266,34 @@ def main() -> int:
     ap.add_argument("--no-recursive", action="store_true")
     ap.add_argument("--only", nargs="+", choices=["jpg", "png", "svg"], default=None)
     ap.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT, metavar="SECONDS")
-
     ap.add_argument("--jpg-quality", type=int, default=70)
     ap.add_argument("--progressive", action="store_true")
     ap.add_argument("--normal", action="store_true")
     ap.add_argument("--jpegoptim", default="jpegoptim", metavar="PATH")
     ap.add_argument("--jpegoptim-arg", action="append", default=[], metavar="ARG")
-
     ap.add_argument("--png-quality", default="65-80")
     ap.add_argument("--speed", type=int, choices=range(1, 12), default=None, metavar="1-11")
     ap.add_argument("--posterize", type=int, choices=range(5), default=None, metavar="0-4")
     ap.add_argument("--pngquant", default="pngquant", metavar="PATH")
     ap.add_argument("--pngquant-arg", action="append", default=[], metavar="ARG")
-
     ap.add_argument("--svg-precision", type=int, default=None)
     ap.add_argument("--svg-config", default=None)
     ap.add_argument("--no-svg-multipass", action="store_true")
     ap.add_argument("--pretty", action="store_true")
     ap.add_argument("--svgo", default="svgo", metavar="PATH")
     ap.add_argument("--svgo-arg", action="append", default=[], metavar="ARG")
-
     args = ap.parse_args()
-
     if args.progressive and args.normal:
         print("error: --progressive and --normal are mutually exclusive", file=sys.stderr)
         return 2
-
     root = Path(args.root).resolve()
     files = list(walker(root, recursive=not args.no_recursive, exts=ALL_EXTS))
-
     if args.only:
         only_set = set(args.only)
         files = [p for p in files if kind_of(p) in only_set]
-
     if not files:
         print(f"No matching files found under {root}")
         return 0
-
     tool_by_kind = {"jpg": args.jpegoptim, "png": args.pngquant, "svg": args.svgo}
     kinds_present = {kind_of(p) for p in files}
     missing: set[str] = set()
@@ -315,11 +302,9 @@ def main() -> int:
             missing.add(k)
             print(f"Warning: {tool_by_kind[k]!r} not found — skipping all {k} files", file=sys.stderr)
     files = [p for p in files if kind_of(p) not in missing]
-
     if not files:
         print("No processable files (all required tools missing).")
         return 1
-
     print(f"Root: {root}")
     print(f"Files: {len(files)} | jobs: {args.jobs} | dry-run: {args.dry_run}")
     print(
@@ -327,7 +312,6 @@ def main() -> int:
         f"svg-multipass: {not args.no_svg_multipass}"
     )
     print("-" * 60)
-
     opts = {
         "jpg_quality": args.jpg_quality,
         "jpg_progressive": args.progressive,
@@ -349,11 +333,9 @@ def main() -> int:
         "verbose": args.verbose,
     }
     tasks = [(p, opts, args.dry_run) for p in files]
-
     total_saved = 0
     counts = {"optimized": 0, "unchanged": 0, "error": 0}
     by_kind: dict[str, int] = {}
-
     with mp.Pool(processes=args.jobs) as pool:
         for r in pool.imap_unordered(optimize_one, tasks):
             if args.verbose and (r.stdout or r.stderr):
@@ -374,7 +356,6 @@ def main() -> int:
                 print(f"{r.path.name} {DIM}unchanged{RESET}")
             else:
                 print(f"{r.path.name} {DIM}error: {r.detail}{RESET}", file=sys.stderr)
-
     print("-" * 60)
     label = "Would free" if args.dry_run else "Space freed"
     print(f"Optimized: {counts['optimized']} | Unchanged: {counts['unchanged']} | Errors: {counts['error']}")

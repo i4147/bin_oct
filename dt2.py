@@ -12,10 +12,8 @@ import sys
 import threading
 import time
 from typing import Any, Final
-
 from deep_translator import GoogleTranslator
 from loguru import logger
-
 
 MAX_WORKERS: Final[int] = 8
 RETRY_ATTEMPTS: Final[int] = 4

@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 import argparse
 from pathlib import Path
 import subprocess
 import sys
-
 from dh import get_nobinary, get_random_filename, should_skip
+
+MAX_CLIPBOARD_BYTES = 1024 * 1024
 
 
 def runcmd(cmd: list[str]) -> int:
@@ -37,14 +39,25 @@ def build_merged_content(files_content: list[tuple[Path, str]], cwd: Path) -> st
     return merged_content
 
 
+def merged_content_byte_size(files_content: list[tuple[Path, str]], cwd: Path) -> int:
+    total = 0
+    for path, content in files_content:
+        total += len(f"# File: {path.relative_to(cwd)}\n".encode("utf-8"))
+        total += len(content.encode("utf-8"))
+        if not content.endswith("\n"):
+            total += 1
+    return total
+
+
 def copy_to_clipboard(content: str) -> None:
     if not content:
         return
-    if len(content) < 1024 * 1024:
-        runcmd(["termux-clipboard-set", content])
-        print("✅ merged content copied to clipboard.")
-    else:
-        print("❌ merged content is bigger than 1mb, can't set clipboard content")
+    size = len(content.encode("utf-8"))
+    if size > MAX_CLIPBOARD_BYTES:
+        print(f"ℹ️  Merged content is {size:,} bytes (> 1 MB), skipping clipboard.")
+        return
+    runcmd(["termux-clipboard-set", content])
+    print("✅ merged content copied to clipboard.")
 
 
 def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], cwd: Path) -> None:
@@ -54,11 +67,14 @@ def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], 
         with output_file.open("w", encoding="utf-8") as fo:
             for path, content in files_content:
                 relative_path = path.relative_to(cwd)
-                fo.write(f"# File: {relative_path}\n")
+                header = f"# File: {relative_path}\n"
+                fo.write(header)
                 fo.write(content)
                 if not content.endswith("\n"):
                     fo.write("\n")
-                total_size += len(content)
+                total_size += len(header.encode("utf-8")) + len(content.encode("utf-8"))
+                if not content.endswith("\n"):
+                    total_size += 1
                 file_count += 1
         print(f"✅ Merged {file_count} files ({total_size:,} bytes) into: {output_file}")
     except OSError as e:
@@ -89,6 +105,7 @@ def merge_files_by_type(
         return []
     if not group_by_ext:
         output_files: list[Path] = []
+        total_size = merged_content_byte_size(valid_files, cwd)
         if write:
             output_file = cwd / f"{get_random_filename()}.txt"
             extensions = {get_file_extension(f) for f, _ in valid_files}
@@ -98,7 +115,10 @@ def merge_files_by_type(
                     output_file = cwd / f"{get_random_filename()}.{ext}"
             write_merged_file(output_file, valid_files, cwd)
             output_files.append(output_file)
-        copy_to_clipboard(build_merged_content(valid_files, cwd))
+        if total_size <= MAX_CLIPBOARD_BYTES:
+            copy_to_clipboard(build_merged_content(valid_files, cwd))
+        else:
+            print(f"ℹ️  Merged content is {total_size:,} bytes (> 1 MB), skipping clipboard.")
         return output_files
     ext_groups: dict[str, list[tuple[Path, str]]] = {}
     for path, content in valid_files:
@@ -107,19 +127,30 @@ def merge_files_by_type(
             ext_groups[ext] = []
         ext_groups[ext].append((path, content))
     output_files = []
-    combined = ""
+    combined_parts: list[str] = []
+    combined_size = 0
+    clipboard_skipped = False
     output_dir = cwd / "merged"
     if write:
         output_dir.mkdir(exist_ok=True)
     for ext, group_files in ext_groups.items():
-        combined += build_merged_content(group_files, cwd)
+        group_content = build_merged_content(group_files, cwd)
+        if not clipboard_skipped:
+            group_bytes = len(group_content.encode("utf-8"))
+            if combined_size + group_bytes <= MAX_CLIPBOARD_BYTES:
+                combined_parts.append(group_content)
+                combined_size += group_bytes
+            else:
+                clipboard_skipped = True
+                print("ℹ️  Combined merged content exceeds 1 MB, skipping clipboard.")
         if write:
             output_file = (
                 output_dir / f"{get_random_filename()}.{ext}" if ext else output_dir / f"{get_random_filename()}.txt"
             )
             write_merged_file(output_file, group_files, cwd)
             output_files.append(output_file)
-    copy_to_clipboard(combined)
+    if not clipboard_skipped and combined_parts:
+        copy_to_clipboard("".join(combined_parts))
     return output_files
 
 

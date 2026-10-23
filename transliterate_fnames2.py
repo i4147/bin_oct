@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import pathlib
 import re
 import unicodedata
-
 
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",

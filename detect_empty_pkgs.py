@@ -9,7 +9,6 @@ import shutil
 import tarfile
 import zipfile
 
-
 WORKERS = 4
 MIN_ARCHIVE_BYTES = 300
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")

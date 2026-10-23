@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
+
 from __future__ import annotations
 import os
 from pathlib import Path
@@ -156,8 +157,7 @@ def is_processable(p: Path) -> bool:
 
 
 def is_allowed(p: Path, explicit: bool) -> bool:
-    # Explicit CLI arguments are always allowed regardless of name/ext.
-    # Binary / unreadable files are rejected later inside process_file().
+
     if explicit:
         return True
     if p.suffix.lower() in SKIP_EXTS:
@@ -211,7 +211,7 @@ def process_file(path_str: str) -> tuple[str, int] | None:
         data = p.read_bytes()
     except OSError:
         return None
-    # Reject binary content (NUL byte is a strong signal).
+
     if b"\x00" in data:
         return None
     original_size = len(data)
@@ -279,7 +279,6 @@ def collect_files(roots: list[Path]) -> tuple[list[Path], set[str]]:
 
     for root in roots:
         try:
-            # is_file() follows symlinks, so an explicit symlink-to-file works.
             if root.is_file():
                 add(root, True)
                 continue

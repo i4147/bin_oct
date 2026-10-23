@@ -7,7 +7,6 @@ from pathlib import Path
 import re
 from typing import Any
 
-
 SKIPPED_DIRS: frozenset[str] = frozenset({
     ".git",
     "__pycache__",

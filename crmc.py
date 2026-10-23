@@ -275,8 +275,17 @@ def _atomic_write(path: Path, data: bytes) -> None:
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
-        shutil.copymode(path, tmp)
-        tmp.replace(path)
+
+        with contextlib.suppress(OSError):
+            shutil.copymode(path, tmp)
+
+        try:
+            tmp.replace(path)
+        except OSError:
+            # Fallback: direct write if Termux storage blocks atomic replacement
+            path.write_bytes(data)
+            tmp.unlink(missing_ok=True)
+
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise

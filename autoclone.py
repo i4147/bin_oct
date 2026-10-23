@@ -1,15 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
 import subprocess
 import sys
-
 from dotenv import load_dotenv
 import requests
-
 
 env_path = Path.home() / ".env"
 if env_path.exists():

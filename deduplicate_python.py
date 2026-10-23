@@ -14,9 +14,7 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-
 from loguru import logger
-
 
 try:
     from tree_sitter import Parser

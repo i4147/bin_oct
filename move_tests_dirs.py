@@ -6,9 +6,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Final, NamedTuple
-
 from loguru import logger
-
 
 MAX_WORKERS: Final[int] = 8
 SRC: Final[Path] = Path("/data/data/com.termux/files/usr/lib/python3.14/site-packages")

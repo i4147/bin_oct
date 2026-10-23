@@ -1,188 +1,323 @@
 #!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 import difflib
-from multiprocessing import Pool
-from pathlib import Path
+import os
 import shutil
 import sys
-from typing import TYPE_CHECKING
+from multiprocessing import Pool
+from pathlib import Path
+from typing import NamedTuple
 
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_rust
 
 
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-WORKERS: int = 8
+# tree-sitter-rust emits line_comment / block_comment, not "comment".
+# Accept all spellings so this works across grammar versions.
+_COMMENT_TYPES = frozenset({"comment", "line_comment", "block_comment"})
+
 _PARSER: Parser | None = None
 
 
 def get_parser() -> Parser:
     global _PARSER
     if _PARSER is None:
-        lang: Language = Language(tree_sitter_rust.language())
-        parser: Parser = Parser()
-        parser.language = lang
-        _PARSER = parser
+        _PARSER = Parser(Language(tree_sitter_rust.language()))
     return _PARSER
 
 
-def is_rust_file(path: Path) -> bool:
-    if path.is_dir() or path.is_symlink() or path.name.startswith("."):
-        return False8
-    return path.suffix.lower() == ".rs"
+# ---------- comment classification ----------------------------------------
+
+
+def is_doc_comment(text: bytes) -> bool:
+    """True for ///, //!, /** … */ and /*! … */.
+
+    Explicitly false for ////, /***/ and /**/ (Rust treats those as
+    ordinary comments, per the reference).
+    """
+    if text.startswith(b"///"):
+        return len(text) < 4 or text[3:4] != b"/"
+    if text.startswith(b"//!"):
+        return True
+    if text.startswith(b"/**"):
+        return len(text) < 4 or text[3:4] not in (b"/", b"*")
+    if text.startswith(b"/*!"):
+        return True
+    return False
 
 
 def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
+    """Byte ranges of non-doc comments, grown to swallow adjacent blanks."""
     ranges: list[tuple[int, int]] = []
-    stack: list[Node] = [root]
+    stack = [root]
     while stack:
-        node: Node = stack.pop()
-        if node.type == "comment":
-            comment_bytes = content[node.start_byte : node.end_byte]
-            stripped = comment_bytes.lstrip()
-            if not (stripped.startswith((b"///", b"//!", b"/**", b"/*!"))):
-                ranges.append((node.start_byte, node.end_byte))
+        node = stack.pop()
+        if node.type in _COMMENT_TYPES:
+            text = content[node.start_byte : node.end_byte].lstrip()
+            if is_doc_comment(text):
+                continue
+            start, end = node.start_byte, node.end_byte
+            # swallow spaces/tabs immediately before the comment on the same line
+            while start > 0 and content[start - 1 : start] in (b" ", b"\t"):
+                start -= 1
+            # if the rest of the line is empty, swallow the newline too
+            nl = content.find(b"\n", end)
+            if nl >= 0:
+                if content[end:nl].strip(b" \t\r") == b"":
+                    end = nl + 1
+            elif content[end:].strip(b" \t\r") == b"":
+                end = len(content)
+            ranges.append((start, end))
             continue
         for child in reversed(node.children):
             stack.append(child)
-    return ranges
+    # merge adjacent/overlapping ranges (can happen after extension)
+    ranges.sort()
+    merged: list[tuple[int, int]] = []
+    for s, e in ranges:
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    return merged
+
+
+def strip_comments(content: bytes) -> tuple[bytes, int, bool]:
+    """Return (stripped, removed_count, original_had_syntax_error)."""
+    tree = get_parser().parse(content)
+    ranges = collect_comment_ranges(tree.root_node, content)
+    if not ranges:
+        return content, 0, tree.root_node.has_error
+    out = bytearray()
+    last = 0
+    for s, e in ranges:
+        out.extend(content[last:s])
+        last = e
+    out.extend(content[last:])
+    return bytes(out), len(ranges), tree.root_node.has_error
+
+
+# ---------- whitespace tidy ------------------------------------------------
 
 
 def remove_blank_lines(content: bytes) -> bytes:
-    lines = content.splitlines(keepends=True)
-    non_blank = [line for line in lines if line.strip(b" \t\r\n") != b""]
-    return b"".join(non_blank)
+    """Drop lines that are entirely whitespace. Never touches other lines."""
+    return b"".join(line for line in content.splitlines(keepends=True) if line.strip(b" \t\r\n"))
 
 
-def strip_comments(content: bytes) -> tuple[bytes, int]:
-    parser: Parser = get_parser()
-    tree = parser.parse(content)
-    ranges: list[tuple[int, int]] = collect_comment_ranges(tree.root_node, content)
-    if not ranges:
-        return content, 0
-    ranges.sort(key=lambda r: r[0])
-    out: bytearray = bytearray()
-    last: int = 0
-    for start, end in ranges:
-        out.extend(content[last:start])
-        last = end
-    out.extend(content[last:])
-    return bytes(out), len(ranges)
+def validate_rust(content: bytes) -> bool:
+    return not get_parser().parse(content).root_node.has_error
 
 
-def process_file(args_tuple: tuple[Path, Path, bool, bool]) -> tuple[str, int, int, str, str, str]:
-    path, base, dry_run, backup = args_tuple
+# ---------- per-file worker ------------------------------------------------
+
+
+class FileResult(NamedTuple):
+    name: str
+    reduced: int
+    count: int
+    changed: bool
+    error: str
+    old_text: str
+    new_text: str
+
+
+def process_file(task: tuple[str, bool, bool]) -> FileResult:
+    path_str, dry_run, backup = task
+    path = Path(path_str)
+    name = path.name
     try:
-        path = Path(path).resolve()
-        base = Path(base).resolve()
-        content: bytes = path.read_bytes()
-        orig_size = len(content)
+        content = path.read_bytes()
+    except OSError as exc:
+        return FileResult(name, 0, 0, False, str(exc), "", "")
+
+    orig_size = len(content)
+    try:
+        new_content, count, orig_has_error = strip_comments(content)
+        if count > 0:
+            new_content = remove_blank_lines(new_content)
+            # validate the exact bytes we intend to write
+            if not orig_has_error and not validate_rust(new_content):
+                return FileResult(
+                    name,
+                    0,
+                    count,
+                    False,
+                    "stripping comments introduced syntax errors",
+                    "",
+                    "",
+                )
+    except Exception as exc:  # noqa: BLE001 — one bad file must not kill the run
+        return FileResult(name, 0, 0, False, f"{type(exc).__name__}: {exc}", "", "")
+
+    if new_content == content:
+        return FileResult(name, 0, count, False, "", "", "")
+
+    reduced = orig_size - len(new_content)
+    old_text = content.decode("utf-8", errors="replace")
+    new_text = new_content.decode("utf-8", errors="replace")
+    if not dry_run:
         try:
-            old_text = content.decode("utf-8", errors="replace")
-        except Exception:
-            old_text = ""
-        new_content, count = strip_comments(content)
-        new_content = remove_blank_lines(new_content)
-        new_size = len(new_content)
-        reduced = orig_size - new_size
-        try:
-            new_text = new_content.decode("utf-8", errors="replace")
-        except Exception:
-            new_text = ""
-        if not dry_run and reduced > 0:
             if backup:
-                backup_path = path.with_suffix(path.suffix + ".bak")
-                shutil.copy2(path, backup_path)
+                shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
             path.write_bytes(new_content)
-        try:
-            rel: str = str(path.relative_to(base))
-        except ValueError:
-            rel = str(path)
-        return rel, reduced, count, "", old_text, new_text
-    except Exception as exc:
-        return str(path), 0, 0, str(exc), "", ""
+        except OSError as exc:
+            return FileResult(name, 0, count, False, str(exc), old_text, new_text)
+    return FileResult(name, reduced, count, True, "", old_text, new_text)
 
 
-def iter_rust_files(paths: Iterable[Path]) -> Iterator[Path]:
+# ---------- traversal ------------------------------------------------------
+
+
+def iter_rust_files(paths):
     seen: set[Path] = set()
     for p in paths:
+        if p.is_symlink():
+            logger.warning(f"Skipping symlink: {p}")
+            continue
         if p.is_file():
-            if is_rust_file(p):
-                rp: Path = p.resolve()
-                if rp not in seen:
-                    seen.add(rp)
-                    yield p
+            if p.suffix.lower() != ".rs" or p.name.startswith("."):
+                logger.warning(f"Skipping non-Rust file: {p}")
+                continue
+            rp = p.resolve()
+            if rp not in seen:
+                seen.add(rp)
+                yield p
         elif p.is_dir():
-            for f in sorted(p.rglob("*")):
-                if f.is_file() and is_rust_file(f):
-                    rp = f.resolve()
-                    if rp not in seen:
-                        seen.add(rp)
-                        yield f
-
-
-def print_colorful_diff(old_text: str, new_text: str, rel: str) -> None:
-    diff = difflib.unified_diff(
-        old_text.splitlines(keepends=True), new_text.splitlines(keepends=True), fromfile=f"a/{rel}", tofile=f"b/{rel}"
-    )
-    for line in diff:
-        if line.startswith("+") and not line.startswith("+++"):
-            sys.stdout.write(f"\033[32m{line}\033[0m")
-        elif line.startswith("-") and not line.startswith("---"):
-            sys.stdout.write(f"\033[31m{line}\033[0m")
-        elif line.startswith("@@"):
-            sys.stdout.write(f"\033[36m{line}\033[0m")
+            for dirpath, dirnames, filenames in os.walk(p, followlinks=False):
+                dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
+                for fname in sorted(filenames):
+                    if fname.startswith(".") or not fname.lower().endswith(".rs"):
+                        continue
+                    fp = Path(dirpath) / fname
+                    if fp.is_symlink():
+                        continue
+                    rp = fp.resolve()
+                    if rp in seen:
+                        continue
+                    seen.add(rp)
+                    yield fp
         else:
-            sys.stdout.write(line)
+            logger.warning(f"Path not found: {p}")
+
+
+# ---------- output ---------------------------------------------------------
+
+
+def _color(code: str, text: str) -> str:
+    return f"\033[{code}m{text}\033[0m" if sys.stdout.isatty() else text
+
+
+def _truncate(s: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    if len(s) <= width:
+        return s
+    return s[: width - 1] + "…" if width > 1 else "…"
+
+
+def format_result(index: int, total: int, r: FileResult, term_width: int) -> str:
+    idx_w = len(str(total))
+    prefix = f"[{index:>{idx_w}}]  "
+    bytes_w = 9  # len("unchanged")
+    name_w = max(10, term_width - len(prefix) - 2 - bytes_w)
+    name = _truncate(r.name, name_w).ljust(name_w)
+    if r.changed:
+        val = _color("32", str(r.reduced))  # green
+    else:
+        val = _color("2", "unchanged")  # dim
+    return f"{prefix}{name}  {val}"
+
+
+def print_diff(old: str, new: str, name: str) -> None:
+    use_color = sys.stdout.isatty()
+    for line in difflib.unified_diff(
+        old.splitlines(keepends=True),
+        new.splitlines(keepends=True),
+        fromfile=f"a/{name}",
+        tofile=f"b/{name}",
+    ):
+        if use_color:
+            if line.startswith("+") and not line.startswith("+++"):
+                sys.stdout.write(f"\033[32m{line}\033[0m")
+                continue
+            if line.startswith("-") and not line.startswith("---"):
+                sys.stdout.write(f"\033[31m{line}\033[0m")
+                continue
+            if line.startswith("@@"):
+                sys.stdout.write(f"\033[36m{line}\033[0m")
+                continue
+        sys.stdout.write(line)
+
+
+# ---------- CLI ------------------------------------------------------------
 
 
 def main() -> int:
-    ap: argparse.ArgumentParser = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="Strip non-doc comments from Rust sources.")
     ap.add_argument("paths", nargs="*", type=Path)
-    ap.add_argument("--diff", action="store_true")
-    ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--backup", action="store_true")
-    args: argparse.Namespace = ap.parse_args()
-    inputs: list[Path] = list(args.paths) if args.paths else [Path()]
-    files: list[Path] = list(iter_rust_files(inputs))
+    ap.add_argument("-n", "--dry-run", action="store_true", help="Report changes (implies --diff), do not write.")
+    ap.add_argument("-d", "--diff", action="store_true", help="Show unified diff.")
+    ap.add_argument("-b", "--backup", action="store_true", help="Write <file>.bak before overwriting.")
+    ap.add_argument("-w", "--workers", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("-v", "--verbose", action="count", default=0)
+    ap.add_argument("-q", "--quiet", action="store_true")
+    args = ap.parse_args()
+
+    level = "ERROR" if args.quiet else "DEBUG" if args.verbose >= 2 else "INFO" if args.verbose else "WARNING"
+    logger.remove()
+    logger.add(sys.stderr, level=level)
+
+    show_diff = args.diff or args.dry_run
+    inputs = list(args.paths) if args.paths else [Path()]
+    files = list(iter_rust_files(inputs))
     if not files:
         logger.error("No Rust files to process.")
         return 1
-    base: Path = Path.cwd()
-    total_reduced: int = 0
-    errors: int = 0
-    tasks = [(p, base, args.dry_run, args.backup) for p in files]
-    if len(files) == 1:
-        rel, reduced, count, err, old_text, new_text = process_file(tasks[0])
-        if err:
-            errors += 1
-            logger.error(f"{rel}: ERROR: {err}")
+
+    term_width = shutil.get_terminal_size((100, 24)).columns
+    total = len(files)
+    workers = max(1, args.workers)
+    tasks = [(str(p), args.dry_run, args.backup) for p in files]
+
+    scanned = changed = skipped = failed = total_reduced = 0
+
+    def emit(i: int, r: FileResult) -> None:
+        nonlocal scanned, changed, skipped, failed, total_reduced
+        scanned += 1
+        if r.error:
+            failed += 1
+            logger.error(f"{r.name}: {r.error}")
+            return
+        if r.changed:
+            changed += 1
+            total_reduced += r.reduced
         else:
-            total_reduced += reduced
-            green_reduced = f"\033[32m{reduced}\033[0m"
-            print(f"{rel}  {green_reduced}")
-            if args.diff and reduced > 0:
-                print_colorful_diff(old_text, new_text, rel)
+            skipped += 1
+        if not args.quiet:
+            print(format_result(i, total, r, term_width))
+            if show_diff and r.changed:
+                print_diff(r.old_text, r.new_text, r.name)
+
+    if total == 1 or workers == 1:
+        for i, task in enumerate(tasks, 1):
+            emit(i, process_file(task))
     else:
-        with Pool(processes=WORKERS) as pool:
-            results = [pool.apply_async(process_file, t) for t in tasks]
-            for res in results:
-                rel, reduced, _count, err, old_text, new_text = res.get()
-                if err:
-                    errors += 1
-                    logger.error(f"{rel}: ERROR: {err}")
-                    continue
-                total_reduced += reduced
-                green_reduced = f"\033[32m{reduced}\033[0m"
-                print(f"{rel}  {green_reduced}")
-                if args.diff and reduced > 0:
-                    print_colorful_diff(old_text, new_text, rel)
-    print(f"\nTotal space freed: {total_reduced} bytes")
-    return 1 if errors else 0
+        with Pool(processes=workers) as pool:
+            for i, result in enumerate(pool.imap(process_file, tasks), 1):
+                emit(i, result)
+
+    if not args.quiet:
+        print(
+            f"\nScanned {scanned} file(s): {changed} changed, "
+            f"{skipped} unchanged, {failed} failed; {total_reduced} bytes freed.",
+            file=sys.stderr,
+        )
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

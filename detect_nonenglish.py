@@ -11,7 +11,6 @@ from pathlib import Path
 import sys
 from typing import Optional, Sequence
 
-
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".txt",
     ".csv",

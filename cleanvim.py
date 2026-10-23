@@ -6,10 +6,8 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 import time
-
 from tree_sitter import Language, Node, Parser
 import tree_sitter_vim
-
 
 PathLike = str | Path
 

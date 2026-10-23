@@ -6,11 +6,9 @@ import multiprocessing as mp
 from pathlib import Path
 import sys
 from typing import Iterator
-
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
-
 
 WORKERS = 8
 ELF_TYPES = {

@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from pathlib import Path
 import re
 import sys
-
 
 CODE_BLOCK_RE = re.compile(
     r"^```(?:python|py)\b\s*\n(.*?)^```[ \t]*$",

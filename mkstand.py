@@ -11,11 +11,9 @@ import sys
 import time
 from typing import Any
 from urllib.parse import urljoin, urlparse
-
 from bs4 import BeautifulSoup
 from loguru import logger
 import requests
-
 
 logger.remove()
 logger.add(sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>")

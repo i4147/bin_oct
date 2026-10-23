@@ -7,9 +7,7 @@ from dataclasses import dataclass
 import multiprocessing
 from pathlib import Path
 from typing import Any, Iterable, Iterator
-
 from loguru import logger
-
 
 WORKERS = 8
 CHUNK_SIZE = 64 * 1024

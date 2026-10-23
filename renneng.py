@@ -1,12 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import os
 from pathlib import Path
 import re
-
 from deep_translator import GoogleTranslator
-
 
 DIRECTORY = "."
 non_english_pattern = re.compile(r"[^\x00-\x7F]")

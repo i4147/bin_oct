@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 import argparse
 from collections import defaultdict
 import json
 import operator
 from pathlib import Path
-
 from dh import get_files
 import ssdeep
 

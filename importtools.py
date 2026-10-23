@@ -15,7 +15,6 @@ import textwrap
 import traceback
 from typing import Any, Iterable, Iterator
 
-
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8
 DEFAULT_PY2_THRESHOLD: int = 85

@@ -6,10 +6,8 @@ import ast
 from dataclasses import dataclass
 from pathlib import Path
 import sys
-
 from rich.console import Console
 from rich.markdown import Markdown
-
 
 try:
     from readchar import (
@@ -18,17 +16,11 @@ try:
     )
 
     HAVE_READCHAR = True
-except Exception:  # pragma: no cover - optional dependency
+except Exception:
     HAVE_READCHAR = False
 
 
-# --------------------------------------------------------------------------- #
-# Keyboard input
-# --------------------------------------------------------------------------- #
-
-
 def _key_set(*names: str) -> set[str]:
-    """Collect the string values of ``readchar.key`` members by name."""
     keys: set[str] = set()
     for name in names:
         value = getattr(RKEY, name, None) if HAVE_READCHAR else None
@@ -47,7 +39,6 @@ QUIT_KEYS = {"q", "Q", "\x03", "\x04", "\x1b"}
 
 
 def classify(key: str) -> str | None:
-    """Map a raw key press (or a line of input) to an action name."""
     if key == "":
         return "next_page"
     if key in NEXT_KEYS:
@@ -68,14 +59,11 @@ def classify(key: str) -> str | None:
 
 
 def read_action() -> str:
-    """Block until the user presses a key and return the action name."""
     if HAVE_READCHAR:
         try:
             return classify(readkey()) or ""
         except (EOFError, KeyboardInterrupt):
             return "quit"
-
-    # Fallback: line based paging, no raw keyboard access required.
     try:
         line = input("  [enter]=next  b=back  n/p=file  q=quit > ").strip()
     except (EOFError, KeyboardInterrupt):
@@ -83,29 +71,20 @@ def read_action() -> str:
     return classify(line[:1] if line else "") or ""
 
 
-# --------------------------------------------------------------------------- #
-# Collecting docstrings
-# --------------------------------------------------------------------------- #
-
-
 @dataclass
 class Document:
-    """One ``.py`` file and the module docstring found in it."""
-
     name: str
     docstring: str | None = None
     error: str | None = None
 
 
 def extract_docstring(path: Path) -> Document:
-    """Read *path* and return a :class:`Document` for its module docstring."""
     try:
         source = path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return Document(path.name, error="not a valid UTF-8 text file")
     except OSError as error:
         return Document(path.name, error=str(error))
-
     try:
         tree = ast.parse(source, filename=str(path))
     except SyntaxError as error:
@@ -113,24 +92,19 @@ def extract_docstring(path: Path) -> Document:
             path.name,
             error=f"syntax error on line {error.lineno}: {error.msg}",
         )
-    except ValueError as error:  # e.g. source code with null bytes
+    except ValueError as error:
         return Document(path.name, error=str(error))
-
     return Document(path.name, docstring=ast.get_docstring(tree))
 
 
 def render_document(console: Console, document: Document, width: int) -> list[str]:
-    """Render one document to a list of terminal lines."""
     lines = [f"  {document.name}  ", ""]
-
     if document.error is not None:
         lines.append(f"  (could not read module docstring: {document.error})")
         return lines
-
     if document.docstring is None or not document.docstring.strip():
         lines.append("  (this module has no docstring)")
         return lines
-
     previous_width = console.width
     console.width = width
     try:
@@ -143,15 +117,9 @@ def render_document(console: Console, document: Document, width: int) -> list[st
 
 
 def paginate(lines: list[str], height: int) -> list[list[str]]:
-    """Split *lines* into pages of at most *height* lines each."""
     height = max(height, 1)
     pages = [lines[i : i + height] for i in range(0, len(lines), height)]
     return pages or [[]]
-
-
-# --------------------------------------------------------------------------- #
-# Command line interface
-# --------------------------------------------------------------------------- #
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -182,7 +150,6 @@ def main() -> int:
     args = build_parser().parse_args()
     console = Console()
     err_console = Console(stderr=True)
-
     directory = Path(args.directory)
     try:
         if not directory.is_dir():
@@ -192,11 +159,9 @@ def main() -> int:
     except OSError as error:
         err_console.print(f"[red]Error:[/red] {error}")
         return 1
-
     if not paths:
         console.print(f"[yellow]No .py files found in[/yellow] {directory.resolve()}")
         return 0
-
     documents = [extract_docstring(path) for path in paths]
     rendered: dict[tuple[int, int], list[str]] = {}
 
@@ -211,22 +176,18 @@ def main() -> int:
     doc_index = 0
     page_index = 0
     message = ""
-
     while True:
         width = max(console.size.width, 20)
         height = max(console.size.height - 2, 1)
-
         body = lines_for(doc_index, width)
         pages = paginate(body, height)
         page_index = max(0, min(page_index, len(pages) - 1))
-
         status = (
             f" {documents[doc_index].name}"
             f"  ·  file {doc_index + 1}/{len(documents)}"
             f"  ·  page {page_index + 1}/{len(pages)}"
             f"  ·  q=quit "
         )[:width]
-
         console.clear()
         frame = [status, *pages[page_index]]
         if message:
@@ -234,9 +195,7 @@ def main() -> int:
             message = ""
         sys.stdout.write("\n".join(frame) + "\n")
         sys.stdout.flush()
-
         action = read_action()
-
         if action == "quit":
             break
         elif action == "next_page":
@@ -273,8 +232,6 @@ def main() -> int:
         elif action == "last":
             doc_index = len(documents) - 1
             page_index = 0
-        # Unknown keys are ignored and simply redraw the current page.
-
     return 0
 
 

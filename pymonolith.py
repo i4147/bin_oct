@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import base64
@@ -8,10 +7,8 @@ import re
 import sys
 from typing import Optional
 from urllib.parse import urljoin, urlparse
-
 from bs4 import BeautifulSoup
 import requests
-
 
 DEFAULT_MIME_TYPES: dict[str, str] = {
     ".css": "text/css",

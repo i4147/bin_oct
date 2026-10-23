@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import json
@@ -9,10 +8,8 @@ import re
 import sys
 import time
 from typing import Final, Sequence
-
 from deep_translator import GoogleTranslator
 from loguru import logger
-
 
 PERSIAN_RE: Final = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import ast
 import collections
@@ -7,10 +6,8 @@ import json
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, cast
-
 import astor
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

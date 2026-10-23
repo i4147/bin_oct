@@ -1,17 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from dh import gsz, rrs
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 import tree_sitter_python as tsp
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

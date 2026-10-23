@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
-
 from dh import SKIP_DIRS, unique_path
 
 
@@ -32,11 +30,11 @@ def remove_string_from_names(
             if new_path.exists():
                 new_path = unique_path(new_path)
             if dry_run:
-                print(f"[DRY RUN] Would rename: {item} -> {new_name}")
+                print(f"[DRY RUN] Would rename: {item.name} -> {new_name}")
             else:
                 try:
                     item.rename(new_path)
-                    print(f"{item} -> {new_name}")
+                    print(f"{item.name} -> {new_name}")
                     renamed_count += 1
                 except OSError as e:
                     print(f"Error renaming '{item.name}': {e}")
@@ -70,11 +68,11 @@ def replace_string_in_names(
             if new_path.exists():
                 new_path = unique_path(new_path)
             if dry_run:
-                print(f"[DRY RUN] Would rename: {item} -> {new_name}")
+                print(f"[DRY RUN] Would rename: {item.name} -> {new_name}")
             else:
                 try:
                     item.rename(new_path)
-                    print(f"{item} -> {new_name}")
+                    print(f"{item.name} -> {new_name}")
                     renamed_count += 1
                 except OSError as e:
                     print(f"Error renaming '{item.name}': {e}")

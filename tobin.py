@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 from hashlib import sha256
 from pathlib import Path

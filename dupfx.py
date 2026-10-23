@@ -6,16 +6,14 @@ from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from xxhash import xxh64
-
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 QUICK_READ: int = 4096
-CHUNK_SIZE: int = 65536
-POOL_WORKERS: int = 8
+CHUNK_SIZE: int = 32768
+POOL_WORKERS: int = 4
 
 
 def file_stat_key(p: Path) -> tuple[int, int] | None:
@@ -123,7 +121,7 @@ def main() -> None:
         "-r",
         "--remove",
         action="store_true",
-        default=False,
+        default=True,
         help="Actually delete duplicate files. Without this flag, only report them.",
     )
     p.add_argument(

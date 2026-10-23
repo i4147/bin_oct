@@ -6,10 +6,8 @@ import json
 from pathlib import Path
 import re
 import sys
-
 from dh import get_random_filename
 from loguru import logger
-
 
 ENGLISH_RE = re.compile(r"^[A-Za-z][A-Za-z\s\-'.]*$")
 

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import Counter
@@ -9,7 +8,6 @@ from pathlib import Path
 import re
 import time
 from typing import Iterable, Optional
-
 
 _ANSI = {
     "red": "\033[31m",

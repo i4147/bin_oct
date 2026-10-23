@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -8,11 +9,7 @@ import shutil
 import sys
 
 
-# --------------------------------------------------------------------------- #
-# Config
-# --------------------------------------------------------------------------- #
-
-TOP_N_PIE = 30  # top N extensions to show in the pie chart (tail → "other")
+TOP_N_PIE = 30
 
 SKIP_DIRS = {
     ".git",
@@ -38,11 +35,6 @@ SKIP_DIRS = {
 }
 
 
-# --------------------------------------------------------------------------- #
-# Colors
-# --------------------------------------------------------------------------- #
-
-
 class Colors:
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -59,11 +51,6 @@ class Colors:
     DATA_FG = YELLOW
 
 
-# --------------------------------------------------------------------------- #
-# Helpers
-# --------------------------------------------------------------------------- #
-
-
 def format_size(bytes_val: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if bytes_val < 1024:
@@ -76,11 +63,6 @@ def should_skip(path: Path) -> bool:
     if path.is_symlink():
         return True
     return any(part in SKIP_DIRS for part in path.parts)
-
-
-# --------------------------------------------------------------------------- #
-# Scanning
-# --------------------------------------------------------------------------- #
 
 
 def scan_extensions(show_size: bool = False) -> dict[str, tuple[list[Path], int]]:
@@ -96,13 +78,8 @@ def scan_extensions(show_size: bool = False) -> dict[str, tuple[list[Path], int]
                 file_size = file_path.stat().st_size if show_size else 0
                 ext_map[ext] = (paths + [file_path], total_size + file_size)
         except OSError:
-            continue  # permission denied, races, dangling entries
+            continue
     return ext_map
-
-
-# --------------------------------------------------------------------------- #
-# Terminal report
-# --------------------------------------------------------------------------- #
 
 
 def generate_report(
@@ -161,21 +138,15 @@ def format_table(
     return "\n".join(lines)
 
 
-# --------------------------------------------------------------------------- #
-# Pie chart (opt-in via -p/--pie-chart)
-# --------------------------------------------------------------------------- #
-
-
 def write_pie_chart(
     ext_map: dict[str, tuple[list[Path], int]],
     out_path: Path = Path("extinfo.png"),
     top_n: int = TOP_N_PIE,
 ) -> None:
-    """Render a pie chart of extension → total bytes. Requires matplotlib."""
     try:
         import matplotlib
 
-        matplotlib.use("Agg")  # headless: no display needed
+        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
         print(
@@ -188,7 +159,6 @@ def write_pie_chart(
         print("No files found — nothing to plot.", file=sys.stderr)
         return
 
-    # ext -> total bytes (we may have skipped stat()ing if size wasn't requested).
     sizes: dict[str, int] = {}
     for ext, (paths, cached_size) in ext_map.items():
         if cached_size:
@@ -205,7 +175,6 @@ def write_pie_chart(
     total_files = sum(len(paths) for paths, _ in ext_map.values())
     total_exts = len(sizes)
 
-    # Sort descending, cap at top_n, bucket tail into "other".
     ordered = sorted(sizes.items(), key=lambda kv: kv[1], reverse=True)
     if 0 < top_n < total_exts:
         head = ordered[:top_n]
@@ -216,7 +185,7 @@ def write_pie_chart(
         shown = total_exts
 
     values = [s for _, s in ordered]
-    total_size = sum(values) or 1  # avoid /0 on empty-ish trees
+    total_size = sum(values) or 1
 
     legend_labels = [f"{ext}  ({size / total_size * 100:.1f}%, {format_size(size)})" for ext, size in ordered]
 
@@ -249,11 +218,6 @@ def write_pie_chart(
     print(f"\nWrote pie chart: {out_path} ({out_path.stat().st_size:,} bytes)")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Report file extensions in current directory recursively.")
     parser.add_argument(
@@ -282,7 +246,6 @@ def main() -> None:
         else:
             print(f"Scanning {cwd_str} ({mode_str})...\n")
 
-        # When --pie-chart is on we need sizes regardless of -s.
         need_sizes = args.size or args.pie_chart
         ext_map = scan_extensions(show_size=need_sizes)
         if not ext_map:

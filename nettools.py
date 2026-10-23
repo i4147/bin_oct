@@ -17,7 +17,6 @@ import time
 from typing import Optional, Sequence
 from urllib import request as urlrequest
 
-
 try:
     from colorama import (
         Fore,

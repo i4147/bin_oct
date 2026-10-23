@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from collections import Counter
@@ -13,7 +12,6 @@ import re
 import sys
 import tempfile
 from typing import Iterator, Sequence
-
 
 try:
     import tomllib

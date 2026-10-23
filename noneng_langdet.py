@@ -8,9 +8,7 @@ from pathlib import Path
 import sys
 import time
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

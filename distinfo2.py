@@ -4,9 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 import sys
-
 from dh import cprint
-
 
 major, minor, _, _, _ = sys.version_info
 py_version = f"{major}.{minor}"

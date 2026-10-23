@@ -11,7 +11,6 @@ import sys
 import threading
 import time
 from typing import Callable, Optional
-
 from loguru import logger
 
 

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -16,11 +15,9 @@ import sys
 import tempfile
 import textwrap
 from typing import ClassVar, Iterable, Iterator, Literal, Sequence
-
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
-
 
 VERSION = "1.0.0"
 UTF8_BOM = b"\xef\xbb\xbf"

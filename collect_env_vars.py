@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-
 env_vars = set()
 env_var_pattern = re.compile("^([A-Z_0-9]+)=")
 for path in Path().rglob("*"):

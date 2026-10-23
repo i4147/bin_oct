@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 
+
 from __future__ import annotations
 from pathlib import Path
 import sys
@@ -25,7 +26,7 @@ def process_file(path: str | Path) -> tuple[bool, Path]:
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
-    files = (
+    files = list(
         [Path(f) for f in args]
         if args
         else get_files(

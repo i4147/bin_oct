@@ -3,7 +3,6 @@
 from __future__ import annotations
 from pathlib import Path
 
-
 if __name__ == "__main__":
     fn = Path.home() / "prompt.txt"
     text = fn.read_text(encoding="utf-8")

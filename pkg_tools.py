@@ -16,7 +16,6 @@ import urllib.error
 import urllib.request
 import zipfile
 
-
 try:
     from rapidfuzz import fuzz as _rapidfuzz
 except ImportError:

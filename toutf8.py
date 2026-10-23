@@ -1,15 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 import chardet
 from dh import get_nobinary, is_binary
 from loguru import logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Generator

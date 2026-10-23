@@ -13,9 +13,7 @@ import sys
 import sysconfig
 import token
 import tokenize
-
 from dh import runcmd
-
 
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8

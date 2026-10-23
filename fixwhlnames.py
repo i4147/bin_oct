@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 from email.parser import HeaderParser
@@ -9,9 +8,7 @@ import re
 import shutil
 from typing import Any, Final
 import zipfile
-
 from loguru import logger
-
 
 WHEEL_SUFFIX: Final[str] = ".whl"
 METADATA_SUFFIX: Final[str] = ".dist-info/METADATA"

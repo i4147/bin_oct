@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import json
@@ -10,9 +9,7 @@ import sys
 from typing import Any, Final
 import urllib.error
 import urllib.request
-
 from dotenv import load_dotenv
-
 
 ENV_PATH: Final[Path] = Path.home() / ".env"
 """Location of the .env file that holds GITHUB_TOKEN."""

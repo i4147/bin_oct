@@ -8,10 +8,8 @@ from pathlib import Path
 import re
 import sys
 from typing import TYPE_CHECKING
-
 from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
-
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable

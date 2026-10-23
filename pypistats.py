@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from collections import defaultdict
 import json
 import ssl
 import sys
 from urllib.request import urlopen
-
 
 PACKAGE = sys.argv[1]
 

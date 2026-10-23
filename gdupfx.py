@@ -12,7 +12,6 @@ import sys
 import time
 from typing import Optional
 
-
 try:
     import xxhash
 except ImportError:

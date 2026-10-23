@@ -8,9 +8,7 @@ import os
 from pathlib import Path
 import sys
 import time
-
 from tree_sitter import Language, Node, Parser
-
 
 PathLike = str | Path
 

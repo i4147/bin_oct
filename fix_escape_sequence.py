@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import io
@@ -8,7 +7,6 @@ from pathlib import Path
 import sys
 import tokenize
 import warnings
-
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")

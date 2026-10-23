@@ -7,10 +7,9 @@ import os
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 import urllib.error
 import urllib.request
-
 
 _SOURCE_CITATION: str = "[cite: 1]"
 

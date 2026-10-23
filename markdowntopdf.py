@@ -9,10 +9,8 @@ import lzma
 from pathlib import Path
 import sys
 from time import time
-
 from markdown import markdown
 from weasyprint import CSS, HTML
-
 
 MARKDOWN_BASE_EXTENSIONS = [
     "markdown.extensions.tables",

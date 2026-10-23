@@ -5,7 +5,6 @@ from pathlib import Path
 import urllib.request
 import xml.etree.ElementTree as ET
 
-
 RSS_URL = "https://pypi.org/rss/packages.xml"
 OUTPUT_FILE = Path("latest_pypi_packages.txt")
 

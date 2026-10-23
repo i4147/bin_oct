@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import csv
 import json
@@ -7,9 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
-
 import ssdeep
-
 
 try:
     from tabulate import tabulate

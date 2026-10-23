@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 from functools import partial
 from multiprocessing import Pool, cpu_count

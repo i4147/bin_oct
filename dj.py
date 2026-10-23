@@ -5,12 +5,11 @@ from pathlib import Path
 import shutil
 import sys
 
-
 EMPTY_MODE = "-e" in sys.argv
 REMOVE_MODE = "-r" in sys.argv
-SKIP_DIRS = {".git", "var"}
+SKIP_DIRS = {".git", "var", "lazy"}
 REMOVABLE_EXTENSIONS = {".txt", ".md"}
-JUNK_EXTENSIONS = {".tmp", ".bak", ".log", ".pyc"}
+JUNK_EXTENSIONS = {".tmp", ".bak", ".log", ".pyc", ".save"}
 
 
 def empty_it(path: Path) -> None:
@@ -49,6 +48,7 @@ def main() -> None:
         if path.is_file() and loname in {
             "license_gpl2.0.txt",
             "license_lgpl_2.1.txt",
+            ".cache.json",
             "copyrightnotice.txt",
             "history.rst",
             ".dirinfo",

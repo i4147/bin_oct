@@ -14,10 +14,8 @@ import tempfile
 from urllib.parse import urlparse
 import zipfile
 from zipfile import ZipFile
-
 from dh import append_text, is_valid_url
 import zstd
-
 
 DEFAULT_MAX_MB = 15
 EXCLUDE_DIRS = {".git", "__pycache__"}
@@ -316,9 +314,10 @@ def iter_files(root: Path):
         dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
         if should_skip_dir(current_dir):
             continue
-        cd = Path(current_dir)
         for fname in filenames:
-            yield (cd / fname)
+            p = Path(current_dir) / fname
+            if not p.is_symlink():
+                yield p
 
 
 def main() -> None:

@@ -11,7 +11,6 @@ import tarfile
 from typing import Any
 import zipfile
 
-
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (
     ".whl",

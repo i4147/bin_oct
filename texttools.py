@@ -8,7 +8,6 @@ import tempfile
 from typing import Final, Sequence
 import unicodedata
 
-
 MAX_LEN: Final[int] = 120
 BREAK_PUNCTS: Final[list[str]] = [",", ";", ":", "?"]
 WS_PATTERN: Final[re.Pattern[str]] = re.compile(r"[\u00A0\u2000-\u200F\u2028\u2029\u202F\u205F\u3000\uFEFF]")
@@ -209,27 +208,21 @@ def cmd_reformatext(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texttools")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_clean = sub.add_parser("clean")
     p_clean.add_argument("filename")
     p_clean.set_defaults(func=cmd_clean)
-
     p_norm = sub.add_parser("normalize-lines")
     p_norm.add_argument("filename")
     p_norm.set_defaults(func=cmd_normalize_lines)
-
     p_ws = sub.add_parser("norm-white")
     p_ws.add_argument("filename")
     p_ws.set_defaults(func=cmd_norm_white)
-
     p_ref = sub.add_parser("reformat-text")
     p_ref.add_argument("filename")
     p_ref.set_defaults(func=cmd_reformat_text)
-
     p_rex = sub.add_parser("reformatext")
     p_rex.add_argument("filename")
     p_rex.set_defaults(func=cmd_reformatext)
-
     return parser
 
 

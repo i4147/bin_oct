@@ -15,7 +15,6 @@ import sys
 import time
 from typing import Any, Iterator
 
-
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"
 WORKERS: int = 8

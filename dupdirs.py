@@ -7,9 +7,7 @@ from multiprocessing import Pool
 import os
 from pathlib import Path
 import sys
-
 import xxhash
-
 
 NUM_WORKERS = 8
 SKIP_DIR_NAMES = {".git"}

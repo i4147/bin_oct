@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 import argparse
 import ast
@@ -13,7 +12,6 @@ import re
 import shutil
 import subprocess
 from typing import Iterable
-
 
 WORKERS: int = 6
 BACKUP_SUFFIX: str = ".bak"

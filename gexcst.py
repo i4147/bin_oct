@@ -9,10 +9,8 @@ import shutil
 import tarfile
 from typing import Any
 import zipfile
-
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
-
 
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (
