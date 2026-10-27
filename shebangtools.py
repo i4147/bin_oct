@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor
 import contextlib
 import os
-from pathlib import Path
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 from typing import Optional, Sequence
 
 TERMUX_PREFIX = "/data/data/com.termux/files/usr"

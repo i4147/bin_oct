@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
+import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
-import sys
 from typing import TYPE_CHECKING
+
 import libcst as cst
 from libcst import RemovalSentinel
 from libcst.metadata import MetadataWrapper, PositionProvider

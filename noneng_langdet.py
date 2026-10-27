@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass, field
 import multiprocessing as mp
-from pathlib import Path
 import sys
 import time
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
 from loguru import logger
 
 if TYPE_CHECKING:

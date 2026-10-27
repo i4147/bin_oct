@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import json
 import logging
 import os

@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
+
 import argparse
 import logging
 import multiprocessing as mp
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 from typing import Final
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")

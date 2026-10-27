@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass
 import datetime as dt
 import json as jsonlib
 import os
-from pathlib import Path
 import re
 import stat as statlib
 import subprocess
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Sequence
 
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({".mypy_cache", ".ruff_cache", ".git", "__pycache__"})

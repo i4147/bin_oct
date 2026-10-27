@@ -1,25 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import contextlib
-from dataclasses import asdict, dataclass
 import difflib
 import fnmatch
-from functools import partial
 import io
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-from time import perf_counter as pff
 import tokenize
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from functools import partial
+from pathlib import Path
+from time import perf_counter as pff
 from typing import Any, Protocol, Sequence, runtime_checkable
-from dh import cprint, format_time, fsz, get_pyfiles, atomic_write
+
+from dh import atomic_write, cprint, format_time, fsz, get_pyfiles
 
 __version__ = "2.0.0"
 DEFAULT_LINE_LENGTH = 88

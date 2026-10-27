@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import csv
-from pathlib import Path
 import sysconfig
 import zipfile
+from pathlib import Path
 
 
 def is_empty_package(dist_info_path) -> bool:

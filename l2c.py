@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import subprocess
 import sys
+from pathlib import Path
 
 
 def copy_line_to_clipboard(filename: str, indx) -> None:

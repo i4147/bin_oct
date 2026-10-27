@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
 import multiprocessing
 import os
-from pathlib import Path
 import select
 import shutil
 import sys
+from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
 _WIN_EXTS = {".exe", ".dll", ".bat", ".com", ".msi", ".vbs", ".ps1"}

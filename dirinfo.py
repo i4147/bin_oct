@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
 import operator
-from pathlib import Path
 import sys
-from dh import fsz
+from collections import defaultdict
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+from dh import fsz
 
 
 def scan_directory(path: str = "."):

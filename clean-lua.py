@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import difflib
 import multiprocessing
 import os
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 from typing import Iterator
-from tree_sitter import Language, Parser, Query, QueryCursor
+
 import tree_sitter_lua as ts_lua
+from tree_sitter import Language, Parser, Query, QueryCursor
 
 try:
     import luaparse

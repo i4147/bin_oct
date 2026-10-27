@@ -5,12 +5,12 @@ import gzip
 import json
 import lzma
 import os
-from pathlib import Path
 import shutil
 import sys
 import tarfile
-from typing import Any, Callable, Iterable, Optional
 import zipfile
+from pathlib import Path
+from typing import Any, Callable, Iterable, Optional
 
 try:
     import py7zr

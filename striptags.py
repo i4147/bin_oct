@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import re
 from typing import Iterable, Optional
-from bs4 import BeautifulSoup, Comment, NavigableString
+
 import click
+from bs4 import BeautifulSoup, Comment, NavigableString
 
 NEWLINE_ELEMENTS = (
     "address",

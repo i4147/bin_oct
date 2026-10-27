@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import os
 import signal
 import sys
 import tempfile
 import time
-from pydub import AudioSegment
+
 import speech_recognition as sr
+from pydub import AudioSegment
 
 interrupted = False
 output_file_global = "out.txt"

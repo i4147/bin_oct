@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from dataclasses import dataclass
-from multiprocessing import Pool
+
 import os
-from pathlib import Path
 import stat
 import sys
+from dataclasses import dataclass
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Any
 
 WORKERS = 8
@@ -103,6 +104,7 @@ def iter_source_files(root: Path) -> list[Path]:
 
 def get_language(spec: LanguageSpec) -> Any:
     from importlib import import_module
+
     from tree_sitter import Language
 
     module = import_module(spec.module_name)

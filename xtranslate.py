@@ -1,18 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import json
 import logging
 import multiprocessing as mp
-from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import time
+from pathlib import Path
 from typing import Any, Iterator, Sequence
+
+from dh import atomic_write
 
 try:
     from deep_translator import GoogleTranslator
@@ -126,14 +129,6 @@ def chunk_with_lines(text: str, max_size: int) -> list[tuple[int, int, str]]:
     if buf:
         out.append((start, len(lines) - 1, "".join(buf)))
     return out
-
-
-def atomic_write(path: Path, content: str, encoding: str = "utf-8") -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding=encoding, delete=False, dir=str(path.parent)) as tmp:
-        tmp.write(content)
-        tmp_path = Path(tmp.name)
-    shutil.move(str(tmp_path), str(path))
 
 
 def iter_files(

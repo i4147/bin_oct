@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import abc
-from copy import deepcopy
-from posixpath import normpath
 import re
-from typing import Any, Callable, Final, Self
 import urllib.parse
 import warnings
+from copy import deepcopy
+from posixpath import normpath
+from typing import Any, Callable, Final, Self
 
 try:
     from icecream import ic

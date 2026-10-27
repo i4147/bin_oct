@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
-import os
 import json
+import os
+import sys
+
 import javaobj
 
 

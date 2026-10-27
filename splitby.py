@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import sys
+from pathlib import Path
 
 
 def split_file_by_delimiter(fname: str, delimiter: str) -> None:

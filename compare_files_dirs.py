@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import difflib
 import filecmp
 import hashlib
 import os
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 from typing import Optional
 
 try:

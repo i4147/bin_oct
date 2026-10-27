@@ -1,7 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from datetime import date
+
 import sys
+from datetime import date
+
 from faprint import faprint
 
 _PERSIAN_DIGITS: dict[int, str] = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")

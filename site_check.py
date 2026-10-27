@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
-import os
-import sys
-import site
-import json
-import py_compile
-import pkgutil
 import importlib
+import json
+import os
+import pkgutil
+import py_compile
+import site
+import sys
 
 
 def run_sanity_check():

@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import codecs
 import contextlib
 import ctypes
-from html.parser import HTMLParser
-from io import BytesIO
 import locale
 import logging
 import os
@@ -14,8 +13,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from types import SimpleNamespace
 import xml.dom.minidom
+from html.parser import HTMLParser
+from io import BytesIO
+from types import SimpleNamespace
 
 if sys.version_info < (3, 4):
     msg = "PyOCR requires Python 3.4+"

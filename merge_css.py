@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
 
 GOOGLE_FONTS_RE = re.compile(r"@import\s+url\([^)]+fonts\.googleapis[^)]+\);?", re.IGNORECASE)

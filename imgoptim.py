@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import os
@@ -11,6 +12,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
+
 from dh import walker
 
 GREEN = "\033[32m"

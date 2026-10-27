@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup
+
 import requests
+from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
     from requests.sessions import Session

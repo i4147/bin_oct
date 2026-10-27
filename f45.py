@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import shutil
 import sys
 import textwrap
+from pathlib import Path
 
 
 def wrap_text_content(content: str, width: int) -> str:

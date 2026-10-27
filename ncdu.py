@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import curses
-from dataclasses import dataclass, field
 import json
 import logging
 import multiprocessing as mp
 import os
-from pathlib import Path
 import shutil
 import stat
 import sys
 import time
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Iterator
 
 __version__ = "2.0.0"

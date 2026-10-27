@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ctypes
 import ctypes.util
-from datetime import UTC, datetime
-from functools import partial
 import multiprocessing as mp
 import operator
 import os
-from pathlib import Path
 import shutil
 import sys
 import time
+from datetime import UTC, datetime
+from functools import partial
+from pathlib import Path
 from typing import Final, Sequence
+
 from tqdm import tqdm
 
 SECONDS_PER_MINUTE: Final[float] = 60.0

@@ -3,8 +3,8 @@ import ast
 import difflib
 import opcode
 import pprint
-import types
 import sys
+import types
 
 
 def diff_bytecode_of_files(filename_a, filename_b):

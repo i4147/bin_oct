@@ -40,7 +40,8 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import (Callable, Dict, Iterable, List, Optional, Sequence, Set,
+                    Tuple)
 
 UNIT_SEP = "\x1f"  # field separator inside `git log --format` records
 DIFF_FILTER = "AD"  # git's own letters: A = added, D = deleted

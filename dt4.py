@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
-from pathlib import Path
 import signal
 import sys
-from threading import Lock
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from threading import Lock
 from typing import Callable, Optional
+
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from loguru import logger

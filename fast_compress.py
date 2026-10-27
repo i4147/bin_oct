@@ -1,17 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
-from dataclasses import dataclass
 import fnmatch
 import json
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import sys
+from dataclasses import dataclass
+from multiprocessing import Pool
+from pathlib import Path
 from typing import TYPE_CHECKING
-from loguru import logger
+
 import zstandard as zstd
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

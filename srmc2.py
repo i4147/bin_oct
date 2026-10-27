@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import codecs
@@ -10,7 +11,6 @@ import fnmatch
 import json
 import multiprocessing
 import os
-from pathlib import Path
 import re
 import shutil
 import signal
@@ -18,7 +18,9 @@ import stat
 import sys
 import tempfile
 import textwrap
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
+
 import libcst as cst
 from loguru import logger
 

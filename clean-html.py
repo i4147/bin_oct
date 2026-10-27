@@ -1,17 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import difflib
 import multiprocessing
 import os
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 from typing import Iterator
-from tree_sitter import Language, Parser, Query, QueryCursor
+
 import tree_sitter_css as ts_css
 import tree_sitter_html as ts_html
 import tree_sitter_javascript as ts_js
+from tree_sitter import Language, Parser, Query, QueryCursor
 
 try:
     import htmlmin

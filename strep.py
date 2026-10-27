@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import re
 import sys
 import tempfile
+from pathlib import Path
 from zipfile import ZipFile
-from dh import fsz, runcmd
+
+from dh import fsz, get_size, runcmd
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
-from dh import get_size
 
 SO_RE = re.compile(r"\.so(\.\d+)*$", re.IGNORECASE)
 WHL_SUFFIX = ".whl"

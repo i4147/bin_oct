@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass
-from functools import partial
 import io
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import shutil
 import sys
 import tarfile
 import threading
 import time
+from dataclasses import dataclass
+from functools import partial
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Iterable, Optional, Sequence
+
 import zstandard as zstd
 
 try:

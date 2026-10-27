@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import sys
 from pathlib import Path
 from shutil import move
-import sys
 
 
 def validate_dirs(source: Path, dest: Path) -> bool:

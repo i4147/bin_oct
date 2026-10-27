@@ -1,16 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import (
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-    as_completed,
-)
 import mmap
-from pathlib import Path
 import shutil
 import tarfile
+from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor,
+                                as_completed)
+from pathlib import Path
 from typing import Sequence
+
 import brotli
 
 try:

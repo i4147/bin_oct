@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from dataclasses import dataclass
 import multiprocessing as mp
 import os
-from pathlib import Path
 import sys
 import time
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, Sequence
 
 try:
-    from tree_sitter import Language, Node, Parser, Query, QueryCursor
     import tree_sitter_python as _tspython
+    from tree_sitter import Language, Node, Parser, Query, QueryCursor
 except ImportError as _exc:
     print(
         f"error: missing dependency ({_exc}); install with: pip install tree-sitter tree-sitter-python",

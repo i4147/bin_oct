@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import csv
-from datetime import datetime
 import json
 import sys
 import xml.etree.ElementTree as ET
+from datetime import datetime
+
 import requests
 
 

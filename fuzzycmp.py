@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from abc import ABC, abstractmethod
+
 import argparse
-from collections import Counter
-from dataclasses import dataclass, field
 import hashlib
 import math
-from pathlib import Path
 import random
 import re
 import sys
+from abc import ABC, abstractmethod
+from collections import Counter
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
 __all__ = [

@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import shutil
 import tempfile
 import time
+from pathlib import Path
+
 import rmc3 as sc
 
 

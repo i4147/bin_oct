@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import json
 import multiprocessing
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 from typing import Iterable, Iterator
 
 APPEND_TOOLS: dict[str, list[str]] = {

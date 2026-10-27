@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import InterpreterPoolExecutor
 import json
-from pathlib import Path
 import sys
+from concurrent.futures import InterpreterPoolExecutor
+from pathlib import Path
 from typing import Any
 
 DEFAULT_EXCLUDES: set[str] = {

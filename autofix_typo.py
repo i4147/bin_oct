@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
-from datetime import datetime
 import json
-from pathlib import Path
 import re
 import shutil
 import sys
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+
 from dh import PY_KEYWORDS
 
 COMMON_SUBSTITUTIONS = {

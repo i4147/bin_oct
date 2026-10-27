@@ -1,19 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import asyncio
-from collections import Counter
-from dataclasses import dataclass
 import fnmatch
-from os import environ
-from pathlib import Path
 import re
 import shutil
 import sys
 import time
-from typing import TYPE_CHECKING
 import warnings
+from collections import Counter
+from dataclasses import dataclass
+from os import environ
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 from dh import DOC_TH1, DOC_TH2
 from loguru import logger
 

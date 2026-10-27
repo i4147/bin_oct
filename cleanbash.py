@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import os
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
-from tree_sitter import Language, Node, Parser
+
 import tree_sitter_bash
+from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable

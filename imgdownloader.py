@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
 import os
 import re
 import sys
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
     import requests

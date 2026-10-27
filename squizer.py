@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import ast
 import base64
 import builtins
 import operator
-from pathlib import Path
 import string
 import sys
-from typing import Callable, Iterator, Sequence
 import zlib
+from pathlib import Path
+from typing import Callable, Iterator, Sequence
+
 from dh import cprint
 
 PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {

@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import sys
+
 from moviepy import AudioFileClip
 
 if __name__ == "__main__":

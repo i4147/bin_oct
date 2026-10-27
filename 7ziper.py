@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor
 import logging
 import mmap
 import multiprocessing
-from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 from typing import Any, Optional
+
 import py7zr
 
 try:

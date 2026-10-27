@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import mmap
-from pathlib import Path
 import re
+from pathlib import Path
+
 from dh import mpf
 
 LOG_EXT = ".log"

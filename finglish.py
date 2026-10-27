@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import unicodedata
+from pathlib import Path
 
 
 def custom_persian_to_finglish(text: str) -> str:

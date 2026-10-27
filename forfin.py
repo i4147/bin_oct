@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import subprocess
+import sys
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-import subprocess
-import sys
 
 
 def process_file(cli_app, cli_args, path):

@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import contextlib
 import io
 import multiprocessing as mp
 import os
-from pathlib import Path
 import sys
 import tokenize
+from pathlib import Path
 from typing import TYPE_CHECKING
+
 import libcst as cst
 
 if TYPE_CHECKING:

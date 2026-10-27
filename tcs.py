@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import ast
 import builtins
-from collections import Counter
-from itertools import count, product
 import keyword
-from pathlib import Path
 import string
 import subprocess
 import sys
+from collections import Counter
+from itertools import count, product
+from pathlib import Path
 
 TEXT1 = "Return full type-annotated code in one markdown block, no docstrings & no comments"
 USAGE = """\

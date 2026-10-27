@@ -19,7 +19,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
 
-
 # Characters treated as punctuation to remove (ASCII set is usually enough for filenames)
 _PUNCT_TO_REMOVE: str = string.punctuation.replace("_", "").replace("-", "").replace(":", "")
 _TRANSLATE_TABLE = str.maketrans({c: None for c in _PUNCT_TO_REMOVE} | {" ": "_"})

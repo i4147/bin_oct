@@ -1,21 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import difflib
 import hashlib
 import io
 import json
 import multiprocessing as mp
-from pathlib import Path
 import sys
 import time
-from tokenize import generate_tokens, COMMENT, NL, NEWLINE, ENDMARKER
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from pathlib import Path
+from tokenize import COMMENT, ENDMARKER, NEWLINE, NL, generate_tokens
 from typing import Any, NamedTuple
+
 from loguru import logger
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import (BarColumn, Progress, SpinnerColumn,
+                           TaskProgressColumn, TextColumn)
 from rich.table import Table
 
 console = Console()

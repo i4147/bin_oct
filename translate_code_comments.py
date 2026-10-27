@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 import io
 import logging
-from pathlib import Path
 import re
 import shutil
 import tokenize
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator, Sequence
+
 from deep_translator import GoogleTranslator
 
 LOGGER = logging.getLogger("merged_translator")

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import re
+from pathlib import Path
 
 LOG_EXT = ".log"
 PATTERNS = [

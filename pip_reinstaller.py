@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
 import argparse
 import importlib.metadata
 import multiprocessing
+import sys
 from pathlib import Path
+
 from pip._internal.commands import main as pip_main
 
 

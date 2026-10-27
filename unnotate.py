@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import os
@@ -10,6 +11,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import libcst as cst
 from rich.console import Console
 from rich.text import Text

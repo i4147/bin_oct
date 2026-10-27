@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import json
-from multiprocessing.pool import Pool
-from pathlib import Path
 import re
 import sys
 import time
+from multiprocessing.pool import Pool
+from pathlib import Path
 from typing import Final, Sequence
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 

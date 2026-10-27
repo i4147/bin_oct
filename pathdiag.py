@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
-from hashlib import sha256
 import os
-from pathlib import Path
 import re
 import shutil
 import sys
+from collections import defaultdict
+from hashlib import sha256
+from pathlib import Path
 
 
 def get_path_entries() -> list[str]:

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 import os
+
 from fontTools.ttLib import TTFont
 
 DRY_RUN = False

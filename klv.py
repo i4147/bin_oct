@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
 import logging
 import multiprocessing as mp
-from pathlib import Path
 import re
 import shutil
 import sys
+from collections import defaultdict
+from pathlib import Path
 from typing import Any, Optional, Sequence
 
 logger = logging.getLogger(__name__)

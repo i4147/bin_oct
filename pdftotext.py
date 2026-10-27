@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import re
 from io import StringIO
 from pathlib import Path
-import re
 
 
 class Extractor(object):
@@ -47,7 +48,8 @@ class Extractor(object):
         elif self.backend == "pdfminer":
             from pdfminer.converter import TextConverter
             from pdfminer.layout import LAParams
-            from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
+            from pdfminer.pdfinterp import (PDFPageInterpreter,
+                                            PDFResourceManager)
             from pdfminer.pdfpage import PDFPage
 
             rsrcmgr = PDFResourceManager(caching=True)

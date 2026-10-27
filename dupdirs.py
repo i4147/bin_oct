@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import os
+import sys
 from collections import defaultdict
 from multiprocessing import Pool
-import os
 from pathlib import Path
-import sys
+
 import xxhash
 
 NUM_WORKERS = 8

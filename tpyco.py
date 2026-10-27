@@ -1,20 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from dataclasses import dataclass
 import json
 import multiprocessing
-from multiprocessing import Lock, Pool, Value
-from pathlib import Path
 import re
-from tempfile import NamedTemporaryFile
 import time
 import tokenize
+from dataclasses import dataclass
+from multiprocessing import Lock, Pool, Value
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
 from loguru import logger
 
 WORKER_COUNT: Final[int] = 8

@@ -1,31 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import hashlib
+import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-import hashlib
 from pathlib import Path
-import sys
 from typing import ClassVar
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import (
-    Button,
-    DataTable,
-    DirectoryTree,
-    Footer,
-    Header,
-    Input,
-    Label,
-    OptionList,
-    ProgressBar,
-    RadioSet,
-    Static,
-)
+from textual.widgets import (Button, DataTable, DirectoryTree, Footer, Header,
+                             Input, Label, OptionList, ProgressBar, RadioSet,
+                             Static)
 
 
 @dataclass

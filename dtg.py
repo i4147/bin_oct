@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from io import BytesIO
 import json
-from pathlib import Path
 import re
 import sys
 import time
 import tokenize
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import BytesIO
+from pathlib import Path
 
 STRING_RE = re.compile(r'^([rufbRUFB]*)([\'"]{3}|[\'"]{1})(.*)\2$', flags=re.DOTALL)
 COMMENT_RE = re.compile(r"^(#+)(\s*)(.*)$", flags=re.DOTALL)

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import concurrent.futures
@@ -8,13 +9,14 @@ import hashlib
 import json
 import logging
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import time
-from dh import PKG_MAPPING, STDLIB
+from pathlib import Path
+
 import requests
+from dh import PKG_MAPPING, STDLIB
 from yarg import json2package
 from yarg.exceptions import HTTPError
 

@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import sys
+from pathlib import Path
+
 import cv2
-from dh import cprint, get_files, mpf
 import nude
+from dh import cprint, get_files, mpf
 
 nude_path = Path("nude")
 nude_path.mkdir(exist_ok=True)

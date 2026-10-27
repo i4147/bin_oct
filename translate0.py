@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
-from pathlib import Path
 import random
 import re
 import sqlite3
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Final
+
 from deep_translator import GoogleTranslator
 
 MAX_WORKERS: Final[int] = 16

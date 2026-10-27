@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import sys
+from pathlib import Path
 
 
 def convert_codepen_html(html_content, title="Document", charset="UTF-8"):

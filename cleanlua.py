@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import tree_sitter_lua
 from loguru import logger
 from tree_sitter import Language, Node, Parser
-import tree_sitter_lua
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

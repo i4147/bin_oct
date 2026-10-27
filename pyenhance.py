@@ -1,21 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from collections import Counter
-from dataclasses import dataclass, field
 import difflib
-from functools import partial
 import io
 import multiprocessing as mp
 import os
-from pathlib import Path
 import re
 import shutil
 import sys
 import tokenize
-from typing import TYPE_CHECKING, NamedTuple
 import warnings
+from collections import Counter
+from dataclasses import dataclass, field
+from functools import partial
+from pathlib import Path
+from typing import TYPE_CHECKING, NamedTuple
+
 from loguru import logger
 
 if TYPE_CHECKING:

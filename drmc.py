@@ -1,23 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
-from dataclasses import dataclass
 import difflib
 import io
-from itertools import chain
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import tokenize
-from typing import Callable, Iterable, Iterator
 import zipfile
+from dataclasses import dataclass
+from itertools import chain
+from multiprocessing import Pool
+from pathlib import Path
+from typing import Callable, Iterable, Iterator
+
 from loguru import logger
 
 SKIP_DIRS: frozenset[str] = frozenset({
@@ -371,8 +373,8 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
 
 
 def backend_tree_sitter(source: str, opts: Options) -> Stripped:
-    from tree_sitter import Language, Parser
     import tree_sitter_python as tspy
+    from tree_sitter import Language, Parser
 
     lang = Language(tspy.language())
     try:

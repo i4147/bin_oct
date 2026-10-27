@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import hashlib
 import json
 import multiprocessing as mp
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tarfile
-from typing import Any, Iterable, Iterator, Optional, Sequence
 import zipfile
+from pathlib import Path
+from typing import Any, Iterable, Iterator, Optional, Sequence
 
 try:
     from tqdm import tqdm as _tqdm

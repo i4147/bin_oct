@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from collections import defaultdict
 import importlib.metadata
 import importlib.util
-from multiprocessing import Pool
 import numbers
-from pathlib import Path
 import time
+from collections import defaultdict
+from multiprocessing import Pool
+from pathlib import Path
+
 from dh import STDLIB, get_installed_pkgs
 
 NUM_WORKERS = 8

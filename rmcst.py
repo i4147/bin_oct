@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
 import io
 import multiprocessing as mp
 import os
-from pathlib import Path
 import sys
 import tempfile
 import tokenize
+from pathlib import Path
 from typing import Iterable, Iterator
+
 import libcst as cst
 
 NUM_WORKERS = 8

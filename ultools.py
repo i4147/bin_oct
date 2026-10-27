@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
 import hashlib
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import re
 import sys
 import tarfile
+import zipfile
+from collections import defaultdict
+from multiprocessing import Pool
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import unquote, urlparse
-import zipfile
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
@@ -7,12 +8,13 @@ import functools
 import io
 import multiprocessing as mp
 import os
-from pathlib import Path
 import sys
 import tempfile
 import tokenize as _tokenize
-from dh import DOC_TH1, DOC_TH2
+from pathlib import Path
+
 import libcst as cst
+from dh import DOC_TH1, DOC_TH2
 
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4

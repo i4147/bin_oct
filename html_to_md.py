@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import sys
-from dh import get_files, mpf
+from pathlib import Path
+
 import html2text
+from dh import get_files, mpf
 from readability import Document
 
 remove_orig = True

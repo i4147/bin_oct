@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor
 import contextlib
 import io
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from typing import Iterable, Optional
 import urllib.parse
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
+from typing import Iterable, Optional
+
 import pypdf
 import pypdf.generic
 

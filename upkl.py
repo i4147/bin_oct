@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import pickle as pkl
+from pathlib import Path
 
 if __name__ == "__main__":
     import sys

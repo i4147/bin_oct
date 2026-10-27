@@ -16,8 +16,9 @@ from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
+
 import tree_sitter_python as tspy
-from dh import SKIP_DIRS
+from dh import SKIP_DIRS, atomic_write
 from rich.console import Console
 from rich.text import Text
 from tree_sitter import Language, Node, Parser
@@ -172,19 +173,6 @@ def is_valid(new: bytes, old: bytes) -> bool:
     if parses(new):
         return True
     return not parses(old) and not ts_parser().parse(new).root_node.has_error
-
-
-def atomic_write(path: str, data: bytes) -> None:
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".pystrip-", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-        shutil.copymode(path, tmp)
-        os.replace(tmp, path)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            os.unlink(tmp)
-        raise
 
 
 class Stripper:

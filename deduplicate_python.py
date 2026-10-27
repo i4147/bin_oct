@@ -1,23 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import bz2
-from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
-from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import zipfile
+from collections import defaultdict
+from pathlib import Path
+
 from loguru import logger
 
 try:
-    from tree_sitter import Parser
     import tree_sitter_python
+    from tree_sitter import Parser
 
     TREE_SITTER_AVAILABLE = True
 except Exception:

@@ -1,17 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import Counter
 import contextlib
-from dataclasses import dataclass
 import functools
 import multiprocessing as mp
 import os
-from pathlib import Path
 import re
 import sys
 import tempfile
+from collections import Counter
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator, Sequence
+
+from dh import atomic_write
 
 try:
     import tomllib
@@ -521,20 +524,6 @@ class Result:
     path: str
     status: str
     message: str = ""
-
-
-def atomic_write(path: Path, data: bytes, mode: int) -> None:
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(data)
-        with contextlib.suppress(OSError):
-            os.chmod(temporary, mode)
-        os.replace(temporary, path)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            os.unlink(temporary)
-        raise
 
 
 def _process_file(path_str: str, check: bool) -> Result:

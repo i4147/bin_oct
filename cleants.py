@@ -1,19 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import Counter
-from dataclasses import dataclass
 import difflib
-from functools import partial
 import importlib
 import multiprocessing as mp
 import os
-from pathlib import Path, PurePosixPath
 import re
 import shlex
 import shutil
 import sys
+from collections import Counter
+from dataclasses import dataclass
+from functools import partial
+from pathlib import Path, PurePosixPath
 from typing import Iterator
+
 from tree_sitter import Language, Node, Parser, Tree
 
 

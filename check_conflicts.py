@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import json
-from pathlib import Path
 import re
 import sys
 import time
+from pathlib import Path
+
 from dh import STDLIB
 
 PIP_JSON = Path("/sdcard/data/pip.json")

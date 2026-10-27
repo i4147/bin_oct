@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
-from functools import partial
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
+from functools import partial
+from multiprocessing import Pool
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, NamedTuple
 
 if TYPE_CHECKING:

@@ -1,25 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python
 import argparse
-from dataclasses import dataclass
 import hashlib
 import multiprocessing as mp
-from multiprocessing import Pool, cpu_count
 import os
-from pathlib import Path
 import shutil
 import struct
 import sys
 import tarfile
 import tempfile
 import time
+from dataclasses import dataclass
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 from typing import Callable, Iterator, Optional, Sequence
+
 import brotli
 
 try:
     from rich import box
     from rich.console import Console
     from rich.panel import Panel
-    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+    from rich.progress import (BarColumn, Progress, SpinnerColumn, TextColumn,
+                               TimeElapsedColumn)
     from rich.table import Table
     from rich.text import Text
 

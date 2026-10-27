@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 import contextlib
-from dataclasses import dataclass
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 try:

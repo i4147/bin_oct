@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import re
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-import re
 from re import Match
-import sys
 from typing import Optional, Sequence
 
 SHIFT_RE = re.compile(r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})")

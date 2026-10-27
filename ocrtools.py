@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import csv
-from datetime import datetime
-from itertools import product
 import json
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 import sys
 import time
+from datetime import datetime
+from itertools import product
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 try:
@@ -33,11 +34,9 @@ except ImportError:
     Image = None
     HAS_PIL = False
 try:
-    from skimage import (
-        color as skcolor,
-        filters as skfilters,
-        io as skiio,
-    )
+    from skimage import color as skcolor
+    from skimage import filters as skfilters
+    from skimage import io as skiio
     from skimage.filters import threshold_local
     from skimage.util import img_as_ubyte
 

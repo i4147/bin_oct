@@ -1,21 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from dataclasses import dataclass, field
-from functools import cache
 import hashlib
 import importlib
 import importlib.util
 import multiprocessing as mp
 import os
-from pathlib import Path
 import re
 import shutil
 import sys
 import tempfile
+from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from dataclasses import dataclass, field
+from functools import cache
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 

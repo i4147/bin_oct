@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
-from pathlib import Path
 import shutil
 import tarfile
+from pathlib import Path
 
 
 def compress_tar(folder: Path, output: Path | None = None, cleanup: bool = False) -> bool:

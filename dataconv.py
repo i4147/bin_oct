@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import csv
 import importlib
 import io
 import json
 import mmap
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import re
 import sqlite3
 import sys
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Any, Callable, Optional
+
 from loguru import logger
 
 Tables = dict[str, list[dict[str, Any]]]

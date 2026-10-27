@@ -1,27 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import codecs
-from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from contextlib import ExitStack, suppress
-from dataclasses import dataclass, replace
-from functools import cache, partial
 import importlib.util
 import io
-from multiprocessing import Pool
 import os
-from pathlib import Path, PurePath
 import re
 import subprocess
 import sys
 import tempfile
 import textwrap
 import tokenize
-from typing import TYPE_CHECKING
 import warnings
 import zipfile
+from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextlib import ExitStack, suppress
+from dataclasses import dataclass, replace
+from functools import cache, partial
+from multiprocessing import Pool
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING
+
 from loguru import logger
 
 try:
@@ -399,8 +401,8 @@ def strip_libcst(text: str, opts: Options) -> Stripped:
 
 @cache
 def tree_sitter_parser() -> Parser:
-    from tree_sitter import Language, Parser
     import tree_sitter_python
+    from tree_sitter import Language, Parser
 
     return Parser(Language(tree_sitter_python.language()))
 

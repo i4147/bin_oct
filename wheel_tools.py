@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import importlib.metadata
 import json
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import textwrap
-from typing import Optional, Sequence
 import zipfile
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
+from typing import Optional, Sequence
 
 try:
     from packaging.tags import parse_tag
@@ -33,7 +34,8 @@ except ImportError:
     requests = None
 try:
     from rich.console import Console
-    from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
+    from rich.progress import (BarColumn, Progress, TaskProgressColumn,
+                               TextColumn)
 
     _HAVE_RICH = True
 except ImportError:

@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from difflib import unified_diff
 from pathlib import Path
 from typing import NamedTuple, TypeVar
+
 import libcst as cst
 from dh import SKIP_DIRS
 from libcst.metadata import MetadataWrapper, PositionProvider

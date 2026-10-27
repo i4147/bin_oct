@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from collections import defaultdict
 import hashlib
 import json
 import multiprocessing
 import os
 import sys
+from collections import defaultdict
 
 try:
-    from rapidfuzz import fuzz
     import ssdeep
+    from rapidfuzz import fuzz
 except ImportError:
     print("Please install dependencies: pip install ssdeep rapidfuzz")
     sys.exit(1)

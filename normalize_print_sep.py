@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from multiprocessing import Pool
-from pathlib import Path
 import re
 import sys
+from multiprocessing import Pool
+from pathlib import Path
 from typing import NamedTuple
 
 

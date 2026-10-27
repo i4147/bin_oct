@@ -1,20 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
 import io
 import os
-from pathlib import Path
 import re
 import sys
 import tarfile
-from tarfile import TarFile
 import tempfile
-from urllib.parse import urlparse
 import zipfile
+from pathlib import Path
+from tarfile import TarFile
+from urllib.parse import urlparse
 from zipfile import ZipFile
-from dh import append_text, is_valid_url
+
 import zstd
+from dh import append_text, is_valid_url
 
 DEFAULT_MAX_MB = 15
 EXCLUDE_DIRS = {".git", "__pycache__"}

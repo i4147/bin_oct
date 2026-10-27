@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import sys
 from multiprocessing import Pool
 from pathlib import Path
-import sys
+
 from dh import is_binary, should_skip
 
 WORKERS = 8

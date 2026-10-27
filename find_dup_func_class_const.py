@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from collections import defaultdict
 import concurrent.futures
 import os
-from pathlib import Path
 import sys
+from collections import defaultdict
+from pathlib import Path
 
 
 def parse_file_definitions(path: Path) -> dict:

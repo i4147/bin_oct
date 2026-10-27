@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterator
 
-from dh import is_binary, SKIP_DIRS
+from dh import SKIP_DIRS, is_binary
 from loguru import logger
 
 # ---------------------------------------------------------------------------

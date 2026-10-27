@@ -1,21 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import base64
 import contextlib
 import hashlib
-from io import BytesIO
 import mimetypes
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import re
 import sys
 import time
+from io import BytesIO
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
-from bs4 import BeautifulSoup, Tag
+
 import requests
+from bs4 import BeautifulSoup, Tag
 
 try:
     from loguru import logger

@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import heapq
-from pathlib import Path
 import sqlite3
 import sys
+from pathlib import Path
 
 DB_PATH = Path("/sdcard/data/pip.db")
 DEFAULT_LIMIT = 20

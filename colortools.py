@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import colorsys
 import contextlib
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import random
 import re
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
 try:

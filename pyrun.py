@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import subprocess
+import sys
+import time
 from dataclasses import dataclass, field
 from enum import Enum
 from multiprocessing import Pool
 from pathlib import Path
-import subprocess
-import sys
-import time
+
 from loguru import logger
 
 WORKER_COUNT = 8

@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from datetime import datetime
 import json
 import os
-from pathlib import Path
 import random
 import re
-from typing import Any, Generator
 import unicodedata
 import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Generator
 
 
 class PathRenamer:

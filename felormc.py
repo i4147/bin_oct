@@ -1,21 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass
 import multiprocessing as mp
-from pathlib import Path
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Final, Iterable, Iterator, Optional
+
 import libcst as cst
-from libcst import (
-    BaseStatement,
-    ClassDef,
-    EmptyLine,
-    FunctionDef,
-    Module,
-    SimpleStatementLine,
-    TrailingWhitespace,
-)
+from libcst import (BaseStatement, ClassDef, EmptyLine, FunctionDef, Module,
+                    SimpleStatementLine, TrailingWhitespace)
 from loguru import logger
 
 DEFAULT_WORKERS: Final[int] = 8

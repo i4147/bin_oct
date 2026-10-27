@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import logging
-from pathlib import Path
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 try:

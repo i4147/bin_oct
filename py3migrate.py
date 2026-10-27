@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
 import logging
-from pathlib import Path
 import pkgutil
 import re
 import shutil
@@ -13,8 +11,11 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-from typing import Iterable, Sequence
 import zipfile
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+from pathlib import Path
+from typing import Iterable, Sequence
 
 log = logging.getLogger("py3migrate")
 DEFAULT_EXT: tuple[str, ...] = (".py",)

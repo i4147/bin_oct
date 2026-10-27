@@ -1,7 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from importlib.metadata import distributions
+
 import sys
+from importlib.metadata import distributions
+
 from pip._internal.cli.main import main as pip_main
 
 

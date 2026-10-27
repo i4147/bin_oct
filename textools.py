@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import Counter
-from datetime import datetime
 import json
 import mimetypes
-from multiprocessing import Pool
-from pathlib import Path
 import re
 import sys
+from collections import Counter
+from datetime import datetime
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Any, Sequence
 
 try:

@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import re
+import sys
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
-import re
-import sys
 from typing import Any
-import unicodedata
+
 from loguru import logger
 
 try:

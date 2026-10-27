@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 from hashlib import sha224
 from logging import error, exception, info
 from pathlib import Path
@@ -8,6 +9,7 @@ from shutil import move
 from tempfile import gettempdir
 from time import sleep
 from typing import Any, Callable, Optional
+
 from requests import Response, get
 
 __all__ = ["SaveToDisk", "get_resource", "save_file"]

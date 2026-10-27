@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import codecs
-from dataclasses import dataclass
 import multiprocessing
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Iterator
+
 from loguru import logger
 
 WORKERS = 8

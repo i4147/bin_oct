@@ -13,14 +13,11 @@ import io
 import sys
 from pathlib import Path
 
+from dh import atomic_write
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from dh import atomic_write
-
-# Modes ImageOps.invert can handle directly (no channel juggling needed).
 DIRECT_MODES = {"L", "RGB", "CMYK"}
 
-# Metadata worth carrying over to the rewritten file.
 META_KEYS = ("exif", "icc_profile", "dpi")
 
 
@@ -31,7 +28,6 @@ def negate(img: Image.Image) -> Image.Image:
 
     has_alpha = "A" in img.getbands() or "transparency" in img.info
     if has_alpha:
-        # Invert colour channels only, leave the alpha channel untouched.
         r, g, b, a = img.convert("RGBA").split()
         rgb = ImageOps.invert(Image.merge("RGB", (r, g, b)))
         r, g, b = rgb.split()
@@ -55,10 +51,8 @@ def negate_inplace(path: Path) -> None:
 
     save_kwargs = dict(meta)
     if fmt == "JPEG":
-        # Re-encoding a JPEG is inherently lossy; keep the damage minimal.
         save_kwargs["quality"] = 95
 
-    # Encode to memory, then let dh.atomic_write handle the safe replacement.
     buf = io.BytesIO()
     out.save(buf, format=fmt, **save_kwargs)
     atomic_write(str(path), buf.getvalue())

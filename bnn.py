@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass
 import logging
-from pathlib import Path
 import shutil
 import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
+
 from joblib import Parallel, delayed
 
 if TYPE_CHECKING:

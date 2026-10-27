@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from dataclasses import dataclass
+
 import logging
 import multiprocessing as mp
-from pathlib import Path
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 try:
-    from tree_sitter import Language, Node, Parser
     import tree_sitter_html as ts_html
+    from tree_sitter import Language, Node, Parser
 except ImportError:
     print("Error: Required packages not installed.", file=sys.stderr)
     print("Install with: pip install tree-sitter tree-sitter-html", file=sys.stderr)

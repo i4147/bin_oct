@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
-import sys
 import json
+import sys
 import tokenize
 from pathlib import Path
 

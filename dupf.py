@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 from collections import defaultdict
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
+
 from dh import fsz, gsz
 from loguru import logger
 from xxhash import xxh64

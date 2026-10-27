@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict, deque
 import html
+import re
+from collections import defaultdict, deque
 from importlib import metadata
 from pathlib import Path
-import re
+
 from joblib import Parallel, delayed
 
 WORKERS = 8

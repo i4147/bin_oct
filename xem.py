@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import base64
 import hashlib
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
+
 from dh import MIME2EXT, get_nobinary
 
 OUTPUT_DIR = Path("extracted_base64")

@@ -170,14 +170,9 @@ def process_files(
     if not show_progress:
         return _run_jobs(paths, worker_count)
     try:
-        from rich.progress import (
-            BarColumn,
-            Progress,
-            SpinnerColumn,
-            TextColumn,
-            TimeElapsedColumn,
-            TimeRemainingColumn,
-        )
+        from rich.progress import (BarColumn, Progress, SpinnerColumn,
+                                   TextColumn, TimeElapsedColumn,
+                                   TimeRemainingColumn)
     except ImportError:
         completed = 0
 

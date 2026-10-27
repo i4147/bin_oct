@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from argparse import ArgumentParser, ArgumentTypeError
+
 import contextlib
 import datetime as dt
 import json
-from pathlib import Path
 import sys
+from argparse import ArgumentParser, ArgumentTypeError
+from pathlib import Path
+
+import requests
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
-import requests
 
 IDN = True
 try:

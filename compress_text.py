@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import bz2
 import hashlib
@@ -23,18 +24,12 @@ from dataclasses import asdict, dataclass
 from multiprocessing.queues import Queue as MPQueue
 from pathlib import Path
 from typing import Final, TypeAlias
+
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (
-    BarColumn,
-    DownloadColumn,
-    Progress,
-    TaskID,
-    TaskProgressColumn,
-    TextColumn,
-    TimeElapsedColumn,
-    TransferSpeedColumn,
-)
+from rich.progress import (BarColumn, DownloadColumn, Progress, TaskID,
+                           TaskProgressColumn, TextColumn, TimeElapsedColumn,
+                           TransferSpeedColumn)
 from rich.table import Table
 from rich.text import Text
 

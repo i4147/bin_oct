@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import shutil
+import sys
 from contextlib import ExitStack, suppress
 from dataclasses import dataclass
 from itertools import islice
 from multiprocessing import Pool
 from pathlib import Path
-import shutil
-import sys
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
+
 from loguru import logger
 
 if TYPE_CHECKING:

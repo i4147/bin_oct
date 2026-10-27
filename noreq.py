@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import shutil
 import tarfile
 import tempfile
 import zipfile
+from pathlib import Path
 
 
 def is_wheel_ok(path: Path) -> bool:

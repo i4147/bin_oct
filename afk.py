@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import bz2
-from concurrent.futures import ProcessPoolExecutor
 import contextlib
-from dataclasses import dataclass, field, replace
 import difflib
 import fnmatch
 import gzip
@@ -13,16 +12,18 @@ import io
 import itertools
 import lzma
 import os
-from pathlib import Path, PurePosixPath
 import re
 import stat
 import sys
 import tarfile
 import tempfile
 import tokenize
-from typing import IO, Any, Callable, Iterator, Sequence, Union
 import warnings
 import zipfile
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass, field, replace
+from pathlib import Path, PurePosixPath
+from typing import IO, Any, Callable, Iterator, Sequence, Union
 
 MAX_FILE_BYTES: int = 8 * 1024 * 1024
 LINE_LIMIT: int = 88

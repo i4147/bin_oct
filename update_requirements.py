@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Final
-from packaging.version import InvalidVersion, Version
+
 import requests
+from packaging.version import InvalidVersion, Version
 
 _TIMEOUT: Final[float] = 10.0
 _MAX_WORKERS: Final[int] = 16

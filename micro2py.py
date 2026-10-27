@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 if sys.version_info >= (3, 10):
     _STDLIB: set[str] | None = set(sys.stdlib_module_names)

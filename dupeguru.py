@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
 import hashlib
 import multiprocessing as mp
 import os
-from pathlib import Path
 import sys
+from collections import defaultdict
+from pathlib import Path
 from typing import Iterable, Iterator
 
 CHUNK_SIZE = 1 << 20

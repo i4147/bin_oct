@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import sys
 from multiprocessing import Pool
 from pathlib import Path
-import sys
 from typing import TYPE_CHECKING
-from loguru import logger
+
 import nbformat
+from loguru import logger
 from nbformat import NotebookNode
 
 if TYPE_CHECKING:

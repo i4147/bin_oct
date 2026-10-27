@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 from pathlib import Path
-from tree_sitter import Language, Parser
+
 import tree_sitter_lua
+from tree_sitter import Language, Parser
 
 
 def make_parser() -> Parser:

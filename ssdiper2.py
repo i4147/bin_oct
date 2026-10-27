@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 import argparse
-from collections import defaultdict
 import json
 import operator
+from collections import defaultdict
 from pathlib import Path
-from dh import get_files
+
 import ssdeep
+from dh import get_files
 
 
 def X(h, M=1):

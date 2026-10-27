@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
+
 from char_det import detect
 from dh import get_nobinary, is_binary
 from loguru import logger

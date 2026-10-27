@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import lzma
-from pathlib import Path
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from time import time
+
 from markdown import markdown
 from weasyprint import CSS, HTML
 

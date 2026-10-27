@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import contextlib
 import os
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 
 OLD_USERNAME = "iho147"
 OLD_EMAIL = "isaacaunegh@gmail.com"

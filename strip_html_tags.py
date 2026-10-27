@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from html.parser import HTMLParser
+
 import multiprocessing as mp
 import os
-from pathlib import Path
 import sys
+from html.parser import HTMLParser
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 SKIP_CONTENT_TAGS = {"script", "style", "noscript", "template", "head"}

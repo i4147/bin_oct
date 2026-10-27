@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import os
-from pathlib import Path
-from queue import Queue
 import sys
 import threading
+from pathlib import Path
+from queue import Queue
 from typing import Optional
+
 import cv2
-from PIL import Image
 import pytesseract
+from PIL import Image
 
 _ANSI = {"cyan": "\033[36m", "blue": "\033[34m", "reset": "\033[0m"}
 

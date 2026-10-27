@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import csv
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: str) -> bool:

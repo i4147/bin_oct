@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import re
 import sys
 import unicodedata
+from pathlib import Path
 
 try:
     from pypinyin import lazy_pinyin

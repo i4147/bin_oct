@@ -1,25 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass
 import hashlib
-from pathlib import Path
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
+
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
-from packaging.tags import Tag, compatible_tags, cpython_tags, interpreter_name, interpreter_version
-from packaging.utils import (
-    InvalidSdistFilename,
-    InvalidWheelFilename,
-    canonicalize_name,
-    parse_sdist_filename,
-    parse_wheel_filename,
-)
+from packaging.tags import (Tag, compatible_tags, cpython_tags,
+                            interpreter_name, interpreter_version)
+from packaging.utils import (InvalidSdistFilename, InvalidWheelFilename,
+                             canonicalize_name, parse_sdist_filename,
+                             parse_wheel_filename)
 from packaging.version import InvalidVersion, Version
-from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+from rich.progress import (BarColumn, DownloadColumn, Progress, TextColumn,
+                           TimeRemainingColumn, TransferSpeedColumn)
 
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"

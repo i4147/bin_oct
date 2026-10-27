@@ -39,8 +39,10 @@ except ImportError:
     HAS_PYGIT2 = False
 
 try:
-    from dulwich import porcelain as dulwich_porcelain  # type: ignore[import-untyped]
-    from dulwich.repo import Repo as DulwichRepo  # type: ignore[import-untyped]
+    from dulwich import \
+        porcelain as dulwich_porcelain  # type: ignore[import-untyped]
+    from dulwich.repo import \
+        Repo as DulwichRepo  # type: ignore[import-untyped]
 
     HAS_DULWICH = True
 except ImportError:

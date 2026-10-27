@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import shutil
 import sys
-from rignore import walk as _walk
+from pathlib import Path
 
 from dh import SKIP_DIRS, should_skip
+from rignore import walk as _walk
 
 
 def main() -> None:

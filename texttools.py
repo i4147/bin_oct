@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import re
 import sys
 import tempfile
-from typing import Final, Sequence
 import unicodedata
+from pathlib import Path
+from typing import Final, Sequence
 
 MAX_LEN: Final[int] = 120
 BREAK_PUNCTS: Final[list[str]] = [",", ";", ":", "?"]

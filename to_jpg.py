@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import fnmatch
@@ -13,7 +14,8 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
+                    Set, Tuple)
 
 VERSION = "2.0.0"
 
@@ -362,7 +364,7 @@ _PIL_FMT = {
 
 
 def _pil_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
-    from PIL import Image, ImageOps, ImageFile
+    from PIL import Image, ImageFile, ImageOps
 
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     with Image.open(str(src)) as img:
@@ -471,7 +473,8 @@ _register(
     lambda: _HAS_CV2,
 )
 try:
-    from skimage import io as _ski_io, color as _ski_color
+    from skimage import color as _ski_color
+    from skimage import io as _ski_io
 
     _HAS_SKI = True
 except ImportError:
@@ -618,8 +621,8 @@ def _probe_wand() -> bool:
 
 
 def _wand_convert(src: Path, dst: Path, to_ext: str, quality: int, opts: ConvertOptions) -> bool:
-    from wand.image import Image as WImage
     from wand.color import Color
+    from wand.image import Image as WImage
 
     with WImage(filename=str(src)) as img:
         if opts.auto_orient:

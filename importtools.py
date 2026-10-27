@@ -1,17 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from importlib.machinery import SourceFileLoader
-from importlib.util import find_spec
-from multiprocessing import Pool, cpu_count
 import os
-from pathlib import Path
 import random
 import string
 import sys
 import textwrap
 import traceback
+from importlib.machinery import SourceFileLoader
+from importlib.util import find_spec
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
@@ -848,9 +849,9 @@ def _should_skip(path: Path) -> bool:
 
 def cmd_find_py2(ns: argparse.Namespace) -> int:
     try:
+        import tree_sitter_python as tsp
         from rapidfuzz import fuzz
         from tree_sitter import Language, Parser
-        import tree_sitter_python as tsp
     except ImportError as exc:
         LOG.error(f"find-py2 needs tree_sitter, tree_sitter_python, rapidfuzz: {exc}")
         return 2

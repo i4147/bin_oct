@@ -1,9 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import asyncio
-from collections import deque
-from concurrent.futures import ThreadPoolExecutor
 import contextlib
 import importlib
 import inspect
@@ -15,6 +14,8 @@ import signal
 import sys
 import tempfile
 import threading
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 try:

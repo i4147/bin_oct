@@ -1,9 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
-from pathlib import Path
 import shutil
 import subprocess
 import sys
@@ -11,7 +9,11 @@ import tempfile
 import termios
 import textwrap
 import tty
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
+
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -263,6 +265,7 @@ def get_page_count(path: Path, backend: str) -> int:
 
 def extract_pdfminer_page(path: Path, page_number: int) -> str:
     from io import StringIO
+
     from pdfminer.high_level import extract_text_to_fp
     from pdfminer.layout import LAParams
     from pdfminer.pdfpage import PDFPage

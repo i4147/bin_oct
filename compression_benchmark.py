@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import bz2
 import gzip
 import lzma
-from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
 import time
-from typing import Callable, Optional
 import zipfile
+from pathlib import Path
+from typing import Callable, Optional
 
 try:
     import brotli

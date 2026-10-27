@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from datetime import datetime, timedelta
+
 import json
 import sys
+from datetime import datetime, timedelta
+
 import requests
 
 

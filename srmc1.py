@@ -1,21 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
-from dataclasses import asdict, dataclass
 import difflib
 import json
 import multiprocessing
 import os
-from pathlib import Path
 import re
 import stat
 import sys
 import tempfile
 import textwrap
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import ClassVar, Iterable, Iterator, Literal, Sequence
+
 import libcst as cst
+from dh import atomic_write
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
 
@@ -353,23 +356,6 @@ def make_diff(path: Path, original: str, transformed: str) -> str:
             tofile=str(path),
         )
     )
-
-
-def atomic_write(path: Path, data: bytes, mode: int) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    temporary_path = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "wb") as temporary_file:
-            temporary_file.write(data)
-            temporary_file.flush()
-            os.fsync(temporary_file.fileno())
-        os.chmod(temporary_path, mode)
-        os.replace(temporary_path, path)
-    except Exception:
-        with contextlib.suppress(OSError):
-            temporary_path.unlink(missing_ok=True)
-        raise
 
 
 def process_file(item: WorkItem) -> FileResult:

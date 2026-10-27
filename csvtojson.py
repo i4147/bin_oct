@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import csv
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def convert_csv_to_json(input_path: Path) -> None:

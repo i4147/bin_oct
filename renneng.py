@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import os
-from pathlib import Path
 import re
+from pathlib import Path
+
 from deep_translator import GoogleTranslator
 
 DIRECTORY = "."

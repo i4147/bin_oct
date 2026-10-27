@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import io
-from pathlib import Path
 import re
 import sys
 import tokenize
+from pathlib import Path
 
 HEREDOC_START_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^;\n]*?)"

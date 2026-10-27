@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import os
-from pathlib import Path
 import tokenize
+from pathlib import Path
 
 
 def process_file(path: Path, auto_fix: bool = False) -> dict:

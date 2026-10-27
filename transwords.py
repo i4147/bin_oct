@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import json
+import time
 from multiprocessing import Pool
 from pathlib import Path
-import time
 from typing import TYPE_CHECKING, Final, TypedDict
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 

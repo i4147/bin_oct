@@ -9,15 +9,18 @@ from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Generator, List, Optional, Set
+
 try:
     import nltk
     from nltk.probability import FreqDist
+
     NLTK_AVAILABLE = True
 except ImportError:
     NLTK_AVAILABLE = False
     FreqDist = None
 try:
     from hazm import Normalizer, WordTokenizer
+
     HAZM_AVAILABLE = True
 except ImportError:
     HAZM_AVAILABLE = False
@@ -81,6 +84,8 @@ STOPWORDS = {
 DEFAULT_OUTPUT = "fa.txt"
 DEFAULT_MIN_LENGTH = 0
 DEFAULT_WORKERS = None
+
+
 def setup_logger(verbose: bool) -> logging.Logger:
     logger = logging.getLogger("PersianExtraction")
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -89,6 +94,8 @@ def setup_logger(verbose: bool) -> logging.Logger:
         handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
         logger.addHandler(handler)
     return logger
+
+
 def ensure_nltk_data(logger: logging.Logger) -> None:
     if not NLTK_AVAILABLE:
         return
@@ -100,11 +107,14 @@ def ensure_nltk_data(logger: logging.Logger) -> None:
             nltk.download("stopwords", quiet=True)
         except Exception as exc:
             logger.debug(f"NLTK stopwords download failed: {exc}")
+
+
 def build_combined_stopwords() -> Set[str]:
     words = set(STOPWORDS)
     if NLTK_AVAILABLE:
         try:
             from nltk.corpus import stopwords as nltk_stopwords
+
             for lang in ("persian", "arabic"):
                 try:
                     words.update(nltk_stopwords.words(lang))
@@ -113,6 +123,8 @@ def build_combined_stopwords() -> Set[str]:
         except Exception:
             pass
     return words
+
+
 class PersianTokenizer:
     def __init__(self):
         if HAZM_AVAILABLE:
@@ -122,6 +134,7 @@ class PersianTokenizer:
             self.normalizer = None
             self.tokenizer = None
         self.persian_pattern = re.compile(f"^[{PERSIAN_UNICODE_RANGE}]+$")
+
     def clean_and_tokenize(self, text: str, min_len: int = 0) -> Generator[str, None, None]:
         if HAZM_AVAILABLE:
             normalized_text = self.normalizer.normalize(text)
@@ -132,8 +145,11 @@ class PersianTokenizer:
             token = token.strip("،؛:؟!.,()[]{}<>«»\"'-_*+=")
             if len(token) >= min_len and self._is_persian_word(token):
                 yield token
+
     def _is_persian_word(self, word: str) -> bool:
         return bool(self.persian_pattern.match(word))
+
+
 def is_valid_text_file(file_path: Path) -> bool:
     if not file_path.is_file():
         return False
@@ -145,6 +161,8 @@ def is_valid_text_file(file_path: Path) -> bool:
     except OSError:
         return False
     return True
+
+
 def read_file_content(file_path: Path) -> Optional[str]:
     for enc in ("utf-8", "windows-1256", "latin-1"):
         try:
@@ -154,6 +172,8 @@ def read_file_content(file_path: Path) -> Optional[str]:
         except (IOError, OSError, UnicodeDecodeError):
             continue
     return None
+
+
 def process_file(path_str: str, min_length: int) -> List[str]:
     file_path = Path(path_str)
     if not is_valid_text_file(file_path):
@@ -167,8 +187,12 @@ def process_file(path_str: str, min_length: int) -> List[str]:
     except Exception as e:
         logging.getLogger("PersianExtraction").debug(f"Error processing {file_path}: {e}", exc_info=True)
         return []
+
+
 def collect_files(directory: Path) -> List[str]:
     return [str(f) for f in directory.rglob("*") if f.is_file()]
+
+
 def print_statistics(counter: Counter, file_count: int) -> None:
     total_tokens = counter.total()
     unique = len(counter)
@@ -188,6 +212,8 @@ def print_statistics(counter: Counter, file_count: int) -> None:
     else:
         print(" (NLTK not available; skipping FreqDist details)")
     print("=" * 55 + "\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Extract unique Persian words from files.")
     parser.add_argument("source", type=str, help="Input directory or single file to scan")
@@ -254,5 +280,7 @@ def main() -> None:
         logger.error(f"Failed to write output file: {e}")
     if args.stats:
         print_statistics(counter, len(valid_files))
+
+
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import bz2
 import contextlib
@@ -7,14 +8,15 @@ import gzip
 import lzma
 import multiprocessing as mp
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
-from typing import TYPE_CHECKING
 import zipfile
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 import brotli
 from loguru import logger
 

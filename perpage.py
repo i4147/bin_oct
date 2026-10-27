@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
 

@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from multiprocessing import Pool, cpu_count
 import re
 import sys
+from multiprocessing import Pool, cpu_count
+
 import hunspell
 
 

@@ -1,27 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import OrderedDict
-from contextlib import closing, suppress
 import copy
-from io import BytesIO
 import json
 import os
-from os import path
-from os.path import abspath, basename, dirname, exists, join, splitext
 import re
-from shutil import get_terminal_size
 import subprocess
 import sys
 import tempfile
+import zipfile
+from collections import OrderedDict
+from contextlib import closing, suppress
+from io import BytesIO
+from os import path
+from os.path import abspath, basename, dirname, exists, join, splitext
+from shutil import get_terminal_size
 from traceback import format_exc
 from typing import Any, Optional
 from urllib.parse import urljoin
-import zipfile
-from bs4 import BeautifulSoup
-from guessit import guessit
+
 import rarfile
 import requests
+from bs4 import BeautifulSoup
+from guessit import guessit
 from requests import exceptions
 from requests.utils import quote
 

@@ -1,25 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import as_completed
-from pathlib import Path
 import re
 import shutil
+from concurrent.futures import as_completed
+from pathlib import Path
+
 from rich.console import Console
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
+from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
+                           SpinnerColumn, TextColumn, TimeElapsedColumn,
+                           TimeRemainingColumn)
 
 try:
     from concurrent.futures import InterpreterPoolExecutor
 except ImportError:
-    from concurrent.futures import ProcessPoolExecutor as InterpreterPoolExecutor
+    from concurrent.futures import \
+        ProcessPoolExecutor as InterpreterPoolExecutor
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 KANA_RE = re.compile(r"[\u3040-\u309f\u30a0-\u30ff]")
 HANGUL_RE = re.compile(r"[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]")

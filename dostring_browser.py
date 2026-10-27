@@ -1,18 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-import sys
+
 from rich.console import Console
 from rich.markdown import Markdown
 
 try:
-    from readchar import (
-        key as RKEY,
-        readkey,
-    )
+    from readchar import key as RKEY
+    from readchar import readkey
 
     HAVE_READCHAR = True
 except Exception:

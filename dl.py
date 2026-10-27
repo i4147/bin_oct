@@ -1,19 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
 import hashlib
 import json
 import multiprocessing as mp
-from pathlib import Path
 import re
 import signal
 import sys
 import time
-from typing import Optional
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
+from typing import Optional
+
 import requests
 from tqdm import tqdm
 
@@ -656,14 +658,9 @@ def _chunk_worker(url: str, dest_str: str, idx: int, start: int, end: int, timeo
 def cmd_chunked(args: argparse.Namespace) -> int:
     try:
         from rich.console import Console
-        from rich.progress import (
-            BarColumn,
-            DownloadColumn,
-            Progress,
-            TextColumn,
-            TimeRemainingColumn,
-            TransferSpeedColumn,
-        )
+        from rich.progress import (BarColumn, DownloadColumn, Progress,
+                                   TextColumn, TimeRemainingColumn,
+                                   TransferSpeedColumn)
     except ImportError:
         logger.error("The 'chunked' subcommand needs 'rich'. Install: pip install rich")
         return 1

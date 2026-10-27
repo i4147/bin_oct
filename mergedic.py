@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from collections import defaultdict
+
 import json
-from pathlib import Path
 import re
 import sys
+from collections import defaultdict
+from pathlib import Path
+
 from dh import get_random_filename
 from loguru import logger
 

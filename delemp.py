@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 import argparse
+import sys
+import time
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
-import sys
-import time
 from typing import TYPE_CHECKING, Final
+
 from dh import is_binary, should_skip
 from loguru import logger
 

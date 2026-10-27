@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import bz2
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import gzip
 import lzma
 import multiprocessing as mp
 import os
-from pathlib import Path
 import shutil
 import sys
 import tarfile
-from typing import IO, Any, Final, Literal, cast
 from compression import zstd
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from pathlib import Path
+from typing import IO, Any, Final, Literal, cast
 
 Compressor = Literal["xz", "gz", "bz2", "zstd", "lz4"]
 COMPRESSORS: Final[tuple[Compressor, ...]] = ("xz", "gz", "bz2", "zstd", "lz4")

@@ -4,7 +4,8 @@ import subprocess
 import sys
 from datetime import datetime
 from typing import Optional
-from git import Repo, GitCommandError, Submodule
+
+from git import GitCommandError, Repo, Submodule
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess:

@@ -1,21 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import concurrent.futures
-from dataclasses import dataclass
-from io import StringIO
 import logging
 import mimetypes
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tokenize
-from typing import TYPE_CHECKING, Any, Callable
 import zipfile
+from dataclasses import dataclass
+from io import StringIO
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -32,14 +33,12 @@ try:
 except Exception:
     filetype = None
 try:
-    from dh import (
-        BIN_EXT as DH_BIN_EXT,
-        MIME2EXT as DH_MIME2EXT,
-        SHEBANG_MAP as DH_SHEBANG_MAP,
-        TXT_EXT as DH_TXT_EXT,
-        get_files as dh_get_files,
-        is_binary as dh_is_binary,
-    )
+    from dh import BIN_EXT as DH_BIN_EXT
+    from dh import MIME2EXT as DH_MIME2EXT
+    from dh import SHEBANG_MAP as DH_SHEBANG_MAP
+    from dh import TXT_EXT as DH_TXT_EXT
+    from dh import get_files as dh_get_files
+    from dh import is_binary as dh_is_binary
 except Exception:
     DH_BIN_EXT = None
     DH_MIME2EXT = None

@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import multiprocessing as mp
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 
 try:
-    from tree_sitter import Language, Parser
     import tree_sitter_rust
+    from tree_sitter import Language, Parser
 
     TREE_SITTER_AVAILABLE = True
 except ImportError:

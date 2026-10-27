@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import os
-from dotenv import load_dotenv
+from pathlib import Path
+
 import ipinfo
 from dh import cyan, reset
+from dotenv import load_dotenv
 
 if __name__ == "__main__":
     env_path = Path.home() / ".env"

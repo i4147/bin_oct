@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 if __name__ == "__main__":
     target_dir = Path.cwd().resolve()

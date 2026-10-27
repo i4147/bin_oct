@@ -1,22 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
 import datetime as dt
-from difflib import SequenceMatcher
 import re
 import string
 import sys
-from typing import Any, Optional
 import urllib.error
 import urllib.request
+from difflib import SequenceMatcher
+from typing import Any, Optional
+
 import bibtexparser
-from bibtexparser.bparser import BibTexParser
-from bibtexparser.bwriter import BibTexWriter
 import bs4
 import isbnlib
 import pycountry
 import pyparsing
+from bibtexparser.bparser import BibTexParser
+from bibtexparser.bwriter import BibTexWriter
 from SPARQLWrapper import JSON, SPARQLWrapper
 from termcolor import colored
 

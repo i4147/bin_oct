@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import ast
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def sort_python_script(path: Path) -> None:

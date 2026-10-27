@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 import gzip
 import lzma
-from multiprocessing import Pool
-from pathlib import Path
 import subprocess
 import sys
 import tarfile
 import zipfile
+from multiprocessing import Pool
+from pathlib import Path
+
 import py7zr
 
 MAX_WORKERS: int = 4

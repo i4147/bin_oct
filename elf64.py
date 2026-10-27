@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Iterator
+
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile

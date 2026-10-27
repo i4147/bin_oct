@@ -4,7 +4,8 @@ import base64
 import mimetypes
 import re
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Set, Tuple
+
 import requests
 from bs4 import BeautifulSoup
 

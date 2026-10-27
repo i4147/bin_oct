@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from dataclasses import dataclass, field
 import hashlib
-from pathlib import Path
 import sys
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Iterator
+
 import ssdeep
 
 SKIP_DIRS: frozenset[str] = frozenset({

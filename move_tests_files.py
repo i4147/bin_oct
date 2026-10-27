@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import json
+import shutil
 from multiprocessing import Pool
 from pathlib import Path
-import shutil
 from typing import Any
+
 from loguru import logger
 
 TESTS_DIR: Path = Path.home() / "tmp" / "tests"

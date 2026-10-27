@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import base64
-from html.parser import HTMLParser
-from pathlib import Path
 import re
 import sys
+from html.parser import HTMLParser
+from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
 
@@ -359,7 +360,8 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
         from reportlab.lib.units import inch
-        from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
+        from reportlab.platypus import (PageBreak, Paragraph,
+                                        SimpleDocTemplate, Spacer)
     except ImportError:
         die("reportlab is required for --backend reportlab")
     chm_obj = chm.CHMFile(str(chm_path))

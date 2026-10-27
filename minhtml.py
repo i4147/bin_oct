@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import fnmatch
 import glob as _glob
@@ -20,6 +21,7 @@ from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
+
 from loguru import logger
 
 try:

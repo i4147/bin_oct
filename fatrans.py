@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
-from multiprocessing import Pool
-from pathlib import Path
 import re
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm

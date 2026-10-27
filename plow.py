@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+import sys
 from pathlib import Path
 from typing import Annotated
-import sys
+
+from loguru import logger
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.syntax import Syntax
 from rich.panel import Panel
-from loguru import logger
+from rich.syntax import Syntax
 
 
 def render_markdown(content: str) -> None:

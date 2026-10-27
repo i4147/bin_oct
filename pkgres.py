@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import re
 from multiprocessing import Pool
 from pathlib import Path
-import re
 from typing import Any
 
 SKIPPED_DIRS: frozenset[str] = frozenset({

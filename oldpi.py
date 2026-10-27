@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from collections import deque
+
 import mmap
-from mmap import mmap
-from pathlib import Path
 import re
 import tokenize
+from collections import deque
+from mmap import mmap
+from pathlib import Path
+
 from dh import mpf
 
 

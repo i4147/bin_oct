@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

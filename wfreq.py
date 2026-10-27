@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import multiprocessing as mp
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 from typing import Iterable, Iterator
+
 from spellchecker import SpellChecker
 
 WORD_RE = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*", re.UNICODE)

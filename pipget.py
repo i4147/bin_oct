@@ -1,17 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import asyncio
 import contextlib
-from pathlib import Path
 import re
 import sys
 import tarfile
 import time
 import zipfile
+from pathlib import Path
+
+import httpx
 from bs4 import BeautifulSoup
 from dh import cprint
-import httpx
 
 MIRRORS = {
     "runflare": "https://mirror-pypi.runflare.com",

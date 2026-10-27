@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import csv
@@ -50,7 +51,8 @@ try:
 except ImportError:
     _tlsh = None
 try:
-    from concurrent.futures import InterpreterPoolExecutor as _InterpreterPoolExecutor
+    from concurrent.futures import \
+        InterpreterPoolExecutor as _InterpreterPoolExecutor
 except ImportError:
     _InterpreterPoolExecutor = None
 try:
@@ -1095,14 +1097,9 @@ def process_files(
         results.extend(_run_jobs(path_texts, cfg, worker_count, method))
         return results, cache_hits
     try:
-        from rich.progress import (
-            BarColumn,
-            Progress,
-            SpinnerColumn,
-            TextColumn,
-            TimeElapsedColumn,
-            TimeRemainingColumn,
-        )
+        from rich.progress import (BarColumn, Progress, SpinnerColumn,
+                                   TextColumn, TimeElapsedColumn,
+                                   TimeRemainingColumn)
     except ImportError:
         LOGGER.warning("rich is unavailable; falling back to basic progress output")
         if not sys.stderr.isatty():

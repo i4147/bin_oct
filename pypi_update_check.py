@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import importlib.metadata
 import io
@@ -7,15 +8,16 @@ import json
 import logging
 import multiprocessing
 import os
-from pathlib import Path
 import re
 import signal
 import sys
 import sysconfig
 import time
+from pathlib import Path
 from typing import Any, Optional, Sequence
-from packaging import version
+
 import requests
+from packaging import version
 
 try:
     import pycurl

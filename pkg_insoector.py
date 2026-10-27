@@ -1,19 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
 import configparser
 import contextlib
 import csv
-from datetime import datetime
-from importlib import metadata
 import json
 import os
-from pathlib import Path
 import re
 import site
 import subprocess
 import sys
+from collections import defaultdict
+from datetime import datetime
+from importlib import metadata
+from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
 BINARY_EXTS: tuple[str, ...] = (".so", ".pyd", ".dll", ".dylib")

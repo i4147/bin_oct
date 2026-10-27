@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import defaultdict
-from pathlib import Path
 import re
 import shutil
+from collections import defaultdict
+from pathlib import Path
 
 
 def normalize_name(path: Path) -> str:

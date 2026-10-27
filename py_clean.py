@@ -1,22 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import deque
-from dataclasses import dataclass, field
 import difflib
 import fnmatch
 import io
 import multiprocessing
 import os
-from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import tokenize
+from collections import deque
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Sequence
+
 import libcst as cst
+from dh import atomic_write
 from libcst.helpers import get_full_name_for_node
 from loguru import logger
 
@@ -396,20 +399,6 @@ def is_python_file(path: Path) -> bool:
     except OSError:
         return False
     return header.startswith(b"#!") and b"python" in header
-
-
-def atomic_write(path: Path, data: bytes) -> None:
-    resolved_path = path.resolve()
-    fd, temp_path_str = tempfile.mkstemp(dir=resolved_path.parent, prefix=f".{resolved_path.name}.", suffix=".tmp")
-    temp_path = Path(temp_path_str)
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-        shutil.copymode(resolved_path, temp_path)
-        os.replace(temp_path, resolved_path)
-    except BaseException:
-        temp_path.unlink(missing_ok=True)
-        raise
 
 
 def get_diff(path: str, original: str, modified: str) -> str:

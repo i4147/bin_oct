@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor
 import csv
 import importlib.metadata
-from pathlib import Path
 import re
 import shutil
 import site
@@ -12,6 +11,8 @@ import sys
 import tarfile
 import tempfile
 import zipfile
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 try:
     STDLIB = set(sys.stdlib_module_names)

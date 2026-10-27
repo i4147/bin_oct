@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, Optional, Protocol
+
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
 from loguru import logger

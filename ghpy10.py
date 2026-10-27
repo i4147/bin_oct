@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from datetime import datetime, timedelta
+
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
-from dotenv import load_dotenv
+
 import requests
+from dotenv import load_dotenv
 
 
 def search_github_repos() -> None:

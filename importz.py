@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import ast
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def is_python_file(path: Path) -> bool:

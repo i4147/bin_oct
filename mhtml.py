@@ -1,24 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import base64
 import codecs
 import contextlib
-from email.parser import BytesParser
-from email.policy import compat32
 import glob
-from importlib.metadata import (
-    PackageNotFoundError,
-    version as _pkg_version,
-)
 import mimetypes
 import multiprocessing as mp
-from pathlib import Path
 import re
 import sys
+from email.parser import BytesParser
+from email.policy import compat32
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Sequence
 from urllib.parse import unquote, urljoin
 from urllib.request import Request, urlopen
+
 from loguru import logger
 from lxml import html as lh
 

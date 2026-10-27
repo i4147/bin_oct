@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from datetime import datetime
-from pathlib import Path
+
 import subprocess
 import sys
+from datetime import datetime
+from pathlib import Path
 
 REPO_PATH = Path.home() / "bin"
 MAIN_BRANCH = "main"

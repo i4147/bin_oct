@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 import multiprocessing as mp
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Iterable
+
 import rarfile
 
 

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import json
@@ -7,9 +8,9 @@ import os
 import re
 import subprocess
 import sys
-from typing import Iterable, Iterator, Optional
 import urllib.error
 import urllib.request
+from typing import Iterable, Iterator, Optional
 
 try:
     STDLIB: set[str] = set(sys.stdlib_module_names)

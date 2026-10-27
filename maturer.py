@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import base64
 import hashlib
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tomllib
 import zipfile
+from pathlib import Path
 
 
 def get_cargo_metadata():

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import os
@@ -30,9 +31,9 @@ try:
 except ImportError:
     pass
 try:
-    from skimage import io as _ski_io
-    from skimage import color as _ski_color
     import numpy as _np
+    from skimage import color as _ski_color
+    from skimage import io as _ski_io
 
     ski_io = _ski_io
     ski_color = _ski_color

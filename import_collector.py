@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import ast
 import importlib.metadata
 import importlib.util
-from pathlib import Path
 import sys
+from pathlib import Path
+
 from dh import is_python_file
 
 PACKAGE_MAPPING = {

@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import difflib
-from multiprocessing import Pool
-from pathlib import Path
 import shutil
 import sys
+from multiprocessing import Pool
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+import tree_sitter_bash
 from loguru import logger
 from tree_sitter import Language, Node, Parser
-import tree_sitter_bash
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

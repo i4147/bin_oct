@@ -1,7 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import re
+from pathlib import Path
+
 from dh import cprint, fsz, get_nobinary, gsz
 
 LIC_FILE = Path("/sdcard/lic")

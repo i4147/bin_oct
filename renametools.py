@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 import logging
-from os.path import commonpath
-from pathlib import Path
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from os.path import commonpath
+from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
 log = logging.getLogger("renametools")

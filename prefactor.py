@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
+import sys
 from collections import deque
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-import sys
 
 MAX_DEFAULT = 10
 

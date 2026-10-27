@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import asyncio
-from html.parser import HTMLParser
 import io
 import json
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+from html.parser import HTMLParser
+from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 

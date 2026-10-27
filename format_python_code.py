@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from functools import partial
 import io
-from pathlib import Path
 import re
 import subprocess
 import sys
-from textwrap import fill as _fill
 import time
 import tokenize
-from typing import Optional
 import unicodedata
+from functools import partial
+from pathlib import Path
+from textwrap import fill as _fill
+from typing import Optional
+
 from dh import cprint, format_time, fsz, get_files, get_pyfiles, is_binary, mpf
 
 _DOC_TOKENS = ('"""', "'''")

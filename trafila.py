@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import sys
-from dh import get_files, mpf
+from pathlib import Path
+
 import trafilatura
+from dh import get_files, mpf
 
 remove_orig = "-r" in sys.argv
 

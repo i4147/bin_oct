@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from concurrent.futures import ProcessPoolExecutor
 import copy
-from dataclasses import dataclass
 import hashlib
 import os
-from pathlib import Path
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator, Sequence
 
 
@@ -240,8 +241,8 @@ def cmd_ast(args: argparse.Namespace) -> int:
 
 
 def _ts_make_parser():
-    from tree_sitter import Language, Parser
     import tree_sitter_python as tsp
+    from tree_sitter import Language, Parser
 
     parser = Parser()
     parser.language = Language(tsp.language())

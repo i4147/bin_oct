@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import multiprocessing as mp
 from pathlib import Path
 from typing import Optional
+
 import pymupdf
 
 _DOC: Optional[pymupdf.Document] = None

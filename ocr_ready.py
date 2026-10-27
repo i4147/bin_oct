@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import multiprocessing
 import sys
 from pathlib import Path
 from typing import Any, Union
+
 import numpy as np
 import pytesseract
 from loguru import logger

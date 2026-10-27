@@ -1,20 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from collections import defaultdict
-from dataclasses import dataclass, field
 import io
 import json
 import os
-from pathlib import Path
 import re
 import sqlite3
 import sys
 import tarfile
 import textwrap
-from typing import Iterable, Iterator
 import zipfile
+from collections import defaultdict
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Iterable, Iterator
 
 try:
     import libcst as cst

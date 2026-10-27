@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
-from dataclasses import dataclass
 import multiprocessing as mp
 import os
-from pathlib import Path
 import re
 import sys
-from typing import Optional
 import urllib.request
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+from dh import atomic_write
 
 DEFAULT_WORKERS: int = 8
 EXT_TO_LANG: dict[str, str] = {
@@ -365,22 +368,6 @@ def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
     ranges = ts_comment_ranges(result, html_parser)
     result, n = apply_removal(result, "html", ranges, preserve, opts)
     return result, total + n
-
-
-def atomic_write(path: Path, data: bytes) -> None:
-    st = path.stat()
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    try:
-        with tmp.open("wb") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())
-        os.chmod(tmp, st.st_mode)
-        os.replace(tmp, path)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            tmp.unlink(missing_ok=True)
-        raise
 
 
 def process_job(job: Job) -> Result:

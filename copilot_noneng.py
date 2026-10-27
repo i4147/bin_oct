@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import json
 import multiprocessing as mp
-from pathlib import Path
 import sys
 import threading
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from dh import is_binary
+
 import gcld3
-from langdetect import DetectorFactory, detect_langs
 import pycld2 as cld2
+from dh import is_binary
+from langdetect import DetectorFactory, detect_langs
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

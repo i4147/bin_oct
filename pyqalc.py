@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from decimal import getcontext
 import math
 import re
+from decimal import getcontext
 
 getcontext().prec = 28
 

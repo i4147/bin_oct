@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
+import hashlib
+import os
+import sys
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-import hashlib
-import os
 from pathlib import Path
-import sys
-import time
 from typing import Optional
 
 try:

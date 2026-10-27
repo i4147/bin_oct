@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from collections import deque
+
 import gzip
-from pathlib import Path
 import sys
+from collections import deque
+from pathlib import Path
 from tempfile import NamedTemporaryFile
+
 from dh import cprint, mpf, runcmd
 
 

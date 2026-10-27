@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from dataclasses import dataclass
 import json
 import multiprocessing as mp
-from pathlib import Path
 import sys
 import time
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Final
-from dh import fsz
+
 import ffmpeg
+from dh import fsz
 from loguru import logger
 
 NUM_WORKERS: Final[int] = 8

@@ -1,16 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
-from functools import partial
 import json
 import logging
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor,
+                                as_completed)
+from dataclasses import dataclass
+from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
+
+from dh import atomic_write
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -60,22 +64,6 @@ def read_text(path: Path, max_bytes: int = 0) -> Optional[str]:
     except OSError as exc:
         LOG.error("Failed to read %s: %s", path, exc)
         return None
-
-
-def atomic_write(path: Path, text: str) -> bool:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    try:
-        tmp.write_text(text, encoding="utf-8")
-        tmp.replace(path)
-        return True
-    except Exception as exc:
-        LOG.error("Failed to write %s: %s", path, exc)
-        try:
-            if tmp.exists():
-                tmp.unlink()
-        except OSError:
-            pass
-        return False
 
 
 def discover(
@@ -145,8 +133,8 @@ class HtmlTagFormatter:
 
     def __init__(self) -> None:
         try:
-            from tree_sitter import Language, Parser
             import tree_sitter_html as ts_html
+            from tree_sitter import Language, Parser
         except ImportError as exc:
             msg = "Required packages not installed. Install with: pip install tree-sitter tree-sitter-html"
             raise RuntimeError(msg) from exc

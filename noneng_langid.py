@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import math
-from pathlib import Path
 import sys
+from pathlib import Path
+
 import py3langid as langid
 
 ROOT = Path.cwd()

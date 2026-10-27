@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import logging
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 import shutil
 import sys
 import time
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
+
 from tqdm import tqdm
 
 logging.basicConfig(

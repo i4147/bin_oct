@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import base64
 import contextlib
@@ -8,14 +9,15 @@ import hashlib
 import io
 import json
 import mmap
-from multiprocessing import Pool
 import os
-from pathlib import Path
 import re
 import sys
 import tempfile
 import tokenize
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Iterator, NamedTuple
+
 import libcst as cst
 from loguru import logger
 

@@ -1,17 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import curses
 import logging
 import logging.config
 import logging.handlers
-from pathlib import Path
 import re
 import sys
 import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
-from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
+from pathlib import Path
+
+from sqlalchemy import (Boolean, Column, Integer, MetaData, Table, Unicode,
+                        create_engine, select)
 
 DEBUG = True
 USE_COLORS = True

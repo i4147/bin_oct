@@ -1,22 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
+import sys
+import time
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
-import sys
-import time
 from typing import Optional, Sequence
+
 from dh import fsz
 from loguru import logger
 
 try:
-    from fontTools.ttLib import TTFont
-    from fontTools.t1Lib import T1Font
     from fontTools.fontBuilder import FontBuilder
-    from fontTools.pens.t2CharStringPen import T2CharStringPen
     from fontTools.misc.psCharStrings import T2CharString
+    from fontTools.pens.t2CharStringPen import T2CharStringPen
+    from fontTools.t1Lib import T1Font
+    from fontTools.ttLib import TTFont
 except ImportError:
     sys.stderr.write("fonttools is not installed.\n  pip install fonttools\n")
     sys.exit(1)

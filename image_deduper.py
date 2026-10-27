@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 import os
 from collections import defaultdict
-from PIL import Image
+
 import imagehash
+from PIL import Image
 
 DRY_RUN = True
 IMAGE_EXTENSIONS = (".webp", ".jpg", ".jpeg", ".png", ".tiff", ".tif")

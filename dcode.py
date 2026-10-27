@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import base64
 import binascii
@@ -11,10 +12,10 @@ import lzma
 import os
 import re
 import sys
-from typing import Callable
 import urllib.parse
 import urllib.request
 import zlib
+from typing import Callable
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("decoder")

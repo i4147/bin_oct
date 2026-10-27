@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import re
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
+
 from dh import get_files, mpf
 from lxml import html as lxml_html
 

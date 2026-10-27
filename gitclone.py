@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 
 def _default_branch(url: str) -> str | None:

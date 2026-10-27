@@ -1,13 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import contextlib
-from dataclasses import dataclass, field
 import multiprocessing
-from pathlib import Path
 import re
 import sys
 import zipfile
+from dataclasses import dataclass, field
+from pathlib import Path
+
 from fontTools.ttLib import TTFont
 from loguru import logger
 

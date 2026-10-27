@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from collections import deque
 import hashlib
-from html.parser import HTMLParser
 import io
-from pathlib import Path
 import re
 import sys
+from collections import deque
+from html.parser import HTMLParser
+from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
+
 import pycurl
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".tif", ".tiff", ".ico", ".avif"}

@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import json
 import multiprocessing as mp
-from pathlib import Path
 import random
 import re
 import signal
 import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any, Final
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 

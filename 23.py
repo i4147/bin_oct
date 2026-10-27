@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
+import sys
 from collections import deque
 from multiprocessing import Lock, Pool
 from pathlib import Path
-import sys
 from typing import TYPE_CHECKING, Any
+
 from dh import runcmd
 
 if TYPE_CHECKING:

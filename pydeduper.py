@@ -1,19 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import bz2
-from collections import defaultdict
-from dataclasses import dataclass, field
 import gzip
 import hashlib
 import lzma
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 import sys
 import tarfile
-from typing import Iterable, Iterator, Optional
 import zipfile
+from collections import defaultdict
+from dataclasses import dataclass, field
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
+from typing import Iterable, Iterator, Optional
 
 try:
     from loguru import logger

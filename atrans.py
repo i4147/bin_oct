@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from loguru import logger
 
 logger.remove()

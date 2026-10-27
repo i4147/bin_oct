@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
-from collections import defaultdict
 import concurrent.futures
 import hashlib
 import json
 import multiprocessing
 import os
-from pathlib import Path
 import re
+from collections import defaultdict
+from pathlib import Path
 from typing import Any, Iterable, Optional
 
 try:
@@ -353,8 +354,8 @@ def find_fuzzy_duplicates(
     similarity_threshold: float,
 ) -> None:
     try:
-        from rapidfuzz import fuzz
         import ssdeep
+        from rapidfuzz import fuzz
     except ImportError:
         logger.error("Please install dependencies for --fuzzy: pip install ssdeep rapidfuzz")
         return

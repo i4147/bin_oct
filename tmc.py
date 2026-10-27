@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import concurrent.futures as cf
@@ -26,6 +27,8 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Protocol, cast
+
+from dh import atomic_write
 
 if TYPE_CHECKING:
     from libcst import CSTTransformer
@@ -203,23 +206,6 @@ class ASTStripper:
         out.extend(src[cursor:])
         return bytes(out)
 
-    @staticmethod
-    def _atomic_write(path: Path, data: bytes, original: bytes) -> None:
-        mode = stat.S_IMODE(path.stat().st_mode)
-        fd, name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
-        temp = Path(name)
-        try:
-            with os.fdopen(fd, "wb") as stream:
-                stream.write(data)
-                stream.flush()
-                os.fsync(stream.fileno())
-            temp.chmod(mode)
-            if path.is_symlink() or path.read_bytes() != original:
-                raise RuntimeError("File changed while processing; not replaced")
-            temp.replace(path)
-        finally:
-            temp.unlink(missing_ok=True)
-
     def strip_file(
         self,
         path: Path,
@@ -255,7 +241,7 @@ class ASTStripper:
                         if path.is_symlink() or path.read_bytes() != original:
                             raise RuntimeError("File changed while processing; not replaced")
                         result.backup = create_backup(path, original)
-                    self._atomic_write(path, data, original)
+                    atomic_write(path, data)
         except SkipFile as exc:
             result.skipped = True
             result.skip_reason = str(exc)

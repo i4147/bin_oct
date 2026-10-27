@@ -2,10 +2,10 @@
 import argparse
 import concurrent.futures
 import os
+import re
 import shutil
 import sys
 import tempfile
-import re
 from pathlib import Path
 
 try:

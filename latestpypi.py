@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-from pathlib import Path
+
 import urllib.request
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 RSS_URL = "https://pypi.org/rss/packages.xml"
 OUTPUT_FILE = Path("latest_pypi_packages.txt")

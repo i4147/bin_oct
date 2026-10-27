@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
 import ast
 import difflib
@@ -21,7 +22,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import perf_counter
 from typing import Iterator
-from dh import ASTStripper, TSStripper, CSTStripper, SKIP_DIRS
+
+from dh import SKIP_DIRS, ASTStripper, CSTStripper, TSStripper, atomic_write
 
 LOGGER = logging.getLogger("striper_termux")
 _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
@@ -66,23 +68,6 @@ def create_backup(path: Path, original: bytes) -> Path:
             backup.unlink(missing_ok=True)
             raise
     return backup
-
-
-def _atomic_write(path: Path, data: bytes, original: bytes) -> None:
-    mode = stat.S_IMODE(path.stat().st_mode)
-    fd, name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
-    temp = Path(name)
-    try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        temp.chmod(mode)
-        if path.is_symlink() or read_bounded(path, len(original)) != original:
-            raise RuntimeError("File changed while processing; not replaced")
-        temp.replace(path)
-    finally:
-        temp.unlink(missing_ok=True)
 
 
 def remove_blank_lines(source: str) -> str:
@@ -146,7 +131,7 @@ def _process_file(
                     if path.is_symlink() or read_bounded(path, len(original)) != original:
                         raise RuntimeError("File changed while processing; not replaced")
                     result.backup = create_backup(path, original)
-                _atomic_write(path, data, original)
+                atomic_write(path, data)
     except BudgetExceeded as exc:
         result.skipped = str(exc)
         result.saved = 0

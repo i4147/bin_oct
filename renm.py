@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from multiprocessing.pool import AsyncResult, Pool
 import os
-from pathlib import Path
 import re
+from multiprocessing.pool import AsyncResult, Pool
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from deep_translator import GoogleTranslator
 from dh import unique_path
 from loguru import logger

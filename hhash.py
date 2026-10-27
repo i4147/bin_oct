@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
+
 import argparse
-from functools import reduce
 import hashlib
 import json
 import operator
 import sys
-from typing import Any, Optional, Sequence
 import uuid as uuidlib
+from functools import reduce
+from typing import Any, Optional, Sequence
 
 DEFAULT_WORDLIST: tuple[str, ...] = (
     "ack",

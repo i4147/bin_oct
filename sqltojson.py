@@ -1,17 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import absolute_import, annotations
+
 import calendar
 import contextlib
 import csv
 import datetime as dt
-from decimal import Decimal
 import json
 import os
 import sys
+from decimal import Decimal
 from typing import Optional
 from zoneinfo import ZoneInfo
-from dateutil.relativedelta import relativedelta
+
 import fire
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 
