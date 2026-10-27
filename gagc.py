@@ -1,0 +1,70 @@
+#!/data/data/com.termux/files/usr/bin/python
+import os
+import subprocess
+import sys
+from datetime import datetime
+from typing import Optional
+from git import Repo, GitCommandError, Submodule
+
+
+def run_command(command: list[str]) -> subprocess.CompletedProcess:
+    """Helper to run shell commands and return results."""
+    print(f"Running: {' '.join(command)}")
+    return subprocess.run(command, capture_output=True, text=True, check=True)
+
+
+def auto_git_workflow():
+    repo_path = os.getcwd()
+    repo_name = os.path.basename(repo_path)
+
+    try:
+        repo = Repo(repo_path)
+        print(f"--- Detected repository: {repo_name} ---")
+    except Exception:
+        print("Not a git repository. Initializing...")
+        repo = Repo.init(repo_path)
+        repo.git.add(A=True)
+        repo.index.commit(f"Initial commit: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # 1. Handle Submodules
+    if repo.submodules:
+        print("Updating submodules...")
+        repo.git.submodule("update", "--init", "--recursive")
+
+    # 2. Add and Commit
+    repo.git.add(A=True)
+    commit_msg = f"Auto-commit: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    repo.index.commit(commit_msg)
+    print(f"Committed changes with message: '{commit_msg}'")
+
+    # 3. Handle Remote/GitHub Logic
+    remotes = repo.remotes
+    if not remotes:
+        print("No remote configured. Creating new repository on GitHub...")
+        try:
+            run_command(["gh", "repo", "create", repo_name, "--public", "--source=.", "--push"])
+        except subprocess.CalledProcessError:
+            new_name = input("Repository exists. Enter a unique name for the new repo: ")
+            run_command(["gh", "repo", "create", new_name, "--public", "--source=.", "--push"])
+    else:
+        origin = remotes[0].url
+        # Check if user owns the repo (heuristic: check if it's a personal/org path)
+        user = subprocess.check_output(["gh", "api", "user", "--jq", ".login"]).decode().strip()
+
+        if user not in origin:
+            print("Not the owner. Forking repository...")
+            run_command(["gh", "repo", "fork", "--remote", "true"])
+            repo.git.push("fork", repo.active_branch)
+        else:
+            print("Pushing to existing remote...")
+            repo.remotes.origin.push()
+
+    print("Workflow completed successfully.")
+
+
+if __name__ == "__main__":
+    try:
+        auto_git_workflow()
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)

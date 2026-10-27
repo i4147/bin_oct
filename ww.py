@@ -1,0 +1,10 @@
+#!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
+import os
+from pathlib import Path
+import subprocess
+
+if __name__ == "__main__":
+    target_dir = Path.cwd().resolve()
+    os.chdir(target_dir.parent)
+    subprocess.run(["wheel", "pack", str(target_dir), "-d", "/sdcard/whl"], check=False)

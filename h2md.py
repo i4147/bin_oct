@@ -1,0 +1,30 @@
+#!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
+from pathlib import Path
+import sys
+from dh import get_files, mpf
+from markdownify import markdownify
+
+
+def process_file(path) -> None:
+    path = Path(path)
+    md_path = path.with_suffix(".md")
+    content = path.read_text(encoding="utf8")
+    markdownify(content)
+    md_path.write_text(md_content, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    cwd = Path.cwd()
+    args = sys.argv[1:]
+    files = []
+    if args:
+        for arg in args:
+            p = Path(arg)
+            if p.is_file():
+                files.append(p)
+            elif p.is_dir():
+                files.extend(get_files(p, ext=[".html"]))
+    else:
+        files.extend(get_files(p, ext=[".html"]))
+    mpf(process_file, files)

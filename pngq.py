@@ -1,0 +1,140 @@
+#!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
+import argparse
+import multiprocessing as mp
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterator
+
+PNG_EXTS = {".png"}
+SKIP_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv"}
+GREEN = "\033[32m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+PNGQUANT_NOOP_CODES = {98, 99}
+
+
+@dataclass
+class Result:
+    path: Path
+    before: int
+    after: int
+    status: str
+    detail: str = ""
+
+    @property
+    def saved(self) -> int:
+        return max(self.before - self.after, 0)
+
+
+def walk_pngs(root: Path) -> Iterator[Path]:
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for name in filenames:
+            p = Path(dirpath) / name
+            if p.suffix.lower() in PNG_EXTS and not p.is_symlink() and p.is_file():
+                yield p
+
+
+def run_pngquant(path: Path, quality: str, output: Path) -> int:
+    cmd = [
+        "pngquant",
+        "--force",
+        "--strip",
+        f"--quality={quality}",
+        "--output",
+        str(output),
+        "--",
+        str(path),
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        return -1
+    return proc.returncode
+
+
+def optimize_one(args: tuple[Path, str, bool]) -> Result:
+    path, quality, dry_run = args
+    tmp_out: Path | None = None
+    try:
+        before = path.stat().st_size
+        with tempfile.NamedTemporaryFile(suffix=path.suffix, dir=path.parent, delete=False) as tmp:
+            tmp_out = Path(tmp.name)
+        rc = run_pngquant(path, quality, tmp_out)
+        if rc == -1:
+            return Result(path, before, before, "error", "pngquant not found")
+        if rc in PNGQUANT_NOOP_CODES:
+            return Result(path, before, before, "unchanged")
+        if rc != 0:
+            return Result(path, before, before, "error", f"exit {rc}")
+        after = tmp_out.stat().st_size
+        if after >= before:
+            return Result(path, before, after, "unchanged")
+        if not dry_run:
+            shutil.copymode(path, tmp_out)
+            os.replace(tmp_out, path)
+            tmp_out = None
+        return Result(path, before, after, "optimized")
+    except Exception as e:
+        return Result(path, 0, 0, "error", f"{type(e).__name__}: {e}")
+    finally:
+        if tmp_out is not None:
+            try:
+                tmp_out.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("-q", "--quality", default="65-80", help="pngquant --quality min-max, e.g. 65-80 (default: 65-80)")
+    ap.add_argument("-n", "--dry-run", action="store_true")
+    ap.add_argument("--root", default=".")
+    args = ap.parse_args()
+    if not shutil.which("pngquant"):
+        print("Error: pngquant not found in PATH.", file=sys.stderr)
+        return 1
+    root = Path(args.root).resolve()
+    files = list(walk_pngs(root))
+    if not files:
+        print(f"No PNGs found under {root}")
+        return 0
+    print(f"Root: {root}")
+    print(
+        f"Files: {len(files)} | Quality: {args.quality} | "
+        f"strip | skip-if-larger | jobs: {args.jobs} | dry-run: {args.dry_run}"
+    )
+    print("-" * 60)
+    tasks = [(p, args.quality, args.dry_run) for p in files]
+    total_saved = 0
+    optimized = unchanged = errors = 0
+    with mp.Pool(processes=args.jobs) as pool:
+        for r in pool.imap_unordered(optimize_one, tasks):
+            if r.status == "optimized":
+                optimized += 1
+                total_saved += r.saved
+                print(f"{r.path.name} {GREEN}{r.saved}{RESET}")
+            elif r.status == "unchanged":
+                unchanged += 1
+                print(f"{r.path.name} {DIM}unchanged{RESET}")
+            else:
+                errors += 1
+                print(f"{r.path.name} {DIM}error: {r.detail}{RESET}", file=sys.stderr)
+    print("-" * 60)
+    if args.dry_run:
+        print(f"Dry run complete. {len(files)} files scanned.")
+    else:
+        print(f"Optimized: {optimized} | Unchanged: {unchanged} | Errors: {errors}")
+        print(f"Space freed: {GREEN}{total_saved:,} bytes{RESET} ({total_saved / 1024 / 1024:.2f} MiB)")
+    return 0 if errors == 0 else 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
