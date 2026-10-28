@@ -802,3 +802,13 @@ zip-files/
 ~$*
 ~$*.doc*
 ~$*.ppt*
+
+# ---------------------------------------------------------------------------
+# Generated code-analysis reports (deliverables).  The global rules above
+# ignore *.json / *.txt, so re-include just these paths.
+# ---------------------------------------------------------------------------
+!reports/*.json
+!reports/*.svg
+!reports/*.md
+!reports/raw/*.json
+!reports/raw/*.txt
