@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python
+#!/data/data/com.termux/files/usr/bin/env python
 """Read QR/barcodes from images (and optionally generate QR codes).
 
 Analysis / deduplication

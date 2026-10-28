@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python
+#!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
 
 import argparse
@@ -227,10 +227,6 @@ def main() -> None:
         use_color = not args.no_color and sys.stdout.isatty()
         mode_str = "size mode" if args.size else "example files mode"
         cwd_str = str(Path.cwd())
-        if use_color:
-            print(f"Scanning {Colors.BOLD}{cwd_str}{Colors.RESET} ({mode_str})...\n")
-        else:
-            print(f"Scanning {cwd_str} ({mode_str})...\n")
         need_sizes = args.size or args.pie_chart
         ext_map = scan_extensions(show_size=need_sizes)
         if not ext_map:

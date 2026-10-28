@@ -1,5 +1,6 @@
-#!/data/data/com.termux/files/usr/bin/python
-from __future__ import annotations
+1. add functionality to remove .gitkeep,.gitmodules,.gitignore file & .github folder if parent folder of them is not a git dir (we are not in a git repo)
+ie, if we encounter .gitignore,... files or .github folder and they are not in a git repo, remove them
+2. i wanna move lines 37 to 203 to a file(/sdcard/data/junk) and read from that file
 
 import shutil
 import sys
@@ -12,7 +13,7 @@ from rignore import walk as _walk
 def main() -> None:
     cwd = Path.cwd()
     removed_count = 0
-    for path in _walk(cwd):
+    for path in _walk(cwd):/
         if path.is_symlink() or ".git" in path.parts:
             continue
         loname = path.name.lower()

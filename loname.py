@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python
+#!/data/data/com.termux/files/usr/bin/env python
 """Rename files to a normalized lowercase form.
 
 Normalization rules (applied to the filename stem; extension is preserved):

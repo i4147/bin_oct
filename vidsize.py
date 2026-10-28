@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python
+#!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 video_size_reporter.py — report the file size of videos on the web.
