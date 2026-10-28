@@ -1,0 +1,51 @@
+[
+  {
+    "file": "codepener.py",
+    "kind": "SyntaxError",
+    "line": 9,
+    "message": "unterminated string literal (detected at line 9)",
+    "requires_python_312": true
+  },
+  {
+    "file": "fixescape.py",
+    "kind": "SyntaxError",
+    "line": 80,
+    "message": "f-string expression part cannot include a backslash",
+    "requires_python_312": true
+  },
+  {
+    "file": "minhtml.py",
+    "kind": "SyntaxError",
+    "line": 47,
+    "message": "invalid syntax",
+    "requires_python_312": true
+  },
+  {
+    "file": "rmc3.py",
+    "kind": "SyntaxError",
+    "line": 130,
+    "message": "invalid syntax",
+    "requires_python_312": true
+  },
+  {
+    "file": "rmh.py",
+    "kind": "SyntaxError",
+    "line": 210,
+    "message": "unterminated string literal (detected at line 210)",
+    "requires_python_312": true
+  },
+  {
+    "file": "srmc2.py",
+    "kind": "SyntaxError",
+    "line": 169,
+    "message": "expected '('",
+    "requires_python_312": true
+  },
+  {
+    "file": "zip_crack.py",
+    "kind": "SyntaxError",
+    "line": 129,
+    "message": "unterminated string literal (detected at line 129)",
+    "requires_python_312": true
+  }
+]
