@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-# /// script
-# requires-python = ">=3.12"
-# dependencies = [
-#   "beautifulsoup4>=4.12",
-#   "linkify-it-py>=2.0",
-#   "loguru>=0.7.3",
-#   "markdown-it-py>=3.0",
-#   "markdownify>=0.13",
-#   "pygments>=2.17",
-#   "rich>=13.9",
-# ]
-# ///
 """
 glow.py -- a self-contained, pure-Python implementation of the ``glow`` idea.
 
@@ -67,14 +55,9 @@ from pathlib import Path
 from string import Template
 from typing import Any, Final, Iterable, Literal, Mapping, NoReturn, Sequence
 
-# --------------------------------------------------------------------------- #
-# loguru is the one mandatory third-party dependency: all diagnostics go
-# through it.  If it is missing we cannot log with it, so emit one clear line
-# on stderr and stop.  This is the only message that bypasses loguru.
-# --------------------------------------------------------------------------- #
 try:
     from loguru import logger
-except ImportError as _exc:  # pragma: no cover - environment problem
+except ImportError as _exc:
     sys.stderr.write(
         "glow.py: 'loguru' is required. Install dependencies with:\n"
         "  pip install loguru rich markdown-it-py markdownify beautifulsoup4 "
@@ -86,14 +69,11 @@ except ImportError as _exc:  # pragma: no cover - environment problem
 if sys.platform != "win32":
     import termios
     import tty
-else:  # pragma: no cover - pager simply degrades to plain output on Windows
-    termios = None  # type: ignore[assignment]
-    tty = None  # type: ignore[assignment]
+else:
+    termios = None
+    tty = None
 
 
-# --------------------------------------------------------------------------- #
-# Type aliases (PEP 695) and enums
-# --------------------------------------------------------------------------- #
 type ColorMode = Literal["auto", "always", "never"]
 type ThemeName = Literal["dark", "light", "mono"]
 type BackendName = Literal["auto", "rich", "builtin"]
@@ -112,9 +92,6 @@ class ExitCode(IntEnum):
     INTERRUPTED = 130
 
 
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
 APP_NAME: Final = "glow.py"
 VERSION: Final = "1.0.0"
 DEFAULT_WIDTH: Final = 80
@@ -123,14 +100,12 @@ MAX_WIDTH: Final = 1000
 DEFAULT_TIMEOUT: Final = 15.0
 DEFAULT_MAX_BYTES: Final = 25 * 1024 * 1024
 HTML_EXTS: Final = frozenset({".html", ".htm", ".xhtml", ".shtml"})
-DOC_EXTS: Final = frozenset(
-    {".md", ".markdown", ".mdown", ".mkd", ".mdx", ".txt", ".html", ".htm", ".xhtml"}
-)
+DOC_EXTS: Final = frozenset({".md", ".markdown", ".mdown", ".mkd", ".mdx", ".txt", ".html", ".htm", ".xhtml"})
 
 ANSI_RE: Final = re.compile(
-    r"\x1b\[[0-?]*[ -/]*[@-~]"          # CSI ... (SGR, cursor, erase, ...)
-    r"|\x1b\][^\x07]*(?:\x07|\x1b\\)"   # OSC ... BEL / ST
-    r"|\x1b[@-Z\\-_]"                   # 2-char ESC sequences
+    r"\x1b\[[0-?]*[ -/]*[@-~]"
+    r"|\x1b\][^\x07]*(?:\x07|\x1b\\)"
+    r"|\x1b[@-Z\\-_]"
 )
 TAG_RE: Final = re.compile(r"<[^>]*>")
 RESET: Final = "\x1b[0m"
@@ -210,9 +185,6 @@ PAGER_HELP: Final = """glow.py pager -- keyboard reference
 """
 
 
-# --------------------------------------------------------------------------- #
-# Errors
-# --------------------------------------------------------------------------- #
 class GlowError(Exception):
     """Base class for every expected error raised by glow.py."""
 
@@ -233,9 +205,6 @@ class ConversionError(GlowError):
     """A Markdown <-> HTML conversion failed."""
 
 
-# --------------------------------------------------------------------------- #
-# Options
-# --------------------------------------------------------------------------- #
 @dataclass(slots=True, frozen=True)
 class Options:
     sources: tuple[str, ...]
@@ -275,9 +244,6 @@ class Options:
         return sys.stderr.isatty()
 
 
-# --------------------------------------------------------------------------- #
-# Dependencies / doctor
-# --------------------------------------------------------------------------- #
 @dataclass(slots=True, frozen=True)
 class Dependency:
     distribution: str
@@ -289,9 +255,7 @@ class Dependency:
 DEPENDENCIES: Final[tuple[Dependency, ...]] = (
     Dependency("loguru", "loguru", "error logging", True),
     Dependency("rich", "rich", "primary terminal Markdown renderer", False),
-    Dependency(
-        "markdown-it-py", "markdown_it", "CommonMark -> HTML backend", False
-    ),
+    Dependency("markdown-it-py", "markdown_it", "CommonMark -> HTML backend", False),
     Dependency("linkify-it-py", "linkify_it", "autolinks in HTML output", False),
     Dependency("markdownify", "markdownify", "HTML -> Markdown backend", False),
     Dependency("beautifulsoup4", "bs4", "HTML cleaning / fallback converter", False),
@@ -323,9 +287,6 @@ def resolve_backend(opts: Options) -> Literal["rich", "builtin"]:
     return "builtin"
 
 
-# --------------------------------------------------------------------------- #
-# ANSI helpers
-# --------------------------------------------------------------------------- #
 def char_width(ch: str) -> int:
     """Display width of one character (0, 1 or 2)."""
     if unicodedata.combining(ch):
@@ -382,9 +343,6 @@ def ansi(codes: SgrCodes, text: str, *, enabled: bool = True) -> str:
     return f"\x1b[0m\x1b[{';'.join(codes)}m{text}\x1b[0m"
 
 
-# --------------------------------------------------------------------------- #
-# Palette (SGR parameter fragments; an empty string means "no colour")
-# --------------------------------------------------------------------------- #
 @dataclass(slots=True, frozen=True)
 class Palette:
     h1: str
@@ -436,9 +394,7 @@ MONO_PALETTE: Final = Palette("", "", "", "", "", "", "", "", "", "", "", "", ""
 
 
 def get_palette(theme: ThemeName) -> Palette:
-    return {"dark": DARK_PALETTE, "light": LIGHT_PALETTE, "mono": MONO_PALETTE}[
-        theme
-    ]
+    return {"dark": DARK_PALETTE, "light": LIGHT_PALETTE, "mono": MONO_PALETTE}[theme]
 
 
 def resolve_color(opts: Options) -> bool:
@@ -470,9 +426,6 @@ def clamp_width(value: int) -> int:
     return max(MIN_WIDTH, min(MAX_WIDTH, value))
 
 
-# --------------------------------------------------------------------------- #
-# Logging
-# --------------------------------------------------------------------------- #
 def bootstrap_logging() -> None:
     """Minimal sink so even argument-parsing failures are logged by loguru."""
     logger.remove()
@@ -491,10 +444,7 @@ def configure_logging(opts: Options) -> None:
         sys.stderr,
         level=level,
         colorize=opts.log_colorize,
-        format=(
-            "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
-            "<level>{message}</level>"
-        ),
+        format=("<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>"),
     )
     if opts.log_file is not None:
         try:
@@ -505,22 +455,13 @@ def configure_logging(opts: Options) -> None:
                 rotation="5 MB",
                 retention=3,
                 encoding="utf-8",
-                format=(
-                    "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
-                    "{name}:{function}:{line} | {message}"
-                ),
+                format=("{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | {message}"),
             )
         except OSError as exc:
-            raise InputError(
-                f"cannot open log file {opts.log_file}: {exc}"
-            ) from exc
+            raise InputError(f"cannot open log file {opts.log_file}: {exc}") from exc
     logger.debug("glow.py {} on Python {}", VERSION, platform.python_version())
 
 
-# --------------------------------------------------------------------------- #
-# Minimal CommonMark-ish parser (used by the builtin renderer and as the
-# stdlib-only fallback for Markdown -> HTML).
-# --------------------------------------------------------------------------- #
 @dataclass(slots=True, frozen=True)
 class Text:
     text: str
@@ -575,18 +516,7 @@ class RawHtml:
     html: str
 
 
-type InlineNode = (
-    Text
-    | CodeSpan
-    | Strong
-    | Emph
-    | Strike
-    | Link
-    | Image
-    | SoftBreak
-    | HardBreak
-    | RawHtml
-)
+type InlineNode = Text | CodeSpan | Strong | Emph | Strike | Link | Image | SoftBreak | HardBreak | RawHtml
 
 
 @dataclass(slots=True, frozen=True)
@@ -642,16 +572,7 @@ class HtmlBlock:
     raw: str
 
 
-type Block = (
-    Heading
-    | Paragraph
-    | CodeBlock
-    | QuoteBlock
-    | ListBlock
-    | TableBlock
-    | RuleBlock
-    | HtmlBlock
-)
+type Block = Heading | Paragraph | CodeBlock | QuoteBlock | ListBlock | TableBlock | RuleBlock | HtmlBlock
 
 type LinkRef = tuple[str, str | None]
 
@@ -678,26 +599,18 @@ _INLINE_RE: Final = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
-_FENCE_RE: Final = re.compile(
-    r"^(?P<indent> {0,3})(?P<fence>`{3,}|~{3,})(?P<lang>[^`\n]*)$"
-)
+_FENCE_RE: Final = re.compile(r"^(?P<indent> {0,3})(?P<fence>`{3,}|~{3,})(?P<lang>[^`\n]*)$")
 _FENCE_CLOSE_RE: Final = re.compile(r"^ {0,3}(?P<fence>`{3,}|~{3,})\s*$")
-_ATX_RE: Final = re.compile(
-    r"^ {0,3}(?P<hashes>#{1,6})(?:\s+(?P<text>.*?))?\s*$"
-)
+_ATX_RE: Final = re.compile(r"^ {0,3}(?P<hashes>#{1,6})(?:\s+(?P<text>.*?))?\s*$")
 _SETEXT_RE: Final = re.compile(r"^ {0,3}(?P<underline>=+|-+)\s*$")
-_HR_RE: Final = re.compile(
-    r"^ {0,3}(?P<char>\*|-|_)(?:\s*(?P=char)){2,}\s*$"
-)
+_HR_RE: Final = re.compile(r"^ {0,3}(?P<char>\*|-|_)(?:\s*(?P=char)){2,}\s*$")
 _QUOTE_RE: Final = re.compile(r"^ {0,3}>[ ]?(?P<content>.*)$")
 _LIST_RE: Final = re.compile(
     r"^(?P<indent>[ \t]{0,12})(?P<marker>(?P<num>\d{1,9})[.)]|[-+*])"
     r"(?P<space>[ \t]+)(?P<content>.*)$"
 )
 _TASK_RE: Final = re.compile(r"^\[(?P<x>[ xX])\]\s*(?P<rest>.*)$")
-_TABLE_DELIM_RE: Final = re.compile(
-    r"^\s*\|?\s*:?-{1,}:?\s*(?:\|\s*:?-{1,}:?\s*)*\|?\s*$"
-)
+_TABLE_DELIM_RE: Final = re.compile(r"^\s*\|?\s*:?-{1,}:?\s*(?:\|\s*:?-{1,}:?\s*)*\|?\s*$")
 _HTML_BLOCK_RE: Final = re.compile(
     r"^ {0,3}<(?:/?(?:div|table|pre|p|h[1-6]|ul|ol|li|blockquote|section|"
     r"article|header|footer|main|aside|hr|br|img|figure|details|summary|"
@@ -747,12 +660,7 @@ def parse_inline(
             nodes.append(Text(m.group("escape")[1:]))
         elif m.group("fence") is not None:
             body = m.group("codebody").replace("\n", " ")
-            if (
-                len(body) > 1
-                and body.startswith(" ")
-                and body.endswith(" ")
-                and body.strip()
-            ):
+            if len(body) > 1 and body.startswith(" ") and body.endswith(" ") and body.strip():
                 body = body[1:-1]
             nodes.append(CodeSpan(body))
         elif m.group("hard") is not None:
@@ -791,14 +699,10 @@ def parse_inline(
                 else:
                     nodes.append(Text(f"[{text}]"))
                     continue
-            nodes.append(
-                Link(parse_inline(text, refs, allow_html=allow_html), href, title)
-            )
+            nodes.append(Link(parse_inline(text, refs, allow_html=allow_html), href, title))
         elif m.group("strongemph") is not None:
             body = m.group("sebody") or m.group("sebody2") or ""
-            nodes.append(
-                Strong((Emph(parse_inline(body, refs, allow_html=allow_html)),))
-            )
+            nodes.append(Strong((Emph(parse_inline(body, refs, allow_html=allow_html)),)))
         elif m.group("strong") is not None:
             body = m.group("sbody") or m.group("sbody2") or ""
             nodes.append(Strong(parse_inline(body, refs, allow_html=allow_html)))
@@ -834,18 +738,16 @@ def _table_aligns(cells: Sequence[str]) -> list[Align]:
     for cell in cells:
         c = cell.strip()
         left, right = c.startswith(":"), c.endswith(":")
-        out.append(
-            "center" if left and right else "right" if right else "left" if left else "none"
-        )
+        out.append("center" if left and right else "right" if right else "left" if left else "none")
     return out
 
 
 def _paragraph_line(line: str) -> str:
     """Normalise a paragraph line but keep CommonMark hard-break markers."""
     stripped = line.strip()
-    raw = line.rstrip("\r\n")  # keep trailing spaces: they encode hard breaks
+    raw = line.rstrip("\r\n")
     if raw.endswith("\\"):
-        return stripped  # the backslash survives strip()
+        return stripped
     if len(raw) - len(raw.rstrip(" ")) >= 2:
         return stripped + "  "
     return stripped
@@ -886,11 +788,7 @@ def parse_list(
 
     while i < n:
         m = _LIST_RE.match(lines[i])
-        if (
-            m is None
-            or len(m.group("indent")) != indent
-            or _list_kind(m) != kind
-        ):
+        if m is None or len(m.group("indent")) != indent or _list_kind(m) != kind:
             break
         marker = m.group("marker")
         content = m.group("content")
@@ -925,19 +823,13 @@ def parse_list(
                 item_lines.append(cur.strip())
                 i += 1
 
-        items.append(
-            ListItem(marker, checked, parse_blocks(item_lines, refs, allow_html=allow_html))
-        )
+        items.append(ListItem(marker, checked, parse_blocks(item_lines, refs, allow_html=allow_html)))
         while i < n and not lines[i].strip():
             i += 1
         if i >= n:
             break
         nm = _LIST_RE.match(lines[i])
-        if (
-            nm is None
-            or len(nm.group("indent")) != indent
-            or _list_kind(nm) != kind
-        ):
+        if nm is None or len(nm.group("indent")) != indent or _list_kind(nm) != kind:
             break
 
     return ListBlock(ordered, start_num, tuple(items)), i
@@ -956,17 +848,13 @@ def parse_table(
     if len(aligns) < len(header_cells):
         aligns += ["none"] * (len(header_cells) - len(aligns))
     aligns = aligns[: len(header_cells)]
-    headers = tuple(
-        parse_inline(cell, refs, allow_html=allow_html) for cell in header_cells
-    )
+    headers = tuple(parse_inline(cell, refs, allow_html=allow_html) for cell in header_cells)
     i = start + 2
     rows: list[tuple[tuple[InlineNode, ...], ...]] = []
     while i < len(lines) and lines[i].strip() and "|" in lines[i]:
         cells = _split_table_row(lines[i])
         cells = (cells + [""] * len(header_cells))[: len(header_cells)]
-        rows.append(
-            tuple(parse_inline(cell, refs, allow_html=allow_html) for cell in cells)
-        )
+        rows.append(tuple(parse_inline(cell, refs, allow_html=allow_html) for cell in cells))
         i += 1
     return TableBlock(headers, tuple(aligns), tuple(rows)), i
 
@@ -997,9 +885,7 @@ def parse_blocks(
             code: list[str] = []
             while i < n:
                 close = _FENCE_CLOSE_RE.match(lines[i])
-                if close and close.group("fence")[0] == fence_char and len(
-                    close.group("fence")
-                ) >= fence_len:
+                if close and close.group("fence")[0] == fence_char and len(close.group("fence")) >= fence_len:
                     i += 1
                     break
                 code.append(lines[i][indent:] if lines[i].startswith(" " * indent) else lines[i])
@@ -1043,11 +929,7 @@ def parse_blocks(
                 if qm:
                     quoted.append(qm.group("content"))
                     i += 1
-                elif (
-                    not lines[i].strip()
-                    and i + 1 < n
-                    and _QUOTE_RE.match(lines[i + 1])
-                ):
+                elif not lines[i].strip() and i + 1 < n and _QUOTE_RE.match(lines[i + 1]):
                     quoted.append("")
                     i += 1
                 else:
@@ -1085,9 +967,7 @@ def parse_blocks(
                 break
             para.append(_paragraph_line(lines[i]))
             i += 1
-        out.append(
-            Paragraph(parse_inline("\n".join(para), refs, allow_html=allow_html))
-        )
+        out.append(Paragraph(parse_inline("\n".join(para), refs, allow_html=allow_html)))
 
     return tuple(out)
 
@@ -1097,9 +977,6 @@ def parse_markdown(text: str, *, allow_html: bool = True) -> tuple[Block, ...]:
     return parse_blocks(lines, collect_refs(lines), allow_html=allow_html)
 
 
-# --------------------------------------------------------------------------- #
-# Builtin ANSI renderer
-# --------------------------------------------------------------------------- #
 @dataclass(slots=True, frozen=True)
 class Segment:
     text: str
@@ -1133,45 +1010,33 @@ def inline_to_lines(
         elif isinstance(node, Strong):
             _merge_lines(
                 result,
-                inline_to_lines(
-                    node.body, base + ("1",), pal, show_links=show_links, allow_html=allow_html
-                ),
+                inline_to_lines(node.body, base + ("1",), pal, show_links=show_links, allow_html=allow_html),
             )
         elif isinstance(node, Emph):
             _merge_lines(
                 result,
-                inline_to_lines(
-                    node.body, base + ("3",), pal, show_links=show_links, allow_html=allow_html
-                ),
+                inline_to_lines(node.body, base + ("3",), pal, show_links=show_links, allow_html=allow_html),
             )
         elif isinstance(node, Strike):
             codes = base + tuple(c for c in (pal.strike, "9") if c)
             _merge_lines(
                 result,
-                inline_to_lines(
-                    node.body, codes, pal, show_links=show_links, allow_html=allow_html
-                ),
+                inline_to_lines(node.body, codes, pal, show_links=show_links, allow_html=allow_html),
             )
         elif isinstance(node, Link):
             codes = base + tuple(c for c in (pal.link, "4") if c)
             _merge_lines(
                 result,
-                inline_to_lines(
-                    node.body, codes, pal, show_links=show_links, allow_html=allow_html
-                ),
+                inline_to_lines(node.body, codes, pal, show_links=show_links, allow_html=allow_html),
             )
             if show_links and node.href:
-                result[-1].append(
-                    Segment(f" ({node.href})", base + tuple(c for c in (pal.dim,) if c))
-                )
+                result[-1].append(Segment(f" ({node.href})", base + tuple(c for c in (pal.dim,) if c)))
         elif isinstance(node, Image):
             codes = base + tuple(c for c in (pal.image, "1") if c)
             label = f"[image: {node.alt or 'unnamed'}]"
             result[-1].append(Segment(label, codes))
             if show_links and node.src:
-                result[-1].append(
-                    Segment(f" ({node.src})", base + tuple(c for c in (pal.dim,) if c))
-                )
+                result[-1].append(Segment(f" ({node.src})", base + tuple(c for c in (pal.dim,) if c)))
         elif isinstance(node, SoftBreak):
             result[-1].append(Segment(" ", base))
         elif isinstance(node, HardBreak):
@@ -1240,9 +1105,7 @@ def segments_to_ansi(line: StyledLine, *, color: bool) -> str:
         if not seg.text:
             continue
         if seg.codes != current:
-            parts.append(
-                RESET + (f"\x1b[{';'.join(seg.codes)}m" if seg.codes else "")
-            )
+            parts.append(RESET + (f"\x1b[{';'.join(seg.codes)}m" if seg.codes else ""))
             current = seg.codes
         parts.append(seg.text)
     if current:
@@ -1250,9 +1113,7 @@ def segments_to_ansi(line: StyledLine, *, color: bool) -> str:
     return "".join(parts)
 
 
-def _style_line(
-    line: StyledLine, *, width: int, color: bool, pad_codes: SgrCodes = ()
-) -> str:
+def _style_line(line: StyledLine, *, width: int, color: bool, pad_codes: SgrCodes = ()) -> str:
     if pad_codes:
         missing = width - sum(len(seg.text) for seg in line)
         if missing > 0:
@@ -1289,7 +1150,6 @@ class BuiltinRenderer:
             lines.pop()
         return lines
 
-    # -- helpers ---------------------------------------------------------- #
     def _inline(self, nodes: Iterable[InlineNode]) -> list[StyledLine]:
         return inline_to_lines(
             nodes,
@@ -1299,9 +1159,7 @@ class BuiltinRenderer:
             allow_html=self.opts.allow_html,
         )
 
-    def _wrapped(
-        self, nodes: Iterable[InlineNode], *, base: SgrCodes = ()
-    ) -> list[str]:
+    def _wrapped(self, nodes: Iterable[InlineNode], *, base: SgrCodes = ()) -> list[str]:
         result: list[str] = []
         for line in self._inline(nodes):
             if base:
@@ -1313,7 +1171,6 @@ class BuiltinRenderer:
     def _rule(self, codes: SgrCodes, char: str = "─") -> str:
         return ansi(codes, char * self.width, enabled=self.color)
 
-    # -- blocks ----------------------------------------------------------- #
     def _block(self, block: Block) -> list[str]:
         if isinstance(block, Heading):
             return self._heading(block)
@@ -1410,10 +1267,7 @@ class BuiltinRenderer:
         header_codes: SgrCodes = tuple(c for c in (self.pal.table, "1") if c)
 
         def cell_text(nodes: Iterable[InlineNode]) -> str:
-            return " ".join(
-                strip_ansi(segments_to_ansi(line, color=False))
-                for line in self._inline(nodes)
-            ).strip()
+            return " ".join(strip_ansi(segments_to_ansi(line, color=False)) for line in self._inline(nodes)).strip()
 
         def cell_ansi(nodes: Iterable[InlineNode], codes: SgrCodes) -> str:
             return " ".join(
@@ -1453,10 +1307,7 @@ class BuiltinRenderer:
             return raw
 
         out: list[str] = [border("┌", "┬", "┐")]
-        headers = [
-            cell_ansi(h, header_codes) if self.color else cell_text(h)
-            for h in block.headers
-        ]
+        headers = [cell_ansi(h, header_codes) if self.color else cell_text(h) for h in block.headers]
         out.append(ansi(border_codes, row_line(headers), enabled=self.color))
         out.append(border("├", "┼", "┤"))
         for row in block.rows:
@@ -1488,12 +1339,7 @@ def render_markdown_builtin(text: str, opts: Options) -> str:
     return "\n".join(renderer.render(blocks))
 
 
-# --------------------------------------------------------------------------- #
-# Builtin Markdown -> HTML (stdlib-only fallback)
-# --------------------------------------------------------------------------- #
-_SAFE_SCHEMES: Final = frozenset(
-    {"http", "https", "mailto", "ftp", "ftps", "tel", ""}
-)
+_SAFE_SCHEMES: Final = frozenset({"http", "https", "mailto", "ftp", "ftps", "tel", ""})
 
 
 def safe_href(url: str) -> str:
@@ -1514,9 +1360,7 @@ def _attr(value: str) -> str:
     return html.escape(value, quote=True)
 
 
-def inline_to_html(
-    nodes: Iterable[InlineNode], *, allow_html: bool
-) -> str:
+def inline_to_html(nodes: Iterable[InlineNode], *, allow_html: bool) -> str:
     parts: list[str] = []
     for node in nodes:
         if isinstance(node, Text):
@@ -1543,9 +1387,7 @@ def inline_to_html(
                 parts.append(html.escape(node.alt))
             else:
                 title = f' title="{_attr(node.title)}"' if node.title else ""
-                parts.append(
-                    f'<img src="{_attr(src)}" alt="{_attr(node.alt)}"{title}>'
-                )
+                parts.append(f'<img src="{_attr(src)}" alt="{_attr(node.alt)}"{title}>')
         elif isinstance(node, SoftBreak):
             parts.append("\n")
         elif isinstance(node, HardBreak):
@@ -1560,22 +1402,12 @@ def blocks_to_html(blocks: Sequence[Block], *, allow_html: bool) -> str:
     for block in blocks:
         if isinstance(block, Heading):
             level = min(6, max(1, block.level))
-            parts.append(
-                f"<h{level}>{inline_to_html(block.body, allow_html=allow_html)}</h{level}>"
-            )
+            parts.append(f"<h{level}>{inline_to_html(block.body, allow_html=allow_html)}</h{level}>")
         elif isinstance(block, Paragraph):
-            parts.append(
-                f"<p>{inline_to_html(block.body, allow_html=allow_html)}</p>"
-            )
+            parts.append(f"<p>{inline_to_html(block.body, allow_html=allow_html)}</p>")
         elif isinstance(block, CodeBlock):
-            cls = (
-                f' class="language-{_attr(block.language)}"'
-                if block.language
-                else ""
-            )
-            parts.append(
-                f"<pre><code{cls}>{html.escape(block.code)}</code></pre>"
-            )
+            cls = f' class="language-{_attr(block.language)}"' if block.language else ""
+            parts.append(f"<pre><code{cls}>{html.escape(block.code)}</code></pre>")
         elif isinstance(block, QuoteBlock):
             inner = blocks_to_html(block.blocks, allow_html=allow_html)
             parts.append(f"<blockquote>\n{inner}\n</blockquote>")
@@ -1587,20 +1419,13 @@ def blocks_to_html(blocks: Sequence[Block], *, allow_html: bool) -> str:
                 chunks: list[str] = []
                 for idx, sub in enumerate(item.blocks):
                     if idx == 0 and isinstance(sub, Paragraph):
-                        # Tight list: no <p> wrapper for the first paragraph.
-                        chunks.append(
-                            inline_to_html(sub.body, allow_html=allow_html)
-                        )
+                        chunks.append(inline_to_html(sub.body, allow_html=allow_html))
                     else:
-                        chunks.append(
-                            blocks_to_html([sub], allow_html=allow_html)
-                        )
+                        chunks.append(blocks_to_html([sub], allow_html=allow_html))
                 inner = "\n".join(chunks).strip()
                 if item.checked is not None:
                     checked = " checked" if item.checked else ""
-                    inner = (
-                        f'<input type="checkbox" disabled{checked}> {inner}'
-                    )
+                    inner = f'<input type="checkbox" disabled{checked}> {inner}'
                     items.append(f'<li class="task-list-item">{inner}</li>')
                 else:
                     items.append(f"<li>{inner}</li>")
@@ -1610,9 +1435,7 @@ def blocks_to_html(blocks: Sequence[Block], *, allow_html: bool) -> str:
         elif isinstance(block, RuleBlock):
             parts.append("<hr>")
         elif isinstance(block, HtmlBlock):
-            parts.append(
-                block.raw if allow_html else f"<p>{html.escape(_strip_tags(block.raw))}</p>"
-            )
+            parts.append(block.raw if allow_html else f"<p>{html.escape(_strip_tags(block.raw))}</p>")
     return "\n".join(parts)
 
 
@@ -1626,38 +1449,28 @@ def _table_to_html(block: TableBlock, *, allow_html: bool) -> str:
         return f"<td{attr}>{inline_to_html(cell, allow_html=allow_html)}</td>"
 
     aligns = block.aligns
-    head = "\n".join(
-        th(cell, aligns[i] if i < len(aligns) else "none")
-        for i, cell in enumerate(block.headers)
-    )
+    head = "\n".join(th(cell, aligns[i] if i < len(aligns) else "none") for i, cell in enumerate(block.headers))
     rows = "\n".join(
         "<tr>\n"
         + "\n".join(
-            td(cell, aligns[i] if i < len(aligns) else "none")
-            for i, cell in enumerate(row[: len(block.headers)])
+            td(cell, aligns[i] if i < len(aligns) else "none") for i, cell in enumerate(row[: len(block.headers)])
         )
         + "\n</tr>"
         for row in block.rows
     )
-    return (
-        "<table>\n<thead>\n<tr>\n"
-        + head
-        + "\n</tr>\n</thead>\n<tbody>\n"
-        + rows
-        + "\n</tbody>\n</table>"
-    )
+    return "<table>\n<thead>\n<tr>\n" + head + "\n</tr>\n</thead>\n<tbody>\n" + rows + "\n</tbody>\n</table>"
 
 
 def markdown_to_html_builtin(text: str, opts: Options) -> str:
-    return blocks_to_html(
-        parse_markdown(text, allow_html=opts.allow_html),
-        allow_html=opts.allow_html,
-    ).rstrip() + "\n"
+    return (
+        blocks_to_html(
+            parse_markdown(text, allow_html=opts.allow_html),
+            allow_html=opts.allow_html,
+        ).rstrip()
+        + "\n"
+    )
 
 
-# --------------------------------------------------------------------------- #
-# Markdown -> HTML (markdown-it-py primary backend)
-# --------------------------------------------------------------------------- #
 def _taskify_html(fragment: str) -> str:
     fragment = re.sub(
         r"(<li>)\s*\[ \]\s*",
@@ -1699,7 +1512,7 @@ def markdown_to_html(text: str, opts: Options) -> str:
                     md.enable(rule)
             fragment = md.render(text)
             return _taskify_html(fragment).rstrip() + "\n"
-        except Exception as exc:  # noqa: BLE001 - fall back to the stdlib path
+        except Exception as exc:
             logger.warning(
                 "markdown-it-py backend failed ({}); using builtin converter",
                 exc,
@@ -1708,23 +1521,39 @@ def markdown_to_html(text: str, opts: Options) -> str:
         logger.debug("markdown-it-py missing; using builtin Markdown -> HTML")
     try:
         return markdown_to_html_builtin(text, opts)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise ConversionError(f"Markdown -> HTML conversion failed: {exc}") from exc
 
 
-# --------------------------------------------------------------------------- #
-# HTML -> Markdown (markdownify primary, BeautifulSoup + stdlib fallbacks)
-# --------------------------------------------------------------------------- #
-_SKIP_TAGS: Final = frozenset(
-    {"script", "style", "head", "noscript", "iframe", "svg", "canvas", "template"}
-)
-_HTML_BLOCK_TAGS: Final = frozenset(
-    {
-        "p", "div", "section", "article", "header", "footer", "main", "aside",
-        "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote",
-        "pre", "table", "tr", "hr", "figure", "figcaption", "details", "summary",
-    }
-)
+_SKIP_TAGS: Final = frozenset({"script", "style", "head", "noscript", "iframe", "svg", "canvas", "template"})
+_HTML_BLOCK_TAGS: Final = frozenset({
+    "p",
+    "div",
+    "section",
+    "article",
+    "header",
+    "footer",
+    "main",
+    "aside",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "pre",
+    "table",
+    "tr",
+    "hr",
+    "figure",
+    "figcaption",
+    "details",
+    "summary",
+})
 
 
 def clean_html(text: str) -> tuple[str, str]:
@@ -1742,7 +1571,6 @@ def clean_html(text: str) -> tuple[str, str]:
                 node.extract()
             for node in soup.find_all(list(_SKIP_TAGS)):
                 node.decompose()
-            # Round-trip GFM task-list checkboxes back into Markdown markers.
             for checkbox in soup.find_all("input", attrs={"type": "checkbox"}):
                 mark = "[x] " if checkbox.has_attr("checked") else "[ ] "
                 checkbox.replace_with(soup.new_string(mark))
@@ -1754,7 +1582,7 @@ def clean_html(text: str) -> tuple[str, str]:
                     title = h1.get_text(" ", strip=True)
             html_out = str(soup.body) if soup.body else str(soup)
             return html_out, title
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.debug("BeautifulSoup cleaning failed: {}", exc)
     cleaned = re.sub(
         r"<(script|style|head|noscript|iframe|svg|canvas|template)\b[^>]*>.*?</\1>",
@@ -1774,7 +1602,7 @@ def _code_language(pre: Any) -> str:
             for prefix in ("language-", "lang-", "highlight-"):
                 if cls.startswith(prefix):
                     return cls[len(prefix) :]
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
     return ""
 
@@ -1897,9 +1725,7 @@ def html_to_markdown_bs4(cleaned: str, opts: Options) -> str:
             return render_list(node, depth)
         if name == "blockquote":
             inner = "".join(convert(c, depth) for c in node.children).strip()
-            quoted = "\n".join(
-                ("> " + line.lstrip()) if line.strip() else ">" for line in inner.split("\n")
-            )
+            quoted = "\n".join(("> " + line.lstrip()) if line.strip() else ">" for line in inner.split("\n"))
             return block(quoted)
         if name == "table":
             return render_table(node)
@@ -1994,8 +1820,6 @@ def normalise_markdown(md: str) -> str:
     md = md.replace("\r\n", "\n").replace("\r", "\n")
     md = re.sub(r"[ \t]+\n", "\n", md)
     md = re.sub(r"\n{3,}", "\n\n", md)
-    # Repair bold/italic markers that ended up with spaces just inside them,
-    # without touching the ordinary spaces *between* words.
     md = re.sub(r"\*\*[ \t]+(\S.*?\S)[ \t]+\*\*", r"**\1**", md)
     md = re.sub(r"(?<!\*)\*[ \t]+(\S.*?\S)[ \t]+\*(?!\*)", r"*\1*", md)
     return md.strip() + "\n"
@@ -2013,27 +1837,20 @@ def html_to_markdown(text: str, opts: Options) -> str:
         else:
             backend = "stdlib"
             result = html_to_markdown_plain(cleaned)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.opt(exception=opts.verbose).warning(
             "HTML -> Markdown ({}) failed: {}; using simple fallback", backend, exc
         )
         try:
             result = html_to_markdown_plain(cleaned)
-        except Exception as inner:  # noqa: BLE001
-            raise ConversionError(
-                f"HTML -> Markdown conversion failed: {inner}"
-            ) from inner
+        except Exception as inner:
+            raise ConversionError(f"HTML -> Markdown conversion failed: {inner}") from inner
     else:
         logger.debug("HTML -> Markdown backend: {}", backend)
     return normalise_markdown(result)
 
 
-# --------------------------------------------------------------------------- #
-# Rendering
-# --------------------------------------------------------------------------- #
-_TASK_LINE_RE: Final = re.compile(
-    r"^(\s*(?:[-+*]|\d{1,9}[.)])\s+)\[([ xX])\]\s+(.*)$"
-)
+_TASK_LINE_RE: Final = re.compile(r"^(\s*(?:[-+*]|\d{1,9}[.)])\s+)\[([ xX])\]\s+(.*)$")
 
 
 def preprocess_for_rich(text: str) -> str:
@@ -2069,14 +1886,12 @@ def render_with_rich(text: str, opts: Options) -> str:
     color = resolve_color(opts)
     width = resolve_width(opts, text)
     code_theme = "monokai" if opts.theme != "light" else "default"
-    theme = Theme(
-        {
-            "markdown.h1": "bold",
-            "markdown.h2": "bold",
-            "markdown.code": "bold",
-            "markdown.link": "underline",
-        }
-    )
+    theme = Theme({
+        "markdown.h1": "bold",
+        "markdown.h2": "bold",
+        "markdown.code": "bold",
+        "markdown.link": "underline",
+    })
     buf = io.StringIO()
     console = Console(
         file=buf,
@@ -2105,10 +1920,8 @@ def render_markdown(text: str, opts: Options) -> str:
     if backend == "rich":
         try:
             return render_with_rich(text, opts)
-        except Exception as exc:  # noqa: BLE001
-            logger.opt(exception=opts.verbose).warning(
-                "rich renderer failed ({}); using builtin renderer", exc
-            )
+        except Exception as exc:
+            logger.opt(exception=opts.verbose).warning("rich renderer failed ({}); using builtin renderer", exc)
     return render_markdown_builtin(text, opts)
 
 
@@ -2116,9 +1929,6 @@ def separator_line(width: int, pal: Palette, color: bool) -> str:
     return ansi(tuple(c for c in (pal.rule,) if c), "─" * width, enabled=color)
 
 
-# --------------------------------------------------------------------------- #
-# Input handling
-# --------------------------------------------------------------------------- #
 @dataclass(slots=True, frozen=True)
 class Source:
     label: str
@@ -2168,9 +1978,7 @@ def expand_sources(patterns: Sequence[str]) -> list[Source]:
             continue
         path = Path(pattern).expanduser()
         if path.is_dir():
-            files = sorted(
-                p for p in path.iterdir() if p.is_file() and p.suffix.lower() in DOC_EXTS
-            )
+            files = sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() in DOC_EXTS)
             if not files:
                 raise InputError(f"no Markdown/HTML files in directory: {path}")
             for file in files:
@@ -2197,9 +2005,7 @@ def decode_bytes(data: bytes, encoding: str, label: str) -> str:
     return data.decode("utf-8", errors="replace")
 
 
-def read_source(
-    src: Source, opts: Options, stdin_cache: dict[str, str]
-) -> tuple[str, str | None]:
+def read_source(src: Source, opts: Options, stdin_cache: dict[str, str]) -> tuple[str, str | None]:
     if src.kind == "stdin":
         if "<stdin>" in stdin_cache:
             return stdin_cache["<stdin>"], None
@@ -2208,18 +2014,14 @@ def read_source(
         except OSError as exc:
             raise InputError(f"cannot read stdin: {exc}") from exc
         if len(data) > opts.max_bytes:
-            raise InputError(
-                f"stdin exceeds --max-bytes ({opts.max_bytes}); increase the limit"
-            )
+            raise InputError(f"stdin exceeds --max-bytes ({opts.max_bytes}); increase the limit")
         text = decode_bytes(data, opts.encoding, "<stdin>")
         stdin_cache["<stdin>"] = text
         return text, None
 
     if src.kind == "url":
         url = src.url or src.label
-        request = urllib.request.Request(
-            url, headers={"User-Agent": f"{APP_NAME}/{VERSION}"}
-        )
+        request = urllib.request.Request(url, headers={"User-Agent": f"{APP_NAME}/{VERSION}"})
         try:
             with urllib.request.urlopen(request, timeout=opts.timeout) as response:
                 raw = response.read(opts.max_bytes + 1)
@@ -2230,9 +2032,7 @@ def read_source(
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
             raise InputError(f"cannot fetch {url}: {exc}") from exc
         if len(raw) > opts.max_bytes:
-            raise InputError(
-                f"{url} exceeds --max-bytes ({opts.max_bytes}); increase the limit"
-            )
+            raise InputError(f"{url} exceeds --max-bytes ({opts.max_bytes}); increase the limit")
         text = decode_bytes(raw, charset or opts.encoding, url)
         return text, content_type
 
@@ -2242,15 +2042,11 @@ def read_source(
     except OSError as exc:
         raise InputError(f"cannot read {src.path}: {exc}") from exc
     if len(raw) > opts.max_bytes:
-        raise InputError(
-            f"{src.path} exceeds --max-bytes ({opts.max_bytes}); increase the limit"
-        )
+        raise InputError(f"{src.path} exceeds --max-bytes ({opts.max_bytes}); increase the limit")
     return decode_bytes(raw, opts.encoding, str(src.path)), None
 
 
-def detect_format(
-    src: Source, text: str, declared: str | None, opts: Options
-) -> DocFormat:
+def detect_format(src: Source, text: str, declared: str | None, opts: Options) -> DocFormat:
     if opts.input_format != "auto":
         return opts.input_format
     if declared and "html" in declared.lower():
@@ -2294,9 +2090,6 @@ def load_documents(opts: Options) -> list[Document]:
     return docs
 
 
-# --------------------------------------------------------------------------- #
-# Document-level pipelines
-# --------------------------------------------------------------------------- #
 def html_body_fragment(text: str) -> str:
     if has_module("bs4"):
         try:
@@ -2305,7 +2098,7 @@ def html_body_fragment(text: str) -> str:
             soup = BeautifulSoup(text, "html.parser")
             if soup.body:
                 return "".join(str(child) for child in soup.body.contents)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.debug("body extraction failed: {}", exc)
     m = re.search(r"<body[^>]*>(.*?)</body>", text, re.IGNORECASE | re.DOTALL)
     return m.group(1) if m else text
@@ -2320,7 +2113,7 @@ def standalone_html(fragments: Sequence[tuple[str, str]], opts: Options) -> str:
             chunk += f'<div class="doc-source">{html.escape(doc_title)}</div>\n'
         chunk += f"<article>\n{fragment.strip()}\n</article>"
         body_parts.append(chunk)
-    body = "\n<hr class=\"doc-separator\">\n".join(body_parts)
+    body = '\n<hr class="doc-separator">\n'.join(body_parts)
     return HTML_TEMPLATE.substitute(
         version=VERSION,
         title=html.escape(title, quote=True),
@@ -2343,9 +2136,8 @@ def run_to_html(docs: Sequence[Document], opts: Options) -> str:
     if len(fragments) == 1:
         return fragments[0][1].rstrip() + "\n"
     return (
-        "\n\n<hr class=\"doc-separator\">\n\n".join(
-            f"<!-- {html.escape(title)} -->\n\n{fragment.strip()}"
-            for title, fragment in fragments
+        '\n\n<hr class="doc-separator">\n\n'.join(
+            f"<!-- {html.escape(title)} -->\n\n{fragment.strip()}" for title, fragment in fragments
         )
         + "\n"
     )
@@ -2355,9 +2147,7 @@ def run_to_markdown(docs: Sequence[Document], opts: Options) -> str:
     parts: list[str] = []
     for doc in docs:
         if doc.fmt == "markdown":
-            logger.warning(
-                "{} is already Markdown; passing it through", doc.source.label
-            )
+            logger.warning("{} is already Markdown; passing it through", doc.source.label)
             md_text = doc.text
         else:
             md_text = html_to_markdown(doc.text, opts)
@@ -2386,15 +2176,10 @@ def run_render(docs: Sequence[Document], opts: Options) -> str:
         parts.append(render_markdown(text, opts))
     if len(parts) == 1:
         return parts[0]
-    sep = separator_line(
-        resolve_width(opts), get_palette(opts.theme), resolve_color(opts)
-    )
+    sep = separator_line(resolve_width(opts), get_palette(opts.theme), resolve_color(opts))
     return f"\n\n{sep}\n\n".join(parts)
 
 
-# --------------------------------------------------------------------------- #
-# In-process pager (no subprocess, no os.system, no `less`)
-# --------------------------------------------------------------------------- #
 class Pager:
     """A small `less`-like pager driven directly from the terminal."""
 
@@ -2418,14 +2203,8 @@ class Pager:
         self._fd: int | None = None
         self._old_attrs: Any = None
 
-    # -- public ----------------------------------------------------------- #
     def run(self) -> None:
-        if (
-            termios is None
-            or tty is None
-            or not sys.stdin.isatty()
-            or not sys.stdout.isatty()
-        ):
+        if termios is None or tty is None or not sys.stdin.isatty() or not sys.stdout.isatty():
             self._dump()
             return
         self._fd = sys.stdin.fileno()
@@ -2444,7 +2223,6 @@ class Pager:
                 termios.tcsetattr(self._fd, termios.TCSADRAIN, self._old_attrs)
             self._emit("\x1b[?25h" + RESET + "\x1b[?1049l")
 
-    # -- low level -------------------------------------------------------- #
     def _emit(self, text: str) -> None:
         with contextlib.suppress(BrokenPipeError, OSError):
             sys.stdout.write(text)
@@ -2458,8 +2236,6 @@ class Pager:
             sys.stdout.flush()
 
     def _read_key(self) -> str:
-        # Read straight from the fd (not sys.stdin.buffer) so select() sees
-        # every pending byte and multi-byte escape sequences stay intact.
         assert self._fd is not None
         first = os.read(self._fd, 1)
         if not first:
@@ -2521,7 +2297,6 @@ class Pager:
             return text + pad
         return f"\x1b[7m{text}{pad}{RESET}"
 
-    # -- interaction ------------------------------------------------------ #
     def _handle_key(self, key: str, size: os.terminal_size) -> bool:
         height = self._content_height(size)
         half = max(1, height // 2)
@@ -2582,7 +2357,7 @@ class Pager:
             ch = byte.decode("utf-8", "replace")
             if ch in {"\r", "\n"}:
                 break
-            if ch in {"\x03", "\x1b"}:  # Ctrl-C / Esc cancels the prompt
+            if ch in {"\x03", "\x1b"}:
                 chars = []
                 break
             if ch in {"\x7f", "\b"}:
@@ -2593,23 +2368,17 @@ class Pager:
             if ch < " " or ch == "\x7f":
                 continue
             chars.append(ch)
-            self._emit(ch)  # manual echo, since raw mode disables ECHO
+            self._emit(ch)
         answer = "".join(chars)
         self._emit("\x1b[?25l")
         if kind == "/":
             self.query = answer.strip()
             if self.query:
                 needle = self.query.lower()
-                self.matches = [
-                    i
-                    for i, line in enumerate(self.lines)
-                    if needle in strip_ansi(line).lower()
-                ]
+                self.matches = [i for i, line in enumerate(self.lines) if needle in strip_ansi(line).lower()]
                 self._jump_match(1, height)
         elif answer.strip().isdigit():
-            self.top = min(
-                self._max_top(height), max(0, int(answer.strip()) - 1)
-            )
+            self.top = min(self._max_top(height), max(0, int(answer.strip()) - 1))
 
     def _jump_match(self, direction: int, height: int) -> None:
         if not self.matches:
@@ -2620,25 +2389,18 @@ class Pager:
             if target is None:
                 target = self.matches[0]
         else:
-            target = next(
-                (m for m in reversed(self.matches) if m <= self.top - 1), None
-            )
+            target = next((m for m in reversed(self.matches) if m <= self.top - 1), None)
             if target is None:
                 target = self.matches[-1]
         self.top = min(self._max_top(height), max(0, target - height // 3))
 
 
-# --------------------------------------------------------------------------- #
-# Output
-# --------------------------------------------------------------------------- #
 def write_output(text: str, opts: Options) -> None:
     payload = text if text.endswith("\n") else text + "\n"
     if opts.output is None or str(opts.output) == "-":
         if opts.pager and not opts.writes_to_file:
             if not (sys.stdin.isatty() and sys.stdout.isatty()):
-                logger.warning(
-                    "-p needs an interactive terminal; printing the full document"
-                )
+                logger.warning("-p needs an interactive terminal; printing the full document")
             else:
                 Pager(payload.splitlines(), color=resolve_color(opts)).run()
                 return
@@ -2654,15 +2416,16 @@ def write_output(text: str, opts: Options) -> None:
     logger.info("wrote {}", opts.output)
 
 
-# --------------------------------------------------------------------------- #
-# Doctor
-# --------------------------------------------------------------------------- #
 def print_doctor(opts: Options) -> None:
     rows: list[tuple[str, str, str]] = [
         ("glow.py", VERSION, ""),
         ("Python", platform.python_version(), ">=3.12 required"),
         ("platform", platform.platform(), ""),
-        ("terminal", f"{shutil.get_terminal_size((DEFAULT_WIDTH, 24)).columns}x{shutil.get_terminal_size((DEFAULT_WIDTH, 24)).lines}", ""),
+        (
+            "terminal",
+            f"{shutil.get_terminal_size((DEFAULT_WIDTH, 24)).columns}x{shutil.get_terminal_size((DEFAULT_WIDTH, 24)).lines}",
+            "",
+        ),
     ]
     for dep in DEPENDENCIES:
         ok = has_module(dep.import_name)
@@ -2688,9 +2451,6 @@ def print_doctor(opts: Options) -> None:
         print(f"{name:<{name_w}}  {version:<{ver_w}}  {note}")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 class GlowArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
         raise UsageError(message)
@@ -2713,9 +2473,7 @@ def build_parser() -> GlowArgumentParser:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        "-V", "--version", action="version", version=f"%(prog)s {VERSION}"
-    )
+    parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {VERSION}")
     parser.add_argument(
         "-p",
         "--pager",
@@ -2749,9 +2507,7 @@ def build_parser() -> GlowArgumentParser:
         action="store_true",
         help="with --to-html: emit a complete self-contained HTML document",
     )
-    parser.add_argument(
-        "--title", default=None, help="document title for --standalone HTML"
-    )
+    parser.add_argument("--title", default=None, help="document title for --standalone HTML")
     parser.add_argument(
         "-o", "--output", type=Path, default=None, help="write to FILE instead of stdout ('-' = stdout)"
     )
@@ -2765,9 +2521,7 @@ def build_parser() -> GlowArgumentParser:
         metavar="COLS",
         help=f"render width (default: terminal width, {MIN_WIDTH}-{MAX_WIDTH})",
     )
-    look.add_argument(
-        "--no-wrap", action="store_true", help="do not wrap long lines"
-    )
+    look.add_argument("--no-wrap", action="store_true", help="do not wrap long lines")
     look.add_argument(
         "--color",
         choices=("auto", "always", "never"),
@@ -2827,12 +2581,8 @@ def build_parser() -> GlowArgumentParser:
     )
 
     diag = parser.add_argument_group("diagnostics")
-    diag.add_argument(
-        "-v", "--verbose", action="store_true", help="verbose loguru logging"
-    )
-    diag.add_argument(
-        "--log-file", type=Path, default=None, metavar="FILE", help="also log to FILE"
-    )
+    diag.add_argument("-v", "--verbose", action="store_true", help="verbose loguru logging")
+    diag.add_argument("--log-file", type=Path, default=None, metavar="FILE", help="also log to FILE")
     diag.add_argument(
         "--doctor",
         action="store_true",
@@ -2896,9 +2646,6 @@ def parse_args(argv: Sequence[str]) -> Options:
     return opts
 
 
-# --------------------------------------------------------------------------- #
-# Entry point
-# --------------------------------------------------------------------------- #
 def run(opts: Options) -> ExitCode:
     if opts.doctor:
         print_doctor(opts)
@@ -2921,7 +2668,7 @@ def _silence_broken_pipe() -> None:
     with contextlib.suppress(Exception):
         sys.stdout.close()
     with contextlib.suppress(Exception):
-        sys.stdout = open(os.devnull, "w", encoding="utf-8")  # type: ignore[assignment]
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -2933,7 +2680,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.debug("options: {}", opts)
         return int(run(opts))
     except SystemExit as exc:
-        # --help / --version are intentional, early exits.
         code = exc.code
         return int(code) if isinstance(code, int) else (0 if code is None else 1)
     except UsageError as exc:
@@ -2951,7 +2697,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if opts is not None and opts.verbose:
             logger.opt(exception=True).debug("traceback for the error above")
         return int(ExitCode.ERROR)
-    except Exception as exc:  # noqa: BLE001 - last-resort boundary
+    except Exception as exc:
         logger.opt(exception=True).error("unexpected error: {}", exc)
         return int(ExitCode.ERROR)
 

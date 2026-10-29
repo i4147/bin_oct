@@ -149,8 +149,7 @@ def run_prompt_toolkit(text):
     from prompt_toolkit.document import Document
     from prompt_toolkit.key_binding import KeyBindings
     from prompt_toolkit.layout import Dimension, HSplit, Layout, Window
-    from prompt_toolkit.layout.controls import (BufferControl,
-                                                FormattedTextControl)
+    from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 
     buf = Buffer(multiline=True, document=Document(text, 0))
     edit = Window(BufferControl(buf), wrap_lines=True, height=Dimension(weight=2))

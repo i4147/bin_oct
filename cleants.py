@@ -367,7 +367,7 @@ def validate(
     return None
 
 
-def write_atomic(target: Path, data: bytes, mode_from: Path) -> None:
+def atomic_write(target: Path, data: bytes, mode_from: Path) -> None:
     tmp = target.with_name(f".{target.name}.tmp")
     try:
         tmp.write_bytes(data)
@@ -433,7 +433,7 @@ def process_file(path: Path, opts: Options) -> Result:
                 shutil.copy2(path, path.with_name(path.name + opts.backup_suffix))
         else:
             target = path.with_name(f"{path.stem}.stripped{path.suffix}")
-        write_atomic(target, new_src, mode_from=path)
+        atomic_write(target, new_src, mode_from=path)
         return Result(path, "changed", len(comment_spans), reduced, diff=diff)
     except ImportError as exc:
         return Result(path, "skipped", message=f"grammar not installed: {exc.name}")

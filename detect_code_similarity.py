@@ -17,8 +17,7 @@ from typing import Any, NamedTuple
 
 from loguru import logger
 from rich.console import Console
-from rich.progress import (BarColumn, Progress, SpinnerColumn,
-                           TaskProgressColumn, TextColumn)
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
 console = Console()

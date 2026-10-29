@@ -15,7 +15,7 @@ from typing import TypeAlias
 from dh import cprint, get_pyfiles
 from xxhash import xxh64_hexdigest
 
-DUPLICATES_CACHE_FILENAME = ".pydup_duplicates.json"
+DUPLICATES_CACHE_FILENAME = ".cache.json"
 
 ProcessResult: TypeAlias = tuple[str, str | None, str | None]
 ProcessingFailure: TypeAlias = tuple[str, str]
@@ -170,9 +170,7 @@ def process_files(
     if not show_progress:
         return _run_jobs(paths, worker_count)
     try:
-        from rich.progress import (BarColumn, Progress, SpinnerColumn,
-                                   TextColumn, TimeElapsedColumn,
-                                   TimeRemainingColumn)
+        from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
     except ImportError:
         completed = 0
 
@@ -239,6 +237,8 @@ def _cache_path(root: Path) -> Path:
 
 
 def save_duplicates_cache(root: Path, groups: list[DuplicateGroup]) -> None:
+    if not groups:
+        return
     payload = {
         "root": str(root),
         "groups": [[str(path) for path in group.paths] for group in groups],

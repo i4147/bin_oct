@@ -10,8 +10,7 @@ from email import policy
 from email.parser import Parser
 from pathlib import Path
 
-from pip._internal.utils.compatibility_tags import (interpreter_name,
-                                                    interpreter_version)
+from pip._internal.utils.compatibility_tags import interpreter_name, interpreter_version
 from pip._internal.utils.urls import path_to_url
 
 

@@ -12,6 +12,7 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
 EXCLUDED_EXTENSIONS: frozenset[str] = frozenset(BIN_EXT)
 POOL_WORKERS: int = 8
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "imap_unordered", "apply_async")
@@ -42,6 +43,8 @@ def collect_files_by_extension() -> dict[str, list[Path]]:
             ext = path.suffix
             if ext in EXCLUDED_EXTENSIONS:
                 continue
+            if not ext:
+                ext = ".no_ext"
             ext_map.setdefault(ext, []).append(path)
     return ext_map
 
@@ -68,7 +71,7 @@ def collect_lines_for_extension(ext: str, files: Sequence[Path], pool_method: st
     logger.info(f"Processing {len(files)} files with extension '{ext}'")
     for result in process_paths(files, pool_method):
         global_counter.update(result)
-    output_name = ext.lstrip(".") or "no_extension"
+    output_name = ext.lstrip(".") or "no_ext"
     output_file = Path(f"{output_name}.txt")
     written_lines = 0
     with output_file.open("w", encoding="utf-8") as fo:
@@ -84,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--pool-method",
         choices=POOL_METHODS,
-        default="map",
+        default="imap_unordered",
         help="Multiprocessing pool method to use for line counting.",
     )
     return parser.parse_args()

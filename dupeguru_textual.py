@@ -15,9 +15,19 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import (Button, DataTable, DirectoryTree, Footer, Header,
-                             Input, Label, OptionList, ProgressBar, RadioSet,
-                             Static)
+from textual.widgets import (
+    Button,
+    DataTable,
+    DirectoryTree,
+    Footer,
+    Header,
+    Input,
+    Label,
+    OptionList,
+    ProgressBar,
+    RadioSet,
+    Static,
+)
 
 
 @dataclass

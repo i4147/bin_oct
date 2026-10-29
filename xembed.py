@@ -176,7 +176,7 @@ def build_link(asset: Path, source: Path) -> str:
     return quote(relative.as_posix())
 
 
-def write_atomic(path: Path, data: bytes) -> None:
+def atomic_write(path: Path, data: bytes) -> None:
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
         tmp.write_bytes(data)
@@ -293,7 +293,7 @@ def process_file(
         except OSError as exc:
             print(f"warning: could not write backup {bak}: {exc}", file=sys.stderr)
     try:
-        write_atomic(path, updated.encode("utf-8"))
+        atomic_write(path, updated.encode("utf-8"))
         if opts.verbose:
             print(f"rewrote: {path}")
     except OSError as exc:

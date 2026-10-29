@@ -34,8 +34,7 @@ except ImportError:
     requests = None
 try:
     from rich.console import Console
-    from rich.progress import (BarColumn, Progress, TaskProgressColumn,
-                               TextColumn)
+    from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 
     _HAVE_RICH = True
 except ImportError:

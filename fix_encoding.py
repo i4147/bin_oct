@@ -27,30 +27,28 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".bzr",
-        ".idea",
-        ".vscode",
-        ".venv",
-        "venv",
-        "env",
-        "node_modules",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".tox",
-        ".nox",
-        ".eggs",
-        ".cache",
-        ".gradle",
-        ".terraform",
-    }
-)
+SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".bzr",
+    ".idea",
+    ".vscode",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    ".eggs",
+    ".cache",
+    ".gradle",
+    ".terraform",
+})
 
 UTF8_NAMES: frozenset[str] = frozenset({"utf-8", "utf-8-sig"})
 
@@ -215,9 +213,7 @@ def process_file(path: Path, opts: Options) -> Result:
         payload = convert(data, encoding, opts)
         if payload == data:
             return Result(path, encoding, Action.UNCHANGED)
-        encoding_changed = encoding not in UTF8_NAMES or (
-            encoding == "utf-8-sig" and opts.strip_bom
-        )
+        encoding_changed = encoding not in UTF8_NAMES or (encoding == "utf-8-sig" and opts.strip_bom)
         action = Action.CONVERTED if encoding_changed else Action.DOS2UNIX
         if opts.dry_run:
             return Result(path, encoding, Action.DRY_RUN)

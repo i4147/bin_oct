@@ -88,9 +88,8 @@ class TranslationCache:
     def get_many(self, texts, source_lang, target_lang):
         found = {}
         with self.lock:
-            # Stay under SQLite's older 999-variable limit, including language codes.
             for start in range(0, len(texts), 900):
-                batch = texts[start:start + 900]
+                batch = texts[start : start + 900]
                 placeholders = ",".join(["?"] * len(batch))
                 query = f"""
                     SELECT source_text, translated_text FROM translations
@@ -106,14 +105,17 @@ class TranslationCache:
             return
         with self.lock:
             data = [(src, source_lang, target_lang, tgt) for src, tgt in translations.items()]
-            self.conn.executemany("""
+            self.conn.executemany(
+                """
                 INSERT INTO translations
                     (source_text, source_lang, target_lang, translated_text, updated_at)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(source_text, source_lang, target_lang) DO UPDATE SET
                     translated_text=excluded.translated_text,
                     updated_at=CURRENT_TIMESTAMP
-            """, data)
+            """,
+                data,
+            )
             self.conn.commit()
 
     def stats(self):
@@ -150,23 +152,27 @@ def translate_text(text, source_lang, target_lang):
             try:
                 if translator is None:
                     translator = Translator()
-                # googletrans returns a Translated object, rather than a string.
                 translated = translator.translate(text, src=source_lang, dest=target_lang)
                 if translated is None or not isinstance(translated.text, str) or not translated.text:
                     raise ValueError("Translator returned an empty result")
-                print(f'{text} -> {translated.text}')
+                print(f"{text} -> {translated.text}")
                 return translated.text
             except Exception as exc:
                 if interrupted:
                     return None
                 if attempt == RETRY_ATTEMPTS:
-                    logger.error("Translation failed after %d attempts for '%s': %s",
-                                 attempt, text[:60], exc)
+                    logger.error("Translation failed after %d attempts for '%s': %s", attempt, text[:60], exc)
                     break
                 delay = RETRY_DELAY * (2 ** (attempt - 1))
                 delay += random.uniform(0, delay * 0.25)
-                logger.warning("Translate attempt %d/%d failed for '%s': %s; retrying in %.2fs",
-                               attempt, RETRY_ATTEMPTS, text[:60], exc, delay)
+                logger.warning(
+                    "Translate attempt %d/%d failed for '%s': %s; retrying in %.2fs",
+                    attempt,
+                    RETRY_ATTEMPTS,
+                    text[:60],
+                    exc,
+                    delay,
+                )
                 time.sleep(delay)
         return None
     finally:
@@ -180,6 +186,7 @@ def translate_text(text, source_lang, target_lang):
 def translate_chunk_factory(source_lang, target_lang):
     def translate_chunk(chunk):
         return chunk, translate_text("\n".join(chunk), source_lang, target_lang)
+
     return translate_chunk
 
 
@@ -207,8 +214,13 @@ def save_progress(all_lines, results, output_path, json_path, source_lang, targe
         }
         with json_path.open("w", encoding="utf-8") as f:
             json.dump(json_data, f, ensure_ascii=False, indent=2)
-        logger.info("Progress saved: %d/%d lines translated (Output: %s, JSON: %s)",
-                    translated_count, len(all_lines), output_path.name, json_path.name)
+        logger.info(
+            "Progress saved: %d/%d lines translated (Output: %s, JSON: %s)",
+            translated_count,
+            len(all_lines),
+            output_path.name,
+            json_path.name,
+        )
     except Exception as exc:
         logger.error("Error saving progress: %s", exc)
 
@@ -223,14 +235,26 @@ def main():
     parser.add_argument("-i", "--input", help="Input text file (one phrase per line)")
     parser.add_argument("-s", "--source", default="ru", help="Source language code (default: ru)")
     parser.add_argument("-t", "--target", default="en", help="Target language code (default: en)")
-    parser.add_argument("--db", default="~/.translate/translate.db",
-                        help="SQLite DB path for cache (default: ~/.translate/translate.db)")
-    parser.add_argument("--max-workers", type=int, default=MAX_WORKERS,
-                        help=f"Max worker threads (default: {MAX_WORKERS})")
-    parser.add_argument("--max-chunk-size", type=int, default=MAX_CHUNK_SIZE,
-                        help=f"Max characters per chunk (default: {MAX_CHUNK_SIZE})")
-    parser.add_argument("--save-interval", type=int, default=SAVE_INTERVAL,
-                        help=f"Save progress interval in seconds (default: {SAVE_INTERVAL})")
+    parser.add_argument(
+        "--db",
+        default="~/.translate/translate.db",
+        help="SQLite DB path for cache (default: ~/.translate/translate.db)",
+    )
+    parser.add_argument(
+        "--max-workers", type=int, default=MAX_WORKERS, help=f"Max worker threads (default: {MAX_WORKERS})"
+    )
+    parser.add_argument(
+        "--max-chunk-size",
+        type=int,
+        default=MAX_CHUNK_SIZE,
+        help=f"Max characters per chunk (default: {MAX_CHUNK_SIZE})",
+    )
+    parser.add_argument(
+        "--save-interval",
+        type=int,
+        default=SAVE_INTERVAL,
+        help=f"Save progress interval in seconds (default: {SAVE_INTERVAL})",
+    )
     parser.add_argument("--cache-stats", action="store_true", help="Show cache statistics and exit")
     args = parser.parse_args()
     if not args.input and not args.cache_stats:
@@ -275,15 +299,22 @@ def main():
             to_translate_raw = [line for line in all_lines if contains_cyrillic(line)]
         else:
             to_translate_raw = list(all_lines)
-        logger.info("Loaded %d lines: %d flagged for translation, %d skipped",
-                    len(all_lines), len(to_translate_raw), len(all_lines) - len(to_translate_raw))
+        logger.info(
+            "Loaded %d lines: %d flagged for translation, %d skipped",
+            len(all_lines),
+            len(to_translate_raw),
+            len(all_lines) - len(to_translate_raw),
+        )
         if not to_translate_raw:
             logger.info("No lines to translate for source_lang=%s", source_lang)
             return 0
 
         to_translate_unique = list(dict.fromkeys(to_translate_raw))
-        logger.info("Deduplicated: %d unique lines to translate (from %d total flagged)",
-                    len(to_translate_unique), len(to_translate_raw))
+        logger.info(
+            "Deduplicated: %d unique lines to translate (from %d total flagged)",
+            len(to_translate_unique),
+            len(to_translate_raw),
+        )
         results = cache.get_many(to_translate_unique, source_lang, target_lang)
         logger.info("Cache hit: %d/%d", len(results), len(to_translate_unique))
         remaining = [line for line in to_translate_unique if line not in results]
@@ -294,7 +325,6 @@ def main():
         to_cache = {}
 
         def save():
-            # Synchronize reads, writes, and result mutations across threads.
             with results_lock:
                 save_progress(all_lines, results, output_path, json_path, source_lang, target_lang)
 
@@ -302,8 +332,13 @@ def main():
         if remaining and not interrupted:
             chunks = create_chunks(remaining, args.max_chunk_size)
             num_workers = min(args.max_workers, len(chunks))
-            logger.info("Created %d chunk(s) from %d remaining lines (max %d chars per chunk), using %d worker(s)",
-                        len(chunks), len(remaining), args.max_chunk_size, num_workers)
+            logger.info(
+                "Created %d chunk(s) from %d remaining lines (max %d chars per chunk), using %d worker(s)",
+                len(chunks),
+                len(remaining),
+                args.max_chunk_size,
+                num_workers,
+            )
 
             def periodic_save():
                 while not stop_saving.wait(args.save_interval):
@@ -330,8 +365,11 @@ def main():
                                 translations = dict(zip(original_lines, translated_lines))
                             else:
                                 if translated_text:
-                                    logger.warning("Line-count mismatch (%d original vs %d translated); falling back to per-line translation",
-                                                   len(original_lines), len(translated_lines))
+                                    logger.warning(
+                                        "Line-count mismatch (%d original vs %d translated); falling back to per-line translation",
+                                        len(original_lines),
+                                        len(translated_lines),
+                                    )
                                 else:
                                     logger.warning("Chunk translation failed; falling back to per-line translation")
                                 translations = {}
@@ -346,8 +384,13 @@ def main():
                             with results_lock:
                                 results.update(translations)
                             to_cache.update(translations)
-                            logger.info("Processed chunk %d/%d (%d/%d lines translated)",
-                                        completed, total, len(translations), len(chunk))
+                            logger.info(
+                                "Processed chunk %d/%d (%d/%d lines translated)",
+                                completed,
+                                total,
+                                len(translations),
+                                len(chunk),
+                            )
                             if len(to_cache) >= 50 or completed == total:
                                 cache.set_many(to_cache, source_lang, target_lang)
                                 to_cache.clear()

@@ -188,7 +188,6 @@ def build_resource_map(message, root) -> dict[str, str]:
         if not data:
             continue
 
-        # Inline every MIME resource, including CSS, fonts and images.
         uri = make_data_uri(content_type, data)
 
         for location in get_part_locations(part):
@@ -339,10 +338,8 @@ def rewrite_html(
     if not enable_scripts:
         html = SCRIPT_RE.sub("", html)
 
-        # Remove inline event handlers when scripts are disabled.
         html = EVENT_RE.sub("", html)
 
-        # Neutralize simple quoted javascript: URLs.
         html = JAVASCRIPT_URL_RE.sub(r"\1#\1", html)
 
     def replace(match: re.Match[str]) -> str:
@@ -380,7 +377,6 @@ def rewrite_html(
 
     html = URL_RE.sub(replace, html)
 
-    # Rewrite inline CSS in style attributes and style elements.
     style_element_re = re.compile(
         r"(<style\b[^>]*>)(.*?)(</style\s*>)",
         re.IGNORECASE | re.DOTALL,
@@ -456,7 +452,6 @@ def convert_file(
         fetch_missing,
     )
 
-    # Ensure output is written as UTF-8.
     if not re.search(r"<meta\b[^>]*charset\s*=", html, re.I):
         charset_tag = '<meta charset="utf-8">'
 

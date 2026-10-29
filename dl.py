@@ -658,9 +658,14 @@ def _chunk_worker(url: str, dest_str: str, idx: int, start: int, end: int, timeo
 def cmd_chunked(args: argparse.Namespace) -> int:
     try:
         from rich.console import Console
-        from rich.progress import (BarColumn, DownloadColumn, Progress,
-                                   TextColumn, TimeRemainingColumn,
-                                   TransferSpeedColumn)
+        from rich.progress import (
+            BarColumn,
+            DownloadColumn,
+            Progress,
+            TextColumn,
+            TimeRemainingColumn,
+            TransferSpeedColumn,
+        )
     except ImportError:
         logger.error("The 'chunked' subcommand needs 'rich'. Install: pip install rich")
         return 1

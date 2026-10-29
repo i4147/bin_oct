@@ -20,29 +20,24 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Literal, Protocol, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party backends
-# ---------------------------------------------------------------------------
 
 try:
-    import git as gitpython  # type: ignore[import-untyped]
+    import git as gitpython
 
     HAS_GITPYTHON = True
 except ImportError:
     HAS_GITPYTHON = False
 
 try:
-    import pygit2  # type: ignore[import-untyped]
+    import pygit2
 
     HAS_PYGIT2 = True
 except ImportError:
     HAS_PYGIT2 = False
 
 try:
-    from dulwich import \
-        porcelain as dulwich_porcelain  # type: ignore[import-untyped]
-    from dulwich.repo import \
-        Repo as DulwichRepo  # type: ignore[import-untyped]
+    from dulwich import porcelain as dulwich_porcelain
+    from dulwich.repo import Repo as DulwichRepo
 
     HAS_DULWICH = True
 except ImportError:
@@ -59,17 +54,12 @@ if HAS_DULWICH:
     AVAILABLE_BACKENDS.append("dulwich")
 
 
-# ---------------------------------------------------------------------------
-# Data model
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True, slots=True)
 class FileChange:
     """A single file that was either added or removed."""
 
     path: str
-    status: Literal["A", "D"]  # A = added, D = deleted
+    status: Literal["A", "D"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,22 +74,12 @@ class CommitReport:
     removed: tuple[str, ...]
 
 
-# ---------------------------------------------------------------------------
-# Backend protocol
-# ---------------------------------------------------------------------------
-
-
 class GitBackend(Protocol):
     """Minimal interface every backend must implement."""
 
     def iter_commits(self) -> Iterator[CommitReport]:
         """Yield a CommitReport for every commit (newest first)."""
         ...
-
-
-# ---------------------------------------------------------------------------
-# subprocess backend (stdlib)
-# ---------------------------------------------------------------------------
 
 
 class SubprocessBackend:
@@ -117,12 +97,10 @@ class SubprocessBackend:
         return result.stdout
 
     def iter_commits(self) -> Iterator[CommitReport]:
-        # Get all commit SHAs (newest first)
         log = self._run("log", "--pretty=format:%H")
         shas = [line.strip() for line in log.splitlines() if line.strip()]
 
         for sha in shas:
-            # Metadata
             meta = self._run(
                 "log",
                 "-1",
@@ -133,8 +111,6 @@ class SubprocessBackend:
             summary = meta[1] if len(meta) > 1 else ""
             author = meta[2] if len(meta) > 2 else ""
 
-            # Name-status of files that differ from the (first) parent
-            # --diff-filter=AD keeps only Added and Deleted
             try:
                 name_status = self._run(
                     "diff-tree",
@@ -142,11 +118,10 @@ class SubprocessBackend:
                     "--name-status",
                     "-r",
                     "--diff-filter=AD",
-                    "-z",  # null-separated for safety
+                    "-z",
                     sha,
                 )
             except subprocess.CalledProcessError:
-                # root commit has no parent; fall back to show
                 name_status = self._run(
                     "show",
                     "--pretty=format:",
@@ -159,7 +134,6 @@ class SubprocessBackend:
             added: list[str] = []
             removed: list[str] = []
 
-            # -z produces: STATUS\0PATH\0STATUS\0PATH\0...
             parts = name_status.split("\0")
             i = 0
             while i + 1 < len(parts):
@@ -184,11 +158,6 @@ class SubprocessBackend:
             )
 
 
-# ---------------------------------------------------------------------------
-# GitPython backend
-# ---------------------------------------------------------------------------
-
-
 class GitPythonBackend:
     def __init__(self, repo: Path) -> None:
         if not HAS_GITPYTHON:
@@ -200,13 +169,11 @@ class GitPythonBackend:
             added: list[str] = []
             removed: list[str] = []
 
-            # Root commit
             if not commit.parents:
                 for item in commit.tree.traverse():
                     if item.type == "blob":
                         added.append(item.path)
             else:
-                # Diff against first parent (standard for merge commits too)
                 parent = commit.parents[0]
                 for diff in parent.diff(commit, create_patch=False):
                     if diff.change_type == "A":
@@ -224,11 +191,6 @@ class GitPythonBackend:
             )
 
 
-# ---------------------------------------------------------------------------
-# pygit2 backend
-# ---------------------------------------------------------------------------
-
-
 class Pygit2Backend:
     def __init__(self, repo: Path) -> None:
         if not HAS_PYGIT2:
@@ -236,7 +198,6 @@ class Pygit2Backend:
         self._repo = pygit2.Repository(str(repo.resolve()))
 
     def iter_commits(self) -> Iterator[CommitReport]:
-        # Walk from HEAD
         walker = self._repo.walk(
             self._repo.head.target,
             pygit2.GIT_SORT_TIME | pygit2.GIT_SORT_TOPOLOGICAL,
@@ -247,9 +208,7 @@ class Pygit2Backend:
             removed: list[str] = []
 
             if len(commit.parents) == 0:
-                # Root commit – everything is added
                 for entry in commit.tree:
-                    # Recurse into trees
                     self._collect_blobs(entry, "", added)
             else:
                 parent = commit.parents[0]
@@ -286,11 +245,6 @@ class Pygit2Backend:
                 self._collect_blobs(child, name, out)
 
 
-# ---------------------------------------------------------------------------
-# dulwich backend
-# ---------------------------------------------------------------------------
-
-
 class DulwichBackend:
     def __init__(self, repo: Path) -> None:
         if not HAS_DULWICH:
@@ -298,7 +252,6 @@ class DulwichBackend:
         self._repo = DulwichRepo(str(repo.resolve()))
 
     def iter_commits(self) -> Iterator[CommitReport]:
-        # Walk the graph from HEAD
         head = self._repo.head()
         for entry in self._repo.get_walker(include=[head]):
             commit = entry.commit
@@ -315,11 +268,9 @@ class DulwichBackend:
 
             parents = commit.parents
             if not parents:
-                # Root commit
                 tree = self._repo[commit.tree]
                 self._walk_tree(tree, b"", added)
             else:
-                # Diff against first parent
                 parent_commit = self._repo[parents[0]]
                 changes = dulwich_porcelain.diff_tree(
                     self._repo,
@@ -327,7 +278,6 @@ class DulwichBackend:
                     commit.tree,
                 )
                 for change in changes:
-                    # change is a TreeChange namedtuple
                     if change.type == "add":
                         path = change.new.path.decode("utf-8", errors="replace")
                         added.append(path)
@@ -345,19 +295,14 @@ class DulwichBackend:
             )
 
     def _walk_tree(self, tree: object, prefix: bytes, out: list[str]) -> None:
-        for entry in tree.items():  # type: ignore[attr-defined]
+        for entry in tree.items():
             name = entry.path
             full = prefix + b"/" + name if prefix else name
-            if entry.mode & 0o170000 == 0o040000:  # directory
+            if entry.mode & 0o170000 == 0o040000:
                 child = self._repo[entry.sha]
                 self._walk_tree(child, full, out)
             else:
                 out.append(full.decode("utf-8", errors="replace"))
-
-
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
 
 
 def create_backend(name: BackendName, repo: Path) -> GitBackend:
@@ -370,11 +315,6 @@ def create_backend(name: BackendName, repo: Path) -> GitBackend:
     if name == "dulwich":
         return DulwichBackend(repo)
     raise ValueError(f"Unknown backend: {name}")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -417,7 +357,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     repo: Path = args.repo.resolve()
 
     if not (repo / ".git").exists() and not (repo / "HEAD").exists():
-        # Also accept bare repos
         print(f"error: {repo} does not look like a Git repository", file=sys.stderr)
         return 1
 

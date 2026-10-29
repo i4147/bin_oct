@@ -48,8 +48,7 @@ class Extractor(object):
         elif self.backend == "pdfminer":
             from pdfminer.converter import TextConverter
             from pdfminer.layout import LAParams
-            from pdfminer.pdfinterp import (PDFPageInterpreter,
-                                            PDFResourceManager)
+            from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
             from pdfminer.pdfpage import PDFPage
 
             rsrcmgr = PDFResourceManager(caching=True)

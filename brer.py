@@ -5,8 +5,7 @@ import argparse
 import mmap
 import shutil
 import tarfile
-from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor,
-                                as_completed)
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Sequence
 

@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor,
-                                as_completed)
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Sequence
 

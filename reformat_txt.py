@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import Final, Literal, NamedTuple
+from dh import atomic_write
 
 DEFAULT_WIDTH: Final[int] = 100
 MIN_PIECE: Final[int] = 20
@@ -443,17 +444,6 @@ def format_text(text: str, width: int, markdown: bool) -> str:
     return "\n".join(result) + "\n" if result else ""
 
 
-def write_atomic(destination: Path, payload: bytes, mode_source: Path) -> None:
-    temporary = destination.with_name(destination.name + ".tmp")
-    try:
-        temporary.write_bytes(payload)
-        shutil.copymode(mode_source, temporary)
-        os.replace(temporary, destination)
-    except OSError:
-        temporary.unlink(missing_ok=True)
-        raise
-
-
 def process_file(path: Path, options: Options) -> Result:
     try:
         raw = path.read_bytes()
@@ -471,7 +461,7 @@ def process_file(path: Path, options: Options) -> Result:
         target = path.with_suffix(".md")
         if not options.dry_run:
             try:
-                write_atomic(target, payload, path)
+                atomic_write(target, payload, path)
                 if options.remove:
                     path.unlink()
             except OSError as error:
@@ -481,7 +471,7 @@ def process_file(path: Path, options: Options) -> Result:
         return Result(path, "unchanged", before, after)
     if not options.dry_run:
         try:
-            write_atomic(path, payload, path)
+            atomic_write(path, payload, path)
         except OSError as error:
             return Result(path, "error", before, after, str(error))
     return Result(path, "changed", before, after)

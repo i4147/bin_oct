@@ -26,29 +26,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, Protocol, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party backends
-# ---------------------------------------------------------------------------
 
 try:
-    import git as gitpython  # type: ignore[import-untyped]
+    import git as gitpython
 
     HAS_GITPYTHON = True
 except ImportError:
     HAS_GITPYTHON = False
 
 try:
-    import pygit2  # type: ignore[import-untyped]
+    import pygit2
 
     HAS_PYGIT2 = True
 except ImportError:
     HAS_PYGIT2 = False
 
 try:
-    from dulwich import \
-        porcelain as dulwich_porcelain  # type: ignore[import-untyped]
-    from dulwich.repo import \
-        Repo as DulwichRepo  # type: ignore[import-untyped]
+    from dulwich import porcelain as dulwich_porcelain
+    from dulwich.repo import Repo as DulwichRepo
 
     HAS_DULWICH = True
 except ImportError:
@@ -65,11 +60,6 @@ if HAS_DULWICH:
     AVAILABLE_BACKENDS.append("dulwich")
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def format_commit_message(when: datetime | None = None) -> str:
     """Return datetime in the exact required format.
 
@@ -77,7 +67,7 @@ def format_commit_message(when: datetime | None = None) -> str:
     """
     dt = when or datetime.now().astimezone()
     day_name = dt.strftime("%A")
-    day = str(dt.day)  # no leading zero
+    day = str(dt.day)
     month = dt.strftime("%B")
     year = dt.strftime("%Y")
     hour = dt.strftime("%I").lstrip("0") or "0"
@@ -110,11 +100,6 @@ def find_empty_files(repo: Path, paths: Sequence[str]) -> list[str]:
         except OSError:
             continue
     return sorted(empty)
-
-
-# ---------------------------------------------------------------------------
-# Backend protocol
-# ---------------------------------------------------------------------------
 
 
 class GitBackend(Protocol):
@@ -152,11 +137,6 @@ class GitBackend(Protocol):
         ...
 
 
-# ---------------------------------------------------------------------------
-# subprocess backend
-# ---------------------------------------------------------------------------
-
-
 class SubprocessBackend:
     def __init__(self, repo: Path) -> None:
         self._repo = repo.resolve()
@@ -185,7 +165,6 @@ class SubprocessBackend:
         return bool(result.stdout.strip())
 
     def list_relevant_files(self) -> list[str]:
-        # All currently tracked files + untracked files that will be added
         tracked = self._run("ls-files", "-z").stdout.split("\0")
         untracked = self._run("ls-files", "--others", "--exclude-standard", "-z").stdout.split("\0")
         files = [p for p in tracked + untracked if p]
@@ -213,14 +192,8 @@ class SubprocessBackend:
             cmd.append("--force-with-lease")
         cmd.append(remote)
         cmd.append(branch if branch else "HEAD")
-        # set upstream on first push
         cmd.insert(1, "-u")
         self._run(*cmd)
-
-
-# ---------------------------------------------------------------------------
-# GitPython backend
-# ---------------------------------------------------------------------------
 
 
 class GitPythonBackend:
@@ -232,16 +205,15 @@ class GitPythonBackend:
     def current_branch(self) -> str | None:
         try:
             return self._repo.active_branch.name
-        except TypeError:  # detached HEAD
+        except TypeError:
             return None
 
     def has_changes(self) -> bool:
         return self._repo.is_dirty(untracked_files=True)
 
     def list_relevant_files(self) -> list[str]:
-        tracked = [item.path for item in self._repo.index.entries.values()]  # type: ignore[attr-defined]
+        tracked = [item.path for item in self._repo.index.entries.values()]
         untracked = list(self._repo.untracked_files)
-        # also include files that are modified/deleted but already tracked
         return sorted(set(tracked) | set(untracked))
 
     def stage_all(self) -> None:
@@ -272,11 +244,6 @@ class GitPythonBackend:
             origin.push(**kwargs)
 
 
-# ---------------------------------------------------------------------------
-# pygit2 backend
-# ---------------------------------------------------------------------------
-
-
 class Pygit2Backend:
     def __init__(self, repo: Path) -> None:
         if not HAS_PYGIT2:
@@ -293,10 +260,7 @@ class Pygit2Backend:
 
     def list_relevant_files(self) -> list[str]:
         status = self._repo.status()
-        # status keys are relative paths
         files = list(status.keys())
-        # also include already tracked files that have no status change
-        # (so we can still warn about pre-existing empty files)
         try:
             for entry in self._repo.index:
                 files.append(entry.path)
@@ -322,7 +286,6 @@ class Pygit2Backend:
             parents = [self._repo.head.target]
 
         tree = self._repo.index.write_tree()
-        # pygit2 does not have a direct allow_empty flag; empty tree is fine
         sha = self._repo.create_commit("HEAD", author, author, message, tree, parents)
         return str(sha)
 
@@ -338,14 +301,7 @@ class Pygit2Backend:
             if self._repo.head_is_unborn:
                 raise RuntimeError("Cannot push an unborn HEAD")
             branch = self._repo.head.shorthand
-        # force_with_lease is not directly supported by the simple push API;
-        # fall back to a plain push (user can use subprocess backend for full control)
         remote_obj.push([f"refs/heads/{branch}:refs/heads/{branch}"])
-
-
-# ---------------------------------------------------------------------------
-# dulwich backend
-# ---------------------------------------------------------------------------
 
 
 class DulwichBackend:
@@ -388,8 +344,7 @@ class DulwichBackend:
                     files.add(p.decode("utf-8", errors="replace"))
                 else:
                     files.add(str(p))
-        # also include currently tracked files
-        for entry in self._repo.open_index():  # type: ignore[attr-defined]
+        for entry in self._repo.open_index():
             files.add(entry.path.decode("utf-8", errors="replace"))
         return sorted(files)
 
@@ -422,17 +377,11 @@ class DulwichBackend:
             branch = self.current_branch()
             if branch is None:
                 raise RuntimeError("detached HEAD – supply --branch")
-        # dulwich does not expose force-with-lease cleanly; plain push
         dulwich_porcelain.push(
             self._repo,
             remote_location=remote,
             refspecs=[f"refs/heads/{branch}:refs/heads/{branch}"],
         )
-
-
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
 
 
 def create_backend(name: BackendName, repo: Path) -> GitBackend:
@@ -445,11 +394,6 @@ def create_backend(name: BackendName, repo: Path) -> GitBackend:
     if name == "dulwich":
         return DulwichBackend(repo)
     raise ValueError(f"Unknown backend: {name}")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -547,9 +491,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"Remote     : {args.remote}")
     print("-" * 60)
 
-    # ------------------------------------------------------------------
-    # 1. Branch safety check
-    # ------------------------------------------------------------------
     if branch is not None and branch != "main":
         print(f"WARNING: You are on branch '{branch}', not 'main'.")
         if not args.yes and not args.dry_run:
@@ -559,9 +500,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.dry_run:
             print("[dry-run] would ask for confirmation to continue on non-main branch")
 
-    # ------------------------------------------------------------------
-    # 2. Empty-file warning
-    # ------------------------------------------------------------------
     if not args.skip_empty_check:
         relevant = backend.list_relevant_files()
         empty_files = find_empty_files(repo, relevant)
@@ -576,9 +514,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             elif args.dry_run:
                 print("[dry-run] would ask for confirmation because of empty files")
 
-    # ------------------------------------------------------------------
-    # Dry-run summary
-    # ------------------------------------------------------------------
     if args.dry_run:
         dirty = backend.has_changes()
         print(f"[dry-run] working tree dirty          : {dirty}")
@@ -590,9 +525,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("[dry-run] --no-push specified; would not push")
         return 0
 
-    # ------------------------------------------------------------------
-    # Actual work
-    # ------------------------------------------------------------------
     try:
         if not backend.has_changes() and not args.allow_empty:
             print("Nothing to commit – working tree is clean.")

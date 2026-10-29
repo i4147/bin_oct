@@ -21,20 +21,12 @@ from typing import Iterator
 from dh import SKIP_DIRS, is_binary
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 logger.remove()
 logger.add(
     sys.stderr,
     level="INFO",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {message}",
 )
-# logger.add("dos2unix_utf8.log", rotation="10 MB", level="DEBUG")
-
-# ---------------------------------------------------------------------------
-# Directories to prune during traversal
-# ---------------------------------------------------------------------------
 
 
 def iter_files(root: Path) -> Iterator[Path]:
@@ -44,7 +36,6 @@ def iter_files(root: Path) -> Iterator[Path]:
     """
     root = root.resolve()
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        # Prune directories in-place so os.walk does not descend into them
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not (Path(dirpath) / d).is_symlink()]
 
         for name in filenames:
@@ -67,14 +58,12 @@ def process_file(path: Path) -> None:
         logger.error(f"Cannot read {path}: {exc}")
         return
 
-    # Decode – prefer UTF-8, fall back to latin-1 (lossless for any byte sequence)
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         text = data.decode("latin-1")
         logger.debug(f"Fell back to latin-1 for {path}")
 
-    # dos2unix
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     new_data = normalized.encode("utf-8")
 
@@ -102,7 +91,7 @@ def main() -> None:
         for future in as_completed(futures):
             try:
                 future.result()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 path = futures[future]
                 logger.error(f"Unexpected error on {path}: {exc}")
 

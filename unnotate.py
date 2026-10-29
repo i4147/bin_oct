@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 import libcst as cst
 from rich.console import Console
 from rich.text import Text
+from dh import atomic_write
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -128,20 +129,6 @@ class AnnotationStripper(cst.CSTTransformer):
         return updated_node
 
 
-def write_atomic(path: Path, data: bytes) -> None:
-    tmp_name: str | None = None
-    try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".tmp_stripann_", delete=False) as tmp:
-            tmp_name = tmp.name
-            tmp.write(data)
-        shutil.copymode(path, tmp_name)
-        os.replace(tmp_name, path)
-    except BaseException:
-        if tmp_name is not None and os.path.exists(tmp_name):
-            os.remove(tmp_name)
-        raise
-
-
 def process_file(path_str: str) -> Result:
     path: Path = Path(path_str)
     try:
@@ -159,7 +146,7 @@ def process_file(path_str: str) -> Result:
     if new == src:
         return Result(path, False, None, 0)
     try:
-        write_atomic(path, new)
+        atomic_write(path, new)
     except OSError as exc:
         return Result(path, False, f"write error: {exc}", 0)
     return Result(path, True, None, len(src) - len(new))

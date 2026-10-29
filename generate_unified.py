@@ -5,6 +5,7 @@ Approach: each original script is embedded (line-wise repr) and executed in an
 isolated globals dict with sys.argv patched and __name__ == "__main__".
 This preserves original CLIs exactly via subcommand + passthrough args.
 """
+
 from __future__ import annotations
 import ast
 import os
@@ -14,6 +15,7 @@ from pathlib import Path
 from dh import unique_path
 
 ROOT = Path.cwd().resolve()
+
 
 def sanitize_stem(filename: str) -> str:
     assert filename.endswith(".py")
@@ -28,6 +30,7 @@ def sanitize_stem(filename: str) -> str:
         s = "_" + s
     return s
 
+
 def to_pascal(sanitized: str) -> str:
     parts = [p for p in sanitized.split("_") if p]
     out = "".join(p[:1].upper() + p[1:] for p in parts) or "Tool"
@@ -35,12 +38,14 @@ def to_pascal(sanitized: str) -> str:
         out = "Tool" + out
     return out
 
+
 def folder_to_pascal(folder: str) -> str:
     parts = [p for p in re.split(r"_+", folder) if p]
     out = "".join(p[:1].upper() + p[1:] for p in parts) or "Folder"
     if out[0].isdigit():
         out = "Folder" + out
     return out
+
 
 def extract_info(text: str) -> tuple[str, list[str], str, str]:
     """Returns (description, funcs, notes, doc_first_line)."""
@@ -54,51 +59,46 @@ def extract_info(text: str) -> tuple[str, list[str], str, str]:
         if ds:
             desc = ds.strip().splitlines()[0][:140]
     except SyntaxError as e:
-        notes_parts.append(f"ORIGINAL SYNTAX ERROR on py3.11 ({e.msg} line {e.lineno}); likely needs Python 3.12+ (PEP 701 f-strings). Plainly broken here.")
-    # dh import?
+        notes_parts.append(
+            f"ORIGINAL SYNTAX ERROR on py3.11 ({e.msg} line {e.lineno}); likely needs Python 3.12+ (PEP 701 f-strings). Plainly broken here."
+        )
     if re.search(r"^\s*(from\s+dh\s+import|import\s+dh\b)", text, re.M):
         notes_parts.append("requires missing module 'dh' (ImportError at runtime)")
     has_main = "__main__" in text
     has_argv = ("sys.argv" in text) or ("argparse" in text)
     if not has_main:
-        # check if top-level executable (not just defs/imports)
         try:
             tree2 = ast.parse(text) if "tree" not in dir() else tree
-            # crude: any top-level node that is not Import/ImportFrom/FunctionDef/ClassDef/Assign of simple constants?
-            # Just note it.
             notes_parts.append("no __main__ guard (top-level script or library fragment; exec runs top-level code)")
         except Exception:
             pass
     elif not has_argv and not funcs:
         pass
     if not desc:
-        # first comment?
         for line in text.splitlines()[:15]:
             s = line.strip()
             if s.startswith("#") and len(s) > 2 and "env" not in s and "coding" not in s:
                 desc = s.lstrip("#").strip()[:140]
                 break
     if not desc:
-        desc = f"{funcs[0]}() + {len(funcs)-1} more" if funcs else "top-level script"
+        desc = f"{funcs[0]}() + {len(funcs) - 1} more" if funcs else "top-level script"
     notes = "; ".join(notes_parts)
     return desc, funcs, notes, desc
+
 
 def build_unified(folder: Path, files: list[Path]) -> str:
     folder_name = folder.name
     dispatcher = folder_to_pascal(folder_name) + "Unified"
-    # gather per-file data
     items: list[dict] = []
     seen_sanitized: dict[str, int] = {}
     seen_class: dict[str, int] = {}
     seen_const: dict[str, int] = {}
     for f in sorted(files, key=lambda p: p.name):
         text = f.read_text(encoding="utf-8", errors="replace")
-        # normalize: ensure ends with newline for splitlines logic; keep original otherwise
         lines = text.splitlines()
         nlines = len(lines)
         desc, funcs, notes, _ = extract_info(text)
         base_san = sanitize_stem(f.name)
-        # uniqueness
         san = base_san
         if san in seen_sanitized:
             seen_sanitized[base_san] += 1
@@ -132,21 +132,17 @@ def build_unified(folder: Path, files: list[Path]) -> str:
             "nlines": nlines,
         })
 
-    # docstring original mapping
     map_lines: list[str] = []
     for it in items:
         extra = f" [{it['notes']}]" if it["notes"] else ""
-        # escape desc for docstring? keep simple, truncate
         d = it["desc"].replace("\n", " ").replace("\r", " ")[:120]
         map_lines.append(f"  {it['san']} <- {it['filename']} ({it['nlines']}L): {d}{extra}")
     mapping = "\n".join(map_lines)
 
-    # assumption line (one line)
     assumption = "Assumption: each original CLI preserved as `main.py <tool> [args...]` with passthrough args."
     if len(items) == 1:
         assumption = "Assumption: single original script preserved; `main.py [args...]` passes through to it."
 
-    # Build source constants
     const_blocks: list[str] = []
     for it in items:
         const_blocks.append(f"{it['const']}: str = (")
@@ -154,7 +150,6 @@ def build_unified(folder: Path, files: list[Path]) -> str:
             const_blocks.append('    ""')
         else:
             for ln in it["lines"]:
-                # repr(line + "\n") is a valid literal
                 lit = repr(ln + "\n")
                 const_blocks.append(f"    {lit}")
         const_blocks.append(")")
@@ -162,14 +157,11 @@ def build_unified(folder: Path, files: list[Path]) -> str:
 
     const_section = "\n".join(const_blocks)
 
-    # Build tool classes
     class_blocks: list[str] = []
     for it in items:
-        # escape for python string literal via repr
         desc_lit = repr(it["desc"][:200])
         notes_lit = repr(it["notes"][:500])
         funcs_lit = repr(it["funcs"])
-        # class docstring: avoid triple-quote breakage
         doc_safe = it["desc"].replace('"""', "'''")[:160].replace("\n", " ")
         if it["notes"]:
             doc_safe += f" NOTE: {it['notes'][:200]}".replace('"""', "'''").replace("\n", " ")
@@ -184,9 +176,8 @@ def build_unified(folder: Path, files: list[Path]) -> str:
         class_blocks.append("")
     classes_section = "\n".join(class_blocks)
 
-    tools_entries = "\n".join(f'        {repr(it["san"])}: {it["cls"]},' for it in items)
+    tools_entries = "\n".join(f"        {repr(it['san'])}: {it['cls']}," for it in items)
 
-    # Full template
     header = f'''#!/usr/bin/env python3
 """{dispatcher} for {folder_name}.
 
@@ -206,7 +197,7 @@ Notes:
   sys.argv patched to [source_file] + args, and __name__ == "__main__".
 - Missing third-party deps (e.g. 'dh') or SyntaxErrors fail plainly at runtime;
   nothing is simulated or faked.
-{"- Single-tool folder: `python main.py [args...]` runs the only tool directly." if len(items)==1 else "- Multi-tool folder: first arg must be a tool name; use --list to see names."}
+{"- Single-tool folder: `python main.py [args...]` runs the only tool directly." if len(items) == 1 else "- Multi-tool folder: first arg must be a tool name; use --list to see names."}
 """
 from __future__ import annotations
 
@@ -365,8 +356,11 @@ if __name__ == "__main__":
 '''
     return header + body
 
+
 def main() -> int:
-    folders = sorted([p for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"])
+    folders = sorted([
+        p for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"
+    ])
     print(f"Found {len(folders)} top-level folders")
     for folder in folders:
         py_files = sorted([p for p in folder.glob("*.py") if p.name != "main.py"])
@@ -375,18 +369,16 @@ def main() -> int:
             continue
         print(f"GEN {folder.name}: {len(py_files)} files -> main.py")
         content = build_unified(folder, py_files)
-        out_name=folder.name+".py"
+        out_name = folder.name + ".py"
         out = folder / out_name
         if out.exists():
-            out=unique_path(out)
+            out = unique_path(out)
         out.write_text(content, encoding="utf-8")
-        # syntax check
         try:
             compile(content, str(out), "exec")
         except SyntaxError as e:
             print(f"  ERROR compiling {out}: {e}")
             return 1
-        # annotation check: all funcs annotated?
         try:
             tree = ast.parse(content)
             missing: list[str] = []
@@ -397,7 +389,6 @@ def main() -> int:
                     for a in node.args.args + node.args.kwonlyargs:
                         if a.arg in ("self",):
                             continue
-                        # require annotation for all including cls (we annotate cls)
                         if a.annotation is None:
                             missing.append(f"{node.name} arg {a.arg} missing :")
                     if node.args.vararg and node.args.vararg.annotation is None:
@@ -413,6 +404,7 @@ def main() -> int:
         os.chmod(out, 0o755)
     print("All unified main.py generated.")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

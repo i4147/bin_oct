@@ -1,7 +1,4 @@
-1. add functionality to remove .gitkeep,.gitmodules,.gitignore file & .github folder if parent folder of them is not a git dir (we are not in a git repo)
-ie, if we encounter .gitignore,... files or .github folder and they are not in a git repo, remove them
-2. i wanna move lines 37 to 203 to a file(/sdcard/data/junk) and read from that file
-
+#!/data/data/com.termux/files/usr/bin/env python
 import shutil
 import sys
 from pathlib import Path
@@ -9,212 +6,100 @@ from pathlib import Path
 from dh import SKIP_DIRS, should_skip
 from rignore import walk as _walk
 
+JUNK_FILE = Path("/sdcard/data/junk")
 
-def main() -> None:
+JUNK_SUFFIXES = (
+    ".pyc",
+    ".tmp",
+    ".log",
+    ".bak",
+    ".cache.json",
+    ".exe",
+    ".bat",
+    ".dll",
+    ".dylib",
+    ".pyd",
+    ".lnk",
+    ".msi",
+)
+
+GIT_META_FILES = frozenset({".gitkeep", ".gitmodules", ".gitignore"})
+GIT_META_DIRS = frozenset({".github"})
+
+
+def load_junk_names(path: Path = JUNK_FILE) -> frozenset[str]:
+    """Load the junk filename list from `path` (one name per line)."""
+    try:
+        with path.open(encoding="utf-8") as fh:
+            return frozenset(line.strip().lower() for line in fh if line.strip())
+    except OSError as exc:
+        print(f"warning: could not read {path}: {exc}", file=sys.stderr)
+        return frozenset()
+
+
+_git_cache: dict[Path, bool] = {}
+
+
+def in_git_repo(path: Path) -> bool:
+    """True if `path` lives inside a git working tree.
+
+    Walks up the parent chain looking for a `.git` entry (dir *or* file, so
+    worktrees and submodules count).  Results are cached per directory since
+    `.git` entries don't appear/disappear while this script runs.
+    """
+    chain: list[Path] = []
+    result = False
+    for parent in path.parents:
+        cached = _git_cache.get(parent)
+        if cached is not None:
+            result = cached
+            break
+        chain.append(parent)
+        if (parent / ".git").exists():
+            result = True
+            break
+    for parent in chain:
+        _git_cache[parent] = result
+    return result
+
+
+def remove(path: Path) -> None:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+
+
+def main() -> int:
     cwd = Path.cwd()
+    junk_names = load_junk_names()
     removed_count = 0
-    for path in _walk(cwd):/
-        if path.is_symlink() or ".git" in path.parts:
+
+    for path in _walk(cwd):
+        if not path.exists() or path.is_symlink() or ".git" in path.parts:
             continue
+
         loname = path.name.lower()
-        if (
-            path.is_file()
-            and loname.endswith((
-                ".pyc",
-                ".tmp",
-                ".log",
-                ".bak",
-                ".cache.json",
-                ".exe",
-                ".bat",
-                ".dll",
-                ".dylib",
-                ".pyd",
-                ".lnk",
-                ".msi",
-            ))
-            or loname
-            in {
-                "license_gpl2.0.txt",
-                "license_lgpl_2.1.txt",
-                ".cache.json",
-                "copyrightnotice.txt",
-                "history.rst",
-                ".dirinfo",
-                "licence.md",
-                ".ds_store",
-                ".reqcache.json",
-                ".travis.yml",
-                "bsd-2-clause.txt",
-                "cc-by-sa-4.0.txt",
-                "copyright.html",
-                "gcc-exception-3.1.txt",
-                "gpl-2.0-only.txt",
-                "gpl-3.0-or-later.txt",
-                "isc.txt",
-                "license-apache",
-                "license-mit",
-                "license-third-party",
-                "llvm-exception.txt",
-                "mit.txt",
-                "license.md.pre",
-                "license.python",
-                "ncsa.txt",
-                "ofl-1.1.txt",
-                "author",
-                "author.md",
-                "author.rst",
-                "author.txt",
-                "authors",
-                "authors.md",
-                "authors.rst",
-                "authors.txt",
-                "bsd-0-clause.rst",
-                "bsd-2-clause.rst",
-                "changelog",
-                "changelog.1",
-                "changelog.debian",
-                "changelog.md",
-                "changelog.rst",
-                "changelog.txt",
-                "changes",
-                "changes.md",
-                "changes.rst",
-                "changes.txt",
-                "citation",
-                "citation.bib",
-                "citation.md",
-                "citation.rst",
-                "citation.txt",
-                "code_of_conduct",
-                "code_of_conduct.md",
-                "code_of_conduct.rst",
-                "code_of_conduct.txt",
-                "contributing",
-                "contributing.md",
-                "contributing.rst",
-                "contributing.txt",
-                "contributing.markdown",
-                "contributors",
-                "contributors.md",
-                "contributors.rst",
-                "contributors.txt",
-                "copying",
-                "copying-lgpl",
-                "copying-mit",
-                "copying.0bsd",
-                "copying.0mit",
-                "copying.bsd-3-clause",
-                "copying.bsd-4-clause-uc",
-                "copying.gpl",
-                "copying.gpl-2.0-or-later",
-                "copying.gpl-3.0-or-later",
-                "copying.gplv2",
-                "copying.gplv3",
-                "copying.isc",
-                "copying.lesser",
-                "copying.lgpl",
-                "copying.lgpl-2.1-or-later",
-                "copying.md",
-                "copying.mit",
-                "copying.mpl",
-                "copying.obstack",
-                "copying.rst",
-                "copying.txt",
-                "copying_ccbysa3",
-                "copying_lgpl",
-                "copyright",
-                "copyright-chapter.mom",
-                "copyright-chapter.pdf",
-                "copyright-default.mom",
-                "copyright-default.pdf",
-                "copyright-library.html",
-                "copyright.1",
-                "copyright.debian",
-                "copyright.txt",
-                "cpl1.o.txt",
-                "description.rst",
-                "gpl-3-0.txt",
-                "icon_license.md",
-                "importz.txt",
-                "installer",
-                "licence",
-                "licence.rst",
-                "license",
-                "license-apache.md",
-                "license-apache.rst",
-                "license-apache.txt",
-                "license-gpl",
-                "license-mit.md",
-                "license-mit.rst",
-                "license-mit.txt",
-                "license-swig",
-                "license-universities",
-                "license.apache",
-                "license.apache-2.0.txt",
-                "license.apache2",
-                "license.bsd",
-                "license.docs",
-                "license.markdown-it",
-                "license.md",
-                "license.mit",
-                "license.rst",
-                "license.txt",
-                "license_numpy.txt",
-                "license_scipy.txt",
-                "licenses",
-                "licenses.md",
-                "licenses.txt",
-                "lisense",
-                "metadata.json",
-                "namespace_packages.txt",
-                "news",
-                "news.debian",
-                "news.html",
-                "news.md",
-                "news.rst",
-                "news.txt",
-                "notice",
-                "notice.txt",
-                "pbr.json",
-                "readme.debian",
-                "release-notes.rst",
-                "release-notes.txt",
-                "requested",
-                "security.md",
-                "thanks",
-                "thanks.md",
-                "thanks.rst",
-                "thanks.txt",
-                "third-party-notices.md",
-                "third-party-notices.rst",
-                "third-party-notices.txt",
-                "third-party_notices.md",
-                "third_party_notices",
-                "thirdpartynotices.txt",
-                "toplevel.txt",
-                "unlicense",
-                "zip-safe",
-                ".pyformat_cache.json",
-                "simz.json",
-                ".gitkeep",
-                "acknowledgements",
-                "history.deb822",
-                "readme.changelog",
-                "uv.lock",
-            }
-        ):
+
+        if loname in GIT_META_FILES or (loname in GIT_META_DIRS and path.is_dir()):
+            if not in_git_repo(path):
+                remove(path)
+                removed_count += 1
+                print(f"{path.name} removed")
+            continue
+
+        if path.is_file() and (loname.endswith(JUNK_SUFFIXES) or loname in junk_names):
             path.unlink()
             removed_count += 1
             print(f"{path.name} removed")
             continue
-        if path.is_dir() and loname == "licenses" and ("dist-info" in path.parent.name):
-            from shutil import rmtree
 
-            rmtree(path)
-            print(rel_path)
+        if path.is_dir() and loname == "licenses" and "dist-info" in path.parent.name:
+            shutil.rmtree(path)
             removed_count += 1
+            print(f"{path.name} removed")
             continue
+
     if removed_count:
         print(f"\n{removed_count} item(s) removed")
     return 0

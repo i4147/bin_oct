@@ -543,7 +543,7 @@ def strip_source(text: str, opts: Options) -> Stripped:
     raise errors[-1] if errors else RuntimeError("no backend available")
 
 
-def write_atomic(path: Path, data: bytes) -> None:
+def atomic_write(path: Path, data: bytes) -> None:
     target = path.resolve()
     descriptor, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
     temporary = Path(name)
@@ -589,7 +589,7 @@ def process_file(path: Path, opts: Options) -> FileResult:
         return result
     if result.changed and not opts.dry_run:
         try:
-            write_atomic(path, updated)
+            atomic_write(path, updated)
         except OSError as exc:
             result.error = f"{type(exc).__name__} writing: {exc}"
             result.changed = False

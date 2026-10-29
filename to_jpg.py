@@ -14,8 +14,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
-                    Set, Tuple)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 VERSION = "2.0.0"
 

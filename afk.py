@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""(No content in stream)
+
+---"""
+
 from __future__ import annotations
 
 import argparse
@@ -634,7 +638,7 @@ def run_analysis(items: list[SourceItem], include_init: bool, workers: int) -> I
         yield from pool.map(process_item, items, itertools.repeat(include_init), chunksize=chunk)
 
 
-def write_atomic(path: Path, data: bytes) -> None:
+def atomic_write(path: Path, data: bytes) -> None:
     real = path.resolve()
     mode = stat.S_IMODE(real.stat().st_mode)
     descriptor, temp_name = tempfile.mkstemp(dir=real.parent, prefix=f".{real.name}.", suffix=".tmp")
@@ -705,7 +709,7 @@ def emit(
         print_file_report(result, style, show_diff, out)
     if will_write and result.new_bytes is not None and result.path is not None:
         try:
-            write_atomic(result.path, result.new_bytes)
+            atomic_write(result.path, result.new_bytes)
         except OSError as exc:
             totals.errors += 1
             print(

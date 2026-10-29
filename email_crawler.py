@@ -13,8 +13,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from sqlalchemy import (Boolean, Column, Integer, MetaData, Table, Unicode,
-                        create_engine, select)
+from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
 
 DEBUG = True
 USE_COLORS = True

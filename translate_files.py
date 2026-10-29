@@ -18,8 +18,7 @@ from typing import Final, Iterable, Sequence
 from deep_translator import GoogleTranslator
 
 try:
-    from tenacity import (before_sleep_log, retry, retry_if_exception_type,
-                          stop_after_attempt, wait_exponential_jitter)
+    from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
 
     _HAS_TENACITY = True
 except ImportError:

@@ -369,7 +369,7 @@ def looks_like_python(text: str) -> bool:
     return True
 
 
-def write_atomic(path: Path, data: bytes, backup: bool) -> None:
+def atomic_write(path: Path, data: bytes, backup: bool) -> None:
     if backup:
         shutil.copy2(path, path.with_name(path.name + ".bak"))
     tmp = path.with_name(f".{path.name}.pyenhance-tmp")
@@ -411,7 +411,7 @@ def process_file(path: Path, cfg: Config) -> FileReport:
         )
     if cfg.write:
         try:
-            write_atomic(path, result.text.encode(encoding), cfg.backup)
+            atomic_write(path, result.text.encode(encoding), cfg.backup)
         except OSError as exc:
             return FileReport(path, error=f"write failed: {exc}")
     return report

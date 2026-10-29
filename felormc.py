@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Final, Iterable, Iterator, Optional
 
 import libcst as cst
-from libcst import (BaseStatement, ClassDef, EmptyLine, FunctionDef, Module,
-                    SimpleStatementLine, TrailingWhitespace)
+from libcst import BaseStatement, ClassDef, EmptyLine, FunctionDef, Module, SimpleStatementLine, TrailingWhitespace
 from loguru import logger
 
 DEFAULT_WORKERS: Final[int] = 8

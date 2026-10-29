@@ -27,18 +27,15 @@ def auto_git_workflow():
         repo.git.add(A=True)
         repo.index.commit(f"Initial commit: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # 1. Handle Submodules
     if repo.submodules:
         print("Updating submodules...")
         repo.git.submodule("update", "--init", "--recursive")
 
-    # 2. Add and Commit
     repo.git.add(A=True)
     commit_msg = f"Auto-commit: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     repo.index.commit(commit_msg)
     print(f"Committed changes with message: '{commit_msg}'")
 
-    # 3. Handle Remote/GitHub Logic
     remotes = repo.remotes
     if not remotes:
         print("No remote configured. Creating new repository on GitHub...")
@@ -49,7 +46,6 @@ def auto_git_workflow():
             run_command(["gh", "repo", "create", new_name, "--public", "--source=.", "--push"])
     else:
         origin = remotes[0].url
-        # Check if user owns the repo (heuristic: check if it's a personal/org path)
         user = subprocess.check_output(["gh", "api", "user", "--jq", ".login"]).decode().strip()
 
         if user not in origin:

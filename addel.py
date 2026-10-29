@@ -24,8 +24,6 @@ Examples
     python addel.py "HEAD~40..HEAD" --max-files 6
 """
 
-# === [1] imports and constants ============================================
-
 from __future__ import annotations
 
 import argparse
@@ -40,11 +38,10 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import (Callable, Dict, Iterable, List, Optional, Sequence, Set,
-                    Tuple)
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-UNIT_SEP = "\x1f"  # field separator inside `git log --format` records
-DIFF_FILTER = "AD"  # git's own letters: A = added, D = deleted
+UNIT_SEP = "\x1f"
+DIFF_FILTER = "AD"
 SKIP_DIRS = frozenset({".git"})
 RESET = "\033[0m"
 STYLES = {
@@ -79,9 +76,6 @@ def painter(enabled: bool) -> Callable[[str, str], str]:
     return paint
 
 
-# === [2] repository discovery -- pathlib only =============================
-
-
 def discover_repo(start: Path) -> Tuple[Path, Path]:
     """Walk up from *start* until a ``.git`` entry is found.
 
@@ -113,14 +107,11 @@ def git(repo: Path, *args: str) -> str:
             encoding="utf-8",
             errors="replace",
         )
-    except OSError as exc:  # git vanished mid-run
+    except OSError as exc:
         raise RepoError(f"could not execute git: {exc}") from exc
     if proc.returncode != 0:
         raise RepoError(f"git {' '.join(args)} failed ({proc.returncode}): {(proc.stderr or '').strip()}")
     return proc.stdout
-
-
-# === [3] commit metadata ==================================================
 
 
 @dataclass(frozen=True)
@@ -165,13 +156,10 @@ def list_commits(repo: Path, revision: str, first_parent: bool = False) -> List[
     return [parse_commit_header(line) for line in git(repo, *args).splitlines() if UNIT_SEP in line]
 
 
-# === [4] the add/remove ledger ============================================
-
-
 @dataclass(frozen=True)
 class Change:
-    status: str  # "A" or "D"
-    path: str  # repository relative, posix separators
+    status: str
+    path: str
 
     @property
     def added(self) -> bool:
@@ -257,7 +245,6 @@ def collect_ledger(
     try:
         raw = run(["--diff-merges=first-parent"] if diff_merges else [])
     except RepoError as exc:
-        # git < 2.31 does not know --diff-merges; fall back and keep going.
         if not diff_merges:
             raise
         sys.stderr.write(f"note: {exc}\nnote: retrying without --diff-merges\n")
@@ -274,17 +261,14 @@ def collect_ledger(
         pending.clear()
 
     for token in (t for t in raw.split("\0") if t):
-        if UNIT_SEP in token:  # a commit header record
+        if UNIT_SEP in token:
             flush()
             current = CommitEntry(parse_commit_header(token))
             entries.append(current)
-        else:  # a status or a path
+        else:
             pending.append(token)
     flush()
     return entries
-
-
-# === [5] walk mode -- snapshot each tree with Path.rglob ==================
 
 
 def snapshot_tree(root: Path, skip: Iterable[str] = SKIP_DIRS) -> Set[str]:
@@ -295,12 +279,12 @@ def snapshot_tree(root: Path, skip: Iterable[str] = SKIP_DIRS) -> Set[str]:
     for path in root.rglob("*"):
         relative = path.relative_to(root)
         if skip.intersection(relative.parts[:-1]):
-            continue  # lives under .git & friends
+            continue
         try:
             if path.is_symlink() or path.is_file():
                 found.add(relative.as_posix())
         except OSError:
-            continue  # broken symlink, race, ...
+            continue
     return found
 
 
@@ -354,14 +338,11 @@ def walk_ledger(
     return entries
 
 
-# === [6] verification against the live working tree =======================
-
-
 @dataclass
 class Verification:
     tracked_now: int
-    ghosts: List[str] = field(default_factory=list)  # deleted in history, still on disk
-    missing: List[str] = field(default_factory=list)  # history says present, disk disagrees
+    ghosts: List[str] = field(default_factory=list)
+    missing: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -385,9 +366,6 @@ def verify_against_disk(repo: Path, entries: Sequence[CommitEntry]) -> Verificat
     ghosts = sorted(p for p in on_disk if last_event.get(p) == "D")
     missing = sorted(expected.difference(on_disk))
     return Verification(len(on_disk), ghosts, missing)
-
-
-# === [7] summary ==========================================================
 
 
 def directory_of(path: str, depth: int = 2) -> str:
@@ -441,9 +419,6 @@ def summarize(entries: Sequence[CommitEntry], top: int = 8) -> Summary:
         hot_directories=directories.most_common(top),
         churn=churn.most_common(top),
     )
-
-
-# === [8] renderers ========================================================
 
 
 def render_text(
@@ -625,9 +600,6 @@ def write_markdown(path: Path, repo: Path, revision: str, entries: Sequence[Comm
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-# === [9] command line =====================================================
-
-
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="addel.py",
@@ -678,7 +650,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
 
     if os.name == "nt":
-        os.system("")  # enable VT processing on Windows
+        os.system("")
     use_color = not args.no_color and os.environ.get("NO_COLOR") is None and sys.stdout.isatty()
     paint = painter(use_color)
     log: Callable[[str], None] = (lambda _m: None) if args.quiet else (lambda m: print(m, file=sys.stderr))

@@ -40,9 +40,6 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 
-# --------------------------------------------------------------------------- #
-# configuration
-# --------------------------------------------------------------------------- #
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
@@ -75,11 +72,6 @@ def session() -> requests.Session:
         s.headers.update(HEADERS)
         _thread_local.s = s
     return s
-
-
-# --------------------------------------------------------------------------- #
-# small helpers
-# --------------------------------------------------------------------------- #
 
 
 def human_size(n) -> str:
@@ -117,11 +109,6 @@ def sanitize(name: str, maxlen: int = 90) -> str:
     return (name or "report")[:maxlen]
 
 
-# --------------------------------------------------------------------------- #
-# HTTP: size discovery
-# --------------------------------------------------------------------------- #
-
-
 def get_size(url: str, timeout: float):
     """
     Return (size_bytes | None, content_type | None, final_url).
@@ -133,7 +120,6 @@ def get_size(url: str, timeout: float):
     ctype = None
     final = url
 
-    # --- 1) HEAD -----------------------------------------------------------
     try:
         r = s.head(url, allow_redirects=True, timeout=timeout)
         ctype = r.headers.get("Content-Type")
@@ -144,13 +130,12 @@ def get_size(url: str, timeout: float):
     except requests.RequestException:
         pass
 
-    # --- 2) Range: bytes=0-0 ----------------------------------------------
     try:
         r = s.get(url, headers={"Range": "bytes=0-0"}, stream=True, allow_redirects=True, timeout=timeout)
         ctype = r.headers.get("Content-Type", ctype)
         final = r.url
         status = r.status_code
-        cr = r.headers.get("Content-Range")  # e.g. bytes 0-0/1234567
+        cr = r.headers.get("Content-Range")
         cl = r.headers.get("Content-Length")
         r.close()
 
@@ -179,11 +164,6 @@ def fetch_text(url: str, timeout: float, limit: int = 8_000_000) -> str:
             break
     r.close()
     return b"".join(buf).decode(enc, errors="replace")
-
-
-# --------------------------------------------------------------------------- #
-# HLS parsing
-# --------------------------------------------------------------------------- #
 
 
 def parse_attr_list(s: str) -> dict:
@@ -298,7 +278,6 @@ def hls_entry(url: str, quality: str, args, extra: dict | None = None) -> dict:
         entry.update(extra)
 
     if args.skip_segments:
-        # estimate from BANDWIDTH * duration
         bw = entry.get("bandwidth")
         est = int(bw * duration / 8) if (bw and duration) else None
         entry["size_bytes"] = est
@@ -318,13 +297,8 @@ def hls_entry(url: str, quality: str, args, extra: dict | None = None) -> dict:
     return entry
 
 
-# --------------------------------------------------------------------------- #
-# link extraction from a web page
-# --------------------------------------------------------------------------- #
-
-
 def extract_links(html: str, base_url: str) -> list:
-    html = html.replace("\\/", "/")  # un-escape JSON-ish slashes
+    html = html.replace("\\/", "/")
     found, seen = [], set()
 
     def add(u):
@@ -343,11 +317,6 @@ def extract_links(html: str, base_url: str) -> list:
     return found
 
 
-# --------------------------------------------------------------------------- #
-# core analysis
-# --------------------------------------------------------------------------- #
-
-
 def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
     entries = [] if entries is None else entries
     seen = set() if seen is None else seen
@@ -363,7 +332,6 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
     is_m3u8 = path.endswith(".m3u8") or "mpegurl" in ctype_l
     is_html = "text/html" in ctype_l or path.endswith((".html", ".htm", ".php"))
 
-    # ---------------- HLS master playlist ---------------------------------
     if is_m3u8:
         try:
             text = fetch_text(final, args.timeout)
@@ -400,7 +368,6 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
                     })
             return entries
 
-        # plain media playlist
         try:
             entries.append(hls_entry(final, guess_quality(final), args))
         except requests.RequestException as e:
@@ -414,7 +381,6 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
             })
         return entries
 
-    # ---------------- HTML page with a playlist ---------------------------
     if is_html:
         try:
             html = fetch_text(final, args.timeout)
@@ -427,7 +393,6 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
             analyze(link, args, depth + 1, entries, seen)
         return entries
 
-    # ---------------- plain video file ------------------------------------
     entries.append({
         "url": final,
         "quality": guess_quality(final, os.path.basename(urlparse(final).path)),
@@ -438,11 +403,6 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
         "size_is_estimate": False,
     })
     return entries
-
-
-# --------------------------------------------------------------------------- #
-# report / output
-# --------------------------------------------------------------------------- #
 
 
 def build_report(source: str, entries: list) -> dict:
@@ -479,7 +439,7 @@ def save_reports(report: dict, outdir: str) -> list:
     for v in report["videos"]:
         groups.setdefault(v.get("quality", "unknown"), []).append(v)
 
-    if len(groups) > 1:  # 480p / 720p / 1080p ...
+    if len(groups) > 1:
         for q, vids in sorted(groups.items(), key=lambda kv: quality_rank(kv[0])):
             known = [v["size_bytes"] for v in vids if v.get("size_bytes")]
             sub = {
@@ -518,11 +478,6 @@ def print_report(report: dict) -> None:
     print(line)
 
 
-# --------------------------------------------------------------------------- #
-# main
-# --------------------------------------------------------------------------- #
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Report the size of videos behind direct links, web pages and HLS playlists."
@@ -543,7 +498,7 @@ def main(argv=None) -> int:
         print(f"\n>>> analyzing {url}")
         try:
             entries = analyze(url, args)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print(f"  ! failed: {e}", file=sys.stderr)
             exit_code = 1
             continue

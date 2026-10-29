@@ -25,9 +25,15 @@ except ImportError:
     pycurl = None
 try:
     from rich.console import Console
-    from rich.progress import (BarColumn, DownloadColumn, Progress, TextColumn,
-                               TimeElapsedColumn, TimeRemainingColumn,
-                               TransferSpeedColumn)
+    from rich.progress import (
+        BarColumn,
+        DownloadColumn,
+        Progress,
+        TextColumn,
+        TimeElapsedColumn,
+        TimeRemainingColumn,
+        TransferSpeedColumn,
+    )
 
     _rich_console: Any = Console()
 except ImportError:

@@ -29,7 +29,7 @@ def has_shell_shebang(path: Path) -> bool:
     try:
         with path.open("rb") as f:
             first = f.readline(SHEBANG_READ_BYTES).decode("utf-8", errors="ignore").strip()
-        return first.startswith("#!") and ("bash" in first or "sh" in first)
+        return first.startswith("#!") and ("bash" in first or "sh" in first or "zsh" in first)
     except OSError:
         return False
 
@@ -37,7 +37,7 @@ def has_shell_shebang(path: Path) -> bool:
 def is_shell_file(path: Path) -> bool:
     if not path.is_file():
         return False
-    if path.suffix == ".sh" or (not path.suffix and has_shell_shebang(path)):
+    if path.suffix in {".zsh", ".sh"} or (not path.suffix and has_shell_shebang(path)):
         return not is_binary(path)
     return False
 
@@ -128,7 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--pool-method",
         choices=POOL_METHODS,
-        default="starmap",
+        default="imap_unordered",
         help="Multiprocessing pool method to use for formatting (default: starmap).",
     )
     parser.add_argument(
