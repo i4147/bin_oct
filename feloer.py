@@ -327,6 +327,7 @@ async def process_one(
         logger.info("[{}] querying felo", label)
         try:
             response = await run_felo(build_prompt(source, label), label)
+            logger.info(response)
         except FileNotFoundError:
             logger.critical("[{}] node executable not found in PATH, aborting run", label)
             abort.set()
@@ -346,6 +347,7 @@ async def process_one(
             stats["errors"] += 1
             return
         log_block(label, "cleaned response", cleaned)
+        logger.info(cleaned)
         result = header + to_docstring(cleaned) + body
         if not opts.dry_run:
             path.write_text(result, encoding="utf-8")

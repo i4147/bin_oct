@@ -23,7 +23,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Iterator
 
-from dh import SKIP_DIRS, ASTStripper, CSTStripper, TSStripper, atomic_write
+from dh import SKIP_DIRS, CSTStripper, TSStripper, atomic_write
 
 LOGGER = logging.getLogger("striper_termux")
 _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
@@ -491,7 +491,7 @@ def main() -> int:
             "preserve_module_docstring": not args.all,
             "preserve_directives": not args.all,
             "validate": True,
-            "preserve_commented_code": False,
+            "preserve_commented_code": True,
         }
         force_utf8 = args.all
         remove_blank_lines_flag = args.remove_blank_lines

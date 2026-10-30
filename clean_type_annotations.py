@@ -15,7 +15,8 @@ import libcst as cst
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 WORKERS = 8
-SKIP_DIR_NAMES = frozenset({"__pycache__"})
+
+from dh import SKIP_DIR
 
 
 class TypeAnnotationRemover(cst.CSTTransformer):
@@ -116,7 +117,7 @@ def _iter_python_files(root: Path) -> Iterable[Path]:
     for candidate in root.rglob("*.py"):
         if not candidate.is_file():
             continue
-        if any(part in SKIP_DIR_NAMES for part in candidate.parts):
+        if any(part in SKIP_DIR for part in candidate.parts):
             continue
         yield candidate
 
@@ -152,6 +153,7 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     files = collect_files(args)
+
     if not files:
         print("No Python files to process.", file=sys.stderr)
         return 0

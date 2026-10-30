@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""(No content in stream)
+
+---"""
+
 from __future__ import annotations
 
 import os

@@ -138,7 +138,7 @@ def main() -> None:
         BASE_DIR.mkdir(exist_ok=True)
     cwd = Path.cwd()
     args = sys.argv[1:]
-    files = [Path(arg) for arg in args] if args else get_files(cwd, ext=[".py", ".pyi", ".pyx", ".pxd"])
+    files = list([Path(arg) for arg in args] if args else get_files(cwd, ext=[".py", ".pyi", ".pyx", ".pxd"]))
     print(f"processing {len(files)} files")
     with get_context("spawn").Pool(8) as pool:
         pending = deque()

@@ -364,6 +364,7 @@ Examples:
     parser.add_argument(
         "-r",
         "--remove",
+        default=True,
         action="store_true",
         help="Remove original file after successful conversion",
     )
