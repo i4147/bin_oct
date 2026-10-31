@@ -1,7 +1,5 @@
-
 **.cache
 **/**.spv
-**/**.txt
 **/.pytest_cache/
 **/.vs/
 **/.vscode/
@@ -202,10 +200,8 @@
 *.tmp
 *.tmp*
 *.tmp_proj
-*.trace.txt
 *.tsbuildinfo
 *.tss
-*.txt
 *.user
 *.userosscache
 *.userprefs
@@ -422,8 +418,6 @@
 /results/
 /shelf/
 /site
-/templates/*.txt
-/templates/*/*.txt
 /workspace.xml
 3d-semantic-segmentation.wiki/
 98-temp/
@@ -516,10 +510,8 @@ _build
 _build/
 _dependency/
 _generated
-_pkginfo.txt
 _static/
 _templates/
-a.txt
 aclocal.m4
 adj.md
 admin_tools_zinnia.egg-info
@@ -625,7 +617,6 @@ evaluate.py.old
 example.json
 exp/
 experiments/*
-f.txt
 fabfile_config.py
 fabric.properties
 flops.py
@@ -717,8 +708,6 @@ parts
 parts/
 personal-askconfig*.pth
 pip
-pip-delete-this-directory.txt
-pip-log.txt
 pip-wheel-metadata/
 pipeline.db
 play.py
@@ -754,13 +743,11 @@ sdist/
 secret
 secret.*
 secret.py
-secrets.txt
 settings*.ini
 settings.ini
 share/python-wheels/
 shared/
 skills-lock.json
-sorted_yaml_files.txt.DS_Store
 source_data/
 src/.idea/
 src/env/
@@ -772,7 +759,6 @@ temp/
 test*
 testing-project
 tmp
-tmp.txt
 tmp/
 tmp_dir/data
 token
@@ -802,13 +788,3 @@ zip-files/
 ~$*
 ~$*.doc*
 ~$*.ppt*
-
-# ---------------------------------------------------------------------------
-# Generated code-analysis reports (deliverables).  The global rules above
-# ignore *.json / *.txt, so re-include just these paths.
-# ---------------------------------------------------------------------------
-!reports/*.json
-!reports/*.svg
-!reports/*.md
-!reports/raw/*.json
-!reports/raw/*.txt
