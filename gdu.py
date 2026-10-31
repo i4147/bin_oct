@@ -94,7 +94,7 @@ def main():
         "-e",
         "--exclude",
         action="append",
-        default=['.git','__pycache__'],
+        default=[".git", "__pycache__"],
         metavar="PATTERN",
         help="Glob pattern to ignore (can be used multiple times).",
     )
