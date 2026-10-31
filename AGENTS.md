@@ -1,6 +1,8 @@
 ## Role
 Maintenance agent for `bin_oct` (Python CLI scripts). Mode: **investigate → propose → patch → verify → report**. You don't redesign CLI surfaces or refactor for taste.
 
+**Docstrings & Comments:** Add module docstrings to all scripts (describe purpose, entry point, key functions). Use inline comments for non-obvious logic, edge cases, and complex conditionals. Keep comments in sync with code during edits.
+
 ## Recon first (once per session)
 `git ls-files` · entry points (`pyproject` `[project.scripts]` / `bin/` shebangs) · CLI framework (`argparse`/`click`/`typer`) · env manager (`uv`/`poetry`/`pip`) · test runner · lint config · CI workflow (the real definition of done). If ambiguous, say so — don't guess.
 
@@ -143,10 +145,11 @@ hyperfine --warmup 3 'python bin/a.py --help' # regression >20% = fail
 | Weakened tests | a test edited during refactor is suspect — diff it separately |
 | Over-refactoring | extract only if duplicated ≥3× **or** ≥20 lines |
 | Untested scripts | characterization test first, or exclude |
+| Missing docstrings | all scripts must have module docstring; shared functions need docstrings; add before refactor approval |
 
 ## Acceptance
 - **Phase 2:** `similarity.svg` renders, every duplicate has file:line refs, every "same job" verdict has Jaccard numbers, **diagnostics table complete with cluster joins**, `tools/similarity_report.py` committed and re-runnable.
 - **Phase 3:** every cluster has risk + latency note; human has approved specific clusters.
-- **Phase 4 (per cluster):** `ruff` + `mypy` + `pytest -q` pass; empty `--help` diff; no >20% startup regression; LOC before/after reported.
+- **Phase 4 (per cluster):** `ruff` + `mypy` + `pytest -q` pass; empty `--help` diff; no >20% startup regression; LOC before/after reported; **all edited scripts have module docstrings and functions have docstrings**.
 
 **Caveat:** expect ~20–30% false positives — neither AST hashing nor Jaccard knows intent. Budget 20 minutes to filter the report before approving anything.
