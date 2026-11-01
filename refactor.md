@@ -113,6 +113,7 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`. (Pha
    ```python
    def main() -> int: ...
 
+
    if __name__ == "__main__":
        raise SystemExit(main())
    ```
@@ -221,6 +222,7 @@ Each refactored script must work when run directly as `python3 refactored/path/t
 import sys
 from pathlib import Path
 
+
 def _bootstrap_refactored_root() -> None:
     for parent in Path(__file__).resolve().parents:
         if (parent / "_shared").is_dir():
@@ -228,6 +230,7 @@ def _bootstrap_refactored_root() -> None:
                 sys.path.insert(0, str(parent))
             return
     raise RuntimeError("could not locate _shared/ package")
+
 
 _bootstrap_refactored_root()
 
