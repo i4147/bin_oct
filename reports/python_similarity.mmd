@@ -1,0 +1,57 @@
+%% Representative relationships from reports/python_similarity.md; edges are not call/dependency arrows.
+%% Invisible links (~ ~ ~ without spaces) control layout and do not represent relationships.
+flowchart TB
+  subgraph code["Shared code and overlapping task"]
+    direction TB
+    d01a["dt3.py"] ---|D01| d01b["dtluna.py"]
+    d02a["cconsolidate.py"] ---|D02| d02b["consolidate.py"]
+    d03a["mk_tree.py"] ---|D03| d03b["mktree.py"]
+    d04a["aitrans.py"] ---|D04| d04b["inplace_translator.py"]
+    d05a["pydup.py"] ---|D05| d05b["python_duplicate_finder.py"]
+    d06a["dduper.py"] ---|D06| d06b["deduplicate_python.py"]
+    d07a["fssim.py"] ---|D07| d07b["ssdim.py"]
+    d08a["migrate_git.py"] ---|D08| d08b["migrate_repos.py"]
+    d09a["pdfv2.py"] ---|D09| d09b["tpv.py"]
+    d10a["dbtools.py"] ---|D10| d10b["sql2json.py"]
+    d01a ~~~ d02a
+    d02a ~~~ d03a
+    d03a ~~~ d04a
+    d04a ~~~ d05a
+    d05a ~~~ d06a
+    d06a ~~~ d07a
+    d07a ~~~ d08a
+    d08a ~~~ d09a
+    d09a ~~~ d10a
+  end
+  subgraph template["Shared template; different targets"]
+    direction TB
+    t01a["clean-css.py"] ---|T01| t01b["clean-js.py"]
+    t02a["opng.py"] ---|T02| t02b["pyterser.py"]
+    t03a["ex_class.py"] ---|T03| t03b["ex_func.py"]
+    t01a ~~~ t02a
+    t02a ~~~ t03a
+  end
+  subgraph function["Functional overlap; implementations may differ"]
+    direction TB
+    f01a["perpage.py"] ---|F01| f01b["ppage.py"]
+    f02a["url2pdf2.py"] ---|F02| f02b["web2pdf.py"]
+    f03a["csv2json.py"] ---|F03| f03b["csvtojson.py"]
+    f04a["audio2txt.py"] ---|F04| f04b["whisper2txt.py"]
+    f05a["clean_type_annotations.py"] ---|F05| f05b["unnotate.py"]
+    f06a["facal.py"] ---|F06| f06b["pyjcal.py"]
+    f07a["tts_from_file.py"] ---|F07| f07b["txt2wav.py"]
+    f01a ~~~ f02a
+    f02a ~~~ f03a
+    f03a ~~~ f04a
+    f04a ~~~ f05a
+    f05a ~~~ f06a
+    f06a ~~~ f07a
+  end
+  d10a ~~~ t01a
+  t03a ~~~ f01a
+  classDef codeStyle fill:#eff6ff,stroke:#2563eb,color:#1e3a8a;
+  classDef templateStyle fill:#fffbeb,stroke:#d97706,color:#78350f;
+  classDef functionStyle fill:#f0fdfa,stroke:#0d9488,color:#134e4a;
+  class d01a,d01b,d02a,d02b,d03a,d03b,d04a,d04b,d05a,d05b,d06a,d06b,d07a,d07b,d08a,d08b,d09a,d09b,d10a,d10b codeStyle;
+  class t01a,t01b,t02a,t02b,t03a,t03b templateStyle;
+  class f01a,f01b,f02a,f02b,f03a,f03b,f04a,f04b,f05a,f05b,f06a,f06b,f07a,f07b functionStyle;
