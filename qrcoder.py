@@ -13,7 +13,7 @@ def process_qrcode(path):
                 img = img.convert("RGB")
             decoded = pyzbar.decode(img)
             results = []
-            for i, obj in enumerate(decoded_objects, 1):
+            for i, obj in enumerate(decoded, 1):
                 data = obj.data.decode("utf-8")
                 rect = obj.rect
                 print(f"QR Code {i}:")

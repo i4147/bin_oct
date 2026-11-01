@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import contextlib
 import io
 import multiprocessing as mp
@@ -20,12 +21,12 @@ def check_and_fix_file(args):
     filepath_str, fix = args
     filepath = pathlib.Path(filepath_str)
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, "r", encoding="utf-8", newline="") as f:
             source_text = f.read()
     except Exception as e:
         return (
             filepath_str,
-            False,
+            True,
             [f"{RED}Error reading {filepath_str}: {e}{RESET}"],
             None,
         )
@@ -33,6 +34,7 @@ def check_and_fix_file(args):
     has_syntax_error = False
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always", SyntaxWarning)
+        warnings.simplefilter("always", DeprecationWarning)
         try:
             compile(source_text, str(filepath), "exec")
         except SyntaxError:
@@ -42,14 +44,18 @@ def check_and_fix_file(args):
         has_warning = any("invalid escape sequence" in str(warn.message) for warn in w)
     if not has_warning and not has_syntax_error:
         return filepath_str, False, [], None
-    with contextlib.suppress(tokenize.TokenError):
+    try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source_text).readline))
+    except (tokenize.TokenError, IndentationError) as e:
+        return filepath_str, True, [f"{RED}Cannot tokenize {filepath_str}: {e}{RESET}"], None
     issues = []
     replacements = []
+    manual_review_lines = []
     for tok in tokens:
         if tok.type == tokenize.STRING:
             with warnings.catch_warnings(record=True) as w2:
                 warnings.simplefilter("always", SyntaxWarning)
+                warnings.simplefilter("always", DeprecationWarning)
                 with contextlib.suppress(Exception):
                     compile(tok.string, "<string>", "eval")
                 if any("invalid escape sequence" in str(warn.message) for warn in w2):
@@ -60,6 +66,16 @@ def check_and_fix_file(args):
                         if "r" not in prefix.lower():
                             prefix = prefix.replace("u", "").replace("U", "")
                             new_string = prefix + "r" + rest
+                            issues.append((tok.start[0], tok.string, new_string))
+                            try:
+                                original_ast = ast.dump(ast.parse(tok.string, mode="eval"))
+                                replacement_ast = ast.dump(ast.parse(new_string, mode="eval"))
+                            except SyntaxError:
+                                manual_review_lines.append(tok.start[0])
+                                continue
+                            if original_ast != replacement_ast:
+                                manual_review_lines.append(tok.start[0])
+                                continue
                             replacements.append((
                                 tok.start[0],
                                 tok.start[1],
@@ -67,7 +83,6 @@ def check_and_fix_file(args):
                                 tok.end[1],
                                 new_string,
                             ))
-                            issues.append((tok.start[0], tok.string, new_string))
     if not issues:
         return filepath_str, False, [], None
     lines = source_text.splitlines(keepends=True)
@@ -77,11 +92,16 @@ def check_and_fix_file(args):
     for lineno in issue_lines:
         idx = lineno - 1
         if idx - 1 >= 0:
-            output.append(f"  {idx}: {lines[idx - 1].rstrip('\n')}")
-        output.append(f"{RED}> {idx + 1}: {lines[idx].rstrip('\n')}{RESET}")
+            previous_line = lines[idx - 1].rstrip("\r\n")
+            output.append(f"  {idx}: {previous_line}")
+        current_line = lines[idx].rstrip("\r\n")
+        output.append(f"{RED}> {idx + 1}: {current_line}{RESET}")
         if idx + 1 < len(lines):
-            output.append(f"  {idx + 2}: {lines[idx + 1].rstrip('\n')}")
+            next_line = lines[idx + 1].rstrip("\r\n")
+            output.append(f"  {idx + 2}: {next_line}")
         output.append("-" * 40)
+    for lineno in sorted(set(manual_review_lines)):
+        output.append(f"Line {lineno} needs manual review; a raw string could change its meaning or be invalid.")
     new_content = None
     if fix and replacements:
         replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
@@ -141,7 +161,7 @@ def main():
                     print(line)
                 if args.apply and new_content is not None:
                     try:
-                        with open(filepath_str, "w", encoding="utf-8") as f:
+                        with open(filepath_str, "w", encoding="utf-8", newline="") as f:
                             f.write(new_content)
                         print(f"{CYAN}Fixed inplace: {filepath_str}{RESET}\n")
                     except Exception as e:

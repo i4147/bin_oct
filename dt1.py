@@ -116,10 +116,12 @@ def _make_deepl(source: str, target: str) -> Translator:
         raise RuntimeError(msg)
     client = deepl.DeepLClient(api_key)
     target_code = _deepl_language(target)
+    # DeepL source languages use the base language rather than a regional variant.
+    source_base = normalize_language(source).replace("_", "-").upper().split("-", 1)[0]
+    source_code = None if source_base == "AUTO" else {"IW": "HE"}.get(source_base, source_base)
 
     def translate(text: str) -> str:
-        del source
-        result = client.translate_text(text, target_lang=target_code)
+        result = client.translate_text(text, source_lang=source_code, target_lang=target_code)
         return str(result.text if hasattr(result, "text") else result)
 
     return translate

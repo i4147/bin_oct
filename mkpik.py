@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import py_compile
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -49,9 +50,7 @@ def compile_single_file(file_path: Path, optimize: int = 0, legacy: bool = False
         return False
     if file_path.is_file():
         pyc_file = file_path.with_suffix(".pyc") if legacy else None
-        if pyc_file and pyc_file.exists():
-            pyc_file.unlink()
-        py_compile.compile(file_path, optimize=optimize, legacy=legacy)
+        py_compile.compile(file_path, cfile=pyc_file, optimize=optimize, doraise=True)
         if delete_source:
             file_path.unlink()
         return True
@@ -60,6 +59,7 @@ def compile_single_file(file_path: Path, optimize: int = 0, legacy: bool = False
 
 def cmd_compile(args: argparse.Namespace) -> None:
     os.environ["PYTHONPYCACHEPREFIX"] = args.pycache_prefix
+    sys.pycache_prefix = args.pycache_prefix
     targets = [Path(p) for p in args.targets]
     py_files: list[Path] = []
     for target in targets:

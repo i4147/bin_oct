@@ -33,14 +33,21 @@ class ProcessResult:
 
 
 class CommentRemover:
-    STRING_PATTERN = r"(?:\"(?:\.|[^\"\])*\"|'(?:\.|[^'\])*')"
-    SINGLE_COMMENT_PATTERN = r"//.*?(?=\n|$)"
+    STRING_PATTERN = r"""(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')"""
+    RAW_STRING_PATTERN = r'(?:u8|u|U|L)?R"(?P<raw_delimiter>[^()\s\\]{0,16})\(.*?\)(?P=raw_delimiter)"'
+    SINGLE_COMMENT_PATTERN = r"//(?:\\\r?\n|[^\n])*"
     MULTI_COMMENT_PATTERN = r"/\*.*?\*/"
 
     def __init__(self):
         self.string_regex = re.compile(self.STRING_PATTERN)
         self.single_comment_regex = re.compile(self.SINGLE_COMMENT_PATTERN)
         self.multi_comment_regex = re.compile(self.MULTI_COMMENT_PATTERN, re.DOTALL)
+        self.comment_token_regex = re.compile(
+            f"(?P<string>{self.RAW_STRING_PATTERN}|{self.STRING_PATTERN})|"
+            f"(?P<single>{self.SINGLE_COMMENT_PATTERN})|"
+            f"(?P<multi>{self.MULTI_COMMENT_PATTERN})",
+            re.DOTALL,
+        )
 
     def _protect_strings(self, text: str) -> tuple[str, dict]:
         protected_strings = {}
@@ -61,42 +68,34 @@ class CommentRemover:
         return text
 
     def remove_comments(self, text: str) -> tuple[str, int]:
-        protected_text, protected_strings = self._protect_strings(text)
-        single_count = len(self.single_comment_regex.findall(protected_text))
-        multi_count = len(self.multi_comment_regex.findall(protected_text))
-        total_comments = single_count + multi_count
-        protected_text = self.single_comment_regex.sub("", protected_text)
-        protected_text = self.multi_comment_regex.sub("", protected_text)
-        lines = protected_text.split("\n")
-        cleaned_lines = []
-        for line in lines:
-            stripped = line.rstrip()
-            cleaned_lines.append(stripped)
-        final_lines = []
-        prev_empty = False
-        for line in cleaned_lines:
-            if not line.strip():
-                if not prev_empty:
-                    final_lines.append(line)
-                prev_empty = True
-            else:
-                final_lines.append(line)
-                prev_empty = False
-        protected_text = "\n".join(final_lines)
-        cleaned_text = self._restore_strings(protected_text, protected_strings)
+        total_comments = 0
+
+        def remove_comment(match: re.Match) -> str:
+            nonlocal total_comments
+            if match.group("string") is not None:
+                return match.group(0)
+            total_comments += 1
+            newlines = "".join(re.findall(r"\r\n|\r|\n", match.group(0)))
+            return " " + newlines
+
+        cleaned_text = self.comment_token_regex.sub(remove_comment, text)
         return (cleaned_text, total_comments)
 
     def process_file(self, path: Path) -> ProcessResult:
         try:
             path = path.resolve()
-            original_content = path.read_text(encoding="utf-8")
+            original_bytes = path.read_bytes()
+            original_content = original_bytes.decode("utf-8")
             original_lines = len(original_content.split("\n"))
-            original_size = len(original_content.encode("utf-8"))
+            original_size = len(original_bytes)
             cleaned_content, comments_removed = self.remove_comments(original_content)
             final_lines = len(cleaned_content.split("\n"))
             final_size = len(cleaned_content.encode("utf-8"))
-            backup_size = len(original_content.encode("utf-8"))
-            path.write_text(cleaned_content, encoding="utf-8")
+            backup_path = path.with_suffix(path.suffix + ".bak")
+            with backup_path.open("xb") as backup:
+                backup.write(original_bytes)
+            backup_size = len(original_bytes)
+            path.write_bytes(cleaned_content.encode("utf-8"))
             return ProcessResult(
                 path=path,
                 success=True,
@@ -207,9 +206,9 @@ def print_summary(results: list[ProcessResult], targets: list[Path]) -> None:
         print("Successful files:")
         for result in successful:
             print(
-                f"  {result.path.name}: {result.comments_removed} comments, {
-                    result.original_lines - result.final_lines
-                } lines removed, freed {_format_bytes(result.space_freed)}"
+                f"  {result.path.name}: {result.comments_removed} comments, "
+                f"{result.original_lines - result.final_lines} lines removed, "
+                f"freed {_format_bytes(result.space_freed)}"
             )
     if failed:
         logger.warning("Failed files:")

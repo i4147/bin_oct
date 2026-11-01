@@ -12,7 +12,7 @@ MAX_QUEUE = 16
 
 
 def process_file(fn: Path) -> bool:
-    Path(path)
+    fn = Path(fn)
     text = ""
     text = Path(fn).read_text(encoding="utf-8")
     stack = []

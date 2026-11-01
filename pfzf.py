@@ -207,7 +207,7 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
         height = rows - 2
         matches = get_matches(query)
         total = len(matches)
-        nonlocal scroll_offset
+        nonlocal scroll_offset, selected_idx
         if selected_idx < scroll_offset:
             scroll_offset = selected_idx
         elif selected_idx >= scroll_offset + height:

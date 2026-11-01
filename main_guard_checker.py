@@ -97,7 +97,7 @@ def indent_block(block: str, spaces: int = 4) -> str:
     return "".join(out)
 
 
-def fix_file_ast(path: Path) -> FileResult:
+def fix_file_ast(path: Path, dry_run: bool = False) -> FileResult:
     src = path.read_text(encoding="utf-8")
     try:
         tree = ast.parse(src, filename=str(path))
@@ -144,6 +144,8 @@ def fix_file_ast(path: Path) -> FileResult:
     main_fn += '\n\nif __name__ == "__main__":\n'
     main_fn += "    raise SystemExit(main())\n"
     new_src = "".join(new_parts).rstrip() + main_fn
+    if dry_run:
+        return FileResult(path, "would_add", "Would wrap code in main() and add guard (dry-run)")
     path.write_text(new_src, encoding="utf-8")
     return FileResult(path, "fixed", "Wrapped code in main() and added guard")
 
@@ -211,7 +213,7 @@ def fix_files_sequential(files: list[Path], method: Literal["ast", "regex"], dry
     results = {"fixed": [], "added": [], "would_add": [], "skipped": [], "errors": []}
     fix_func = fix_file_ast if method == "ast" else fix_file_regex
     for f in files:
-        result = fix_func(f, dry_run) if method == "regex" else fix_func(f)
+        result = fix_func(f, dry_run)
         if result.status == "fixed":
             results["fixed"].append(f)
         elif result.status == "added":
@@ -232,10 +234,7 @@ def fix_files_parallel(
     results = {"fixed": [], "added": [], "would_add": [], "skipped": [], "errors": []}
     fix_func = fix_file_ast if method == "ast" else fix_file_regex
     with mp.Pool(processes=num_workers) as pool:
-        if method == "regex":
-            async_results = [pool.apply_async(fix_func, (f, dry_run)) for f in files]
-        else:
-            async_results = [pool.apply_async(fix_func, (f,)) for f in files]
+        async_results = [pool.apply_async(fix_func, (f, dry_run)) for f in files]
         for idx, ar in enumerate(async_results, 1):
             result = ar.get()
             if result.status == "fixed":

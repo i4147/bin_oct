@@ -62,7 +62,7 @@ def safe_run(path) -> bool:
         tmp_path = str(path)
     try:
         cmd = ["mandoc", "-T", "html", tmp_path]
-        res, txt, _err = runcmd(cmd, show_output=False)
+        res, txt, err = runcmd(cmd, show_output=False)
         if res != 0:
             print(f"Error running mandoc: {err}", file=sys.stderr)
             return False

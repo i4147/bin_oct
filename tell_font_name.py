@@ -49,7 +49,7 @@ def get_font_names(path) -> tuple[str, str] | tuple[None, None]:
 
 
 def process_file(fn: Path) -> int:
-    Path(path)
+    fn = Path(fn)
     try:
         family, style = get_font_names(fn)
     except Exception as e:
@@ -63,8 +63,8 @@ def process_file(fn: Path) -> int:
     if fn.name == new_path.name:
         cprint("no change", "blue")
         return 0
-    new_path = Path(
-        str(new_path)
+    new_path = new_path.with_name(
+        new_path.name
         .replace("_1", "")
         .replace("_2", "")
         .replace("_3", "")
