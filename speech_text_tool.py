@@ -33,7 +33,6 @@ Examples
   python3 speech_text_tool.py speak notes.txt --max-chars 1500
 """
 
-
 import argparse
 import shlex
 import subprocess
@@ -168,12 +167,15 @@ def cmd_play(args: argparse.Namespace) -> int:
     """Play an audio file or URL with GStreamer (blocking)."""
     try:
         import gi
+
         gi.require_version("Gst", "1.0")
         from gi.repository import Gst
     except (ImportError, ValueError):
         raise _missing("gi (PyGObject)", "PyGObject  # plus distro GStreamer") from None
     sound: str = args.sound
-    uri: str = sound if sound.startswith(("http://", "https://")) else "file://" + pathname2url(str(Path(sound).absolute()))
+    uri: str = (
+        sound if sound.startswith(("http://", "https://")) else "file://" + pathname2url(str(Path(sound).absolute()))
+    )
     Gst.init(None)
     playbin = Gst.ElementFactory.make("playbin", "playbin")
     playbin.props.uri = uri
@@ -192,21 +194,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     tr = sub.add_parser("transcribe", help="Audio -> text (Google Web Speech or Whisper)")
     tr.add_argument("input", type=Path, help="Input audio file (wav/m4a/mp3/...)")
-    tr.add_argument("-o", "--output", type=Path, default=Path(DEFAULT_OUTPUT),
-                    help=f"Output text file (default: {DEFAULT_OUTPUT})")
+    tr.add_argument(
+        "-o", "--output", type=Path, default=Path(DEFAULT_OUTPUT), help=f"Output text file (default: {DEFAULT_OUTPUT})"
+    )
     tr.add_argument("-e", "--engine", choices=("google", "whisper"), default="google")
-    tr.add_argument("--chunk-seconds", type=int, default=DEFAULT_CHUNK_SECONDS,
-                    help="Google engine: seconds per request, 0 = whole file (default: 30)")
-    tr.add_argument("-m", "--model", default=DEFAULT_WHISPER_MODEL,
-                    help="Whisper engine: model name (default: base)")
+    tr.add_argument(
+        "--chunk-seconds",
+        type=int,
+        default=DEFAULT_CHUNK_SECONDS,
+        help="Google engine: seconds per request, 0 = whole file (default: 30)",
+    )
+    tr.add_argument("-m", "--model", default=DEFAULT_WHISPER_MODEL, help="Whisper engine: model name (default: base)")
     tr.set_defaults(handler=cmd_transcribe)
 
     sp = sub.add_parser("speak", help="Read a text file aloud in chunks")
     sp.add_argument("file", type=Path, help="Text file to speak")
-    sp.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS,
-                    help="Max characters per utterance (default: 3000)")
-    sp.add_argument("--speaker", default="termux-tts-speak",
-                    help="Command that speaks its last argument (default: termux-tts-speak)")
+    sp.add_argument(
+        "--max-chars", type=int, default=DEFAULT_MAX_CHARS, help="Max characters per utterance (default: 3000)"
+    )
+    sp.add_argument(
+        "--speaker",
+        default="termux-tts-speak",
+        help="Command that speaks its last argument (default: termux-tts-speak)",
+    )
     sp.add_argument("-n", "--dry-run", action="store_true", help="Only list the chunks")
     sp.set_defaults(handler=cmd_speak)
 

@@ -21,7 +21,6 @@ Examples
   python3 c_build_tool.py cythonize pkg/
 """
 
-
 import argparse
 import shlex
 import subprocess
@@ -67,8 +66,9 @@ def compile_one(job: tuple[Path, str, tuple[str, ...], bool]) -> JobResult:
     compiler: str = COMPILERS[source.suffix.lower()]
     output: Path = source.with_suffix("")
     try:
-        proc = subprocess.run([compiler, str(source), "-o", str(output), *flags],
-                              capture_output=True, text=True, timeout=TIMEOUT_SECONDS)
+        proc = subprocess.run(
+            [compiler, str(source), "-o", str(output), *flags], capture_output=True, text=True, timeout=TIMEOUT_SECONDS
+        )
     except subprocess.TimeoutExpired:
         return JobResult(source, False, f"timeout: {source.name}")
     except FileNotFoundError:
@@ -83,8 +83,9 @@ def compile_one(job: tuple[Path, str, tuple[str, ...], bool]) -> JobResult:
 def cythonize_one(source: Path) -> JobResult:
     """Run ``cythonize`` in the directory containing one ``.pyx`` file."""
     try:
-        proc = subprocess.run(["cythonize", source.name], cwd=source.parent,
-                              capture_output=True, text=True, timeout=TIMEOUT_SECONDS)
+        proc = subprocess.run(
+            ["cythonize", source.name], cwd=source.parent, capture_output=True, text=True, timeout=TIMEOUT_SECONDS
+        )
     except FileNotFoundError:
         return JobResult(source, False, "cythonize not found (pip install Cython)")
     except subprocess.TimeoutExpired:
@@ -94,8 +95,9 @@ def cythonize_one(source: Path) -> JobResult:
     return JobResult(source, True, f"cythonized: {source.name}")
 
 
-def run_parallel(jobs: Sequence[JobResult] | list[tuple[Path, str, tuple[str, ...], bool]],
-                 worker: str, workers: int) -> int:
+def run_parallel(
+    jobs: Sequence[JobResult] | list[tuple[Path, str, tuple[str, ...], bool]], worker: str, workers: int
+) -> int:
     """Run *worker* over *jobs*, print results, return the failure count."""
     fn = compile_one if worker == "compile" else cythonize_one
     failed: int = 0
@@ -140,8 +142,7 @@ def build_parser() -> argparse.ArgumentParser:
     for name, help_text in (("build", "Compile .c/.cpp files"), ("cythonize", "Cythonize .pyx files")):
         child = sub.add_parser(name, help=help_text)
         child.add_argument("paths", nargs="*", type=Path, help="Files or dirs (default: current dir)")
-        child.add_argument("-j", "--workers", type=int, default=DEFAULT_WORKERS,
-                           help="Parallel workers (default: 4)")
+        child.add_argument("-j", "--workers", type=int, default=DEFAULT_WORKERS, help="Parallel workers (default: 4)")
     build = sub.choices["build"]
     build.add_argument("--strip", action="store_true", help="Strip each binary after compiling")
     build.add_argument("--cflags", default="", help='Extra compiler flags, e.g. --cflags="-O2 -Wall"')

@@ -20,7 +20,6 @@ Examples
   python3 git_diff_tool.py added-files ~/repo -o added.json
 """
 
-
 import argparse
 import json
 import subprocess
@@ -80,8 +79,7 @@ def file_stats(repo: Path, older: str, newer: str) -> list[dict[str, object]]:
         path: str = parts[-1]
         old_path: str | None = parts[1] if status.startswith(("R", "C")) and len(parts) == 3 else None
         ins, dele = numstat.get(path, (None, None))
-        files.append({"status": status, "path": path, "old_path": old_path,
-                      "insertions": ins, "deletions": dele})
+        files.append({"status": status, "path": path, "old_path": old_path, "insertions": ins, "deletions": dele})
     return files
 
 
@@ -124,8 +122,14 @@ def repo_status(repo: Path) -> dict[str, object]:
     changed: list[str] = [line for line in porcelain.splitlines() if line.strip()]
     ahead_behind: str = (try_git(repo, "rev-list", "--left-right", "--count", "HEAD...@{upstream}") or "").strip()
     last: str = (try_git(repo, "log", "-1", "--format=%h %s") or "").strip()
-    return {"repo": str(repo), "branch": branch, "dirty": bool(changed),
-            "changed": len(changed), "upstream": ahead_behind, "last_commit": last}
+    return {
+        "repo": str(repo),
+        "branch": branch,
+        "dirty": bool(changed),
+        "changed": len(changed),
+        "upstream": ahead_behind,
+        "last_commit": last,
+    }
 
 
 def cmd_status(args: argparse.Namespace) -> int:
@@ -150,8 +154,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def cmd_added_files(args: argparse.Namespace) -> int:
     """Map each short commit hash to the basenames it added."""
-    out: str | None = try_git(args.repo, "log", "--diff-filter=A", "--name-only",
-                               "--pretty=format:COMMIT %h")
+    out: str | None = try_git(args.repo, "log", "--diff-filter=A", "--name-only", "--pretty=format:COMMIT %h")
     if out is None:
         print("Error: not a git repository (or empty).", file=sys.stderr)
         return 1

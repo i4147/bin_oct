@@ -22,7 +22,6 @@ Examples
   python3 main_guard_tool.py fix --method regex
 """
 
-
 import argparse
 import ast
 import re
@@ -33,12 +32,17 @@ from pathlib import Path
 from typing import Literal
 
 DEFAULT_EXCLUDES: tuple[str, ...] = (
-    ".git", "__pycache__", "venv", ".venv", "env", "dist", "build",
-    ".pytest_cache", ".mypy_cache",
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "env",
+    "dist",
+    "build",
+    ".pytest_cache",
+    ".mypy_cache",
 )
-MAIN_GUARD_PATTERN: re.Pattern[str] = re.compile(
-    r"""if\s+__name__\s*==\s*["']__main__["']\s*:"""
-)
+MAIN_GUARD_PATTERN: re.Pattern[str] = re.compile(r"""if\s+__name__\s*==\s*["']__main__["']\s*:""")
 GUARD_SNIPPET: str = '\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
 
 Status = Literal["skipped", "missing", "would_add", "added", "fixed", "error"]
@@ -195,8 +199,10 @@ def cmd_fix(files: list[Path], method: Method, dry_run: bool) -> int:
         result: FileResult = fix(path, dry_run)  # type: ignore[operator]
         counts[result.status if result.status in counts else "error"] += 1
         print(f"{path}: {result.status} - {result.message}")
-    print(f"\nResults: fixed={counts['fixed']} added={counts['added']} "
-          f"would_add={counts['would_add']} skipped={counts['skipped']} errors={counts['error']}")
+    print(
+        f"\nResults: fixed={counts['fixed']} added={counts['added']} "
+        f"would_add={counts['would_add']} skipped={counts['skipped']} errors={counts['error']}"
+    )
     return 2 if counts["error"] else 0
 
 

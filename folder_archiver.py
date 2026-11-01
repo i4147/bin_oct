@@ -2,6 +2,7 @@
 """
 Create archives of folders (tar / tar.gz / zip …) with optional cleanup.
 """
+
 import argparse
 import shutil
 import sys
@@ -9,13 +10,15 @@ from collections.abc import Sequence
 from pathlib import Path
 
 FORMAT_SUFFIX: dict[str, str] = {
-    "tar": ".tar", "gztar": ".tar.gz", "bztar": ".tar.bz2",
-    "xztar": ".tar.xz", "zip": ".zip",
+    "tar": ".tar",
+    "gztar": ".tar.gz",
+    "bztar": ".tar.bz2",
+    "xztar": ".tar.xz",
+    "zip": ".zip",
 }
 
 
-def create_archive(folder: Path, fmt: str, output: Path | None,
-                   cleanup: bool, dry_run: bool) -> Path:
+def create_archive(folder: Path, fmt: str, output: Path | None, cleanup: bool, dry_run: bool) -> Path:
     """Archive *folder* and optionally delete the original. Return archive path."""
     archive: Path = output or folder.parent / f"{folder.name}{FORMAT_SUFFIX[fmt]}"
     if dry_run:
@@ -45,12 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     create = sub.add_parser("create", help="Archive a folder")
     create.add_argument("folders", nargs="+", type=Path, help="Folder(s) to archive")
-    create.add_argument("-f", "--format", choices=sorted(FORMAT_SUFFIX), default="tar",
-                        help="Archive format (default: tar)")
-    create.add_argument("-o", "--output", type=Path, default=None,
-                        help="Output archive path (single folder only)")
-    create.add_argument("--cleanup", action="store_true",
-                        help="Delete each folder after archiving (default: keep)")
+    create.add_argument(
+        "-f", "--format", choices=sorted(FORMAT_SUFFIX), default="tar", help="Archive format (default: tar)"
+    )
+    create.add_argument("-o", "--output", type=Path, default=None, help="Output archive path (single folder only)")
+    create.add_argument("--cleanup", action="store_true", help="Delete each folder after archiving (default: keep)")
     create.add_argument("-n", "--dry-run", action="store_true", help="Only show what would happen")
     return parser
 
