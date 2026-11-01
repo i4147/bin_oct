@@ -14,8 +14,6 @@ Features:
   - Rich error reporting via loguru
 """
 
-from __future__ import annotations
-
 import argparse
 import ast
 import dataclasses

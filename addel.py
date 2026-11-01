@@ -24,8 +24,6 @@ Examples
     python addel.py "HEAD~40..HEAD" --max-files 6
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import json

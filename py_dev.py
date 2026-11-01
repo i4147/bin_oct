@@ -1,4 +1,3 @@
-from __future__ import annotations
 import subprocess
 import sys
 import venv
@@ -156,7 +155,6 @@ logs/
 
     def _get_main_template(self) -> str:
         return '''"""Main module for the project."""
-from __future__ import annotations
 def main() -> None:
     print("Hello, Python!")
 if __name__ == "__main__":

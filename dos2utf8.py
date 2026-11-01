@@ -10,8 +10,6 @@ Recursively apply dos2unix (CRLF/CR → LF) and convert non-binary files to UTF-
 - Fully type-annotated
 """
 
-from __future__ import annotations
-
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed

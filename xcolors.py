@@ -6,8 +6,6 @@ Scans files and directories for CSS-style hex colors (#RGB, #RGBA, #RRGGBB,
 global palette using a fixed pool of worker processes.
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import fnmatch

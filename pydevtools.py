@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import configparser
@@ -604,7 +603,6 @@ def render_setup_py_runtime(meta: ProjectMeta) -> str:
         working even when the project uses a PEP 517 backend such as
         flit_core or poetry-core.
         """
-        from __future__ import annotations
         import importlib
         import subprocess
         import sys

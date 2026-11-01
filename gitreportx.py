@@ -11,8 +11,6 @@ Supported backends (selected with -b/--backend):
   - dulwich     (requires: pip install dulwich)
 """
 
-from __future__ import annotations
-
 import argparse
 import subprocess
 import sys

@@ -10,8 +10,6 @@ Recursively scan files under the current directory for non-English text
 - Writes a JSON report at the end
 """
 
-from __future__ import annotations
-
 import json
 import os
 import sys

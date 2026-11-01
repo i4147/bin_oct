@@ -2,8 +2,6 @@
 # marked.py
 """A pure-Python port of the core of the npm package `marked`."""
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union

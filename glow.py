@@ -30,8 +30,6 @@ Examples::
     glow.py --doctor                         # show active backends
 """
 
-from __future__ import annotations
-
 import argparse
 import contextlib
 import glob

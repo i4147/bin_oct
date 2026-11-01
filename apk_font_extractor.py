@@ -3,8 +3,6 @@
 
 ---"""
 
-from __future__ import annotations
-
 import argparse
 import contextlib
 import multiprocessing

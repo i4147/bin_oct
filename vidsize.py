@@ -26,8 +26,6 @@ python video_size_reporter.py "https://example.com/watch/serial3" --outdir repor
 python video_size_reporter.py "https://example.com/master.m3u8" --skip-segments
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import os

@@ -43,8 +43,6 @@ Outputs (all written to --out-dir, default: the directory of this script):
 Pure standard library; nothing is installed and no script is executed.
 """
 
-from __future__ import annotations
-
 import argparse
 import ast
 import collections

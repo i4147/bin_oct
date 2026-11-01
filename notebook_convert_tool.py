@@ -27,8 +27,6 @@ Examples
   python3 notebook_convert_tool.py strip . --dry-run
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import re

@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Convert MHTML/MHT archives to standalone HTML files."""
 
-from __future__ import annotations
-
 import argparse
 import base64
 import logging

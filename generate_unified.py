@@ -6,7 +6,6 @@ isolated globals dict with sys.argv patched and __name__ == "__main__".
 This preserves original CLIs exactly via subcommand + passthrough args.
 """
 
-from __future__ import annotations
 import ast
 import os
 import re
@@ -199,7 +198,6 @@ Notes:
   nothing is simulated or faked.
 {"- Single-tool folder: `python main.py [args...]` runs the only tool directly." if len(items) == 1 else "- Multi-tool folder: first arg must be a tool name; use --list to see names."}
 """
-from __future__ import annotations
 
 import argparse
 import sys

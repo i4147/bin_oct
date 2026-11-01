@@ -28,8 +28,6 @@ Examples
   python3 github_query_tool.py repo-size python/cpython
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import json

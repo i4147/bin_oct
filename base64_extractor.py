@@ -3,8 +3,6 @@
 
 ---"""
 
-from __future__ import annotations
-
 import argparse
 import base64 as _b64
 import concurrent.futures as _cf

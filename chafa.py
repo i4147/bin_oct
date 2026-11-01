@@ -27,8 +27,6 @@ CC0 (Christoph Peters). This port omits chafa's double-width (CJK) symbol
 matching, which upstream also excludes from its default symbol set.
 """
 
-from __future__ import annotations
-
 import argparse
 import base64
 import io

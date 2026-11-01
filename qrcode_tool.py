@@ -22,8 +22,6 @@ Examples
   python3 qrcode_tool.py make "https://example.com" -o code.png
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys

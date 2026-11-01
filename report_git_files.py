@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Report added and removed paths for every reachable Git commit."""
 
-from __future__ import annotations
-
 import argparse
 import json
 import os

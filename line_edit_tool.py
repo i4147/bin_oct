@@ -30,8 +30,6 @@ Examples
   python3 line_edit_tool.py wrap essay.txt -w 72 -i
 """
 
-from __future__ import annotations
-
 import argparse
 import shutil
 import sys

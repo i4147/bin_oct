@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Example: dos2unix + UTF-8 conversion that also works inside archives."""
 
-from __future__ import annotations
-
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path

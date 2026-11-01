@@ -3,8 +3,6 @@
 
 ---"""
 
-from __future__ import annotations
-
 import argparse
 import concurrent.futures as _futures
 import ctypes

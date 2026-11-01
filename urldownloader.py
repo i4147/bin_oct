@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 from hashlib import sha224
 from logging import error, exception, info

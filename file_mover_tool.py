@@ -30,8 +30,6 @@ Examples
   python3 file_mover_tool.py send tool.py --to ~/sbin --dedup
 """
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

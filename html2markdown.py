@@ -31,8 +31,6 @@ Examples
   python3 html_to_markdown_tool.py fetch https://example.com -o example.txt
 """
 
-from __future__ import annotations
-
 import argparse
 import html.parser
 import re
