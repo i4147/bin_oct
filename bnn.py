@@ -27,7 +27,10 @@ class FileStats:
     error_msg: str | None = None
 
     def __str__(self) -> str:
-        relpath = self.path.relative_to(Path.cwd())
+        try:
+            relpath = self.path.relative_to(Path.cwd())
+        except ValueError:
+            relpath = self.path
         if not self.success:
             return f"✗ {relpath}: {self.error_msg}"
         size_delta = self.new_size - self.original_size
@@ -69,6 +72,11 @@ def process_file_chunked(
     chunk_size: int = 1024 * 1024,
 ) -> FileStats:
     stats = FileStats(path=path, success=True)
+    if chunk_size <= 0:
+        stats.success = False
+        stats.error_msg = "Chunk size must be greater than zero"
+        return stats
+    temp_path: Path | None = None
     try:
         stats.original_size = path.stat().st_size
         with tempfile.NamedTemporaryFile(
@@ -80,7 +88,7 @@ def process_file_chunked(
             temp_path = Path(temp_file.name)
             try:
                 total_replacements = 0
-                with open(path, "r", encoding="utf-8", errors="replace") as f:
+                with open(path, "r", encoding="utf-8", errors="strict", newline="") as f:
                     buffer = ""
                     while True:
                         chunk = f.read(chunk_size)
@@ -115,17 +123,17 @@ def process_file_chunked(
     except UnicodeDecodeError as e:
         stats.success = False
         stats.error_msg = f"Encoding error: {e}"
-        if temp_path.exists():
+        if temp_path is not None and temp_path.exists():
             temp_path.unlink()
     except PermissionError as e:
         stats.success = False
         stats.error_msg = f"Permission denied: {e}"
-        if temp_path.exists():
+        if temp_path is not None and temp_path.exists():
             temp_path.unlink()
     except Exception as e:
         stats.success = False
         stats.error_msg = f"Error: {type(e).__name__}: {e}"
-        if temp_path.exists():
+        if temp_path is not None and temp_path.exists():
             temp_path.unlink()
     return stats
 
@@ -176,8 +184,11 @@ Examples:
             chunk_size = int(chunk_size_str[:-1]) * multipliers[chunk_size_str[-1]]
         else:
             chunk_size = int(chunk_size_str)
-    except ValueError:
+    except (IndexError, ValueError):
         logger.error(f"Invalid chunk size: {args.chunk_size}")
+        return 1
+    if chunk_size <= 0:
+        logger.error("Chunk size must be greater than zero")
         return 1
     if not args.inputs:
         inputs = [Path.cwd()]

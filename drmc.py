@@ -126,7 +126,7 @@ def iter_targets(inputs: Iterable[Path]) -> Iterator[Path]:
                 d for d in dirnames if d not in SKIP_DIRS and not any(Path(d).match(g) for g in SKIP_DIR_GLOBS)
             ]
             base = Path(dirpath)
-            for name in fil88enames:
+            for name in filenames:
                 p = base / name
                 if p.is_symlink() or not p.exists():
                     continue

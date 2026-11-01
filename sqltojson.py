@@ -316,6 +316,11 @@ def list_queries(
     return global_query_names
 
 
+# The command-line option names shadow these public helpers in the handler.
+_list_connections = list_connections
+_list_queries = list_queries
+
+
 def _resolve_query_string(connection_name: str, query_name: str, connections: dict, config: dict) -> str:
     connection_queries = _get_connection_queries_dict(config, connections)
     scoped_queries = connection_queries.get(connection_name, {})
@@ -518,6 +523,12 @@ def handle_run_query2json(
     **kwargs,
 ):
     try:
+        if isinstance(name, str) and name.endswith(".sql") and os.path.isfile(name):
+            if query == "default":
+                query = "@" + name
+            if output is None:
+                output = os.path.splitext(name)[0] + ".json"
+            name = "default"
         if list_connections:
             config_path = kwargs.get("config")
             print(json.dumps(_list_connections(config_path)))

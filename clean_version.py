@@ -40,7 +40,7 @@ def main() -> None:
     args = parser.parse_args()
     path = Path(args.file)
     if not path.is_file():
-        raise SystemExit(msg)
+        raise SystemExit(f"Not a file: {path}")
     lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
     packages = []
     for line in lines:

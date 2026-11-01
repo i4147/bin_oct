@@ -243,11 +243,11 @@ class TypoFixerWithLearning:
         while True:
             choice = input(f"Fix '{word}'? [y(es)/n(o)/e(dit)/l(earn)]: ").lower()
             if choice == "y" and suggestion:
-                self.learner.learn_from_correction(word, suggestion, line)
+                self.learner.learn_from_correction(word, suggestion)
                 return suggestion
             elif (choice == "y" and not suggestion) or choice == "e":
                 manual = input("Enter correction: ")
-                self.learner.learn_from_correction(word, manual, line)
+                self.learner.learn_from_correction(word, manual)
                 return manual
             elif choice == "l":
                 print(f"Learning '{word}' as valid word")

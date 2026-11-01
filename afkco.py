@@ -19,14 +19,19 @@ except ImportError:
 
 @dataclass
 class UnusedImport:
-    module_path = ""
+    lineno: int
+    col_offset: int
+    statement: str
+    unused_names: list[str]
+    module_path: str = ""
 
 
 @dataclass
 class FileReport:
-    unused_imports = field(default_factory=list)
-    error = None
-    file_size = 0
+    path: str
+    unused_imports: list[UnusedImport] = field(default_factory=list)
+    error: str | None = None
+    file_size: int = 0
 
 
 class Colors:
@@ -51,6 +56,28 @@ class ImportVisitor(ast.NodeVisitor):
         self.future_imports = set()
         self.all_export = set()
         self.star_imports = set()
+        self._type_checking_depth = 0
+
+    def visit_If(self, node):
+        type_checking = isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING"
+        type_checking = type_checking or (
+            isinstance(node.test, ast.Attribute)
+            and isinstance(node.test.value, ast.Name)
+            and node.test.value.id == "typing"
+            and node.test.attr == "TYPE_CHECKING"
+        )
+        if not type_checking:
+            self.generic_visit(node)
+            return
+        self.visit(node.test)
+        self._type_checking_depth += 1
+        try:
+            for child in node.body:
+                self.visit(child)
+        finally:
+            self._type_checking_depth -= 1
+        for child in node.orelse:
+            self.visit(child)
 
     def visit_ImportFrom(self, node):
         if node.module == "__future__":
@@ -58,12 +85,6 @@ class ImportVisitor(ast.NodeVisitor):
                 self.future_imports.add(alias.asname or alias.name)
             self.generic_visit(node)
             return
-        under_type_checking = False
-        for parent in ast.walk(ast.Module()):
-            if isinstance(parent, ast.If) and (isinstance(parent.test, ast.Name) and parent.test.id == "TYPE_CHECKING"):
-                for child in parent.body:
-                    if child == node:
-                        under_type_checking = True
         if node.names[0].name == "*":
             module_name = node.module or ""
             self.star_imports.add(module_name)
@@ -72,7 +93,7 @@ class ImportVisitor(ast.NodeVisitor):
         statement = self._build_import_statement(node)
         for alias in node.names:
             name = alias.asname or alias.name
-            if under_type_checking:
+            if self._type_checking_depth:
                 self.type_checking_imports.add(name)
             else:
                 self.imports[name] = (node.lineno, node.col_offset, statement)
@@ -82,7 +103,10 @@ class ImportVisitor(ast.NodeVisitor):
         statement = self._build_import_statement(node)
         for alias in node.names:
             name = alias.asname or alias.name.split(".")[0]
-            self.imports[name] = (node.lineno, node.col_offset, statement)
+            if self._type_checking_depth:
+                self.type_checking_imports.add(name)
+            else:
+                self.imports[name] = (node.lineno, node.col_offset, statement)
         self.generic_visit(node)
 
     def visit_Assign(self, node):
@@ -142,8 +166,6 @@ def analyze_imports(source, path=""):
         statement,
     ) in import_visitor.imports.items():
         if imported_name in import_visitor.future_imports:
-            continue
-        if imported_name in import_visitor.type_checking_imports:
             continue
         if imported_name in import_visitor.all_export:
             continue
@@ -313,21 +335,25 @@ def remove_unused_imports(source, unused):
     for lineno in sorted(unused_by_line.keys(), reverse=True):
         idx = lineno - 1
         if idx < 0 or idx >= len(lines):
-            continue
+            return (source, False)
         line = lines[idx]
         unused_names = unused_by_line[lineno]
+        stripped = line.lstrip()
+        indentation = line[: len(line) - len(stripped)]
+        # Do not discard comments or other statements on the same line.
+        if "#" in line:
+            return (source, False)
         try:
-            tree = ast.parse(line)
-            node = tree.body[0] if tree.body else None
-        except Exception:
-            continue
-        if not isinstance(node, (ast.Import, ast.ImportFrom)):
-            continue
-        new_line = _reconstruct_import_line(node, unused_names, line)
+            tree = ast.parse(stripped)
+        except SyntaxError:
+            return (source, False)
+        if len(tree.body) != 1 or not isinstance(tree.body[0], (ast.Import, ast.ImportFrom)):
+            return (source, False)
+        new_line = _reconstruct_import_line(tree.body[0], unused_names, line)
         if new_line is None:
             del lines[idx]
         else:
-            lines[idx] = new_line
+            lines[idx] = indentation + new_line
     result = "\n".join(lines)
     try:
         ast.parse(result)
@@ -415,9 +441,8 @@ def print_report(
         for unused in report.unused_imports:
             total_unused += 1
             print(
-                f"{Colors.BOLD}{report.path}{Colors.RESET}  -->  line {Colors.CYAN}{unused.lineno:>5}{Colors.RESET}  {
-                    Colors.YELLOW
-                }{unused.statement}{Colors.RESET}"
+                f"{Colors.BOLD}{report.path}{Colors.RESET}  -->  line {Colors.CYAN}{unused.lineno:>5}{Colors.RESET}  "
+                f"{Colors.YELLOW}{unused.statement}{Colors.RESET}"
             )
             if verbose and len(unused.unused_names) > 1:
                 print(f"{'':30}[unused: {', '.join(unused.unused_names)}]")

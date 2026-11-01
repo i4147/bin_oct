@@ -34,7 +34,7 @@ def convert_file(path: Path) -> tuple[str, bool, str]:
         if is_binary(path):
             return (str(path), False, "Binary file (skipped)")
         try:
-            data = f.read_bytes()
+            data = path.read_bytes()
             new_data = dos2unix(data)
             if new_data != data:
                 path.write_bytes(new_data)

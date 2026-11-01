@@ -6,13 +6,15 @@ from pathlib import Path
 
 
 def convert_codepen_html(html_content, title="Document", charset="UTF-8"):
-    full_html = f'<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="{
-        charset
-    }">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>{
-        title
-    }</title>\n    <link rel="stylesheet" href="style.css">\n</head>\n<body>\n{
-        html_content
-    }\n    <script src="script.js"></script>\n</body>\n</html>\n'
+    full_html = (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+        f'    <meta charset="{charset}">\n'
+        '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+        f"    <title>{title}</title>\n"
+        '    <link rel="stylesheet" href="style.css">\n'
+        f"</head>\n<body>\n{html_content}\n"
+        '    <script src="script.js"></script>\n</body>\n</html>\n'
+    )
     return full_html
 
 

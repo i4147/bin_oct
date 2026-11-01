@@ -31,7 +31,6 @@ def process_file(path):
         del before, after
         return
     except:
-        del before, after
         return
 
 

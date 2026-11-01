@@ -41,6 +41,8 @@ def main() -> None:
         sign = "+"
     elif before > after:
         sign = "-"
+    else:
+        sign = ""
     print(f"space changed : {sign} {fsz(diff_size)}")
 
 
