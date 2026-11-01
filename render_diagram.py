@@ -70,9 +70,7 @@ def render_to_html(input_path_str: str) -> None:
         # To keep it completely self-contained without internet access,
         # we inline the official Mermaid JS engine library script bundle as base64.
         # This falls back gracefully to a public reliable CDN network mirror script.
-        mermaid_cdn_url = (
-            "https://jsdelivr.net"
-        )
+        mermaid_cdn_url = "https://jsdelivr.net"
 
         html_content = f"""<!DOCTYPE html>
 <html lang="en">

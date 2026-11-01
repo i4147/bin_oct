@@ -24,13 +24,22 @@ DEFAULT_TARGET: str = "3.12"
 DEFAULT_EXTS: tuple[str, ...] = (".py", ".pyi", ".pyw")
 
 SKIP_DIRS: set[str] = {
-    ".git", ".hg", ".svn",
+    ".git",
+    ".hg",
+    ".svn",
     "__pycache__",
-    ".tox", ".nox",
-    ".venv", "venv", "env", ".env",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
     "node_modules",
-    ".mypy_cache", ".pytest_cache", ".ruff_cache",
-    "build", "dist",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
     ".eggs",
     ".cache",
     "site-packages",
@@ -55,7 +64,7 @@ def parse_size(s: str | None) -> int | None:
     if not s:
         return None
     t = s.upper().strip()
-    for unit, mult in (("GB", 1024 ** 3), ("MB", 1024 ** 2), ("KB", 1024), ("B", 1)):
+    for unit, mult in (("GB", 1024**3), ("MB", 1024**2), ("KB", 1024), ("B", 1)):
         if t.endswith(unit):
             return int(float(t[: -len(unit)]) * mult)
     return int(t)
@@ -96,9 +105,7 @@ def _load_gitignore_spec() -> Any:
     if not gi.exists():
         return None
     try:
-        return pathspec.PathSpec.from_lines(
-            "gitwildmatch", gi.read_text(encoding="utf-8").splitlines()
-        )
+        return pathspec.PathSpec.from_lines("gitwildmatch", gi.read_text(encoding="utf-8").splitlines())
     except Exception as exc:
         logger.warning(f"failed to load .gitignore: {exc}")
         return None
@@ -108,7 +115,9 @@ def _git_root() -> Path:
     try:
         p = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
     except (FileNotFoundError, OSError) as exc:
         logger.warning(f"git unavailable: {exc}")
@@ -123,7 +132,9 @@ def _git_paths(args: list[str]) -> set[Path]:
     try:
         p = subprocess.run(
             ["git", *args],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
     except (FileNotFoundError, OSError) as exc:
         logger.warning(f"git unavailable: {exc}")
@@ -270,10 +281,7 @@ def _format_ruff(src: str, opts: dict[str, Any]) -> str:
                 return fn(src, line_length=opts["line_length"])
             except TypeError:
                 return fn(src)
-    raise RuntimeError(
-        "This ruff build does not expose a Python formatting API; "
-        "use the ruff CLI or upgrade ruff."
-    )
+    raise RuntimeError("This ruff build does not expose a Python formatting API; use the ruff CLI or upgrade ruff.")
 
 
 def _format_isort(src: str, opts: dict[str, Any]) -> str:
@@ -315,8 +323,12 @@ def process_file(job: Job) -> Result:
     path_str, backends, opts, do_diff, dry_run, do_backup, encoding, diff_context = job
     path = Path(path_str)
     result: Result = {
-        "path": path_str, "old_size": 0, "new_size": 0,
-        "changed": False, "diff": None, "error": None,
+        "path": path_str,
+        "old_size": 0,
+        "new_size": 0,
+        "changed": False,
+        "diff": None,
+        "error": None,
     }
     try:
         old_full = path.read_bytes()
@@ -349,7 +361,9 @@ def process_file(job: Job) -> Result:
                 difflib.unified_diff(
                     src.splitlines(keepends=True),
                     new_src.splitlines(keepends=True),
-                    fromfile=path_str, tofile=path_str, n=diff_context,
+                    fromfile=path_str,
+                    tofile=path_str,
+                    n=diff_context,
                 )
             )
 
@@ -363,8 +377,7 @@ def process_file(job: Job) -> Result:
     return result
 
 
-def _row(i: int, total: int, res: Result, term_width: int,
-         relative: bool, color: bool) -> str:
+def _row(i: int, total: int, res: Result, term_width: int, relative: bool, color: bool) -> str:
     idx = f"[{i}/{total}]"
     if relative:
         try:
@@ -378,7 +391,7 @@ def _row(i: int, total: int, res: Result, term_width: int,
     size_w = 10
     path_w = max(20, term_width - idx_w - size_w - 2)
     if len(name) > path_w:
-        name = "…" + name[-(path_w - 1):]
+        name = "…" + name[-(path_w - 1) :]
 
     if res["error"]:
         status = _color("ERROR".rjust(size_w), "31", color)
@@ -407,8 +420,7 @@ def _log_failure(res: Result) -> None:
         logger.error(f"{res['path']}: {res['error']}")
 
 
-def _run_jobs(jobs: list[Job], workers: int, timeout: float | None,
-              emit: Emit) -> list[Result | None]:
+def _run_jobs(jobs: list[Job], workers: int, timeout: float | None, emit: Emit) -> list[Result | None]:
     results: list[Result | None] = [None] * len(jobs)
 
     if workers > 1:
@@ -420,19 +432,24 @@ def _run_jobs(jobs: list[Job], workers: int, timeout: float | None,
                 except FuturesTimeout:
                     err = f"timeout after {timeout}s"
                     res = {
-                        "path": jobs[i][0], "old_size": 0, "new_size": 0,
-                        "changed": False, "diff": None, "error": err,
+                        "path": jobs[i][0],
+                        "old_size": 0,
+                        "new_size": 0,
+                        "changed": False,
+                        "diff": None,
+                        "error": err,
                     }
                     logger.error(f"{jobs[i][0]}: {err}")
                 except Exception as exc:  # noqa: BLE001
                     res = {
-                        "path": jobs[i][0], "old_size": 0, "new_size": 0,
-                        "changed": False, "diff": None,
+                        "path": jobs[i][0],
+                        "old_size": 0,
+                        "new_size": 0,
+                        "changed": False,
+                        "diff": None,
                         "error": f"{type(exc).__name__}: {exc}",
                     }
-                    logger.opt(exception=exc).error(
-                        f"worker crashed on {jobs[i][0]}"
-                    )
+                    logger.opt(exception=exc).error(f"worker crashed on {jobs[i][0]}")
                 else:
                     _log_failure(res)
                 results[i] = res
@@ -443,8 +460,11 @@ def _run_jobs(jobs: list[Job], workers: int, timeout: float | None,
                 res = process_file(job)
             except Exception as exc:  # noqa: BLE001
                 res = {
-                    "path": job[0], "old_size": 0, "new_size": 0,
-                    "changed": False, "diff": None,
+                    "path": job[0],
+                    "old_size": 0,
+                    "new_size": 0,
+                    "changed": False,
+                    "diff": None,
                     "error": f"{type(exc).__name__}: {exc}",
                 }
                 logger.opt(exception=exc).error(f"unexpected failure on {job[0]}")
@@ -455,8 +475,7 @@ def _run_jobs(jobs: list[Job], workers: int, timeout: float | None,
     return results
 
 
-def _handle_stdin(args: argparse.Namespace, backends: list[str],
-                  opts: dict[str, Any]) -> int:
+def _handle_stdin(args: argparse.Namespace, backends: list[str], opts: dict[str, Any]) -> int:
     src = sys.stdin.read()
     newline = "\r\n" if "\r\n" in src else "\n"
     try:
@@ -468,10 +487,17 @@ def _handle_stdin(args: argparse.Namespace, backends: list[str],
         out = out.replace("\n", "\r\n")
 
     if args.diff:
-        sys.stdout.write("".join(difflib.unified_diff(
-            src.splitlines(keepends=True), out.splitlines(keepends=True),
-            fromfile="<stdin>", tofile="<stdin>", n=args.diff_context,
-        )))
+        sys.stdout.write(
+            "".join(
+                difflib.unified_diff(
+                    src.splitlines(keepends=True),
+                    out.splitlines(keepends=True),
+                    fromfile="<stdin>",
+                    tofile="<stdin>",
+                    n=args.diff_context,
+                )
+            )
+        )
     else:
         sys.stdout.write(out)
     return 1 if (args.check and out != src) else 0
@@ -506,13 +532,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     g = p.add_argument_group("backend")
     g.add_argument("-b", "--backend", choices=BACKENDS, default="black")
-    g.add_argument("--chain", default=None,
-                   help="Comma-separated backends run in order (overrides -b).")
+    g.add_argument("--chain", default=None, help="Comma-separated backends run in order (overrides -b).")
     g.add_argument("--line-length", type=int, default=DEFAULT_LINE_LENGTH)
     g.add_argument("--target-version", default=DEFAULT_TARGET)
     g.add_argument("--isort-profile", default=None)
-    g.add_argument("--autoflake-remove-all",
-                   action=argparse.BooleanOptionalAction, default=True)
+    g.add_argument("--autoflake-remove-all", action=argparse.BooleanOptionalAction, default=True)
 
     g = p.add_argument_group("discovery")
     g.add_argument("-r", "--recursive", action="store_true")
@@ -523,12 +547,11 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument("--no-skip-dirs", action="store_true")
 
     g = p.add_argument_group("git selection")
-    g.add_argument("--since", default=None, metavar="REF",
-                   help="Only files changed since REF (git diff --name-only REF).")
-    g.add_argument("--staged", action="store_true",
-                   help="Only staged files (git diff --name-only --cached).")
-    g.add_argument("--changed", action="store_true",
-                   help="Only files changed vs HEAD plus untracked files.")
+    g.add_argument(
+        "--since", default=None, metavar="REF", help="Only files changed since REF (git diff --name-only REF)."
+    )
+    g.add_argument("--staged", action="store_true", help="Only staged files (git diff --name-only --cached).")
+    g.add_argument("--changed", action="store_true", help="Only files changed vs HEAD plus untracked files.")
 
     g = p.add_argument_group("output / behavior")
     g.add_argument("--diff", action="store_true")
@@ -588,8 +611,7 @@ def main() -> int:
     roots = [Path(x) for x in args.paths] if args.paths else [Path.cwd()]
     exclude_globs = [g.strip() for g in args.exclude.split(",") if g.strip()]
     include_exts: tuple[str, ...] = tuple(
-        e.strip() if e.strip().startswith(".") else "." + e.strip()
-        for e in args.include_ext.split(",") if e.strip()
+        e.strip() if e.strip().startswith(".") else "." + e.strip() for e in args.include_ext.split(",") if e.strip()
     )
     skip_dirs = set() if args.no_skip_dirs else SKIP_DIRS
     max_size = parse_size(args.max_size)
@@ -642,28 +664,27 @@ def main() -> int:
 
     dry_run = args.dry_run or args.check
     jobs: list[Job] = [
-        (str(f), backends, opts, args.diff, dry_run, args.backup,
-         args.encoding, args.diff_context)
-        for f in files
+        (str(f), backends, opts, args.diff, dry_run, args.backup, args.encoding, args.diff_context) for f in files
     ]
 
-    color = (
-        not args.no_color
-        and not os.environ.get("NO_COLOR")
-        and sys.stdout.isatty()
-    )
+    color = not args.no_color and not os.environ.get("NO_COLOR") and sys.stdout.isatty()
     term_width = shutil.get_terminal_size((100, 24)).columns
 
     if args.json:
+
         def emit(i: int, res: Result) -> None:
             return None
+
     elif args.quiet:
+
         def emit(i: int, res: Result) -> None:
             if res["error"] or (args.check and res["changed"]):
                 print(_row(i + 1, total, res, term_width, args.relative_paths, color))
                 if res.get("diff"):
                     print(res["diff"])
+
     else:
+
         def emit(i: int, res: Result) -> None:
             print(_row(i + 1, total, res, term_width, args.relative_paths, color))
             if res.get("diff"):
@@ -694,13 +715,15 @@ def main() -> int:
     elif args.summary:
         s = _summarize(results)
         print()
-        print(" | ".join([
-            f"{s['total']} file{'s' if s['total'] != 1 else ''}",
-            f"{s['changed']} changed",
-            f"{s['unchanged']} unchanged",
-            f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
-            f"{s['delta_bytes']:+d} bytes",
-        ]))
+        print(
+            " | ".join([
+                f"{s['total']} file{'s' if s['total'] != 1 else ''}",
+                f"{s['changed']} changed",
+                f"{s['unchanged']} unchanged",
+                f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
+                f"{s['delta_bytes']:+d} bytes",
+            ])
+        )
 
     if any(r["error"] for r in results):
         return 1
