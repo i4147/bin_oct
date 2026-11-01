@@ -1,0 +1,585 @@
+pyrefly static-analysis report: missing-import-excluded rerun
+Repository: /home/user/bin_oct
+Scope: project-wide command from the repository root; 835 tracked Python files are present.
+Python: 3.11.2; no tool-specific or Python project configuration was found in the repository.
+Analyzers were installed in isolated temporary environments with user approval; project dependencies were not installed.
+No Python source or repository project configuration was modified. Previous reports were preserved.
+Caches and Python bytecode were disabled or redirected outside the repository.
+Missing-import handling: Only missing-import is ignored; the same unconfigured basic preset is used as in the earlier run.
+All other diagnostics are left at each tool's normal defaults, including its existing preset or default suppressions.
+
+Version command: /tmp/bin-oct-approved-tools/bin/pyrefly --version
+Version exit status: 0
+--- version stdout (14 bytes) ---
+pyrefly 1.4.0
+--- end version stdout ---
+--- version stderr (0 bytes) ---
+--- end version stderr ---
+
+Analysis command: /tmp/bin-oct-approved-tools/bin/pyrefly check --threads 2 --python-interpreter-path /usr/bin/python3 --ignore missing-import .
+Analysis exit status: 1
+Elapsed seconds: 4.71
+--- analysis stdout (22150 bytes) ---
+ERROR `unused_imports` is a dataclass field but has no type annotation [bad-class-definition]
+  --> afkco.py:27:5
+   |
+27 |     unused_imports = field(default_factory=list)
+   |     ^^^^^^^^^^^^^^
+ERROR Cannot use line breaks in non-triple-quoted f-string replacement fields on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> afkco.py:418:118
+    |
+418 |                 f"{Colors.BOLD}{report.path}{Colors.RESET}  -->  line {Colors.CYAN}{unused.lineno:>5}{Colors.RESET}  {
+    |                                                                                                                      ^
+ERROR Could not find name `msg` [unknown-name]
+  --> clean_version.py:43:26
+   |
+43 |         raise SystemExit(msg)
+   |                          ^^^
+ERROR Could not find name `ANSI_RE` [unknown-name]
+  --> cleaner.py:24:12
+   |
+24 |     text = ANSI_RE.sub("", text)
+   |            ^^^^^^^
+ERROR Could not find name `FENCE_RE` [unknown-name]
+  --> cleaner.py:38:12
+   |
+38 |     text = FENCE_RE.sub("", text)
+   |            ^^^^^^^^
+ERROR Could not find name `SHELL_PROMPT_RE` [unknown-name]
+  --> cleaner.py:39:12
+   |
+39 |     text = SHELL_PROMPT_RE.sub("", text)
+   |            ^^^^^^^^^^^^^^^
+ERROR Could not find name `PREAMBLE_RE` [unknown-name]
+  --> cleaner.py:40:12
+   |
+40 |     text = PREAMBLE_RE.sub("", text)
+   |            ^^^^^^^^^^^
+ERROR Cannot use line breaks in non-triple-quoted f-string replacement fields on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+ --> codepener.py:9:81
+  |
+9 |     full_html = f'<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="{
+  |                                                                                 ^
+ERROR Cannot use line breaks in non-triple-quoted f-string replacement fields on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> codepener.py:11:97
+   |
+11 |     }">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>{
+   |                                                                                                 ^
+ERROR Cannot use line breaks in non-triple-quoted f-string replacement fields on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> codepener.py:13:79
+   |
+13 |     }</title>\n    <link rel="stylesheet" href="style.css">\n</head>\n<body>\n{
+   |                                                                               ^
+ERROR Could not find name `as_completed` [unknown-name]
+   --> copilot_noneng.py:162:20
+    |
+162 |         for fut in as_completed(futures):
+    |                    ^^^^^^^^^^^^
+ERROR Could not find name `as_completed` [unknown-name]
+   --> copilot_noneng.py:188:20
+    |
+188 |         for fut in as_completed(futures):
+    |                    ^^^^^^^^^^^^
+ERROR Could not find name `as_completed` [unknown-name]
+   --> copilot_noneng.py:211:20
+    |
+211 |         for fut in as_completed(futures):
+    |                    ^^^^^^^^^^^^
+ERROR Could not find name `contextlib` [unknown-name]
+   --> crmc.py:277:14
+    |
+277 |         with contextlib.suppress(OSError):
+    |              ^^^^^^^^^^
+ERROR Could not find name `args` [unknown-name]
+  --> csshtmlpret.py:73:59
+   |
+73 |     css_pgs = _compile_props(CSS_PROPS_TEXT, grouped=bool(args.group))
+   |                                                           ^^^^
+ERROR Could not find name `minidom` [unknown-name]
+   --> csshtmlpret.py:214:16
+    |
+214 |         html = minidom.parseString(html).toprettyxml(indent="    ")[22:]
+    |                ^^^^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:242:8
+    |
+242 |     if args.watch:
+    |        ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:266:16
+    |
+266 |     filename = args.prefix + filename if args.prefix else filename
+    |                ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:266:42
+    |
+266 |     filename = args.prefix + filename if args.prefix else filename
+    |                                          ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:271:12
+    |
+271 |     global args
+    |            ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:284:55
+    |
+284 |         pretty_html = html_prettify(html_file.read(), args.extraline)
+    |                                                       ^^^^
+ERROR Could not find name `log` [unknown-name]
+   --> csshtmlpret.py:338:12
+    |
+338 |     global log
+    |            ^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:339:8
+    |
+339 |     if args.before and getoutput:
+    |        ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:340:29
+    |
+340 |         print(getoutput(str(args.before)))
+    |                             ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:341:13
+    |
+341 |     if Path(args.fullpath).is_file() and args.fullpath.endswith((".css", ".scss")):
+    |             ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:341:42
+    |
+341 |     if Path(args.fullpath).is_file() and args.fullpath.endswith((".css", ".scss")):
+    |                                          ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:343:29
+    |
+343 |         list_of_files = str(args.fullpath)
+    |                             ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:344:33
+    |
+344 |         process_single_css_file(args.fullpath)
+    |                                 ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:345:15
+    |
+345 |     elif Path(args.fullpath).is_file() and args.fullpath.endswith((".htm", ".html")):
+    |               ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:345:44
+    |
+345 |     elif Path(args.fullpath).is_file() and args.fullpath.endswith((".htm", ".html")):
+    |                                            ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:347:29
+    |
+347 |         list_of_files = str(args.fullpath)
+    |                             ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:348:34
+    |
+348 |         process_single_html_file(args.fullpath)
+    |                                  ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:349:15
+    |
+349 |     elif Path(args.fullpath).is_dir():
+    |               ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:352:35
+    |
+352 |         list_of_files = walk2list(args.fullpath, (".css", ".scss", ".html", ".htm"), ".min.css")
+    |                                   ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:360:8
+    |
+360 |     if args.after and getoutput:
+    |        ^^^^
+ERROR Could not find name `args` [unknown-name]
+   --> csshtmlpret.py:361:29
+    |
+361 |         print(getoutput(str(args.after)))
+    |                             ^^^^
+ERROR Could not find name `LiteralString` [unknown-name]
+  --> decryptor.py:16:37
+   |
+16 | def random_key(length: int = 32) -> LiteralString:
+   |                                     ^^^^^^^^^^^^^
+ERROR Unexpected keyword argument `filter` in function `zipfile.ZipFile.extractall` [unexpected-keyword]
+   --> deduper.py:109:39
+    |
+109 |                 zf.extractall(tmpdir, filter="data")
+    |                                       ^^^^^^
+ERROR Could not find name `Language` [unknown-name]
+  --> deduplicate_python.py:81:27
+   |
+81 |         parser.language = Language(tree_sitter_python.language())
+   |                           ^^^^^^^^
+ERROR Could not find name `fil88enames` [unknown-name]
+   --> drmc.py:129:25
+    |
+129 |             for name in fil88enames:
+    |                         ^^^^^^^^^^^
+  Did you mean `filenames`?
+ERROR Could not find name `path` [unknown-name]
+  --> ensurebracket.py:15:10
+   |
+15 |     Path(path)
+   |          ^^^^
+  Did you mean `Path`?
+ERROR Could not find name `unique_path` [unknown-name]
+  --> excss.py:24:16
+   |
+24 |         path = unique_path(path)
+   |                ^^^^^^^^^^^
+ERROR Could not find name `should_skip` [unknown-name]
+  --> find_big_files.py:21:20
+   |
+21 |                 if should_skip(full_path) or resolved_path in visited_dirs:
+   |                    ^^^^^^^^^^^
+ERROR Could not find name `should_skip` [unknown-name]
+  --> find_big_files.py:26:24
+   |
+26 |                 if not should_skip(path):
+   |                        ^^^^^^^^^^^
+ERROR Cannot use an escape sequence (backslash) in f-strings on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> fixescape.py:80:62
+   |
+80 |             output.append(f"  {idx}: {lines[idx - 1].rstrip('\n')}")
+   |                                                              ^
+ERROR Cannot use an escape sequence (backslash) in f-strings on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> fixescape.py:81:63
+   |
+81 |         output.append(f"{RED}> {idx + 1}: {lines[idx].rstrip('\n')}{RESET}")
+   |                                                               ^
+ERROR Cannot use an escape sequence (backslash) in f-strings on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> fixescape.py:83:66
+   |
+83 |             output.append(f"  {idx + 2}: {lines[idx + 1].rstrip('\n')}")
+   |                                                                  ^
+ERROR Unexpected keyword argument `found` in function `scan_bytes_for_urls` [unexpected-keyword]
+   --> furls.py:273:62
+    |
+273 |         found.update(scan_bytes_for_urls(b, max_bytes, exts, found=found, name_hint=path))
+    |                                                              ^^^^^
+ERROR Could not find name `Iterable` [unknown-name]
+  --> fztrans.py:37:27
+   |
+37 | def setup_readline(words: Iterable[str]) -> None:
+   |                           ^^^^^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:77:1
+   |
+77 | type ColorMode = Literal["auto", "always", "never"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:78:1
+   |
+78 | type ThemeName = Literal["dark", "light", "mono"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:79:1
+   |
+79 | type BackendName = Literal["auto", "rich", "builtin"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:80:1
+   |
+80 | type ConvertMode = Literal["render", "to-html", "to-markdown"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:81:1
+   |
+81 | type InputFormat = Literal["auto", "markdown", "html"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:82:1
+   |
+82 | type DocFormat = Literal["markdown", "html"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:83:1
+   |
+83 | type Align = Literal["left", "center", "right", "none"]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> glow.py:84:1
+   |
+84 | type SgrCodes = tuple[str, ...]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> glow.py:519:1
+    |
+519 | type InlineNode = Text | CodeSpan | Strong | Emph | Strike | Link | Image | SoftBreak | HardBreak | RawHtml
+    | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> glow.py:575:1
+    |
+575 | type Block = Heading | Paragraph | CodeBlock | QuoteBlock | ListBlock | TableBlock | RuleBlock | HtmlBlock
+    | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> glow.py:577:1
+    |
+577 | type LinkRef = tuple[str, str | None]
+    | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> glow.py:986:1
+    |
+986 | type StyledLine = list[Segment]
+    | ^^^^
+ERROR Could not find name `BytesParser` [unknown-name]
+   --> htmltools.py:903:15
+    |
+903 |         msg = BytesParser(policy=policy.default).parsebytes(mhtml_path.read_bytes())
+    |               ^^^^^^^^^^^
+ERROR Could not find name `policy` [unknown-name]
+   --> htmltools.py:903:34
+    |
+903 |         msg = BytesParser(policy=policy.default).parsebytes(mhtml_path.read_bytes())
+    |                                  ^^^^^^
+ERROR Could not find name `os` [unknown-name]
+   --> hunspeller.py:200:24
+    |
+200 |                 lang = os.path.basename(dic).replace(".dic", "")
+    |                        ^^
+ERROR Could not find name `path` [unknown-name]
+  --> img2asci.py:13:10
+   |
+13 |     Path(path)
+   |          ^^^^
+  Did you mean `Path`?
+ERROR Could not find name `Pool` [unknown-name]
+  --> img2asci.py:25:12
+   |
+25 |     pool = Pool(8)
+   |            ^^^^
+  Did you mean `bool`?
+ERROR Could not find name `Any` [unknown-name]
+  --> java_serialization_data_converter.py:19:31
+   |
+19 | def default_json_encoder(obj: Any) -> Any:
+   |                               ^^^
+  Did you mean `any`?
+ERROR Could not find name `Any` [unknown-name]
+  --> java_serialization_data_converter.py:19:39
+   |
+19 | def default_json_encoder(obj: Any) -> Any:
+   |                                       ^^^
+  Did you mean `any`?
+ERROR Could not find name `err` [unknown-name]
+  --> man_doc.py:67:44
+   |
+67 |             print(f"Error running mandoc: {err}", file=sys.stderr)
+   |                                            ^^^
+  Did you mean `_err`?
+ERROR Could not find name `importlib` [unknown-name]
+  --> micro2py.py:21:16
+   |
+21 |         return importlib.util.find_spec(name) is not None
+   |                ^^^^^^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> minhtml.py:47:1
+   |
+47 | type JobTuple = tuple[str, bool, str, tuple[str, ...], float, bool, str | None, bool, bool]
+   | ^^^^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+  --> minhtml.py:48:1
+   |
+48 | type ResultTuple = tuple[str, int, int, str | None, str | None, float]
+   | ^^^^
+ERROR Could not find name `contextlib` [unknown-name]
+   --> minhtml.py:264:22
+    |
+264 |                 with contextlib.suppress(OSError):
+    |                      ^^^^^^^^^^
+ERROR Unexpected keyword argument `legacy` in function `py_compile.compile` [unexpected-keyword]
+  --> mkpik.py:54:58
+   |
+54 |         py_compile.compile(file_path, optimize=optimize, legacy=legacy)
+   |                                                          ^^^^^^
+ERROR Cannot unpack tuple[list[tuple[str, dict[str, Counter[str]]]], dict[str, int], dict[str, int], dict[str, int]] (of size 4) into 7 values [bad-unpacking]
+   --> module_usage.py:489:9
+    |
+489 | /         (
+490 | |             per_file,
+491 | |             stdlib_totals,
+492 | |             thirdparty_totals,
+...   |
+496 | |             package_files,
+497 | |         ) = analyze_directory(directory, args.package, stdlib)
+    | |_________^
+ERROR Could not find name `run_command` [unknown-name]
+  --> pycppcheck.py:21:21
+   |
+21 |     ret, txt, err = run_command(cmd)
+   |                     ^^^^^^^^^^^
+ERROR Could not find name `NoReturn` [unknown-name]
+  --> pydevtools.py:30:38
+   |
+30 | def die(msg: str, code: int = 1) -> "NoReturn":
+   |                                      ^^^^^^^^
+ERROR Could not find name `textwrap` [unknown-name]
+   --> pydevtools.py:560:14
+    |
+560 |     header = textwrap.dedent(f'''\
+    |              ^^^^^^^^
+ERROR Could not find name `textwrap` [unknown-name]
+   --> pydevtools.py:598:12
+    |
+598 |     return textwrap.dedent('''\
+    |            ^^^^^^^^
+ERROR Could not find name `textwrap` [unknown-name]
+   --> pydevtools.py:831:17
+    |
+831 | GITIGNORE_DEV = textwrap.dedent("""\
+    |                 ^^^^^^^^
+ERROR Could not find name `textwrap` [unknown-name]
+    --> pydevtools.py:1206:21
+     |
+1206 | PRE_COMMIT_CONFIG = textwrap.dedent("""\
+     |                     ^^^^^^^^
+ERROR Could not find name `textwrap` [unknown-name]
+    --> pydevtools.py:1392:16
+     |
+1392 |         epilog=textwrap.dedent("""\
+     |                ^^^^^^^^
+ERROR Cannot unpack tuple[str, str, str, list[Unknown], list[Unknown]] (of size 5) into 3 values [bad-unpacking]
+   --> pydocr.py:128:5
+    |
+128 |     module_doc, functions, classes = result
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR Could not find name `f` [unknown-name]
+  --> pydos2unix.py:37:20
+   |
+37 |             data = f.read_bytes()
+   |                    ^
+ERROR Cannot use `type` alias statement on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> rmc3.py:130:1
+    |
+130 | type Backend = Callable[[str, Options], Stripped]
+    | ^^^^
+ERROR Could not find name `ASTStripper` [unknown-name]
+   --> rmc_termux.py:152:15
+    |
+152 |         cls = ASTStripper
+    |               ^^^^^^^^^^^
+  Did you mean `CSTStripper`?
+ERROR Cannot use line breaks in non-triple-quoted f-string replacement fields on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> rmh.py:210:77
+    |
+210 |                 f"  {result.path.name}: {result.comments_removed} comments, {
+    |                                                                             ^
+ERROR Could not find name `Iterable` [unknown-name]
+   --> similarity_check.py:178:31
+    |
+178 | def build_stem_lexicon(names: Iterable[str]) -> set[str]:
+    |                               ^^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:114:21
+    |
+114 |                     logging.warning("Skipping non-SQL file: %s", root)
+    |                     ^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:121:25
+    |
+121 |                         logging.warning("Cannot inspect %s: %s", path, exc)
+    |                         ^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:123:17
+    |
+123 |                 logging.warning("Input does not exist or is inaccessible: %s", root)
+    |                 ^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:125:13
+    |
+125 |             logging.warning("Cannot inspect input %s: %s", root, exc)
+    |             ^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:355:25
+    |
+355 |                         logging.warning("Skipping malformed INSERT in %s: %s", source, exc)
+    |                         ^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:375:9
+    |
+375 |         logging.error("No .sql files found.")
+    |         ^^^^^^^
+ERROR Could not find name `logging` [unknown-name]
+   --> sql2json.py:394:17
+    |
+394 |                 logging.error("%s: %s", result.source, result.error)
+    |                 ^^^^^^^
+ERROR Could not find name `_list_connections` [unknown-name]
+   --> sqltojson.py:154:30
+    |
+154 |             print(json.dumps(_list_connections(config_path)))
+    |                              ^^^^^^^^^^^^^^^^^
+  Did you mean `list_connections`?
+ERROR Could not find name `_list_queries` [unknown-name]
+   --> sqltojson.py:163:34
+    |
+163 |                 print(json.dumps(_list_queries(config_path)))
+    |                                  ^^^^^^^^^^^^^
+  Did you mean `list_queries`?
+ERROR Could not find name `_list_queries` [unknown-name]
+   --> sqltojson.py:165:34
+    |
+165 |                 print(json.dumps(_list_queries(config_path, scoped=True)))
+    |                                  ^^^^^^^^^^^^^
+  Did you mean `list_queries`?
+ERROR Could not find name `_list_connections` [unknown-name]
+   --> sqltojson.py:523:30
+    |
+523 |             print(json.dumps(_list_connections(config_path)))
+    |                              ^^^^^^^^^^^^^^^^^
+  Did you mean `list_connections`?
+ERROR Could not find name `_list_queries` [unknown-name]
+   --> sqltojson.py:532:34
+    |
+532 |                 print(json.dumps(_list_queries(config_path)))
+    |                                  ^^^^^^^^^^^^^
+  Did you mean `list_queries`?
+ERROR Could not find name `_list_queries` [unknown-name]
+   --> sqltojson.py:534:34
+    |
+534 |                 print(json.dumps(_list_queries(config_path, scoped=True)))
+    |                                  ^^^^^^^^^^^^^
+  Did you mean `list_queries`?
+ERROR Cannot use type parameter lists on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> srmc2.py:169:17
+    |
+169 |     def on_leave[N: cst.CSTNode](
+    |                 ^^^^^^^^^^^^^^^^
+ERROR Could not find name `syd` [unknown-name]
+  --> summar.py:14:15
+   |
+14 |     fn = Path(syd.argv[1].strip())
+   |               ^^^
+ERROR Could not find name `path` [unknown-name]
+  --> tell_font_name.py:52:10
+   |
+52 |     Path(path)
+   |          ^^^^
+  Did you mean `Path`?
+ERROR Expected valid functional named tuple definition [bad-class-definition]
+  --> up_img.py:24:1
+   |
+24 | ConfigTuple = namedtuple("ConfigTuple", CONFIG_FIELDS)
+   | ^^^^^^^^^^^
+ERROR Unexpected keyword argument `walk_up` in function `pathlib.PurePath.relative_to` [unexpected-keyword]
+   --> xembed.py:166:40
+    |
+166 |         return path.relative_to(start, walk_up=True)
+    |                                        ^^^^^^^
+ERROR Cannot use line breaks in non-triple-quoted f-string replacement fields on Python 3.11 (syntax was added in Python 3.12) [invalid-syntax]
+   --> zip_crack.py:129:99
+    |
+129 |                         f"Progress: {progress:6.2f}% | Tested: {result.tested_count:10,} | Speed: {
+    |                                                                                                   ^
+--- end analysis stdout ---
+--- analysis stderr (181 bytes) ---
+ INFO 107 errors (4 suppressed)
+No `pyrefly.toml` found — using preset `basic`.
+Run `pyrefly init` to continue setting up Pyrefly.
+Docs: https://pyrefly.org/en/docs/installation/
+--- end analysis stderr ---

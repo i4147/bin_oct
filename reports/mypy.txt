@@ -1,0 +1,26 @@
+mypy static-analysis report
+Repository: /home/user/bin_oct
+Python: 3.11.2 (/usr/bin/python3)
+Scope: repository Python files, recursively; 835 tracked .py files discovered.
+Project configuration: no tool-specific or Python project configuration found.
+Executable on PATH: not found
+Python module: not importable
+Result: unavailable. No analysis was performed and no diagnostics were produced.
+The cache path is outside the repository to avoid creating project files.
+No tools or dependencies were installed or upgraded.
+
+Version check
+Command: mypy --version
+Exit status: 127 (shell status: executable not found; tool did not start)
+Standard output:
+(empty)
+Standard error:
+/bin/sh: 1: exec: mypy: not found
+
+Project-wide analysis
+Command: mypy --cache-dir=/tmp/bin-oct-tool-analysis/mypy-cache .
+Exit status: 127 (shell status: executable not found; tool did not start)
+Standard output:
+(empty)
+Standard error:
+/bin/sh: 1: exec: mypy: not found
