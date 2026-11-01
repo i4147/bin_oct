@@ -73,6 +73,7 @@ After all batches are complete:
    - Checks skipped (name + reason)
    - Files or symbols intentionally left undocumented (with reason)
    - Anything that needs my input
+save the documented verdions to documented folder,dont alter orig files
 
 save the helper scripts (bash, python, ...) thst you used during this session under arena folder in root of connected repo
 commit the changes.

@@ -301,3 +301,5 @@ Begin now:
 Do not return control to the user between phases unless one of the permitted stop reasons applies.
 
 
+save the helper scripts (bash, python, ...) thst you used during this session under arena folder in root of connected repo
+commit the changes.
