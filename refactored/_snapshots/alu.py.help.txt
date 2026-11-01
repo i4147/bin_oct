@@ -1,0 +1,8 @@
+usage: alu.py [-h] [--dry-run] [--version]
+
+List the packages that have an upgrade available.
+
+options:
+  -h, --help  show this help message and exit
+  --dry-run   print the command only
+  --version   show program's version number and exit

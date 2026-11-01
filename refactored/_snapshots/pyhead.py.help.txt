@@ -1,0 +1,11 @@
+usage: pyhead.py [-h] [--bytes BYTES] [--version] path
+
+Print the first kilobyte of a file ('-' reads standard input).
+
+positional arguments:
+  path           file to read, or '-' for stdin
+
+options:
+  -h, --help     show this help message and exit
+  --bytes BYTES  how many characters to print (default: 1024)
+  --version      show program's version number and exit

@@ -1,0 +1,11 @@
+usage: lowerer.py [-h] [--dry-run] [--version] path
+
+Rewrite a text file in lower case.
+
+positional arguments:
+  path        file to lower-case in place
+
+options:
+  -h, --help  show this help message and exit
+  --dry-run   report without writing
+  --version   show program's version number and exit

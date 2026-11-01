@@ -1,0 +1,11 @@
+usage: ww.py [-h] [--project PROJECT] [--output OUTPUT] [--dry-run]
+             [--version]
+
+Pack a project into a wheel with 'wheel pack'.
+
+options:
+  -h, --help         show this help message and exit
+  --project PROJECT  project directory to pack (default: current directory)
+  --output OUTPUT    directory that receives the wheel (default: /sdcard/whl)
+  --dry-run          print the command only
+  --version          show program's version number and exit

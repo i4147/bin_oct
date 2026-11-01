@@ -1,0 +1,10 @@
+usage: fv.py [-h] [--version] path
+
+Show a text file in a pager ('-' reads standard input).
+
+positional arguments:
+  path        file to display, or '-' for stdin
+
+options:
+  -h, --help  show this help message and exit
+  --version   show program's version number and exit

@@ -1,0 +1,11 @@
+usage: decode_unicode.py [-h] [--dry-run] [--version] path
+
+Rewrite a text file as plain ASCII.
+
+positional arguments:
+  path        file to rewrite in place
+
+options:
+  -h, --help  show this help message and exit
+  --dry-run   report without writing
+  --version   show program's version number and exit

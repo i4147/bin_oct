@@ -1,0 +1,12 @@
+usage: raster.py [-h] [--dry-run] [--version] path stem
+
+Rename an extension module to the Android ABI-tagged name.
+
+positional arguments:
+  path        compiled extension to rename
+  stem        module name without the ABI suffix
+
+options:
+  -h, --help  show this help message and exit
+  --dry-run   report the rename only
+  --version   show program's version number and exit
