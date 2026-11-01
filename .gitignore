@@ -789,5 +789,6 @@ zip-files/
 ~$*.doc*
 ~$*.ppt*
 
-# refactor output must stay committable (refactor.md)
+# session output must stay committable (refactor.md deliverables + arena/ helpers)
 !refactored/.progress.json
+!arena/build_python312.sh
