@@ -1,0 +1,11 @@
+usage: mergecss.py [-h] [--directory DIRECTORY] [--dry-run] [--version]
+
+Merge the CSS files of a directory with cleancss.
+
+options:
+  -h, --help            show this help message and exit
+  --directory DIRECTORY
+                        directory holding the stylesheets (default: current
+                        directory)
+  --dry-run             print the cleancss command only
+  --version             show program's version number and exit

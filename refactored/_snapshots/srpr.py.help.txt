@@ -1,0 +1,9 @@
+usage: srpr.py [-h] [--binary BINARY] [--dry-run] [--version]
+
+Run srp for every letter of the alphabet.
+
+options:
+  -h, --help       show this help message and exit
+  --binary BINARY  executable to invoke (default: srp)
+  --dry-run        print the commands only
+  --version        show program's version number and exit

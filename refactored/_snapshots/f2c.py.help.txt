@@ -1,0 +1,10 @@
+usage: f2c.py [-h] [--version] fahrenheit
+
+Convert a Fahrenheit temperature to Celsius and kelvin.
+
+positional arguments:
+  fahrenheit  temperature in degrees Fahrenheit
+
+options:
+  -h, --help  show this help message and exit
+  --version   show program's version number and exit

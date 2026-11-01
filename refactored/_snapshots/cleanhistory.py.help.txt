@@ -1,0 +1,9 @@
+usage: cleanhistory.py [-h] [--path PATH] [--dry-run] [--version]
+
+Remove noise and duplicate commands from the shell history.
+
+options:
+  -h, --help   show this help message and exit
+  --path PATH  history file to clean (default: ~/.bash_history)
+  --dry-run    report without writing
+  --version    show program's version number and exit

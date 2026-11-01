@@ -788,3 +788,6 @@ zip-files/
 ~$*
 ~$*.doc*
 ~$*.ppt*
+
+# refactor output must stay committable (refactor.md)
+!refactored/.progress.json

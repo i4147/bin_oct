@@ -1,0 +1,11 @@
+usage: empt.py [-h] [--dry-run] [--version] path
+
+Truncate a file to zero bytes.
+
+positional arguments:
+  path        file to empty
+
+options:
+  -h, --help  show this help message and exit
+  --dry-run   report the target without writing
+  --version   show program's version number and exit

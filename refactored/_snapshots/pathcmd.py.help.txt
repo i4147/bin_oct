@@ -1,0 +1,8 @@
+usage: pathcmd.py [-h] [--variable VARIABLE] [--version]
+
+Print the entries of a PATH-style environment variable.
+
+options:
+  -h, --help           show this help message and exit
+  --variable VARIABLE  environment variable to inspect (default: PATH)
+  --version            show program's version number and exit

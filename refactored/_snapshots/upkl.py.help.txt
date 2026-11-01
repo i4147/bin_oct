@@ -1,0 +1,11 @@
+usage: upkl.py [-h] [--dry-run] [--version] path
+
+Unpack a pickled bytes object into a .raw file.
+
+positional arguments:
+  path        pickle file to unpack
+
+options:
+  -h, --help  show this help message and exit
+  --dry-run   report without writing
+  --version   show program's version number and exit

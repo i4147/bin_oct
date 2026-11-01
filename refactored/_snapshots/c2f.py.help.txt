@@ -1,0 +1,10 @@
+usage: c2f.py [-h] [--version] celsius
+
+Convert a Celsius temperature to Fahrenheit.
+
+positional arguments:
+  celsius     temperature in degrees Celsius
+
+options:
+  -h, --help  show this help message and exit
+  --version   show program's version number and exit

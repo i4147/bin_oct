@@ -1,0 +1,3379 @@
+{
+ "python_version": "3.12.16 (built from source: codeload cpython v3.12.16; sandbox default python3 is 3.11.2)",
+ "phase": 1,
+ "scope_note": "All tracked *.py at the repo root. `documented/` is excluded: it is generated output of the previous docstring task, not hand-written source. `refactored/` and `reqs/` are excluded per spec.",
+ "manifest": [
+  "23.py",
+  "480mkv.py",
+  "7ziper.py",
+  "a-b.py",
+  "abline.py",
+  "add_hints.py",
+  "addel.py",
+  "addmainguard.py",
+  "afk.py",
+  "afk2.py",
+  "afkco.py",
+  "afkx.py",
+  "aitrans.py",
+  "alu.py",
+  "annotate.py",
+  "annotate_types.py",
+  "ans2proj.py",
+  "apk_font_extractor.py",
+  "archive_convert.py",
+  "archive_dir.py",
+  "archive_merger.py",
+  "archive_tools.py",
+  "armc.py",
+  "artools.py",
+  "ast_eval.py",
+  "atrans.py",
+  "audio2text.py",
+  "audio2txt.py",
+  "autobuild.py",
+  "autoclone.py",
+  "autofix_typo.py",
+  "autopull.py",
+  "ax.py",
+  "b642f.py",
+  "base64_extractor.py",
+  "bash2py.py",
+  "bat2bash.py",
+  "bbc.py",
+  "bcss.py",
+  "benchrmc.py",
+  "bestwhois.py",
+  "bf_nlp.py",
+  "bhtml.py",
+  "bibici.py",
+  "binarytools.py",
+  "bkk.py",
+  "blink.py",
+  "bnn.py",
+  "boxfaces.py",
+  "br.py",
+  "brer.py",
+  "brmc.py",
+  "build_setup.py",
+  "buildr.py",
+  "bw.py",
+  "c2f.py",
+  "calc.py",
+  "camel2snake.py",
+  "cccpp.py",
+  "cconsolidate.py",
+  "ccss.py",
+  "cext.py",
+  "chafa.py",
+  "change_project_name.py",
+  "check_conflicts.py",
+  "check_duplicate_packages.py",
+  "check_exports.py",
+  "check_fname_conflict.py",
+  "check_funcs.py",
+  "check_main_guard.py",
+  "clean-bash.py",
+  "clean-cpp.py",
+  "clean-css.py",
+  "clean-html.py",
+  "clean-js.py",
+  "clean-lua.py",
+  "clean-rs.py",
+  "clean-toml.py",
+  "clean-ts.py",
+  "clean_type_annotations.py",
+  "clean_version.py",
+  "cleanbash.py",
+  "cleandic.py",
+  "cleaner.py",
+  "cleanhistory.py",
+  "cleanjsts.py",
+  "cleanlog.py",
+  "cleanlua.py",
+  "cleanmd.py",
+  "cleanpy.py",
+  "cleanrs.py",
+  "cleants.py",
+  "cleants2.py",
+  "cleanvim.py",
+  "cliner.py",
+  "cliner2.py",
+  "codepener.py",
+  "colab1.py",
+  "collect_env_vars.py",
+  "collectlic.py",
+  "colortools.py",
+  "comment_out.py",
+  "compare_files_dirs.py",
+  "compile_c_cpp_files.py",
+  "compile_precise2.py",
+  "compress_files_500k.py",
+  "compress_subdirs.py",
+  "compress_text.py",
+  "compression_benchmark.py",
+  "compresstools.py",
+  "comprust.py",
+  "compsub.py",
+  "compy.py",
+  "compy2.py",
+  "consolidate.py",
+  "copilot_noneng.py",
+  "copy_pyfiles_without_moduledoc.py",
+  "count_chars.py",
+  "cout.py",
+  "cppnew.py",
+  "cpprun.py",
+  "cppu.py",
+  "cramer.py",
+  "create_monthly_branch.py",
+  "create_stub.py",
+  "crmc.py",
+  "crun.py",
+  "csshtmlpret.py",
+  "csv2json.py",
+  "csv2json2.py",
+  "csvtojson.py",
+  "csym.py",
+  "ctrans.py",
+  "cwin.py",
+  "cytonizer.py",
+  "dataconv.py",
+  "dbconverter.py",
+  "dbtools.py",
+  "dcode.py",
+  "dduper.py",
+  "decode_phonetic.py",
+  "decode_unicode.py",
+  "decryptor.py",
+  "dedup_func.py",
+  "deduper.py",
+  "dedupfunc.py",
+  "deduplicate_python.py",
+  "deduptools.py",
+  "del10.py",
+  "delafter.py",
+  "delbefor.py",
+  "delemp.py",
+  "delshort.py",
+  "deob.py",
+  "detect_code_similarity.py",
+  "detect_empty_pkgs.py",
+  "detect_encoding.py",
+  "detect_noneng.py",
+  "detect_nonenglish.py",
+  "dhtools.py",
+  "dirinfo.py",
+  "dirsizes.py",
+  "dirtools.py",
+  "dirz.py",
+  "distinfo.py",
+  "distinfo2.py",
+  "dj.py",
+  "dj2.py",
+  "dl.py",
+  "dll.py",
+  "docer.py",
+  "docstring_formatter.py",
+  "doctools.py",
+  "dos2utf-8.py",
+  "dos2utf8.py",
+  "dostounix.py",
+  "dostring_browser.py",
+  "drmc.py",
+  "dt1.py",
+  "dt2.py",
+  "dt3.py",
+  "dt4.py",
+  "dt5.py",
+  "dtg.py",
+  "dtluna.py",
+  "dufpy.py",
+  "dup_detector.py",
+  "dupdirs.py",
+  "dupeguru.py",
+  "dupeguru_textual.py",
+  "dupf.py",
+  "dupfuncanalyzer.py",
+  "dupfx.py",
+  "duptools.py",
+  "egg2whl.py",
+  "elf64.py",
+  "email_collector.py",
+  "email_crawler.py",
+  "empt.py",
+  "emptypkg.py",
+  "emptywhl.py",
+  "encryptor.py",
+  "ensurebracket.py",
+  "erap.py",
+  "ewhl.py",
+  "ewhl2.py",
+  "ex_class.py",
+  "ex_comments.py",
+  "ex_const.py",
+  "ex_ex.py",
+  "ex_func.py",
+  "ex_imports.py",
+  "excss.py",
+  "eximports.py",
+  "eximports2.py",
+  "eximports3.py",
+  "exjs.py",
+  "extinfo.py",
+  "extz.py",
+  "exurls.py",
+  "f2c.py",
+  "f2l.py",
+  "fa_translator.py",
+  "facal.py",
+  "faedit.py",
+  "faen.py",
+  "failtest.py",
+  "faprinter.py",
+  "fasort.py",
+  "fast_compress.py",
+  "fatrans.py",
+  "fatranslate.py",
+  "fco.py",
+  "feloai.py",
+  "feloer.py",
+  "felopy.py",
+  "felormc.py",
+  "fetchimages.py",
+  "ffbp.py",
+  "file_cleanup.py",
+  "file_mover_tool.py",
+  "filefixer.py",
+  "filetools.py",
+  "fimport.py",
+  "find_big_files.py",
+  "find_dup_folders.py",
+  "find_dup_func_class_const.py",
+  "find_empty_wheels.py",
+  "find_req.py",
+  "find_scripts.py",
+  "finglish.py",
+  "fix_encoding.py",
+  "fix_escape_sequence.py",
+  "fix_html_md_broken_links.py",
+  "fix_is_not.py",
+  "fix_shebang_opt.py",
+  "fixast.py",
+  "fixcape.py",
+  "fixescape.py",
+  "fixext.py",
+  "fixparanthes.py",
+  "fixshebang.py",
+  "fixwhl.py",
+  "fixwhlnames.py",
+  "flaten.py",
+  "fmt_bash.py",
+  "fmt_toml.py",
+  "foext.py",
+  "folderize.py",
+  "folderize_by_sim_names.py",
+  "foldesiz.py",
+  "foldext.py",
+  "foldimension.py",
+  "foldpy.py",
+  "font_deduper.py",
+  "fontconverter.py",
+  "fontpreview.py",
+  "forfin.py",
+  "format_python_code.py",
+  "frmc.py",
+  "fssim.py",
+  "ftak.py",
+  "funclass_names.py",
+  "furl_cli.py",
+  "furls.py",
+  "fuzzy_dedup.py",
+  "fuzzycmp.py",
+  "fv.py",
+  "fztrans.py",
+  "g1.py",
+  "gagc.py",
+  "gdetect_dup_objects.py",
+  "gdrive_sync.py",
+  "gdu.py",
+  "gdupfunc.py",
+  "gdupfx.py",
+  "generate_unified.py",
+  "get_keys.py",
+  "get_latest_pkgs_added_to_pypi.py",
+  "get_lic.py",
+  "get_pypi_rssfeed.py",
+  "get_req.py",
+  "get_sub.py",
+  "getenc.py",
+  "getkeys.py",
+  "getpyrepos.py",
+  "getsub.py",
+  "gexcst.py",
+  "gext.py",
+  "gext0.py",
+  "gfco.py",
+  "gh_repo.py",
+  "ghzip.py",
+  "git_repo_creator.py",
+  "git_squash_n.py",
+  "gitclone.py",
+  "github_query_tool.py",
+  "gitools.py",
+  "gitreportx.py",
+  "gitsynctools.py",
+  "gittools.py",
+  "gitutils.py",
+  "glow.py",
+  "gp.py",
+  "grmc.py",
+  "grmcst.py",
+  "group_by_size.py",
+  "gsz.py",
+  "gtransline.py",
+  "gzbz.py",
+  "hasdoc.py",
+  "hformat.py",
+  "hhash.py",
+  "hijri.py",
+  "histdup.py",
+  "html2markdown.py",
+  "html_entity.py",
+  "html_minify_py.py",
+  "html_tag_balancer.py",
+  "htmlcleaner.py",
+  "htmlformat.py",
+  "htmlstrip.py",
+  "htmltomarkdown.py",
+  "htmltools.py",
+  "htnew.py",
+  "hunspeller.py",
+  "image_deduper.py",
+  "image_remover.py",
+  "imagetools.py",
+  "imagetotext.py",
+  "img2asci.py",
+  "img2txt.py",
+  "img_similarity.py",
+  "imgco.py",
+  "imgdownloader.py",
+  "imgoptim.py",
+  "imgtools.py",
+  "imgviewer.py",
+  "import_collector.py",
+  "imports.py",
+  "imports4.py",
+  "imports5.py",
+  "importtools.py",
+  "importz.py",
+  "initmat.py",
+  "inject-info.py",
+  "inject_wheel_to_pip_cache.py",
+  "inplace_translator.py",
+  "isnude.py",
+  "iso8859toutf8.py",
+  "isporn.py",
+  "java_serialization_data_converter.py",
+  "jb2.py",
+  "jg.py",
+  "joinlines.py",
+  "jsontools.py",
+  "junktools.py",
+  "justwhl.py",
+  "klv.py",
+  "l2c.py",
+  "langtools.py",
+  "last5minutes.py",
+  "lastncommits.py",
+  "latestpypi.py",
+  "licr.py",
+  "lictools.py",
+  "line_edit_tool.py",
+  "list_dir.py",
+  "list_files_starting_with.py",
+  "lkk.py",
+  "ll.py",
+  "loname.py",
+  "lowerer.py",
+  "ltxt.py",
+  "luaeval.py",
+  "lz4er.py",
+  "m4a2mp3.py",
+  "magickcv.py",
+  "main_guard_checker.py",
+  "make_dep_graph.py",
+  "man_doc.py",
+  "markdowntopdf.py",
+  "marked.py",
+  "maturer.py",
+  "mchist.py",
+  "mdv.py",
+  "merge_css.py",
+  "merge_enfa.py",
+  "merge_faen.py",
+  "merge_reqs.py",
+  "mergecss.py",
+  "mergedic.py",
+  "merger.py",
+  "meta_to_ipynb.py",
+  "mht.py",
+  "mhtm.py",
+  "mhtml-to-html.py",
+  "mhtml.py",
+  "micro2py.py",
+  "migrate2newaccount.py",
+  "migrate_git.py",
+  "migrate_git_user.py",
+  "migrate_repos.py",
+  "minhtml.py",
+  "mk_deptree_svg.py",
+  "mk_tree.py",
+  "mkart.py",
+  "mkc.py",
+  "mkdebs.py",
+  "mkhtml.py",
+  "mkinit.py",
+  "mkinit2.py",
+  "mkpic.py",
+  "mkpik.py",
+  "mkpyc.py",
+  "mksetuppy.py",
+  "mkstand.py",
+  "mkt.py",
+  "mktree.py",
+  "mkx.py",
+  "mo2po.py",
+  "module_usage.py",
+  "morseconverter.py",
+  "mosaic.py",
+  "most_similar.py",
+  "move_tests_dirs.py",
+  "mp3play.py",
+  "mvl.py",
+  "mynano.py",
+  "nato.py",
+  "ncdu.py",
+  "nch.py",
+  "neg.py",
+  "nerf_mp3.py",
+  "nettools.py",
+  "new2old.py",
+  "noface.py",
+  "nolua.py",
+  "noneng.py",
+  "noneng_all.py",
+  "noneng_gcld3.py",
+  "noneng_langdet.py",
+  "noneng_langid.py",
+  "noneng_pycld2.py",
+  "noneng_unicode_range.py",
+  "nonutf8.py",
+  "noreq.py",
+  "normalize_print_sep.py",
+  "noroot.py",
+  "notebook_convert_tool.py",
+  "nr.py",
+  "nvim_plugin_toolbox.py",
+  "obf.py",
+  "ocr_ready.py",
+  "ocrpdf.py",
+  "ocrtools.py",
+  "okerror.py",
+  "oldpi.py",
+  "opng.py",
+  "otf2woff2.py",
+  "outcast.py",
+  "pathcmd.py",
+  "pathdiag.py",
+  "pbat.py",
+  "pdf2img.py",
+  "pdf2page.py",
+  "pdf2png.py",
+  "pdf2text.py",
+  "pdftools.py",
+  "pdftools2.py",
+  "pdftoolz.py",
+  "pdftotext.py",
+  "pdfv.py",
+  "pdfv2.py",
+  "pdfview.py",
+  "pdfviewer.py",
+  "pdif.py",
+  "pdiff.py",
+  "perpage.py",
+  "pfzf.py",
+  "pip_downloader.py",
+  "pip_reinstaller.py",
+  "pip_sanity_check.py",
+  "pipget.py",
+  "piu.py",
+  "pkg_deps_reporter.py",
+  "pkg_insoector.py",
+  "pkg_tools.py",
+  "pkgfetch.py",
+  "pkgres.py",
+  "pkgtools.py",
+  "pkgtools2.py",
+  "pkl2json.py",
+  "pklr.py",
+  "pkltojson.py",
+  "plotter.py",
+  "plow.py",
+  "pnr.py",
+  "pnr2.py",
+  "ppage.py",
+  "pret.py",
+  "pret2.py",
+  "prompt-reformatter.py",
+  "psearch.py",
+  "pss.py",
+  "purepy.py",
+  "py3migrate.py",
+  "py7zmax.py",
+  "py_clean.py",
+  "py_dev.py",
+  "py_refact.py",
+  "py_refactor.py",
+  "pybat.py",
+  "pycatimg.py",
+  "pyclean.py",
+  "pycleaner.py",
+  "pyco.py",
+  "pycppcheck.py",
+  "pycurl_downloader.py",
+  "pydeduper.py",
+  "pydevtools.py",
+  "pydiff.py",
+  "pydocr.py",
+  "pydos2unix.py",
+  "pydos2unix2.py",
+  "pydup.py",
+  "pyenhance.py",
+  "pyextract.py",
+  "pyfmt.py",
+  "pyfslint.py",
+  "pygdu.py",
+  "pyget.py",
+  "pyhead.py",
+  "pyjcal.py",
+  "pylychee.py",
+  "pymonolith.py",
+  "pyocr.py",
+  "pypi_stats.py",
+  "pypi_update_check.py",
+  "pypi_user_pkgs.py",
+  "pypidl.py",
+  "pypistats.py",
+  "pyproj.py",
+  "pyqalc.py",
+  "pyrg.py",
+  "pyrgb.py",
+  "pyruf.py",
+  "pyrun.py",
+  "pysanity-check.py",
+  "pysearch.py",
+  "pyshuf.py",
+  "pysim.py",
+  "pysplit.py",
+  "pyterser.py",
+  "python_downloader.py",
+  "python_duplicate_finder.py",
+  "pytokei.py",
+  "pyxsrt.py",
+  "pyzpkg.py",
+  "qrcode_tool.py",
+  "qrcoder.py",
+  "quickview.py",
+  "qv.py",
+  "random_font.py",
+  "randomize_dircolors.py",
+  "rassingle.py",
+  "raster.py",
+  "re2regex.py",
+  "refactor_as_single.py",
+  "refactor_imports.py",
+  "reformat_module_docstring.py",
+  "reformat_txt.py",
+  "reinstall_system_pkgs.py",
+  "remove_duplicate_functions.py",
+  "remove_lines_containing_str_from_files.py",
+  "rename-project.py",
+  "rename_by_parent.py",
+  "rename_html_by_title.py",
+  "rename_svg_fonts.py",
+  "renametools.py",
+  "render_diagram.py",
+  "renm.py",
+  "renneng.py",
+  "repacktools.py",
+  "repacopy.py",
+  "replace_symlink_with_orig.py",
+  "replacer.py",
+  "report_git_files.py",
+  "reqmaker.py",
+  "reqmerger.py",
+  "reqtools.py",
+  "restore_all_historical_deletions.py",
+  "revdic.py",
+  "rlic.py",
+  "rm_from_archive.py",
+  "rm_numbers.py",
+  "rmc-ts.py",
+  "rmc.py",
+  "rmc2.py",
+  "rmc3.py",
+  "rmc_termux.py",
+  "rmca.py",
+  "rmcco.py",
+  "rmcomdocs.py",
+  "rmcst.py",
+  "rmctools.py",
+  "rmcts.py",
+  "rmempty.py",
+  "rmfiles.py",
+  "rmh.py",
+  "rmi.py",
+  "rmlic.py",
+  "rmshebang.py",
+  "rprompt.py",
+  "rquote.py",
+  "rst2md.py",
+  "ruffbin.py",
+  "run_pylint.py",
+  "s16.py",
+  "sanity-check.py",
+  "save_en.py",
+  "savepkgstocsv.py",
+  "scolor.py",
+  "scraper.py",
+  "secretleak.py",
+  "setup_dotfiles.py",
+  "shebangtools.py",
+  "shiftsrt.py",
+  "show_encodings.py",
+  "showenc.py",
+  "similar_size_files.py",
+  "similarity_check.py",
+  "simple_pipdown.py",
+  "since.py",
+  "site_check.py",
+  "siter.py",
+  "siter2.py",
+  "sitesanity.py",
+  "sitetools.py",
+  "sjby.py",
+  "smart_archiver.py",
+  "snapr.py",
+  "snippetforgr.py",
+  "sonic.py",
+  "soniq.py",
+  "sort_pyfile.py",
+  "sort_quotes.py",
+  "sortbylen.py",
+  "sortbysize.py",
+  "sorted_pkgs.py",
+  "soverify.py",
+  "spdf.py",
+  "spdf2.py",
+  "spdown.py",
+  "spell_fnames.py",
+  "speller.py",
+  "spl.py",
+  "split_json.py",
+  "split_movies_list.py",
+  "splitby.py",
+  "sql2json.py",
+  "sqlite2json.py",
+  "sqltojson.py",
+  "squizer.py",
+  "srmc1.py",
+  "srmc2.py",
+  "srpr.py",
+  "ssdeeper.py",
+  "ssdim.py",
+  "ssdiper.py",
+  "ssdiper2.py",
+  "ssize.py",
+  "strep.py",
+  "strip_comments.py",
+  "strip_html_tags.py",
+  "strip_installed_pkgs.py",
+  "strip_notebooks.py",
+  "striper.py",
+  "striptags.py",
+  "stripy.py",
+  "subdir.py",
+  "subtools.py",
+  "summar.py",
+  "sumr.py",
+  "svg2png.py",
+  "symdups.py",
+  "symlink_so.py",
+  "system_pkgs_reinstaller.py",
+  "taplo.py",
+  "tcg.py",
+  "tcg3.py",
+  "tchat2json.py",
+  "tchunks.py",
+  "tcleaner.py",
+  "tco.py",
+  "tco1.py",
+  "tco2.py",
+  "tco3.py",
+  "tcs.py",
+  "tdif.py",
+  "telegram_link_extractor.py",
+  "tell_font_name.py",
+  "ter_ser.py",
+  "termimage.py",
+  "termimg0.py",
+  "textclean.py",
+  "textools.py",
+  "texttools.py",
+  "tfn.py",
+  "timg.py",
+  "tmc.py",
+  "tnn.py",
+  "to.env.py",
+  "to_jpg.py",
+  "to_unicode.py",
+  "tomd.py",
+  "tomlfmt.py",
+  "top11.py",
+  "top12.py",
+  "topdf.py",
+  "tore.py",
+  "tosc.py",
+  "toutf8.py",
+  "tpv.py",
+  "tpyco.py",
+  "trafila.py",
+  "translate0.py",
+  "translate_code_comments.py",
+  "translate_files.py",
+  "translate_googletrans.py",
+  "translate_noneng_filenames.py",
+  "translate_py_literals.py",
+  "transliterate_fnames.py",
+  "transliterate_fnames2.py",
+  "transwords.py",
+  "try_decode.py",
+  "trybuild.py",
+  "trydecomp.py",
+  "tscleaner.py",
+  "tsrmc.py",
+  "ttf2woff2.py",
+  "tts_from_file.py",
+  "txt2wav.py",
+  "ufa.py",
+  "uncomment.py",
+  "unflatten.py",
+  "unnotate.py",
+  "up_img.py",
+  "update_abi.py",
+  "update_custom_dict.py",
+  "update_requirements.py",
+  "update_summary.py",
+  "upkl.py",
+  "url2pdf.py",
+  "url2pdf2.py",
+  "url2pdf3.py",
+  "urldownloader.py",
+  "urltools.py",
+  "uwrap.py",
+  "uzz.py",
+  "valhtml.py",
+  "validate_cpp_syntax.py",
+  "vcf2json.py",
+  "version_filter.py",
+  "vid2text.py",
+  "vidocr.py",
+  "vidsize.py",
+  "vidtools.py",
+  "watcher.py",
+  "web2pdf.py",
+  "webassets.py",
+  "webclean.py",
+  "wfreq.py",
+  "wheel_cleaner.py",
+  "wheel_inspector.py",
+  "wheel_tools.py",
+  "wheelbuilder.py",
+  "wheelinspector.py",
+  "whisper2txt.py",
+  "woff22woff.py",
+  "woff2woff2.py",
+  "word_freq_counter.py",
+  "wordlist_cleaner.py",
+  "wrapper_gh.py",
+  "wtmp.py",
+  "ww.py",
+  "www.py",
+  "xbase64_assets.py",
+  "xbash_functions.py",
+  "xcodepy.py",
+  "xcolors.py",
+  "xcompress.py",
+  "xem.py",
+  "xembed.py",
+  "xemoji.py",
+  "xenv_vars.py",
+  "xfa.py",
+  "xfenced.py",
+  "xip.py",
+  "xm.py",
+  "xmetadata.py",
+  "xml_yaml2json.py",
+  "xordup.py",
+  "xpy_entities.py",
+  "xrar.py",
+  "xreport.py",
+  "xreport2.py",
+  "xtar.py",
+  "xtranslate.py",
+  "xztools.py",
+  "yap.py",
+  "zhtrans.py",
+  "zip2xz.py",
+  "zip_crack.py",
+  "zshdiag.py",
+  "zstdtools.py"
+ ],
+ "items": {
+  "23.py": {
+   "status": "pending"
+  },
+  "480mkv.py": {
+   "status": "pending"
+  },
+  "7ziper.py": {
+   "status": "pending"
+  },
+  "a-b.py": {
+   "status": "pending"
+  },
+  "abline.py": {
+   "status": "pending"
+  },
+  "add_hints.py": {
+   "status": "pending"
+  },
+  "addel.py": {
+   "status": "pending"
+  },
+  "addmainguard.py": {
+   "status": "pending"
+  },
+  "afk.py": {
+   "status": "pending"
+  },
+  "afk2.py": {
+   "status": "pending"
+  },
+  "afkco.py": {
+   "status": "pending"
+  },
+  "afkx.py": {
+   "status": "pending"
+  },
+  "aitrans.py": {
+   "status": "pending"
+  },
+  "alu.py": {
+   "status": "verified",
+   "out": "refactored/alu.py"
+  },
+  "annotate.py": {
+   "status": "pending"
+  },
+  "annotate_types.py": {
+   "status": "pending"
+  },
+  "ans2proj.py": {
+   "status": "pending"
+  },
+  "apk_font_extractor.py": {
+   "status": "pending"
+  },
+  "archive_convert.py": {
+   "status": "pending"
+  },
+  "archive_dir.py": {
+   "status": "pending"
+  },
+  "archive_merger.py": {
+   "status": "pending"
+  },
+  "archive_tools.py": {
+   "status": "pending"
+  },
+  "armc.py": {
+   "status": "pending"
+  },
+  "artools.py": {
+   "status": "pending"
+  },
+  "ast_eval.py": {
+   "status": "pending"
+  },
+  "atrans.py": {
+   "status": "pending"
+  },
+  "audio2text.py": {
+   "status": "pending"
+  },
+  "audio2txt.py": {
+   "status": "pending"
+  },
+  "autobuild.py": {
+   "status": "pending"
+  },
+  "autoclone.py": {
+   "status": "pending"
+  },
+  "autofix_typo.py": {
+   "status": "pending"
+  },
+  "autopull.py": {
+   "status": "pending"
+  },
+  "ax.py": {
+   "status": "pending"
+  },
+  "b642f.py": {
+   "status": "pending"
+  },
+  "base64_extractor.py": {
+   "status": "pending"
+  },
+  "bash2py.py": {
+   "status": "pending"
+  },
+  "bat2bash.py": {
+   "status": "pending"
+  },
+  "bbc.py": {
+   "status": "pending"
+  },
+  "bcss.py": {
+   "status": "pending"
+  },
+  "benchrmc.py": {
+   "status": "pending"
+  },
+  "bestwhois.py": {
+   "status": "pending"
+  },
+  "bf_nlp.py": {
+   "status": "pending"
+  },
+  "bhtml.py": {
+   "status": "pending"
+  },
+  "bibici.py": {
+   "status": "pending"
+  },
+  "binarytools.py": {
+   "status": "pending"
+  },
+  "bkk.py": {
+   "status": "pending"
+  },
+  "blink.py": {
+   "status": "pending"
+  },
+  "bnn.py": {
+   "status": "pending"
+  },
+  "boxfaces.py": {
+   "status": "pending"
+  },
+  "br.py": {
+   "status": "pending"
+  },
+  "brer.py": {
+   "status": "pending"
+  },
+  "brmc.py": {
+   "status": "pending"
+  },
+  "build_setup.py": {
+   "status": "pending"
+  },
+  "buildr.py": {
+   "status": "pending"
+  },
+  "bw.py": {
+   "status": "pending"
+  },
+  "c2f.py": {
+   "status": "verified",
+   "out": "refactored/c2f.py"
+  },
+  "calc.py": {
+   "status": "pending"
+  },
+  "camel2snake.py": {
+   "status": "pending"
+  },
+  "cccpp.py": {
+   "status": "pending"
+  },
+  "cconsolidate.py": {
+   "status": "pending"
+  },
+  "ccss.py": {
+   "status": "pending"
+  },
+  "cext.py": {
+   "status": "pending"
+  },
+  "chafa.py": {
+   "status": "pending"
+  },
+  "change_project_name.py": {
+   "status": "pending"
+  },
+  "check_conflicts.py": {
+   "status": "pending"
+  },
+  "check_duplicate_packages.py": {
+   "status": "pending"
+  },
+  "check_exports.py": {
+   "status": "pending"
+  },
+  "check_fname_conflict.py": {
+   "status": "pending"
+  },
+  "check_funcs.py": {
+   "status": "pending"
+  },
+  "check_main_guard.py": {
+   "status": "pending"
+  },
+  "clean-bash.py": {
+   "status": "pending"
+  },
+  "clean-cpp.py": {
+   "status": "pending"
+  },
+  "clean-css.py": {
+   "status": "pending"
+  },
+  "clean-html.py": {
+   "status": "pending"
+  },
+  "clean-js.py": {
+   "status": "pending"
+  },
+  "clean-lua.py": {
+   "status": "pending"
+  },
+  "clean-rs.py": {
+   "status": "pending"
+  },
+  "clean-toml.py": {
+   "status": "pending"
+  },
+  "clean-ts.py": {
+   "status": "pending"
+  },
+  "clean_type_annotations.py": {
+   "status": "pending"
+  },
+  "clean_version.py": {
+   "status": "pending"
+  },
+  "cleanbash.py": {
+   "status": "pending"
+  },
+  "cleandic.py": {
+   "status": "pending"
+  },
+  "cleaner.py": {
+   "status": "pending"
+  },
+  "cleanhistory.py": {
+   "status": "verified",
+   "out": "refactored/cleanhistory.py"
+  },
+  "cleanjsts.py": {
+   "status": "pending"
+  },
+  "cleanlog.py": {
+   "status": "pending"
+  },
+  "cleanlua.py": {
+   "status": "pending"
+  },
+  "cleanmd.py": {
+   "status": "pending"
+  },
+  "cleanpy.py": {
+   "status": "pending"
+  },
+  "cleanrs.py": {
+   "status": "pending"
+  },
+  "cleants.py": {
+   "status": "pending"
+  },
+  "cleants2.py": {
+   "status": "pending"
+  },
+  "cleanvim.py": {
+   "status": "pending"
+  },
+  "cliner.py": {
+   "status": "pending"
+  },
+  "cliner2.py": {
+   "status": "pending"
+  },
+  "codepener.py": {
+   "status": "pending"
+  },
+  "colab1.py": {
+   "status": "pending"
+  },
+  "collect_env_vars.py": {
+   "status": "pending"
+  },
+  "collectlic.py": {
+   "status": "pending"
+  },
+  "colortools.py": {
+   "status": "pending"
+  },
+  "comment_out.py": {
+   "status": "pending"
+  },
+  "compare_files_dirs.py": {
+   "status": "pending"
+  },
+  "compile_c_cpp_files.py": {
+   "status": "pending"
+  },
+  "compile_precise2.py": {
+   "status": "pending"
+  },
+  "compress_files_500k.py": {
+   "status": "pending"
+  },
+  "compress_subdirs.py": {
+   "status": "pending"
+  },
+  "compress_text.py": {
+   "status": "pending"
+  },
+  "compression_benchmark.py": {
+   "status": "pending"
+  },
+  "compresstools.py": {
+   "status": "pending"
+  },
+  "comprust.py": {
+   "status": "failed",
+   "reason": "imports the local module `compression_prompt`, which does not exist in the repo; behavior cannot be preserved or verified"
+  },
+  "compsub.py": {
+   "status": "pending"
+  },
+  "compy.py": {
+   "status": "pending"
+  },
+  "compy2.py": {
+   "status": "pending"
+  },
+  "consolidate.py": {
+   "status": "pending"
+  },
+  "copilot_noneng.py": {
+   "status": "pending"
+  },
+  "copy_pyfiles_without_moduledoc.py": {
+   "status": "pending"
+  },
+  "count_chars.py": {
+   "status": "pending"
+  },
+  "cout.py": {
+   "status": "pending"
+  },
+  "cppnew.py": {
+   "status": "pending"
+  },
+  "cpprun.py": {
+   "status": "pending"
+  },
+  "cppu.py": {
+   "status": "pending"
+  },
+  "cramer.py": {
+   "status": "pending"
+  },
+  "create_monthly_branch.py": {
+   "status": "pending"
+  },
+  "create_stub.py": {
+   "status": "pending"
+  },
+  "crmc.py": {
+   "status": "pending"
+  },
+  "crun.py": {
+   "status": "pending"
+  },
+  "csshtmlpret.py": {
+   "status": "pending"
+  },
+  "csv2json.py": {
+   "status": "pending"
+  },
+  "csv2json2.py": {
+   "status": "pending"
+  },
+  "csvtojson.py": {
+   "status": "pending"
+  },
+  "csym.py": {
+   "status": "pending"
+  },
+  "ctrans.py": {
+   "status": "pending"
+  },
+  "cwin.py": {
+   "status": "pending"
+  },
+  "cytonizer.py": {
+   "status": "pending"
+  },
+  "dataconv.py": {
+   "status": "pending"
+  },
+  "dbconverter.py": {
+   "status": "pending"
+  },
+  "dbtools.py": {
+   "status": "pending"
+  },
+  "dcode.py": {
+   "status": "pending"
+  },
+  "dduper.py": {
+   "status": "pending"
+  },
+  "decode_phonetic.py": {
+   "status": "pending"
+  },
+  "decode_unicode.py": {
+   "status": "verified",
+   "out": "refactored/decode_unicode.py"
+  },
+  "decryptor.py": {
+   "status": "pending"
+  },
+  "dedup_func.py": {
+   "status": "pending"
+  },
+  "deduper.py": {
+   "status": "pending"
+  },
+  "dedupfunc.py": {
+   "status": "pending"
+  },
+  "deduplicate_python.py": {
+   "status": "pending"
+  },
+  "deduptools.py": {
+   "status": "pending"
+  },
+  "del10.py": {
+   "status": "pending"
+  },
+  "delafter.py": {
+   "status": "pending"
+  },
+  "delbefor.py": {
+   "status": "pending"
+  },
+  "delemp.py": {
+   "status": "pending"
+  },
+  "delshort.py": {
+   "status": "pending"
+  },
+  "deob.py": {
+   "status": "pending"
+  },
+  "detect_code_similarity.py": {
+   "status": "pending"
+  },
+  "detect_empty_pkgs.py": {
+   "status": "pending"
+  },
+  "detect_encoding.py": {
+   "status": "pending"
+  },
+  "detect_noneng.py": {
+   "status": "pending"
+  },
+  "detect_nonenglish.py": {
+   "status": "pending"
+  },
+  "dhtools.py": {
+   "status": "pending"
+  },
+  "dirinfo.py": {
+   "status": "pending"
+  },
+  "dirsizes.py": {
+   "status": "pending"
+  },
+  "dirtools.py": {
+   "status": "pending"
+  },
+  "dirz.py": {
+   "status": "pending"
+  },
+  "distinfo.py": {
+   "status": "pending"
+  },
+  "distinfo2.py": {
+   "status": "pending"
+  },
+  "dj.py": {
+   "status": "pending"
+  },
+  "dj2.py": {
+   "status": "pending"
+  },
+  "dl.py": {
+   "status": "pending"
+  },
+  "dll.py": {
+   "status": "pending"
+  },
+  "docer.py": {
+   "status": "pending"
+  },
+  "docstring_formatter.py": {
+   "status": "pending"
+  },
+  "doctools.py": {
+   "status": "pending"
+  },
+  "dos2utf-8.py": {
+   "status": "pending"
+  },
+  "dos2utf8.py": {
+   "status": "pending"
+  },
+  "dostounix.py": {
+   "status": "pending"
+  },
+  "dostring_browser.py": {
+   "status": "pending"
+  },
+  "drmc.py": {
+   "status": "pending"
+  },
+  "dt1.py": {
+   "status": "pending"
+  },
+  "dt2.py": {
+   "status": "pending"
+  },
+  "dt3.py": {
+   "status": "pending"
+  },
+  "dt4.py": {
+   "status": "pending"
+  },
+  "dt5.py": {
+   "status": "pending"
+  },
+  "dtg.py": {
+   "status": "pending"
+  },
+  "dtluna.py": {
+   "status": "pending"
+  },
+  "dufpy.py": {
+   "status": "pending"
+  },
+  "dup_detector.py": {
+   "status": "pending"
+  },
+  "dupdirs.py": {
+   "status": "pending"
+  },
+  "dupeguru.py": {
+   "status": "pending"
+  },
+  "dupeguru_textual.py": {
+   "status": "pending"
+  },
+  "dupf.py": {
+   "status": "pending"
+  },
+  "dupfuncanalyzer.py": {
+   "status": "pending"
+  },
+  "dupfx.py": {
+   "status": "pending"
+  },
+  "duptools.py": {
+   "status": "pending"
+  },
+  "egg2whl.py": {
+   "status": "pending"
+  },
+  "elf64.py": {
+   "status": "pending"
+  },
+  "email_collector.py": {
+   "status": "pending"
+  },
+  "email_crawler.py": {
+   "status": "pending"
+  },
+  "empt.py": {
+   "status": "verified",
+   "out": "refactored/empt.py"
+  },
+  "emptypkg.py": {
+   "status": "pending"
+  },
+  "emptywhl.py": {
+   "status": "pending"
+  },
+  "encryptor.py": {
+   "status": "pending"
+  },
+  "ensurebracket.py": {
+   "status": "pending"
+  },
+  "erap.py": {
+   "status": "pending"
+  },
+  "ewhl.py": {
+   "status": "pending"
+  },
+  "ewhl2.py": {
+   "status": "pending"
+  },
+  "ex_class.py": {
+   "status": "pending"
+  },
+  "ex_comments.py": {
+   "status": "pending"
+  },
+  "ex_const.py": {
+   "status": "pending"
+  },
+  "ex_ex.py": {
+   "status": "pending"
+  },
+  "ex_func.py": {
+   "status": "pending"
+  },
+  "ex_imports.py": {
+   "status": "pending"
+  },
+  "excss.py": {
+   "status": "pending"
+  },
+  "eximports.py": {
+   "status": "pending"
+  },
+  "eximports2.py": {
+   "status": "pending"
+  },
+  "eximports3.py": {
+   "status": "pending"
+  },
+  "exjs.py": {
+   "status": "pending"
+  },
+  "extinfo.py": {
+   "status": "pending"
+  },
+  "extz.py": {
+   "status": "pending"
+  },
+  "exurls.py": {
+   "status": "pending"
+  },
+  "f2c.py": {
+   "status": "verified",
+   "out": "refactored/f2c.py"
+  },
+  "f2l.py": {
+   "status": "pending"
+  },
+  "fa_translator.py": {
+   "status": "pending"
+  },
+  "facal.py": {
+   "status": "pending"
+  },
+  "faedit.py": {
+   "status": "pending"
+  },
+  "faen.py": {
+   "status": "pending"
+  },
+  "failtest.py": {
+   "status": "pending"
+  },
+  "faprinter.py": {
+   "status": "pending"
+  },
+  "fasort.py": {
+   "status": "pending"
+  },
+  "fast_compress.py": {
+   "status": "pending"
+  },
+  "fatrans.py": {
+   "status": "pending"
+  },
+  "fatranslate.py": {
+   "status": "pending"
+  },
+  "fco.py": {
+   "status": "pending"
+  },
+  "feloai.py": {
+   "status": "pending"
+  },
+  "feloer.py": {
+   "status": "pending"
+  },
+  "felopy.py": {
+   "status": "pending"
+  },
+  "felormc.py": {
+   "status": "pending"
+  },
+  "fetchimages.py": {
+   "status": "pending"
+  },
+  "ffbp.py": {
+   "status": "pending"
+  },
+  "file_cleanup.py": {
+   "status": "pending"
+  },
+  "file_mover_tool.py": {
+   "status": "pending"
+  },
+  "filefixer.py": {
+   "status": "pending"
+  },
+  "filetools.py": {
+   "status": "pending"
+  },
+  "fimport.py": {
+   "status": "pending"
+  },
+  "find_big_files.py": {
+   "status": "pending"
+  },
+  "find_dup_folders.py": {
+   "status": "pending"
+  },
+  "find_dup_func_class_const.py": {
+   "status": "pending"
+  },
+  "find_empty_wheels.py": {
+   "status": "pending"
+  },
+  "find_req.py": {
+   "status": "pending"
+  },
+  "find_scripts.py": {
+   "status": "pending"
+  },
+  "finglish.py": {
+   "status": "pending"
+  },
+  "fix_encoding.py": {
+   "status": "pending"
+  },
+  "fix_escape_sequence.py": {
+   "status": "pending"
+  },
+  "fix_html_md_broken_links.py": {
+   "status": "pending"
+  },
+  "fix_is_not.py": {
+   "status": "pending"
+  },
+  "fix_shebang_opt.py": {
+   "status": "pending"
+  },
+  "fixast.py": {
+   "status": "pending"
+  },
+  "fixcape.py": {
+   "status": "pending"
+  },
+  "fixescape.py": {
+   "status": "pending"
+  },
+  "fixext.py": {
+   "status": "pending"
+  },
+  "fixparanthes.py": {
+   "status": "pending"
+  },
+  "fixshebang.py": {
+   "status": "pending"
+  },
+  "fixwhl.py": {
+   "status": "pending"
+  },
+  "fixwhlnames.py": {
+   "status": "pending"
+  },
+  "flaten.py": {
+   "status": "pending"
+  },
+  "fmt_bash.py": {
+   "status": "pending"
+  },
+  "fmt_toml.py": {
+   "status": "pending"
+  },
+  "foext.py": {
+   "status": "pending"
+  },
+  "folderize.py": {
+   "status": "pending"
+  },
+  "folderize_by_sim_names.py": {
+   "status": "pending"
+  },
+  "foldesiz.py": {
+   "status": "pending"
+  },
+  "foldext.py": {
+   "status": "pending"
+  },
+  "foldimension.py": {
+   "status": "pending"
+  },
+  "foldpy.py": {
+   "status": "pending"
+  },
+  "font_deduper.py": {
+   "status": "pending"
+  },
+  "fontconverter.py": {
+   "status": "pending"
+  },
+  "fontpreview.py": {
+   "status": "pending"
+  },
+  "forfin.py": {
+   "status": "pending"
+  },
+  "format_python_code.py": {
+   "status": "pending"
+  },
+  "frmc.py": {
+   "status": "pending"
+  },
+  "fssim.py": {
+   "status": "pending"
+  },
+  "ftak.py": {
+   "status": "pending"
+  },
+  "funclass_names.py": {
+   "status": "pending"
+  },
+  "furl_cli.py": {
+   "status": "pending"
+  },
+  "furls.py": {
+   "status": "pending"
+  },
+  "fuzzy_dedup.py": {
+   "status": "pending"
+  },
+  "fuzzycmp.py": {
+   "status": "pending"
+  },
+  "fv.py": {
+   "status": "verified",
+   "out": "refactored/fv.py"
+  },
+  "fztrans.py": {
+   "status": "pending"
+  },
+  "g1.py": {
+   "status": "pending"
+  },
+  "gagc.py": {
+   "status": "pending"
+  },
+  "gdetect_dup_objects.py": {
+   "status": "pending"
+  },
+  "gdrive_sync.py": {
+   "status": "pending"
+  },
+  "gdu.py": {
+   "status": "pending"
+  },
+  "gdupfunc.py": {
+   "status": "pending"
+  },
+  "gdupfx.py": {
+   "status": "pending"
+  },
+  "generate_unified.py": {
+   "status": "pending"
+  },
+  "get_keys.py": {
+   "status": "pending"
+  },
+  "get_latest_pkgs_added_to_pypi.py": {
+   "status": "pending"
+  },
+  "get_lic.py": {
+   "status": "pending"
+  },
+  "get_pypi_rssfeed.py": {
+   "status": "pending"
+  },
+  "get_req.py": {
+   "status": "pending"
+  },
+  "get_sub.py": {
+   "status": "pending"
+  },
+  "getenc.py": {
+   "status": "pending"
+  },
+  "getkeys.py": {
+   "status": "pending"
+  },
+  "getpyrepos.py": {
+   "status": "pending"
+  },
+  "getsub.py": {
+   "status": "pending"
+  },
+  "gexcst.py": {
+   "status": "pending"
+  },
+  "gext.py": {
+   "status": "pending"
+  },
+  "gext0.py": {
+   "status": "pending"
+  },
+  "gfco.py": {
+   "status": "pending"
+  },
+  "gh_repo.py": {
+   "status": "pending"
+  },
+  "ghzip.py": {
+   "status": "pending"
+  },
+  "git_repo_creator.py": {
+   "status": "pending"
+  },
+  "git_squash_n.py": {
+   "status": "pending"
+  },
+  "gitclone.py": {
+   "status": "pending"
+  },
+  "github_query_tool.py": {
+   "status": "pending"
+  },
+  "gitools.py": {
+   "status": "pending"
+  },
+  "gitreportx.py": {
+   "status": "pending"
+  },
+  "gitsynctools.py": {
+   "status": "pending"
+  },
+  "gittools.py": {
+   "status": "pending"
+  },
+  "gitutils.py": {
+   "status": "pending"
+  },
+  "glow.py": {
+   "status": "pending"
+  },
+  "gp.py": {
+   "status": "pending"
+  },
+  "grmc.py": {
+   "status": "pending"
+  },
+  "grmcst.py": {
+   "status": "pending"
+  },
+  "group_by_size.py": {
+   "status": "pending"
+  },
+  "gsz.py": {
+   "status": "pending"
+  },
+  "gtransline.py": {
+   "status": "pending"
+  },
+  "gzbz.py": {
+   "status": "pending"
+  },
+  "hasdoc.py": {
+   "status": "pending"
+  },
+  "hformat.py": {
+   "status": "pending"
+  },
+  "hhash.py": {
+   "status": "pending"
+  },
+  "hijri.py": {
+   "status": "pending"
+  },
+  "histdup.py": {
+   "status": "pending"
+  },
+  "html2markdown.py": {
+   "status": "pending"
+  },
+  "html_entity.py": {
+   "status": "pending"
+  },
+  "html_minify_py.py": {
+   "status": "pending"
+  },
+  "html_tag_balancer.py": {
+   "status": "pending"
+  },
+  "htmlcleaner.py": {
+   "status": "pending"
+  },
+  "htmlformat.py": {
+   "status": "pending"
+  },
+  "htmlstrip.py": {
+   "status": "pending"
+  },
+  "htmltomarkdown.py": {
+   "status": "pending"
+  },
+  "htmltools.py": {
+   "status": "pending"
+  },
+  "htnew.py": {
+   "status": "pending"
+  },
+  "hunspeller.py": {
+   "status": "pending"
+  },
+  "image_deduper.py": {
+   "status": "pending"
+  },
+  "image_remover.py": {
+   "status": "pending"
+  },
+  "imagetools.py": {
+   "status": "pending"
+  },
+  "imagetotext.py": {
+   "status": "pending"
+  },
+  "img2asci.py": {
+   "status": "pending"
+  },
+  "img2txt.py": {
+   "status": "pending"
+  },
+  "img_similarity.py": {
+   "status": "pending"
+  },
+  "imgco.py": {
+   "status": "pending"
+  },
+  "imgdownloader.py": {
+   "status": "pending"
+  },
+  "imgoptim.py": {
+   "status": "pending"
+  },
+  "imgtools.py": {
+   "status": "pending"
+  },
+  "imgviewer.py": {
+   "status": "pending"
+  },
+  "import_collector.py": {
+   "status": "pending"
+  },
+  "imports.py": {
+   "status": "pending"
+  },
+  "imports4.py": {
+   "status": "pending"
+  },
+  "imports5.py": {
+   "status": "pending"
+  },
+  "importtools.py": {
+   "status": "pending"
+  },
+  "importz.py": {
+   "status": "pending"
+  },
+  "initmat.py": {
+   "status": "pending"
+  },
+  "inject-info.py": {
+   "status": "pending"
+  },
+  "inject_wheel_to_pip_cache.py": {
+   "status": "pending"
+  },
+  "inplace_translator.py": {
+   "status": "pending"
+  },
+  "isnude.py": {
+   "status": "pending"
+  },
+  "iso8859toutf8.py": {
+   "status": "pending"
+  },
+  "isporn.py": {
+   "status": "pending"
+  },
+  "java_serialization_data_converter.py": {
+   "status": "pending"
+  },
+  "jb2.py": {
+   "status": "pending"
+  },
+  "jg.py": {
+   "status": "pending"
+  },
+  "joinlines.py": {
+   "status": "pending"
+  },
+  "jsontools.py": {
+   "status": "pending"
+  },
+  "junktools.py": {
+   "status": "pending"
+  },
+  "justwhl.py": {
+   "status": "pending"
+  },
+  "klv.py": {
+   "status": "pending"
+  },
+  "l2c.py": {
+   "status": "pending"
+  },
+  "langtools.py": {
+   "status": "pending"
+  },
+  "last5minutes.py": {
+   "status": "pending"
+  },
+  "lastncommits.py": {
+   "status": "pending"
+  },
+  "latestpypi.py": {
+   "status": "pending"
+  },
+  "licr.py": {
+   "status": "pending"
+  },
+  "lictools.py": {
+   "status": "pending"
+  },
+  "line_edit_tool.py": {
+   "status": "pending"
+  },
+  "list_dir.py": {
+   "status": "pending"
+  },
+  "list_files_starting_with.py": {
+   "status": "pending"
+  },
+  "lkk.py": {
+   "status": "pending"
+  },
+  "ll.py": {
+   "status": "pending"
+  },
+  "loname.py": {
+   "status": "pending"
+  },
+  "lowerer.py": {
+   "status": "verified",
+   "out": "refactored/lowerer.py"
+  },
+  "ltxt.py": {
+   "status": "pending"
+  },
+  "luaeval.py": {
+   "status": "pending"
+  },
+  "lz4er.py": {
+   "status": "pending"
+  },
+  "m4a2mp3.py": {
+   "status": "pending"
+  },
+  "magickcv.py": {
+   "status": "pending"
+  },
+  "main_guard_checker.py": {
+   "status": "pending"
+  },
+  "make_dep_graph.py": {
+   "status": "pending"
+  },
+  "man_doc.py": {
+   "status": "pending"
+  },
+  "markdowntopdf.py": {
+   "status": "pending"
+  },
+  "marked.py": {
+   "status": "pending"
+  },
+  "maturer.py": {
+   "status": "pending"
+  },
+  "mchist.py": {
+   "status": "pending"
+  },
+  "mdv.py": {
+   "status": "pending"
+  },
+  "merge_css.py": {
+   "status": "pending"
+  },
+  "merge_enfa.py": {
+   "status": "pending"
+  },
+  "merge_faen.py": {
+   "status": "pending"
+  },
+  "merge_reqs.py": {
+   "status": "pending"
+  },
+  "mergecss.py": {
+   "status": "verified",
+   "out": "refactored/mergecss.py"
+  },
+  "mergedic.py": {
+   "status": "pending"
+  },
+  "merger.py": {
+   "status": "pending"
+  },
+  "meta_to_ipynb.py": {
+   "status": "pending"
+  },
+  "mht.py": {
+   "status": "pending"
+  },
+  "mhtm.py": {
+   "status": "pending"
+  },
+  "mhtml-to-html.py": {
+   "status": "pending"
+  },
+  "mhtml.py": {
+   "status": "pending"
+  },
+  "micro2py.py": {
+   "status": "pending"
+  },
+  "migrate2newaccount.py": {
+   "status": "pending"
+  },
+  "migrate_git.py": {
+   "status": "pending"
+  },
+  "migrate_git_user.py": {
+   "status": "pending"
+  },
+  "migrate_repos.py": {
+   "status": "pending"
+  },
+  "minhtml.py": {
+   "status": "pending"
+  },
+  "mk_deptree_svg.py": {
+   "status": "pending"
+  },
+  "mk_tree.py": {
+   "status": "pending"
+  },
+  "mkart.py": {
+   "status": "pending"
+  },
+  "mkc.py": {
+   "status": "pending"
+  },
+  "mkdebs.py": {
+   "status": "pending"
+  },
+  "mkhtml.py": {
+   "status": "pending"
+  },
+  "mkinit.py": {
+   "status": "pending"
+  },
+  "mkinit2.py": {
+   "status": "pending"
+  },
+  "mkpic.py": {
+   "status": "pending"
+  },
+  "mkpik.py": {
+   "status": "pending"
+  },
+  "mkpyc.py": {
+   "status": "pending"
+  },
+  "mksetuppy.py": {
+   "status": "pending"
+  },
+  "mkstand.py": {
+   "status": "pending"
+  },
+  "mkt.py": {
+   "status": "pending"
+  },
+  "mktree.py": {
+   "status": "pending"
+  },
+  "mkx.py": {
+   "status": "pending"
+  },
+  "mo2po.py": {
+   "status": "pending"
+  },
+  "module_usage.py": {
+   "status": "pending"
+  },
+  "morseconverter.py": {
+   "status": "pending"
+  },
+  "mosaic.py": {
+   "status": "pending"
+  },
+  "most_similar.py": {
+   "status": "pending"
+  },
+  "move_tests_dirs.py": {
+   "status": "pending"
+  },
+  "mp3play.py": {
+   "status": "pending"
+  },
+  "mvl.py": {
+   "status": "pending"
+  },
+  "mynano.py": {
+   "status": "pending"
+  },
+  "nato.py": {
+   "status": "pending"
+  },
+  "ncdu.py": {
+   "status": "pending"
+  },
+  "nch.py": {
+   "status": "pending"
+  },
+  "neg.py": {
+   "status": "pending"
+  },
+  "nerf_mp3.py": {
+   "status": "pending"
+  },
+  "nettools.py": {
+   "status": "pending"
+  },
+  "new2old.py": {
+   "status": "pending"
+  },
+  "noface.py": {
+   "status": "pending"
+  },
+  "nolua.py": {
+   "status": "pending"
+  },
+  "noneng.py": {
+   "status": "pending"
+  },
+  "noneng_all.py": {
+   "status": "pending"
+  },
+  "noneng_gcld3.py": {
+   "status": "pending"
+  },
+  "noneng_langdet.py": {
+   "status": "pending"
+  },
+  "noneng_langid.py": {
+   "status": "pending"
+  },
+  "noneng_pycld2.py": {
+   "status": "pending"
+  },
+  "noneng_unicode_range.py": {
+   "status": "pending"
+  },
+  "nonutf8.py": {
+   "status": "pending"
+  },
+  "noreq.py": {
+   "status": "pending"
+  },
+  "normalize_print_sep.py": {
+   "status": "pending"
+  },
+  "noroot.py": {
+   "status": "pending"
+  },
+  "notebook_convert_tool.py": {
+   "status": "pending"
+  },
+  "nr.py": {
+   "status": "pending"
+  },
+  "nvim_plugin_toolbox.py": {
+   "status": "pending"
+  },
+  "obf.py": {
+   "status": "pending"
+  },
+  "ocr_ready.py": {
+   "status": "pending"
+  },
+  "ocrpdf.py": {
+   "status": "pending"
+  },
+  "ocrtools.py": {
+   "status": "pending"
+  },
+  "okerror.py": {
+   "status": "pending"
+  },
+  "oldpi.py": {
+   "status": "pending"
+  },
+  "opng.py": {
+   "status": "pending"
+  },
+  "otf2woff2.py": {
+   "status": "pending"
+  },
+  "outcast.py": {
+   "status": "pending"
+  },
+  "pathcmd.py": {
+   "status": "verified",
+   "out": "refactored/pathcmd.py"
+  },
+  "pathdiag.py": {
+   "status": "pending"
+  },
+  "pbat.py": {
+   "status": "pending"
+  },
+  "pdf2img.py": {
+   "status": "pending"
+  },
+  "pdf2page.py": {
+   "status": "pending"
+  },
+  "pdf2png.py": {
+   "status": "pending"
+  },
+  "pdf2text.py": {
+   "status": "pending"
+  },
+  "pdftools.py": {
+   "status": "pending"
+  },
+  "pdftools2.py": {
+   "status": "pending"
+  },
+  "pdftoolz.py": {
+   "status": "pending"
+  },
+  "pdftotext.py": {
+   "status": "pending"
+  },
+  "pdfv.py": {
+   "status": "pending"
+  },
+  "pdfv2.py": {
+   "status": "pending"
+  },
+  "pdfview.py": {
+   "status": "pending"
+  },
+  "pdfviewer.py": {
+   "status": "pending"
+  },
+  "pdif.py": {
+   "status": "pending"
+  },
+  "pdiff.py": {
+   "status": "pending"
+  },
+  "perpage.py": {
+   "status": "pending"
+  },
+  "pfzf.py": {
+   "status": "pending"
+  },
+  "pip_downloader.py": {
+   "status": "pending"
+  },
+  "pip_reinstaller.py": {
+   "status": "pending"
+  },
+  "pip_sanity_check.py": {
+   "status": "pending"
+  },
+  "pipget.py": {
+   "status": "pending"
+  },
+  "piu.py": {
+   "status": "pending"
+  },
+  "pkg_deps_reporter.py": {
+   "status": "pending"
+  },
+  "pkg_insoector.py": {
+   "status": "pending"
+  },
+  "pkg_tools.py": {
+   "status": "pending"
+  },
+  "pkgfetch.py": {
+   "status": "pending"
+  },
+  "pkgres.py": {
+   "status": "pending"
+  },
+  "pkgtools.py": {
+   "status": "pending"
+  },
+  "pkgtools2.py": {
+   "status": "pending"
+  },
+  "pkl2json.py": {
+   "status": "pending"
+  },
+  "pklr.py": {
+   "status": "pending"
+  },
+  "pkltojson.py": {
+   "status": "pending"
+  },
+  "plotter.py": {
+   "status": "pending"
+  },
+  "plow.py": {
+   "status": "pending"
+  },
+  "pnr.py": {
+   "status": "pending"
+  },
+  "pnr2.py": {
+   "status": "pending"
+  },
+  "ppage.py": {
+   "status": "pending"
+  },
+  "pret.py": {
+   "status": "pending"
+  },
+  "pret2.py": {
+   "status": "pending"
+  },
+  "prompt-reformatter.py": {
+   "status": "pending"
+  },
+  "psearch.py": {
+   "status": "pending"
+  },
+  "pss.py": {
+   "status": "pending"
+  },
+  "purepy.py": {
+   "status": "pending"
+  },
+  "py3migrate.py": {
+   "status": "pending"
+  },
+  "py7zmax.py": {
+   "status": "pending"
+  },
+  "py_clean.py": {
+   "status": "pending"
+  },
+  "py_dev.py": {
+   "status": "pending"
+  },
+  "py_refact.py": {
+   "status": "pending"
+  },
+  "py_refactor.py": {
+   "status": "pending"
+  },
+  "pybat.py": {
+   "status": "pending"
+  },
+  "pycatimg.py": {
+   "status": "pending"
+  },
+  "pyclean.py": {
+   "status": "pending"
+  },
+  "pycleaner.py": {
+   "status": "pending"
+  },
+  "pyco.py": {
+   "status": "pending"
+  },
+  "pycppcheck.py": {
+   "status": "pending"
+  },
+  "pycurl_downloader.py": {
+   "status": "pending"
+  },
+  "pydeduper.py": {
+   "status": "pending"
+  },
+  "pydevtools.py": {
+   "status": "pending"
+  },
+  "pydiff.py": {
+   "status": "pending"
+  },
+  "pydocr.py": {
+   "status": "pending"
+  },
+  "pydos2unix.py": {
+   "status": "pending"
+  },
+  "pydos2unix2.py": {
+   "status": "pending"
+  },
+  "pydup.py": {
+   "status": "pending"
+  },
+  "pyenhance.py": {
+   "status": "pending"
+  },
+  "pyextract.py": {
+   "status": "pending"
+  },
+  "pyfmt.py": {
+   "status": "pending"
+  },
+  "pyfslint.py": {
+   "status": "pending"
+  },
+  "pygdu.py": {
+   "status": "pending"
+  },
+  "pyget.py": {
+   "status": "pending"
+  },
+  "pyhead.py": {
+   "status": "verified",
+   "out": "refactored/pyhead.py"
+  },
+  "pyjcal.py": {
+   "status": "pending"
+  },
+  "pylychee.py": {
+   "status": "pending"
+  },
+  "pymonolith.py": {
+   "status": "pending"
+  },
+  "pyocr.py": {
+   "status": "pending"
+  },
+  "pypi_stats.py": {
+   "status": "pending"
+  },
+  "pypi_update_check.py": {
+   "status": "pending"
+  },
+  "pypi_user_pkgs.py": {
+   "status": "pending"
+  },
+  "pypidl.py": {
+   "status": "pending"
+  },
+  "pypistats.py": {
+   "status": "pending"
+  },
+  "pyproj.py": {
+   "status": "pending"
+  },
+  "pyqalc.py": {
+   "status": "pending"
+  },
+  "pyrg.py": {
+   "status": "pending"
+  },
+  "pyrgb.py": {
+   "status": "pending"
+  },
+  "pyruf.py": {
+   "status": "pending"
+  },
+  "pyrun.py": {
+   "status": "pending"
+  },
+  "pysanity-check.py": {
+   "status": "pending"
+  },
+  "pysearch.py": {
+   "status": "pending"
+  },
+  "pyshuf.py": {
+   "status": "pending"
+  },
+  "pysim.py": {
+   "status": "pending"
+  },
+  "pysplit.py": {
+   "status": "pending"
+  },
+  "pyterser.py": {
+   "status": "pending"
+  },
+  "python_downloader.py": {
+   "status": "pending"
+  },
+  "python_duplicate_finder.py": {
+   "status": "pending"
+  },
+  "pytokei.py": {
+   "status": "pending"
+  },
+  "pyxsrt.py": {
+   "status": "pending"
+  },
+  "pyzpkg.py": {
+   "status": "pending"
+  },
+  "qrcode_tool.py": {
+   "status": "pending"
+  },
+  "qrcoder.py": {
+   "status": "pending"
+  },
+  "quickview.py": {
+   "status": "pending"
+  },
+  "qv.py": {
+   "status": "pending"
+  },
+  "random_font.py": {
+   "status": "pending"
+  },
+  "randomize_dircolors.py": {
+   "status": "pending"
+  },
+  "rassingle.py": {
+   "status": "pending"
+  },
+  "raster.py": {
+   "status": "verified",
+   "out": "refactored/raster.py"
+  },
+  "re2regex.py": {
+   "status": "pending"
+  },
+  "refactor_as_single.py": {
+   "status": "pending"
+  },
+  "refactor_imports.py": {
+   "status": "pending"
+  },
+  "reformat_module_docstring.py": {
+   "status": "pending"
+  },
+  "reformat_txt.py": {
+   "status": "pending"
+  },
+  "reinstall_system_pkgs.py": {
+   "status": "pending"
+  },
+  "remove_duplicate_functions.py": {
+   "status": "pending"
+  },
+  "remove_lines_containing_str_from_files.py": {
+   "status": "pending"
+  },
+  "rename-project.py": {
+   "status": "pending"
+  },
+  "rename_by_parent.py": {
+   "status": "pending"
+  },
+  "rename_html_by_title.py": {
+   "status": "pending"
+  },
+  "rename_svg_fonts.py": {
+   "status": "pending"
+  },
+  "renametools.py": {
+   "status": "pending"
+  },
+  "render_diagram.py": {
+   "status": "pending"
+  },
+  "renm.py": {
+   "status": "pending"
+  },
+  "renneng.py": {
+   "status": "pending"
+  },
+  "repacktools.py": {
+   "status": "pending"
+  },
+  "repacopy.py": {
+   "status": "pending"
+  },
+  "replace_symlink_with_orig.py": {
+   "status": "pending"
+  },
+  "replacer.py": {
+   "status": "pending"
+  },
+  "report_git_files.py": {
+   "status": "pending"
+  },
+  "reqmaker.py": {
+   "status": "pending"
+  },
+  "reqmerger.py": {
+   "status": "pending"
+  },
+  "reqtools.py": {
+   "status": "pending"
+  },
+  "restore_all_historical_deletions.py": {
+   "status": "pending"
+  },
+  "revdic.py": {
+   "status": "pending"
+  },
+  "rlic.py": {
+   "status": "pending"
+  },
+  "rm_from_archive.py": {
+   "status": "pending"
+  },
+  "rm_numbers.py": {
+   "status": "pending"
+  },
+  "rmc-ts.py": {
+   "status": "pending"
+  },
+  "rmc.py": {
+   "status": "pending"
+  },
+  "rmc2.py": {
+   "status": "pending"
+  },
+  "rmc3.py": {
+   "status": "pending"
+  },
+  "rmc_termux.py": {
+   "status": "pending"
+  },
+  "rmca.py": {
+   "status": "pending"
+  },
+  "rmcco.py": {
+   "status": "pending"
+  },
+  "rmcomdocs.py": {
+   "status": "pending"
+  },
+  "rmcst.py": {
+   "status": "pending"
+  },
+  "rmctools.py": {
+   "status": "pending"
+  },
+  "rmcts.py": {
+   "status": "pending"
+  },
+  "rmempty.py": {
+   "status": "pending"
+  },
+  "rmfiles.py": {
+   "status": "pending"
+  },
+  "rmh.py": {
+   "status": "pending"
+  },
+  "rmi.py": {
+   "status": "pending"
+  },
+  "rmlic.py": {
+   "status": "pending"
+  },
+  "rmshebang.py": {
+   "status": "pending"
+  },
+  "rprompt.py": {
+   "status": "pending"
+  },
+  "rquote.py": {
+   "status": "pending"
+  },
+  "rst2md.py": {
+   "status": "pending"
+  },
+  "ruffbin.py": {
+   "status": "pending"
+  },
+  "run_pylint.py": {
+   "status": "pending"
+  },
+  "s16.py": {
+   "status": "pending"
+  },
+  "sanity-check.py": {
+   "status": "pending"
+  },
+  "save_en.py": {
+   "status": "pending"
+  },
+  "savepkgstocsv.py": {
+   "status": "pending"
+  },
+  "scolor.py": {
+   "status": "pending"
+  },
+  "scraper.py": {
+   "status": "pending"
+  },
+  "secretleak.py": {
+   "status": "pending"
+  },
+  "setup_dotfiles.py": {
+   "status": "pending"
+  },
+  "shebangtools.py": {
+   "status": "pending"
+  },
+  "shiftsrt.py": {
+   "status": "pending"
+  },
+  "show_encodings.py": {
+   "status": "pending"
+  },
+  "showenc.py": {
+   "status": "pending"
+  },
+  "similar_size_files.py": {
+   "status": "pending"
+  },
+  "similarity_check.py": {
+   "status": "pending"
+  },
+  "simple_pipdown.py": {
+   "status": "pending"
+  },
+  "since.py": {
+   "status": "pending"
+  },
+  "site_check.py": {
+   "status": "pending"
+  },
+  "siter.py": {
+   "status": "pending"
+  },
+  "siter2.py": {
+   "status": "pending"
+  },
+  "sitesanity.py": {
+   "status": "pending"
+  },
+  "sitetools.py": {
+   "status": "pending"
+  },
+  "sjby.py": {
+   "status": "pending"
+  },
+  "smart_archiver.py": {
+   "status": "pending"
+  },
+  "snapr.py": {
+   "status": "pending"
+  },
+  "snippetforgr.py": {
+   "status": "pending"
+  },
+  "sonic.py": {
+   "status": "pending"
+  },
+  "soniq.py": {
+   "status": "pending"
+  },
+  "sort_pyfile.py": {
+   "status": "pending"
+  },
+  "sort_quotes.py": {
+   "status": "pending"
+  },
+  "sortbylen.py": {
+   "status": "pending"
+  },
+  "sortbysize.py": {
+   "status": "pending"
+  },
+  "sorted_pkgs.py": {
+   "status": "pending"
+  },
+  "soverify.py": {
+   "status": "pending"
+  },
+  "spdf.py": {
+   "status": "pending"
+  },
+  "spdf2.py": {
+   "status": "pending"
+  },
+  "spdown.py": {
+   "status": "pending"
+  },
+  "spell_fnames.py": {
+   "status": "pending"
+  },
+  "speller.py": {
+   "status": "pending"
+  },
+  "spl.py": {
+   "status": "pending"
+  },
+  "split_json.py": {
+   "status": "pending"
+  },
+  "split_movies_list.py": {
+   "status": "pending"
+  },
+  "splitby.py": {
+   "status": "pending"
+  },
+  "sql2json.py": {
+   "status": "pending"
+  },
+  "sqlite2json.py": {
+   "status": "pending"
+  },
+  "sqltojson.py": {
+   "status": "pending"
+  },
+  "squizer.py": {
+   "status": "pending"
+  },
+  "srmc1.py": {
+   "status": "pending"
+  },
+  "srmc2.py": {
+   "status": "pending"
+  },
+  "srpr.py": {
+   "status": "verified",
+   "out": "refactored/srpr.py"
+  },
+  "ssdeeper.py": {
+   "status": "pending"
+  },
+  "ssdim.py": {
+   "status": "pending"
+  },
+  "ssdiper.py": {
+   "status": "pending"
+  },
+  "ssdiper2.py": {
+   "status": "pending"
+  },
+  "ssize.py": {
+   "status": "pending"
+  },
+  "strep.py": {
+   "status": "pending"
+  },
+  "strip_comments.py": {
+   "status": "pending"
+  },
+  "strip_html_tags.py": {
+   "status": "pending"
+  },
+  "strip_installed_pkgs.py": {
+   "status": "pending"
+  },
+  "strip_notebooks.py": {
+   "status": "pending"
+  },
+  "striper.py": {
+   "status": "pending"
+  },
+  "striptags.py": {
+   "status": "pending"
+  },
+  "stripy.py": {
+   "status": "pending"
+  },
+  "subdir.py": {
+   "status": "pending"
+  },
+  "subtools.py": {
+   "status": "pending"
+  },
+  "summar.py": {
+   "status": "pending"
+  },
+  "sumr.py": {
+   "status": "pending"
+  },
+  "svg2png.py": {
+   "status": "pending"
+  },
+  "symdups.py": {
+   "status": "pending"
+  },
+  "symlink_so.py": {
+   "status": "pending"
+  },
+  "system_pkgs_reinstaller.py": {
+   "status": "pending"
+  },
+  "taplo.py": {
+   "status": "pending"
+  },
+  "tcg.py": {
+   "status": "pending"
+  },
+  "tcg3.py": {
+   "status": "pending"
+  },
+  "tchat2json.py": {
+   "status": "pending"
+  },
+  "tchunks.py": {
+   "status": "pending"
+  },
+  "tcleaner.py": {
+   "status": "pending"
+  },
+  "tco.py": {
+   "status": "pending"
+  },
+  "tco1.py": {
+   "status": "pending"
+  },
+  "tco2.py": {
+   "status": "pending"
+  },
+  "tco3.py": {
+   "status": "pending"
+  },
+  "tcs.py": {
+   "status": "pending"
+  },
+  "tdif.py": {
+   "status": "pending"
+  },
+  "telegram_link_extractor.py": {
+   "status": "pending"
+  },
+  "tell_font_name.py": {
+   "status": "pending"
+  },
+  "ter_ser.py": {
+   "status": "pending"
+  },
+  "termimage.py": {
+   "status": "pending"
+  },
+  "termimg0.py": {
+   "status": "pending"
+  },
+  "textclean.py": {
+   "status": "pending"
+  },
+  "textools.py": {
+   "status": "pending"
+  },
+  "texttools.py": {
+   "status": "pending"
+  },
+  "tfn.py": {
+   "status": "pending"
+  },
+  "timg.py": {
+   "status": "pending"
+  },
+  "tmc.py": {
+   "status": "pending"
+  },
+  "tnn.py": {
+   "status": "pending"
+  },
+  "to.env.py": {
+   "status": "pending"
+  },
+  "to_jpg.py": {
+   "status": "pending"
+  },
+  "to_unicode.py": {
+   "status": "pending"
+  },
+  "tomd.py": {
+   "status": "pending"
+  },
+  "tomlfmt.py": {
+   "status": "pending"
+  },
+  "top11.py": {
+   "status": "pending"
+  },
+  "top12.py": {
+   "status": "pending"
+  },
+  "topdf.py": {
+   "status": "pending"
+  },
+  "tore.py": {
+   "status": "pending"
+  },
+  "tosc.py": {
+   "status": "pending"
+  },
+  "toutf8.py": {
+   "status": "pending"
+  },
+  "tpv.py": {
+   "status": "pending"
+  },
+  "tpyco.py": {
+   "status": "pending"
+  },
+  "trafila.py": {
+   "status": "pending"
+  },
+  "translate0.py": {
+   "status": "pending"
+  },
+  "translate_code_comments.py": {
+   "status": "pending"
+  },
+  "translate_files.py": {
+   "status": "pending"
+  },
+  "translate_googletrans.py": {
+   "status": "pending"
+  },
+  "translate_noneng_filenames.py": {
+   "status": "pending"
+  },
+  "translate_py_literals.py": {
+   "status": "pending"
+  },
+  "transliterate_fnames.py": {
+   "status": "pending"
+  },
+  "transliterate_fnames2.py": {
+   "status": "pending"
+  },
+  "transwords.py": {
+   "status": "pending"
+  },
+  "try_decode.py": {
+   "status": "pending"
+  },
+  "trybuild.py": {
+   "status": "pending"
+  },
+  "trydecomp.py": {
+   "status": "pending"
+  },
+  "tscleaner.py": {
+   "status": "pending"
+  },
+  "tsrmc.py": {
+   "status": "pending"
+  },
+  "ttf2woff2.py": {
+   "status": "pending"
+  },
+  "tts_from_file.py": {
+   "status": "pending"
+  },
+  "txt2wav.py": {
+   "status": "pending"
+  },
+  "ufa.py": {
+   "status": "pending"
+  },
+  "uncomment.py": {
+   "status": "pending"
+  },
+  "unflatten.py": {
+   "status": "pending"
+  },
+  "unnotate.py": {
+   "status": "pending"
+  },
+  "up_img.py": {
+   "status": "pending"
+  },
+  "update_abi.py": {
+   "status": "pending"
+  },
+  "update_custom_dict.py": {
+   "status": "pending"
+  },
+  "update_requirements.py": {
+   "status": "pending"
+  },
+  "update_summary.py": {
+   "status": "pending"
+  },
+  "upkl.py": {
+   "status": "verified",
+   "out": "refactored/upkl.py"
+  },
+  "url2pdf.py": {
+   "status": "pending"
+  },
+  "url2pdf2.py": {
+   "status": "pending"
+  },
+  "url2pdf3.py": {
+   "status": "pending"
+  },
+  "urldownloader.py": {
+   "status": "pending"
+  },
+  "urltools.py": {
+   "status": "pending"
+  },
+  "uwrap.py": {
+   "status": "pending"
+  },
+  "uzz.py": {
+   "status": "pending"
+  },
+  "valhtml.py": {
+   "status": "pending"
+  },
+  "validate_cpp_syntax.py": {
+   "status": "pending"
+  },
+  "vcf2json.py": {
+   "status": "pending"
+  },
+  "version_filter.py": {
+   "status": "pending"
+  },
+  "vid2text.py": {
+   "status": "pending"
+  },
+  "vidocr.py": {
+   "status": "pending"
+  },
+  "vidsize.py": {
+   "status": "pending"
+  },
+  "vidtools.py": {
+   "status": "pending"
+  },
+  "watcher.py": {
+   "status": "pending"
+  },
+  "web2pdf.py": {
+   "status": "pending"
+  },
+  "webassets.py": {
+   "status": "pending"
+  },
+  "webclean.py": {
+   "status": "pending"
+  },
+  "wfreq.py": {
+   "status": "pending"
+  },
+  "wheel_cleaner.py": {
+   "status": "pending"
+  },
+  "wheel_inspector.py": {
+   "status": "pending"
+  },
+  "wheel_tools.py": {
+   "status": "pending"
+  },
+  "wheelbuilder.py": {
+   "status": "pending"
+  },
+  "wheelinspector.py": {
+   "status": "pending"
+  },
+  "whisper2txt.py": {
+   "status": "pending"
+  },
+  "woff22woff.py": {
+   "status": "pending"
+  },
+  "woff2woff2.py": {
+   "status": "pending"
+  },
+  "word_freq_counter.py": {
+   "status": "pending"
+  },
+  "wordlist_cleaner.py": {
+   "status": "pending"
+  },
+  "wrapper_gh.py": {
+   "status": "pending"
+  },
+  "wtmp.py": {
+   "status": "pending"
+  },
+  "ww.py": {
+   "status": "verified",
+   "out": "refactored/ww.py"
+  },
+  "www.py": {
+   "status": "pending"
+  },
+  "xbase64_assets.py": {
+   "status": "pending"
+  },
+  "xbash_functions.py": {
+   "status": "pending"
+  },
+  "xcodepy.py": {
+   "status": "pending"
+  },
+  "xcolors.py": {
+   "status": "pending"
+  },
+  "xcompress.py": {
+   "status": "pending"
+  },
+  "xem.py": {
+   "status": "pending"
+  },
+  "xembed.py": {
+   "status": "pending"
+  },
+  "xemoji.py": {
+   "status": "pending"
+  },
+  "xenv_vars.py": {
+   "status": "pending"
+  },
+  "xfa.py": {
+   "status": "pending"
+  },
+  "xfenced.py": {
+   "status": "pending"
+  },
+  "xip.py": {
+   "status": "pending"
+  },
+  "xm.py": {
+   "status": "pending"
+  },
+  "xmetadata.py": {
+   "status": "pending"
+  },
+  "xml_yaml2json.py": {
+   "status": "pending"
+  },
+  "xordup.py": {
+   "status": "pending"
+  },
+  "xpy_entities.py": {
+   "status": "pending"
+  },
+  "xrar.py": {
+   "status": "pending"
+  },
+  "xreport.py": {
+   "status": "pending"
+  },
+  "xreport2.py": {
+   "status": "pending"
+  },
+  "xtar.py": {
+   "status": "pending"
+  },
+  "xtranslate.py": {
+   "status": "pending"
+  },
+  "xztools.py": {
+   "status": "pending"
+  },
+  "yap.py": {
+   "status": "pending"
+  },
+  "zhtrans.py": {
+   "status": "pending"
+  },
+  "zip2xz.py": {
+   "status": "pending"
+  },
+  "zip_crack.py": {
+   "status": "pending"
+  },
+  "zshdiag.py": {
+   "status": "pending"
+  },
+  "zstdtools.py": {
+   "status": "pending"
+  }
+ },
+ "dedup": {
+  "status": "pending",
+  "extracted": {}
+ },
+ "last_batch": {
+  "batch": 1,
+  "verified": 15,
+  "failed": 1,
+  "ts": "2026-11-01T05:45:00Z"
+ }
+}
