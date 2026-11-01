@@ -2,656 +2,712 @@
 from __future__ import annotations
 
 import argparse
-import ast
-import contextlib
 import difflib
 import fnmatch
-import io
 import json
 import os
 import shutil
 import subprocess
 import sys
-import tempfile
-import tokenize
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
-from functools import partial
+from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeout
 from pathlib import Path
-from time import perf_counter as pff
-from typing import Any, Protocol, Sequence, runtime_checkable
+from typing import Any, Callable
 
-from dh import atomic_write, cprint, format_time, fsz, get_pyfiles
+from dh import atomic_write
+from loguru import logger
 
-__version__ = "2.0.0"
-DEFAULT_LINE_LENGTH = 88
-DEFAULT_TARGET_VERSION = "py312"
-CACHE_FILENAME = ".pyfmt-cache.json"
-CANONICAL_ORDER = ("autoflake", "isort", "black", "autopep", "yapf", "ruff")
-KNOWN_FORMATTERS = frozenset(CANONICAL_ORDER)
-AUTODETECT_ORDER = ("ruff", "black", "yapf", "autopep", "autoflake", "isort")
+__version__ = "3.1.0"
 
+BACKENDS: tuple[str, ...] = ("black", "yapf", "autopep8", "ruff", "isort", "autoflake")
+DEFAULT_LINE_LENGTH: int = 120
+DEFAULT_TARGET: str = "3.12"
+DEFAULT_EXTS: tuple[str, ...] = (".py", ".pyi", ".pyw")
 
-@runtime_checkable
-class Formatter(Protocol):
-    name: str
+SKIP_DIRS: set[str] = {
+    ".git", ".hg", ".svn",
+    "__pycache__",
+    ".tox", ".nox",
+    ".venv", "venv", "env", ".env",
+    "node_modules",
+    ".mypy_cache", ".pytest_cache", ".ruff_cache",
+    "build", "dist",
+    ".eggs",
+    ".cache",
+    "site-packages",
+}
 
-    def __call__(self, src: str, path: Path) -> str: ...
-
-
-@dataclass(frozen=True)
-class AutoflakeFormatter:
-    name: str = "autoflake"
-    remove_all_unused_imports: bool = True
-
-    def __call__(self, src: str, path: Path) -> str:
-        from autoflake import fix_code
-
-        return fix_code(src, remove_all_unused_imports=self.remove_all_unused_imports)
+Result = dict[str, Any]
+Job = tuple[str, list[str], dict[str, Any], bool, bool, bool, str, int]
+Emit = Callable[[int, Result], None]
 
 
-@dataclass(frozen=True)
-class IsortFormatter:
-    line_length: int = DEFAULT_LINE_LENGTH
-    target_version: str = DEFAULT_TARGET_VERSION
-    name: str = "isort"
-
-    def __call__(self, src: str, path: Path) -> str:
-        from isort import code as fix_with_isort
-
-        return fix_with_isort(
-            src,
-            line_length=self.line_length,
-            py_version=self.target_version,
-        )
+def _setup_logging(verbose: bool) -> None:
+    logger.remove()
+    logger.add(
+        sys.stderr,
+        level="DEBUG" if verbose else "INFO",
+        format="<level>{level: <8}</level> | <cyan>{message}</cyan>",
+        colorize=sys.stderr.isatty() and not os.environ.get("NO_COLOR"),
+    )
 
 
-@dataclass(frozen=True)
-class BlackFormatter:
-    line_length: int = DEFAULT_LINE_LENGTH
-    target_version: str = DEFAULT_TARGET_VERSION
-    name: str = "black"
-
-    def __call__(self, src: str, path: Path) -> str:
-        from black import Mode, TargetVersion, format_str
-
-        tv = getattr(TargetVersion, self.target_version.upper())
-        return format_str(
-            src,
-            mode=Mode(target_versions={tv}, line_length=self.line_length),
-        )
+def parse_size(s: str | None) -> int | None:
+    if not s:
+        return None
+    t = s.upper().strip()
+    for unit, mult in (("GB", 1024 ** 3), ("MB", 1024 ** 2), ("KB", 1024), ("B", 1)):
+        if t.endswith(unit):
+            return int(float(t[: -len(unit)]) * mult)
+    return int(t)
 
 
-@dataclass(frozen=True)
-class Autopep8Formatter:
-    name: str = "autopep"
-    aggressive: int = 2
-
-    def __call__(self, src: str, path: Path) -> str:
-        from autopep8 import fix_code
-
-        return fix_code(src, options={"aggressive": self.aggressive})
+def _color(text: str, code: str, enabled: bool) -> str:
+    return f"\033[{code}m{text}\033[0m" if enabled else text
 
 
-@dataclass(frozen=True)
-class YapfFormatter:
-    line_length: int = DEFAULT_LINE_LENGTH
-    name: str = "yapf"
-
-    def __call__(self, src: str, path: Path) -> str:
-        from yapf.yapflib.yapf_api import FormatCode
-
-        style = {"based_on_style": "pep8", "column_limit": self.line_length}
-        return FormatCode(src, style_config=style)[0]
+def _excluded(path: Path, patterns: list[str]) -> bool:
+    if not patterns:
+        return False
+    s, name = str(path), path.name
+    return any(fnmatch.fnmatch(s, p) or fnmatch.fnmatch(name, p) for p in patterns)
 
 
-@dataclass(frozen=True)
-class RuffFormatter:
-    line_length: int = DEFAULT_LINE_LENGTH
-    target_version: str = DEFAULT_TARGET_VERSION
-    name: str = "ruff"
-
-    def __call__(self, src: str, path: Path) -> str:
-        args = [
-            "ruff",
-            "format",
-            "--stdin-filename",
-            str(path),
-            "--line-length",
-            str(self.line_length),
-            "--target-version",
-            self.target_version,
-            "-",
-        ]
-        r = subprocess.run(args, input=src, capture_output=True, text=True, check=False)
-        if r.returncode != 0:
-            raise RuntimeError(r.stderr.strip() or f"ruff exited {r.returncode}")
-        return r.stdout
-
-
-@dataclass(frozen=True)
-class Pipeline:
-    formatters: tuple[Any, ...]
-
-    @property
-    def name(self) -> str:
-        return "+".join(f.name for f in self.formatters)
-
-    def __call__(self, src: str, path: Path) -> str:
-        for f in self.formatters:
-            src = f(src, path)
-        return src
-
-
-_FORMATTER_CACHE: dict[tuple[Any, ...], Pipeline] = {}
-
-
-def _make_one(mode: str, line_length: int, target_version: str) -> Any:
-    match mode:
-        case "autoflake":
-            return AutoflakeFormatter()
-        case "isort":
-            return IsortFormatter(line_length=line_length, target_version=target_version)
-        case "black":
-            return BlackFormatter(line_length=line_length, target_version=target_version)
-        case "autopep":
-            return Autopep8Formatter()
-        case "yapf":
-            return YapfFormatter(line_length=line_length)
-        case "ruff":
-            return RuffFormatter(line_length=line_length, target_version=target_version)
-        case _:
-            msg = f"unknown formatter: {mode!r}"
-            raise ValueError(msg)
-
-
-def make_pipeline(modes: Sequence[str], line_length: int, target_version: str) -> Pipeline:
-    if not modes:
-        msg = "empty pipeline"
-        raise ValueError(msg)
-    return Pipeline(tuple(_make_one(m, line_length, target_version) for m in modes))
-
-
-def _get_formatter(cfg: "RunConfig") -> Pipeline:
-    key = (cfg.modes, cfg.line_length, cfg.target_version)
-    p = _FORMATTER_CACHE.get(key)
-    if p is None:
-        p = make_pipeline(cfg.modes, cfg.line_length, cfg.target_version)
-        _FORMATTER_CACHE[key] = p
-    return p
-
-
-@dataclass(frozen=True)
-class RunConfig:
-    modes: tuple[str, ...]
-    line_length: int
-    target_version: str
-    check: bool
-    diff: bool
-    backup: str | None
-    quiet: bool
-    verbose: bool
-    json_output: bool
-    max_size: int
-    validate: bool
-    preserve_stat: bool
-    stats: bool
-    cache_path: Path | None
-
-
-@dataclass(frozen=True)
-class FileResult:
-    path: str
-    status: str
-    elapsed: float
-    bytes_before: int
-    bytes_after: int
-    diff: str | None
-    error: str | None
-    mtime: float
-    size: int
-
-
-def _read_source(path: Path) -> tuple[str, str, str]:
-    raw = path.read_bytes()
+def is_python_file(path: Path, include_exts: tuple[str, ...]) -> bool:
+    if not path.is_file() or path.is_symlink():
+        return False
+    if path.suffix.lower() in include_exts:
+        return True
+    if path.suffix:
+        return False
     try:
-        enc, _ = tokenize.detect_encoding(io.BytesIO(raw).readline)
-    except SyntaxError:
-        enc = "utf-8"
-    text = raw.decode(enc)
-    newline = "\r\n" if b"\r\n" in raw else "\n"
-    return text, enc, newline
+        with path.open("rb") as fh:
+            head = fh.readline(256)
+    except OSError:
+        return False
+    return head.startswith(b"#!") and b"python" in head
 
 
-def process_file(
-    path: Path,
-    cfg: RunConfig,
-    cached: tuple[float, int] | None,
-) -> FileResult:
+def _load_gitignore_spec() -> Any:
     try:
-        st = path.stat()
-        if cached is not None and cached[0] == st.st_mtime and cached[1] == st.st_size:
-            return FileResult(
-                path=str(path),
-                status="skipped",
-                elapsed=0.0,
-                bytes_before=st.st_size,
-                bytes_after=st.st_size,
-                diff=None,
-                error=None,
-                mtime=st.st_mtime,
-                size=st.st_size,
-            )
-        if cfg.max_size and st.st_size > cfg.max_size:
-            return FileResult(
-                path=str(path),
-                status="skipped",
-                elapsed=0.0,
-                bytes_before=st.st_size,
-                bytes_after=st.st_size,
-                diff=None,
-                error=None,
-                mtime=st.st_mtime,
-                size=st.st_size,
-            )
-        stime = pff()
-        original, enc, newline = _read_source(path)
-        normalized = original.replace("\r\n", "\n")
-        pipeline = _get_formatter(cfg)
-        formatted = pipeline(normalized, path)
-        if cfg.validate:
-            ast.parse(formatted, filename=str(path))
-        elapsed = pff() - stime
-        changed = formatted != normalized
-        diff_text: str | None = None
-        if cfg.diff and changed:
-            diff_text = "".join(
-                difflib.unified_diff(
-                    original.splitlines(keepends=True),
-                    formatted.splitlines(keepends=True),
-                    fromfile=f"a/{path}",
-                    tofile=f"b/{path}",
-                )
-            )
-        do_write = not (cfg.check or cfg.diff)
-        status = "unchanged"
-        if changed:
-            if not do_write:
-                status = "would-change"
-            else:
-                if cfg.backup:
-                    shutil.copy2(path, path.with_suffix(path.suffix + cfg.backup))
-                out = formatted if newline == "\n" else formatted.replace("\n", newline)
-                atomic_write(path, out.encode(enc))
-                if cfg.preserve_stat:
-                    os.utime(path, (st.st_atime, st.st_mtime))
-                status = "changed"
-        st2 = path.stat()
-        return FileResult(
-            path=str(path),
-            status=status,
-            elapsed=elapsed,
-            bytes_before=st.st_size,
-            bytes_after=st2.st_size,
-            diff=diff_text,
-            error=None,
-            mtime=st2.st_mtime,
-            size=st2.st_size,
+        import pathspec  # type: ignore
+    except ImportError:
+        return None
+    gi = Path.cwd() / ".gitignore"
+    if not gi.exists():
+        return None
+    try:
+        return pathspec.PathSpec.from_lines(
+            "gitwildmatch", gi.read_text(encoding="utf-8").splitlines()
         )
-    except Exception as e:
-        return FileResult(
-            path=str(path),
-            status="error",
-            elapsed=0.0,
-            bytes_before=0,
-            bytes_after=0,
-            diff=None,
-            error=f"{type(e).__name__}: {e}",
-            mtime=0.0,
-            size=0,
+    except Exception as exc:
+        logger.warning(f"failed to load .gitignore: {exc}")
+        return None
+
+
+def _git_root() -> Path:
+    try:
+        p = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=False,
         )
+    except (FileNotFoundError, OSError) as exc:
+        logger.warning(f"git unavailable: {exc}")
+        return Path.cwd()
+    if p.returncode != 0:
+        logger.warning(f"git rev-parse failed: {p.stderr.strip()}")
+        return Path.cwd()
+    return Path(p.stdout.strip())
 
 
-def _matches(path: Path, patterns: Sequence[str]) -> bool:
-    sp = str(path)
-    name = path.name
-    return any(path.match(pat) or fnmatch.fnmatch(sp, pat) or fnmatch.fnmatch(name, pat) for pat in patterns)
-
-
-def discover_files(
-    roots: Sequence[Path],
-    include: Sequence[str],
-    exclude: Sequence[str],
-) -> list[Path]:
-    seen: set[Path] = set()
-    result: list[Path] = []
-    for root in roots:
-        root = root.resolve()
-        if root.is_file():
-            candidates: list[Path] = [root]
-        elif root.is_dir():
-            try:
-                candidates = [Path(p).resolve() for p in get_pyfiles(root)]
-            except Exception:
-                candidates = [p.resolve() for p in root.rglob("*.py")]
-        else:
+def _git_paths(args: list[str]) -> set[Path]:
+    try:
+        p = subprocess.run(
+            ["git", *args],
+            capture_output=True, text=True, check=False,
+        )
+    except (FileNotFoundError, OSError) as exc:
+        logger.warning(f"git unavailable: {exc}")
+        return set()
+    if p.returncode != 0:
+        logger.warning(f"git error ({' '.join(args)}): {p.stderr.strip()}")
+        return set()
+    root = _git_root()
+    out: set[Path] = set()
+    for line in p.stdout.splitlines():
+        line = line.strip()
+        if not line:
             continue
-        for fp in candidates:
-            if fp in seen:
-                continue
-            if include and not _matches(fp, include):
-                continue
-            if exclude and _matches(fp, exclude):
-                continue
-            seen.add(fp)
-            result.append(fp)
-    return result
-
-
-def _load_cache(path: Path | None) -> dict[str, tuple[float, int]]:
-    if path is None or not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    out: dict[str, tuple[float, int]] = {}
-    if isinstance(data, dict):
-        for k, v in data.items():
-            if isinstance(v, list) and len(v) == 2:
-                try:
-                    out[str(k)] = (float(v[0]), int(v[1]))
-                except (TypeError, ValueError):
-                    continue
+        try:
+            out.add((root / line).resolve())
+        except OSError:
+            continue
     return out
 
 
-def _save_cache(path: Path, results: Sequence[FileResult]) -> None:
-    payload: dict[str, list[float]] = {}
-    for r in results:
-        if r.status == "error":
-            continue
-        if r.status == "changed" and r.mtime == 0.0:
-            continue
-        payload[r.path] = [r.mtime, float(r.size)]
-    with contextlib.suppress(Exception):
-        path.write_text(json.dumps(payload), encoding="utf-8")
+def _select_git_files(args: argparse.Namespace) -> set[Path] | None:
+    if not (args.since or args.staged or args.changed):
+        return None
+    selected: set[Path] = set()
+    if args.since:
+        selected |= _git_paths(["diff", "--name-only", args.since])
+    if args.staged:
+        selected |= _git_paths(["diff", "--name-only", "--cached"])
+    if args.changed:
+        selected |= _git_paths(["diff", "--name-only", "HEAD"])
+        selected |= _git_paths(["ls-files", "--others", "--exclude-standard"])
+    return selected
 
 
-def _installed(mod: str) -> bool:
-    import importlib.util
+def discover_files(
+    roots: list[Path],
+    *,
+    recursive: bool,
+    exclude_globs: list[str],
+    include_exts: tuple[str, ...],
+    skip_dirs: set[str],
+    max_size: int | None,
+    gitignore_spec: Any,
+) -> list[Path]:
+    found: list[Path] = []
 
-    try:
-        return importlib.util.find_spec(mod) is not None
-    except (ImportError, ValueError):
-        return False
+    def gitignore_hit(p: Path, is_dir: bool) -> bool:
+        if gitignore_spec is None:
+            return False
+        try:
+            rel = p.relative_to(Path.cwd()).as_posix()
+        except ValueError:
+            rel = p.as_posix()
+        return bool(gitignore_spec.match_file(rel + ("/" if is_dir else "")))
 
-
-def autodetect_modes() -> tuple[str, ...]:
-    for name in AUTODETECT_ORDER:
-        probe = {"autopep": "autopep8"}.get(name, name)
-        if name == "ruff" and shutil.which("ruff"):
-            return ("ruff",)
-        if name != "ruff" and _installed(probe):
-            return (name,)
-    return ("black",)
-
-
-def load_pyproject_config(explicit: Path | None) -> dict[str, Any]:
-    import tomllib
-
-    candidate: Path | None = explicit
-    if candidate is None:
-        p = Path.cwd()
-        while True:
-            f = p / "pyproject.toml"
-            if f.exists():
-                candidate = f
-                break
-            if p.parent == p:
-                break
-            p = p.parent
-    if candidate is None or not candidate.exists():
-        return {}
-    try:
-        with candidate.open("rb") as fh:
-            data = tomllib.load(fh)
-    except Exception:
-        return {}
-    tool = data.get("tool", {})
-    cfg = tool.get("pyfmt") or tool.get("py-format") or {}
-    return cfg if isinstance(cfg, dict) else {}
-
-
-def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
-        prog="pyfmt",
-        description="Fast Python API-based formatter with pipeline & CI support",
-    )
-    p.add_argument("paths", nargs="*", type=Path, default=None)
-    p.add_argument(
-        "-p", "--pipeline", type=str, default=None, help="comma-separated: autoflake,isort,black,autopep,yapf,ruff"
-    )
-    p.add_argument("--black", action="store_true", help="use black")
-    p.add_argument("--autopep", action="store_true", help="use autopep8")
-    p.add_argument("--isort", action="store_true", help="sort imports")
-    p.add_argument("--raui", action="store_true", help="autoflake cleanup")
-    p.add_argument("--yapf", action="store_true", help="yapf formatter")
-    p.add_argument("--ruff", action="store_true", help="ruff formatter")
-    p.add_argument("--check", action="store_true", help="do not write; exit 1 if changes")
-    p.add_argument("--diff", action="store_true", help="print unified diff (implies no write)")
-    p.add_argument("--backup", type=str, default=None, metavar="SUFFIX", help="write a backup with this suffix")
-    p.add_argument("--exclude", action="append", default=[])
-    p.add_argument("--include", action="append", default=[])
-    p.add_argument("--line-length", type=int, default=None)
-    p.add_argument("--target-version", type=str, default=None)
-    p.add_argument("-j", "--jobs", type=int, default=None)
-    p.add_argument("--stdin-filename", type=Path, default=None)
-    p.add_argument("--config", type=Path, default=None)
-    p.add_argument("-q", "--quiet", action="store_true")
-    p.add_argument("-v", "--verbose", action="store_true")
-    p.add_argument("--json", action="store_true", dest="json_output")
-    p.add_argument("--max-size", type=int, default=None, help="skip files larger than this many bytes")
-    p.add_argument("--no-validate", action="store_true", help="skip post-format AST validation")
-    p.add_argument("--preserve-stat", action="store_true", help="restore mtime after writing")
-    p.add_argument("--no-cache", action="store_true")
-    p.add_argument("--stats", action="store_true")
-    p.add_argument("--version", action="version", version=f"pyfmt {__version__}")
-    return p
-
-
-def _resolve_modes(args: argparse.Namespace, pycfg: dict[str, Any]) -> tuple[str, ...]:
-    if args.pipeline:
-        modes = tuple(m.strip() for m in args.pipeline.split(",") if m.strip())
-        bad = [m for m in modes if m not in KNOWN_FORMATTERS]
-        if bad:
-            msg = f"unknown formatter(s): {', '.join(bad)}"
-            raise SystemExit(msg)
-        return modes
-    selected = {
-        "autoflake": args.raui,
-        "isort": args.isort,
-        "black": args.black,
-        "autopep": args.autopep,
-        "yapf": args.yapf,
-        "ruff": args.ruff,
-    }
-    flags = tuple(m for m in CANONICAL_ORDER if selected[m])
-    if flags:
-        return flags
-    if isinstance(pycfg.get("pipeline"), list):
-        return tuple(str(m) for m in pycfg["pipeline"])
-    if isinstance(pycfg.get("mode"), str):
-        return (pycfg["mode"],)
-    if isinstance(pycfg.get("modes"), list):
-        return tuple(str(m) for m in pycfg["modes"])
-    return autodetect_modes()
-
-
-def _run_stdin(cfg: RunConfig, filename: Path) -> int:
-    src = sys.stdin.read()
-    try:
-        pipeline = make_pipeline(cfg.modes, cfg.line_length, cfg.target_version)
-        out = pipeline(src, filename)
-        if cfg.validate:
-            ast.parse(out, filename=str(filename))
-    except Exception as e:
-        cprint(f"[ERROR] {type(e).__name__}: {e}", "red")
-        return 2
-    if cfg.check or cfg.diff:
-        if out != src:
-            if cfg.diff:
-                sys.stdout.write(
-                    "".join(
-                        difflib.unified_diff(
-                            src.splitlines(keepends=True),
-                            out.splitlines(keepends=True),
-                            fromfile=f"a/{filename}",
-                            tofile=f"b/{filename}",
-                        )
-                    )
-                )
-            return 1
-        return 0
-    sys.stdout.write(out)
-    return 0
-
-
-def _run_pool(
-    files: Sequence[Path],
-    cfg: RunConfig,
-    cache: dict[str, tuple[float, int]],
-    jobs: int,
-) -> list[FileResult]:
-    if jobs <= 1 or len(files) == 1:
-        return [process_file(f, cfg, cache.get(str(f))) for f in files]
-    worker = partial(process_file, cfg=cfg)
-    tasks = [(f, cache.get(str(f))) for f in files]
-    results: list[FileResult] = []
-    with ProcessPoolExecutor(max_workers=jobs) as ex:
-        futures = {ex.submit(worker, path, cached): path for path, cached in tasks}
-        for fut in as_completed(futures):
+    def consider(p: Path) -> None:
+        if p.is_symlink() or not is_python_file(p, include_exts):
+            return
+        if _excluded(p, exclude_globs) or gitignore_hit(p, False):
+            return
+        if max_size is not None:
             try:
-                results.append(fut.result())
-            except Exception as e:
-                p = futures[fut]
-                results.append(
-                    FileResult(
-                        path=str(p),
-                        status="error",
-                        elapsed=0.0,
-                        bytes_before=0,
-                        bytes_after=0,
-                        diff=None,
-                        error=f"{type(e).__name__}: {e}",
-                        mtime=0.0,
-                        size=0,
-                    )
+                if p.stat().st_size > max_size:
+                    return
+            except OSError as exc:
+                logger.warning(f"stat failed on {p}: {exc}")
+                return
+        found.append(p)
+
+    for root in roots:
+        if root.is_symlink():
+            logger.debug(f"skip symlink: {root}")
+            continue
+        if not root.exists():
+            logger.warning(f"skip missing: {root}")
+            continue
+        if root.is_file():
+            consider(root)
+            continue
+        if not root.is_dir():
+            continue
+        stack: list[Path] = [root]
+        while stack:
+            cur = stack.pop()
+            try:
+                entries = sorted(cur.iterdir())
+            except OSError as exc:
+                logger.warning(f"cannot read dir {cur}: {exc}")
+                continue
+            for entry in entries:
+                if entry.is_symlink():
+                    continue
+                if entry.is_dir():
+                    if not recursive or entry.name in skip_dirs:
+                        continue
+                    if _excluded(entry, exclude_globs) or gitignore_hit(entry, True):
+                        continue
+                    stack.append(entry)
+                else:
+                    consider(entry)
+    return found
+
+
+def _format_black(src: str, opts: dict[str, Any]) -> str:
+    import black
+
+    targets: set[Any] = set()
+    for tv in opts.get("target_versions") or [DEFAULT_TARGET]:
+        v = getattr(black.TargetVersion, "PY" + str(tv).replace(".", ""), None)
+        if v is not None:
+            targets.add(v)
+    mode = black.Mode(target_versions=targets or None, line_length=opts["line_length"])
+    try:
+        return black.format_file_contents(src, fast=False, mode=mode)
+    except black.NothingChanged:
+        return src
+
+
+def _format_yapf(src: str, opts: dict[str, Any]) -> str:
+    from yapf.yapflib.yapf_api import FormatCode
+
+    out, _ = FormatCode(
+        src,
+        style_config={"based_on_style": "pep8", "column_limit": opts["line_length"]},
+    )
+    return out
+
+
+def _format_autopep8(src: str, opts: dict[str, Any]) -> str:
+    import autopep8
+
+    return autopep8.fix_code(src, options={"max_line_length": opts["line_length"]})
+
+
+def _format_ruff(src: str, opts: dict[str, Any]) -> str:
+    try:
+        import ruff  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("ruff is not installed") from exc
+    for name in ("format_str", "format_code"):
+        fn = getattr(ruff, name, None)
+        if fn is not None:
+            try:
+                return fn(src, line_length=opts["line_length"])
+            except TypeError:
+                return fn(src)
+    raise RuntimeError(
+        "This ruff build does not expose a Python formatting API; "
+        "use the ruff CLI or upgrade ruff."
+    )
+
+
+def _format_isort(src: str, opts: dict[str, Any]) -> str:
+    import isort
+
+    kwargs: dict[str, Any] = {"line_length": opts["line_length"]}
+    if opts.get("isort_profile"):
+        kwargs["profile"] = opts["isort_profile"]
+    return isort.code(src, **kwargs)
+
+
+def _format_autoflake(src: str, opts: dict[str, Any]) -> str:
+    import autoflake
+
+    return autoflake.fix_code(
+        src,
+        remove_unused_imports=True,
+        remove_all_unused_imports=opts.get("autoflake_remove_all", True),
+    )
+
+
+_FORMATTERS: dict[str, Callable[[str, dict[str, Any]], str]] = {
+    "black": _format_black,
+    "yapf": _format_yapf,
+    "autopep8": _format_autopep8,
+    "ruff": _format_ruff,
+    "isort": _format_isort,
+    "autoflake": _format_autoflake,
+}
+
+
+def run_backends(src: str, backends: list[str], opts: dict[str, Any]) -> str:
+    for b in backends:
+        src = _FORMATTERS[b](src, opts)
+    return src
+
+
+def process_file(job: Job) -> Result:
+    path_str, backends, opts, do_diff, dry_run, do_backup, encoding, diff_context = job
+    path = Path(path_str)
+    result: Result = {
+        "path": path_str, "old_size": 0, "new_size": 0,
+        "changed": False, "diff": None, "error": None,
+    }
+    try:
+        old_full = path.read_bytes()
+        result["old_size"] = len(old_full)
+
+        bom, body = b"", old_full
+        if body.startswith(b"\xef\xbb\xbf"):
+            body = body[3:]
+            if not opts.get("strip_bom"):
+                bom = b"\xef\xbb\xbf"
+
+        try:
+            src = body.decode(encoding)
+        except UnicodeDecodeError as exc:
+            result["error"] = f"decode: {exc}"
+            result["new_size"] = result["old_size"]
+            return result
+
+        newline = "\r\n" if "\r\n" in src else "\n"
+        work = src.replace("\r\n", "\n")
+        work = run_backends(work, backends, opts)
+        new_src = work.replace("\n", "\r\n") if newline == "\r\n" else work
+        new_full = bom + new_src.encode(encoding)
+
+        result["new_size"] = len(new_full)
+        result["changed"] = new_full != old_full
+
+        if do_diff and result["changed"]:
+            result["diff"] = "".join(
+                difflib.unified_diff(
+                    src.splitlines(keepends=True),
+                    new_src.splitlines(keepends=True),
+                    fromfile=path_str, tofile=path_str, n=diff_context,
                 )
+            )
+
+        if result["changed"] and not dry_run:
+            if do_backup:
+                atomic_write(path_str + ".bak", old_full)
+            atomic_write(path_str, new_full)
+
+    except Exception as exc:  # noqa: BLE001
+        result["error"] = f"{type(exc).__name__}: {exc}"
+    return result
+
+
+def _row(i: int, total: int, res: Result, term_width: int,
+         relative: bool, color: bool) -> str:
+    idx = f"[{i}/{total}]"
+    if relative:
+        try:
+            name = str(Path(res["path"]).relative_to(Path.cwd()))
+        except ValueError:
+            name = res["path"]
+    else:
+        name = Path(res["path"]).name
+
+    idx_w = len(f"[{total}/{total}]") + 1
+    size_w = 10
+    path_w = max(20, term_width - idx_w - size_w - 2)
+    if len(name) > path_w:
+        name = "…" + name[-(path_w - 1):]
+
+    if res["error"]:
+        status = _color("ERROR".rjust(size_w), "31", color)
+    else:
+        delta = res["new_size"] - res["old_size"]
+        status = _color(f"{delta:+d}".rjust(size_w), "32", color)
+
+    return f"{idx:<{idx_w}} {name:<{path_w}} {status}"
+
+
+def _summarize(results: list[Result]) -> dict[str, int]:
+    changed = sum(1 for r in results if r["changed"] and not r["error"])
+    errors = sum(1 for r in results if r["error"])
+    delta = sum(r["new_size"] - r["old_size"] for r in results if not r["error"])
+    return {
+        "total": len(results),
+        "changed": changed,
+        "unchanged": len(results) - changed - errors,
+        "errors": errors,
+        "delta_bytes": delta,
+    }
+
+
+def _log_failure(res: Result) -> None:
+    if res.get("error"):
+        logger.error(f"{res['path']}: {res['error']}")
+
+
+def _run_jobs(jobs: list[Job], workers: int, timeout: float | None,
+              emit: Emit) -> list[Result | None]:
+    results: list[Result | None] = [None] * len(jobs)
+
+    if workers > 1:
+        with ProcessPoolExecutor(max_workers=workers) as ex:
+            futures = [ex.submit(process_file, j) for j in jobs]
+            for i, fut in enumerate(futures):
+                try:
+                    res = fut.result(timeout=timeout)
+                except FuturesTimeout:
+                    err = f"timeout after {timeout}s"
+                    res = {
+                        "path": jobs[i][0], "old_size": 0, "new_size": 0,
+                        "changed": False, "diff": None, "error": err,
+                    }
+                    logger.error(f"{jobs[i][0]}: {err}")
+                except Exception as exc:  # noqa: BLE001
+                    res = {
+                        "path": jobs[i][0], "old_size": 0, "new_size": 0,
+                        "changed": False, "diff": None,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
+                    logger.opt(exception=exc).error(
+                        f"worker crashed on {jobs[i][0]}"
+                    )
+                else:
+                    _log_failure(res)
+                results[i] = res
+                emit(i, res)
+    else:
+        for i, job in enumerate(jobs):
+            try:
+                res = process_file(job)
+            except Exception as exc:  # noqa: BLE001
+                res = {
+                    "path": job[0], "old_size": 0, "new_size": 0,
+                    "changed": False, "diff": None,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+                logger.opt(exception=exc).error(f"unexpected failure on {job[0]}")
+            else:
+                _log_failure(res)
+            results[i] = res
+            emit(i, res)
     return results
 
 
-def _report(results: Sequence[FileResult], cfg: RunConfig) -> int:
-    errors = 0
-    would_change = 0
-    changed = 0
-    skipped = 0
-    unchanged = 0
-    if cfg.json_output:
-        print(json.dumps([asdict(r) for r in results], indent=2))
+def _handle_stdin(args: argparse.Namespace, backends: list[str],
+                  opts: dict[str, Any]) -> int:
+    src = sys.stdin.read()
+    newline = "\r\n" if "\r\n" in src else "\n"
+    try:
+        out = run_backends(src.replace("\r\n", "\n"), backends, opts)
+    except Exception as exc:  # noqa: BLE001
+        logger.opt(exception=exc).error("failed to format <stdin>")
+        return 1
+    if newline == "\r\n":
+        out = out.replace("\n", "\r\n")
+
+    if args.diff:
+        sys.stdout.write("".join(difflib.unified_diff(
+            src.splitlines(keepends=True), out.splitlines(keepends=True),
+            fromfile="<stdin>", tofile="<stdin>", n=args.diff_context,
+        )))
     else:
-        for r in sorted(results, key=lambda x: x.path):
-            name = Path(r.path).name
-            if r.status == "error":
-                errors += 1
-                if not cfg.quiet:
-                    cprint("[ERROR]", "red", end=" ")
-                    print(f"{name}: {r.error}")
-            elif r.status == "changed":
-                changed += 1
-                if not cfg.quiet:
-                    dsz = abs(r.bytes_before - r.bytes_after)
-                    ratio = dsz / r.bytes_before * 40 if r.bytes_before else 0.0
-                    cprint(
-                        f"({format_time(r.elapsed)}) | {fsz(dsz)} | {ratio:.1f}%  {name}",
-                        "cyan",
-                    )
-            elif r.status == "would-change":
-                would_change += 1
-                if not cfg.quiet:
-                    dsz = abs(r.bytes_before - r.bytes_after)
-                    ratio = dsz / r.bytes_before * 40 if r.bytes_before else 0.0
-                    cprint(
-                        f"({format_time(r.elapsed)}) | {fsz(dsz)} | {ratio:.1f}%  {name} (would change)",
-                        "yellow",
-                    )
-            elif r.status == "skipped":
-                skipped += 1
-            else:
-                unchanged += 1
-                if cfg.verbose and not cfg.quiet:
-                    print(f"{name} (no change)")
-            if cfg.diff and r.diff:
-                sys.stdout.write(r.diff)
-    if cfg.stats and not cfg.json_output and not cfg.quiet:
-        total = len(results)
-        cprint(
-            f"{total} files | {changed} changed | {would_change} would change"
-            f" | {unchanged} unchanged | {skipped} skipped | {errors} errors",
-            "grey",
+        sys.stdout.write(out)
+    return 1 if (args.check and out != src) else 0
+
+
+def _list_backends() -> None:
+    for name in BACKENDS:
+        try:
+            __import__(name)
+            print(f"{name:<10} available")
+        except ImportError:
+            print(f"{name:<10} not installed")
+
+
+def _print_versions() -> None:
+    print(f"pyfmt {__version__}")
+    print(f"python {sys.version.split()[0]}")
+    for name in BACKENDS:
+        try:
+            mod = __import__(name)
+            print(f"  {name:<10} {getattr(mod, '__version__', 'unknown')}")
+        except ImportError:
+            print(f"  {name:<10} (not installed)")
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="pyfmt",
+        description="Format Python files (default: black, target 3.12, line length 120).",
+    )
+    p.add_argument("paths", nargs="*", help="Files or directories (default: cwd).")
+
+    g = p.add_argument_group("backend")
+    g.add_argument("-b", "--backend", choices=BACKENDS, default="black")
+    g.add_argument("--chain", default=None,
+                   help="Comma-separated backends run in order (overrides -b).")
+    g.add_argument("--line-length", type=int, default=DEFAULT_LINE_LENGTH)
+    g.add_argument("--target-version", default=DEFAULT_TARGET)
+    g.add_argument("--isort-profile", default=None)
+    g.add_argument("--autoflake-remove-all",
+                   action=argparse.BooleanOptionalAction, default=True)
+
+    g = p.add_argument_group("discovery")
+    g.add_argument("-r", "--recursive", action="store_true")
+    g.add_argument("--exclude", default="")
+    g.add_argument("--include-ext", default=",".join(DEFAULT_EXTS))
+    g.add_argument("--max-size", default=None)
+    g.add_argument("--respect-gitignore", action="store_true")
+    g.add_argument("--no-skip-dirs", action="store_true")
+
+    g = p.add_argument_group("git selection")
+    g.add_argument("--since", default=None, metavar="REF",
+                   help="Only files changed since REF (git diff --name-only REF).")
+    g.add_argument("--staged", action="store_true",
+                   help="Only staged files (git diff --name-only --cached).")
+    g.add_argument("--changed", action="store_true",
+                   help="Only files changed vs HEAD plus untracked files.")
+
+    g = p.add_argument_group("output / behavior")
+    g.add_argument("--diff", action="store_true")
+    g.add_argument("--diff-context", type=int, default=3)
+    g.add_argument("--dry-run", action="store_true")
+    g.add_argument("--check", action="store_true")
+    g.add_argument("--backup", action="store_true")
+    g.add_argument("--strip-bom", action="store_true")
+    g.add_argument("--encoding", default="utf-8")
+    g.add_argument("--stdin", action="store_true")
+    g.add_argument("-j", "--jobs", default="1")
+    g.add_argument("--timeout", type=float, default=None)
+    g.add_argument("--json", action="store_true")
+    g.add_argument("--summary", action="store_true")
+    g.add_argument("-q", "--quiet", action="store_true")
+    g.add_argument("-v", "--verbose", action="store_true")
+    g.add_argument("--no-color", action="store_true")
+    g.add_argument("--relative-paths", action="store_true")
+
+    g = p.add_argument_group("meta")
+    g.add_argument("--version", action="store_true")
+    g.add_argument("--list-backends", action="store_true")
+    return p
+
+
+def main() -> int:
+    args = _build_parser().parse_args()
+    _setup_logging(args.verbose)
+
+    if args.version:
+        _print_versions()
+        return 0
+    if args.list_backends:
+        _list_backends()
+        return 0
+
+    if args.chain:
+        backends = [b.strip() for b in args.chain.split(",") if b.strip()]
+        bad = [b for b in backends if b not in BACKENDS]
+        if bad:
+            logger.error(f"unknown backend(s) in --chain: {', '.join(bad)}")
+            return 2
+    else:
+        backends = [args.backend]
+
+    opts: dict[str, Any] = {
+        "line_length": args.line_length,
+        "target_versions": [v.strip() for v in args.target_version.split(",") if v.strip()],
+        "isort_profile": args.isort_profile,
+        "autoflake_remove_all": args.autoflake_remove_all,
+        "strip_bom": args.strip_bom,
+    }
+
+    if args.stdin:
+        return _handle_stdin(args, backends, opts)
+
+    roots = [Path(x) for x in args.paths] if args.paths else [Path.cwd()]
+    exclude_globs = [g.strip() for g in args.exclude.split(",") if g.strip()]
+    include_exts: tuple[str, ...] = tuple(
+        e.strip() if e.strip().startswith(".") else "." + e.strip()
+        for e in args.include_ext.split(",") if e.strip()
+    )
+    skip_dirs = set() if args.no_skip_dirs else SKIP_DIRS
+    max_size = parse_size(args.max_size)
+
+    gitignore_spec: Any = None
+    if args.respect_gitignore:
+        gitignore_spec = _load_gitignore_spec()
+        if gitignore_spec is None:
+            logger.warning("--respect-gitignore ignored (install 'pathspec' and add .gitignore)")
+
+    files = discover_files(
+        roots,
+        recursive=args.recursive,
+        exclude_globs=exclude_globs,
+        include_exts=include_exts,
+        skip_dirs=skip_dirs,
+        max_size=max_size,
+        gitignore_spec=gitignore_spec,
+    )
+
+    git_filter = _select_git_files(args)
+    if git_filter is not None:
+        files = [f for f in files if f.resolve() in git_filter]
+
+    if not files:
+        if args.json and args.summary:
+            json.dump({"files": [], "summary": _summarize([])}, sys.stdout, indent=2)
+            sys.stdout.write("\n")
+        else:
+            logger.info("No Python files found.")
+        return 0
+
+    total = len(files)
+
+    if str(args.jobs).lower() == "auto":
+        workers = min(os.cpu_count() or 4, total)
+    else:
+        try:
+            workers = max(1, int(args.jobs))
+        except ValueError:
+            logger.error(f"invalid -j value: {args.jobs!r}")
+            return 2
+
+    if args.verbose and not args.json:
+        logger.debug(
+            f"backends={','.join(backends)} line_length={args.line_length} "
+            f"target={','.join(opts['target_versions'])} workers={workers} "
+            f"files={total}"
         )
-    if errors:
-        return 2
-    if would_change and (cfg.check or cfg.diff):
+
+    dry_run = args.dry_run or args.check
+    jobs: list[Job] = [
+        (str(f), backends, opts, args.diff, dry_run, args.backup,
+         args.encoding, args.diff_context)
+        for f in files
+    ]
+
+    color = (
+        not args.no_color
+        and not os.environ.get("NO_COLOR")
+        and sys.stdout.isatty()
+    )
+    term_width = shutil.get_terminal_size((100, 24)).columns
+
+    if args.json:
+        def emit(i: int, res: Result) -> None:
+            return None
+    elif args.quiet:
+        def emit(i: int, res: Result) -> None:
+            if res["error"] or (args.check and res["changed"]):
+                print(_row(i + 1, total, res, term_width, args.relative_paths, color))
+                if res.get("diff"):
+                    print(res["diff"])
+    else:
+        def emit(i: int, res: Result) -> None:
+            print(_row(i + 1, total, res, term_width, args.relative_paths, color))
+            if res.get("diff"):
+                print(res["diff"])
+
+    raw = _run_jobs(jobs, workers, args.timeout, emit)
+    results: list[Result] = [r for r in raw if r is not None]
+
+    if args.json:
+        payload: dict[str, Any] = {
+            "files": [
+                {
+                    "path": r["path"],
+                    "old_size": r["old_size"],
+                    "new_size": r["new_size"],
+                    "delta": r["new_size"] - r["old_size"],
+                    "changed": r["changed"],
+                    "error": r["error"],
+                    "diff": r["diff"] if args.diff else None,
+                }
+                for r in results
+            ]
+        }
+        if args.summary:
+            payload["summary"] = _summarize(results)
+        json.dump(payload, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    elif args.summary:
+        s = _summarize(results)
+        print()
+        print(" | ".join([
+            f"{s['total']} file{'s' if s['total'] != 1 else ''}",
+            f"{s['changed']} changed",
+            f"{s['unchanged']} unchanged",
+            f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
+            f"{s['delta_bytes']:+d} bytes",
+        ]))
+
+    if any(r["error"] for r in results):
+        return 1
+    if args.check and any(r["changed"] for r in results):
         return 1
     return 0
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    pycfg = load_pyproject_config(args.config)
-    modes = _resolve_modes(args, pycfg)
-    line_length = args.line_length or pycfg.get("line_length") or pycfg.get("line-length") or DEFAULT_LINE_LENGTH
-    target_version = (
-        args.target_version or pycfg.get("target_version") or pycfg.get("target-version") or DEFAULT_TARGET_VERSION
-    )
-    backup = args.backup if args.backup is not None else pycfg.get("backup")
-    exclude = list(args.exclude) + list(pycfg.get("exclude", []) or [])
-    include = list(args.include) + list(pycfg.get("include", []) or [])
-    max_size = args.max_size if args.max_size is not None else int(pycfg.get("max_size", pycfg.get("max-size", 0)) or 0)
-    validate = (not args.no_validate) and bool(pycfg.get("validate", True))
-    preserve_stat = args.preserve_stat or bool(pycfg.get("preserve_stat", False))
-    cfg = RunConfig(
-        modes=modes,
-        line_length=int(line_length),
-        target_version=str(target_version),
-        check=args.check,
-        diff=args.diff,
-        backup=backup,
-        quiet=args.quiet,
-        verbose=args.verbose,
-        json_output=args.json_output,
-        max_size=int(max_size),
-        validate=validate,
-        preserve_stat=preserve_stat,
-        stats=args.stats,
-        cache_path=None if args.no_cache else Path.cwd() / CACHE_FILENAME,
-    )
-    if args.stdin_filename is not None:
-        return _run_stdin(cfg, args.stdin_filename)
-    roots = args.paths or [Path.cwd()]
-    files = discover_files(roots, include, exclude)
-    if not files:
-        if not cfg.quiet and not cfg.json_output:
-            cprint("no files matched", "grey")
-        return 0
-    cache = _load_cache(cfg.cache_path)
-    jobs = args.jobs or (os.cpu_count() or 1)
-    results = _run_pool(files, cfg, cache, jobs)
-    if cfg.cache_path is not None and not cfg.check and not cfg.diff:
-        _save_cache(cfg.cache_path, results)
-    return _report(results, cfg)
-
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
