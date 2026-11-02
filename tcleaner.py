@@ -1,15 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+
+from fastwalk import walk_dirs, walk_files
 import os
 import shutil
 import sys
 from pathlib import Path
-from typing import List, Tuple
+
 
 PREFIX: Path = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
 HOME: Path = Path.home()
 CFG: Path = PREFIX / "etc" / "dpkg" / "dpkg.cfg.d" / "99-termux-slim"
+JUNK_FILE: Path = Path("/sdcard/data/junk")
 
-STRIP: List[Path] = [
+STRIP: list[Path] = [
     PREFIX / "share" / "man",
     PREFIX / "share" / "doc",
     PREFIX / "share" / "info",
@@ -25,18 +28,69 @@ STRIP: List[Path] = [
     PREFIX / "share" / "locale",
 ]
 
-CACHE_DIRS: List[Path] = [
+CACHE_DIRS: list[Path] = [
     PREFIX / "var" / "cache" / "apt" / "archives",
     PREFIX / "tmp",
     HOME / ".cache",
 ]
 
-KEEP: List[Path] = [
+KEEP: list[Path] = [
     HOME / ".cache" / "pip" / "wheels",
 ]
 
 
-def human(kib: int) -> str:
+SKIP_DIRS = frozenset({".git", ".hg", ".svn"})
+
+
+def fsz(nbytes: int) -> str:
+    if nbytes >= 1 << 30:
+        return f"{nbytes / (1 << 30):.2f} GB"
+    if nbytes >= 1 << 20:
+        return f"{nbytes / (1 << 20):.1f} MB"
+    if nbytes >= 1 << 10:
+        return f"{nbytes / (1 << 10):.1f} KB"
+    return f"{nbytes} B"
+
+
+def gsz(path: Path) -> int:
+    try:
+        total = path.lstat().st_size
+    except OSError:
+        return 0
+    if path.is_symlink() or not path.is_dir():
+        return total
+    for dirpath, dirnames, filenames in os.walk(path, followlinks=False):
+        for name in filenames:
+            try:
+                total += os.lstat(os.path.join(dirpath, name)).st_size
+            except OSError:
+                pass
+        for name in dirnames:
+            try:
+                total += os.lstat(os.path.join(dirpath, name)).st_size
+            except OSError:
+                pass
+    return total
+
+
+def walk(root: Path):
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for name in filenames:
+            yield Path(dirpath, name)
+        for name in dirnames:
+            yield Path(dirpath, name)
+
+
+def remove(path: Path, dry_run: bool = False) -> None:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+
+
+def human_kib(kib: int) -> str:
+    """Human-readable size, input in KiB."""
     if kib >= 1048576:
         return f"{kib / 1048576:.2f} GB"
     if kib >= 1024:
@@ -45,29 +99,11 @@ def human(kib: int) -> str:
 
 
 def tree_size_kib(p: Path) -> int:
-    try:
-        st = p.lstat()
-    except OSError:
-        return 0
-    total = st.st_size
-    if p.is_symlink() or not p.is_dir():
-        return total // 1024
-    for dirpath, dirnames, filenames in os.walk(p, followlinks=False):
-        for name in filenames:
-            try:
-                total += os.lstat(os.path.join(dirpath, name)).st_size
-            except OSError:
-                pass
-        for dn in dirnames:
-            try:
-                total += os.lstat(os.path.join(dirpath, dn)).st_size
-            except OSError:
-                pass
-    return total // 1024
+    return gsz(p) // 1024
 
 
-def collect(root: Path, keep: List[Path]) -> List[Path]:
-    out: List[Path] = []
+def collect(root: Path, keep: list[Path]) -> list[Path]:
+    out: list[Path] = []
     if not root.is_dir():
         return out
     try:
@@ -85,29 +121,15 @@ def collect(root: Path, keep: List[Path]) -> List[Path]:
     return out
 
 
-def sorted_by_size(paths: List[Path]) -> List[Tuple[int, Path]]:
+def sorted_by_size(paths: list[Path]) -> list[tuple[int, Path]]:
     sized = [(tree_size_kib(p), p) for p in paths]
     sized.sort(key=lambda t: (t[0], str(t[1])))
     return sized
 
 
-def main(argv: List[str]) -> int:
-    apply = False
-    for a in argv[1:]:
-        if a == "--apply":
-            apply = True
-        elif a in ("-h", "--help"):
-            print(f"usage: {Path(argv[0]).name} [--apply]")
-            return 0
-        else:
-            print(f"unknown arg: {a}", file=sys.stderr)
-            return 2
+def cmd_termux(do_apply: bool = True) -> int:
 
-    if not PREFIX.is_dir():
-        print(f"not a Termux prefix: {PREFIX}", file=sys.stderr)
-        return 1
-
-    deletable: List[Path] = []
+    deletable: list[Path] = []
     for root in (*STRIP, *CACHE_DIRS):
         deletable.extend(collect(root, KEEP))
 
@@ -118,18 +140,18 @@ def main(argv: List[str]) -> int:
     print("kept (will not be touched):")
     if kept_present:
         for kb, p in sorted_by_size(kept_present):
-            print(f"  {human(kb):>10}  {p}")
+            print(f"  {human_kib(kb):>10}  {p}")
     else:
         print("  (none present yet)")
 
     print()
-    print(f"delete candidates — {len(sized)} items, {human(total_kib)}:")
+    print(f"delete candidates — {len(sized)} items, {human_kib(total_kib)}:")
     for kb, p in sized:
-        print(f"  {human(kb):>10}  {p}")
+        print(f"  {human_kib(kb):>10}  {p}")
     print()
-    print(f"total reclaimable: {human(total_kib)}")
+    print(f"total reclaimable: {human_kib(total_kib)}")
 
-    if not apply:
+    if not do_apply:
         print("dry run — rerun with --apply to execute")
         return 0
 
@@ -149,10 +171,143 @@ def main(argv: List[str]) -> int:
         except OSError as e:
             print(f"  warn: {p}: {e}", file=sys.stderr)
 
-    print(f"done. reclaimed ~{human(total_kib)}")
+    print(f"done. reclaimed ~{human_kib(total_kib)}")
     print(f"revert: rm {CFG} && pkg upgrade --reinstall")
     return 0
 
 
+# ---------------------------------------------------------------------------
+# junk file cleaner  (was: dj.py)
+# ---------------------------------------------------------------------------
+
+JUNK_SUFFIXES = (
+    ".pyc",
+    ".tmp",
+    ".log",
+    ".bak",
+    ".cache.json",
+    ".exe",
+    ".bat",
+    ".dll",
+    ".dylib",
+    ".pyd",
+    ".lnk",
+    ".msi",
+)
+
+GIT_META_FILES = frozenset({".gitkeep", ".gitmodules", ".gitignore"})
+GIT_META_DIRS = frozenset({".github"})
+
+
+def load_junk_names(path: Path | None = None) -> frozenset:
+    """Load the junk filename list (one name per line, lower-cased)."""
+    if path is None:
+        path = JUNK_FILE
+    try:
+        with path.open(encoding="utf-8") as fh:
+            return frozenset(line.strip().lower() for line in fh if line.strip())
+    except OSError as exc:
+        print(f"warning: could not read {path}: {exc}", file=sys.stderr)
+        return frozenset()
+
+
+_git_cache: dict[Path, bool] = {}
+
+
+def in_git_repo(path: Path) -> bool:
+    """True if `path` lives inside a git working tree.
+
+    Walks up the parent chain looking for a `.git` entry (dir *or* file, so
+    worktrees and submodules count).  Results are cached per directory since
+    `.git` entries don't appear/disappear while this script runs.
+    """
+    chain: list[Path] = []
+    result = False
+    for parent in path.parents:
+        cached = _git_cache.get(parent)
+        if cached is not None:
+            result = cached
+            break
+        chain.append(parent)
+        if (parent / ".git").exists():
+            result = True
+            break
+    for parent in chain:
+        _git_cache[parent] = result
+    return result
+
+
+def cmd_junk(root: Path, dry_run: bool = False) -> int:
+
+    junk_names = load_junk_names()
+    removed_count = 0
+
+    def zap(path: Path) -> None:
+        nonlocal removed_count
+        try:
+            remove(path, dry_run)
+        except OSError as e:
+            print(f"  warn: {path}: {e}", file=sys.stderr)
+            return
+        removed_count += 1
+        if not dry_run:
+            print(f"{path.name} removed")
+
+    for path in walk(root):
+        if not path.exists() or path.is_symlink() or ".git" in path.parts:
+            continue
+
+        loname = path.name.lower()
+
+        # git metadata that belongs to no repo
+        if loname in GIT_META_FILES or (loname in GIT_META_DIRS and path.is_dir()):
+            if not in_git_repo(path):
+                zap(path)
+            continue
+
+        # junk files by suffix, or by name from the junk list
+        if path.is_file() and (loname.endswith(JUNK_SUFFIXES) or loname in junk_names):
+            zap(path)
+            continue
+
+        if path.is_dir() and loname == "licenses" and "dist-info" in path.parent.name:
+            zap(path)
+            continue
+
+    if removed_count:
+        print(f"\n{removed_count} item(s) removed")
+    else:
+        print("nothing found.")
+    return 0
+
+
+def cmd_pycache(root: Path) -> int:
+    removed = 0
+    sz = 0
+    for path in walk_dirs(root):
+        if path.exists() and path.name == "__pycache__":
+            sz += gsz(path)
+            removed += 1
+            try:
+                remove(path, dry_run)
+            except OSError as e:
+                print(f"  warn: {path}: {e}", file=sys.stderr)
+    if removed:
+        print(f"   • {'would free' if dry_run else 'Total size freed'}: {fsz(sz)}")
+        print(f"   • {'dirs to remove' if dry_run else 'dirs removed'}: {removed}")
+    else:
+        print("nothing found.")
+    return 0
+
+
+def main() -> int:
+
+    root = Path("/data/data/com.termux")
+    rc = cmd_pycache(root)
+    rc |= cmd_junk(root)
+    rc |= cmd_termux()
+    return rc
+
+
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main())

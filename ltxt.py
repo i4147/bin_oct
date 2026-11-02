@@ -6,13 +6,13 @@ from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
-from dh import BIN_EXT
+from dh import BINARY_EXTENSIONS
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-EXCLUDED_EXTENSIONS: frozenset[str] = frozenset(BIN_EXT)
+EXCLUDED_EXTENSIONS: frozenset[str] = frozenset(BINARY_EXTENSIONS)
 POOL_WORKERS: int = 8
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "imap_unordered", "apply_async")
 LineCounter: TypeAlias = Counter[str]

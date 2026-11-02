@@ -29,7 +29,7 @@ CHINESE_RANGES = (
     (0x2CEB0, 0x2EBEF),
 )
 ENCODINGS = ("utf-8", "utf-8-sig", "gb18030", "gbk", "cp1252")
-TXT_EXT = {
+TEXT_EXTENSIONS = {
     ".txt",
     ".md",
     ".rst",
@@ -439,7 +439,7 @@ def _scan_detailed(root: Path, min_bytes: int, max_bytes: int) -> dict:
     print(f"🔍 Scanning directory: {root}")
     print("-" * 40)
     for f in iter_files(root, recursive=True, skip_hidden=True):
-        if f.suffix.lower() not in TXT_EXT:
+        if f.suffix.lower() not in TEXT_EXTENSIONS:
             continue
         if f.stat().st_size > 1_048_576:
             stats["skipped_binary"] += 1

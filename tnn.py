@@ -9,6 +9,8 @@ from dh import cprint, get_nobinary, mpf
 def process_file(path: str | Path) -> None:
     path = Path(path)
     content = path.read_text(encoding="utf-8")
+    if not "\t" in content:
+        return
     new_content = content.replace("\t", "    ")
     if new_content == content:
         cprint(f"{path.name} (no change)", "grey")

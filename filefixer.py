@@ -32,17 +32,17 @@ try:
 except Exception:
     filetype = None
 try:
-    from dh import BIN_EXT as DH_BIN_EXT
+    from dh import BINARY_EXTENSIONS as DH_BINARY_EXTENSIONS
     from dh import MIME2EXT as DH_MIME2EXT
     from dh import SHEBANG_MAP as DH_SHEBANG_MAP
-    from dh import TXT_EXT as DH_TXT_EXT
+    from dh import TEXT_EXTENSIONS as DH_TEXT_EXTENSIONS
     from dh import get_files as dh_get_files
     from dh import is_binary as dh_is_binary
 except Exception:
-    DH_BIN_EXT = None
+    DH_BINARY_EXTENSIONS = None
     DH_MIME2EXT = None
     DH_SHEBANG_MAP = None
-    DH_TXT_EXT = None
+    DH_TEXT_EXTENSIONS = None
     dh_get_files = None
     dh_is_binary = None
 ALIASES: dict[str, str] = {
@@ -138,7 +138,7 @@ SHEBANG_MAP: dict[str, str] = {
 }
 if DH_SHEBANG_MAP:
     SHEBANG_MAP.update(DH_SHEBANG_MAP)
-BIN_EXT: set[str] = {
+BINARY_EXTENSIONS: set[str] = {
     ".png",
     ".jpg",
     ".jpeg",
@@ -169,9 +169,9 @@ BIN_EXT: set[str] = {
     ".whl",
     ".xz",
 }
-if DH_BIN_EXT:
-    BIN_EXT = set(DH_BIN_EXT)
-TXT_EXT: set[str] = {
+if DH_BINARY_EXTENSIONS:
+    BINARY_EXTENSIONS = set(DH_BINARY_EXTENSIONS)
+TEXT_EXTENSIONS: set[str] = {
     ".txt",
     ".md",
     ".py",
@@ -198,8 +198,8 @@ TXT_EXT: set[str] = {
     ".sql",
     ".log",
 }
-if DH_TXT_EXT:
-    TXT_EXT = set(DH_TXT_EXT)
+if DH_TEXT_EXTENSIONS:
+    TEXT_EXTENSIONS = set(DH_TEXT_EXTENSIONS)
 DEFAULT_PROTECT_EXT: set[str] = {
     ".py",
     ".pyc",
@@ -837,7 +837,7 @@ def process_fix_file(
             reason=f"protected extension {current}",
             engine=detection.engine,
         )
-    if skip_text_mismatches and detected == ".txt" and current in TXT_EXT:
+    if skip_text_mismatches and detected == ".txt" and current in TEXT_EXTENSIONS:
         return FixResult(
             path,
             "skipped",
@@ -1001,7 +1001,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
     if not root.exists():
         eprint(f"Error: path {root} does not exist")
         return 2
-    ext_set = BIN_EXT if args.kind == "binary" else TXT_EXT
+    ext_set = BINARY_EXTENSIONS if args.kind == "binary" else TEXT_EXTENSIONS
     files = list(
         iter_files(
             root,

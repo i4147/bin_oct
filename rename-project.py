@@ -3,57 +3,8 @@ import os
 import re
 import sys
 from pathlib import Path
+from dh import SKIP_DIRS, TEXT_EXTENSIONS
 
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    "build",
-    "dist",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".pytest_cache",
-    "node_modules",
-    ".eggs",
-    ".idea",
-    ".vscode",
-}
-TEXT_EXTS = {
-    ".py",
-    ".pyi",
-    ".pyx",
-    ".pxd",
-    ".c",
-    ".h",
-    ".txt",
-    ".md",
-    ".rst",
-    ".toml",
-    ".cfg",
-    ".ini",
-    ".json",
-    ".yaml",
-    ".yml",
-    ".in",
-    ".jinja",
-    ".jinja2",
-    ".tmpl",
-    ".tpl",
-    ".sh",
-    ".bash",
-    ".zsh",
-    ".bat",
-    ".ps1",
-    ".html",
-    ".css",
-    ".js",
-    ".ts",
-}
 TEXT_PREFIXES = (
     "readme",
     "license",
@@ -79,7 +30,7 @@ def looks_textual(path: Path) -> bool:
     name = path.name.lower()
     if name in DOTFILES:
         return True
-    if path.suffix.lower() in TEXT_EXTS:
+    if path.suffix.lower() in TEXT_EXTENSIONS:
         return True
     if name.startswith(TEXT_PREFIXES):
         return True
@@ -118,11 +69,8 @@ def replace_in_file(path: Path, pattern, repl) -> bool:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print(__doc__)
-        return 2
-    project_dir = Path(argv[1]).resolve()
-    new_name = argv[2]
+    project_dir = Path.cwd().resolve()
+    new_name = argv[1]
     if not project_dir.is_dir():
         print(f"error: {project_dir} is not a directory", file=sys.stderr)
         return 1
