@@ -46,3 +46,6 @@ Adjust cokumns by term width, and show size vhange column in greem, if reducwd, 
 -Migrate from argparse to typer+rich
 -Migrate from click to typer
 -Use rich lib to print output
+
+process files in batches batch-size=25
+report stats after finish8ng every batch
