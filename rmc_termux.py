@@ -22,7 +22,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Iterator
 
-from dh import SKIP_DIR
+from dh import SKIP_DIRS
 from codeutils import CSTStripper, TSStripper
 from atomicio import atomic_write
 
