@@ -1,10 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Reformat .txt and .md files in place with sentence-aware line wrapping.
+
+Files are discovered from one or more file/directory arguments (defaulting to
+the current directory) using the Rust-backed ``rignore`` walker, so
+``.gitignore`` rules are honored and hidden entries (``.git`` included) are
+skipped automatically; symlinks and well-known junk directories are filtered
+out explicitly.
+
+Each file is decoded as UTF-8 (BOM tolerated), reflowed to a configurable
+width while headings, list items, code fences, tables, and quotes stay
+structurally intact, then written back atomically. Markdown files (``.md``,
+``.markdown``, ``.mdx``) are formatted with markdown-aware rules (ATX
+headings, ``-`` bullets, indented code blocks preserved); plain text files
+keep setext headings.
+
+Flags cover previews and safety: ``--dry-run`` and ``--check`` report without
+writing, ``--diff`` prints a colored unified diff, ``--backup`` keeps a
+``<name>.bak`` copy of each original, and ``-m`` converts ``.txt`` files to
+``.md`` side by side (optionally removing the original with ``-r``).
+"""
+
+from __future__ import annotations
 
 import argparse
 import codecs
+import difflib
+import fnmatch
 import os
 import re
-import shutil
 import sys
 from collections.abc import Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
@@ -12,11 +35,17 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import Final, Literal, NamedTuple
-from dh import atomic_write
+
+import rignore
+from atomicio import atomic_write
 
 DEFAULT_WIDTH: Final[int] = 100
 MIN_PIECE: Final[int] = 20
 MIN_TAIL: Final[int] = 12
+BACKUP_SUFFIX: Final[str] = ".bak"
+TEXT_SUFFIXES: Final[frozenset[str]] = frozenset({".txt"})
+MARKDOWN_SUFFIXES: Final[frozenset[str]] = frozenset({".md", ".markdown", ".mdx"})
+SUPPORTED_SUFFIXES: Final[frozenset[str]] = TEXT_SUFFIXES | MARKDOWN_SUFFIXES
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",
     ".hg",
@@ -117,11 +146,14 @@ GREEN: Final[str] = "\033[32m"
 DIM: Final[str] = "\033[2m"
 YELLOW: Final[str] = "\033[33m"
 RED: Final[str] = "\033[31m"
+CYAN: Final[str] = "\033[36m"
 RESET: Final[str] = "\033[0m"
 Status = Literal["changed", "unchanged", "converted", "skipped", "error"]
 
 
 class Result(NamedTuple):
+    """Outcome of formatting a single file, pickled back from a worker."""
+
     path: Path
     status: Status
     before: int = 0
@@ -129,18 +161,27 @@ class Result(NamedTuple):
     detail: str = ""
     target: Path | None = None
     removed: bool = False
+    backup: Path | None = None
+    diff_text: str = ""
 
 
 @dataclass(frozen=True)
 class Options:
+    """Immutable run configuration shared with every worker process."""
+
     width: int
     dry_run: bool
-    markdown: bool
+    to_markdown: bool
     remove: bool
+    show_diff: bool = False
+    backup: bool = False
+    check: bool = False
 
 
 @dataclass(frozen=True)
 class Heading:
+    """A detected heading and how it should be re-emitted."""
+
     level: int
     text: str
     raw: str
@@ -149,16 +190,20 @@ class Heading:
 
 @dataclass
 class ListItem:
+    """Accumulator for a list item and its continuation lines."""
+
     indent: str
     marker: str
     parts: list[str] = field(default_factory=list)
 
 
 def normalize(text: str) -> str:
+    """Collapse all whitespace runs into single spaces and trim."""
     return re.sub(r"\s+", " ", text).strip()
 
 
 def is_abbreviation(chunk: str) -> bool:
+    """Return True when a chunk ends with an abbreviation, not a sentence end."""
     words = chunk.split()
     if not words:
         return False
@@ -174,6 +219,7 @@ def is_abbreviation(chunk: str) -> bool:
 
 
 def split_sentences(text: str) -> list[str]:
+    """Split text into sentences, ignoring abbreviations like 'Dr.' or 'e.g.'."""
     sentences: list[str] = []
     start = 0
     for match in SENTENCE_END.finditer(text):
@@ -189,6 +235,7 @@ def split_sentences(text: str) -> list[str]:
 
 
 def protected_mask(text: str) -> list[bool]:
+    """Mark characters inside backticks or unbalanced brackets as protected."""
     mask: list[bool] = []
     depth = 0
     in_code = False
@@ -205,6 +252,7 @@ def protected_mask(text: str) -> list[bool]:
 
 
 def find_break(text: str, room: int) -> int | None:
+    """Pick the best wrap position within ``room``, preferring protected spots late."""
     mask = protected_mask(text)
     for respect_protection in (True, False):
         for index, pattern in enumerate(BREAK_PATTERNS):
@@ -225,6 +273,7 @@ def find_break(text: str, room: int) -> int | None:
 
 
 def wrap(prefix: str, text: str, continuation: str, width: int) -> list[str]:
+    """Wrap ``text`` into lines of at most ``width`` using the given prefixes."""
     lines: list[str] = []
     current = prefix
     remaining = text
@@ -243,11 +292,13 @@ def wrap(prefix: str, text: str, continuation: str, width: int) -> list[str]:
 
 
 def is_title_case(words: Sequence[str]) -> bool:
+    """Return True when every significant word starts with an uppercase letter."""
     significant = [w for w in words if w.lower() not in SMALL_WORDS]
     return bool(significant) and words[0][:1].isupper() and all(w[:1].isupper() or w[:1].isdigit() for w in significant)
 
 
 def setext_heading(line: str, following: str) -> Heading | None:
+    """Detect a setext heading (text line followed by === or --- underline)."""
     if not SETEXT_UNDERLINE.match(following) or LIST_MARKER.match(line):
         return None
     level = 1 if following.strip().startswith("=") else 2
@@ -255,6 +306,7 @@ def setext_heading(line: str, following: str) -> Heading | None:
 
 
 def strong_heading(line: str) -> Heading | None:
+    """Detect ATX headings, emphasized lines, chapter titles, and numbered headings."""
     stripped = line.strip()
     markdown = MD_HEADING.match(line)
     if markdown:
@@ -278,6 +330,7 @@ def strong_heading(line: str) -> Heading | None:
 
 
 def weak_heading(line: str) -> Heading | None:
+    """Detect ALL-CAPS and Title Case colon lines as soft headings."""
     stripped = line.strip()
     if len(stripped) > 80:
         return None
@@ -291,6 +344,7 @@ def weak_heading(line: str) -> Heading | None:
 
 
 def to_markdown_marker(marker: str) -> tuple[str, str]:
+    """Normalize a list marker to markdown style, returning marker and text prefix."""
     if marker in BULLETS:
         return "-", ""
     if marker.startswith("["):
@@ -304,6 +358,8 @@ def to_markdown_marker(marker: str) -> tuple[str, str]:
 
 
 class Formatter:
+    """Streaming builder that reflows text into wrapped, normalized output lines."""
+
     def __init__(self, width: int, markdown: bool) -> None:
         self.width = width
         self.markdown = markdown
@@ -315,21 +371,25 @@ class Formatter:
         self.after_list = False
 
     def blank(self) -> None:
+        """Append a single blank line unless one already ends the output."""
         self.after_text = False
         if self.out and self.out[-1] != "":
             self.out.append("")
 
     def blank_line(self) -> None:
+        """Flush pending content and emit one structural blank line."""
         self.flush()
         self.blank()
         self.after_list = False
 
     def verbatim(self, line: str) -> None:
+        """Emit a line untouched (code, tables, quotes, rules)."""
         self.flush()
         self.after_text = False
         self.out.append(line)
 
     def heading(self, heading: Heading) -> None:
+        """Emit a heading as ATX markdown or as raw text plus underline."""
         self.flush()
         self.blank()
         if self.markdown:
@@ -341,6 +401,7 @@ class Formatter:
         self.after_list = False
 
     def start_item(self, indent: str, marker: str, text: str) -> None:
+        """Begin a list item, normalizing its marker when in markdown mode."""
         self.flush()
         prefix = ""
         if self.markdown:
@@ -350,6 +411,7 @@ class Formatter:
         self.item = ListItem(indent=indent, marker=marker.strip() + " ", parts=[prefix + text.strip()])
 
     def text_line(self, line: str) -> None:
+        """Route a content line into the current item or paragraph."""
         indent = line[: len(line) - len(line.lstrip())]
         stripped = line.strip()
         if self.item is not None:
@@ -362,6 +424,7 @@ class Formatter:
         self.paragraph.append(stripped)
 
     def flush_paragraph(self) -> None:
+        """Join and re-wrap pending paragraph sentences at the target width."""
         if not self.paragraph:
             return
         if self.after_list:
@@ -374,6 +437,7 @@ class Formatter:
         self.after_text = True
 
     def flush_item(self) -> None:
+        """Join and re-wrap the current list item at the target width."""
         item = self.item
         if item is None:
             return
@@ -387,10 +451,12 @@ class Formatter:
         self.after_text = False
 
     def flush(self) -> None:
+        """Flush any pending paragraph and list item."""
         self.flush_paragraph()
         self.flush_item()
 
     def result(self) -> list[str]:
+        """Flush everything and return output lines without trailing blanks."""
         self.flush()
         while self.out and self.out[-1] == "":
             self.out.pop()
@@ -398,9 +464,11 @@ class Formatter:
 
 
 def format_text(text: str, width: int, markdown: bool) -> str:
+    """Reflow text: wrap sentences, normalize headings and lists, protect code."""
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     formatter = Formatter(width, markdown)
     in_fence = False
+    prev_blank = True
     index = 0
     while index < len(lines):
         raw = lines[index]
@@ -411,16 +479,22 @@ def format_text(text: str, width: int, markdown: bool) -> str:
         if FENCE.match(line):
             in_fence = not in_fence
             formatter.verbatim(raw)
+            prev_blank = False
             continue
         if in_fence:
             formatter.verbatim(raw)
+            prev_blank = False
             continue
         if not stripped:
             formatter.blank_line()
+            prev_blank = True
             continue
-        if VERBATIM.match(line):
+        indent = line[: len(line) - len(line.lstrip())]
+        if VERBATIM.match(line) or (markdown and prev_blank and (indent.startswith("    ") or indent.startswith("\t"))):
             formatter.verbatim(line)
+            prev_blank = False
             continue
+        prev_blank = False
         setext = setext_heading(line, following)
         if setext:
             formatter.heading(setext)
@@ -443,7 +517,42 @@ def format_text(text: str, width: int, markdown: bool) -> str:
     return "\n".join(result) + "\n" if result else ""
 
 
+def make_backup(path: Path, raw: bytes, options: Options) -> Path | None:
+    """Save the original bytes as ``<name>.bak`` when --backup is enabled."""
+    if not options.backup:
+        return None
+    backup = path.with_name(path.name + BACKUP_SUFFIX)
+    atomic_write(backup, raw, path)
+    return backup
+
+
+def build_diff(path: Path, before: str, after: str) -> str:
+    """Build a unified diff between original and reformatted text."""
+    return "".join(
+        difflib.unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=f"{path} (original)",
+            tofile=f"{path} (formatted)",
+        )
+    )
+
+
+def paint_diff_line(line: str, color: bool) -> str:
+    """Colorize one unified-diff line: adds green, removes red, hunks cyan."""
+    if line.startswith(("+++", "---")):
+        return paint(line, DIM, color)
+    if line.startswith("@@"):
+        return paint(line, CYAN, color)
+    if line.startswith("+"):
+        return paint(line, GREEN, color)
+    if line.startswith("-"):
+        return paint(line, RED, color)
+    return line
+
+
 def process_file(path: Path, options: Options) -> Result:
+    """Decode, reformat, and (unless dry-running) persist a single file."""
     try:
         raw = path.read_bytes()
         has_bom = raw.startswith(codecs.BOM_UTF8)
@@ -452,50 +561,101 @@ def process_file(path: Path, options: Options) -> Result:
         return Result(path, "skipped", detail=f"not valid utf-8 ({error.reason})")
     except OSError as error:
         return Result(path, "error", detail=str(error))
+
+    markdown_mode = path.suffix.lower() in MARKDOWN_SUFFIXES or options.to_markdown
+    convert = options.to_markdown and path.suffix.lower() not in MARKDOWN_SUFFIXES
     newline = "\r\n" if "\r\n" in text else "\n"
-    formatted = format_text(text, options.width, options.markdown).replace("\n", newline)
+    formatted = format_text(text, options.width, markdown_mode).replace("\n", newline)
     payload = (codecs.BOM_UTF8 if has_bom else b"") + formatted.encode("utf-8")
     before, after = len(raw), len(payload)
-    if options.markdown:
+    diff_text = build_diff(path, text, formatted) if options.show_diff else ""
+
+    if convert:
         target = path.with_suffix(".md")
+        backup: Path | None = None
         if not options.dry_run:
             try:
+                backup = make_backup(path, raw, options)
                 atomic_write(target, payload, path)
                 if options.remove:
                     path.unlink()
             except OSError as error:
                 return Result(path, "error", before, after, str(error))
-        return Result(path, "converted", before, after, target=target, removed=options.remove)
+        return Result(
+            path, "converted", before, after, target=target, removed=options.remove, backup=backup, diff_text=diff_text
+        )
+
     if payload == raw:
         return Result(path, "unchanged", before, after)
+
+    backup = None
     if not options.dry_run:
         try:
+            backup = make_backup(path, raw, options)
             atomic_write(path, payload, path)
         except OSError as error:
             return Result(path, "error", before, after, str(error))
-    return Result(path, "changed", before, after)
+    return Result(path, "changed", before, after, backup=backup, diff_text=diff_text)
 
 
-def walk_txt_files(root: Path) -> Iterator[Path]:
+def is_excluded(path: Path, root: Path, patterns: Sequence[str]) -> bool:
+    """Return True when a path's name or root-relative path matches a glob."""
+    if not patterns:
+        return False
+    name = path.name
     try:
-        entries = sorted(root.iterdir(), key=lambda entry: entry.name.lower())
-    except OSError:
-        return
-    for entry in entries:
-        if entry.is_symlink():
+        relative = path.relative_to(root).as_posix()
+    except ValueError:
+        relative = name
+    return any(fnmatch.fnmatch(name, pattern) or fnmatch.fnmatch(relative, pattern) for pattern in patterns)
+
+
+def in_junk_dir(entry: Path, root: Path) -> bool:
+    """Return True when a file lives under a well-known junk directory."""
+    try:
+        relative = entry.relative_to(root)
+    except ValueError:
+        return False
+    return any(part in SKIP_DIRS for part in relative.parts[:-1])
+
+
+def walk_files(root: Path, exclude: Sequence[str]) -> Iterator[Path]:
+    """Yield supported files under root via rignore, skipping symlinks and junk."""
+    for entry in rignore.walk(root):
+        if not isinstance(entry, Path):
+            entry = Path(entry)
+        if entry.is_symlink() or not entry.is_file():
             continue
-        if entry.is_dir():
-            if entry.name not in SKIP_DIRS:
-                yield from walk_txt_files(entry)
-        elif entry.suffix.lower() == ".txt" and entry.is_file():
-            yield entry
+        if entry.suffix.lower() not in SUPPORTED_SUFFIXES:
+            continue
+        if in_junk_dir(entry, root) or is_excluded(entry, root, exclude):
+            continue
+        yield entry
+
+
+def discover(inputs: Sequence[Path], exclude: Sequence[str]) -> tuple[list[Path], list[Path]]:
+    """Expand file/directory inputs into a deduplicated, sorted file list."""
+    found: dict[Path, None] = {}
+    missing: list[Path] = []
+    for raw in inputs:
+        path = raw.expanduser().resolve()
+        if path.is_dir():
+            for file_path in walk_files(path, exclude):
+                found[file_path] = None
+        elif path.is_file():
+            found[path] = None
+        else:
+            missing.append(path)
+    return sorted(found, key=str), missing
 
 
 def paint(text: str, style: str, enabled: bool) -> str:
+    """Wrap text in an ANSI style when color is enabled."""
     return f"{style}{text}{RESET}" if enabled else text
 
 
 def human_size(size: int) -> str:
+    """Format a byte count as a human-readable string."""
     value = float(abs(size))
     unit = "B"
     for unit in ("B", "KB", "MB", "GB"):
@@ -506,24 +666,43 @@ def human_size(size: int) -> str:
 
 
 def signed_size(size: int) -> str:
+    """Prefix a size delta with its sign."""
     return f"{'+' if size >= 0 else '-'}{human_size(size)}"
 
 
+def choose_color(mode: str) -> bool:
+    """Resolve the --color mode against NO_COLOR and tty detection."""
+    if mode == "always":
+        return True
+    if mode == "never":
+        return False
+    return sys.stdout.isatty() and "NO_COLOR" not in os.environ
+
+
 def render(result: Result, name_width: int, color: bool) -> str:
+    """Render one worker result as a colored single-line report."""
     name = result.path.name
     if result.status == "converted" and result.target is not None:
-        return f"{name} -> {result.target.name}"
-    label = name.ljust(name_width + 2)
-    if result.status == "changed":
-        return label + paint(f"{result.after - result.before:+d}", GREEN, color)
-    if result.status == "unchanged":
-        return label + paint("unchanged", DIM, color)
-    if result.status == "skipped":
-        return label + paint(f"skipped: {result.detail}", YELLOW, color)
-    return label + paint(f"error: {result.detail}", RED, color)
+        line = f"{name} -> {result.target.name}"
+        if result.removed:
+            line += paint(" (original removed)", DIM, color)
+    else:
+        label = name.ljust(name_width + 2)
+        if result.status == "changed":
+            line = label + paint(f"{result.after - result.before:+d}", GREEN, color)
+        elif result.status == "unchanged":
+            line = label + paint("unchanged", DIM, color)
+        elif result.status == "skipped":
+            line = label + paint(f"skipped: {result.detail}", YELLOW, color)
+        else:
+            line = label + paint(f"error: {result.detail}", RED, color)
+    if result.backup is not None:
+        line += paint(f" [backup: {result.backup.name}]", DIM, color)
+    return line
 
 
 def summarize(results: Sequence[Result], options: Options, color: bool) -> list[str]:
+    """Build the end-of-run summary lines from all results."""
     counts: dict[str, int] = {}
     for result in results:
         counts[result.status] = counts.get(result.status, 0) + 1
@@ -535,51 +714,106 @@ def summarize(results: Sequence[Result], options: Options, color: bool) -> list[
     delta = after - before
     percent = f", {delta / before * 100:+.1f}%" if before else ""
     space = f"space: {human_size(before)} -> {human_size(after)} ({paint(signed_size(delta) + percent, GREEN, color)})"
-    if options.markdown and not options.remove:
+    if options.to_markdown and not options.remove:
         space += " originals kept"
     lines.append(space)
-    if options.markdown and options.remove:
+    if options.backup:
+        if options.dry_run:
+            pending = counts.get("changed", 0) + counts.get("converted", 0)
+            if pending:
+                lines.append(f"backups: would create {pending} {BACKUP_SUFFIX} file(s)")
+        else:
+            created = sum(1 for r in results if r.backup is not None)
+            if created:
+                lines.append(f"backups: created {created} {BACKUP_SUFFIX} file(s)")
+    if options.to_markdown and options.remove:
         verb = "would remove" if options.dry_run else "removed"
         lines.append(f"{verb} {counts.get('converted', 0)} original files")
+    if options.check:
+        pending = counts.get("changed", 0) + counts.get("converted", 0)
+        if pending:
+            lines.append(f"check failed: {pending} file(s) need formatting")
     if options.dry_run:
         lines.append("dry run: nothing was written")
     return lines
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Reformat .txt files recursively, in place.")
-    parser.add_argument("root", nargs="?", type=Path, default=Path.cwd())
-    parser.add_argument("-w", "--width", type=int, default=DEFAULT_WIDTH)
-    parser.add_argument("-j", "--workers", type=int, default=os.cpu_count() or 1)
-    parser.add_argument("-n", "--dry-run", action="store_true")
-    parser.add_argument("-m", "--markdown", action="store_true", help="write file.md beside file.txt")
+    """Define and parse the command-line interface."""
+    parser = argparse.ArgumentParser(
+        description="Reformat .txt/.md files in place with sentence-aware wrapping.",
+        epilog="With no input, the current directory is processed recursively.",
+    )
+    parser.add_argument("inputs", nargs="*", type=Path, help="files or directories to process (default: '.')")
+    parser.add_argument("-w", "--width", type=int, default=DEFAULT_WIDTH, help="maximum line width (default: 100)")
+    parser.add_argument(
+        "-j", "--workers", type=int, default=os.cpu_count() or 1, help="parallel workers (default: CPU count)"
+    )
+    parser.add_argument("-n", "--dry-run", action="store_true", help="show what would change without writing")
+    parser.add_argument("--diff", action="store_true", help="print a colored unified diff for changed files")
+    parser.add_argument("--backup", action="store_true", help="save each original as <name>.bak before writing")
+    parser.add_argument("--check", action="store_true", help="exit 1 if any file needs formatting (implies --dry-run)")
+    parser.add_argument(
+        "-m", "--markdown", dest="to_markdown", action="store_true", help="write file.md beside each .txt"
+    )
     parser.add_argument("-r", "--remove", action="store_true", help="with -m, delete the original .txt")
+    parser.add_argument(
+        "-e", "--exclude", action="append", default=[], metavar="GLOB", help="skip matching files (repeatable)"
+    )
+    parser.add_argument("-q", "--quiet", action="store_true", help="only print the summary")
+    parser.add_argument(
+        "--color", choices=("auto", "always", "never"), default="auto", help="colorize output (default: auto)"
+    )
     args = parser.parse_args(argv)
-    if args.remove and not args.markdown:
+    if args.remove and not args.to_markdown:
         parser.error("-r/--remove requires -m/--markdown")
+    if args.width < MIN_PIECE:
+        parser.error(f"-w/--width must be at least {MIN_PIECE}")
+    if args.check:
+        args.dry_run = True
     return args
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Discover files, format them in parallel, and print per-file results."""
     args = parse_args(argv)
-    root: Path = args.root.resolve()
-    files = list(walk_txt_files(root))
+    inputs = list(args.inputs) or [Path(".")]
+    files, missing = discover(inputs, list(args.exclude))
+    for path in missing:
+        print(f"skipping missing input: {path}", file=sys.stderr)
     if not files:
-        print(f"No .txt files found under {root}")
-        return 0
-    options = Options(width=args.width, dry_run=args.dry_run, markdown=args.markdown, remove=args.remove)
-    color = sys.stdout.isatty() and "NO_COLOR" not in os.environ
+        print(f"No .txt/.md files found under: {', '.join(str(p) for p in inputs)}")
+        return 1 if missing else 0
+    options = Options(
+        width=args.width,
+        dry_run=args.dry_run,
+        to_markdown=args.to_markdown,
+        remove=args.remove,
+        show_diff=args.diff,
+        backup=args.backup,
+        check=args.check,
+    )
+    color = choose_color(args.color)
     name_width = max(len(path.name) for path in files)
     workers = max(1, min(args.workers, len(files)))
     worker = partial(process_file, options=options)
     results: list[Result] = []
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        for result in pool.map(worker, files, chunksize=max(1, len(files) // (workers * 4))):
+        chunksize = max(1, len(files) // (workers * 4))
+        for result in pool.map(worker, files, chunksize=chunksize):
             results.append(result)
+            if args.quiet:
+                continue
             print(render(result, name_width, color))
+            for diff_line in result.diff_text.splitlines():
+                print(paint_diff_line(diff_line, color))
     print()
     print("\n".join(summarize(results, options, color)))
-    return 1 if any(r.status == "error" for r in results) else 0
+    if any(result.status == "error" for result in results):
+        return 1
+    if args.check and any(result.status in ("changed", "converted") for result in results):
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

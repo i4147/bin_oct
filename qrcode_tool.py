@@ -46,7 +46,7 @@ def decode_with_pyzbar(image: object, qr_only: bool) -> list[DecodedCode] | None
     except ImportError:
         return None
     results: list[DecodedCode] = []
-    for symbol in decode(image):
+    for symbol in decode(image):  # type: ignore[arg-type]
         kind: str = str(symbol.type)
         if qr_only and kind != "QRCODE":
             continue
@@ -67,10 +67,10 @@ def decode_with_opencv(path: Path) -> list[DecodedCode] | None:
         import cv2
     except ImportError:
         return None
-    image = cv2.imread(str(path))
+    image = cv2.imread(str(path))  # type: ignore[attr-defined]
     if image is None:
         return []
-    detector = cv2.QRCodeDetector()
+    detector = cv2.QRCodeDetector()  # type: ignore[attr-defined]
     data: str
     points: object
     data, points, _ = detector.detectAndDecode(image)
@@ -158,10 +158,10 @@ def cmd_make(args: argparse.Namespace) -> int:
     except ImportError:
         print("Missing optional dependency: pip install qrcode", file=sys.stderr)
         return 1
-    image: object = qrcode.make(args.data)
+    image: object = qrcode.make(args.data)  # type: ignore[attr-defined]
     if args.size is not None:
-        image = image.resize((args.size, args.size))
-    image.save(str(args.output))
+        image = image.resize((args.size, args.size))  # type: ignore[attr-defined]
+    image.save(str(args.output))  # type: ignore[attr-defined]
     print(f"Wrote QR code to {args.output}")
     return 0
 
@@ -186,6 +186,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

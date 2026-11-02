@@ -22,7 +22,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Iterator
 
-from dh import SKIP_DIRS, CSTStripper, TSStripper, atomic_write
+from dh import SKIP_DIR
+from codeutils import CSTStripper, TSStripper
+from atomicio import atomic_write
 
 LOGGER = logging.getLogger("striper_termux")
 _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
