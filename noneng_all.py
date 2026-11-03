@@ -22,9 +22,9 @@ import os
 import sys
 import math
 import argparse
-from typing import Callable, Tuple
+from typing import Callable
 
-DetectionResult = Tuple[str, float]  # (lang_code, probability in [0,1])
+DetectionResult = tuple[str, float]  # (lang_code, probability in [0,1])
 
 
 # --- Backend implementations -------------------------------------------------

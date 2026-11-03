@@ -10,7 +10,7 @@ import tempfile
 import zipfile
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional
 
 try:
     from packaging.tags import Tag, sys_tags
@@ -24,8 +24,8 @@ class WheelBuilder:
 
     def __init__(
         self,
-        site_packages: Union[str, Path],
-        output_dir: Union[str, Path],
+        site_packages: str | Path,
+        output_dir: str | Path,
         force_all: bool = False,
         parallel: bool = True,
         max_workers: Optional[int] = None,
@@ -39,7 +39,7 @@ class WheelBuilder:
         self.venv_root: Optional[Path] = self._find_venv_root()
         self.bin_dir: Optional[Path] = self._find_bin_dir()
         self.share_dir: Optional[Path] = self.venv_root / "share" if self.venv_root else None
-        self.processed_packages: Set[str] = set()
+        self.processed_packages: set[str] = set()
 
     def _find_venv_root(self) -> Optional[Path]:
         """Locate the virtual environment root directory."""
@@ -73,12 +73,12 @@ class WheelBuilder:
         digest = h.digest()
         return f"sha256={base64.urlsafe_b64encode(digest).decode().rstrip('=')}"
 
-    def _read_record(self, dist_info: Path) -> Dict[str, Dict[str, str]]:
+    def _read_record(self, dist_info: Path) -> dict[str, dict[str, str]]:
         """Parse RECORD file from a .dist-info directory."""
         record_file = dist_info / "RECORD"
         if not record_file.exists():
             return {}
-        records: Dict[str, Dict[str, str]] = {}
+        records: dict[str, dict[str, str]] = {}
         with record_file.open(encoding="utf-8", newline="") as f:
             reader = csv.reader(f)
             for row in reader:
@@ -91,11 +91,11 @@ class WheelBuilder:
                 }
         return records
 
-    def _find_scripts_for_package(self, records: Dict[str, Dict[str, str]]) -> List[Path]:
+    def _find_scripts_for_package(self, records: dict[str, dict[str, str]]) -> list[Path]:
         """Discover console scripts declared in entry_points.txt."""
         if not self.bin_dir or not self.bin_dir.exists():
             return []
-        scripts: List[Path] = []
+        scripts: list[Path] = []
         entry_points_file: Optional[Path] = None
         for path_str in records:
             if path_str.endswith("entry_points.txt"):
@@ -103,7 +103,7 @@ class WheelBuilder:
                 break
         if not entry_points_file or not entry_points_file.exists():
             return scripts
-        script_names: Set[str] = set()
+        script_names: set[str] = set()
         in_console_scripts = False
         for line in entry_points_file.read_text().splitlines():
             line = line.strip()
@@ -123,11 +123,11 @@ class WheelBuilder:
                     break
         return scripts
 
-    def _find_data_for_package(self, package_name: str) -> List[Tuple[Path, str]]:
+    def _find_data_for_package(self, package_name: str) -> list[tuple[Path, str]]:
         """Find data files in share/ directory belonging to the package."""
         if not self.share_dir or not self.share_dir.exists():
             return []
-        data_files: List[Tuple[Path, str]] = []
+        data_files: list[tuple[Path, str]] = []
         pkg_normalized = package_name.lower().replace("-", "_")
         for item in self.share_dir.rglob("*"):
             if not item.is_file():
@@ -140,7 +140,7 @@ class WheelBuilder:
                     pass
         return data_files
 
-    def _get_wheel_tags(self) -> Tuple[str, str, str]:
+    def _get_wheel_tags(self) -> tuple[str, str, str]:
         """Determine wheel compatibility tags (interpreter, abi, platform)."""
         if sys_tags is not None:
             try:
@@ -156,7 +156,7 @@ class WheelBuilder:
         platform_tag = f"{plat}_{machine}"
         return (python_tag, abi_tag, platform_tag)
 
-    def _detect_purity(self, records: Dict[str, Dict[str, str]]) -> bool:
+    def _detect_purity(self, records: dict[str, dict[str, str]]) -> bool:
         """Check if package is pure Python (no binary extensions)."""
         return all(not path.endswith((".so", ".pyd", ".dll")) for path in records)
 
@@ -203,7 +203,7 @@ class WheelBuilder:
                 dist_info_dest.mkdir(parents=True)
                 data_dir_name = f"{pkg_name}-{version}.data"
                 data_dir: Optional[Path] = None
-                new_record: List[Tuple[str, str, str]] = []
+                new_record: list[tuple[str, str, str]] = []
                 for path_str in records:
                     src = self.site_packages / path_str
                     if not src.exists():
@@ -272,9 +272,9 @@ class WheelBuilder:
                 wheel_path.unlink(missing_ok=True)
             return None
 
-    def build_all(self) -> List[Path]:
+    def build_all(self) -> list[Path]:
         """Build wheels for all packages in site-packages."""
-        wheels: List[Path] = []
+        wheels: list[Path] = []
         for dist_info in self.site_packages.glob("*.dist-info"):
             wheel = self.build_wheel(dist_info)
             if wheel:

@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from fastwalk import walk_dirs, walk_files
+from fastwalk import walk_dirs
 import os
 import shutil
 import sys

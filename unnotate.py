@@ -4,9 +4,6 @@ import argparse
 import multiprocessing as mp
 import os
 import re
-import shutil
-import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING

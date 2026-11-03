@@ -8,7 +8,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 
 def run(

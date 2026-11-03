@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 DEFAULT_JSON: Path = Path("installed.json")
 
@@ -19,7 +18,7 @@ def human_size(kib: int) -> str:
     return f"{int(value)}{unit}" if value == int(value) else f"{value:.1f}{unit}"
 
 
-def get_installed() -> List[Tuple[str, int]]:
+def get_installed() -> list[tuple[str, int]]:
     proc = subprocess.run(
         [
             "dpkg-query",
@@ -30,7 +29,7 @@ def get_installed() -> List[Tuple[str, int]]:
         text=True,
         check=True,
     )
-    packages: List[Tuple[str, int]] = []
+    packages: list[tuple[str, int]] = []
     for line in proc.stdout.splitlines():
         parts = line.split("\t")
         if len(parts) != 3:
@@ -52,16 +51,16 @@ def term_width() -> int:
     return shutil.get_terminal_size(fallback=(80, 24)).columns
 
 
-def render(packages: List[Tuple[str, int]], width: int) -> str:
+def render(packages: list[tuple[str, int]], width: int) -> str:
     if not packages:
         return ""
-    entries: List[Tuple[str, str]] = [(n, human_size(kb)) for n, kb in packages]
+    entries: list[tuple[str, str]] = [(n, human_size(kb)) for n, kb in packages]
     name_max = max(len(n) for n, _ in entries)
     size_max = max(len(s) for _, s in entries)
     name_width = name_max + 2
     if name_width + size_max > width:
         name_width = max(6, width - size_max)
-    lines: List[str] = []
+    lines: list[str] = []
     for name, size in entries:
         if len(name) > name_width:
             name = name[: name_width - 2] + ".." if name_width >= 3 else name[:name_width]
@@ -69,7 +68,7 @@ def render(packages: List[Tuple[str, int]], width: int) -> str:
     return "\n".join(lines)
 
 
-def main(argv: List[str]) -> int:
+def main(argv: list[str]) -> int:
     output_path: Path = Path(argv[1]) if len(argv) > 1 else DEFAULT_JSON
     packages = get_installed()
     payload = [

@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
-from typing import Any, Callable
+from typing import Any
 
 from loguru import logger
 

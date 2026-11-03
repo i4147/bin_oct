@@ -362,7 +362,7 @@ class _ExecutorMethodRenamer(ast.NodeTransformer):
 
 
 class ExecutorTransformer(ast.NodeTransformer):
-    def visit_With(self, node: ast.With) -> Union[ast.AST, list[ast.stmt]]:
+    def visit_With(self, node: ast.With) -> ast.AST | list[ast.stmt]:
         self.generic_visit(node)
         if len(node.items) != 1:
             return node
@@ -431,7 +431,7 @@ class LoggingTransformer(ast.NodeTransformer):
             return ast.Constant(value=node.attr)
         return node
 
-    def visit_Expr(self, node: ast.Expr) -> Union[ast.AST, list[ast.stmt]]:
+    def visit_Expr(self, node: ast.Expr) -> ast.AST | list[ast.stmt]:
         self.generic_visit(node)
         call = node.value
         if not isinstance(call, ast.Call):

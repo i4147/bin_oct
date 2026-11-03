@@ -40,7 +40,6 @@ import urllib.request
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from urllib.parse import urlparse
 
 HTML_SUFFIXES: frozenset[str] = frozenset({".html", ".htm", ".xhtml", ".xhtm"})
 SKIP_TAGS: frozenset[str] = frozenset({"script", "style", "noscript", "template", "head"})

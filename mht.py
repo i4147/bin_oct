@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import base64
 import html
-import multiprocessing as mp
 import quopri
 import re
 import sys
@@ -13,7 +12,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, urlunparse
 
-from loguru import logger
 
 __version__ = "2.1.0"
 BOM_UTF16BE = b"\xfe\xff"

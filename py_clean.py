@@ -10,7 +10,6 @@ import re
 import shutil
 import signal
 import sys
-import tempfile
 import tokenize
 from collections import deque
 from dataclasses import dataclass, field

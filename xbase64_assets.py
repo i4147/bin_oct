@@ -10,7 +10,7 @@ from datetime import datetime
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any
 from loguru import logger
 
 SUPPORTED_EXTENSIONS = {".html", ".css", ".js", ".jsx", ".tsx", ".ts"}

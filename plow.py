@@ -6,7 +6,6 @@ from typing import Annotated
 from loguru import logger
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.panel import Panel
 from rich.syntax import Syntax
 
 

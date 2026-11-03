@@ -3,7 +3,6 @@ import shutil
 import sys
 from pathlib import Path
 
-from dh import SKIP_DIRS, should_skip
 from rignore import walk as _walk
 
 JUNK_FILE = Path("/sdcard/data/junk")

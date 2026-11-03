@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import ast
-import contextlib
 import functools
 import itertools
 import keyword
 import os
 import re
-import shutil
-import tempfile
 import textwrap
 from collections import deque
 from collections.abc import Iterator

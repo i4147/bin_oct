@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -71,7 +71,7 @@ def clone_tag(tag: Tag, soup: BeautifulSoup) -> Tag:
 
 
 def skeletonize(
-    node: Union[Tag, NavigableString],
+    node: Tag | NavigableString,
     soup: BeautifulSoup,
     depth: int = 0,
     max_depth: int = DEFAULT_MAX_DEPTH,

@@ -4,7 +4,7 @@
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Iterator, Union
+from typing import Iterable, Iterator
 
 import rignore
 
@@ -56,7 +56,7 @@ def _has_python_shebang(path: Path) -> bool:
     return b"python" in low or b"pypy" in low
 
 
-def is_python_file(path: Union[str, Path]) -> bool:
+def is_python_file(path: str | Path) -> bool:
     path = Path(path)
     if path.suffix == ".py":
         return True
@@ -65,7 +65,7 @@ def is_python_file(path: Union[str, Path]) -> bool:
     return False
 
 
-def walk_python_files(root_dir: Union[str, Path]) -> Iterator[Path]:
+def walk_python_files(root_dir: str | Path) -> Iterator[Path]:
     """Generator yielding Python files under *root_dir*, respecting rignore."""
     root = Path(root_dir).resolve()
     for entry in rignore.walk(root):

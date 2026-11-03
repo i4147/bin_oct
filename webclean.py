@@ -1,9 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-import contextlib
 import multiprocessing as mp
-import os
 import re
 import sys
 import urllib.request

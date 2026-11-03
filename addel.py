@@ -36,7 +36,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Iterable, Optional, Sequence
 
 UNIT_SEP = "\x1f"
 DIFF_FILTER = "AD"
@@ -74,7 +74,7 @@ def painter(enabled: bool) -> Callable[[str, str], str]:
     return paint
 
 
-def discover_repo(start: Path) -> Tuple[Path, Path]:
+def discover_repo(start: Path) -> tuple[Path, Path]:
     """Walk up from *start* until a ``.git`` entry is found.
 
     Returns ``(repository_root, git_entry)``.  ``git_entry`` is a directory for
@@ -118,7 +118,7 @@ class Commit:
     short: str
     author: str
     date: str
-    parents: Tuple[str, ...]
+    parents: tuple[str, ...]
     subject: str
 
     @property
@@ -145,7 +145,7 @@ def parse_commit_header(record: str) -> Commit:
     return Commit(sha, short, author, date, tuple(parents.split()), subject)
 
 
-def list_commits(repo: Path, revision: str, first_parent: bool = False) -> List[Commit]:
+def list_commits(repo: Path, revision: str, first_parent: bool = False) -> list[Commit]:
     """Commits reachable from *revision*, oldest first."""
     args = ["log", "--reverse", "--date-order", f"--format={LOG_FORMAT}"]
     if first_parent:
@@ -167,14 +167,14 @@ class Change:
 @dataclass
 class CommitEntry:
     commit: Commit
-    added: List[str] = field(default_factory=list)
-    removed: List[str] = field(default_factory=list)
+    added: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
 
     @property
     def quiet(self) -> bool:
         return not self.added and not self.removed
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         c = self.commit
         return {
             "sha": c.sha,
@@ -189,14 +189,14 @@ class CommitEntry:
         }
 
 
-def parse_name_status(tokens: Sequence[str]) -> List[Change]:
+def parse_name_status(tokens: Sequence[str]) -> list[Change]:
     """Turn NUL-split ``--name-status`` tokens into Change records.
 
     With ``-z`` git emits ``status NUL path NUL`` pairs; rename and copy
     records emit *two* paths (``R100 NUL old NUL new``), which we explode into
     a deletion of the old path plus an addition of the new one.
     """
-    changes: List[Change] = []
+    changes: list[Change] = []
     index = 0
     total = len(tokens)
     while index < total:
@@ -221,7 +221,7 @@ def collect_ledger(
     keep_renames: bool = False,
     diff_merges: bool = True,
     first_parent: bool = False,
-) -> List[CommitEntry]:
+) -> list[CommitEntry]:
     """The default engine: one batched ``git log`` call for all of history."""
     base = [
         "log",
@@ -248,9 +248,9 @@ def collect_ledger(
         sys.stderr.write(f"note: {exc}\nnote: retrying without --diff-merges\n")
         raw = run([])
 
-    entries: List[CommitEntry] = []
+    entries: list[CommitEntry] = []
     current: Optional[CommitEntry] = None
-    pending: List[str] = []
+    pending: list[str] = []
 
     def flush() -> None:
         if current is not None and pending:
@@ -269,10 +269,10 @@ def collect_ledger(
     return entries
 
 
-def snapshot_tree(root: Path, skip: Iterable[str] = SKIP_DIRS) -> Set[str]:
+def snapshot_tree(root: Path, skip: Iterable[str] = SKIP_DIRS) -> set[str]:
     """Every file (and symlink) under *root* as a repo-relative posix path."""
     skip = set(skip)
-    found: Set[str] = set()
+    found: set[str] = set()
     root = Path(root)
     for path in root.rglob("*"):
         relative = path.relative_to(root)
@@ -305,7 +305,7 @@ def walk_ledger(
     commits: Sequence[Commit],
     *,
     log: Callable[[str], None] = lambda _message: None,
-) -> List[CommitEntry]:
+) -> list[CommitEntry]:
     """The paranoid engine: check every commit out and diff real directory trees.
 
     Slow -- one worktree per commit -- but it never trusts git's diff cache, so
@@ -313,8 +313,8 @@ def walk_ledger(
     """
     sandbox = Path(tempfile.mkdtemp(prefix="addel-walk-"))
     tree = sandbox / "tree"
-    entries: List[CommitEntry] = []
-    previous: Set[str] = set()
+    entries: list[CommitEntry] = []
+    previous: set[str] = set()
     total = len(commits)
     try:
         for number, commit in enumerate(commits, start=1):
@@ -339,10 +339,10 @@ def walk_ledger(
 @dataclass
 class Verification:
     tracked_now: int
-    ghosts: List[str] = field(default_factory=list)
-    missing: List[str] = field(default_factory=list)
+    ghosts: list[str] = field(default_factory=list)
+    missing: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "files_on_disk": self.tracked_now,
             "ghosts": self.ghosts,
@@ -353,7 +353,7 @@ class Verification:
 def verify_against_disk(repo: Path, entries: Sequence[CommitEntry]) -> Verification:
     """Compare the pathlib snapshot of the working tree with recorded history."""
     on_disk = snapshot_tree(repo)
-    last_event: Dict[str, str] = {}
+    last_event: dict[str, str] = {}
     for entry in entries:
         for path in entry.added:
             last_event[path] = "A"
@@ -383,9 +383,9 @@ class Summary:
     removed: int
     unique_added: int
     unique_removed: int
-    span: Tuple[str, str]
-    hot_directories: List[Tuple[str, int]]
-    churn: List[Tuple[str, int]]
+    span: tuple[str, str]
+    hot_directories: list[tuple[str, int]]
+    churn: list[tuple[str, int]]
 
     @property
     def net(self) -> int:
@@ -430,7 +430,7 @@ def render_text(
     max_files: int = 25,
     paint: Callable[[str, str], str],
 ) -> str:
-    out: List[str] = []
+    out: list[str] = []
     width = 74
     out.append(paint("addel", "bold", "teal") + paint(" · ledger of added & removed files", "dim"))
     out.append(paint("repository ", "dim") + str(repo))
@@ -535,7 +535,7 @@ def render_text(
     return "\n".join(out)
 
 
-def write_json(path: Path, payload: Dict[str, object]) -> None:
+def write_json(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -561,7 +561,7 @@ def write_csv(path: Path, entries: Sequence[CommitEntry]) -> None:
 
 def write_markdown(path: Path, repo: Path, revision: str, entries: Sequence[CommitEntry], summary: Summary) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines: List[str] = [
+    lines: list[str] = [
         "# Added & removed files",
         "",
         f"`{repo}` @ `{revision}` — {summary.commits} commits, "

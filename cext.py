@@ -4,11 +4,10 @@ import io
 import multiprocessing as mp
 import os
 import re
-import sys
 import tarfile
 import zipfile
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, NamedTuple
 from loguru import logger

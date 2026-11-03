@@ -9,7 +9,6 @@ This preserves original CLIs exactly via subcommand + passthrough args.
 import ast
 import os
 import re
-import sys
 from pathlib import Path
 from dh import unique_path
 

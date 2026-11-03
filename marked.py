@@ -4,7 +4,7 @@
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ class Token:
     type: str
     raw: str = ""
     text: str = ""
-    tokens: Optional[List["Token"]] = None
+    tokens: Optional[list["Token"]] = None
     # Token‑specific fields (populated as needed)
     depth: int = 0
     lang: str = ""
@@ -25,12 +25,12 @@ class Token:
     ordered: bool = False
     start: int = 0
     loose: bool = False
-    items: List["Token"] = field(default_factory=list)
+    items: list["Token"] = field(default_factory=list)
     href: str = ""
     title: Optional[str] = None
-    header: List[Token] = field(default_factory=list)
-    rows: List[List[str]] = field(default_factory=list)
-    align: List[Optional[str]] = field(default_factory=list)
+    header: list[Token] = field(default_factory=list)
+    rows: list[list[str]] = field(default_factory=list)
+    align: list[Optional[str]] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -126,11 +126,11 @@ class Renderer:
 class Tokenizer:
     """Breaks raw Markdown into tokens. Regex‑based, like the original."""
 
-    def __init__(self, options: Dict[str, Any]):
+    def __init__(self, options: dict[str, Any]):
         self.options = options
         self.rules = self._build_rules()
 
-    def _build_rules(self) -> List[tuple]:
+    def _build_rules(self) -> list[tuple]:
         # Each rule is (name, compiled_regex, handler)
         return [
             ("code", re.compile(r"^( {4}[^\n]+\n*)+", re.M), self._code),
@@ -306,14 +306,14 @@ class Tokenizer:
 class Lexer:
     """Tokenises a Markdown string into a flat list of block tokens."""
 
-    def __init__(self, options: Dict[str, Any]):
+    def __init__(self, options: dict[str, Any]):
         self.options = options
         self.tokenizer = Tokenizer(options)
 
-    def lex(self, src: str) -> List[Token]:
+    def lex(self, src: str) -> list[Token]:
         src = src.replace("\r\n", "\n").replace("\r", "\n")
         src += "\n\n"
-        tokens: List[Token] = []
+        tokens: list[Token] = []
         while src:
             for name, regex, handler in self.tokenizer.rules:
                 cap = regex.match(src)
@@ -339,12 +339,12 @@ class Lexer:
 class Parser:
     """Turns tokens into HTML via a Renderer."""
 
-    def __init__(self, options: Dict[str, Any]):
+    def __init__(self, options: dict[str, Any]):
         self.options = options
         self.renderer = options.get("renderer") or Renderer()
         self.tokenizer = Tokenizer(options)
 
-    def parse(self, tokens: List[Token]) -> str:
+    def parse(self, tokens: list[Token]) -> str:
         out = []
         for token in tokens:
             out.append(self._render_token(token))
@@ -400,9 +400,9 @@ class Parser:
                 out.append(self.renderer.text(tok.text or tok.raw))
         return "".join(out)
 
-    def _inline_tokens(self, text: str) -> List[Token]:
+    def _inline_tokens(self, text: str) -> list[Token]:
         """Rough inline tokeniser – sufficient for the supported syntax."""
-        tokens: List[Token] = []
+        tokens: list[Token] = []
         # Simple regex‑based split for inline constructs
         pattern = re.compile(
             r"(\*\*.*?\*\*|__.*?__|"
@@ -481,8 +481,8 @@ class Parser:
 class Marked:
     """A locally scoped `marked` instance (mirrors `new Marked()`)."""
 
-    def __init__(self, *args: Union[Dict[str, Any], Callable[[Any], None]]):
-        self.defaults: Dict[str, Any] = {
+    def __init__(self, *args: dict[str, Any] | Callable[[Any], None]):
+        self.defaults: dict[str, Any] = {
             "async": False,
             "breaks": False,
             "gfm": True,
@@ -499,11 +499,11 @@ class Marked:
             elif isinstance(arg, dict):
                 self.defaults.update(arg)
 
-    def use(self, options: Dict[str, Any]) -> "Marked":
+    def use(self, options: dict[str, Any]) -> "Marked":
         self.defaults.update(options)
         return self
 
-    def parse(self, src: str, options: Optional[Dict[str, Any]] = None) -> str:
+    def parse(self, src: str, options: Optional[dict[str, Any]] = None) -> str:
         opts = {**self.defaults, **(options or {})}
         lexer = Lexer(opts)
         tokens = lexer.lex(src)
@@ -513,7 +513,7 @@ class Marked:
         parser = Parser(opts)
         return parser.parse(tokens)
 
-    def parseInline(self, src: str, options: Optional[Dict[str, Any]] = None) -> str:
+    def parseInline(self, src: str, options: Optional[dict[str, Any]] = None) -> str:
         """Parse inline Markdown only (no block‑level tokens)."""
         opts = {**self.defaults, **(options or {})}
         parser = Parser(opts)

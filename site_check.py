@@ -5,7 +5,6 @@ import os
 import pkgutil
 import py_compile
 import site
-import sys
 
 
 def run_sanity_check():

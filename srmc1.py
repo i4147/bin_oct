@@ -2,15 +2,12 @@
 
 import argparse
 import ast
-import contextlib
 import difflib
 import json
 import multiprocessing
-import os
 import re
 import stat
 import sys
-import tempfile
 import textwrap
 from dataclasses import asdict, dataclass
 from pathlib import Path

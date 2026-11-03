@@ -17,7 +17,6 @@ Supported backends (selected with -b/--backend):
 """
 
 import argparse
-import os
 import subprocess
 import sys
 from datetime import datetime

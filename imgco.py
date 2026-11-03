@@ -7,14 +7,14 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Callable, Optional, Sequence
 
 cv2 = None
 np = None
 ski_io = None
 ski_color = None
 Image = None
-_HAS: Dict[str, bool] = {
+_HAS: dict[str, bool] = {
     "cv2": False,
     "skimage": False,
     "pillow": False,
@@ -50,7 +50,7 @@ except ImportError:
     pass
 if shutil.which("convert") or shutil.which("magick"):
     _HAS["imagemagick"] = True
-TARGET_EXTS: Dict[str, Set[str]] = {
+TARGET_EXTS: dict[str, set[str]] = {
     "cv2": {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"},
     "skimage": {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"},
     "pillow": {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".gif"},
@@ -122,8 +122,8 @@ def collect_images(
     paths: Sequence[Path],
     exts: Sequence[str],
     recursive: bool,
-) -> List[Path]:
-    found: List[Path] = []
+) -> list[Path]:
+    found: list[Path] = []
     ext_set = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in exts}
     for p in paths:
         p = p.resolve()
@@ -175,7 +175,7 @@ def process_cv2(src: Path, dst: Path, quality: int, to_ext: str) -> bool:
         final = cv2.merge((b, g, r))
     else:
         final = img
-    params: List[int] = []
+    params: list[int] = []
     if to_ext in (".jpg", ".jpeg"):
         params = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
     elif to_ext == ".png":
@@ -265,13 +265,13 @@ def process_imagemagick(src: Path, dst: Path, quality: int, to_ext: str) -> bool
 
 
 def process_file(
-    path: Union[str, Path],
+    path: str | Path,
     backend: str,
     to_ext: str = ".jpg",
     quality: int = 95,
     keep: bool = False,
     force: bool = False,
-) -> Tuple[str, Optional[int], Optional[int]]:
+) -> tuple[str, Optional[int], Optional[int]]:
     path = Path(path)
     if not path.is_file():
         return (f"skip: {path.name} (not a file)", None, None)
@@ -456,7 +456,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     cwd = Path.cwd()
     size_before = get_dir_size(cwd) if not args.paths else 0
-    results: List[Tuple[str, Optional[int], Optional[int]]] = []
+    results: list[tuple[str, Optional[int], Optional[int]]] = []
     worker: Callable = lambda p: process_file(
         p, backend=backend, to_ext=to_ext, quality=quality, keep=args.keep, force=args.force
     )

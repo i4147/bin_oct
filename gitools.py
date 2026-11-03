@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 
 @dataclass

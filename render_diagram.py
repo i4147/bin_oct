@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import base64
-import mimetypes
 import sys
 from pathlib import Path
 

@@ -2,10 +2,7 @@
 """Example: dos2unix + UTF-8 conversion that also works inside archives."""
 
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 
-from binaryornot.check import is_binary
 from loguru import logger
 
 from archive_walker import AdvancedWalker, VirtualFile

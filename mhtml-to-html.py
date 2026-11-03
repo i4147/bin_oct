@@ -4,7 +4,6 @@
 import argparse
 import base64
 import logging
-import mimetypes
 import re
 import sys
 import urllib.error
@@ -12,8 +11,6 @@ import urllib.parse
 import urllib.request
 from email import policy
 from email.parser import BytesParser
-from html import escape
-from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
 

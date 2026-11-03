@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import logging
-import os
 import re
 import sys
 from collections import Counter
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from typing import Generator, List, Optional, Set
+from typing import Generator, Optional
 
 try:
     import nltk
@@ -109,7 +108,7 @@ def ensure_nltk_data(logger: logging.Logger) -> None:
             logger.debug(f"NLTK stopwords download failed: {exc}")
 
 
-def build_combined_stopwords() -> Set[str]:
+def build_combined_stopwords() -> set[str]:
     words = set(STOPWORDS)
     if NLTK_AVAILABLE:
         try:
@@ -174,7 +173,7 @@ def read_file_content(file_path: Path) -> Optional[str]:
     return None
 
 
-def process_file(path_str: str, min_length: int) -> List[str]:
+def process_file(path_str: str, min_length: int) -> list[str]:
     file_path = Path(path_str)
     if not is_valid_text_file(file_path):
         return []
@@ -189,7 +188,7 @@ def process_file(path_str: str, min_length: int) -> List[str]:
         return []
 
 
-def collect_files(directory: Path) -> List[str]:
+def collect_files(directory: Path) -> list[str]:
     return [str(f) for f in directory.rglob("*") if f.is_file()]
 
 

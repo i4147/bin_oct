@@ -4,7 +4,7 @@ import string
 import sys
 from pathlib import Path
 import re
-from dh import SKIP_DIRS, unique_path
+from dh import unique_path
 
 recursive = "-r" in sys.argv
 
