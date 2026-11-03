@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Recursively scan files under the current directory for non-English text
-(Persian/Arabic, Chinese, Japanese, Korean) using Unicode ranges.
-
-- Skips symlinks and .git directories
-- Skips binary files (binaryornot)
-- pathlib + generator walker
-- Live console output as matches are found
-- Writes a JSON report at the end
-"""
 
 import json
 import os
@@ -18,29 +8,26 @@ from typing import Iterator
 
 from binaryornot.check import is_binary
 
-# ---------------------------------------------------------------------------
-# Unicode ranges for the target scripts
-# ---------------------------------------------------------------------------
 ARABIC_PERSIAN_RANGES: list[tuple[int, int]] = [
-    (0x0600, 0x06FF),  # Arabic
-    (0x0750, 0x077F),  # Arabic Supplement
-    (0x08A0, 0x08FF),  # Arabic Extended-A
-    (0xFB50, 0xFDFF),  # Arabic Presentation Forms-A
-    (0xFE70, 0xFEFF),  # Arabic Presentation Forms-B
+    (0x0600, 0x06FF),
+    (0x0750, 0x077F),
+    (0x08A0, 0x08FF),
+    (0xFB50, 0xFDFF),
+    (0xFE70, 0xFEFF),
 ]
 
 CJK_RANGES: list[tuple[int, int]] = [
-    (0x4E00, 0x9FFF),  # CJK Unified Ideographs
-    (0x3400, 0x4DBF),  # CJK Extension A
+    (0x4E00, 0x9FFF),
+    (0x3400, 0x4DBF),
 ]
 
 HIRAGANA_RANGE: tuple[int, int] = (0x3040, 0x309F)
 KATAKANA_RANGE: tuple[int, int] = (0x30A0, 0x30FF)
 
 HANGUL_RANGES: list[tuple[int, int]] = [
-    (0xAC00, 0xD7AF),  # Hangul Syllables
-    (0x1100, 0x11FF),  # Hangul Jamo
-    (0x3130, 0x318F),  # Hangul Compatibility Jamo
+    (0xAC00, 0xD7AF),
+    (0x1100, 0x11FF),
+    (0x3130, 0x318F),
 ]
 
 
@@ -49,7 +36,6 @@ def _in_ranges(code: int, ranges: list[tuple[int, int]]) -> bool:
 
 
 def detect_scripts(text: str) -> set[str]:
-    """Return the set of target scripts present in *text*."""
     found: set[str] = set()
     for char in text:
         code = ord(char)
@@ -61,14 +47,12 @@ def detect_scripts(text: str) -> set[str]:
             found.add("Korean")
         if _in_ranges(code, CJK_RANGES):
             found.add("Chinese")
-        # early exit once everything is found
         if len(found) == 4:
             break
     return found
 
 
 def extract_sample(text: str, max_chars: int = 80) -> str:
-    """Return a short sample of characters that belong to the target scripts."""
     sample: list[str] = []
     for char in text:
         code = ord(char)
@@ -85,17 +69,9 @@ def extract_sample(text: str, max_chars: int = 80) -> str:
     return "".join(sample)
 
 
-# ---------------------------------------------------------------------------
-# Walker – skips symlinks and .git
-# ---------------------------------------------------------------------------
 def iter_files(root: Path) -> Iterator[Path]:
-    """
-    Yield regular (non-symlink) files under *root*.
-    Prunes .git directories and never follows symlinks.
-    """
     root = root.resolve()
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        # Prune .git and any symlink directories in-place
         dirnames[:] = [d for d in dirnames if d != ".git" and not (Path(dirpath) / d).is_symlink()]
 
         for name in filenames:
@@ -105,13 +81,7 @@ def iter_files(root: Path) -> Iterator[Path]:
             yield path
 
 
-# ---------------------------------------------------------------------------
-# Main logic
-# ---------------------------------------------------------------------------
 def process_file(path: Path, root: Path) -> dict | None:
-    """
-    Return a report dict if the file contains target-script text, else None.
-    """
     try:
         if is_binary(str(path)):
             return None
@@ -120,7 +90,6 @@ def process_file(path: Path, root: Path) -> dict | None:
         print(f"[error] cannot read {path}: {exc}", file=sys.stderr)
         return None
 
-    # Decode leniently – we only care about the presence of certain code points
     text = data.decode("utf-8", errors="replace")
 
     scripts = detect_scripts(text)
@@ -149,7 +118,6 @@ def main() -> None:
         if result is None:
             continue
 
-        # Live output
         scripts_str = ", ".join(result["scripts"])
         print(f"→ {result['path']}")
         print(f"  scripts : {scripts_str}")
@@ -158,7 +126,6 @@ def main() -> None:
 
         report.append(result)
 
-    # Write JSON report
     out_path = root / "non_english_report.json"
     with out_path.open("w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=2)

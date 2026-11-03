@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import codecs
 import contextlib
@@ -18,7 +17,6 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
-
 from binaryornot.check import is_binary
 from charset_normalizer import from_bytes
 from loguru import logger
@@ -26,29 +24,30 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    ".idea",
-    ".vscode",
-    ".venv",
-    "venv",
-    "env",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".tox",
-    ".nox",
-    ".eggs",
-    ".cache",
-    ".gradle",
-    ".terraform",
-})
-
+SKIP_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".bzr",
+        ".idea",
+        ".vscode",
+        ".venv",
+        "venv",
+        "env",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".tox",
+        ".nox",
+        ".eggs",
+        ".cache",
+        ".gradle",
+        ".terraform",
+    }
+)
 UTF8_NAMES: frozenset[str] = frozenset({"utf-8", "utf-8-sig"})
 
 
@@ -311,7 +310,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.jobs < 1:
         logger.error("--jobs must be >= 1")
         return 2
-
     opts = Options(
         dos2unix=not args.no_dos2unix,
         strip_bom=args.strip_bom,
@@ -324,19 +322,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     skip_dirs = SKIP_DIRS | frozenset(args.exclude_dir or [])
     exclude: list[str] = [*(args.exclude or []), "*.bak"]
     max_size = int(args.max_size * 1024 * 1024)
-
     start = time.perf_counter()
     files = list(iter_text_files(root, skip_dirs, args.include or [], exclude, max_size))
     total = len(files)
     if total == 0:
         console.print("no text files found")
         return 0
-
     counter_width = len(f"[{total}/{total}]")
     action_width = 10
     encoding_width = max(10, min(20, console.width // 6))
     counts: Counter[Action] = Counter()
-
     try:
         for index, result in enumerate(run(files, opts, args.jobs), 1):
             counts[result.action] += 1
@@ -358,7 +353,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         console.print("[bold red]interrupted[/bold red]")
         return 130
-
     elapsed = time.perf_counter() - start
     parts = [f"{action.value} {counts[action]}" for action in Action if counts[action]]
     console.print(Text(f"{total} files | {' | '.join(parts)} | {elapsed:.2f}s", style="bold"))

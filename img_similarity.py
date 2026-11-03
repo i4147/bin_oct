@@ -714,8 +714,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument(
         "--pattern",
         default=r"^(similar|group|duplicates)_",
-        help="Regex matching group folder names "
-        r"(default: ^(similar|group|duplicates)_)",
+        help="Regex matching group folder names " r"(default: ^(similar|group|duplicates)_)",
     )
     sp.add_argument(
         "-y",

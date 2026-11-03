@@ -6,7 +6,6 @@ import shutil
 import sys
 from pathlib import Path
 
-
 PREFIX: Path = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
 HOME: Path = Path.home()
 CFG: Path = PREFIX / "etc" / "dpkg" / "dpkg.cfg.d" / "99-termux-slim"
@@ -90,7 +89,6 @@ def remove(path: Path, dry_run: bool = False) -> None:
 
 
 def human_kib(kib: int) -> str:
-    """Human-readable size, input in KiB."""
     if kib >= 1048576:
         return f"{kib / 1048576:.2f} GB"
     if kib >= 1024:
@@ -176,10 +174,6 @@ def cmd_termux(do_apply: bool = True) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# junk file cleaner  (was: dj.py)
-# ---------------------------------------------------------------------------
-
 JUNK_SUFFIXES = (
     ".pyc",
     ".tmp",
@@ -200,7 +194,6 @@ GIT_META_DIRS = frozenset({".github"})
 
 
 def load_junk_names(path: Path | None = None) -> frozenset:
-    """Load the junk filename list (one name per line, lower-cased)."""
     if path is None:
         path = JUNK_FILE
     try:
@@ -215,12 +208,6 @@ _git_cache: dict[Path, bool] = {}
 
 
 def in_git_repo(path: Path) -> bool:
-    """True if `path` lives inside a git working tree.
-
-    Walks up the parent chain looking for a `.git` entry (dir *or* file, so
-    worktrees and submodules count).  Results are cached per directory since
-    `.git` entries don't appear/disappear while this script runs.
-    """
     chain: list[Path] = []
     result = False
     for parent in path.parents:
@@ -259,13 +246,11 @@ def cmd_junk(root: Path, dry_run: bool = False) -> int:
 
         loname = path.name.lower()
 
-        # git metadata that belongs to no repo
         if loname in GIT_META_FILES or (loname in GIT_META_DIRS and path.is_dir()):
             if not in_git_repo(path):
                 zap(path)
             continue
 
-        # junk files by suffix, or by name from the junk list
         if path.is_file() and (loname.endswith(JUNK_SUFFIXES) or loname in junk_names):
             zap(path)
             continue
@@ -302,7 +287,7 @@ def cmd_pycache(root: Path) -> int:
 
 def main() -> int:
 
-    root = Path("/data/data/com.termux")
+    root = Path("/data/data/com.termux/files/usr")
     rc = cmd_pycache(root)
     rc |= cmd_junk(root)
     rc |= cmd_termux()

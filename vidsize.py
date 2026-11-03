@@ -1,30 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-video_size_reporter.py — report the file size of videos on the web.
-
-What it does
-------------
-* direct video URL (mp4 / mkv / webm ...)  -> HEAD (or Range) request -> size
-* web page (HTML with a playlist)          -> scrapes video links -> size of each
-* HLS master playlist (.m3u8)              -> one entry per quality
-                                              (480p / 720p / 1080p ...),
-                                              size = sum of segment sizes
-                                              (or BANDWIDTH estimate with --skip-segments)
-
-Everything is printed to the console AND written as JSON.
-If a playlist contains several qualities, one extra JSON per quality is written.
-
-Requires:  pip install requests
-
-Examples
---------
-python video_size_reporter.py "https://dl1uptv.pishtazmovie.ir/prei2saff/uptv/dl1/uptv/serial3/My%20Brilliant%20Friend/s4/My.Brilliant%20Friend.S04.E01.720p.Sub_UPTV.co.mp4"
-
-python video_size_reporter.py "https://example.com/watch/serial3" --outdir reports
-
-python video_size_reporter.py "https://example.com/master.m3u8" --skip-segments
-"""
 
 import argparse
 import json
@@ -35,35 +10,26 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
-
 import requests
 
-
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-
 HEADERS = {
     "User-Agent": UA,
     "Accept": "*/*",
     "Accept-Language": "en-US,en;q=0.9",
 }
-
 QUALITY_ORDER = ["2160p", "1440p", "1080p", "900p", "720p", "576p", "540p", "480p", "360p", "240p", "unknown"]
-
 MEDIA_EXT = r"(?:mp4|m3u8|mkv|webm|mov|m4v|ts|avi|flv)"
-
 ABS_LINK_RE = re.compile(r"https?://[^\s\"'<>\\]+?\." + MEDIA_EXT + r"(?:\?[^\s\"'<>\\]*)?", re.I)
-
 REL_LINK_RE = re.compile(
     r"""(?:src|href|data-src|data-video|data-file|file|url)\s*[=:]\s*"""
     r"""["']([^"']+?\.""" + MEDIA_EXT + r"""(?:\?[^"']*)?)["']""",
     re.I,
 )
-
 _thread_local = threading.local()
 
 
 def session() -> requests.Session:
-    """One requests.Session per thread (thread-safe for the segment pool)."""
     s = getattr(_thread_local, "s", None)
     if s is None:
         s = requests.Session()
@@ -91,7 +57,6 @@ def quality_rank(q: str) -> int:
 
 
 def guess_quality(*texts) -> str:
-    """Guess '480p' / '720p' / '1080p' ... from a url or a name."""
     blob = " ".join(t for t in texts if t)
     m = re.search(r"(?<![\d])(2160|1440|1080|900|720|576|540|480|360|240)\s*[pP](?!\w)", blob)
     if m:
@@ -108,16 +73,9 @@ def sanitize(name: str, maxlen: int = 90) -> str:
 
 
 def get_size(url: str, timeout: float):
-    """
-    Return (size_bytes | None, content_type | None, final_url).
-
-    Tries HEAD first, then a 1-byte Range GET (works on servers that
-    reject HEAD or don't send Content-Length on HEAD).
-    """
     s = session()
     ctype = None
     final = url
-
     try:
         r = s.head(url, allow_redirects=True, timeout=timeout)
         ctype = r.headers.get("Content-Type")
@@ -127,7 +85,6 @@ def get_size(url: str, timeout: float):
             return int(cl), ctype, final
     except requests.RequestException:
         pass
-
     try:
         r = s.get(url, headers={"Range": "bytes=0-0"}, stream=True, allow_redirects=True, timeout=timeout)
         ctype = r.headers.get("Content-Type", ctype)
@@ -136,7 +93,6 @@ def get_size(url: str, timeout: float):
         cr = r.headers.get("Content-Range")
         cl = r.headers.get("Content-Length")
         r.close()
-
         if cr and "/" in cr:
             total = cr.rsplit("/", 1)[1].strip()
             if total.isdigit():
@@ -145,7 +101,6 @@ def get_size(url: str, timeout: float):
             return int(cl), ctype, final
     except requests.RequestException:
         pass
-
     return None, ctype, final
 
 
@@ -165,7 +120,6 @@ def fetch_text(url: str, timeout: float, limit: int = 8_000_000) -> str:
 
 
 def parse_attr_list(s: str) -> dict:
-    """BANDWIDTH=1280000,RESOLUTION=640x360,CODECS="avc1.4d,mp4a.40.2" -> dict"""
     attrs = {}
     for m in re.finditer(r'([A-Za-z0-9\-]+)=("[^"]*"|[^,]*)', s):
         k, v = m.group(1).upper(), m.group(2).strip()
@@ -176,7 +130,6 @@ def parse_attr_list(s: str) -> dict:
 
 
 def parse_master_playlist(text: str, base_url: str) -> list:
-    """Parse #EXT-X-STREAM-INF variants (one per quality)."""
     lines = [l.strip() for l in text.splitlines()]
     variants, seen = [], set()
     for i, line in enumerate(lines):
@@ -194,7 +147,6 @@ def parse_master_playlist(text: str, base_url: str) -> list:
         if full in seen:
             continue
         seen.add(full)
-
         res = attrs.get("RESOLUTION", "")
         height = None
         if "x" in res.lower():
@@ -202,20 +154,20 @@ def parse_master_playlist(text: str, base_url: str) -> list:
                 height = int(res.lower().split("x")[1])
             except ValueError:
                 height = None
-
         bw = attrs.get("BANDWIDTH", "")
-        variants.append({
-            "url": full,
-            "height": height,
-            "resolution": res or None,
-            "bandwidth": int(bw) if bw.isdigit() else None,
-            "codecs": attrs.get("CODECS"),
-        })
+        variants.append(
+            {
+                "url": full,
+                "height": height,
+                "resolution": res or None,
+                "bandwidth": int(bw) if bw.isdigit() else None,
+                "codecs": attrs.get("CODECS"),
+            }
+        )
     return variants
 
 
 def parse_media_playlist(text: str, base_url: str):
-    """Return (segment_urls, duration_seconds, has_byterange)."""
     segs, duration, byterange = [], 0.0, False
     for raw in text.splitlines():
         line = raw.strip()
@@ -237,7 +189,6 @@ def parse_media_playlist(text: str, base_url: str):
 
 
 def sum_sizes(urls: list, timeout: float, workers: int = 16):
-    """HEAD every url, return (total_bytes, ok_count, unknown_count)."""
     total, ok, unknown = 0, 0, 0
 
     def one(u):
@@ -259,10 +210,8 @@ def sum_sizes(urls: list, timeout: float, workers: int = 16):
 
 
 def hls_entry(url: str, quality: str, args, extra: dict | None = None) -> dict:
-    """Build a report entry for one HLS media playlist (all segments summed)."""
     text = fetch_text(url, args.timeout)
     segs, duration, byterange = parse_media_playlist(text, url)
-
     entry = {
         "url": url,
         "quality": quality,
@@ -274,7 +223,6 @@ def hls_entry(url: str, quality: str, args, extra: dict | None = None) -> dict:
     }
     if extra:
         entry.update(extra)
-
     if args.skip_segments:
         bw = entry.get("bandwidth")
         est = int(bw * duration / 8) if (bw and duration) else None
@@ -283,7 +231,6 @@ def hls_entry(url: str, quality: str, args, extra: dict | None = None) -> dict:
         entry["size_is_estimate"] = True
         entry["note"] = "estimated from BANDWIDTH x duration (--skip-segments)"
         return entry
-
     total, ok, unknown = sum_sizes(segs, args.timeout, args.workers)
     entry["size_bytes"] = total if ok else None
     entry["size_human"] = human_size(entry["size_bytes"])
@@ -318,32 +265,29 @@ def extract_links(html: str, base_url: str) -> list:
 def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
     entries = [] if entries is None else entries
     seen = set() if seen is None else seen
-
     if url in seen or depth > args.max_depth:
         return entries
     seen.add(url)
-
     size, ctype, final = get_size(url, args.timeout)
     ctype_l = (ctype or "").lower()
     path = urlparse(final).path.lower()
-
     is_m3u8 = path.endswith(".m3u8") or "mpegurl" in ctype_l
     is_html = "text/html" in ctype_l or path.endswith((".html", ".htm", ".php"))
-
     if is_m3u8:
         try:
             text = fetch_text(final, args.timeout)
         except requests.RequestException as e:
-            entries.append({
-                "url": final,
-                "quality": guess_quality(final),
-                "kind": "hls",
-                "size_bytes": None,
-                "size_human": "unknown",
-                "error": str(e),
-            })
+            entries.append(
+                {
+                    "url": final,
+                    "quality": guess_quality(final),
+                    "kind": "hls",
+                    "size_bytes": None,
+                    "size_human": "unknown",
+                    "error": str(e),
+                }
+            )
             return entries
-
         if "#EXT-X-STREAM-INF" in text.upper():
             for v in parse_master_playlist(text, final):
                 q = f"{v['height']}p" if v["height"] else guess_quality(v["url"])
@@ -355,30 +299,32 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
                 try:
                     entries.append(hls_entry(v["url"], q, args, extra))
                 except requests.RequestException as e:
-                    entries.append({
-                        "url": v["url"],
-                        "quality": q,
-                        "kind": "hls",
-                        "size_bytes": None,
-                        "size_human": "unknown",
-                        "error": str(e),
-                        **extra,
-                    })
+                    entries.append(
+                        {
+                            "url": v["url"],
+                            "quality": q,
+                            "kind": "hls",
+                            "size_bytes": None,
+                            "size_human": "unknown",
+                            "error": str(e),
+                            **extra,
+                        }
+                    )
             return entries
-
         try:
             entries.append(hls_entry(final, guess_quality(final), args))
         except requests.RequestException as e:
-            entries.append({
-                "url": final,
-                "quality": guess_quality(final),
-                "kind": "hls",
-                "size_bytes": None,
-                "size_human": "unknown",
-                "error": str(e),
-            })
+            entries.append(
+                {
+                    "url": final,
+                    "quality": guess_quality(final),
+                    "kind": "hls",
+                    "size_bytes": None,
+                    "size_human": "unknown",
+                    "error": str(e),
+                }
+            )
         return entries
-
     if is_html:
         try:
             html = fetch_text(final, args.timeout)
@@ -390,16 +336,17 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
         for link in links:
             analyze(link, args, depth + 1, entries, seen)
         return entries
-
-    entries.append({
-        "url": final,
-        "quality": guess_quality(final, os.path.basename(urlparse(final).path)),
-        "kind": "file",
-        "content_type": ctype,
-        "size_bytes": size,
-        "size_human": human_size(size),
-        "size_is_estimate": False,
-    })
+    entries.append(
+        {
+            "url": final,
+            "quality": guess_quality(final, os.path.basename(urlparse(final).path)),
+            "kind": "file",
+            "content_type": ctype,
+            "size_bytes": size,
+            "size_human": human_size(size),
+            "size_is_estimate": False,
+        }
+    )
     return entries
 
 
@@ -430,13 +377,10 @@ def save_reports(report: dict, outdir: str) -> list:
     p = urlparse(report["source"])
     base = sanitize(f"{p.netloc}_{os.path.basename(p.path) or 'index'}")
     written = []
-
     written.append(write_json(os.path.join(outdir, f"{base}_all.json"), report))
-
     groups = {}
     for v in report["videos"]:
         groups.setdefault(v.get("quality", "unknown"), []).append(v)
-
     if len(groups) > 1:
         for q, vids in sorted(groups.items(), key=lambda kv: quality_rank(kv[0])):
             known = [v["size_bytes"] for v in vids if v.get("size_bytes")]
@@ -490,7 +434,6 @@ def main(argv=None) -> int:
     )
     ap.add_argument("--no-print-json", action="store_true", help="do not dump the JSON to the console")
     args = ap.parse_args(argv)
-
     exit_code = 0
     for url in args.urls:
         print(f"\n>>> analyzing {url}")
@@ -500,21 +443,16 @@ def main(argv=None) -> int:
             print(f"  ! failed: {e}", file=sys.stderr)
             exit_code = 1
             continue
-
         if not entries:
             print("  ! no video found", file=sys.stderr)
             exit_code = 1
             continue
-
         report = build_report(url, entries)
         print_report(report)
-
         if not args.no_print_json:
             print(json.dumps(report, indent=2, ensure_ascii=False))
-
         for path in save_reports(report, args.outdir):
             print(f"  -> saved {path}")
-
     return exit_code
 
 

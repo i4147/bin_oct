@@ -42,7 +42,6 @@ SKIP_DIRS = {
 
 
 def iter_files(cwd: Path):
-    """Yield regular (non-symlink) files, pruning SKIP_DIRS and symlinked dirs."""
     for root, dirnames, filenames in os.walk(cwd, topdown=True, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not os.path.islink(os.path.join(root, d))]
         for name in filenames:

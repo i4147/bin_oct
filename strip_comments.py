@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import io
 import re
@@ -8,7 +7,6 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 from dh import fsz
 from loguru import logger
 

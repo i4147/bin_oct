@@ -1,3 +1,4 @@
+#!/data/data/com.termux/files/usr/bin/env python
 import ast
 import re
 import sys
@@ -339,7 +340,6 @@ def remove_unused_imports(source, unused):
         unused_names = unused_by_line[lineno]
         stripped = line.lstrip()
         indentation = line[: len(line) - len(stripped)]
-        # Do not discard comments or other statements on the same line.
         if "#" in line:
             return (source, False)
         try:

@@ -32,22 +32,24 @@ PoolMethod = Literal["imap_unordered", "imap", "map"]
 _COOKIE_RE: Final = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*[-\w.]+")
 _DIRECTIVE_RE: Final = re.compile(r"^#\s*(?:type|fmt)\s*:")
 _SUFFIXES: Final = frozenset({".py", ".pyi", ".pyw"})
-_SKIP_DIRS: Final = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "node_modules",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".eggs",
-    "site-packages",
-})
+_SKIP_DIRS: Final = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "__pycache__",
+        "node_modules",
+        ".tox",
+        ".nox",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        ".eggs",
+        "site-packages",
+    }
+)
 _TRIVIAL: Final = (ast.Name, ast.Constant, ast.Attribute)
 
 

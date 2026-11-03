@@ -1,31 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Convert between Jupyter notebooks, Python scripts and Markdown.
-
-Analysis / deduplication
-------------------------
-- ``nb2py.py`` -> ``to-py`` (its import-hoisting + env/sys.path
-  shuffling + "wrap everything in ``__main__``" behaviour is kept as
-  ``--hoist-imports``/``--wrap-main`` options, defaults preserve the
-  original for the common case; a plain faithful conversion is one
-  flag away). ``loguru`` dropped.
-- ``py2ipynb.py`` (smart splitting) + ``pytoipynb.py`` (one cell) ->
-  ``to-ipynb`` with ``--split auto|single|blank`` (also treating
-  ``# %%`` markers as cell breaks, the standard convention).
-- ``ipynb2md.py`` -> ``to-md``.
-- ``strip_notebooks.py`` -> ``strip`` (plain JSON, no nbformat needed).
-- ``meta_to_ipynb.py`` (PKG-INFO/markdown metadata + fenced code ->
-  notebook) -> ``meta-to-ipynb``, generalized to any markdown file.
-
-Notebooks are manipulated as plain JSON (nbformat is only used for
-validation when installed), so the tool needs no third-party packages.
-
-Examples
---------
-  python3 notebook_convert_tool.py to-py analysis.ipynb
-  python3 notebook_convert_tool.py to-ipynb script.py
-  python3 notebook_convert_tool.py to-md notebooks/
-  python3 notebook_convert_tool.py strip . --dry-run
-"""
 
 import argparse
 import json
@@ -42,7 +15,6 @@ Cell = dict[str, object]
 
 
 def load_notebook(path: Path) -> dict[str, object]:
-    """Load and minimally validate a notebook JSON file."""
     data: object = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or not isinstance(data.get("cells"), list):
         raise ValueError(f"not a notebook (no 'cells' list): {path}")
@@ -50,12 +22,10 @@ def load_notebook(path: Path) -> dict[str, object]:
 
 
 def save_notebook(notebook: dict[str, object], path: Path) -> None:
-    """Write notebook JSON (indent=1 like Jupyter)."""
     path.write_text(json.dumps(notebook, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def cell_source(cell: Cell) -> str:
-    """Joined source text of a notebook cell."""
     source: object = cell.get("source", "")
     if isinstance(source, list):
         return "".join(str(part) for part in source)
@@ -63,7 +33,6 @@ def cell_source(cell: Cell) -> str:
 
 
 def new_notebook(cells: list[Cell]) -> dict[str, object]:
-    """A minimal valid nbformat-4 notebook dict."""
     return {
         "cells": cells,
         "metadata": {
@@ -76,7 +45,6 @@ def new_notebook(cells: list[Cell]) -> dict[str, object]:
 
 
 def code_cell(source: str) -> Cell:
-    """One code cell."""
     return {
         "cell_type": "code",
         "execution_count": None,
@@ -88,12 +56,10 @@ def code_cell(source: str) -> Cell:
 
 
 def md_cell(source: str) -> Cell:
-    """One markdown cell."""
     return {"cell_type": "markdown", "metadata": {}, "source": source, "id": f"cell-{abs(hash(source)) % 10**8:08d}"}
 
 
 def find_files(inputs: Sequence[Path], suffix: str) -> list[Path]:
-    """Collect files with *suffix* from file/dir arguments."""
     roots: list[Path] = list(inputs) or [Path.cwd()]
     found: set[Path] = set()
     for root in roots:
@@ -104,9 +70,7 @@ def find_files(inputs: Sequence[Path], suffix: str) -> list[Path]:
     return sorted(found)
 
 
-# ------------------------------------------------------------------- to-py
 def strip_magics(source: str, mode: str) -> str:
-    """Comment/disable or keep IPython magic & shell lines."""
     out: list[str] = []
     for line in source.splitlines():
         stripped: str = line.lstrip()
@@ -123,7 +87,6 @@ def strip_magics(source: str, mode: str) -> str:
 
 
 def notebook_to_py(notebook: dict[str, object], hoist: bool, wrap_main: bool, magic_mode: str) -> str:
-    """Notebook -> Python source (markdown becomes comments)."""
     imports: list[str] = []
     body: list[str] = []
     cells: object = notebook["cells"]
@@ -158,7 +121,6 @@ def notebook_to_py(notebook: dict[str, object], hoist: bool, wrap_main: bool, ma
 
 
 def cmd_to_py(args: argparse.Namespace) -> int:
-    """Convert .ipynb -> .py."""
     return run_each(
         find_files(args.paths, ".ipynb"),
         lambda p: p.with_suffix(".py"),
@@ -167,15 +129,14 @@ def cmd_to_py(args: argparse.Namespace) -> int:
 
 
 def run_each(files: list[Path], dest_of: object, convert: object) -> int:
-    """Convert text files one-to-one, reporting failures. (No pool: tiny jobs.)"""
     if not files:
         print("No matching files found.")
         return 0
     failed: int = 0
     for path in files:
         try:
-            dest: Path = dest_of(path)  # type: ignore[operator]
-            dest.write_text(convert(path), encoding="utf-8")  # type: ignore[operator]
+            dest: Path = dest_of(path)
+            dest.write_text(convert(path), encoding="utf-8")
             print(f"{path.name} -> {dest.name}")
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             print(f"failed: {path}: {exc}", file=sys.stderr)
@@ -183,9 +144,7 @@ def run_each(files: list[Path], dest_of: object, convert: object) -> int:
     return 1 if failed else 0
 
 
-# ------------------------------------------------------------------- to-md
 def notebook_to_md(notebook: dict[str, object]) -> str:
-    """Notebook -> Markdown (code cells fenced as python)."""
     out: list[str] = []
     cells: object = notebook["cells"]
     for raw_cell in cells if isinstance(cells, list) else []:
@@ -200,15 +159,12 @@ def notebook_to_md(notebook: dict[str, object]) -> str:
 
 
 def cmd_to_md(args: argparse.Namespace) -> int:
-    """Convert .ipynb -> .md."""
     return run_each(
         find_files(args.paths, ".ipynb"), lambda p: p.with_suffix(".md"), lambda p: notebook_to_md(load_notebook(p))
     )
 
 
-# --------------------------------------------------------------- to-ipynb
 def split_py(code: str, mode: str) -> list[str]:
-    """Split Python source into cell texts."""
     if mode == "single":
         return [code.strip()] if code.strip() else []
     if CELL_MARKER.search(code):
@@ -216,7 +172,6 @@ def split_py(code: str, mode: str) -> list[str]:
         return [c for c in chunks if c]
     if mode == "blank":
         return [c.strip() for c in re.split(r"\n\s*\n\s*\n", code) if c.strip()]
-    # auto: new cell at top-level def/class, import-group change, blank gap
     cells: list[str] = []
     current: list[str] = []
     lines: list[str] = code.splitlines()
@@ -242,7 +197,6 @@ def split_py(code: str, mode: str) -> list[str]:
 
 
 def cmd_to_ipynb(args: argparse.Namespace) -> int:
-    """Convert .py -> .ipynb."""
     failed: int = 0
     for path in find_files(args.paths, ".py"):
         dest: Path = args.output if args.output and len(args.paths) == 1 else path.with_suffix(".ipynb")
@@ -252,9 +206,7 @@ def cmd_to_ipynb(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
-# ------------------------------------------------------------------- strip
 def strip_one(job: tuple[Path, bool]) -> tuple[Path, bool, str]:
-    """Clear outputs/execution counts of one notebook (unless dry-run)."""
     path, dry_run = job
     try:
         notebook: dict[str, object] = load_notebook(path)
@@ -277,7 +229,6 @@ def strip_one(job: tuple[Path, bool]) -> tuple[Path, bool, str]:
 
 
 def cmd_strip(args: argparse.Namespace) -> int:
-    """Clear notebook outputs in place (use --dry-run to preview)."""
     files: list[Path] = find_files(args.paths, ".ipynb")
     jobs: list[tuple[Path, bool]] = [(p, args.dry_run) for p in files]
     stripped: int = 0
@@ -289,9 +240,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
     return 0
 
 
-# ----------------------------------------------------------- meta-to-ipynb
 def md_to_cells(text: str) -> list[Cell]:
-    """Markdown with fenced code blocks -> notebook cells."""
     cells: list[Cell] = []
     position: int = 0
     for match in CODE_FENCE.finditer(text):
@@ -309,9 +258,7 @@ def md_to_cells(text: str) -> list[Cell]:
 
 
 def cmd_meta_to_ipynb(args: argparse.Namespace) -> int:
-    """Build a notebook from a markdown/metadata document."""
     text: str = args.input.read_text(encoding="utf-8", errors="replace")
-    # Keep a leading RFC822-style metadata header as its own markdown cell.
     dest: Path = args.output or args.input.with_suffix(".ipynb")
     cells: list[Cell] = md_to_cells(text)
     save_notebook(new_notebook(cells), dest)
@@ -320,7 +267,6 @@ def cmd_meta_to_ipynb(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Notebook <-> script/markdown conversion.")
     sub = parser.add_subparsers(dest="command", required=True)
     tp = sub.add_parser("to-py", help=".ipynb -> .py")
@@ -355,7 +301,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

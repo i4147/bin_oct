@@ -21,9 +21,7 @@ class FileStats:
 
 MD_IMAGE_PATTERN = re.compile(r"!\[.*?\]\(.*?\)")
 HTML_BADGE_PATTERN = re.compile(
-    r"<p\b[^>]*>[\s\S]*?<img\b[\s\S]*?</p>|"
-    r"<a\b[^>]*>\s*<img\b[\s\S]*?</a>|"
-    r"<img\b[^>]*/?>",
+    r"<p\b[^>]*>[\s\S]*?<img\b[\s\S]*?</p>|" r"<a\b[^>]*>\s*<img\b[\s\S]*?</a>|" r"<img\b[^>]*/?>",
     re.IGNORECASE,
 )
 RST_IMAGE_PATTERNS = [

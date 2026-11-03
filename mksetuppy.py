@@ -1,3 +1,4 @@
+#!/data/data/com.termux/files/usr/bin/env python
 import email.utils
 import importlib
 import re

@@ -71,12 +71,14 @@ def create_symlinks(duplicates, dry_run=False) -> int:
             get_size = Path(duplicate).stat().st_size
             print(f"  Symlinking: {duplicate} -> {keeper_abs}")
             if not dry_run:
-                backup_data["operations"].append({
-                    "symlink": str(duplicate_abs),
-                    "target": str(keeper_abs),
-                    "original_existed": True,
-                    "size": get_size,
-                })
+                backup_data["operations"].append(
+                    {
+                        "symlink": str(duplicate_abs),
+                        "target": str(keeper_abs),
+                        "original_existed": True,
+                        "size": get_size,
+                    }
+                )
                 try:
                     Path(duplicate).unlink()
                     Path(duplicate_abs).symlink_to(keeper_abs)

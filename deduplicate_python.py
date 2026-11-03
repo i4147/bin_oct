@@ -88,13 +88,15 @@ def extract_with_tree_sitter(code: str):
                 name = code[name_node.start_byte : name_node.end_byte]
                 snippet = code[node.start_byte : node.end_byte]
                 kind = "function" if node.type == "function_definition" else "class"
-                objects.append({
-                    "name": name,
-                    "kind": kind,
-                    "snippet": snippet,
-                    "start_byte": node.start_byte,
-                    "end_byte": node.end_byte,
-                })
+                objects.append(
+                    {
+                        "name": name,
+                        "kind": kind,
+                        "snippet": snippet,
+                        "start_byte": node.start_byte,
+                        "end_byte": node.end_byte,
+                    }
+                )
             elif node.type == "expression_statement":
                 text = code[node.start_byte : node.end_byte]
                 try:
@@ -103,13 +105,15 @@ def extract_with_tree_sitter(code: str):
                         assign = parsed.body[0]
                         if all(isinstance(t, ast.Name) for t in assign.targets):
                             name = assign.targets[0].id
-                            objects.append({
-                                "name": name,
-                                "kind": "constant",
-                                "snippet": text,
-                                "start_byte": node.start_byte,
-                                "end_byte": node.end_byte,
-                            })
+                            objects.append(
+                                {
+                                    "name": name,
+                                    "kind": "constant",
+                                    "snippet": text,
+                                    "start_byte": node.start_byte,
+                                    "end_byte": node.end_byte,
+                                }
+                            )
                 except Exception:
                     pass
     except Exception as e:
@@ -127,42 +131,48 @@ def extract_with_ast(code: str):
                 snippet = ast.get_source_segment(code, node)
                 if snippet is None:
                     continue
-                objects.append({
-                    "name": node.name,
-                    "kind": "function",
-                    "snippet": snippet,
-                    "start_byte": None,
-                    "end_byte": None,
-                    "lineno": node.lineno,
-                    "end_lineno": getattr(node, "end_lineno", None),
-                })
-            elif isinstance(node, ast.ClassDef):
-                snippet = ast.get_source_segment(code, node)
-                if snippet is None:
-                    continue
-                objects.append({
-                    "name": node.name,
-                    "kind": "class",
-                    "snippet": snippet,
-                    "start_byte": None,
-                    "end_byte": None,
-                    "lineno": node.lineno,
-                    "end_lineno": getattr(node, "end_lineno", None),
-                })
-            elif isinstance(node, ast.Assign):
-                if all(isinstance(t, ast.Name) for t in node.targets):
-                    snippet = ast.get_source_segment(code, node)
-                    if snippet is None:
-                        continue
-                    objects.append({
-                        "name": node.targets[0].id,
-                        "kind": "constant",
+                objects.append(
+                    {
+                        "name": node.name,
+                        "kind": "function",
                         "snippet": snippet,
                         "start_byte": None,
                         "end_byte": None,
                         "lineno": node.lineno,
                         "end_lineno": getattr(node, "end_lineno", None),
-                    })
+                    }
+                )
+            elif isinstance(node, ast.ClassDef):
+                snippet = ast.get_source_segment(code, node)
+                if snippet is None:
+                    continue
+                objects.append(
+                    {
+                        "name": node.name,
+                        "kind": "class",
+                        "snippet": snippet,
+                        "start_byte": None,
+                        "end_byte": None,
+                        "lineno": node.lineno,
+                        "end_lineno": getattr(node, "end_lineno", None),
+                    }
+                )
+            elif isinstance(node, ast.Assign):
+                if all(isinstance(t, ast.Name) for t in node.targets):
+                    snippet = ast.get_source_segment(code, node)
+                    if snippet is None:
+                        continue
+                    objects.append(
+                        {
+                            "name": node.targets[0].id,
+                            "kind": "constant",
+                            "snippet": snippet,
+                            "start_byte": None,
+                            "end_byte": None,
+                            "lineno": node.lineno,
+                            "end_lineno": getattr(node, "end_lineno", None),
+                        }
+                    )
     except Exception as e:
         logger.error(f"AST parsing failed: {e}")
     return objects
@@ -280,17 +290,19 @@ def process_file(path_str: str):
         snippet = obj["snippet"].strip()
         if not snippet:
             continue
-        result.append({
-            "file": str(path),
-            "name": obj["name"],
-            "kind": obj["kind"],
-            "snippet": obj["snippet"],
-            "hash": sha256(snippet),
-            "start_byte": obj.get("start_byte"),
-            "end_byte": obj.get("end_byte"),
-            "lineno": obj.get("lineno"),
-            "end_lineno": obj.get("end_lineno"),
-        })
+        result.append(
+            {
+                "file": str(path),
+                "name": obj["name"],
+                "kind": obj["kind"],
+                "snippet": obj["snippet"],
+                "hash": sha256(snippet),
+                "start_byte": obj.get("start_byte"),
+                "end_byte": obj.get("end_byte"),
+                "lineno": obj.get("lineno"),
+                "end_lineno": obj.get("end_lineno"),
+            }
+        )
     return result
 
 

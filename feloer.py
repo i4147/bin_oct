@@ -25,25 +25,29 @@ TIMEOUT: int = int(environ.get("FELO_TIMEOUT", "300"))
 MAX_SIZE: int = 80 * 1024
 MAX_ARG_BYTES: int = 120_000
 DEFAULT_LOG: str = "felo-docstrings.log"
-IGNORED_NAMES: frozenset[str] = frozenset({
-    "__init__.py",
-    "__main__.py",
-    "setup.py",
-    "main.py",
-    "test.py",
-    "conf.py",
-    "const.p",
-    "constants.py",
-    "tests.py",
-    "conftest.py",
-})
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-})
+IGNORED_NAMES: frozenset[str] = frozenset(
+    {
+        "__init__.py",
+        "__main__.py",
+        "setup.py",
+        "main.py",
+        "test.py",
+        "conf.py",
+        "const.p",
+        "constants.py",
+        "tests.py",
+        "conftest.py",
+    }
+)
+SKIP_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        "__pycache__",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+    }
+)
 PROMPT_HEAD: str = (
     "You are an expert software requirements writer. Analyze the Python code provided between the "
     "<python_code> tags and write a clear, high-level prompt or specification that can be given to an "

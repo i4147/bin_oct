@@ -22,25 +22,27 @@ except ImportError:
     tomllib = None
 WORKERS = 4
 MARKERS = ("setup.py", "pyproject.toml")
-SKIP_DIRS = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    ".nox",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "build",
-    "dist",
-    ".eggs",
-    "site-packages",
-})
+SKIP_DIRS = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "env",
+        ".tox",
+        ".nox",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        "build",
+        "dist",
+        ".eggs",
+        "site-packages",
+    }
+)
 TAIL_LINES = 40
 
 

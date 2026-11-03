@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import re
 import sys
@@ -7,7 +6,6 @@ import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
-
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger
 

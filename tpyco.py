@@ -24,51 +24,52 @@ DEFAULT_DELAY: Final[float] = 1.5
 DEFAULT_TIMEOUT: Final[float] = 60.0
 MAX_RETRIES: Final[int] = 5
 _NON_LATIN_RE: Final[re.Pattern[str]] = re.compile(
-    r"[^\x00-\x7f]|[\u0400-\u04ff\u0600-\u06ff\u0900-\u097f"
-    r"\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]"
+    r"[^\x00-\x7f]|[\u0400-\u04ff\u0600-\u06ff\u0900-\u097f" r"\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]"
 )
-_NON_ENGLISH_WORDS: Final[frozenset[str]] = frozenset({
-    " el ",
-    " la ",
-    " los ",
-    " las ",
-    " una ",
-    " uno ",
-    " que ",
-    " para ",
-    " con ",
-    " por ",
-    " como ",
-    " del ",
-    " der ",
-    " die ",
-    " das ",
-    " und ",
-    " nicht ",
-    " ist ",
-    " ein ",
-    " eine ",
-    " des ",
-    " les ",
-    " une ",
-    " dans ",
-    " pour ",
-    " avec ",
-    " est ",
-    " de ",
-    " en ",
-    " un ",
-    " uma ",
-    " não ",
-    " não",
-    " são ",
-    " com ",
-    " هذا ",
-    " هذه ",
-    " من ",
-    " إلى ",
-    " و ",
-})
+_NON_ENGLISH_WORDS: Final[frozenset[str]] = frozenset(
+    {
+        " el ",
+        " la ",
+        " los ",
+        " las ",
+        " una ",
+        " uno ",
+        " que ",
+        " para ",
+        " con ",
+        " por ",
+        " como ",
+        " del ",
+        " der ",
+        " die ",
+        " das ",
+        " und ",
+        " nicht ",
+        " ist ",
+        " ein ",
+        " eine ",
+        " des ",
+        " les ",
+        " une ",
+        " dans ",
+        " pour ",
+        " avec ",
+        " est ",
+        " de ",
+        " en ",
+        " un ",
+        " uma ",
+        " não ",
+        " não",
+        " são ",
+        " com ",
+        " هذا ",
+        " هذه ",
+        " من ",
+        " إلى ",
+        " و ",
+    }
+)
 _WORKER_BACKEND: str
 _WORKER_LIBRE_URL: str
 _WORKER_TIMEOUT: float
@@ -293,13 +294,15 @@ def http_json_request(
 
 
 def translate_google(text: str, timeout: float) -> str:
-    query = urlencode({
-        "client": "gtx",
-        "sl": "auto",
-        "tl": "en",
-        "dt": "t",
-        "q": text,
-    })
+    query = urlencode(
+        {
+            "client": "gtx",
+            "sl": "auto",
+            "tl": "en",
+            "dt": "t",
+            "q": text,
+        }
+    )
     request = Request(
         f"https://translate.googleapis.com/translate_a/single?{query}",
         headers={"User-Agent": "python-translation-script/1.0"},

@@ -68,15 +68,17 @@ def format_duration(seconds: float) -> str:
 
 def get_audio_info(mp3_file: Path) -> tuple[int | None, int | None]:
     try:
-        result = subprocess_run([
-            "ffprobe",
-            "-v",
-            "quiet",
-            "-print_format",
-            "json",
-            "-show_format",
-            str(mp3_file),
-        ])
+        result = subprocess_run(
+            [
+                "ffprobe",
+                "-v",
+                "quiet",
+                "-print_format",
+                "json",
+                "-show_format",
+                str(mp3_file),
+            ]
+        )
         info: dict[str, object] = json.loads(result)
         format_info = info.get("format", {})
         if not isinstance(format_info, dict):

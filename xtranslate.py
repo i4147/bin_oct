@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import ast
 import json
@@ -12,7 +11,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Iterator, Sequence
-
 from dh import atomic_write
 
 try:
@@ -31,19 +29,21 @@ DEFAULT_EXTENSIONS: tuple[str, ...] = (
     ".xml",
     ".csv",
 )
-EXCLUDE_DIRS: frozenset[str] = frozenset({
-    "lazy",
-    ".git",
-    ".hg",
-    ".svn",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".venv",
-    "venv",
-})
+EXCLUDE_DIRS: frozenset[str] = frozenset(
+    {
+        "lazy",
+        ".git",
+        ".hg",
+        ".svn",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        ".venv",
+        "venv",
+    }
+)
 NON_ASCII = re.compile(r"[^\x00-\x7F]")
 CHINESE_RUN = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+")
 DEFAULT_CHUNK_SIZE = 32768
@@ -428,13 +428,15 @@ def mode_json(args: argparse.Namespace) -> int:
         results = _run_workers(_chunk_worker, tasks, args.workers)
         records = []
         for (start, end, original), translated in zip(chunks, results):
-            records.append({
-                "chunk_id": f"{start}_{end}",
-                "start_line": start,
-                "end_line": end,
-                "translated": translated,
-                "skipped": translated == original,
-            })
+            records.append(
+                {
+                    "chunk_id": f"{start}_{end}",
+                    "start_line": start,
+                    "end_line": end,
+                    "translated": translated,
+                    "skipped": translated == original,
+                }
+            )
         out_path = path.with_suffix(".json")
         if args.dry_run:
             print(f"[dry-run] would write {out_path}")

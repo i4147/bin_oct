@@ -1,26 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Detect and add ``if __name__ == "__main__":`` guards to Python files.
-
-Analysis / deduplication
-------------------------
-This folder already contained a single merged script
-(``main_guard_merger.py``). This is its simplified, fully type-annotated
-rewrite for Python 3.14 on Linux: the duplicated file-collection helpers
-were merged, the unused imports/templates dropped, and both fix methods
-now honour ``--dry-run`` (the AST method previously ignored it).
-
-Original script mapping
------------------------
-  addmain.py       ->  main_guard_tool.py fix --method ast
-  addmainguard.py  ->  main_guard_tool.py fix --method regex
-
-Examples
---------
-  python3 main_guard_tool.py check
-  python3 main_guard_tool.py check src/
-  python3 main_guard_tool.py fix --method ast --dry-run
-  python3 main_guard_tool.py fix --method regex
-"""
 
 import argparse
 import ast
@@ -44,14 +22,12 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
 )
 MAIN_GUARD_PATTERN: re.Pattern[str] = re.compile(r"""if\s+__name__\s*==\s*["']__main__["']\s*:""")
 GUARD_SNIPPET: str = '\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
-
 Status = Literal["skipped", "missing", "would_add", "added", "fixed", "error"]
 Method = Literal["ast", "regex"]
 
 
 @dataclass(slots=True)
 class FileResult:
-    """Outcome of processing one file."""
 
     path: Path
     status: Status
@@ -59,7 +35,6 @@ class FileResult:
 
 
 def is_main_guard(node: ast.stmt) -> bool:
-    """Return True if *node* is a top-level ``if __name__ == "__main__":``."""
     if not isinstance(node, ast.If):
         return False
     test: ast.expr = node.test
@@ -76,27 +51,23 @@ def is_main_guard(node: ast.stmt) -> bool:
 
 
 def has_main_guard(tree: ast.Module) -> bool:
-    """Return True if the module already has a main guard."""
     return any(is_main_guard(node) for node in tree.body)
 
 
 def should_wrap(node: ast.stmt) -> bool:
-    """Return True for executable statements that belong inside ``main()``."""
     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Import, ast.ImportFrom)):
         return False
     if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-        return False  # module docstring / bare string
+        return False
     return not is_main_guard(node)
 
 
 def indent_block(block: str, spaces: int = 4) -> str:
-    """Indent every non-blank line of *block* by *spaces* spaces."""
     prefix: str = " " * spaces
     return "".join(prefix + line if line.strip() else line for line in block.splitlines(True))
 
 
 def fix_file_ast(path: Path, dry_run: bool = False) -> FileResult:
-    """Wrap top-level executable statements in ``main()`` and add the guard."""
     src: str = path.read_text(encoding="utf-8")
     try:
         tree: ast.Module = ast.parse(src, filename=str(path))
@@ -107,7 +78,6 @@ def fix_file_ast(path: Path, dry_run: bool = False) -> FileResult:
     wrap_nodes: list[ast.stmt] = [node for node in tree.body if should_wrap(node)]
     if not wrap_nodes:
         return FileResult(path, "skipped", "Nothing to wrap")
-
     lines: list[str] = src.splitlines(True)
     keep: list[tuple[int, int]] = []
     main_parts: list[str] = []
@@ -119,7 +89,6 @@ def fix_file_ast(path: Path, dry_run: bool = False) -> FileResult:
             main_parts.append(segment.rstrip() + "\n")
         else:
             keep.append((node.lineno, node.end_lineno))
-
     new_parts: list[str] = []
     cursor: int = 1
     for start, end in sorted(keep):
@@ -129,7 +98,6 @@ def fix_file_ast(path: Path, dry_run: bool = False) -> FileResult:
         cursor = end + 1
     if cursor <= len(lines):
         new_parts.append("".join(lines[cursor - 1 :]))
-
     main_body: str = "".join(main_parts).rstrip("\n")
     main_fn: str = "\n\ndef main() -> None:\n"
     main_fn += (indent_block(main_body + "\n").rstrip("\n") + "\n") if main_body.strip() else "    pass\n"
@@ -141,7 +109,6 @@ def fix_file_ast(path: Path, dry_run: bool = False) -> FileResult:
 
 
 def fix_file_regex(path: Path, dry_run: bool = False) -> FileResult:
-    """Append a bare main guard (assumes a ``main()`` function exists)."""
     try:
         content: str = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -158,7 +125,6 @@ def fix_file_regex(path: Path, dry_run: bool = False) -> FileResult:
 
 
 def collect_files(inputs: Sequence[str], excludes: Sequence[str]) -> list[Path]:
-    """Collect ``*.py`` files from files/dirs, skipping excluded dir names."""
     excluded: frozenset[str] = frozenset(excludes)
     roots: list[Path] = [Path(item) for item in inputs] or [Path(".")]
     out: set[Path] = set()
@@ -171,7 +137,6 @@ def collect_files(inputs: Sequence[str], excludes: Sequence[str]) -> list[Path]:
 
 
 def cmd_check(files: list[Path]) -> int:
-    """Report files that lack a main guard."""
     missing: list[Path] = []
     guarded: int = 0
     errors: int = 0
@@ -192,11 +157,10 @@ def cmd_check(files: list[Path]) -> int:
 
 
 def cmd_fix(files: list[Path], method: Method, dry_run: bool) -> int:
-    """Apply the chosen fix method to every file and summarise."""
     fix: object = fix_file_ast if method == "ast" else fix_file_regex
     counts: dict[str, int] = {"fixed": 0, "added": 0, "would_add": 0, "skipped": 0, "error": 0}
     for path in files:
-        result: FileResult = fix(path, dry_run)  # type: ignore[operator]
+        result: FileResult = fix(path, dry_run)
         counts[result.status if result.status in counts else "error"] += 1
         print(f"{path}: {result.status} - {result.message}")
     print(
@@ -207,7 +171,6 @@ def cmd_fix(files: list[Path], method: Method, dry_run: bool) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(
         description="Detect and add main guards to Python files.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -225,7 +188,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     files: list[Path] = collect_files(args.paths, (*DEFAULT_EXCLUDES, *args.exclude))
     if not files:

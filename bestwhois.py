@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""(No content in stream)
-
----"""
 
 import contextlib
 import datetime as dt
@@ -87,10 +84,7 @@ def main() -> int:
         "--version",
         help="Print version information and exit.",
         action="version",
-        version=MYNAME
-        + " ver. "
-        + VERSION
-        + """
+        version=MYNAME + " ver. " + VERSION + """
     (c) WhoisXML API Inc.""",
     )
     ARGS_PARSER.add_argument(
@@ -193,11 +187,9 @@ def main() -> int:
     if IDN:
         domain_name = idna.encode(ARGS.domainName).decode("utf-8")
     elif not all(ord(char) < 128 for char in ARGS.domainName):
-        sys.stderr.write(
-            """Please install the "idna" Python package to query non-ASCII unicode domain names.
+        sys.stderr.write("""Please install the "idna" Python package to query non-ASCII unicode domain names.
     Exiting.
-    """
-        )
+    """)
         sys.exit(3)
     else:
         domain_name = ARGS.domainName

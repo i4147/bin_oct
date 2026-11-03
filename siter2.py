@@ -20,7 +20,6 @@ except ImportError:
 
 
 class WheelBuilder:
-    """Build wheel packages from installed distributions in a virtual environment."""
 
     def __init__(
         self,
@@ -42,7 +41,6 @@ class WheelBuilder:
         self.processed_packages: set[str] = set()
 
     def _find_venv_root(self) -> Optional[Path]:
-        """Locate the virtual environment root directory."""
         current = self.site_packages
         for _ in range(5):
             if (current / "pyvenv.cfg").exists():
@@ -55,7 +53,6 @@ class WheelBuilder:
         return None
 
     def _find_bin_dir(self) -> Optional[Path]:
-        """Find the bin/Scripts directory in the virtual environment."""
         if not self.venv_root:
             return None
         for name in ("bin", "Scripts"):
@@ -65,7 +62,6 @@ class WheelBuilder:
         return None
 
     def _compute_hash(self, path: Path) -> str:
-        """Compute SHA256 hash in PEP 376 format (urlsafe base64, no padding)."""
         h = hashlib.sha256()
         with path.open("rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
@@ -74,7 +70,6 @@ class WheelBuilder:
         return f"sha256={base64.urlsafe_b64encode(digest).decode().rstrip('=')}"
 
     def _read_record(self, dist_info: Path) -> dict[str, dict[str, str]]:
-        """Parse RECORD file from a .dist-info directory."""
         record_file = dist_info / "RECORD"
         if not record_file.exists():
             return {}
@@ -92,7 +87,6 @@ class WheelBuilder:
         return records
 
     def _find_scripts_for_package(self, records: dict[str, dict[str, str]]) -> list[Path]:
-        """Discover console scripts declared in entry_points.txt."""
         if not self.bin_dir or not self.bin_dir.exists():
             return []
         scripts: list[Path] = []
@@ -124,7 +118,6 @@ class WheelBuilder:
         return scripts
 
     def _find_data_for_package(self, package_name: str) -> list[tuple[Path, str]]:
-        """Find data files in share/ directory belonging to the package."""
         if not self.share_dir or not self.share_dir.exists():
             return []
         data_files: list[tuple[Path, str]] = []
@@ -141,7 +134,6 @@ class WheelBuilder:
         return data_files
 
     def _get_wheel_tags(self) -> tuple[str, str, str]:
-        """Determine wheel compatibility tags (interpreter, abi, platform)."""
         if sys_tags is not None:
             try:
                 tag: Tag = next(sys_tags())
@@ -157,11 +149,9 @@ class WheelBuilder:
         return (python_tag, abi_tag, platform_tag)
 
     def _detect_purity(self, records: dict[str, dict[str, str]]) -> bool:
-        """Check if package is pure Python (no binary extensions)."""
         return all(not path.endswith((".so", ".pyd", ".dll")) for path in records)
 
     def build_wheel(self, dist_info_dir: Path) -> Optional[Path]:
-        """Build a wheel from a .dist-info directory."""
         if not dist_info_dir.is_dir():
             return None
         parts = dist_info_dir.stem.split("-")
@@ -273,7 +263,6 @@ class WheelBuilder:
             return None
 
     def build_all(self) -> list[Path]:
-        """Build wheels for all packages in site-packages."""
         wheels: list[Path] = []
         for dist_info in self.site_packages.glob("*.dist-info"):
             wheel = self.build_wheel(dist_info)

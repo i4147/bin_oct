@@ -34,7 +34,6 @@ def scan_and_detect(root_dir="."):
                 lang, prob = detect_language(content)
                 snippet = content[:40].replace("\n", " ") + ("..." if len(content) > 40 else "")
 
-                # Live output: every file is printed immediately as it's processed
                 print(f"{file_path:<40} | {lang:<7} ({prob:2.0f}%) | {snippet}", flush=True)
 
             except Exception:

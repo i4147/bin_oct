@@ -80,12 +80,14 @@ def process_target_file(
     duplicates: list[dict[str, Any]] = []
     for func_name, func_info in funcs.items():
         if func_info["hash"] in ref_hashes:
-            duplicates.append({
-                "name": func_name,
-                "lineno": func_info["lineno"],
-                "end_lineno": func_info["end_lineno"],
-                "ref_name": ref_hashes[func_info["hash"]],
-            })
+            duplicates.append(
+                {
+                    "name": func_name,
+                    "lineno": func_info["lineno"],
+                    "end_lineno": func_info["end_lineno"],
+                    "ref_name": ref_hashes[func_info["hash"]],
+                }
+            )
     if not duplicates:
         return {"file": target_path, "status": "ok", "duplicates": []}
     if apply:

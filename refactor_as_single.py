@@ -89,8 +89,7 @@ def strip_six_and_py2(text: str) -> str:
     for six_path, native in SIX_MOVES_MAP.items():
         text = text.replace(six_path, native)
     text = re.sub(
-        r"^\s*copyreg\.pickle\(types\.MethodType,.*\n(?:.*\n)*?"
-        r"^\s*def _unpickle_method\b.*(?:\n(?:    .*)?)*\n?",
+        r"^\s*copyreg\.pickle\(types\.MethodType,.*\n(?:.*\n)*?" r"^\s*def _unpickle_method\b.*(?:\n(?:    .*)?)*\n?",
         "",
         text,
         flags=re.MULTILINE,

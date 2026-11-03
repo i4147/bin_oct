@@ -1,24 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Git reporting: diff between commits, multi-repo status, added files.
-
-Analysis / deduplication
-------------------------
-- ``git_differ.py`` (last-two-commits JSON report via subprocess)
-  -> ``diff``; any two refs can be given instead of just HEAD~1..HEAD.
-- ``gitdif.py`` (find every repo below a root and print its status
-  with a process pool) -> ``status``.
-- ``gitreport.py`` (files added per commit, via dulwich) ->
-  ``added-files``; reimplemented with ``git log --diff-filter=A`` so
-  no third-party package is needed and it also works on bare clones
-  through ``--git-dir`` semantics of ``git -C``.
-
-Examples
---------
-  python3 git_diff_tool.py diff ~/repo
-  python3 git_diff_tool.py diff ~/repo HEAD~5 HEAD -o report.json --no-patch
-  python3 git_diff_tool.py status ~/projects --dirty-only
-  python3 git_diff_tool.py added-files ~/repo -o added.json
-"""
 
 import argparse
 import json
@@ -30,7 +10,6 @@ from pathlib import Path
 
 
 def run_git(repo: Path, *git_args: str) -> str:
-    """Run git in *repo* and return stdout (raise RuntimeError on failure)."""
     proc = subprocess.run(["git", *git_args], cwd=repo, capture_output=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(f"git {' '.join(git_args)} failed: {proc.stderr.strip()}")
@@ -38,7 +17,6 @@ def run_git(repo: Path, *git_args: str) -> str:
 
 
 def try_git(repo: Path, *git_args: str) -> str | None:
-    """Like :func:`run_git` but return None instead of raising."""
     try:
         return run_git(repo, *git_args)
     except RuntimeError:
@@ -46,7 +24,6 @@ def try_git(repo: Path, *git_args: str) -> str | None:
 
 
 def last_two_commits(repo: Path) -> tuple[str, str]:
-    """Return (older, newer) of the two most recent commits."""
     out: list[str] = run_git(repo, "log", "-2", "--format=%H").strip().splitlines()
     if len(out) < 2:
         raise RuntimeError("Repository needs at least 2 commits to diff.")
@@ -54,7 +31,6 @@ def last_two_commits(repo: Path) -> tuple[str, str]:
 
 
 def commit_meta(repo: Path, ref: str) -> dict[str, str]:
-    """Author/email/date/subject metadata for one commit."""
     fmt: str = "%an%x00%ae%x00%ad%x00%s"
     line: str = run_git(repo, "show", "-s", f"--format={fmt}", ref).strip()
     author, email, date, subject = line.split("\x00")
@@ -63,7 +39,6 @@ def commit_meta(repo: Path, ref: str) -> dict[str, str]:
 
 
 def file_stats(repo: Path, older: str, newer: str) -> list[dict[str, object]]:
-    """Per-file status + insertion/deletion counts between two refs."""
     numstat: dict[str, tuple[int | None, int | None]] = {}
     for line in run_git(repo, "diff", "--numstat", older, newer).splitlines():
         parts: list[str] = line.split("\t")
@@ -84,7 +59,6 @@ def file_stats(repo: Path, older: str, newer: str) -> list[dict[str, object]]:
 
 
 def cmd_diff(args: argparse.Namespace) -> int:
-    """Write a JSON diff report between two refs (default: last two commits)."""
     repo: Path = args.repo
     try:
         older, newer = (args.older, args.newer) if args.older and args.newer else last_two_commits(repo)
@@ -108,7 +82,6 @@ def cmd_diff(args: argparse.Namespace) -> int:
 
 
 def find_repos(root: Path) -> list[Path]:
-    """Return every directory containing a ``.git`` entry."""
     repos: list[Path] = []
     for git_dir in root.rglob(".git"):
         repos.append(git_dir.parent)
@@ -116,7 +89,6 @@ def find_repos(root: Path) -> list[Path]:
 
 
 def repo_status(repo: Path) -> dict[str, object]:
-    """Branch/cleanliness/ahead-behind summary for one repo."""
     branch: str = (try_git(repo, "rev-parse", "--abbrev-ref", "HEAD") or "?").strip()
     porcelain: str = try_git(repo, "status", "--porcelain") or ""
     changed: list[str] = [line for line in porcelain.splitlines() if line.strip()]
@@ -133,7 +105,6 @@ def repo_status(repo: Path) -> dict[str, object]:
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    """Print a status line for every repo below a root."""
     repos: list[Path] = find_repos(args.root)
     if not repos:
         print(f"No git repositories under {args.root}")
@@ -153,7 +124,6 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def cmd_added_files(args: argparse.Namespace) -> int:
-    """Map each short commit hash to the basenames it added."""
     out: str | None = try_git(args.repo, "log", "--diff-filter=A", "--name-only", "--pretty=format:COMMIT %h")
     if out is None:
         print("Error: not a git repository (or empty).", file=sys.stderr)
@@ -175,7 +145,6 @@ def cmd_added_files(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Git diff/status reporting.")
     sub = parser.add_subparsers(dest="command", required=True)
     df = sub.add_parser("diff", help="JSON report between two commits")
@@ -199,7 +168,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

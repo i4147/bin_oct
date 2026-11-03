@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import compileall
 import os
 import sys
 from pathlib import Path
-
 from dh import get_pyfiles, mpf
 
 REMOVE_ORIG = False

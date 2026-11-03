@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import json
 import logging
@@ -13,7 +12,6 @@ from datetime import datetime
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, Iterable, Sequence
-
 from deep_translator import GoogleTranslator
 
 try:

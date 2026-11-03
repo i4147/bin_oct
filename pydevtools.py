@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import configparser
 import json
@@ -664,25 +663,31 @@ def detect_entry_points(project_dir: Path, package_name: str) -> list[dict[str, 
         return "main"
 
     if pkg_main.exists():
-        entry.append({
-            "module": f"{package_name}.__main__",
-            "function": "main",
-            "script_name": package_name,
-        })
+        entry.append(
+            {
+                "module": f"{package_name}.__main__",
+                "function": "main",
+                "script_name": package_name,
+            }
+        )
     if pkg_cli.exists():
-        entry.append({
-            "module": f"{package_name}.cli",
-            "function": guess_func(pkg_cli),
-            "script_name": (package_name if not pkg_main.exists() else f"{package_name}-cli"),
-        })
+        entry.append(
+            {
+                "module": f"{package_name}.cli",
+                "function": guess_func(pkg_cli),
+                "script_name": (package_name if not pkg_main.exists() else f"{package_name}-cli"),
+            }
+        )
     if not entry and root_main.exists():
         entry.append({"module": "__main__", "function": "main", "script_name": package_name})
     if not entry and root_cli.exists():
-        entry.append({
-            "module": "cli",
-            "function": guess_func(root_cli),
-            "script_name": package_name,
-        })
+        entry.append(
+            {
+                "module": "cli",
+                "function": guess_func(root_cli),
+                "script_name": package_name,
+            }
+        )
     return entry
 
 

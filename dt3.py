@@ -287,11 +287,13 @@ def _make_azure(source: str, target: str) -> Translator:
     mapped_target = _map_language(target, LANGUAGE_CODES)
 
     def translate(text: str) -> str:
-        query = urllib.parse.urlencode({
-            "api-version": "3.0",
-            "from": mapped_source,
-            "to": mapped_target,
-        })
+        query = urllib.parse.urlencode(
+            {
+                "api-version": "3.0",
+                "from": mapped_source,
+                "to": mapped_target,
+            }
+        )
         body = json.dumps([{"Text": text}]).encode("utf-8")
         request = urllib.request.Request(
             f"{endpoint}/translate?{query}",
@@ -335,14 +337,16 @@ def _make_baidu(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         salt = str(random.randint(10000, 99999))
         sign = hashlib.md5(f"{app_id}{text}{salt}{secret_key}".encode("utf-8")).hexdigest()
-        payload = urllib.parse.urlencode({
-            "q": text,
-            "from": mapped_source,
-            "to": mapped_target,
-            "appid": app_id,
-            "salt": salt,
-            "sign": sign,
-        }).encode("utf-8")
+        payload = urllib.parse.urlencode(
+            {
+                "q": text,
+                "from": mapped_source,
+                "to": mapped_target,
+                "appid": app_id,
+                "salt": salt,
+                "sign": sign,
+            }
+        ).encode("utf-8")
         request = urllib.request.Request(
             "https://fanyi-api.baidu.com/api/trans/vip/translate",
             data=payload,

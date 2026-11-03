@@ -1,28 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""addel.py -- a ledger of every file that ever entered or left a git repository.
-
-For every commit in the history this script reports *only* the paths that were
-added or removed.  Files that were merely modified are out of scope and are
-dropped by git itself (``--diff-filter=AD``), so they never reach the report.
-
-All filesystem traversal is done with :mod:`pathlib`:
-
-* walking up from a starting path to discover the repository root,
-* probing ``.git`` -- a directory in a normal clone, a plain *file* in a linked
-  worktree or a submodule,
-* snapshotting an entire tree with ``Path.rglob("*")`` for ``--mode walk``,
-* inspecting the live working tree for ``--verify`` / ``--no-verify``,
-* creating output folders and writing the JSON / CSV / Markdown reports.
-
-Standard library only.  Python 3.9+.  Requires the ``git`` binary on PATH.
-
-Examples
---------
-    python addel.py                              # pretty console ledger
-    python addel.py ~/code/api --json out.json   # machine readable
-    python addel.py --mode walk --md NOTES.md    # re-snapshot every commit
-    python addel.py "HEAD~40..HEAD" --max-files 6
-"""
 
 import argparse
 import csv
@@ -60,11 +36,10 @@ examples:
 
 
 class RepoError(RuntimeError):
-    """Raised when the repository cannot be found or a git command fails."""
+    pass
 
 
 def painter(enabled: bool) -> Callable[[str, str], str]:
-    """Return a tiny ANSI helper that degrades to identity when disabled."""
 
     def paint(text: str, *styles: str) -> str:
         if not enabled or not styles:
@@ -75,12 +50,6 @@ def painter(enabled: bool) -> Callable[[str, str], str]:
 
 
 def discover_repo(start: Path) -> tuple[Path, Path]:
-    """Walk up from *start* until a ``.git`` entry is found.
-
-    Returns ``(repository_root, git_entry)``.  ``git_entry`` is a directory for
-    an ordinary clone and a regular file for linked worktrees and submodules,
-    which is why we test both shapes instead of ``is_dir()`` alone.
-    """
     start = Path(start).expanduser()
     try:
         start = start.resolve()
@@ -95,7 +64,6 @@ def discover_repo(start: Path) -> tuple[Path, Path]:
 
 
 def git(repo: Path, *args: str) -> str:
-    """Run ``git -C repo args...`` and return stdout, or raise RepoError."""
     command = ["git", "-C", str(repo), *args]
     try:
         proc = subprocess.run(
@@ -130,7 +98,6 @@ class Commit:
         return not self.parents
 
     def when(self) -> str:
-        """ISO author date trimmed to something pleasant for a report."""
         try:
             return datetime.fromisoformat(self.date).strftime("%Y-%m-%d %H:%M")
         except ValueError:
@@ -146,7 +113,6 @@ def parse_commit_header(record: str) -> Commit:
 
 
 def list_commits(repo: Path, revision: str, first_parent: bool = False) -> list[Commit]:
-    """Commits reachable from *revision*, oldest first."""
     args = ["log", "--reverse", "--date-order", f"--format={LOG_FORMAT}"]
     if first_parent:
         args.append("--first-parent")
@@ -190,12 +156,6 @@ class CommitEntry:
 
 
 def parse_name_status(tokens: Sequence[str]) -> list[Change]:
-    """Turn NUL-split ``--name-status`` tokens into Change records.
-
-    With ``-z`` git emits ``status NUL path NUL`` pairs; rename and copy
-    records emit *two* paths (``R100 NUL old NUL new``), which we explode into
-    a deletion of the old path plus an addition of the new one.
-    """
     changes: list[Change] = []
     index = 0
     total = len(tokens)
@@ -222,7 +182,6 @@ def collect_ledger(
     diff_merges: bool = True,
     first_parent: bool = False,
 ) -> list[CommitEntry]:
-    """The default engine: one batched ``git log`` call for all of history."""
     base = [
         "log",
         "--reverse",
@@ -270,7 +229,6 @@ def collect_ledger(
 
 
 def snapshot_tree(root: Path, skip: Iterable[str] = SKIP_DIRS) -> set[str]:
-    """Every file (and symlink) under *root* as a repo-relative posix path."""
     skip = set(skip)
     found: set[str] = set()
     root = Path(root)
@@ -287,7 +245,6 @@ def snapshot_tree(root: Path, skip: Iterable[str] = SKIP_DIRS) -> set[str]:
 
 
 def drop_worktree(repo: Path, tree: Path) -> None:
-    """Remove a temporary worktree, brute force if git refuses."""
     if not tree.exists():
         return
     try:
@@ -306,11 +263,6 @@ def walk_ledger(
     *,
     log: Callable[[str], None] = lambda _message: None,
 ) -> list[CommitEntry]:
-    """The paranoid engine: check every commit out and diff real directory trees.
-
-    Slow -- one worktree per commit -- but it never trusts git's diff cache, so
-    it is the right way to audit the default engine.
-    """
     sandbox = Path(tempfile.mkdtemp(prefix="addel-walk-"))
     tree = sandbox / "tree"
     entries: list[CommitEntry] = []
@@ -351,7 +303,6 @@ class Verification:
 
 
 def verify_against_disk(repo: Path, entries: Sequence[CommitEntry]) -> Verification:
-    """Compare the pathlib snapshot of the working tree with recorded history."""
     on_disk = snapshot_tree(repo)
     last_event: dict[str, str] = {}
     for entry in entries:
@@ -367,7 +318,6 @@ def verify_against_disk(repo: Path, entries: Sequence[CommitEntry]) -> Verificat
 
 
 def directory_of(path: str, depth: int = 2) -> str:
-    """Bucket a path by its first *depth* components for the hot-spot table."""
     parts = Path(path).parts
     if len(parts) == 1:
         return "(root)"
@@ -548,15 +498,17 @@ def write_csv(path: Path, entries: Sequence[CommitEntry]) -> None:
         for entry in entries:
             for status, paths in (("added", entry.added), ("removed", entry.removed)):
                 for item in paths:
-                    writer.writerow([
-                        entry.commit.sha,
-                        entry.commit.short,
-                        entry.commit.date,
-                        entry.commit.author,
-                        entry.commit.subject,
-                        status,
-                        item,
-                    ])
+                    writer.writerow(
+                        [
+                            entry.commit.sha,
+                            entry.commit.short,
+                            entry.commit.date,
+                            entry.commit.author,
+                            entry.commit.subject,
+                            status,
+                            item,
+                        ]
+                    )
 
 
 def write_markdown(path: Path, repo: Path, revision: str, entries: Sequence[CommitEntry], summary: Summary) -> None:

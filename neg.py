@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Negate images in place (the original files are overwritten).
-
-Usage:
-    python negate_inplace.py IMAGE [IMAGE ...]
-
-Requires Pillow:  pip install pillow
-"""
 
 import io
 import sys
@@ -20,7 +13,6 @@ META_KEYS = ("exif", "icc_profile", "dpi")
 
 
 def negate(img: Image.Image) -> Image.Image:
-    """Return a negated copy of *img*, preserving transparency if present."""
     if img.mode in DIRECT_MODES:
         return ImageOps.invert(img)
 

@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Report files added or removed in every commit of a Git repository.
-
-Only files that were newly added (A) or deleted (D) are reported.
-Changed/modified files are ignored.
-
-Supported backends (selected with -b/--backend):
-  - subprocess  (stdlib only, always available)
-  - gitpython   (requires: pip install GitPython)
-  - pygit2      (requires: pip install pygit2)
-  - dulwich     (requires: pip install dulwich)
-"""
 
 import argparse
 import subprocess
@@ -18,21 +7,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Literal, Protocol, Sequence
 
-
 try:
     import git as gitpython
 
     HAS_GITPYTHON = True
 except ImportError:
     HAS_GITPYTHON = False
-
 try:
     import pygit2
 
     HAS_PYGIT2 = True
 except ImportError:
     HAS_PYGIT2 = False
-
 try:
     from dulwich import porcelain as dulwich_porcelain
     from dulwich.repo import Repo as DulwichRepo
@@ -40,9 +26,7 @@ try:
     HAS_DULWICH = True
 except ImportError:
     HAS_DULWICH = False
-
 BackendName = Literal["subprocess", "gitpython", "pygit2", "dulwich"]
-
 AVAILABLE_BACKENDS: list[BackendName] = ["subprocess"]
 if HAS_GITPYTHON:
     AVAILABLE_BACKENDS.append("gitpython")
@@ -54,7 +38,6 @@ if HAS_DULWICH:
 
 @dataclass(frozen=True, slots=True)
 class FileChange:
-    """A single file that was either added or removed."""
 
     path: str
     status: Literal["A", "D"]
@@ -62,7 +45,6 @@ class FileChange:
 
 @dataclass(frozen=True, slots=True)
 class CommitReport:
-    """Added/removed files for one commit."""
 
     sha: str
     short_sha: str
@@ -73,11 +55,8 @@ class CommitReport:
 
 
 class GitBackend(Protocol):
-    """Minimal interface every backend must implement."""
 
-    def iter_commits(self) -> Iterator[CommitReport]:
-        """Yield a CommitReport for every commit (newest first)."""
-        ...
+    def iter_commits(self) -> Iterator[CommitReport]: ...
 
 
 class SubprocessBackend:
@@ -97,7 +76,6 @@ class SubprocessBackend:
     def iter_commits(self) -> Iterator[CommitReport]:
         log = self._run("log", "--pretty=format:%H")
         shas = [line.strip() for line in log.splitlines() if line.strip()]
-
         for sha in shas:
             meta = self._run(
                 "log",
@@ -108,7 +86,6 @@ class SubprocessBackend:
             short_sha = meta[0] if meta else sha[:7]
             summary = meta[1] if len(meta) > 1 else ""
             author = meta[2] if len(meta) > 2 else ""
-
             try:
                 name_status = self._run(
                     "diff-tree",
@@ -128,10 +105,8 @@ class SubprocessBackend:
                     "-z",
                     sha,
                 )
-
             added: list[str] = []
             removed: list[str] = []
-
             parts = name_status.split("\0")
             i = 0
             while i + 1 < len(parts):
@@ -145,7 +120,6 @@ class SubprocessBackend:
                 elif status.startswith("D"):
                     removed.append(path)
                 i += 2
-
             yield CommitReport(
                 sha=sha,
                 short_sha=short_sha,
@@ -166,7 +140,6 @@ class GitPythonBackend:
         for commit in self._repo.iter_commits():
             added: list[str] = []
             removed: list[str] = []
-
             if not commit.parents:
                 for item in commit.tree.traverse():
                     if item.type == "blob":
@@ -178,7 +151,6 @@ class GitPythonBackend:
                         added.append(diff.b_path or diff.a_path)
                     elif diff.change_type == "D":
                         removed.append(diff.a_path or diff.b_path)
-
             yield CommitReport(
                 sha=commit.hexsha,
                 short_sha=commit.hexsha[:7],
@@ -200,11 +172,9 @@ class Pygit2Backend:
             self._repo.head.target,
             pygit2.GIT_SORT_TIME | pygit2.GIT_SORT_TOPOLOGICAL,
         )
-
         for commit in walker:
             added: list[str] = []
             removed: list[str] = []
-
             if len(commit.parents) == 0:
                 for entry in commit.tree:
                     self._collect_blobs(entry, "", added)
@@ -218,7 +188,6 @@ class Pygit2Backend:
                         added.append(delta.new_file.path)
                     elif status == pygit2.GIT_DELTA_DELETED:
                         removed.append(delta.old_file.path)
-
             author = commit.author
             yield CommitReport(
                 sha=str(commit.id),
@@ -255,15 +224,11 @@ class DulwichBackend:
             commit = entry.commit
             sha = commit.id.decode("ascii")
             short_sha = sha[:7]
-
             message = commit.message.decode("utf-8", errors="replace")
             summary = message.splitlines()[0] if message else ""
-
             author = commit.author.decode("utf-8", errors="replace")
-
             added: list[str] = []
             removed: list[str] = []
-
             parents = commit.parents
             if not parents:
                 tree = self._repo[commit.tree]
@@ -282,7 +247,6 @@ class DulwichBackend:
                     elif change.type == "delete":
                         path = change.old.path.decode("utf-8", errors="replace")
                         removed.append(path)
-
             yield CommitReport(
                 sha=sha,
                 short_sha=short_sha,
@@ -353,29 +317,23 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo: Path = args.repo.resolve()
-
     if not (repo / ".git").exists() and not (repo / "HEAD").exists():
         print(f"error: {repo} does not look like a Git repository", file=sys.stderr)
         return 1
-
     try:
         backend = create_backend(args.backend, repo)
     except Exception as exc:
         print(f"error: failed to initialise backend '{args.backend}': {exc}", file=sys.stderr)
         return 1
-
     print(f"Repository : {repo}")
     print(f"Backend    : {args.backend}")
     print("-" * 72)
-
     count = 0
     for report in backend.iter_commits():
         if args.only_with_changes and not report.added and not report.removed:
             continue
-
         print(f"commit {report.short_sha}  {report.summary}")
         print(f"Author: {report.author}")
-
         if report.added:
             print("  Added:")
             for p in report.added:
@@ -386,12 +344,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(f"    - {p}")
         if not report.added and not report.removed:
             print("  (no files added or removed)")
-
         print()
         count += 1
         if args.max_commits is not None and count >= args.max_commits:
             break
-
     print(f"Processed {count} commit(s).")
     return 0
 

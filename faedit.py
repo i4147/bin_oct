@@ -43,11 +43,13 @@ def run_urwid(text):
             return key
 
     ed = Ed("", text, multiline=True, allow_tab=True, edit_pos=0)
-    root = urwid.Pile([
-        ("weight", 2, urwid.Filler(ed, "top")),
-        ("pack", urwid.Divider("─")),
-        ("weight", 1, urwid.Filler(pv, "top")),
-    ])
+    root = urwid.Pile(
+        [
+            ("weight", 2, urwid.Filler(ed, "top")),
+            ("pack", urwid.Divider("─")),
+            ("weight", 1, urwid.Filler(pv, "top")),
+        ]
+    )
     scr = urwid.display.raw.Screen()
     scr.tty_signal_keys(start="undefined", stop="undefined")
     urwid.MainLoop(root, screen=scr).run()

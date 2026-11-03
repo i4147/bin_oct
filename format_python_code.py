@@ -43,24 +43,26 @@ def _fixcode_can(s: str) -> bool:
     if not s:
         return True
     return (
-        s.startswith((
-            "def ",
-            "class ",
-            "if ",
-            "elif ",
-            "else:",
-            "for ",
-            "while ",
-            "try:",
-            "except ",
-            "finally:",
-            "with ",
-            "return",
-            "import ",
-            "from ",
-            "@",
-            "#",
-        ))
+        s.startswith(
+            (
+                "def ",
+                "class ",
+                "if ",
+                "elif ",
+                "else:",
+                "for ",
+                "while ",
+                "try:",
+                "except ",
+                "finally:",
+                "with ",
+                "return",
+                "import ",
+                "from ",
+                "@",
+                "#",
+            )
+        )
         or "=" in s
         or "(" in s
         or s.endswith(":")

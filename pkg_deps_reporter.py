@@ -6,46 +6,33 @@ import sys
 
 
 def parse_metadata_dependencies(metadata_path: Path) -> dict:
-    """Parses a single METADATA file to extract the package name, version, and dependencies."""
     pkg_info = {"name": "Unknown", "version": "Unknown", "dependencies": []}
-
-    # Matches 'Requires-Dist: package_name (>=version)' or variants
     req_pattern = re.compile(r"^Requires-Dist:\s*(.+)$", re.IGNORECASE)
     name_pattern = re.compile(r"^Name:\s*(.+)$", re.IGNORECASE)
     version_pattern = re.compile(r"^Version:\s*(.+)$", re.IGNORECASE)
-
     try:
         with open(metadata_path, "r", encoding="utf-8", errors="ignore") as f:
             for line in f:
-                # METADATA fields stop at the first blank line before the long description
                 if not line.strip():
                     break
-
                 name_match = name_pattern.match(line)
                 if name_match:
                     pkg_info["name"] = name_match.group(1).strip()
                     continue
-
                 version_match = version_pattern.match(line)
                 if version_match:
                     pkg_info["version"] = version_match.group(1).strip()
                     continue
-
                 req_match = req_pattern.match(line)
                 if req_match:
                     pkg_info["dependencies"].append(req_match.group(1).strip())
     except Exception as e:
         print(f"Error parsing metadata file {metadata_path}: {e}", file=sys.stderr)
-
     return pkg_info
 
 
 def find_package_metadata(target_pkg: str, root_dir: Path) -> Path | None:
-    """Locates the METADATA file for a specific case-insensitive package name."""
-    # Standard format: package_name-version.dist-info/METADATA
-    # Normalise naming conventions (hyphens vs underscores)
     normalized_target = target_pkg.lower().replace("-", "_")
-
     for meta_path in root_dir.rglob("METADATA"):
         parent_name = meta_path.parent.name.lower().replace("-", "_")
         if parent_name.startswith(f"{normalized_target}-"):
@@ -54,12 +41,10 @@ def find_package_metadata(target_pkg: str, root_dir: Path) -> Path | None:
 
 
 def generate_report(pkgs_data: list[dict]) -> str:
-    """Generates a structured, highly scannable string report."""
     lines = []
     lines.append("=" * 60)
     lines.append("PYTHON PACKAGE DEPENDENCY DIAGNOSTIC REPORT")
     lines.append("=" * 60)
-
     for pkg in sorted(pkgs_data, key=lambda x: x["name"].lower()):
         lines.append(f"\n📦 Package: {pkg['name']} (v{pkg['version']})")
         if pkg["dependencies"]:
@@ -96,16 +81,11 @@ def main():
         default=".",
         help="Root path of the site-packages directory to parse (Defaults to current folder '.').",
     )
-
     args = parser.parse_args()
     root_path = Path(args.directory).resolve()
-
-    # Input constraints and flags sanity validation
     if not args.all and not args.package:
         parser.error("You must either specify a target package name or pass the -a/--all flag.")
-
     pkgs_to_report = []
-
     if args.all:
         print(f"Scanning target directory '{root_path}' for all package distributions...", file=sys.stderr)
         metadata_files = list(root_path.rglob("METADATA"))
@@ -120,13 +100,8 @@ def main():
             print(f"Error: Could not find METADATA for package '{args.package}' in '{root_path}'.", file=sys.stderr)
             sys.exit(1)
         pkgs_to_report.append(parse_metadata_dependencies(meta_path))
-
-    # Generate output interface string
     report_output = generate_report(pkgs_to_report)
-
-    # Handle display and file-writing channels
     print(report_output)
-
     if args.write:
         output_file = Path(args.write)
         try:

@@ -1,32 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Query GitHub: user repos, search, trending pages, repo size.
-
-Analysis / deduplication
-------------------------
-- ``gitrepos.py`` (asks for a username, dumps repos), ``getrepos.py``
-  (PyGithub + a countdown thread) and half of ``getpyrepos.py`` all
-  list a user's repos -> ``user-repos`` (REST + pagination, stdlib
-  HTTP when ``requests`` is absent).
-- ``ghpy.py`` (50 most recently updated Python repos) and
-  ``ghpy10.py`` (Python repos created in the last 10 days, by stars)
-  are one ``search`` command: ``search --preset active|new`` or a raw
-  ``-q`` query.
-- ``getpyrepos.py``'s no-arg mode (top new users + their Python
-  repos) -> ``trending-users``; ``get_trending_py_repos.py`` (scrapes
-  github.com/trending with BeautifulSoup) -> ``trending``.
-- ``gsz.py`` (one repo's size) -> ``repo-size``.
-
-Auth: ``GITHUB_TOKEN`` from the environment or ``~/.env``
-(``$GITHUB_TOKEN`` wins); unauthenticated use works at lower limits.
-
-Examples
---------
-  python3 github_query_tool.py user-repos octocat --python-only
-  python3 github_query_tool.py search --preset new --days 10
-  python3 github_query_tool.py search -q "topic:cli language:Python" --sort stars
-  python3 github_query_tool.py trending --timeframe weekly
-  python3 github_query_tool.py repo-size python/cpython
-"""
 
 import argparse
 import csv
@@ -45,7 +17,6 @@ API: str = "https://api.github.com"
 
 @dataclass(slots=True)
 class Repo:
-    """Normalized repository record used by every subcommand."""
 
     name: str
     full_name: str
@@ -59,7 +30,6 @@ class Repo:
 
 
 def load_token() -> str | None:
-    """GITHUB_TOKEN from the environment or ``~/.env``."""
     token: str | None = os.environ.get("GITHUB_TOKEN")
     if token:
         return token
@@ -73,7 +43,6 @@ def load_token() -> str | None:
 
 
 def get_json(url: str, params: dict[str, object] | None = None) -> object:
-    """GET JSON with requests if available, else stdlib urllib."""
     full_url: str = url
     if params:
         full_url = url + "?" + urllib.parse.urlencode(params)
@@ -98,7 +67,6 @@ def get_json(url: str, params: dict[str, object] | None = None) -> object:
 
 
 def get_textpage(url: str) -> str:
-    """GET an HTML page as text."""
     try:
         import requests
 
@@ -112,7 +80,6 @@ def get_textpage(url: str) -> str:
 
 
 def to_repo(raw: dict[str, object]) -> Repo:
-    """Convert one GitHub API repo object."""
 
     def text(key: str) -> str:
         value: object = raw.get(key)
@@ -134,7 +101,6 @@ def to_repo(raw: dict[str, object]) -> Repo:
 
 
 def save_repos(repos: list[Repo], output: Path | None, fmt: str) -> None:
-    """Print or save repos as txt/json/csv."""
     if output is None:
         for repo in repos:
             print(f"{repo.full_name}  ★{repo.stars}  {repo.url}")
@@ -159,7 +125,6 @@ def save_repos(repos: list[Repo], output: Path | None, fmt: str) -> None:
 
 
 def cmd_user_repos(args: argparse.Namespace) -> int:
-    """List a user's repositories (paginated)."""
     repos: list[Repo] = []
     page: int = 1
     while True:
@@ -181,7 +146,6 @@ def cmd_user_repos(args: argparse.Namespace) -> int:
 
 
 def cmd_search(args: argparse.Namespace) -> int:
-    """Search repositories (presets reproduce ghpy / ghpy10)."""
     if args.query:
         query: str = args.query
         sort: str = args.sort
@@ -189,7 +153,7 @@ def cmd_search(args: argparse.Namespace) -> int:
         since: str = (datetime.now(timezone.utc) - timedelta(days=args.days)).strftime("%Y-%m-%d")
         query = f"language:Python created:>{since}"
         sort = "stars"
-    else:  # active
+    else:
         query = "language:Python"
         sort = "updated"
     data: object = get_json(
@@ -199,16 +163,17 @@ def cmd_search(args: argparse.Namespace) -> int:
     repos: list[Repo] = [to_repo(raw) for raw in items if isinstance(raw, dict)] if isinstance(items, list) else []
     save_repos(
         repos,
-        args.output or Path("ghpy.txt" if args.preset == "active" else "ghpy10.txt")
-        if args.query is None and args.preset
-        else args.output,
+        (
+            args.output or Path("ghpy.txt" if args.preset == "active" else "ghpy10.txt")
+            if args.query is None and args.preset
+            else args.output
+        ),
         args.format,
     )
     return 0
 
 
 def cmd_trending(args: argparse.Namespace) -> int:
-    """Scrape github.com/trending/<language> (needs beautifulsoup4)."""
     try:
         from bs4 import BeautifulSoup
     except ImportError:
@@ -230,7 +195,6 @@ def cmd_trending(args: argparse.Namespace) -> int:
 
 
 def cmd_trending_users(args: argparse.Namespace) -> int:
-    """New Python users with most followers + their Python repos."""
     since: str = (datetime.now(timezone.utc) - timedelta(days=args.days)).strftime("%Y-%m-%d")
     data: object = get_json(
         f"{API}/search/users",
@@ -252,12 +216,14 @@ def cmd_trending_users(args: argparse.Namespace) -> int:
                 if isinstance(repos_raw, list)
                 else []
             )
-            users.append({
-                "username": login,
-                "name": detail.get("name", ""),
-                "followers": detail.get("followers", 0),
-                "repositories": repos,
-            })
+            users.append(
+                {
+                    "username": login,
+                    "name": detail.get("name", ""),
+                    "followers": detail.get("followers", 0),
+                    "repositories": repos,
+                }
+            )
             print(
                 f"{login} ({detail.get('name', '')}) followers={detail.get('followers', 0)} python-repos={len(repos)}"
             )
@@ -268,7 +234,6 @@ def cmd_trending_users(args: argparse.Namespace) -> int:
 
 
 def parse_repo_spec(spec: str) -> tuple[str, str]:
-    """Accept ``user/repo`` or a full github.com URL."""
     cleaned: str = spec.strip().removeprefix("https://github.com/").removeprefix("http://github.com/")
     cleaned = cleaned.rstrip("/").removesuffix(".git")
     parts: list[str] = cleaned.split("/")
@@ -278,7 +243,6 @@ def parse_repo_spec(spec: str) -> tuple[str, str]:
 
 
 def cmd_repo_size(args: argparse.Namespace) -> int:
-    """Print one repository's size (GitHub reports KiB)."""
     user, repo = parse_repo_spec(args.repo)
     data: object = get_json(f"{API}/repos/{user}/{repo}")
     if not isinstance(data, dict):
@@ -295,13 +259,11 @@ def cmd_repo_size(args: argparse.Namespace) -> int:
 
 
 def add_output(child: argparse.ArgumentParser) -> None:
-    """Shared -o/--format options."""
     child.add_argument("-o", "--output", type=Path, default=None, help="Output file (default: print)")
     child.add_argument("--format", choices=("txt", "json", "csv"), default="txt")
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="GitHub repository/user queries.")
     sub = parser.add_subparsers(dest="command", required=True)
     ur = sub.add_parser("user-repos", help="List a user's repos")
@@ -339,11 +301,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     try:
         return int(args.handler(args))
-    except OSError as exc:  # network / HTTP errors
+    except OSError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 

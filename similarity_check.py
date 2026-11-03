@@ -1,47 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Functional similarity analysis for the standalone scripts in ``bin_oct``.
-
-The repository is a flat directory of ~800 independent one-file tools, many of
-which are renamed copies or successive revisions of each other.  This script
-groups scripts that *do nearly the same job* instead of merely reporting raw
-text overlap.
-
-How "same job" is measured
---------------------------
-For every file we extract several complementary views, then combine them:
-
-* lexical code shingles   - 5-grams over normalised tokens (identifiers kept
-                             and an anonymised variant where names are erased,
-                             so renamed copies still match).
-* structural shingles     - 6-grams over the AST node-type skeleton.
-* semantic features       - imports, called APIs, CLI flags, function/class
-                             names, words from docstrings/comments/messages.
-* purpose features        - filename tokens + documentation vocabulary.
-
-All features are IDF weighted (boilerplate such as ``import os`` is therefore
-worth very little), and four scores are computed per candidate pair:
-
-    cos_all      IDF-weighted cosine over all features       (0..1)
-    containment  |shingles(A) & shingles(B)| / min(|A|,|B|) (0..1)
-    cos_api      cosine over imports/calls/CLI flags only    (0..1)
-    cos_purpose  cosine over semantic features (no shingles) (0..1)
-    name_sim     similarity of segmented filename stems      (0..1)
-
-    score = .52*(.55*cos_all + .30*containment + .15*cos_api)
-          + .48*(.50*cos_purpose + .25*cos_api + .25*name_sim)
-    plus a filename-variant boost and a near-literal-copy boost.
-
-Scripts with a score >= --threshold are grouped by frontier expansion from the
-densest script: a group may grow through any of its members, but a cohesion
-test prevents unrelated families from chaining into one giant cluster.
-
-Outputs (all written to --out-dir, default: the directory of this script):
-    similarity_report.json   full machine-readable report
-    similarity_report.md     readable group listing
-    similarity_report.svg    visual version of the JSON report
-
-Pure standard library; nothing is installed and no script is executed.
-"""
 
 import argparse
 import ast
@@ -64,8 +21,7 @@ from typing import Any, Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-STOPWORDS = frozenset(
-    """a about above after again against all also am an and any are as at be
+STOPWORDS = frozenset("""a about above after again against all also am an and any are as at be
     because been before being below between both but by can cannot could did do
     does doing down during each few for from further had has have having he her
     here hers herself him himself his how i if in into is it its itself just me
@@ -83,23 +39,15 @@ STOPWORDS = frozenset(
     com termux usr local home data files env python3 python env bin sbin opt tmp
     etc dev var coding utf indent expandtab tabstop shiftwidth fileencoding
     http https www html wwwwww newline endcode operator todo note fixme
-    """.split()
-)
+    """.split())
 
-# Affixes that add no meaning when deciding whether two filenames describe the
-# same job ("pyclean" and "clean" are the same family; "csv2json" and
-# "csvtojson" are the same family too).
-GENERIC_STEM_TOKENS = frozenset(
-    """to from into and the a an of for with by on in at is are new old v1 v2 v3
+GENERIC_STEM_TOKENS = frozenset("""to from into and the a an of for with by on in at is are new old v1 v2 v3
     py python simple fast auto mini test tests tools tool utils util utility
     cli x xx extra super better best small big my run runner file files dir dirs
     the2 s es er ing ed 2 3 4 5 10 one two three
-    """.split()
-)
+    """.split())
 
-# Short domain words worth keeping when splitting glued filenames.
-STEM_SEED = frozenset(
-    """to md js ts rs c cpp cc cc py ipynb txt csv json xml yaml yml toml ini cfg
+STEM_SEED = frozenset("""to md js ts rs c cpp cc cc py ipynb txt csv json xml yaml yml toml ini cfg
     sql sqlite db pdf png jpg jpeg gif webp svg img image images html htm css
     lua rst srt vcf pkl whl tar zip xz gz bz2 rar 7z ttf otf woff woff2
     url uri http https www web api cli gui ai ml nlp ocr tts wav mp3 mp4 mkv
@@ -111,28 +59,23 @@ STEM_SEED = frozenset(
     clean cleaner cleanup fmt format formatter pretty min minify strip stripper
     rmc rmcts rmca rmcst eximports imports importz importtools
     csv2json pkl2json sqltojson sqlite2json xml_yaml2json vcf2json
-    """.split()
-)
+    """.split())
 
-# Feature groups and their relative importance in the combined vector.
 FEATURE_WEIGHTS = {
-    "lex": 1.0,  # normalised token 5-grams
-    "anon": 0.7,  # token 5-grams with identifiers erased
-    "ast": 0.9,  # AST node-type 6-grams
-    "call": 2.0,  # dotted call / attribute names
-    "imp": 2.2,  # imported modules
-    "opt": 3.0,  # command line flags / subcommands
-    "word": 1.1,  # documentation + message vocabulary
-    "stem": 3.2,  # filename tokens
-    "def": 1.2,  # defined function / class names
+    "lex": 1.0,
+    "anon": 0.7,
+    "ast": 0.9,
+    "call": 2.0,
+    "imp": 2.2,
+    "opt": 3.0,
+    "word": 1.1,
+    "stem": 3.2,
+    "def": 1.2,
 }
 
 API_PREFIXES = ("call", "imp", "opt")
 LEX_N = 5
 AST_N = 6
-# Shingles are stored as 32-bit hashes and only a deterministic 1/N sample goes
-# into the cosine vectors.  The same sample is kept for every file, so shared
-# shingles still match, while memory stays bounded on a 9 MB source tree.
 SHINGLE_SAMPLE = 3
 
 
@@ -140,11 +83,7 @@ def _hash_shingle(s: str) -> int:
     return zlib.crc32(s.encode("utf-8", "replace")) & 0xFFFFFFFF
 
 
-# --------------------------------------------------------------------------- #
-# discovery / source handling
-# --------------------------------------------------------------------------- #
 def discover_files(root: pathlib.Path) -> list[pathlib.Path]:
-    """Tracked top-level *.py files (excludes helper scripts in reports/)."""
     try:
         out = subprocess.run(
             ["git", "ls-files", "*.py"],
@@ -173,13 +112,11 @@ def read_source(path: pathlib.Path) -> tuple[str, str]:
 
 
 def build_stem_lexicon(names: Iterable[str]) -> set[str]:
-    """Learn filename words from the corpus so glued names can be segmented."""
     counts: collections.Counter[str] = collections.Counter()
     for name in names:
         stem = (name[:-3] if name.endswith(".py") else name).lower()
         for tok in re.findall(r"[a-z]{2,}", re.sub(r"[0-9]+", " ", stem)):
             counts[tok] += 1
-        # camelCase boundaries
         for tok in re.findall(r"[a-z]{2,}", stem):
             for part in re.findall(r"[a-z]{2,}", re.sub(r"([a-z])([A-Z])", r"\1 \2", tok).lower()):
                 counts[part] += 1
@@ -189,17 +126,14 @@ def build_stem_lexicon(names: Iterable[str]) -> set[str]:
 
 
 def normalise_stem(name: str, lexicon: set[str]) -> tuple[str, tuple[str, ...], tuple[str, ...]]:
-    """Return (letters, all words, meaningful words) for a filename."""
     stem = (name[:-3] if name.endswith(".py") else name).lower()
     letters = re.sub(r"[^a-z]", "", stem)
-    # dynamic-programming segmentation into known filename words
     best: list[tuple[float, list[str]]] = [(0.0, [])] + [(-1e9, [])] * len(letters)
     for i in range(len(letters)):
         if best[i][0] < -1e8:
             continue
         for j in range(i + 2, min(len(letters), i + 18) + 1):
             cand = letters[i:j]
-            # per-token bonus favours splitting glued names into real words
             gain = (len(cand) ** 1.15 + 2.5) if cand in lexicon else -1.1 * len(cand)
             val = best[i][0] + gain
             if val > best[j][0]:
@@ -213,7 +147,6 @@ def _words(text: str) -> list[str]:
     out = []
     for w in re.findall(r"[a-zA-Z][a-zA-Z0-9_'-]{2,}", text.lower()):
         w = w.strip("_-'")
-        # split snake / camel case
         parts = re.findall(r"[a-z]+|[A-Z][a-z]*|[0-9]+", w)
         for p in parts:
             p = p.lower()
@@ -235,7 +168,6 @@ def _dotted(node: ast.AST) -> str:
 
 
 def _lex_tokens(text: str) -> list[str]:
-    """Normalised lexical stream; tolerant fallback for unparsable source."""
     toks: list[str] = []
     try:
         for t in tokenize.generate_tokens(io.StringIO(text).readline):
@@ -263,7 +195,7 @@ def _lex_tokens(text: str) -> list[str]:
                 toks.append("op:" + s.strip())
     except (tokenize.TokenError, IndentationError, SyntaxError, ValueError):
         pass
-    if not toks:  # last-resort fallback (tokenizer gave up on the whole file)
+    if not toks:
         toks = [
             "kw:" + m if keyword.iskeyword(m) else "n:" + m.lower() for m in re.findall(r"[A-Za-z_]\w*|[^\s\w]", text)
         ]
@@ -317,7 +249,6 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
         if api_feature or prefix in API_PREFIXES:
             api[key] += FEATURE_WEIGHTS[prefix] * weight
 
-    # ---- lexical shingles (work even for files that fail to parse) ---------
     lex = _lex_tokens(text)
     info["token_count"] = len(lex)
     lex_sh = _shingles(lex, LEX_N, "lex:")
@@ -328,7 +259,6 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
     for h in _shingles(anon, LEX_N, "anon:", sampled=True):
         add("anon", str(h), 1.0)
 
-    # ---- words from comments / docstrings / messages ----------------------
     raw_words = _words(" ".join(re.findall(r"#[^\n]*", text[:4000])))
     info["doc_words"] = list(dict.fromkeys(raw_words))[:40]
     for w, c in collections.Counter(raw_words).most_common(60):
@@ -340,7 +270,6 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
     if letters:
         add("stem", letters, 1.2)
 
-    # ---- AST view ---------------------------------------------------------
     try:
         tree = ast.parse(text, filename=path.name)
     except (SyntaxError, ValueError) as exc:
@@ -362,7 +291,6 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
             skeleton.append(type(node).__name__)
             for child in ast.iter_child_nodes(node):
                 stack.append(child)
-                # calls, imports, names, CLI surface
                 if isinstance(child, ast.Call):
                     dotted = _dotted(child.func)
                     if dotted:
@@ -405,7 +333,6 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
         info[k] = sorted(set(info[k]))
     info["doc_words"] = [w for w in dict.fromkeys(info["doc_words"]) if w not in STOPWORDS][:40]
 
-    # A call repeated 12 times is not 12 times more descriptive of the job.
     for d in (feats, api):
         for key in list(d):
             if key.startswith("call:"):
@@ -413,9 +340,6 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
             elif key.startswith("word:"):
                 d[key] = min(d[key], 5.0)
 
-    # Purpose vector: what the script is called + which domain APIs it uses.
-    # Deliberately excludes code shingles, so different implementations of the
-    # same task can still land in one group.
     purpose: dict[str, float] = collections.defaultdict(float)
     for imp in info["imports"]:
         purpose["imp:" + imp.split(".")[0]] += 3.0
@@ -443,11 +367,7 @@ def extract(path: pathlib.Path, lexicon: set[str]) -> dict[str, Any]:
     return info
 
 
-# --------------------------------------------------------------------------- #
-# similarity
-# --------------------------------------------------------------------------- #
 def cosine_pairs(vecs: list[dict[str, float]], n: int, min_score: float, max_df: int) -> dict[tuple[int, int], float]:
-    """Sparse IDF-weighted cosine via an inverted index."""
     postings: dict[str, list[tuple[int, float]]] = collections.defaultdict(list)
     for i, vec in enumerate(vecs):
         for feat, w in vec.items():
@@ -477,7 +397,6 @@ def cosine_pairs(vecs: list[dict[str, float]], n: int, min_score: float, max_df:
 
 
 def name_candidates(infos: list[dict[str, Any]]) -> set[tuple[int, int]]:
-    """Pairs whose filenames look like variants of one another."""
     groups: dict[str, list[int]] = collections.defaultdict(list)
     for i, inf in enumerate(infos):
         for tok in set(inf.get("stem_core") or inf["stem_tokens"]):
@@ -512,12 +431,8 @@ def name_similarity(a: dict[str, Any], b: dict[str, Any]) -> float:
     tb = set(b.get("stem_core") or b["stem_tokens"])
     jac = len(ta & tb) / len(ta | tb) if ta | tb else 0.0
     sim = 0.55 * seq + 0.45 * jac
-    # Same set of meaningful filename words ("csv2json" / "csvtojson").
-    # Requiring a decent character-level match stops generic 2-to-3 letter
-    # fragments ("re", "rm", "ex") from linking unrelated scripts.
     if ta and ta == tb and seq >= 0.55:
         sim = max(sim, 0.70 + 0.20 * seq)
-    # A stem is a strict prefix/suffix of the other: revisions / variants.
     if min(len(sa), len(sb)) >= 3 and (sa.startswith(sb) or sb.startswith(sa) or sa.endswith(sb) or sb.endswith(sa)):
         sim = max(sim, 0.62 + 0.18 * seq)
     return min(1.0, sim)
@@ -531,7 +446,6 @@ def containment(a: set[int], b: set[int]) -> float:
 
 
 def approx_containment_pairs(sets: list[set[int]], min_score: float, max_df: int = 180) -> dict[tuple[int, int], float]:
-    """Cheap candidate generator for near-duplicate code with different names."""
     postings: dict[str, list[int]] = collections.defaultdict(list)
     for i, s in enumerate(sets):
         for sh in s:
@@ -554,33 +468,18 @@ def approx_containment_pairs(sets: list[set[int]], min_score: float, max_df: int
 
 
 def final_score(cos_all: float, cont: float, cos_api: float, cos_purpose: float, name: float) -> float:
-    """Blend code duplication and same-job evidence, plus two explicit rules."""
     code = 0.55 * cos_all + 0.30 * cont + 0.15 * cos_api
     purpose = 0.50 * cos_purpose + 0.25 * cos_api + 0.25 * name
     s = 0.52 * code + 0.48 * purpose
-    # Rule 1: variant filenames ("url2pdf" / "url2pdf2", "csv2json" /
-    # "csvtojson") almost always describe one job even when the code differs.
-    # The boost scales with independent evidence so names alone cannot group.
     if name >= 0.72:
         evidence = max(cos_purpose, cos_api, cos_all, cont)
         s = max(s, 0.47 + 0.40 * evidence)
-    # Rule 2: near literal copies.
     if cont >= 0.85 and cos_all >= 0.55:
         s = max(s, 0.86 + 0.12 * cont)
     return min(1.0, s)
 
 
-# --------------------------------------------------------------------------- #
-# clustering
-# --------------------------------------------------------------------------- #
 def cluster(n: int, scores: dict[tuple[int, int], float], threshold: float) -> tuple[list[list[int]], list[float]]:
-    """Frontier expansion around the densest unassigned script.
-
-    Groups grow through *any* member (not just the medoid), which is what lets
-    a family of differently-named revisions such as rmc/rmc2/rmca/tsrmc end
-    up together.  A weak cohesion test keeps bridges between unrelated
-    clusters from chaining into one giant group.
-    """
     score_of = lambda a, b: scores.get((a, b) if a < b else (b, a), 0.0)
     neighbours: list[list[tuple[int, float]]] = [[] for _ in range(n)]
     for (i, j), s in scores.items():
@@ -612,8 +511,6 @@ def cluster(n: int, scores: dict[tuple[int, int], float], threshold: float) -> t
                     strong = [v for v in links if v > 0]
                     avg_strong = sum(strong) / len(strong) if strong else 0.0
                     avg_all = sum(links) / len(links)
-                    # anti-chaining: once a group is sizeable, a newcomer must
-                    # resemble more than a single member of that group
                     if len(group) >= 5 and avg_all < threshold * 0.28:
                         continue
                     if avg_strong >= threshold * 0.45:
@@ -622,8 +519,6 @@ def cluster(n: int, scores: dict[tuple[int, int], float], threshold: float) -> t
                         nxt.append(j)
             frontier = nxt
 
-    # one conservative refinement pass: move a file only when another group
-    # fits it clearly better than its current one
     for i in range(n):
         cur = assigned[i]
         if len(groups[cur]) < 2:
@@ -662,9 +557,6 @@ def group_label(members: list[dict[str, Any]]) -> tuple[str, list[str], str]:
     return label, purpose[:6], base
 
 
-# --------------------------------------------------------------------------- #
-# report assembly
-# --------------------------------------------------------------------------- #
 def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
     files = discover_files(root)
     n = len(files)
@@ -691,7 +583,6 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
         c_all = cos_all.get((i, j), 0.0)
         c_api = cos_api.get((i, j), 0.0)
         c_purp = cos_purpose.get((i, j), 0.0)
-        # exact containment only for candidates (cheap, no df cut-off)
         cont = containment(lex_sets[i], lex_sets[j])
         name = name_similarity(infos[i], infos[j])
         s = final_score(c_all, cont, c_api, c_purp, name)
@@ -730,19 +621,21 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
                 key=lambda x: x[1],
                 default=(None, 0.0),
             )
-            members.append({
-                "file": infos[i]["name"],
-                "lines": infos[i]["lines"],
-                "bytes": infos[i]["bytes"],
-                "sha256": infos[i]["sha256"],
-                "ast_ok": infos[i]["ast_ok"],
-                "nearest_in_group": infos[nearest]["name"] if nearest is not None else None,
-                "nearest_score": round(ns, 4),
-                "imports": infos[i]["imports"][:18],
-                "options": infos[i]["options"][:18],
-                "top_functions": infos[i]["defs"][:18],
-                "docstring": infos[i]["docstring"],
-            })
+            members.append(
+                {
+                    "file": infos[i]["name"],
+                    "lines": infos[i]["lines"],
+                    "bytes": infos[i]["bytes"],
+                    "sha256": infos[i]["sha256"],
+                    "ast_ok": infos[i]["ast_ok"],
+                    "nearest_in_group": infos[nearest]["name"] if nearest is not None else None,
+                    "nearest_score": round(ns, 4),
+                    "imports": infos[i]["imports"][:18],
+                    "options": infos[i]["options"][:18],
+                    "top_functions": infos[i]["defs"][:18],
+                    "docstring": infos[i]["docstring"],
+                }
+            )
         members.sort(key=lambda m: (m["file"] != infos[medoid]["name"], m["file"]))
         pairs = sorted(
             (
@@ -777,40 +670,44 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
         else:
             basis = "loosely related (review before merging)"
         confidence = "high" if cohesion >= 0.72 else "medium" if cohesion >= 0.58 else "low"
-        groups_out.append({
-            "signal_averages": {
-                "cos_code": round(comp_avg("cos_all"), 4),
-                "containment": round(comp_avg("containment"), 4),
-                "cos_api": round(comp_avg("cos_api"), 4),
-                "cos_purpose": round(comp_avg("cos_purpose"), 4),
-                "name_sim": round(comp_avg("name_sim"), 4),
-            },
-            "id": f"G{gi:03d}",
-            "label": label,
-            "keywords": purpose,
-            "stem_family": base,
-            "size": len(g),
-            "medoid": infos[medoid]["name"],
-            "basis": basis,
-            "confidence": confidence,
-            "cohesion": round(cohesion, 4),
-            "strong_link_density": round(len(strong_pairs) / max(1, len(intra)), 4),
-            "avg_similarity": round(avg, 4),
-            "min_similarity": round(min(intra), 4) if intra else 0.0,
-            "max_similarity": round(max(intra), 4) if intra else 0.0,
-            "shared_imports": shared_imports[:15],
-            "shared_cli_options": shared_opts[:15],
-            "shared_definitions": shared_defs[:15],
-            "recommendation": (
-                "near-duplicate: consolidate into one script"
-                if (intra and max(intra) >= 0.88)
-                else "strong overlap: pick one canonical script, retire the rest"
-                if (intra and sum(intra) / len(intra) >= 0.7)
-                else "review: scripts appear to do the same job"
-            ),
-            "members": members,
-            "top_pairs": [{"a": a, "b": b, "score": round(s, 4)} for s, a, b in pairs],
-        })
+        groups_out.append(
+            {
+                "signal_averages": {
+                    "cos_code": round(comp_avg("cos_all"), 4),
+                    "containment": round(comp_avg("containment"), 4),
+                    "cos_api": round(comp_avg("cos_api"), 4),
+                    "cos_purpose": round(comp_avg("cos_purpose"), 4),
+                    "name_sim": round(comp_avg("name_sim"), 4),
+                },
+                "id": f"G{gi:03d}",
+                "label": label,
+                "keywords": purpose,
+                "stem_family": base,
+                "size": len(g),
+                "medoid": infos[medoid]["name"],
+                "basis": basis,
+                "confidence": confidence,
+                "cohesion": round(cohesion, 4),
+                "strong_link_density": round(len(strong_pairs) / max(1, len(intra)), 4),
+                "avg_similarity": round(avg, 4),
+                "min_similarity": round(min(intra), 4) if intra else 0.0,
+                "max_similarity": round(max(intra), 4) if intra else 0.0,
+                "shared_imports": shared_imports[:15],
+                "shared_cli_options": shared_opts[:15],
+                "shared_definitions": shared_defs[:15],
+                "recommendation": (
+                    "near-duplicate: consolidate into one script"
+                    if (intra and max(intra) >= 0.88)
+                    else (
+                        "strong overlap: pick one canonical script, retire the rest"
+                        if (intra and sum(intra) / len(intra) >= 0.7)
+                        else "review: scripts appear to do the same job"
+                    )
+                ),
+                "members": members,
+                "top_pairs": [{"a": a, "b": b, "score": round(s, 4)} for s, a, b in pairs],
+            }
+        )
 
     top_pairs = sorted(
         (
@@ -836,7 +733,6 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
         by_hash[inf["sha256"]].append(inf["name"])
     exact = sorted((v for v in by_hash.values() if len(v) > 1), key=lambda v: v[0])
 
-    # Broad functional domains: useful for the scripts that stay singletons.
     grouped_names = {infos[i]["name"] for g in multi for i in g}
     domains: dict[str, list[str]] = collections.defaultdict(list)
     for inf in infos:
@@ -947,9 +843,6 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
     return report
 
 
-# --------------------------------------------------------------------------- #
-# markdown output
-# --------------------------------------------------------------------------- #
 def render_markdown(rep: dict[str, Any], out: pathlib.Path) -> None:
     s = rep["summary"]
     L = [
@@ -1032,9 +925,6 @@ def render_markdown(rep: dict[str, Any], out: pathlib.Path) -> None:
     out.write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
-# --------------------------------------------------------------------------- #
-# SVG output
-# --------------------------------------------------------------------------- #
 PALETTE = [
     "#5eead4",
     "#93c5fd",
@@ -1066,7 +956,6 @@ def text(x: float, y: float, s: str, size: int = 12, fill: str = "#cbd5e1", anch
 
 
 def score_color(s: float) -> str:
-    """Blue -> teal -> yellow -> red ramp for 0..1 similarity."""
     stops = [
         (0.0, (17, 30, 58)),
         (0.25, (30, 64, 120)),
@@ -1087,7 +976,6 @@ def score_color(s: float) -> str:
 def squarify(
     items: list[tuple[float, Any]], x: float, y: float, w: float, h: float
 ) -> list[tuple[Any, float, float, float, float]]:
-    """Row-based treemap: similar-weight cells, readable rectangles."""
     out: list[tuple[Any, float, float, float, float]] = []
     items = sorted(items, key=lambda it: -it[0])
     total = sum(v for v, _ in items)
@@ -1095,8 +983,6 @@ def squarify(
         return out
     rows = max(1, min(len(items), round(math.sqrt(len(items) * h / w))))
     rows = max(rows, 2) if len(items) > 3 else rows
-    # contiguous, roughly balanced strips: keeps the largest groups top-left
-    # and preserves descending order instead of scattering cells.
     target = total / rows
     strips: list[list[tuple[float, Any]]] = []
     cur: list[tuple[float, Any]] = []
@@ -1135,7 +1021,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
         "</linearGradient></defs>",
         rect(0, 0, W, H, "url(#bg)"),
     ]
-    # ---------------------------------------------------------------- header
     svg += [
         text(48, 62, "bin_oct  /  Python script similarity", 30, "#f1f5f9", font_weight="700"),
         text(
@@ -1175,7 +1060,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             text(x + 18, 210, f"{val:,}", 32, col, font_weight="700"),
         ]
 
-    # ---------------------------------------------------------- panel frames
     def frame(x, y, w, h, title, sub=""):
         svg.append(rect(x, y, w, h, "#0d1729", rx=12, stroke="#22314f"))
         svg.append(text(x + 20, y + 32, title, 18, "#e2e8f0", font_weight="700"))
@@ -1217,7 +1101,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
         "filename-derived job keywords · teal = scripts already in a group, grey = singletons",
     )
 
-    # ------------------------------------------------------------- treemap
     shown = groups[:18]
     other = groups[18:]
     sizes = [(max(1.0, g["size"] ** 0.85), i) for i, g in enumerate(shown)]
@@ -1260,7 +1143,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             if len(g["members"]) > maxrows:
                 svg.append(text(x + 14, y + 45 + maxrows * 15, f"+{len(g['members']) - maxrows} more", 10, "#64748b"))
 
-    # ------------------------------------------------------------- network
     net_groups = groups[:14]
     node_names: list[str] = []
     node_group: list[int] = []
@@ -1270,7 +1152,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             node_group.append(gi)
     N = len(node_names)
     cx, cy, R = 1522, 630, 232
-    # place groups in angular sectors proportional to size, with gaps
     total = sum(len([x for x in node_group if x == gi]) for gi in range(len(net_groups)))
     pos: dict[str, tuple[float, float]] = {}
     angle = -math.pi / 2
@@ -1283,7 +1164,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             a = angle + span * (k + 0.5) / len(idxs)
             r = R - (k % 3) * 18
             pos[node_names[i]] = (cx + r * math.cos(a), cy + r * math.sin(a))
-        # group label at the middle of the sector
         am = angle + span / 2
         lx, ly = cx + (R + 34) * math.cos(am), cy + (R + 34) * math.sin(am)
         anchor = "start" if math.cos(am) >= 0 else "end"
@@ -1291,7 +1171,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
         svg.append(text(lx, ly, glabel, 10, PALETTE[gi % len(PALETTE)], anchor=anchor))
         angle += span
 
-    # lookup score for a pair of file names
     scoremat: dict[frozenset[str], float] = {}
     for p in rep["pair_scores_for_heatmap"]:
         scoremat[frozenset((p["a"], p["b"]))] = p["score"]
@@ -1304,7 +1183,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             x1, y1 = pos[node_names[i]]
             x2, y2 = pos[node_names[j]]
             mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-            # bow toward centre
             mx = mx * 0.82 + cx * 0.18
             my = my * 0.82 + cy * 0.18
             svg.append(
@@ -1320,7 +1198,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
     svg.append(text(cx, cy - 12, f"{N} scripts", 22, "#e2e8f0", anchor="middle", font_weight="700"))
     svg.append(text(cx, cy + 14, f"{edges} strong links", 12, "#64748b", anchor="middle"))
 
-    # ------------------------------------------------------------- heatmap
     hm_groups = groups[:22]
     order: list[str] = []
     bounds: list[int] = [0]
@@ -1341,7 +1218,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             else:
                 col = score_color(scoremat.get(frozenset((order[i], order[j])), 0.0))
             svg.append(rect(hx + j * cell, hy + i * cell, cell + 0.4, cell + 0.4, col))
-    # group separators and coloured group markers along the top / left
     for gi in range(1, len(bounds)):
         b = bounds[gi]
         if b > m:
@@ -1386,7 +1262,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
             anchor="end",
         )
     )
-    # legend
     lx, ly = 70, 1040
     svg.append(text(lx, ly, "SIMILARITY", 12, "#94a3b8"))
     for k in range(11):
@@ -1398,7 +1273,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
     svg.append(text(lx, ly + 308, "White lines mark", 11, "#94a3b8"))
     svg.append(text(lx, ly + 324, "group boundaries.", 11, "#94a3b8"))
 
-    # ---------------------------------------------- strongest pairs / groups
     px, py = 1192, 1046
     svg.append(text(px, py, "TOP PAIRS", 12, "#64748b"))
     for k, p in enumerate(rep["top_pairs"][:16]):
@@ -1416,7 +1290,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
         svg.append(text(px + 20, y, f"{g['id']}  {label}"[:60], 11, "#cbd5e1"))
         svg.append(text(px + 640, y, str(g["size"]), 12, PALETTE[k % len(PALETTE)], anchor="end", font_weight="700"))
 
-    # ------------------------------------------------- functional domains
     fams = rep["functional_families"][:24]
     if fams:
         maxv = max(d["scripts"] for d in fams)
@@ -1432,7 +1305,6 @@ def render_svg(rep: dict[str, Any], out: pathlib.Path) -> None:
                 svg.append(rect(bx + 108, by, grouped_w, 13, PALETTE[col % len(PALETTE)], rx=3))
             svg.append(text(bx + 416, by + 11, f"{d['scripts']:>2} scripts · {d['in_groups']} grouped", 10, "#94a3b8"))
 
-    # --------------------------------------------------------------- footer
     svg.append(rect(48, H - 52, W - 96, 1, "#1e293b"))
     svg.append(
         text(
@@ -1462,7 +1334,6 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     rep = build_report(args.root.resolve(), args.threshold)
 
-    # internal-only fields are not needed in the deliverable
     jp = out_dir / "similarity_report.json"
     jp.write_text(json.dumps(rep, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"[5/5] wrote {jp} ({jp.stat().st_size / 1024:.0f} KiB)", flush=True)

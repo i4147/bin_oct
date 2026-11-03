@@ -31,7 +31,6 @@ except ImportError:
 
 
 def format_row(backend: str, encoding: str, confidence: str) -> str:
-    """Formats a single row to fit standard terminal spacing parameters."""
     return f"║ {backend:<24} ║ {encoding:<18} ║ {confidence:<12} ║"
 
 

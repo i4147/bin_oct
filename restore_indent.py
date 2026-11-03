@@ -8,7 +8,6 @@ def restore_indentation(source_code: str, indent_size: int = 4) -> str:
     lines = source_code.splitlines()
     output_lines = []
 
-    # Stack to keep track of active block structures
     block_stack = [{"type": "module", "indent": 0}]
 
     branch_keywords = ("elif ", "else:", "except", "finally:")
@@ -21,7 +20,6 @@ def restore_indentation(source_code: str, indent_size: int = 4) -> str:
 
         is_branch = line.startswith(branch_keywords)
 
-        # Determine target indentation based on stack
         if is_branch and len(block_stack) > 1:
             target_indent = block_stack[-2]["indent"]
         else:
@@ -33,7 +31,6 @@ def restore_indentation(source_code: str, indent_size: int = 4) -> str:
 
         output_lines.append(" " * target_indent + line)
 
-        # Check if line opens a new block
         if line.endswith(":"):
             if is_branch:
                 block_stack[-1] = {"type": "branch", "indent": target_indent, "expect_indent": True}
@@ -41,7 +38,6 @@ def restore_indentation(source_code: str, indent_size: int = 4) -> str:
                 block_type = line.split()[0] if line else "block"
                 block_stack.append({"type": block_type, "indent": target_indent, "expect_indent": True})
         else:
-            # Reset stack to module level if a new top-level statement is encountered
             if (
                 line.startswith(("def ", "class ", "import ", "from ", "BACKENDS =", "DEFAULT_"))
                 and len(block_stack) > 1

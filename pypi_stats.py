@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import atexit
 import calendar
@@ -353,7 +352,6 @@ def system(package, os=None, **kwargs):
 
 
 import contextlib
-
 from platformdirs import user_cache_dir
 from slugify import slugify
 
@@ -599,22 +597,26 @@ common_arguments = [
 ]
 
 
-@subcommand([
-    package_argument,
-    argument("-p", "--period", choices=("day", "week", "month")),
-    arg_format,
-    arg_json,
-    arg_verbose,
-])
+@subcommand(
+    [
+        package_argument,
+        argument("-p", "--period", choices=("day", "week", "month")),
+        arg_format,
+        arg_json,
+        arg_verbose,
+    ]
+)
 def recent(args):
     print(recent(args.package, period=args.period, format=args.format))
 
 
-@subcommand([
-    package_argument,
-    argument("--mirrors", choices=("true", "false", "with", "without")),
-    *common_arguments,
-])
+@subcommand(
+    [
+        package_argument,
+        argument("--mirrors", choices=("true", "false", "with", "without")),
+        *common_arguments,
+    ]
+)
 def overall(args):
     if args.mirrors in ["with", "without"]:
         args.mirrors = args.mirrors == "with"
@@ -632,11 +634,13 @@ def overall(args):
     )
 
 
-@subcommand([
-    package_argument,
-    argument("-V", "--version", help="eg. 2 or 3", type=_python_major_version),
-    *common_arguments,
-])
+@subcommand(
+    [
+        package_argument,
+        argument("-V", "--version", help="eg. 2 or 3", type=_python_major_version),
+        *common_arguments,
+    ]
+)
 def python_major(args):
     print(
         python_major(
@@ -652,11 +656,13 @@ def python_major(args):
     )
 
 
-@subcommand([
-    package_argument,
-    argument("-V", "--version", help="eg. 2.7 or 3.6", type=_python_minor_version),
-    *common_arguments,
-])
+@subcommand(
+    [
+        package_argument,
+        argument("-V", "--version", help="eg. 2.7 or 3.6", type=_python_minor_version),
+        *common_arguments,
+    ]
+)
 def python_minor(args):
     print(
         python_minor(
@@ -672,11 +678,13 @@ def python_minor(args):
     )
 
 
-@subcommand([
-    package_argument,
-    argument("-o", "--os", help="eg. windows, linux, darwin or other"),
-    *common_arguments,
-])
+@subcommand(
+    [
+        package_argument,
+        argument("-o", "--os", help="eg. windows, linux, darwin or other"),
+        *common_arguments,
+    ]
+)
 def system(args):
     print(
         system(

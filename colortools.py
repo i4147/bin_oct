@@ -31,14 +31,9 @@ except ImportError:
 
 HEX_RE = re.compile(r"#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})\b")
 FULL_HEX_RE = re.compile(r"^#([0-9a-fA-F]{6})$")
-BARE_HEX_RE = re.compile(
-    r"(?<![0-9A-Fa-f])"
-    r"(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})"
-    r"(?![0-9A-Fa-f])"
-)
+BARE_HEX_RE = re.compile(r"(?<![0-9A-Fa-f])" r"(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" r"(?![0-9A-Fa-f])")
 RGB_RE = re.compile(
-    r"\brgba?\(\s*(?P<r>\d{1,3})\s*,\s*(?P<g>\d{1,3})\s*,\s*"
-    r"(?P<b>\d{1,3})(?:\s*,\s*(?P<a>[\d\.]+))?\s*\)\b",
+    r"\brgba?\(\s*(?P<r>\d{1,3})\s*,\s*(?P<g>\d{1,3})\s*,\s*" r"(?P<b>\d{1,3})(?:\s*,\s*(?P<a>[\d\.]+))?\s*\)\b",
     re.IGNORECASE,
 )
 RESET = "\x1b[0m"

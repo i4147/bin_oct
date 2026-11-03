@@ -459,11 +459,13 @@ def cmd_symlink(args: argparse.Namespace) -> int:
             except OSError as e:
                 warn(f"could not symlink {p}: {e}")
                 continue
-            operations.append({
-                "symlink": str(p),
-                "target": str(target_resolved),
-                "size": size,
-            })
+            operations.append(
+                {
+                    "symlink": str(p),
+                    "target": str(target_resolved),
+                    "size": size,
+                }
+            )
         stash_map[str(stashed_path)] = {
             "hash": h,
             "originals": [str(p) for p in group],

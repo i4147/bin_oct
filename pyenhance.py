@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import ast
 import difflib
@@ -16,38 +15,41 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 WORKERS: int = 8
 PYTHON_SUFFIXES: frozenset[str] = frozenset({".py", ".pyw", ".pyi"})
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "node_modules",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
+SKIP_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        "__pycache__",
+        ".venv",
+        "venv",
+        "node_modules",
+        ".tox",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+    }
+)
 ALL_FIXES: frozenset[str] = frozenset({"regex", "escape", "bytes", "is"})
-RE_FUNCS: frozenset[str] = frozenset({
-    "compile",
-    "match",
-    "search",
-    "fullmatch",
-    "sub",
-    "subn",
-    "split",
-    "findall",
-    "finditer",
-})
+RE_FUNCS: frozenset[str] = frozenset(
+    {
+        "compile",
+        "match",
+        "search",
+        "fullmatch",
+        "sub",
+        "subn",
+        "split",
+        "findall",
+        "finditer",
+    }
+)
 PATTERN_NAME_RE = re.compile(r"pattern|regex|regexp|_re$|^re_", re.IGNORECASE)
 LITERAL_RE = re.compile(r"([A-Za-z]*)('''|\"\"\"|'|\")(.*)\2", re.DOTALL)
 IS_OP_RE = re.compile(rb"\bis\s+not\b|\bis\b")
@@ -200,10 +202,12 @@ def regex_constant_spans(tree: ast.AST, pos: Positions) -> set[tuple[int, int]]:
     spans: set[tuple[int, int]] = set()
     for arg in candidates:
         if isinstance(arg, ast.Constant) and isinstance(arg.value, (str, bytes)):
-            spans.add((
-                pos.from_ast(arg.lineno, arg.col_offset),
-                pos.from_ast(arg.end_lineno, arg.end_col_offset),
-            ))
+            spans.add(
+                (
+                    pos.from_ast(arg.lineno, arg.col_offset),
+                    pos.from_ast(arg.end_lineno, arg.end_col_offset),
+                )
+            )
     return spans
 
 

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import subprocess
 import sys
 from pathlib import Path

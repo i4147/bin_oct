@@ -170,8 +170,7 @@ def main() -> None:
     write_gitattributes()
     write_gitignore()
     init_repo()
-    print(
-        textwrap.dedent(f"""
+    print(textwrap.dedent(f"""
     ✅ Setup complete.
     Your repo is a bare repo at:
         {REPO_DIR}
@@ -189,8 +188,7 @@ def main() -> None:
         # should print -----BEGIN AGE ENCRYPTED FILE-----
     🔑 BACK UP {AGE_KEY} somewhere safe (password manager).
     Lose it and the encrypted files are unrecoverable.
-    """)
-    )
+    """))
 
 
 if __name__ == "__main__":

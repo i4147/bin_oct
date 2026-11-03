@@ -4,47 +4,32 @@ from PIL import Image
 
 
 def convert_images_to_jpg_recursive():
-    # Define supported target extensions to search for (excluding .jpg and .jpeg)
     extensions = {".png", ".webp", ".bmp", ".tiff", ".tif", ".gif"}
     current_dir = Path(".")
-
-    # Track conversion counters
     converted_count = 0
     error_count = 0
-
     print("Scanning directory and subdirectories for images...")
-
-    # rglob('*') processes all files recursively
     for file_path in current_dir.rglob("*"):
         if file_path.is_file() and file_path.suffix.lower() in extensions:
             target_path = file_path.with_suffix(".jpg")
-
-            # Avoid overwriting an existing .jpg file with the same base name
             if target_path.exists():
                 print(f"⚠️ Skipped {file_path.relative_to(current_dir)}: {target_path.name} already exists.")
                 continue
-
             try:
                 with Image.open(file_path) as img:
-                    # Handle alpha channel (transparency) by pasting onto a white background
                     if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
                         bg = Image.new("RGB", img.size, (255, 255, 255))
                         mask = img.convert("RGBA").split()[-1] if img.mode != "LA" else img.convert("LA").split()[-1]
                         bg.paste(img, mask=mask)
                         bg.save(target_path, "JPEG", quality=70)
                     else:
-                        # Direct conversion for standard image modes
                         img.convert("RGB").save(target_path, "JPEG", quality=70)
-
-                # Remove the original file only after successful save
                 file_path.unlink()
                 print(f"✅ Converted: {file_path.relative_to(current_dir)} -> {target_path.name} (Original removed)")
                 converted_count += 1
-
             except Exception as e:
                 print(f"❌ Failed to process {file_path.relative_to(current_dir)}: {e}")
                 error_count += 1
-
     print(f"\n🎉 Done! Successfully converted {converted_count} images. Errors encountered: {error_count}.")
 
 

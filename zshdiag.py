@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import contextlib
 import os
 import re
@@ -13,8 +12,7 @@ CUSTOM_DIR = HOME / ".config" / "zsh.d"
 OH_MY_ZSH = HOME / ".oh-my-zsh"
 ALIAS_RE = re.compile(r"""^\s*alias\s+(['"]?)([A-Za-z0-9_.+-]+)\1\s*=""")
 FUNCTION_RE = re.compile(
-    r"""^\s*(?:function\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(\s*\))?|"""
-    r"""([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\))\s*\{"""
+    r"""^\s*(?:function\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(\s*\))?|""" r"""([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\))\s*\{"""
 )
 
 

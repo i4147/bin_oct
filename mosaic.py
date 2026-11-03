@@ -1,15 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import os
-
 import cv2
 import numpy as np
 
 
 def load_tiles(tiles_folder, tile_size=(50, 50)):
-    """
-    Loads all images from a folder, resizes them to a fixed square size,
-    and calculates their average BGR color values.
-    """
     tiles = []
     tile_avg_colors = []
     valid_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
@@ -30,10 +25,6 @@ def load_tiles(tiles_folder, tile_size=(50, 50)):
 
 
 def create_mosaic_blended(target_image_path, tiles, tile_avg_colors, grid_size=(100, 100), alpha=0.3):
-    """
-    Generates a mosaic and blends it with the original master image for sharp details.
-    alpha: 0.0 means pure tiles. 1.0 means pure original image. (0.2 to 0.4 is optimal)
-    """
     target_img = cv2.imread(target_image_path, cv2.IMREAD_COLOR)
     if target_img is None:
         raise FileNotFoundError(f"Could not open target image: {target_image_path}")

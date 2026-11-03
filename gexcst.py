@@ -55,25 +55,26 @@ class EntityExtractor(cst.CSTVisitor):
             if hasattr(node, "body") and isinstance(node.body, cst.SimpleStatementSuite):
                 return "".join(
                     self.source_lines[
-                        self.get_metadata(PositionProvider, node).start.line - 1 : self.get_metadata(
-                            PositionProvider, node
-                        ).end.line
+                        self.get_metadata(PositionProvider, node).start.line
+                        - 1 : self.get_metadata(PositionProvider, node).end.line
                     ]
                 )
             return ""
 
     def _extract_and_save(self, node: cst.CSTNode, entity_type: str, name: str):
         entity_code = self._get_source_slice(node)
-        self.entities.append({
-            "name": name,
-            "full_name": name,
-            "type": entity_type,
-            "code": entity_code,
-            "path": str(self.original_path),
-            "is_constant": entity_type == "constant",
-            "is_class": entity_type == "class",
-            "is_function": entity_type == "function",
-        })
+        self.entities.append(
+            {
+                "name": name,
+                "full_name": name,
+                "type": entity_type,
+                "code": entity_code,
+                "path": str(self.original_path),
+                "is_constant": entity_type == "constant",
+                "is_class": entity_type == "class",
+                "is_function": entity_type == "function",
+            }
+        )
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
         if self.scope_depth == 0:

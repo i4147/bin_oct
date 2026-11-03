@@ -1,23 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Comment (or uncomment) a 1-based line range in a source file.
-
-Analysis / deduplication
-------------------------
-``comment_out.py`` and ``commentout.py`` do exactly the same job;
-``commentout.py`` just streams the file through a process pool and
-treats a missing end line as "to EOF". The pool added nothing, so the
-merged tool simply rewrites the file in memory (with a backup option),
-and the two extension->comment-token maps were unioned (HTML/CSS get
-proper ``<!-- -->`` / ``/* */`` pairs instead of only an opener).
-``--undo`` is the natural inverse the originals lacked.
-
-Examples
---------
-  python3 comment_range_tool.py comment app.py 10 25
-  python3 comment_range_tool.py comment app.py 10        # to EOF
-  python3 comment_range_tool.py comment app.py 10 25 --undo
-  python3 comment_range_tool.py comment run.sh 1 5 --token "::"
-"""
 
 import argparse
 import shutil
@@ -26,7 +7,6 @@ from collections.abc import Sequence
 from pathlib import Path
 
 DEFAULT_COMMENT: str = "#"
-# extension -> (open token, close token or "")
 COMMENT_TOKENS: dict[str, tuple[str, str]] = {
     ".py": ("#", ""),
     ".sh": ("#", ""),
@@ -55,7 +35,6 @@ COMMENT_TOKENS: dict[str, tuple[str, str]] = {
 
 
 def tokens_for(path: Path, override: str | None) -> tuple[str, str]:
-    """Return (open, close) comment tokens for *path*."""
     if override:
         return override, ""
     found: tuple[str, str] | None = COMMENT_TOKENS.get(path.suffix.lower())
@@ -66,7 +45,6 @@ def tokens_for(path: Path, override: str | None) -> tuple[str, str]:
 
 
 def comment_line(line: str, open_token: str, close_token: str) -> str:
-    """Comment one line (blank/already-commented lines stay untouched)."""
     stripped: str = line.lstrip()
     if not stripped or stripped.startswith(open_token):
         return line
@@ -78,7 +56,6 @@ def comment_line(line: str, open_token: str, close_token: str) -> str:
 
 
 def uncomment_line(line: str, open_token: str, close_token: str) -> str:
-    """Remove one comment layer added by :func:`comment_line`."""
     stripped: str = line.lstrip()
     if not stripped.startswith(open_token):
         return line
@@ -91,7 +68,6 @@ def uncomment_line(line: str, open_token: str, close_token: str) -> str:
 
 
 def process_lines(lines: list[str], start: int, end: int | None, open_token: str, close_token: str, undo: bool) -> int:
-    """(Un)comment the inclusive 1-based range in place; return change count."""
     last: int = len(lines) if end is None else min(end, len(lines))
     changed: int = 0
     for index in range(start - 1, last):
@@ -103,7 +79,6 @@ def process_lines(lines: list[str], start: int, end: int | None, open_token: str
 
 
 def cmd_comment(args: argparse.Namespace) -> int:
-    """Run the ``comment`` subcommand."""
     path: Path = args.file
     if not path.is_file():
         print(f"Error: file not found: {path}", file=sys.stderr)
@@ -132,7 +107,6 @@ def cmd_comment(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Comment/uncomment a line range in a file.")
     sub = parser.add_subparsers(dest="command", required=True)
     cmd = sub.add_parser("comment", help="Comment (or --undo) lines START..END")
@@ -149,7 +123,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

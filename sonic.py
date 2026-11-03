@@ -1,16 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-"""
-Sort, deduplicate, and transform lines in text files.
-
-Uses mmap for large files and an external merge sort so that arbitrarily large
-files can be processed with bounded memory. Supports most of the common
-sort(1)/uniq(1) semantics via a composable pipeline:
-
-    reader → range filter → line filter → key extractor → sorter/coalescer
-        → transformer → limiter → formatter → writer
-"""
-
 import argparse
 import csv
 import heapq
@@ -30,14 +19,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Iterator, TextIO
 
-
 IN_MEMORY_THRESHOLD_BYTES = 8 * 1024 * 1024
 MMAP_THRESHOLD_BYTES = 1024 * 1024
 DEFAULT_CHUNK_LINES = 100_000
 DEFAULT_BUFFER_SIZE = 1 << 16
-
 VERSION = "2.0.0"
-
 Stats = dict[str, Any]
 
 
@@ -169,15 +155,12 @@ class SortKeyFactory:
         self.sep = sep
         self.dedupe_by_key = dedupe_by_key
         self.locale_name = locale_name
-
         if locale_name:
             try:
                 _locale_module.setlocale(_locale_module.LC_COLLATE, locale_name)
             except _locale_module.Error as exc:
                 raise ValueError(f"invalid locale {locale_name!r}: {exc}") from exc
-
         self._effective_field = dedupe_by_key if dedupe_by_key else field
-
         self._has_modifiers = any((ignore_case, ignore_blanks, dictionary, self._effective_field))
 
     def _extract(self, line: str) -> str:
@@ -661,7 +644,6 @@ class OutputWriter(LineProcessor):
                 size += len(chunk.encode(self.encoding))
             self.log(f"DRY RUN: would write {count:,} chunk(s) ({fsz(size)})")
             return count, size
-
         if destination == "-":
             if is_binary_stdout:
                 buf = sys.stdout.buffer
@@ -673,7 +655,6 @@ class OutputWriter(LineProcessor):
                     sys.stdout.write(chunk)
                 sys.stdout.flush()
             return -1, -1
-
         output = Path(destination)
         output.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp_name = tempfile.mkstemp(prefix=f".{output.name}.", suffix=".tmp", dir=str(output.parent))
@@ -793,7 +774,6 @@ class FileSorter(LineProcessor):
             is_binary_stdout=args.null_terminated,
         )
 
-    # ----------------
     def process_file(
         self,
         path: str,
@@ -804,17 +784,14 @@ class FileSorter(LineProcessor):
         input_path = Path(path) if path != "-" else None
         if input_path is not None and not input_path.exists():
             raise FileNotFoundError(f"input file not found: {input_path}")
-
         output = output_path or ("-" if path == "-" else path)
         original_size = self.get_file_size(input_path) if input_path else 0
         start_time = time.monotonic()
-
         backup_path: Path | None = None
         if args.backup and not self.dry_run and input_path is not None and output == str(input_path):
             backup_path = input_path.with_name(input_path.name + args.backup_suffix)
             shutil.copy2(input_path, backup_path)
             self.log(f"Backup written: {backup_path}")
-
         reader = LineReader(
             verbose=self.verbose,
             use_mmap=not args.no_mmap,
@@ -823,14 +800,11 @@ class FileSorter(LineProcessor):
         )
         source_iter = reader.read(path, args.encoding)
         counted = _CountingIterator(source_iter)
-
         range_filter = self._build_range(args, verbose=self.verbose)
         line_filter = self._build_filter(args, verbose=self.verbose)
-
         pipeline: Iterable[str] = counted
         pipeline = range_filter.apply(pipeline)
         pipeline = line_filter.apply(pipeline)
-
         key_factory = SortKeyFactory(
             numeric=args.numeric,
             version=args.version_sort,
@@ -845,7 +819,6 @@ class FileSorter(LineProcessor):
             locale_name=args.locale,
             dedupe_by_key=args.dedupe_by_key,
         )
-
         if args.check or args.check_only_duplicates:
             return self._run_check(
                 args,
@@ -855,21 +828,17 @@ class FileSorter(LineProcessor):
                 input_path,
                 start_time,
             )
-
         temp_files: list[Path] = []
         merge_gen: Iterator[str] | None = None
         original_lines = 0
         try:
-            # ----- build the base (un-deduped) line stream --------------
             if args.random:
                 materialized = list(pipeline)
                 original_lines = counted.count
                 self.log(f"Random shuffle of {len(materialized):,} lines")
                 random.shuffle(materialized)
                 base_lines: Iterable[str] = materialized
-
             elif args.sort and (original_size > args.in_memory_threshold and args.from_line is None):
-                # Bounded-memory path: chunk → sort → merge.
                 lsorter = LineSorter(verbose=self.verbose)
                 temp_files = lsorter.create_sorted_chunks(
                     pipeline,
@@ -886,7 +855,6 @@ class FileSorter(LineProcessor):
                     encoding=args.encoding,
                 )
                 base_lines = merge_gen
-
             elif args.sort:
                 materialized = list(pipeline)
                 original_lines = counted.count
@@ -895,13 +863,10 @@ class FileSorter(LineProcessor):
                     key=key_factory,
                     reverse=args.reverse,
                 )
-
             else:
                 materialized = list(pipeline)
                 original_lines = counted.count
                 base_lines = materialized
-
-            # ----- dedupe ----------------------------------------------
             if self._dedupe_requested(args):
                 mode, show_count, keep = self._dedupe_mode(args)
                 group_key = key_factory.group_key
@@ -924,8 +889,6 @@ class FileSorter(LineProcessor):
                     )
             else:
                 final_iter = iter(base_lines)
-
-            # ----- sampling / limiting --------------------------------
             if args.sample is not None:
                 final_iter = _reservoir_sample(final_iter, args.sample)
             if args.sample_rate is not None:
@@ -934,11 +897,8 @@ class FileSorter(LineProcessor):
             limit = args.limit if args.limit is not None else args.head
             if limit is not None:
                 final_iter = _take(final_iter, limit)
-
-            # ----- transform / write ----------------------------------
             transformer = self._build_transformer(args, verbose=self.verbose)
             final_iter = transformer.apply(final_iter)
-
             stats: Stats = {
                 "input_file": path,
                 "output_file": output,
@@ -946,7 +906,6 @@ class FileSorter(LineProcessor):
                 "original_size_bytes": original_size,
                 "original_size": fsz(original_size),
             }
-
             _, written_bytes = self._write_stream(
                 args,
                 final_iter,
@@ -955,9 +914,6 @@ class FileSorter(LineProcessor):
                 stats=stats,
             )
         finally:
-            # Close the merge generator *before* unlinking its chunk
-            # files, so open file handles are released first (matters on
-            # Windows, harmless elsewhere).
             if merge_gen is not None:
                 try:
                     merge_gen.close()
@@ -965,22 +921,20 @@ class FileSorter(LineProcessor):
                     pass
             if temp_files:
                 LineSorter.cleanup_temp_files(temp_files)
-
         elapsed = time.monotonic() - start_time
-        stats.update({
-            "final_lines": -1,
-            "after_bytes": written_bytes if written_bytes >= 0 else 0,
-            "after": fsz(written_bytes) if written_bytes >= 0 else "n/a",
-            "processing_time": elapsed,
-        })
-
+        stats.update(
+            {
+                "final_lines": -1,
+                "after_bytes": written_bytes if written_bytes >= 0 else 0,
+                "after": fsz(written_bytes) if written_bytes >= 0 else "n/a",
+                "processing_time": elapsed,
+            }
+        )
         if args.stats_file:
             self._write_stats_file(stats, args.stats_file)
         if backup_path is not None:
             stats["backup_file"] = str(backup_path)
         return stats
-
-    # ----------------
 
     def _run_check(
         self,
@@ -993,12 +947,9 @@ class FileSorter(LineProcessor):
     ) -> Stats:
         check_unique = bool(args.unique or args.unique_only or args.count or args.repeated or args.repeated_once)
         group_key = key_factory.group_key
-
         sorted_ok = True
         unique_ok = True
-
         if args.check_only_duplicates:
-            # Single pass; we can piggy-back the sortedness check on it.
             counter: Counter[str] = Counter()
             prev_key: Any = None
             prev_gk: str | None = None
@@ -1015,7 +966,6 @@ class FileSorter(LineProcessor):
                 prev_gk = gk
                 counter[gk] += 1
                 first = False
-
             dup_groups = sum(1 for v in counter.values() if v > 1)
             dup_lines = sum(v for v in counter.values() if v > 1)
             print(f"duplicate groups: {dup_groups}")
@@ -1023,8 +973,6 @@ class FileSorter(LineProcessor):
             if args.check:
                 print("sorted" if sorted_ok else "not sorted")
         else:
-            # O(1)-memory check: only *adjacent* duplicates matter for a
-            # file that is supposed to be in canonical (sorted+uniq) form.
             prev_key = None
             prev_gk = None
             first = True
@@ -1043,7 +991,6 @@ class FileSorter(LineProcessor):
             print("sorted" if sorted_ok else "not sorted")
             if check_unique:
                 print("unique" if unique_ok else "duplicates present")
-
         elapsed = time.monotonic() - start_time
         return {
             "input_file": str(input_path) if input_path else "-",
@@ -1052,8 +999,6 @@ class FileSorter(LineProcessor):
             "original_lines": counted.count,
             "processing_time": elapsed,
         }
-
-    # -----------------
 
     """
     def process_file(
@@ -1066,17 +1011,14 @@ class FileSorter(LineProcessor):
         input_path = Path(path) if path != "-" else None
         if input_path is not None and not input_path.exists():
             raise FileNotFoundError(f"input file not found: {input_path}")
-
         output = output_path or ("-" if path == "-" else path)
         original_size = self.get_file_size(input_path) if input_path else 0
         start_time = time.monotonic()
-
         backup_path: Path | None = None
         if args.backup and not self.dry_run and input_path is not None and output == str(input_path):
             backup_path = input_path.with_name(input_path.name + args.backup_suffix)
             shutil.copy2(input_path, backup_path)
             self.log(f"Backup written: {backup_path}")
-
         reader = LineReader(
             verbose=self.verbose,
             use_mmap=not args.no_mmap,
@@ -1085,14 +1027,11 @@ class FileSorter(LineProcessor):
         )
         source_iter = reader.read(path, args.encoding)
         counted = _CountingIterator(source_iter)
-
         range_filter = self._build_range(args, verbose=self.verbose)
         line_filter = self._build_filter(args, verbose=self.verbose)
-
         pipeline: Iterable[str] = counted
         pipeline = range_filter.apply(pipeline)
         pipeline = line_filter.apply(pipeline)
-
         key_factory = SortKeyFactory(
             numeric=args.numeric,
             version=args.version_sort,
@@ -1107,10 +1046,8 @@ class FileSorter(LineProcessor):
             locale_name=args.locale,
             dedupe_by_key=args.dedupe_by_key,
         )
-
         if args.check or args.check_only_duplicates:
             return self._run_check(args, pipeline, key_factory, counted, input_path, start_time)
-
         if args.random:
             lines = list(pipeline)
             original_lines = counted.count
@@ -1128,7 +1065,6 @@ class FileSorter(LineProcessor):
         else:
             lines = list(pipeline)
             original_lines = counted.count
-
         if self._dedupe_requested(args):
             mode, show_count, keep = self._dedupe_mode(args)
             group_key = key_factory.group_key
@@ -1152,7 +1088,6 @@ class FileSorter(LineProcessor):
                 )
         else:
             final_iter = iter(lines)
-
         if args.sample is not None and args.sample < len(lines):
             final_iter = _reservoir_sample(final_iter, args.sample)
         if args.sample_rate is not None:
@@ -1160,10 +1095,8 @@ class FileSorter(LineProcessor):
         limit = args.limit if args.limit is not None else args.head
         if limit is not None:
             final_iter = _take(final_iter, limit)
-
         transformer = self._build_transformer(args, verbose=self.verbose)
         final_iter = transformer.apply(final_iter)
-
         stats: Stats = {
             "input_file": path,
             "output_file": output,
@@ -1171,11 +1104,9 @@ class FileSorter(LineProcessor):
             "original_size_bytes": original_size,
             "original_size": fsz(original_size),
         }
-
         if args.check_only_duplicates:
             stats["duplicates_only"] = True
             return stats
-
         _, written_bytes = self._write_stream(
             args,
             final_iter,
@@ -1183,7 +1114,6 @@ class FileSorter(LineProcessor):
             source_for_meta=input_path,
             stats=stats,
         )
-
         elapsed = time.monotonic() - start_time
         stats.update({
             "final_lines": -1,
@@ -1191,13 +1121,11 @@ class FileSorter(LineProcessor):
             "after": fsz(written_bytes) if written_bytes >= 0 else "n/a",
             "processing_time": elapsed,
         })
-
         if args.stats_file:
             self._write_stats_file(stats, args.stats_file)
         if backup_path is not None:
             stats["backup_file"] = str(backup_path)
         return stats
-
     def _run_check(
         self,
         args: argparse.Namespace,
@@ -1214,7 +1142,6 @@ class FileSorter(LineProcessor):
         seen: set[str] = set()
         check_unique = bool(args.unique or args.unique_only or args.count or args.repeated or args.repeated_once)
         group_key = key_factory.group_key
-
         for line in pipeline:
             if args.check:
                 k = key_factory(line)
@@ -1226,10 +1153,8 @@ class FileSorter(LineProcessor):
                 seen.add(group_key(line))
             prev_key = key_factory(line)
             prev_line = line
-
         if args.check_only_duplicates:
             from collections import Counter
-
             counter = Counter()
             for line in pipeline:
                 counter[group_key(line)] += 1
@@ -1239,7 +1164,6 @@ class FileSorter(LineProcessor):
             print("sorted" if sorted_ok else "not sorted")
             if check_unique:
                 print("unique" if unique_ok else "duplicates present")
-
         elapsed = time.monotonic() - start_time
         return {
             "input_file": str(input_path) if input_path else "-",
@@ -1406,7 +1330,6 @@ def _build_parser() -> argparse.ArgumentParser:
             "  python sort_unique_lines.py words.txt --sort-by-length -N\n"
         ),
     )
-
     parser.add_argument(
         "filenames",
         nargs="+",
@@ -1420,7 +1343,6 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--encoding", "-e", default="utf-8", help="File encoding (default: utf-8)")
     parser.add_argument("--from-line", type=int, metavar="X", help="Start processing at line X (1-based)")
     parser.add_argument("--to-line", type=int, metavar="Y", help="Stop processing at line Y (1-based, inclusive)")
-
     parser.add_argument("-s", "--sort", action="store_true", default=True, help="Sort lines (default: enabled)")
     parser.add_argument(
         "-u", "--unique", action="store_true", default=True, help="Coalesce duplicate lines (default: enabled)"
@@ -1429,7 +1351,6 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-i", "--case-insensitive", action="store_true", help="Case-insensitive sort (legacy alias for -f)"
     )
-
     sort_group = parser.add_argument_group("sort semantics")
     sort_group.add_argument("-n", "--numeric", action="store_true", help="Compare lines as numbers")
     sort_group.add_argument(
@@ -1451,7 +1372,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sort_group.add_argument("--locale", metavar="NAME", help="Locale-aware collation (locale.strxfrm)")
     sort_group.add_argument("--sort-by-length", action="store_true", help="Sort by line length (shortest first)")
-
     dedupe_group = parser.add_argument_group("dedupe semantics")
     dedupe_group.add_argument("-c", "--count", action="store_true", help="Prefix each line with its occurrence count")
     dedupe_group.add_argument("-D", "--repeated", action="store_true", help="Show only duplicated lines (all copies)")
@@ -1464,7 +1384,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "--keep", choices=("first", "last"), default="first", help="Keep first or last occurrence of each line"
     )
     dedupe_group.add_argument("--dedupe-by-key", type=int, metavar="N", help="Dedupe by the Nth field (needs -t)")
-
     filter_group = parser.add_argument_group("filtering")
     filter_group.add_argument("-m", "--match", metavar="REGEX", help="Keep only lines matching REGEX")
     filter_group.add_argument("-v", "--invert-match", action="store_true", help="Invert --match (drop matching lines)")
@@ -1488,7 +1407,6 @@ def _build_parser() -> argparse.ArgumentParser:
     filter_group.add_argument("--head", type=int, metavar="N", help="Alias for --limit")
     filter_group.add_argument("--sample", type=int, metavar="N", help="Reservoir-sample N lines")
     filter_group.add_argument("--sample-rate", type=float, metavar="P", help="Keep each line with probability P (0..1)")
-
     output_group = parser.add_argument_group("output")
     output_group.add_argument("-N", "--number", action="store_true", help="Prefix each line with its 1-based index")
     output_group.add_argument(
@@ -1505,15 +1423,11 @@ def _build_parser() -> argparse.ArgumentParser:
     output_group.add_argument("-q", "--quiet", action="store_true", help="Suppress the trailing summary")
     output_group.add_argument("--no-stats", action="store_true", help="Skip the trailing summary")
     output_group.add_argument("--stats-file", metavar="FILE", help="Write stats as JSON to FILE")
-
     safety_group = parser.add_argument_group("safety / verification")
     safety_group.add_argument("--check", action="store_true", help="Exit non-zero if input is not sorted/unique")
     safety_group.add_argument(
         "--check-only-duplicates", action="store_true", help="Report duplicates without writing output"
     )
-    #    safety_group.add_argument("--backup", action="store_true",
-    #                              help="Write
-    # ---------------
     safety_group.add_argument(
         "--backup", action="store_true", help="Write a backup copy before modifying a file in place"
     )
@@ -1528,7 +1442,6 @@ def _build_parser() -> argparse.ArgumentParser:
     safety_group.add_argument("--preserve-mtime", action="store_true", help="Copy the input file mtime onto the output")
     safety_group.add_argument("--analyze", action="store_true", help="Print a per-file analysis report and exit")
     safety_group.add_argument("--report-file", metavar="FILE", help="Write a JSON summary report to FILE")
-
     perf_group = parser.add_argument_group("performance")
     perf_group.add_argument("--no-mmap", action="store_true", help="Disable mmap; always use buffered reads")
     perf_group.add_argument(
@@ -1559,17 +1472,14 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help=(f"Lines per external-sort chunk (default: {DEFAULT_CHUNK_LINES})"),
     )
-
     parser.add_argument("--verbose", action="store_true", help="Emit progress diagnostics to stderr")
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
-
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-
     if args.analyze:
         analyzer = FileAnalyzer(verbose=args.verbose)
         for filename in args.filenames:
@@ -1585,7 +1495,6 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"error reading {filename}: {exc}", file=sys.stderr)
                 return 2
         return 0
-
     if args.output and args.output_dir:
         print("error: --output and --output-dir are mutually exclusive", file=sys.stderr)
         return 2
@@ -1601,17 +1510,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.from_line is not None and args.to_line is not None and args.from_line > args.to_line:
         print("error: --from-line must be <= --to-line", file=sys.stderr)
         return 2
-
     sorter = FileSorter(
         verbose=args.verbose,
         dry_run=args.dry_run,
         quiet=args.quiet,
         no_stats=args.no_stats,
     )
-
     exit_code = 0
     all_stats: list[Stats] = []
-
     for filename in args.filenames:
         try:
             output_path: str | None = args.output
@@ -1619,24 +1525,18 @@ def main(argv: list[str] | None = None) -> int:
                 out_dir = Path(args.output_dir)
                 out_dir.mkdir(parents=True, exist_ok=True)
                 output_path = str(out_dir / Path(filename).name)
-
             stats = sorter.process_file(filename, output_path, args=args)
             all_stats.append(stats)
-
             if args.check:
-                # Only --check drives the exit code. --check-only-duplicates
-                # is a pure reporting mode (exit 0 regardless).
                 if stats.get("check_sorted") is False:
                     exit_code = max(exit_code, 1)
                 if stats.get("check_unique") is False:
                     exit_code = max(exit_code, 1)
             elif not args.check_only_duplicates:
                 sorter.print_stats(stats)
-
             """
             stats = sorter.process_file(filename, output_path, args=args)
             all_stats.append(stats)
-
             if args.check or args.check_only_duplicates:
                 # `_run_check` records the verdict in the stats dict.
                 if stats.get("check_sorted") is False:
@@ -1645,10 +1545,7 @@ def main(argv: list[str] | None = None) -> int:
                     exit_code = max(exit_code, 1)
             else:
                 sorter.print_stats(stats)
-
-
                 """
-
         except FileNotFoundError as exc:
             print(f"error: {exc}", file=sys.stderr)
             exit_code = 2
@@ -1658,11 +1555,9 @@ def main(argv: list[str] | None = None) -> int:
         except KeyboardInterrupt:
             print("\ninterrupted", file=sys.stderr)
             return 130
-
     if args.report_file and all_stats:
         payload = all_stats[0] if len(all_stats) == 1 else {"files": all_stats}
         sorter.save_report(payload, args.report_file)
-
     return exit_code
 
 

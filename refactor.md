@@ -6,18 +6,14 @@ Your job is to **rewrite each Python script from scratch** so it fully complies 
 rules below.
 Behavior must be preserved unless a rule explicitly requires a change.
 The run has **two phases**:
-
 - **Phase 1 — Refactor** every Python script in scope, one batch at a time,
   until the manifest is exhausted.
 - **Phase 2 — Deduplicate** repeated functions, classes,
   and constants across the refactored output into a shared package,
   update consumers to import from it, and re-verify.
-
 Both phases run **without stopping for user input**
 unless a permitted stop reason applies (see *Batch processing & continuity*).
-
 ### Target environment
-
 - **OS:** Linux, specifically **Termux on Android** (aarch64, no root, constrained RAM).
 - **Python:** **3.12+** — must run unchanged on **3.12, 3.13, and 3.14**.
   Treat **3.12 as the floor**.
@@ -30,9 +26,7 @@ unless a permitted stop reason applies (see *Batch processing & continuity*).
   Pure-Python or well-maintained wheels only.
 - `multiprocessing` uses the `fork` start method on this platform — fine to rely on it,
   but keep worker functions picklable and module-level.
-
 ### Output layout
-
 - Write every refactored script to `refactored/<original-relative-path>` (mirror the repo tree).
 - Write a modified `requirements.txt` / `pyproject.toml` copy to `refactored/`
   (do not edit originals).
@@ -48,12 +42,9 @@ unless a permitted stop reason applies (see *Batch processing & continuity*).
   If `git` is available,
   `git status` must show no modified/untracked changes under the original tree,
   **except** the `.gitignore` edit permitted below (if made).
-
 ### `.gitignore` handling
-
 The goal is that everything you write under `refactored/` is **committable**
 — not silently excluded by an ignore rule.
-
 1. Before writing files, inspect, in order:
    the repo-root `.gitignore`, any nested `.gitignore` files along the paths you will write to,
    and `.git/info/exclude`.
@@ -71,12 +62,9 @@ The goal is that everything you write under `refactored/` is **committable**
    If you cannot edit the root `.gitignore`, stop and ask.
 5. Final check: `git status --porcelain --ignored refactored/ | grep '^!!'` returns nothing.
    `git status --porcelain refactored/` lists your files.
-
 ### Batch processing & continuity
-
 The repo has many files. **Do not stop after the first batch.
 Keep going until every Python script in scope has been processed.**
-
 - **Batching:** work in batches of **10–20 scripts**, or fewer if scripts are large/complex.
   Batch boundaries are internal.
 - **Per batch:** (a) refactor each script into `refactored/`; (b) run per-script verification;
@@ -92,9 +80,7 @@ Keep going until every Python script in scope has been processed.**
   generated dirs (`__pycache__`, `.venv`, `venv`, `build`, `dist`, `node_modules`, `.tox`),
   **the user-provided `reqs/` directory**, and anything the user listed as out-of-scope.
   Write this manifest to `refactored/.progress.json` at start.
-
 **Permitted reasons to stop before the end of the run — and only these:**
-
 1. `python3 --version` is < 3.12.
 2. `reqs/atomicio.py` is missing from the repo.
 3. A genuinely ambiguous rule conflict
@@ -102,9 +88,7 @@ Keep going until every Python script in scope has been processed.**
    (batched into a single question; continue with unaffected files).
 4. You cannot edit the root `.gitignore` and an existing rule excludes `refactored/`.
 5. The user explicitly tells you to stop.
-
 **Context/turn limits are not a permitted stop reason.** If you sense you're running low on context:
-
 - Ensure `refactored/.progress.json` reflects the **last fully-verified** file,
   not a partially-written one.
 - Emit: `PAUSED at <n>/<total> (phase <1|2>) — state saved in refactored/.progress.json.
@@ -112,9 +96,7 @@ Keep going until every Python script in scope has been processed.**
 - On resume, the prompt is **idempotent**:
   skip `verified` items, retry `failed`, process `pending`/missing.
   Phase 2 skips anything already `extracted`/`verified`.
-
 `refactored/.progress.json` schema (minimum):
-
 ```json
 {
   "python_version": "3.12.x",
@@ -132,12 +114,9 @@ Keep going until every Python script in scope has been processed.**
   }
 }
 ```
-
 Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
 (Phase 2): `pending` | `extracted` | `verified`.
-
 ### Ground rules
-
 - Process scripts **one at a time within a batch**.
   Batches run back-to-back without waiting for user input.
 - Do **not** invent features.
@@ -148,24 +127,19 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
   Record assumptions in `refactored/REPORT.md`.
 - After rewriting each script, run verification **against the file in `refactored/`**,
   not the original.
-
 ### Phase 1 refactor rules (all mandatory)
-
 1. **Standard library first.** Prefer stdlib.
    3rd-party libs only when stdlib is materially worse, and only if they install cleanly on Termux.
    If a script imports a `dh` module,
    **rewrite the imported functions inline (or into a local helper)
    and remove the `dh` dependency entirely.** No `dh` imports may remain.
    Note the dropped dependency in the copied manifest.
-
 2. **Logging: `logging` → `loguru`.** Replace all logging API with `loguru.logger`.
    Preserve levels and message content.
    Configure loguru once at the entry point, honoring existing verbosity flags.
-
 3. **Paths: `os.path` → `pathlib.Path`.** Replace all `os.path.*`, `os.makedirs`, `os.listdir`,
    `glob.glob`, etc. with `Path` equivalents.
    No `os.path` calls may remain.
-
 4. **Concurrency: `concurrent.futures` → `multiprocessing.pool`.** Replace `ThreadPoolExecutor` /
    `ProcessPoolExecutor` with `multiprocessing.Pool`. **Must use
    `pool.imap_unordered(func, iterable)` with `processes=4`.** Preserve ordering only
@@ -174,13 +148,11 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
    and picklable. `with multiprocessing.Pool(processes=4) as pool:` for cleanup. **One pool per
    `main()` run**, not per item.
    Pass a sensible `chunksize` for small per-item workloads.
-
 5. **Remove worker-count flags.** Delete `-j`, `-w`, `--workers`, `--jobs`, `--processes`,
    `--threads`, and equivalent knobs (including `WORKERS` env vars).
    Worker count **hard-coded to 4**.
    Remove now-unused argparse args.
    Keep other CLI flags intact.
-
 6. **Modernize to Python 3.12 syntax (floor = 3.12; must not break on 3.13/3.14).** `Optional[X]` →
    `X | None`; `List[X]`/`Dict[K, V]` → `list[X]`/`dict[K, V]`; `typing.Union` → `|`;
    PEP 695 `type` aliases/generics where applicable; PEP 701 f-strings;
@@ -190,7 +162,6 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
    Don't gratuitously rewrite modern code. **Do not use** >3.12 features:
    PEP 758, PEP 750 (t-strings), PEP 649, `-X gil=0`, or other 3.13/3.14-only syntax.
    Check `docs.python.org/3.12` if unsure.
-
 7. **Design priorities (in order):**
    1. **Speed / performance** — profile hot paths;
       avoid needless copies, redundant I/O, per-item `Pool` creation.
@@ -202,9 +173,7 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
    4. **Code clarity / maintainability** — small functions, type hints,
       docstrings on public functions.
    5. **Feature depth** — sensible defaults, adaptive behavior only where it clearly helps.
-
 8. **Add a `main()` guard.** Every script:
-
    ```python
    def main() -> int: ...
 
@@ -212,19 +181,15 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
    if __name__ == "__main__":
        raise SystemExit(main())
    ```
-
    Move top-level executable code into `main()`.
    Return an int exit code.
-
 9. **No import-time side effects.** No I/O, network, argument parsing, `os.environ[...]` access,
    logger configuration, or filesystem probes at module level.
    All side effects live inside `main()` or lazily inside functions called from it.
    Each module must be importable under `python3 -c "import <module>"` with no arguments
    and no environment set.
-
 10. **[UPDATED] Atomic file writes — use `reqs/atomicio.py`.** The user provides a single-file,
     fully-optimized atomic-write module at `reqs/atomicio.py` in the repo.
-
     - **Verify it exists before starting.** If not, stop and ask (permitted stop reason #2).
     - **Read it once** to learn its public API
       (e.g. `atomic_write(path, data)` or a context manager).
@@ -243,12 +208,10 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
       or in `_shared/`. `atomicio` is the sole source of truth for atomic writes.
     - Skip atomicity only for pure log/append streams (loguru handles those)
       and for `stdout`/`stderr`.
-
 11. **Encoding everywhere.** Every `open()`, `Path.read_text()`, `Path.write_text()`,
     `sys.stdout`/`stderr` re-wrap, and text-mode `subprocess.run(...)` must pass `encoding="utf-8"`.
     Use `errors="strict"` unless the original explicitly handled bad bytes.
     No implicit platform encoding.
-
 12. **Exception hygiene.** No bare `except:`.
     No `except Exception: pass`.
     Catch the narrowest type; if unsure, `except Exception as e: logger.exception(...); raise`.
@@ -256,7 +219,6 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
     Re-raise with context (`raise NewErr(...) from e`). `KeyboardInterrupt`
     and `SystemExit` must **not** be caught by generic handlers.
     Do not catch inside pool workers — let the pool propagate.
-
 13. **Signal handling + pool cleanup.** In `main()`,
     install `SIGINT`/`SIGTERM` handlers that set a shutdown flag
     or raise `SystemExit`. `multiprocessing.Pool` must be inside a `with` block so workers terminate
@@ -264,7 +226,6 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
     Emit a single "interrupted,
     cleaning up" log line at the top of `main()`
     — do not catch-and-ignore `KeyboardInterrupt` mid-business-logic.
-
 14. **Secrets and RCE hygiene.** No hardcoded secrets (API keys, passwords, tokens)
     — read from `os.environ` inside `main()`, `SystemExit(1)` with a clear message if missing.
     No `eval`, `exec`, or `pickle.load` on data from files/network/stdin. `yaml.load` →
@@ -272,14 +233,12 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
     `shell=False` and args as a list
     unless the original explicitly required shell features (document if kept).
     No `os.system`.
-
 15. **Type hints.** Every function reachable from `main()`
     or exported from a module has full parameter and return annotations.
     Use `X | None` (never `Optional[X]`). `Any` only when forced by stdlib or user-supplied JSON
     — justify with a comment.
     Type-only imports go under `if TYPE_CHECKING:`.
     Prefer `Protocol` over `ABC` for structural typing.
-
 16. **Reuse stdlib.** Before writing a helper,
     check `itertools` (`batched`, `pairwise`, `chain`, `islice`, `groupby`, `tee`),
     `functools` (`cache`, `partial`, `singledispatch`),
@@ -287,13 +246,11 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
     `collections` (`Counter`, `defaultdict`, `deque`), `shutil` (`copytree`, `rmtree`, `which`),
     `tempfile`.
     Do not hand-roll `batched`, `partition`, or similar — 3.12 has them.
-
 17. **Hoist and cache hot paths.** Compile every regex once at module scope
     (`_RE = re.compile(...)`).
     Wrap pure deterministic helpers with `functools.cache` / `lru_cache(maxsize=None)`
     when input cardinality is bounded.
     Never put `lru_cache` in front of I/O or anything with side effects.
-
 18. **CLI consistency.** `argparse` only.
     Every script supports `--help` and `--version` (from `__version__` if present).
     Preserve `--quiet`/`--verbose` if the original had any verbosity knob.
@@ -301,41 +258,32 @@ Statuses (Phase 1 items): `pending` | `refactored` | `verified` | `failed`.
     when a single path is handled.
     Exit codes: `0` success, `1` runtime error, `2` usage (argparse default).
     No `sys.exit()` mid-function — return from `main()`.
-
 19. **Config precedence.** When config comes from multiple sources:
     **CLI args > env vars > config file > hardcoded defaults**.
     Fail fast at startup with one clear log line if required config is missing.
     Validate types early (`int`, `Path`, `bool`) — don't pass strings around.
-
 20. **Cross-script consistency report.** After Phase 1,
     scan `refactored/**/*.py` and report (in `REPORT.md`) inconsistencies in:
     argparse style, logging setup, exit-code conventions, `main()` signature, signal handling,
     version-string source. **Report, do not silently normalize** — the user decides.
-
 21. **Dead code cleanup.** Remove unused imports, unused locals, unreachable branches,
     and commented-out code.
     Run `ruff check --select F,I,UP,B,SIM,RUF --fix <file>` and accept auto-fixes
     unless they alter behavior — note any deviation in the report.
     Do not delete `# noqa`-annotated code.
-
 22. **CLI snapshot.** For each refactored script,
     run `python3 refactored/<path> --help`
     and save output to `refactored/_snapshots/<original-relative-path>.help.txt`.
     Same for `--version` if supported.
     This is part of Phase 1 verification; a failed `--help` fails the script.
-
 ### Rule priority on conflict
-
 On conflict between rules: **preserve behavior** is the highest priority;
 document the conflict in `refactored/REPORT.md`.
 If two rules could both apply to the same code without affecting behavior,
 follow the **lower-numbered** rule.
 If a rule conflicts with design priority 7, rule 7's ordering decides.
-
 ### Phase 1 per-script verification (against `refactored/` copies)
-
 A script is "done" only when **all** of these hold:
-
 - `grep -nE "os\.path|concurrent\.futures|import logging|logging\.getLogger|from dh|import
   dh|max_workers|--workers|--jobs|--processes|-j\b" <file>` returns nothing.
 - `loguru` is the only logging API used.
@@ -357,22 +305,16 @@ A script is "done" only when **all** of these hold:
   - `grep -nA1 -E "except Exception( as \w+)?:\s*$" <file> | grep -B1 -E "^\s*pass\s*$"`
   - `grep -nE "open\([^)]*\)" <file> | grep -vE '"rb"|"wb"' | grep -v "encoding="`
 - `_snapshots/<original-relative-path>.help.txt` exists.
-
 ### Phase 2 — Deduplication into a shared package
-
 **Trigger:** run automatically after **every** Phase 1 item is `verified`
 or `failed` (manifest exhausted).
 Do not start Phase 2 with pending files remaining.
-
 **Goal:** find repeated functions, classes, and constants across `refactored/**/*.py`,
 extract each distinct repeated object into a single shared package under `refactored/_shared/`,
 and update every consumer to import from there
 — so the user can later promote `_shared/` to an installable package.
-
 #### 2.1 What counts as a duplicate
-
 A **deduplication candidate** must satisfy **all** of:
-
 - Appears in **≥ 2** refactored files under `refactored/`
   (excluding `_shared/` itself, and excluding `refactored/reqs/atomicio.py` — user-provided,
   never a source of dedup candidates).
@@ -385,9 +327,7 @@ A **deduplication candidate** must satisfy **all** of:
   or constants that are non-scalar (dict/list/tuple/regex/compiled pattern/large string),
   or scalar constants that are semantically meaningful
   (`DEFAULT_TIMEOUT = 30`, `USER_AGENT = "..."`) and not just `0`/`1`/`True`/`None`/`""`.
-
 **Not** a candidate if:
-
 - Same **name**, different body/behavior across files (name collision).
   Do **not** merge.
   Log as `skipped:name-collision`.
@@ -395,13 +335,10 @@ A **deduplication candidate** must satisfy **all** of:
 - Trivial one-liners or obvious literal constants.
 - Test fixtures, `__all__` lists, or items used only within `_shared/` itself.
 - Anything defined in `reqs/atomicio.py` (never extracted).
-
 **When in doubt, don't extract.** A conservative Phase 2 that leaves a few duplicates beats breaking
 a working script.
 Log every borderline case as `candidate-for-review`.
-
 #### 2.2 Extraction layout
-
 - **`refactored/_shared/__init__.py`** — package marker; may re-export selected names.
 - **`refactored/_shared/constants.py`** — module-level constants.
 - **`refactored/_shared/utils.py`** — helper functions.
@@ -415,14 +352,11 @@ Log every borderline case as `candidate-for-review`.
   no `dh`; no `logging`;
   `pathlib` + stdlib + `loguru` + already-approved 3rd-party only. **Do not re-implement
   `atomicio`** — `_shared/` code may `from reqs.atomicio import ...` if it needs atomic writes.
-
 #### 2.3 How consumers import
-
 Each refactored script must work
 when run directly as `python3 refactored/path/to/script.py` from **any** CWD.
 Add a small bootstrap at the top of each consuming script **before** the `from _shared...` /
 `from reqs.atomicio...` imports:
-
 ```python
 # Bootstrap: add the refactored root (parent of _shared/) to sys.path.
 import sys
@@ -439,23 +373,18 @@ def _bootstrap_refactored_root() -> None:
 
 
 _bootstrap_refactored_root()
-
 from _shared.constants import DEFAULT_TIMEOUT
 from _shared.utils import parse_config
 from reqs.atomicio import atomic_write
 ```
-
 - Do **not** use relative imports (`from .._shared import`)
   — they don't work for standalone scripts.
 - One canonical bootstrap function per file; do not duplicate it inline.
 - Use `sys.path.insert(0, ...)`, never `append`.
 - Remove any now-unused local definitions of the extracted objects from consumer files.
   Leftover `unused-variable`/`unused-function` lints must be clean.
-
 #### 2.4 Verification of Phase 2
-
 For each extraction, **after** updating all consumers:
-
 - Extracted object exists **once**, in `_shared/`, with all original behavior preserved.
 - Every consumer imports it; no consumer still defines it locally.
 - Every touched consumer still passes its Phase 1 verification
@@ -465,11 +394,8 @@ For each extraction, **after** updating all consumers:
   subdirectories from a CWD **outside** `refactored/`,
   and confirm they still start (this exercises the bootstrap and `reqs` resolution).
 - `refactored/.progress.json` → `dedup.extracted` and `dedup.status: verified`.
-
 #### 2.5 Phase 2 report (in `refactored/REPORT.md`)
-
 Append a `## Phase 2 — Deduplication` section:
-
 - **Table of extracted objects:**
   `name | kind (func/class/const) | _shared module | # consumers | consumer paths`.
 - **Table of skipped:**
@@ -480,11 +406,8 @@ Append a `## Phase 2 — Deduplication` section:
   and how to change the bootstrap to a plain `from yourpackage import ...`.
   Also note that `reqs/atomicio.py` is the user's module and can be promoted alongside
   or kept as a sibling package.
-
 ---
-
 ### Final verification before you report "complete"
-
 - `refactored/.progress.json` → `phase: 2` and `dedup.status: "verified"`.
 - Every script in the manifest has `status: "verified"`, **or** is listed as `failed` with a reason.
 - `python3 --version` recorded and ≥ 3.12.
@@ -506,14 +429,11 @@ Append a `## Phase 2 — Deduplication` section:
     "refactored/reqs/"`
   - `grep -rnE "os\.replace|\.fsync\(|\.tmp['\"]" refactored/ --include='*.py' | grep -v
     "refactored/reqs/atomicio.py"`
-
 **Final message:** one summary table
 — Phase 1 (total / verified / failed / skipped)
 and Phase 2 (objects extracted / consumers updated / skipped / borderline) — plus one line each for:
 `atomicio.py` byte-identical check, snapshot count, and a pointer to `refactored/REPORT.md`.
-
 Begin now:
-
 1. Detect Python version.
 2. Verify `reqs/atomicio.py` exists; read it to learn its API.
 3. Build the manifest (excluding `refactored/`, generated dirs, `reqs/`).
@@ -526,8 +446,6 @@ Begin now:
 9. refactored files should be fully type-annotated and well documented. esp module docstring,
    it should be brief explanation of what script does.
 10. Emit final summary.
-
 Do not return control to the user between phases unless one of the permitted stop reasons applies.
-
 save the helper scripts (bash, python, ...) thst you used during this session under arena folder in
 root of connected repo commit the changes.

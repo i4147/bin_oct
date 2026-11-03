@@ -20,7 +20,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Setup logging level
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
     else:
@@ -36,7 +35,6 @@ def main():
     target_language = Language(args.language)
     print(f"Searching for '{target_language.name}' subtitles...")
 
-    # Download the best matching subtitles
     subtitles = download_best_subtitles({video}, {target_language})
 
     if subtitles[video]:

@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Streaming hex-color extractor for text files.
-
-Scans files and directories for CSS-style hex colors (#RGB, #RGBA, #RRGGBB,
-#RRGGBBAA), optionally normalizes them, and reports per-file occurrences or a
-global palette using a fixed pool of worker processes.
-"""
 
 import argparse
 import csv
@@ -18,23 +12,18 @@ from dataclasses import dataclass, field
 from multiprocessing import get_context
 from pathlib import Path
 from typing import Final, TextIO
-
 from loguru import logger
 
 __version__: Final[str] = "2.0.0"
-
 WORKERS_DEFAULT: Final[int] = 8
 READ_SIZE: Final[int] = 1 << 20
 BINARY_PROBE: Final[int] = 8192
 MAX_HEX_DIGITS: Final[int] = 8
 CARRY_SIZE: Final[int] = MAX_HEX_DIGITS + 1
-
 COLOR_RE: Final[re.Pattern[str]] = re.compile(
     r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})(?![0-9A-Fa-f])"
 )
-
 FORMATS: Final[frozenset[str]] = frozenset({"text", "json", "jsonl", "csv", "tsv", "md", "html"})
-
 HTML_HEAD: Final[str] = (
     "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Colors</title>"
     "<style>"
@@ -397,7 +386,6 @@ def _build_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="Files or directories to scan; defaults to the current directory",
     )
-
     scan = parser.add_argument_group("color detection")
     scan.add_argument(
         "--dedupe",
@@ -409,7 +397,6 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Ignore 4- and 8-digit hex with alpha",
     )
-
     sel = parser.add_argument_group("file selection")
     sel.add_argument(
         "--ext",
@@ -434,7 +421,6 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="BYTES",
         help="Skip files larger than BYTES",
     )
-
     out = parser.add_argument_group("output")
     out.add_argument(
         "--format",
@@ -484,7 +470,6 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="Write output to FILE instead of stdout",
     )
-
     run = parser.add_argument_group("runtime")
     run.add_argument(
         "--workers",
@@ -501,7 +486,6 @@ def _build_parser() -> argparse.ArgumentParser:
     run.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     run.add_argument("-q", "--quiet", action="store_true", help="Only log errors")
     run.add_argument("--version", action="store_true", help="Show version and exit")
-
     return parser
 
 
@@ -524,13 +508,10 @@ def _configure_logging(verbose: bool, quiet: bool) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-
     if args.version:
         sys.stdout.write(f"extract_colors {__version__}\n")
         return 0
-
     _configure_logging(args.verbose, args.quiet)
-
     if args.workers < 1:
         logger.error("--workers must be >= 1")
         return 2
@@ -543,9 +524,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.min_count < 0:
         logger.error("--min-count must be >= 0")
         return 2
-
     extensions = frozenset(part.strip().lower().lstrip(".") for part in (args.ext or "").split(",") if part.strip())
-
     opts = Options(
         dedupe=args.dedupe,
         no_alpha=args.no_alpha,
@@ -562,38 +541,30 @@ def main(argv: list[str] | None = None) -> int:
         include_empty=args.all,
         unique=args.unique,
     )
-
     if opts.swatches and opts.fmt not in ("text", "html"):
         logger.warning("--swatches has no effect for format '{}'", opts.fmt)
-
     sources, missing = _resolve_sources(args.paths)
     if missing:
         logger.error("{} input path(s) could not be resolved", missing)
     if not sources:
         logger.warning("No files to scan")
         return 0 if missing == 0 else 1
-
     try:
         files = collect_files(sources, opts)
     except OSError as exc:
         logger.error("Failed to enumerate files: {}", exc)
         return 1
-
     if args.dry_run:
         for path in files:
             sys.stdout.write(f"{path}\n")
         logger.info("Dry run: {} file(s) would be scanned", len(files))
         return 0
-
     if not files:
         logger.warning("No files matched after filtering")
         return 0 if missing == 0 else 1
-
     config = ScanConfig(dedupe=opts.dedupe, no_alpha=opts.no_alpha)
     chunksize = max(1, min(64, len(files) // (args.workers * 8)))
-
     logger.info("Scanning {} file(s) with {} workers", len(files), args.workers)
-
     out: TextIO
     closer = False
     if args.output is not None:
@@ -605,7 +576,6 @@ def main(argv: list[str] | None = None) -> int:
             return 1
     else:
         out = sys.stdout
-
     summary = Summary()
     exit_code = 0
     try:
@@ -640,7 +610,6 @@ def main(argv: list[str] | None = None) -> int:
                 out.close()
             except OSError:
                 pass
-
     if missing:
         exit_code = 1
     return exit_code

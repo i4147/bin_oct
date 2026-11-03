@@ -46,11 +46,13 @@ def compare_hashes(hashes, threshold, base):
             except Exception:
                 continue
             if score >= threshold:
-                results.append({
-                    "file1": relative(path_a, base),
-                    "file2": relative(path_b, base),
-                    "score": score,
-                })
+                results.append(
+                    {
+                        "file1": relative(path_a, base),
+                        "file2": relative(path_b, base),
+                        "score": score,
+                    }
+                )
     results.sort(key=operator.itemgetter("score"), reverse=True)
     return results
 

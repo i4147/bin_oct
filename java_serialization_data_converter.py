@@ -2,12 +2,10 @@
 import json
 import os
 import sys
-
 import javaobj
 
 
 def read_java_serialization(file_path: str) -> list:
-    """Reads a binary Java serialization file and parses it into native Python objects."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"The file {file_path} does not exist.")
     with open(file_path, "rb") as f:
@@ -17,7 +15,6 @@ def read_java_serialization(file_path: str) -> list:
 
 
 def default_json_encoder(obj: Any) -> Any:
-    """Helper to convert custom Java structures parsed by javaobj into JSON-serializable types."""
     if isinstance(obj, javaobj.JavaObject):
         return {
             "__class__": obj.classdesc.name if obj.classdesc else "Unknown",
@@ -32,7 +29,6 @@ def default_json_encoder(obj: Any) -> Any:
 
 
 def save_as_json(parsed_data: list, output_path: str) -> None:
-    """Saves the parsed Java object hierarchy into a structured, human-readable JSON file."""
     serializable_data = []
     for item in parsed_data:
         if hasattr(item, "to_dict"):

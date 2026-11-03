@@ -1,34 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Move/collect files: by extension, subdirs, flatten, tests, binaries.
-
-Analysis / deduplication (11 scripts)
--------------------------------------
-  collect_files.py   copy *.EXT tree-wide into ./EXT/   -> collect
-  dir_mover.py       move top-level subdirs SRC->DST   -> move-subdirs
-  docer.py           one file -> /sdcard/doc           -> send --to DIR
-  www.py             all *.whl -> /sdcard/whl          -> collect --move
-  flaten.py          lift files out of subdirs         -> flatten
-  move_tests_*.py    tests/ dirs & test_*.py files out -> move-tests
-                     of site-packages, with undo log     (+ --reverse)
-  movebin.py         binary files -> ./binary/         -> move-binary
-                     (it called an undefined is_binary)
-  pycp.py            copy one file to Termux /usr      -> send --copy
-  tobin.py           file -> ~/sbin, hash-dedup        -> send --dedup
-  tosc.py            file -> ~/isaac/may/scripts       -> send
-
-``send`` unifies the four one-file movers; every hardcoded
-destination is now a ``--to`` default you can override. All bulk
-commands support ``--dry-run``; moves never overwrite silently
-(unique ``name_N`` suffixes, as in the originals).
-
-Examples
---------
-  python3 file_mover_tool.py collect pdf --move
-  python3 file_mover_tool.py move-subdirs ~/repos ~/isaac
-  python3 file_mover_tool.py flatten ~/mess --recursive
-  python3 file_mover_tool.py move-tests --dry-run
-  python3 file_mover_tool.py send tool.py --to ~/sbin --dedup
-"""
 
 import argparse
 import hashlib
@@ -45,7 +15,6 @@ DEFAULT_EXCLUDED_PKGS: tuple[str, ...] = ("numpy", "pandas", "scipy", "numba")
 
 
 def unique_destination(dest: Path) -> Path:
-    """Return *dest* or ``name_N.suffix`` when it exists."""
     if not dest.exists():
         return dest
     counter: int = 1
@@ -57,7 +26,6 @@ def unique_destination(dest: Path) -> Path:
 
 
 def do_move(src: Path, dest: Path, copy: bool, dry_run: bool) -> Path:
-    """Move/copy *src* to a collision-free *dest*; print the action."""
     real: Path = unique_destination(dest) if not dry_run else dest
     verb: str = "copy" if copy else "move"
     if dry_run:
@@ -76,7 +44,6 @@ def do_move(src: Path, dest: Path, copy: bool, dry_run: bool) -> Path:
 
 
 def is_binary(path: Path) -> bool:
-    """NUL-byte sniff (the check movebin.py forgot to define)."""
     try:
         return b"\x00" in path.read_bytes()[:8192]
     except OSError:
@@ -84,7 +51,6 @@ def is_binary(path: Path) -> bool:
 
 
 def sha256_of(path: Path) -> str:
-    """SHA-256 hex digest of a file."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(32768), b""):
@@ -92,9 +58,7 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-# ---------------------------------------------------------------- collect
 def cmd_collect(args: argparse.Namespace) -> int:
-    """Gather every ``*.EXT`` under ROOT into one folder (copy or move)."""
     ext: str = args.extension.lower().lstrip(".")
     root: Path = args.root.resolve()
     target: Path = (args.to or root / ext).resolve()
@@ -107,9 +71,7 @@ def cmd_collect(args: argparse.Namespace) -> int:
     return 0
 
 
-# ------------------------------------------------------------ move-subdirs
 def cmd_move_subdirs(args: argparse.Namespace) -> int:
-    """Move top-level subdirectories from SRC to DST (skip name clashes)."""
     source, dest = args.source.resolve(), args.dest.resolve()
     if not source.is_dir() or not dest.is_dir() or source == dest:
         print("Error: source and dest must be two different existing directories.", file=sys.stderr)
@@ -128,9 +90,7 @@ def cmd_move_subdirs(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------- flatten
 def cmd_flatten(args: argparse.Namespace) -> int:
-    """Lift files from subdirectories into the root directory."""
     root: Path = args.root.resolve()
     if args.recursive:
         files: list[Path] = [p for p in root.rglob("*") if p.is_file() and p.parent != root]
@@ -159,9 +119,7 @@ def cmd_flatten(args: argparse.Namespace) -> int:
     return 0
 
 
-# -------------------------------------------------------------- move-tests
 def site_packages_default() -> Path:
-    """First writable-looking site-packages directory."""
     candidates: list[str] = site.getsitepackages() + [site.getusersitepackages()]
     for candidate in candidates:
         if candidate and Path(candidate).is_dir():
@@ -170,12 +128,10 @@ def site_packages_default() -> Path:
 
 
 def is_test_file(path: Path) -> bool:
-    """``test_*.py`` / ``*_test.py`` check from the original."""
     return "_test" in path.stem or "test_" in path.stem
 
 
 def cmd_move_tests(args: argparse.Namespace) -> int:
-    """Move test dirs/files out of a source tree (with an undo log)."""
     if args.reverse:
         return reverse_moves(args.log, args.dry_run)
     source: Path = (args.source or site_packages_default()).resolve()
@@ -212,7 +168,6 @@ def cmd_move_tests(args: argparse.Namespace) -> int:
 
 
 def reverse_moves(log_path: Path, dry_run: bool) -> int:
-    """Undo moves recorded in the JSON log."""
     if not log_path.is_file():
         print(f"Log file not found: {log_path}", file=sys.stderr)
         return 1
@@ -228,9 +183,7 @@ def reverse_moves(log_path: Path, dry_run: bool) -> int:
     return 0
 
 
-# ------------------------------------------------------------- move-binary
 def cmd_move_binary(args: argparse.Namespace) -> int:
-    """Move binary files from a directory into ``binary/``."""
     root: Path = args.root.resolve()
     target: Path = args.to or root / "binary"
     candidates = root.rglob("*") if args.recursive else root.iterdir()
@@ -243,9 +196,7 @@ def cmd_move_binary(args: argparse.Namespace) -> int:
     return 0
 
 
-# -------------------------------------------------------------------- send
 def cmd_send(args: argparse.Namespace) -> int:
-    """Send one file to a destination directory (docer/pycp/tobin/tosc)."""
     dest_dir: Path = args.to.expanduser()
     dest_dir.mkdir(parents=True, exist_ok=True)
     status: int = 0
@@ -267,10 +218,8 @@ def cmd_send(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Collect/move files and directories.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     co = sub.add_parser("collect", help="Gather *.EXT into one folder")
     co.add_argument("extension", help="e.g. pdf, whl")
     co.add_argument("root", nargs="?", type=Path, default=Path.cwd())
@@ -278,14 +227,12 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("--move", action="store_true", help="Move instead of copy (www.py)")
     co.add_argument("-n", "--dry-run", action="store_true")
     co.set_defaults(handler=cmd_collect)
-
     ms = sub.add_parser("move-subdirs", help="Move top-level subdirs SRC -> DST")
     ms.add_argument("source", type=Path)
     ms.add_argument("dest", type=Path)
     ms.add_argument("--rename-on-clash", action="store_true")
     ms.add_argument("-n", "--dry-run", action="store_true")
     ms.set_defaults(handler=cmd_move_subdirs)
-
     fl = sub.add_parser("flatten", help="Lift files out of subdirectories")
     fl.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     fl.add_argument("-r", "--recursive", action="store_true", help="All depths (original: 1 level)")
@@ -293,7 +240,6 @@ def build_parser() -> argparse.ArgumentParser:
     fl.add_argument("--remove-empty", action="store_true")
     fl.add_argument("-n", "--dry-run", action="store_true")
     fl.set_defaults(handler=cmd_flatten)
-
     mt = sub.add_parser("move-tests", help="Move tests/ dirs and test files out")
     mt.add_argument("--source", type=Path, default=None, help="Default: site-packages")
     mt.add_argument("--dir", type=Path, default=Path.cwd(), help="Base for --kind files")
@@ -304,7 +250,6 @@ def build_parser() -> argparse.ArgumentParser:
     mt.add_argument("--reverse", action="store_true", help="Undo using the log")
     mt.add_argument("-n", "--dry-run", action="store_true")
     mt.set_defaults(handler=cmd_move_tests)
-
     mb = sub.add_parser("move-binary", help="Binary files -> binary/")
     mb.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     mb.add_argument("--to", type=Path, default=None)
@@ -312,7 +257,6 @@ def build_parser() -> argparse.ArgumentParser:
     mb.add_argument("--copy", action="store_true")
     mb.add_argument("-n", "--dry-run", action="store_true")
     mb.set_defaults(handler=cmd_move_binary)
-
     se = sub.add_parser("send", help="Send file(s) to a destination dir")
     se.add_argument("files", nargs="+", type=Path)
     se.add_argument("--to", type=Path, required=True, help="e.g. ~/sbin, ~/isaac/may/scripts, /sdcard/doc")
@@ -325,7 +269,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

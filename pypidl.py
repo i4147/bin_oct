@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import hashlib
 import io
@@ -554,8 +553,7 @@ def cmd_mirror(args: argparse.Namespace) -> int:
 
 
 _ARCH_RE = re.compile(
-    r"-(cp\d+|pp\d+|py\d+)(-(cp\d+|pp\d+|py\d+))?"
-    r"-(manylinux|musllinux|win|macosx|linux|darwin)",
+    r"-(cp\d+|pp\d+|py\d+)(-(cp\d+|pp\d+|py\d+))?" r"-(manylinux|musllinux|win|macosx|linux|darwin)",
     re.IGNORECASE,
 )
 _ARCH_TOKENS = (

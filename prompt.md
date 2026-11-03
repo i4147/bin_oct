@@ -1,10 +1,8 @@
 Add useful comments and docstrings to the Python files in this repository.
-
 First, inspect the repository structure and read its contribution guidelines, style configuration,
 and existing documentation conventions.
 Then work through the Python files in small batches.
 After each batch, summarize the files updated and any issues before moving on.
-
 ### Guidelines
 - Add a brief module docstring to each Python script or module that lacks one.
   It should clearly explain what the script or module does.
@@ -23,11 +21,9 @@ After each batch, summarize the files updated and any issues before moving on.
 - Avoid documenting private helpers unless their behavior
   or constraints would otherwise be hard to understand.
 - Follow the repository’s formatting, linting, and line-length rules.
-
 At the end of each batch, review the diff to confirm the changes are documentation-only,
 then report the files changed and any checks run.
 If you find behavior that is unclear, leave it undocumented and flag it for me rather than guessing.
-
 After all batches are complete, run the relevant formatting, lint, and test checks if available.
 Provide a final summary of files changed, checks run, skipped files,
 and anything that needs my input.

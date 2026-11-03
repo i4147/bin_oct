@@ -93,11 +93,13 @@ def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
         if is_already_built(wheels_dir, pkg_dir.name):
             logger.info(f"  ~ Skipping {pkg_dir.name} (already built)")
             return pkg_dir, "Skipped (already built)"
-        has_setup = any([
-            (pkg_dir / "setup.py").exists(),
-            (pkg_dir / "setup.cfg").exists(),
-            (pkg_dir / "pyproject.toml").exists(),
-        ])
+        has_setup = any(
+            [
+                (pkg_dir / "setup.py").exists(),
+                (pkg_dir / "setup.cfg").exists(),
+                (pkg_dir / "pyproject.toml").exists(),
+            ]
+        )
         if not has_setup:
             return pkg_dir, "No setup.py/setup.cfg/pyproject.toml found"
         if has_rust_backend(pkg_dir):
@@ -169,12 +171,14 @@ def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
 def is_valid_package_dir(path: Path) -> bool:
     if not path.is_dir():
         return False
-    has_metadata = any([
-        (path / "setup.py").exists(),
-        (path / "setup.cfg").exists(),
-        (path / "pyproject.toml").exists(),
-        (path / "PKG-INFO").exists(),
-    ])
+    has_metadata = any(
+        [
+            (path / "setup.py").exists(),
+            (path / "setup.cfg").exists(),
+            (path / "pyproject.toml").exists(),
+            (path / "PKG-INFO").exists(),
+        ]
+    )
     return has_metadata
 
 

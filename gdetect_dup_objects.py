@@ -84,14 +84,16 @@ def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
         if obj_type:
             canonical_code = get_canonical_structure(node)
             has_type_hints = check_annotations(node)
-            results.append({
-                "type": obj_type,
-                "name": getattr(node, "name", ast.unparse(node)),
-                "file": str(file_path),
-                "line": node.lineno,
-                "canonical_code": canonical_code,
-                "has_annotations": has_type_hints,
-            })
+            results.append(
+                {
+                    "type": obj_type,
+                    "name": getattr(node, "name", ast.unparse(node)),
+                    "file": str(file_path),
+                    "line": node.lineno,
+                    "canonical_code": canonical_code,
+                    "has_annotations": has_type_hints,
+                }
+            )
     return results
 
 

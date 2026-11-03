@@ -69,59 +69,67 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "dist",
-    "build",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    "node_modules",
-    ".idea",
-    ".vscode",
-})
-JPG_INPUT_EXTS: frozenset[str] = frozenset({
-    ".png",
-    ".bmp",
-    ".tiff",
-    ".tif",
-    ".webp",
-    ".ico",
-    ".jpeg",
-    ".jpg",
-    ".avif",
-    ".aviff",
-    ".heif",
-    ".heic",
-    ".ppm",
-    ".pgm",
-})
-PNG_INPUT_EXTS: frozenset[str] = frozenset({
-    ".jpg",
-    ".jpeg",
-    ".bmp",
-    ".tif",
-    ".tiff",
-    ".webp",
-    ".gif",
-    ".ppm",
-    ".pgm",
-    ".svg",
-    ".ico",
-})
-INVERT_EXTS: frozenset[str] = frozenset({
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".bmp",
-    ".tiff",
-    ".tif",
-    ".webp",
-    ".gif",
-})
+DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        "dist",
+        "build",
+        "__pycache__",
+        ".venv",
+        "venv",
+        "env",
+        "node_modules",
+        ".idea",
+        ".vscode",
+    }
+)
+JPG_INPUT_EXTS: frozenset[str] = frozenset(
+    {
+        ".png",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".webp",
+        ".ico",
+        ".jpeg",
+        ".jpg",
+        ".avif",
+        ".aviff",
+        ".heif",
+        ".heic",
+        ".ppm",
+        ".pgm",
+    }
+)
+PNG_INPUT_EXTS: frozenset[str] = frozenset(
+    {
+        ".jpg",
+        ".jpeg",
+        ".bmp",
+        ".tif",
+        ".tiff",
+        ".webp",
+        ".gif",
+        ".ppm",
+        ".pgm",
+        ".svg",
+        ".ico",
+    }
+)
+INVERT_EXTS: frozenset[str] = frozenset(
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".webp",
+        ".gif",
+    }
+)
 
 
 def find_files(

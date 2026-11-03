@@ -10,14 +10,16 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 LOG = logging.getLogger("fontpreview")
-FONT_EXTS: frozenset[str] = frozenset({
-    ".ttf",
-    ".otf",
-    ".woff",
-    ".woff2",
-    ".eot",
-    ".svg",
-})
+FONT_EXTS: frozenset[str] = frozenset(
+    {
+        ".ttf",
+        ".otf",
+        ".woff",
+        ".woff2",
+        ".eot",
+        ".svg",
+    }
+)
 PRESETS: dict[str, dict] = {
     "fa": {
         "text": "هنر برتز از گوهر آمد پدید",

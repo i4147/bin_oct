@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Generate unified main.py per top-level folder via faithful exec-dispatch.
-
-Approach: each original script is embedded (line-wise repr) and executed in an
-isolated globals dict with sys.argv patched and __name__ == "__main__".
-This preserves original CLIs exactly via subcommand + passthrough args.
-"""
 
 import ast
 import os
@@ -46,7 +40,6 @@ def folder_to_pascal(folder: str) -> str:
 
 
 def extract_info(text: str) -> tuple[str, list[str], str, str]:
-    """Returns (description, funcs, notes, doc_first_line)."""
     funcs: list[str] = []
     desc = ""
     notes_parts: list[str] = []
@@ -118,29 +111,28 @@ def build_unified(folder: Path, files: list[Path]) -> str:
             const = f"{const_base}_{seen_const[const_base]}"
         else:
             seen_const[const] = 1
-        items.append({
-            "filename": f.name,
-            "san": san,
-            "cls": cls,
-            "const": const,
-            "desc": desc,
-            "funcs": funcs,
-            "notes": notes,
-            "lines": lines,
-            "nlines": nlines,
-        })
-
+        items.append(
+            {
+                "filename": f.name,
+                "san": san,
+                "cls": cls,
+                "const": const,
+                "desc": desc,
+                "funcs": funcs,
+                "notes": notes,
+                "lines": lines,
+                "nlines": nlines,
+            }
+        )
     map_lines: list[str] = []
     for it in items:
         extra = f" [{it['notes']}]" if it["notes"] else ""
         d = it["desc"].replace("\n", " ").replace("\r", " ")[:120]
         map_lines.append(f"  {it['san']} <- {it['filename']} ({it['nlines']}L): {d}{extra}")
     mapping = "\n".join(map_lines)
-
     assumption = "Assumption: each original CLI preserved as `main.py <tool> [args...]` with passthrough args."
     if len(items) == 1:
         assumption = "Assumption: single original script preserved; `main.py [args...]` passes through to it."
-
     const_blocks: list[str] = []
     for it in items:
         const_blocks.append(f"{it['const']}: str = (")
@@ -152,9 +144,7 @@ def build_unified(folder: Path, files: list[Path]) -> str:
                 const_blocks.append(f"    {lit}")
         const_blocks.append(")")
         const_blocks.append("")
-
     const_section = "\n".join(const_blocks)
-
     class_blocks: list[str] = []
     for it in items:
         desc_lit = repr(it["desc"][:200])
@@ -173,23 +163,17 @@ def build_unified(folder: Path, files: list[Path]) -> str:
         class_blocks.append(f"    source: str = {it['const']}")
         class_blocks.append("")
     classes_section = "\n".join(class_blocks)
-
     tools_entries = "\n".join(f"        {repr(it['san'])}: {it['cls']}," for it in items)
-
     header = f'''#!/usr/bin/env python3
 """{dispatcher} for {folder_name}.
-
 {assumption}
-
 Original scripts ({len(items)}):
 {mapping}
-
 Usage:
   python main.py --list
   python main.py --info <tool>
   python main.py <tool> [args ...]
   python main.py <tool> --help  (passthrough when supported)
-
 Notes:
 - Each subcommand execs the embedded original source with isolated globals,
   sys.argv patched to [source_file] + args, and __name__ == "__main__".
@@ -197,7 +181,6 @@ Notes:
   nothing is simulated or faked.
 {"- Single-tool folder: `python main.py [args...]` runs the only tool directly." if len(items) == 1 else "- Multi-tool folder: first arg must be a tool name; use --list to see names."}
 """
-
 import argparse
 import sys
 from collections.abc import Sequence
@@ -206,14 +189,12 @@ from collections.abc import Sequence
 {const_section}
 class BaseTool:
     """Base class for embedded original-script tools."""
-
     name: str = "base"
     source_file: str = ""
     description: str = ""
     functions: list[str] = []
     notes: str = ""
     source: str = ""
-
     @classmethod
     def run(cls: type[BaseTool], argv: Sequence[str]) -> int:
         """Execute embedded original source with patched sys.argv."""
@@ -243,7 +224,6 @@ class BaseTool:
             return 1
         finally:
             sys.argv = old_argv
-
     @classmethod
     def info_text(cls: type[BaseTool]) -> str:
         """Return human-readable info for --info."""
@@ -253,26 +233,20 @@ class BaseTool:
             base += f"\\nnotes: {{cls.notes}}"
         base += "\\nrun: python main.py " + cls.name + " [args ...]"
         return base
-
-
 {classes_section}
 class {dispatcher}:
     """Dispatcher exposing all original scripts as subcommands."""
-
     TOOLS: dict[str, type[BaseTool]] = {{
 {tools_entries}
     }}
-
     @classmethod
     def list_tools(cls: type[{dispatcher}]) -> list[str]:
         """Return sorted tool names."""
         return sorted(cls.TOOLS.keys())
-
     @classmethod
     def get_tool(cls: type[{dispatcher}], name: str) -> type[BaseTool] | None:
         """Return tool class by name or None."""
         return cls.TOOLS.get(name)
-
     @classmethod
     def build_parser(cls: type[{dispatcher}]) -> argparse.ArgumentParser:
         """Build argparse parser for unified-level flags."""
@@ -285,7 +259,6 @@ class {dispatcher}:
         p.add_argument("tool", nargs="?", default=None, help="tool name (see --list)")
         p.add_argument("passthrough", nargs=argparse.REMAINDER, help="args passed to original script")
         return p
-
     @classmethod
     def print_list(cls: type[{dispatcher}]) -> None:
         """Print tool list to stdout."""
@@ -293,7 +266,6 @@ class {dispatcher}:
             t: type[BaseTool] = cls.TOOLS[nm]
             extra: str = f" [{{t.notes}}]" if t.notes else ""
             print(f"{{t.name}} <- {{t.source_file}}: {{t.description}}{{extra}}")
-
     @classmethod
     def main(cls: type[{dispatcher}], argv: Sequence[str] | None = None) -> int:
         """Entry point: dispatch to subcommand or handle --list/--info."""
@@ -341,13 +313,9 @@ class {dispatcher}:
         print("\\navailable tools:")
         cls.print_list()
         return 0
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     """Module entry point."""
     return {dispatcher}.main(argv)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())
 '''
@@ -355,9 +323,9 @@ if __name__ == "__main__":
 
 
 def main() -> int:
-    folders = sorted([
-        p for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"
-    ])
+    folders = sorted(
+        [p for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"]
+    )
     print(f"Found {len(folders)} top-level folders")
     for folder in folders:
         py_files = sorted([p for p in folder.glob("*.py") if p.name != "main.py"])

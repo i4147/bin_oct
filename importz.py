@@ -43,9 +43,9 @@ def main() -> None:
     for path in cwd.rglob("*"):
         if is_python_file(path) and path.name != "importz.txt":
             all_imports.update(get_imports_from_file(path))
-    third_party = sorted([
-        imp for imp in all_imports if imp not in std_libs and imp not in local_names and imp != "__future__"
-    ])
+    third_party = sorted(
+        [imp for imp in all_imports if imp not in std_libs and imp not in local_names and imp != "__future__"]
+    )
     if third_party:
         output_file.write_text("\n".join(third_party), encoding="utf-8")
         print(f"✅ Saved {len(third_party)} 3rd-party imports to {output_file}")

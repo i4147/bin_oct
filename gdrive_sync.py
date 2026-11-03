@@ -162,8 +162,7 @@ class DriveClient:
         while True:
             try:
                 resp = (
-                    self.service
-                    .files()
+                    self.service.files()
                     .list(
                         q=f"'{folder_id}' in parents and trashed=false",
                         pageSize=1000,

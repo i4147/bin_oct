@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import csv
 import hashlib
@@ -16,22 +15,24 @@ from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
 DEFAULT_CHUNK_SIZE = 8192
-DEFAULT_DEB_EXCLUDES = frozenset({
-    "llvm",
-    "clang",
-    "libllvm",
-    "libclang",
-    "rust",
-    "cargo",
-    "lld",
-    "lldb",
-    "compiler-rt",
-    "libc++",
-    "libc++abi",
-    "rust-stdlib",
-    "rust-analyzer",
-    "cargo-c",
-})
+DEFAULT_DEB_EXCLUDES = frozenset(
+    {
+        "llvm",
+        "clang",
+        "libllvm",
+        "libclang",
+        "rust",
+        "cargo",
+        "lld",
+        "lldb",
+        "compiler-rt",
+        "libc++",
+        "libc++abi",
+        "rust-stdlib",
+        "rust-analyzer",
+        "cargo-c",
+    }
+)
 
 
 def run_cmd(

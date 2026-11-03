@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 from dh import runcmd
 
 if __name__ == "__main__":

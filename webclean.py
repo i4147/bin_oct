@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import multiprocessing as mp
 import re
@@ -8,7 +7,6 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-
 from dh import atomic_write
 
 DEFAULT_WORKERS: int = 8

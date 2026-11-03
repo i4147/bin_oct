@@ -1,15 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
-# marked.py
-"""A pure-Python port of the core of the npm package `marked`."""
 
 import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
-
-
-# ---------------------------------------------------------------------------
-# Tokens
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -18,7 +11,6 @@ class Token:
     raw: str = ""
     text: str = ""
     tokens: Optional[list["Token"]] = None
-    # Token‑specific fields (populated as needed)
     depth: int = 0
     lang: str = ""
     codeBlockStyle: str = ""
@@ -33,13 +25,7 @@ class Token:
     align: list[Optional[str]] = field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
-# Renderer
-# ---------------------------------------------------------------------------
-
-
 class Renderer:
-    """Default HTML renderer. Override methods to customise output."""
 
     def code(self, code: str, lang: str, escaped: bool) -> str:
         if not escaped:
@@ -109,8 +95,7 @@ class Renderer:
     @staticmethod
     def _escape(text: str) -> str:
         return (
-            text
-            .replace("&", "&amp;")
+            text.replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace('"', "&quot;")
@@ -118,20 +103,13 @@ class Renderer:
         )
 
 
-# ---------------------------------------------------------------------------
-# Tokenizer
-# ---------------------------------------------------------------------------
-
-
 class Tokenizer:
-    """Breaks raw Markdown into tokens. Regex‑based, like the original."""
 
     def __init__(self, options: dict[str, Any]):
         self.options = options
         self.rules = self._build_rules()
 
     def _build_rules(self) -> list[tuple]:
-        # Each rule is (name, compiled_regex, handler)
         return [
             ("code", re.compile(r"^( {4}[^\n]+\n*)+", re.M), self._code),
             ("fences", re.compile(r"^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\s*\1 *(?:\n+|$)", re.M), self._fences),
@@ -166,7 +144,6 @@ class Tokenizer:
             ("escape", re.compile(r"^\\([\\`*{}\[\]()#+\-.!_>~|])", re.M), self._escape),
             ("autolink", re.compile(r"^<([^ >]+(@|:\/)[^ >]+)>", re.M), self._autolink),
             ("url", re.compile(r"^(https?:\/\/[^\s<]+[^<.,:;\"')\]\s])", re.M), self._url),
-            #            ("tag", re.compile(r"^<!--[\s\S]*?-->|^<\/?\w+(?\:\"*\[^"]*"|'[^']*'|[^'">])*?>", re.M), self._tag),
             (
                 "link",
                 re.compile(
@@ -188,8 +165,6 @@ class Tokenizer:
             ("del", re.compile(r"^~~(?=\S)([\s\S]*?\S)~~", re.M), self._del),
             ("text", re.compile(r"^[\s\S]+?(?=[\\<!\[_*`~]|https?:\/\/| {2,}\n|$)", re.M), self._text),
         ]
-
-    # --- Individual tokenizer handlers (simplified) ---
 
     def _code(self, cap: re.Match) -> Token:
         text = cap.group(0)
@@ -220,7 +195,6 @@ class Tokenizer:
         return Token("blockquote", raw=cap.group(0), text=text)
 
     def _list(self, cap: re.Match) -> Token:
-        # Simplified list handling (does not parse nested lists perfectly)
         raw = cap.group(0)
         ordered = bool(re.match(r"^ *\d+\. ", raw))
         return Token("list", raw=raw, ordered=ordered, text=raw)
@@ -229,7 +203,6 @@ class Tokenizer:
         return Token("html", raw=cap.group(0), text=cap.group(0))
 
     def _def(self, cap: re.Match) -> Token:
-        # Definition – treated as no‑op in this simplified port
         return Token("def", raw=cap.group(0))
 
     def _table(self, cap: re.Match) -> Token:
@@ -249,8 +222,6 @@ class Tokenizer:
 
     def _text(self, cap: re.Match) -> Token:
         return Token("text", raw=cap.group(0), text=cap.group(0))
-
-    # --- Inline tokenizers ---
 
     def _escape(self, cap: re.Match) -> Token:
         return Token("text", raw=cap.group(0), text=cap.group(1))
@@ -274,7 +245,6 @@ class Tokenizer:
         return Token("link", raw=cap.group(0), text=text, href=href, title=title)
 
     def _reflink(self, cap: re.Match) -> Token:
-        # Simplified: treat as plain text
         return Token("text", raw=cap.group(0), text=cap.group(0))
 
     def _nolink(self, cap: re.Match) -> Token:
@@ -298,13 +268,7 @@ class Tokenizer:
         return Token("del", raw=cap.group(0), text=cap.group(1))
 
 
-# ---------------------------------------------------------------------------
-# Lexer
-# ---------------------------------------------------------------------------
-
-
 class Lexer:
-    """Tokenises a Markdown string into a flat list of block tokens."""
 
     def __init__(self, options: dict[str, Any]):
         self.options = options
@@ -325,19 +289,12 @@ class Lexer:
                     tokens.append(token)
                     break
             else:
-                # Fallback – consume one character to avoid infinite loop
                 tokens.append(Token("text", raw=src[0], text=src[0]))
                 src = src[1:]
         return tokens
 
 
-# ---------------------------------------------------------------------------
-# Parser
-# ---------------------------------------------------------------------------
-
-
 class Parser:
-    """Turns tokens into HTML via a Renderer."""
 
     def __init__(self, options: dict[str, Any]):
         self.options = options
@@ -375,12 +332,9 @@ class Parser:
             return self._render_inline(token.text)
         if token.type == "space":
             return "\n"
-        # Unknown token – render raw
         return token.raw
 
     def _render_inline(self, text: str) -> str:
-        """Very small inline parser: strong, em, codespan, link, del, br."""
-        # Tokenise inline content
         tokens = self._inline_tokens(text)
         out = []
         for tok in tokens:
@@ -401,16 +355,9 @@ class Parser:
         return "".join(out)
 
     def _inline_tokens(self, text: str) -> list[Token]:
-        """Rough inline tokeniser – sufficient for the supported syntax."""
         tokens: list[Token] = []
-        # Simple regex‑based split for inline constructs
         pattern = re.compile(
-            r"(\*\*.*?\*\*|__.*?__|"
-            r"\*.*?\*|_.*?_|"
-            r"`[^`]*`|"
-            r"\[.*?\]\(.*?\)|"
-            r"~~.*?~~|"
-            r" {2,}\n)",
+            r"(\*\*.*?\*\*|__.*?__|" r"\*.*?\*|_.*?_|" r"`[^`]*`|" r"\[.*?\]\(.*?\)|" r"~~.*?~~|" r" {2,}\n)",
             re.S,
         )
         last = 0
@@ -425,7 +372,6 @@ class Parser:
             elif s.startswith("`"):
                 tokens.append(Token("codespan", raw=s, text=s[1:-1]))
             elif s.startswith("["):
-                # link: [text](href)
                 inner = re.match(r"\[(.*?)\]\((.*?)\)", s)
                 if inner:
                     tokens.append(Token("link", raw=s, text=inner.group(1), href=inner.group(2)))
@@ -443,7 +389,6 @@ class Parser:
         return tokens
 
     def _render_list(self, token: Token) -> str:
-        # Simplified list rendering (split on newlines)
         lines = token.text.split("\n")
         items = [line for line in lines if line.strip()]
         body = ""
@@ -453,7 +398,6 @@ class Parser:
         return self.renderer.list(body, token.ordered)
 
     def _render_table(self, token: Token) -> str:
-        # Very simplified table handling
         header_cells = [c.strip() for c in token.header.split("|")]
         aligns = [a.strip() for a in token.align.split("|")] if token.align else []
         header_html = ""
@@ -473,13 +417,7 @@ class Parser:
         return self.renderer.table(self.renderer.tablerow(header_html), body_html)
 
 
-# ---------------------------------------------------------------------------
-# Public API – the `marked` object
-# ---------------------------------------------------------------------------
-
-
 class Marked:
-    """A locally scoped `marked` instance (mirrors `new Marked()`)."""
 
     def __init__(self, *args: dict[str, Any] | Callable[[Any], None]):
         self.defaults: dict[str, Any] = {
@@ -494,7 +432,6 @@ class Marked:
         }
         for arg in args:
             if callable(arg):
-                # Extension function (not fully supported here)
                 pass
             elif isinstance(arg, dict):
                 self.defaults.update(arg)
@@ -514,13 +451,10 @@ class Marked:
         return parser.parse(tokens)
 
     def parseInline(self, src: str, options: Optional[dict[str, Any]] = None) -> str:
-        """Parse inline Markdown only (no block‑level tokens)."""
         opts = {**self.defaults, **(options or {})}
         parser = Parser(opts)
         return parser._render_inline(src)
 
 
-# Global instance, like the npm package's default export
 marked = Marked()
-
 __all__ = ["marked", "Marked", "Renderer", "Tokenizer", "Lexer", "Parser", "Token"]

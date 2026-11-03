@@ -116,24 +116,26 @@ VITAL_RE = re.compile(
 DOC_PREFIXES = (b"/**", b"///", b"//!")
 DOCSTRING_TYPES = frozenset({"string", "concatenated_string"})
 BODY_OWNERS = frozenset({"function_definition", "class_definition"})
-DEFAULT_EXCLUDES = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".idea",
-    ".vscode",
-    "node_modules",
-    ".venv",
-    "venv",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".tox",
-    ".ruff_cache",
-    "build",
-    "dist",
-    "target",
-})
+DEFAULT_EXCLUDES = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".idea",
+        ".vscode",
+        "node_modules",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".tox",
+        ".ruff_cache",
+        "build",
+        "dist",
+        "target",
+    }
+)
 CHANGED = frozenset({"changed", "would-change"})
 RESET = "\033[0m"
 BOLD = "\033[1m"

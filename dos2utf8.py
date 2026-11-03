@@ -1,21 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Recursively apply dos2unix (CRLF/CR → LF) and convert non-binary files to UTF-8.
-- Uses pathlib
-- Parallel processing (ThreadPoolExecutor)
-- Single read/write pass for both conversions
-- Skips symlinks and common VCS/cache directories
-- Binary detection via binaryornot
-- Errors logged with loguru
-- Fully type-annotated
-"""
 
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterator
-
 from dh import SKIP_DIRS, is_binary
 from loguru import logger
 
@@ -28,14 +17,9 @@ logger.add(
 
 
 def iter_files(root: Path) -> Iterator[Path]:
-    """
-    Yield regular files under *root*, pruning common skip directories
-    and never following symlinks.
-    """
     root = root.resolve()
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not (Path(dirpath) / d).is_symlink()]
-
         for name in filenames:
             path = Path(dirpath) / name
             if path.is_symlink() or not path.is_file():
@@ -44,27 +28,20 @@ def iter_files(root: Path) -> Iterator[Path]:
 
 
 def process_file(path: Path) -> None:
-    """
-    Read once → detect binary → normalize newlines → ensure UTF-8 → write once.
-    """
     try:
         if is_binary(str(path)):
             return
-
         data = path.read_bytes()
     except OSError as exc:
         logger.error(f"Cannot read {path}: {exc}")
         return
-
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         text = data.decode("latin-1")
         logger.debug(f"Fell back to latin-1 for {path}")
-
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     new_data = normalized.encode("utf-8")
-
     if new_data != data:
         try:
             path.write_bytes(new_data)
@@ -76,13 +53,10 @@ def process_file(path: Path) -> None:
 def main() -> None:
     root = Path.cwd()
     files = list(iter_files(root))
-
     if not files:
         logger.info("No eligible files found.")
         return
-
     logger.info(f"Processing {len(files)} files under {root} …")
-
     max_workers = min(32, len(files) or 1)
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(process_file, f): f for f in files}
@@ -92,7 +66,6 @@ def main() -> None:
             except Exception as exc:
                 path = futures[future]
                 logger.error(f"Unexpected error on {path}: {exc}")
-
     logger.info("Done.")
 
 

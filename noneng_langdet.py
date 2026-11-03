@@ -279,58 +279,62 @@ class NonEnglishDetector:
 
     def _is_code_pattern(self, line: str) -> bool:
         code_indicators: list[bool] = [
-            line.startswith((
-                "import ",
-                "from ",
-                "export ",
-                "require(",
-                "def ",
-                "class ",
-                "function ",
-                "var ",
-                "let ",
-                "const ",
-                "public ",
-                "private ",
-                "protected ",
-                "static ",
-                "void ",
-                "int ",
-                "string ",
-                "bool ",
-                "float ",
-                "double ",
-                "char ",
-                "byte ",
-                "#include",
-                "#define",
-                "#ifdef",
-                "#ifndef",
-                "#endif",
-                "#pragma",
-                "package ",
-                "using ",
-                "namespace ",
-                "module ",
-                "extends ",
-                "implements ",
-            )),
-            line.startswith((
-                "<!--",
-                "<!DOCTYPE",
-                "<?xml",
-                "<?php",
-                "{%",
-                "{{",
-                "{#",
-                "<script",
-                "<style",
-                "<div",
-                "<span",
-                "<p>",
-                "<h",
-                "<a ",
-            )),
+            line.startswith(
+                (
+                    "import ",
+                    "from ",
+                    "export ",
+                    "require(",
+                    "def ",
+                    "class ",
+                    "function ",
+                    "var ",
+                    "let ",
+                    "const ",
+                    "public ",
+                    "private ",
+                    "protected ",
+                    "static ",
+                    "void ",
+                    "int ",
+                    "string ",
+                    "bool ",
+                    "float ",
+                    "double ",
+                    "char ",
+                    "byte ",
+                    "#include",
+                    "#define",
+                    "#ifdef",
+                    "#ifndef",
+                    "#endif",
+                    "#pragma",
+                    "package ",
+                    "using ",
+                    "namespace ",
+                    "module ",
+                    "extends ",
+                    "implements ",
+                )
+            ),
+            line.startswith(
+                (
+                    "<!--",
+                    "<!DOCTYPE",
+                    "<?xml",
+                    "<?php",
+                    "{%",
+                    "{{",
+                    "{#",
+                    "<script",
+                    "<style",
+                    "<div",
+                    "<span",
+                    "<p>",
+                    "<h",
+                    "<a ",
+                )
+            ),
             line.strip().startswith(("//", "#", "/*", "* ", "*/", ";", "--", "<!--")),
             line.strip().endswith(("{", "}", ";", "(", ")", "[", "]", ":", ",")),
         ]
@@ -357,19 +361,23 @@ class NonEnglishDetector:
                     language: str | None = detection["language"]
                     confidence: float = float(detection.get("confidence", 0.0))
                     if language is None:
-                        result.non_english_lines.append({
-                            "line_number": line_num,
-                            "text": text[:PREVIEW_LENGTH],
-                            "detected_lang": "unknown",
-                            "confidence": 0.0,
-                        })
+                        result.non_english_lines.append(
+                            {
+                                "line_number": line_num,
+                                "text": text[:PREVIEW_LENGTH],
+                                "detected_lang": "unknown",
+                                "confidence": 0.0,
+                            }
+                        )
                     elif language != "en":
-                        result.non_english_lines.append({
-                            "line_number": line_num,
-                            "text": text[:PREVIEW_LENGTH],
-                            "detected_lang": language,
-                            "confidence": confidence,
-                        })
+                        result.non_english_lines.append(
+                            {
+                                "line_number": line_num,
+                                "text": text[:PREVIEW_LENGTH],
+                                "detected_lang": language,
+                                "confidence": confidence,
+                            }
+                        )
         except Exception as e:
             result.error = f"Error processing file: {e!s}"
         return result

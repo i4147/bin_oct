@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import ast
 import hashlib
@@ -7,24 +6,25 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
-
 import ssdeep
 
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".cache",
-    ".idea",
-    ".vscode",
-})
+SKIP_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        "__pycache__",
+        "node_modules",
+        ".venv",
+        "venv",
+        ".tox",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".cache",
+        ".idea",
+        ".vscode",
+    }
+)
 BOLD_BLUE: str = "\033[1;34m"
 RESET: str = "\033[0m"
 

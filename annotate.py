@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""(No content in stream)
-
----"""
-
 import argparse
 import ast
 import contextlib
@@ -16,15 +12,18 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 
+if TYPE_CHECKING:
+    from tree_sitter import Language, Node, Parser, Tree
+
 
 class TypeshedSanitizer(cst.CSTTransformer):
-    def leave_ImportFrom(self, original_node, updated_node):
+    def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.ImportFrom:
         if original_node.module and cst.helpers.get_full_name_for_node(original_node.module) == "_typeshed":
             return cst.ImportFrom(
                 module=cst.Name("typing"),
@@ -32,8 +31,8 @@ class TypeshedSanitizer(cst.CSTTransformer):
             )
         return updated_node
 
-    def leave_Import(self, original_node, updated_node):
-        names = []
+    def leave_Import(self, original_node: cst.Import, updated_node: cst.Import) -> cst.Import:
+        names: list[cst.ImportAlias] = []
         for alias in original_node.names:
             if cst.helpers.get_full_name_for_node(alias.name) == "_typeshed":
                 names.append(alias.with_changes(name=cst.Name("typing")))
@@ -41,7 +40,7 @@ class TypeshedSanitizer(cst.CSTTransformer):
                 names.append(alias)
         return updated_node.with_changes(names=names)
 
-    def leave_Attribute(self, original_node, updated_node):
+    def leave_Attribute(self, original_node: cst.Attribute, updated_node: cst.Attribute) -> cst.Attribute:
         if (
             isinstance(original_node.value, cst.Name)
             and original_node.value.value == "_typeshed"
@@ -50,7 +49,7 @@ class TypeshedSanitizer(cst.CSTTransformer):
             return cst.Attribute(value=cst.Name("typing"), attr=cst.Name("Any"))
         return updated_node
 
-    def leave_Name(self, original_node, updated_node):
+    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -> cst.Name:
         if original_node.value == "Incomplete":
             return cst.Name("Any")
         return updated_node
@@ -66,31 +65,33 @@ def apply_type_annotations(
     overwrite_existing: bool = True,
     use_future_annotations: bool = False,
 ) -> str:
+    source_cst: cst.Module
     try:
         source_cst = cst.parse_module(source_code)
     except Exception as e:
         msg = f"Failed to parse source file with LibCST: {e}"
         raise ValueError(msg) from e
+    stub_cst: cst.Module
     try:
         stub_cst = cst.parse_module(stub_code)
     except Exception as e:
         msg = f"Failed to parse stub file with LibCST: {e}"
         raise ValueError(msg) from e
     stub_cst = sanitize_stub_cst(stub_cst)
-    context = CodemodContext()
+    context: CodemodContext = CodemodContext()
     ApplyTypeAnnotationsVisitor.store_stub_in_context(
         context=context,
         stub=stub_cst,
         overwrite_existing_annotations=overwrite_existing,
         use_future_annotations=use_future_annotations,
     )
-    transformer = ApplyTypeAnnotationsVisitor(context)
-    annotated_cst = transformer.transform_module(source_cst)
+    transformer: ApplyTypeAnnotationsVisitor = ApplyTypeAnnotationsVisitor(context)
+    annotated_cst: cst.Module = transformer.transform_module(source_cst)
     return annotated_cst.code
 
 
-_PY_LANGUAGE = None
-_TS_PARSER_FACTORY = None
+_PY_LANGUAGE: Optional["Language"] = None
+_TS_PARSER_FACTORY: Optional[type["Parser"]] = None
 
 
 def _ensure_tree_sitter() -> None:
@@ -98,46 +99,43 @@ def _ensure_tree_sitter() -> None:
     if _PY_LANGUAGE is not None:
         return
     try:
-        from tree_sitter import Parser
+        from tree_sitter import Language, Parser
     except Exception as exc:
         msg = "tree-sitter not installed"
         raise RuntimeError(msg) from exc
     try:
-        from tree_sitter_languages import get_language
+        import tree_sitter_python
 
-        _PY_LANGUAGE = get_language("python")
+        _PY_LANGUAGE = Language(tree_sitter_python.language())
     except Exception as exc:
-        msg = (
-            "Failed to load prebuilt Python grammar from tree_sitter_languages. "
-            "Install with: pip install tree_sitter_languages"
-        )
+        msg = "Failed to load Python grammar from tree_sitter_python. " "Install with: pip install tree_sitter_python"
         raise RuntimeError(msg) from exc
     _TS_PARSER_FACTORY = Parser
 
 
-TYPE_COMMENT_RE = re.compile(r"\s*#\s*type\s*:\s*([^\n]*)$", flags=re.IGNORECASE)
+TYPE_COMMENT_RE: "re.Pattern[str]" = re.compile(r"\s*#\s*type\s*:\s*([^\n]*)$", flags=re.IGNORECASE)
 
 
 def _prev_nonspace(buf: bytes, i: int) -> int:
-    j = i - 1
+    j: int = i - 1
     while j >= 0 and buf[j] in b" \t\r":
         j -= 1
     return j
 
 
 def _next_nonspace(buf: bytes, i: int) -> int:
-    n = len(buf)
-    j = i
+    n: int = len(buf)
+    j: int = i
     while j < n and buf[j] in b" \t\r":
         j += 1
     return min(n, j)
 
 
-def _collect_annotation_nodes(root):
-    stack = [root]
-    ann_nodes = []
+def _collect_annotation_nodes(root: "Node") -> list["Node"]:
+    stack: list["Node"] = [root]
+    ann_nodes: list["Node"] = []
     while stack:
-        node = stack.pop()
+        node: "Node" = stack.pop()
         if node.type == "annotation":
             ann_nodes.append(node)
         for c in node.children:
@@ -148,8 +146,10 @@ def _collect_annotation_nodes(root):
 def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> bytes:
     if not ranges:
         return src
-    ranges_sorted = sorted(ranges, key=lambda r: r[0])
-    merged = []
+    ranges_sorted: list[tuple[int, int]] = sorted(ranges, key=lambda r: r[0])
+    merged: list[tuple[int, int]] = []
+    cur_s: int
+    cur_e: int
     cur_s, cur_e = ranges_sorted[0]
     for s, e in ranges_sorted[1:]:
         if s <= cur_e:
@@ -158,7 +158,7 @@ def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> byte
             merged.append((cur_s, cur_e))
             cur_s, cur_e = s, e
     merged.append((cur_s, cur_e))
-    out = bytearray(src)
+    out: bytearray = bytearray(src)
     for s, e in reversed(merged):
         del out[s:e]
     return bytes(out)
@@ -166,61 +166,64 @@ def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> byte
 
 def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, list[str], Optional[str]]:
     _ensure_tree_sitter()
-    parser = _TS_PARSER_FACTORY()
-    parser.set_language(_PY_LANGUAGE)
+    assert _TS_PARSER_FACTORY is not None
+    assert _PY_LANGUAGE is not None
+    parser: "Parser" = _TS_PARSER_FACTORY(_PY_LANGUAGE)
     try:
-        tree = parser.parse(src_bytes)
+        tree: "Tree" = parser.parse(src_bytes)
     except Exception as e:
         return src_bytes, [], f"parse error: {e}"
-    root = tree.root_node
-    ann_nodes = _collect_annotation_nodes(root)
+    root: "Node" = tree.root_node
+    ann_nodes: list["Node"] = _collect_annotation_nodes(root)
     remove_ranges: list[tuple[int, int]] = []
     warnings: list[str] = []
     for node in ann_nodes:
-        s = node.start_byte
-        e = node.end_byte
-        prev_i = _prev_nonspace(src_bytes, s)
+        s: int = node.start_byte
+        e: int = node.end_byte
+        prev_i: int = _prev_nonspace(src_bytes, s)
+        removed_prefix_start: int
         if prev_i >= 1 and src_bytes[prev_i - 1 : prev_i + 1] == b"->":
             removed_prefix_start = prev_i - 1
         elif prev_i >= 0 and src_bytes[prev_i] == ord(":"):
             removed_prefix_start = prev_i
         else:
             removed_prefix_start = s
-        next_i = _next_nonspace(src_bytes, e)
-        next_char = src_bytes[next_i : next_i + 1] if next_i < len(src_bytes) else b""
-        safe_next = next_char in (b"=", b",", b")", b":")
+        next_i: int = _next_nonspace(src_bytes, e)
+        next_char: bytes = src_bytes[next_i : next_i + 1] if next_i < len(src_bytes) else b""
+        safe_next: bool = next_char in (b"=", b",", b")", b":")
+        safe: bool
         if src_bytes[removed_prefix_start : removed_prefix_start + 2] == b"->":
             safe = True
         else:
             safe = safe_next
         if not safe:
-            line_start = src_bytes.rfind(b"\n", 0, s) + 1
-            line_end = src_bytes.find(b"\n", e)
+            line_start: int = src_bytes.rfind(b"\n", 0, s) + 1
+            line_end: int = src_bytes.find(b"\n", e)
             if line_end == -1:
                 line_end = len(src_bytes)
-            snippet = src_bytes[line_start:line_end].decode(errors="replace").strip()
-            warnings.append(f'skipped standalone annotation at {path}:{node.start_point[0] + 1}: "{snippet}"')
+            snippet: str = src_bytes[line_start:line_end].decode(errors="replace").strip()
+            warnings.append(f"skipped standalone annotation at {path}:" f'{node.start_point[0] + 1}: "{snippet}"')
             continue
         remove_ranges.append((removed_prefix_start, e))
     type_comment_ranges: list[tuple[int, int]] = []
-    lines = src_bytes.splitlines(keepends=True)
-    offset = 0
+    lines: list[bytes] = src_bytes.splitlines(keepends=True)
+    offset: int = 0
     for ln in lines:
         try:
-            text = ln.decode()
+            text: str = ln.decode()
         except Exception:
             offset += len(ln)
             continue
-        m = TYPE_COMMENT_RE.search(text)
+        m: Optional["re.Match[str]"] = TYPE_COMMENT_RE.search(text)
         if m:
-            byte_start = offset + len(text[: m.start(0)].encode())
-            byte_end = offset + len(text[: m.end(0)].encode())
+            byte_start: int = offset + len(text[: m.start(0)].encode())
+            byte_end: int = offset + len(text[: m.end(0)].encode())
             type_comment_ranges.append((byte_start, byte_end))
         offset += len(ln)
-    all_remove = remove_ranges + type_comment_ranges
+    all_remove: list[tuple[int, int]] = remove_ranges + type_comment_ranges
     if not all_remove:
         return src_bytes, warnings, None
-    new_bytes = _remove_ranges_from_bytes(src_bytes, all_remove)
+    new_bytes: bytes = _remove_ranges_from_bytes(src_bytes, all_remove)
     return new_bytes, warnings, None
 
 
@@ -233,16 +236,18 @@ def validate_python_code(code: str, filename: str) -> None:
 
 
 def compute_diff(original: str, modified: str, filename: str) -> str:
-    diff = difflib.unified_diff(
-        original.splitlines(keepends=True),
-        modified.splitlines(keepends=True),
-        fromfile=f"{filename} (original)",
-        tofile=f"{filename} (modified)",
+    diff: str = "".join(
+        difflib.unified_diff(
+            original.splitlines(keepends=True),
+            modified.splitlines(keepends=True),
+            fromfile=f"{filename} (original)",
+            tofile=f"{filename} (modified)",
+        )
     )
-    return "".join(diff)
+    return diff
 
 
-def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
+def _run_cmd(cmd: list[str]) -> "subprocess.CompletedProcess[str]":
     return subprocess.run(cmd, text=True, capture_output=True, check=False)
 
 
@@ -269,10 +274,12 @@ class Result:
     diff: str = ""
     backup_path: Optional[Path] = None
     mode: str = "annotate"
+    _new_text: Optional[str] = None
 
 
 def _annotate_file(path: Path, options: Options) -> Result:
-    result = Result(path=path, mode="annotate")
+    result: Result = Result(path=path, mode="annotate")
+    stub_path: Path
     if options.stub_file:
         stub_path = Path(options.stub_file)
     else:
@@ -280,11 +287,13 @@ def _annotate_file(path: Path, options: Options) -> Result:
     if not stub_path.is_file():
         result.error = f"missing stub file: {stub_path}"
         return result
+    original: str
     try:
         original = path.read_text(encoding="utf-8")
     except Exception as e:
         result.error = f"read error: {e}"
         return result
+    stub_code: str
     try:
         stub_code = stub_path.read_text(encoding="utf-8")
     except Exception as e:
@@ -295,6 +304,7 @@ def _annotate_file(path: Path, options: Options) -> Result:
     except SyntaxError as e:
         result.error = f"source has invalid syntax: {e}"
         return result
+    modified: str
     try:
         modified = apply_type_annotations(
             source_code=original,
@@ -322,12 +332,16 @@ def _annotate_file(path: Path, options: Options) -> Result:
 
 
 def _strip_file(path: Path, options: Options) -> Result:
-    result = Result(path=path, mode="remove")
+    result: Result = Result(path=path, mode="remove")
+    src_bytes: bytes
     try:
         src_bytes = path.read_bytes()
     except Exception as e:
         result.error = f"read error: {e}"
         return result
+    new_bytes: bytes
+    warnings: list[str]
+    err: Optional[str]
     new_bytes, warnings, err = strip_annotations_from_bytes(src_bytes, path)
     result.warnings.extend(warnings)
     if err:
@@ -335,6 +349,7 @@ def _strip_file(path: Path, options: Options) -> Result:
         return result
     if new_bytes == src_bytes:
         return result
+    new_text: str
     try:
         new_text = new_bytes.decode("utf-8")
     except UnicodeDecodeError as e:
@@ -354,6 +369,7 @@ def _strip_file(path: Path, options: Options) -> Result:
             return result
     result.changed = True
     if options.show_diff:
+        original_text: str
         try:
             original_text = src_bytes.decode("utf-8")
         except UnicodeDecodeError:
@@ -364,7 +380,7 @@ def _strip_file(path: Path, options: Options) -> Result:
 
 
 def process_file(path_str: str, options: Options) -> Result:
-    path = Path(path_str)
+    path: Path = Path(path_str)
     if not path.exists() or not path.is_file():
         return Result(
             path=path,
@@ -377,25 +393,25 @@ def process_file(path_str: str, options: Options) -> Result:
             error="not a .py file",
             mode=("remove" if options.remove else "annotate"),
         )
-    result = _strip_file(path, options) if options.remove else _annotate_file(path, options)
+    result: Result = _strip_file(path, options) if options.remove else _annotate_file(path, options)
     if result.error or not result.changed or options.dry_run:
         return result
     if options.backup:
         try:
-            backup_path = path.with_suffix(path.suffix + ".bak")
+            backup_path: Path = path.with_suffix(path.suffix + ".bak")
             shutil.copy2(path, backup_path)
             result.backup_path = backup_path
         except Exception as e:
             result.warnings.append(f"failed to create backup: {e}")
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path: Path = path.with_suffix(path.suffix + ".tmp")
     try:
-        if hasattr(result, "_new_text"):
+        if result._new_text is not None:
             tmp_path.write_text(result._new_text, encoding="utf-8")
         else:
-            original = path.read_text(encoding="utf-8")
-            stub_path = Path(options.stub_file) if options.stub_file else path.with_suffix(".pyi")
-            stub_code = stub_path.read_text(encoding="utf-8")
-            new_text = apply_type_annotations(
+            original: str = path.read_text(encoding="utf-8")
+            stub_path: Path = Path(options.stub_file) if options.stub_file else path.with_suffix(".pyi")
+            stub_code: str = stub_path.read_text(encoding="utf-8")
+            new_text: str = apply_type_annotations(
                 source_code=original,
                 stub_code=stub_code,
                 overwrite_existing=options.overwrite_existing,
@@ -403,7 +419,7 @@ def process_file(path_str: str, options: Options) -> Result:
             )
             tmp_path.write_text(new_text, encoding="utf-8")
         try:
-            st = path.stat()
+            st: os.stat_result = path.stat()
             os.chmod(tmp_path, stat.S_IMODE(st.st_mode))
         except Exception:
             pass
@@ -414,7 +430,9 @@ def process_file(path_str: str, options: Options) -> Result:
         result.error = f"write error: {e}"
         return result
     if options.validate_mypy:
-        res = _run_cmd([sys.executable, "-m", "mypy", "--no-incremental", str(path)])
+        res: "subprocess.CompletedProcess[str]" = _run_cmd(
+            [sys.executable, "-m", "mypy", "--no-incremental", str(path)]
+        )
         if res.returncode != 0:
             result.warnings.append(f"mypy reported issues:\n{res.stdout}{res.stderr}")
     return result
@@ -422,9 +440,9 @@ def process_file(path_str: str, options: Options) -> Result:
 
 def gather_py_files(paths: list[str]) -> list[Path]:
     out: list[Path] = []
-    provided = list(paths) if paths else ["."]
+    provided: list[str] = list(paths) if paths else ["."]
     for p in provided:
-        path = Path(p)
+        path: Path = Path(p)
         if path.is_file():
             if path.suffix == ".py":
                 out.append(path.resolve())
@@ -440,7 +458,7 @@ def gather_py_files(paths: list[str]) -> list[Path]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog="batch_annotate",
         description=(
             "Add OR remove type annotations on Python (.py) files.\n\n"
@@ -456,7 +474,7 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="Files, directories, or globs to process (default: current directory).",
     )
-    mode = parser.add_mutually_exclusive_group()
+    mode: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "-r",
         "--remove",
@@ -526,9 +544,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    files = gather_py_files(args.paths)
+    parser: argparse.ArgumentParser = build_parser()
+    args: argparse.Namespace = parser.parse_args(argv)
+    files: list[Path] = gather_py_files(args.paths)
     if not files:
         print("No .py files found.", file=sys.stderr)
         return 1
@@ -547,7 +565,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.no_overwrite and args.remove:
         print("Error: --no-overwrite is not valid with --remove.", file=sys.stderr)
         return 2
-    options = Options(
+    options: Options = Options(
         dry_run=args.dry_run,
         backup=args.backup,
         show_diff=args.diff,
@@ -565,18 +583,19 @@ def main(argv: Optional[list[str]] = None) -> int:
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 3
-    use_pool = len(files) > 1 and (args.jobs is None or args.jobs > 1)
+    use_pool: bool = len(files) > 1 and (args.jobs is None or args.jobs > 1)
+    results: list[Result]
     if use_pool:
-        jobs = args.jobs or min(8, len(files))
+        jobs: int = args.jobs or min(8, len(files))
         with mp.Pool(processes=jobs) as pool:
             results = pool.starmap(process_file, [(str(f), options) for f in files])
     else:
         results = [process_file(str(f), options) for f in files]
-    changed = [r for r in results if r.changed and not r.error]
-    unchanged = [r for r in results if not r.changed and not r.error]
-    failed = [r for r in results if r.error]
-    warnings = [w for r in results for w in r.warnings]
-    verb = "strip" if options.remove else "annotate"
+    changed: list[Result] = [r for r in results if r.changed and not r.error]
+    unchanged: list[Result] = [r for r in results if not r.changed and not r.error]
+    failed: list[Result] = [r for r in results if r.error]
+    warnings: list[str] = [w for r in results for w in r.warnings]
+    verb: str = "strip" if options.remove else "annotate"
     if not args.quiet:
         for r in changed:
             if args.dry_run:

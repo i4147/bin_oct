@@ -8,7 +8,6 @@ from git import Repo
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess:
-    """Helper to run shell commands and return results."""
     print(f"Running: {' '.join(command)}")
     return subprocess.run(command, capture_output=True, text=True, check=True)
 

@@ -192,13 +192,11 @@ def colorize_diff(diff: str, color: bool) -> str:
         code = (
             "1"
             if line.startswith(("---", "+++"))
-            else "32"
-            if line.startswith("+")
-            else "31"
-            if line.startswith("-")
-            else "36"
-            if line.startswith("@@")
-            else ""
+            else (
+                "32"
+                if line.startswith("+")
+                else "31" if line.startswith("-") else "36" if line.startswith("@@") else ""
+            )
         )
         output.append(f"\033[{code}m{line}\033[0m" if code else line)
     return "".join(output)
@@ -628,9 +626,7 @@ def main() -> int:
     label = (
         "Potential source bytes reduced"
         if args.dryrun
-        else "Total source bytes reduced"
-        if args.backup
-        else "Total space freed"
+        else "Total source bytes reduced" if args.backup else "Total space freed"
     )
     print(f"\n{label}: {stats.bytes_reduced:,} bytes")
     print(f"Files: {stats.files}; changed: {stats.changed}; skipped: {stats.skipped}; errors: {stats.errors}")

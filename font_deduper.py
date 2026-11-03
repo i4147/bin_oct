@@ -8,7 +8,6 @@ FONT_EXTENSIONS = (".ttf", ".woff2", ".woff")
 
 
 def get_font_ps_name(file_path):
-    """Extracts the unique PostScript name from a TTF or WOFF2 font file."""
     try:
         font = TTFont(file_path, fontNumber=0, lazy=True)
         name_table = font["name"]

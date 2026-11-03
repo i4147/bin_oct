@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import csv
 import importlib.metadata
@@ -115,8 +114,7 @@ def cmd_strip_versions(args):
         if not line or line.startswith("#"):
             continue
         g = (
-            line
-            .split("==")[0]
+            line.split("==")[0]
             .split(">=")[0]
             .split("<=")[0]
             .split("~=")[0]

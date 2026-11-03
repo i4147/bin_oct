@@ -164,8 +164,7 @@ class CrawlerDb:
         if not self.connected:
             return False
         stmt = (
-            self.website_table
-            .update()
+            self.website_table.update()
             .where(self.website_table.c.id == website.id)
             .values(has_crawled=True, emails=new_emails)
         )

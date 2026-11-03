@@ -68,11 +68,13 @@ def parse_vcard(input_path):
             current["TEL"] = decode_value(value, params)
     result = []
     for card in cards:
-        result.append({
-            "N": card.get("N", ""),
-            "FN": card.get("FN", ""),
-            "TEL": card.get("TEL", ""),
-        })
+        result.append(
+            {
+                "N": card.get("N", ""),
+                "FN": card.get("FN", ""),
+                "TEL": card.get("TEL", ""),
+            }
+        )
     return result
 
 

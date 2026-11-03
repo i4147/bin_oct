@@ -1,20 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Commit all current changes in a Git repository and push to the remote.
-
-Commit message is the current local datetime formatted as:
-    Monday, 26 June 2026,  10:30PM
-
-Safety checks:
-  • Warns (and asks for confirmation) when the current branch is not ``main``.
-  • Warns when any empty (0-byte) files are present among the files being
-    committed / already tracked.
-
-Supported backends (selected with -b/--backend):
-  - subprocess  (stdlib only, always available)
-  - gitpython   (requires: pip install GitPython)
-  - pygit2      (requires: pip install pygit2)
-  - dulwich     (requires: pip install dulwich)
-"""
 
 import argparse
 import subprocess
@@ -22,7 +6,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Literal, Protocol, Sequence
-
 
 try:
     import git as gitpython
@@ -58,10 +41,6 @@ if HAS_DULWICH:
 
 
 def format_commit_message(when: datetime | None = None) -> str:
-    """Return datetime in the exact required format.
-
-    Example:  Monday, 26 June 2026,  10:30PM
-    """
     dt = when or datetime.now().astimezone()
     day_name = dt.strftime("%A")
     day = str(dt.day)
@@ -74,7 +53,6 @@ def format_commit_message(when: datetime | None = None) -> str:
 
 
 def confirm(prompt: str, *, default: bool = False) -> bool:
-    """Ask the user a yes/no question. Returns True for yes."""
     suffix = " [Y/n] " if default else " [y/N] "
     try:
         answer = input(prompt + suffix).strip().lower()
@@ -87,7 +65,6 @@ def confirm(prompt: str, *, default: bool = False) -> bool:
 
 
 def find_empty_files(repo: Path, paths: Sequence[str]) -> list[str]:
-    """Return relative paths of files that exist and have size 0."""
     empty: list[str] = []
     for rel in paths:
         full = repo / rel
@@ -100,28 +77,15 @@ def find_empty_files(repo: Path, paths: Sequence[str]) -> list[str]:
 
 
 class GitBackend(Protocol):
-    def current_branch(self) -> str | None:
-        """Return the current branch name, or None if detached HEAD."""
-        ...
+    def current_branch(self) -> str | None: ...
 
-    def has_changes(self) -> bool:
-        """Return True if there is anything to commit (staged or unstaged)."""
-        ...
+    def has_changes(self) -> bool: ...
 
-    def list_relevant_files(self) -> list[str]:
-        """Return paths that are tracked or about to be committed.
+    def list_relevant_files(self) -> list[str]: ...
 
-        Used to detect empty files.
-        """
-        ...
+    def stage_all(self) -> None: ...
 
-    def stage_all(self) -> None:
-        """Stage every change (equivalent to `git add -A`)."""
-        ...
-
-    def commit(self, message: str, *, allow_empty: bool = False) -> str:
-        """Create a commit with the given message. Return the new SHA."""
-        ...
+    def commit(self, message: str, *, allow_empty: bool = False) -> str: ...
 
     def push(
         self,
@@ -129,9 +93,7 @@ class GitBackend(Protocol):
         branch: str | None,
         *,
         force_with_lease: bool = False,
-    ) -> None:
-        """Push the current branch (or the supplied branch) to the remote."""
-        ...
+    ) -> None: ...
 
 
 class SubprocessBackend:

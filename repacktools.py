@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import asyncio
 import base64
@@ -142,11 +141,13 @@ def _read_record(dist_info: Path) -> Optional[list[tuple[str, str, str]]]:
         for row in csv.reader(f):
             if not row or not row[0]:
                 continue
-            rows.append((
-                row[0],
-                row[1] if len(row) > 1 else "",
-                row[2] if len(row) > 2 else "",
-            ))
+            rows.append(
+                (
+                    row[0],
+                    row[1] if len(row) > 1 else "",
+                    row[2] if len(row) > 2 else "",
+                )
+            )
     return rows
 
 
@@ -553,14 +554,16 @@ class Repacker:
             else:
                 self.stats.failed += 1
                 log.error("  ✗ %s", msg)
-            self.results.append({
-                "package": pkg.name,
-                "version": pkg.version,
-                "is_pure_python": pkg.is_pure,
-                "success": ok,
-                "wheel": path.name if path else None,
-                "message": msg,
-            })
+            self.results.append(
+                {
+                    "package": pkg.name,
+                    "version": pkg.version,
+                    "is_pure_python": pkg.is_pure,
+                    "success": ok,
+                    "wheel": path.name if path else None,
+                    "message": msg,
+                }
+            )
         return self.stats
 
     def save_report(self, filename: str) -> Path:

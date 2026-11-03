@@ -1,14 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-pygdu – a tiny “graphical du” clone in pure Python
-
-Features:
-  • Recursive directory size calculation
-  • Human‑readable output (KB, MB, GB …)
-  • Optional –max-depth to limit the printed tree
-  • Optional –exclude pattern (glob) to ignore files/folders
-  • Simple progress bar for huge trees (optional)
-"""
 
 import os
 import sys
@@ -18,10 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 
-# --------------------------------------------------------------
-# Helper: nice human‑readable size
 def human_size(num_bytes: int) -> str:
-    """Convert a byte count into a human‑readable string."""
     for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
         if num_bytes < 1024.0:
             return f"{num_bytes:3.1f}{unit}"
@@ -29,20 +16,15 @@ def human_size(num_bytes: int) -> str:
     return f"{num_bytes:.1f}EB"
 
 
-# --------------------------------------------------------------
-# Core logic: walk the tree and accumulate sizes
 def scan_path(root: Path, exclude_patterns, follow_symlinks):
-    """Yield (path, size) tuples for every directory under *root*."""
     total_size = 0
-    dir_sizes = defaultdict(int)  # path -> cumulative size of its children
+    dir_sizes = defaultdict(int)
 
     for dirpath, dirnames, filenames in os.walk(root, followlinks=follow_symlinks):
         cur_path = Path(dirpath)
 
-        # Apply exclusion patterns to dirs *before* recursing
         dirnames[:] = [d for d in dirnames if not any(fnmatch.fnmatch(d, pat) for pat in exclude_patterns)]
 
-        # Files in this directory
         for fname in filenames:
             if any(fnmatch.fnmatch(fname, pat) for pat in exclude_patterns):
                 continue
@@ -50,9 +32,8 @@ def scan_path(root: Path, exclude_patterns, follow_symlinks):
             try:
                 sz = fpath.stat().st_size
             except OSError:
-                sz = 0  # unreadable file → count as 0
+                sz = 0
             total_size += sz
-            # Add size to all ancestors (including the current dir)
             ancestor = cur_path
             while True:
                 dir_sizes[ancestor] += sz
@@ -63,17 +44,13 @@ def scan_path(root: Path, exclude_patterns, follow_symlinks):
     return dir_sizes, total_size
 
 
-# --------------------------------------------------------------
-# Pretty‑print the tree
 def print_tree(root: Path, dir_sizes, max_depth, prefix=""):
-    """Recursively display the directory tree with sizes."""
     if max_depth is not None and max_depth < 0:
         return
 
     size_str = human_size(dir_sizes.get(root, 0))
     print(f"{prefix}{root.name or root!s}  [{size_str}]")
 
-    # Gather sub‑directories, sorted alphabetically
     subdirs = sorted([p for p in root.iterdir() if p.is_dir()], key=lambda p: p.name.lower())
 
     for i, sub in enumerate(subdirs):
@@ -83,7 +60,6 @@ def print_tree(root: Path, dir_sizes, max_depth, prefix=""):
         print_tree(sub, dir_sizes, None if max_depth is None else max_depth - 1, prefix=deeper_prefix)
 
 
-# --------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="A tiny, friendly 'gdu' clone written in Python.")
     parser.add_argument("path", nargs="?", default=".", help="Root directory to scan (default: current folder).")

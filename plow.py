@@ -10,7 +10,6 @@ from rich.syntax import Syntax
 
 
 def render_markdown(content: str) -> None:
-    """Render markdown with syntax highlighting for code blocks."""
     console = Console()
     md = Markdown(content)
     lines = content.splitlines()
@@ -40,7 +39,6 @@ def main(
     file: Annotated[Path | None, "Markdown file path"] = None,
     pager: Annotated[bool, "Use pager for long documents"] = False,
 ) -> None:
-    """Render markdown file or stdin with glow-like formatting."""
     try:
         if file:
             content = Path(file).read_text(encoding="utf-8")

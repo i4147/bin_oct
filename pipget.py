@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import asyncio
 import contextlib
@@ -9,7 +8,6 @@ import tarfile
 import time
 import zipfile
 from pathlib import Path
-
 import httpx
 from bs4 import BeautifulSoup
 from dh import cprint
@@ -38,9 +36,7 @@ SDIST_EXTENSIONS = (
 TAR_EXTENSIONS = (".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz")
 ZIP_EXTENSIONS = (".zip", ".whl")
 WHEEL_PLATFORM_RE = re.compile(
-    r"-(cp\d+|pp\d+|py\d+)"
-    r"(-(cp\d+|pp\d+|py\d+))?"
-    r"-(manylinux|musllinux|win|macosx|linux|darwin)",
+    r"-(cp\d+|pp\d+|py\d+)" r"(-(cp\d+|pp\d+|py\d+))?" r"-(manylinux|musllinux|win|macosx|linux|darwin)",
     re.IGNORECASE,
 )
 ARCH_TAGS = [

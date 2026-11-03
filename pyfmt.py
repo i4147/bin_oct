@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import json
 import logging
@@ -11,7 +10,6 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-
 from dh import atomic_write
 
 if TYPE_CHECKING:
@@ -117,17 +115,19 @@ def _move_to_error(path: Path, dest_dir: str) -> None:
 
 
 class HtmlTagFormatter:
-    INLINE_TAGS: frozenset[str] = frozenset({
-        "b",
-        "i",
-        "u",
-        "em",
-        "strong",
-        "code",
-        "small",
-        "sub",
-        "sup",
-    })
+    INLINE_TAGS: frozenset[str] = frozenset(
+        {
+            "b",
+            "i",
+            "u",
+            "em",
+            "strong",
+            "code",
+            "small",
+            "sub",
+            "sup",
+        }
+    )
 
     def __init__(self) -> None:
         try:

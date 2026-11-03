@@ -62,16 +62,18 @@ SIGNATURES: Final[tuple[tuple[bytes, str], ...]] = (
     (b"\x00\x01\x00\x00", ".ttf"),
     (b"\x00\x00\x01\x00", ".ico"),
 )
-TEXT_ASSET_SUFFIXES: Final[frozenset[str]] = frozenset({
-    ".css",
-    ".svg",
-    ".js",
-    ".json",
-    ".html",
-    ".htm",
-    ".txt",
-    ".xml",
-})
+TEXT_ASSET_SUFFIXES: Final[frozenset[str]] = frozenset(
+    {
+        ".css",
+        ".svg",
+        ".js",
+        ".json",
+        ".html",
+        ".htm",
+        ".txt",
+        ".xml",
+    }
+)
 DEFAULT_EXCLUDES: Final[tuple[str, ...]] = (
     ".git",
     "node_modules",
@@ -191,7 +193,6 @@ def should_skip_dir(name: str, exclude: frozenset[str]) -> bool:
 
 
 def iter_sources(opts: Options) -> Iterator[Path]:
-    """Yield every matching file under opts.root (one-shot discovery)."""
     assets_resolved = opts.assets.resolve()
     root = opts.root
     for dirpath, dirnames, filenames in os.walk(root, topdown=True, followlinks=False):
@@ -212,7 +213,6 @@ def process_file(
     *,
     is_asset: bool = False,
 ) -> list[Path]:
-    """Scan one file.  Return list of *new text assets* that need further scanning."""
     newly_created_text_assets: list[Path] = []
     try:
         original = path.read_bytes()
@@ -302,9 +302,6 @@ def process_file(
 
 
 def run_until_clean(opts: Options, stats: Stats) -> None:
-    """Process sources, then keep processing newly-created text assets
-    until no more data-URIs are found (or max_passes is reached).
-    """
     queue: deque[Path] = deque(iter_sources(opts))
     seen: set[Path] = set()
     pass_no = 0

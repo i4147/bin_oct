@@ -27,7 +27,6 @@ GIT_META_DIRS = frozenset({".github"})
 
 
 def load_junk_names(path: Path = JUNK_FILE) -> frozenset[str]:
-    """Load the junk filename list from `path` (one name per line)."""
     try:
         with path.open(encoding="utf-8") as fh:
             return frozenset(line.strip().lower() for line in fh if line.strip())
@@ -40,12 +39,6 @@ _git_cache: dict[Path, bool] = {}
 
 
 def in_git_repo(path: Path) -> bool:
-    """True if `path` lives inside a git working tree.
-
-    Walks up the parent chain looking for a `.git` entry (dir *or* file, so
-    worktrees and submodules count).  Results are cached per directory since
-    `.git` entries don't appear/disappear while this script runs.
-    """
     chain: list[Path] = []
     result = False
     for parent in path.parents:

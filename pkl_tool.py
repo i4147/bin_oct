@@ -1,27 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Convert/inspect pickle files (to JSON, repr, or raw bytes).
-
-Analysis / deduplication
-------------------------
-- ``pkl2json.py`` (bare ``json.dump``, dies on sets/bytes/dates) and
-  ``pkltojson.py`` (recursive serializer with type tagging) are one
-  ``to-json`` command; the smarter serializer is the only engine now
-  (previously unhandled objects degrade to ``{"__type__", "repr"}``
-  instead of crashing the conversion).
-- ``upkl.py`` loaded a pickle and wrote it as ``.raw`` bytes; it
-  called ``pkl.load`` although only ``pickle`` was imported, so it
-  crashed on every run. It is now ``inspect`` (type/size/repr) and
-  ``to-raw`` (bytes payloads written verbatim).
-
-SECURITY: unpickling executes code. Only run this on pickles you
-trust - every subcommand prints a reminder on stderr.
-
-Examples
---------
-  python3 pickle_tool.py to-json data.pkl
-  python3 pickle_tool.py inspect data.pkl --max-repr 2000
-  python3 pickle_tool.py to-raw blob.pkl -o blob.bin
-"""
 
 import argparse
 import base64
@@ -37,35 +14,32 @@ JSON_NATIVE: tuple[type, ...] = (str, int, float, bool, type(None))
 
 
 def warn_unpickle(path: Path) -> None:
-    """Remind the user that unpickling is code execution."""
     print(f"warning: unpickling {path} executes embedded code - trusted files only!", file=sys.stderr)
 
 
 def load_pickle(path: Path) -> object:
-    """Unpickle one file (first object)."""
     warn_unpickle(path)
     with path.open("rb") as handle:
         return pickle.load(handle)
 
 
 def serialize(obj: object) -> object:
-    """Recursively convert *obj* into JSON-compatible data."""
     if isinstance(obj, JSON_NATIVE):
         return obj
     if isinstance(obj, dict):
-        return {stringify_key(k): serialize(v) for k, v in obj.items()}  # type: ignore[arg-type]
+        return {stringify_key(k): serialize(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
-        return [serialize(item) for item in obj]  # type: ignore[arg-type]
+        return [serialize(item) for item in obj]
     if isinstance(obj, (set, frozenset)):
-        return {"__type__": type(obj).__name__, "items": [serialize(i) for i in obj]}  # type: ignore[arg-type]
+        return {"__type__": type(obj).__name__, "items": [serialize(i) for i in obj]}
     if isinstance(obj, (bytes, bytearray)):
         return {
             "__type__": "bytes",
-            "base64": base64.b64encode(bytes(obj)).decode(),  # type: ignore[arg-type]
+            "base64": base64.b64encode(bytes(obj)).decode(),
             "length": len(obj),
-        }  # type: ignore[arg-type]
+        }
     if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
-        return {"__type__": type(obj).__name__, "iso": obj.isoformat()}  # type: ignore[attr-defined]
+        return {"__type__": type(obj).__name__, "iso": obj.isoformat()}
     if isinstance(obj, Path):
         return {"__type__": "Path", "value": str(obj)}
     if isinstance(obj, Decimal):
@@ -76,7 +50,6 @@ def serialize(obj: object) -> object:
 
 
 def stringify_key(key: object) -> str:
-    """JSON object keys must be strings; tag exotic keys as ``type:value``."""
     if isinstance(key, str):
         return key
     if isinstance(key, (int, float, bool)) or key is None:
@@ -85,7 +58,6 @@ def stringify_key(key: object) -> str:
 
 
 def cmd_to_json(args: argparse.Namespace) -> int:
-    """Convert pickle file(s) to JSON."""
     for path in args.files:
         try:
             data: object = load_pickle(path)
@@ -104,21 +76,19 @@ def cmd_to_json(args: argparse.Namespace) -> int:
 
 
 def describe(obj: object, depth: int = 0, max_depth: int = 2) -> str:
-    """Short structural summary of an unpickled object."""
     if isinstance(obj, dict):
-        keys: list[object] = list(obj.keys())[:5]  # type: ignore[attr-defined]
-        return f"dict(len={len(obj)}, keys={keys!r})"  # type: ignore[arg-type]
+        keys: list[object] = list(obj.keys())[:5]
+        return f"dict(len={len(obj)}, keys={keys!r})"
     if isinstance(obj, (list, tuple, set, frozenset)):
-        return f"{type(obj).__name__}(len={len(obj)})"  # type: ignore[arg-type]
+        return f"{type(obj).__name__}(len={len(obj)})"
     if isinstance(obj, (bytes, bytearray)):
-        return f"bytes(len={len(obj)})"  # type: ignore[arg-type]
+        return f"bytes(len={len(obj)})"
     if isinstance(obj, str):
         return f"str(len={len(obj)})"
     return type(obj).__name__
 
 
 def cmd_inspect(args: argparse.Namespace) -> int:
-    """Print type/structure/repr of a pickle's payload."""
     obj: object = load_pickle(args.file)
     print(f"file:   {args.file} ({args.file.stat().st_size} bytes on disk)")
     print(f"type:   {type(obj).__module__}.{type(obj).__qualname__}")
@@ -131,12 +101,11 @@ def cmd_inspect(args: argparse.Namespace) -> int:
 
 
 def cmd_to_raw(args: argparse.Namespace) -> int:
-    """Write a bytes payload verbatim (or repr-encode anything else)."""
     obj: object = load_pickle(args.file)
     dest: Path = args.output or args.file.with_suffix(".raw")
     if isinstance(obj, (bytes, bytearray)):
         dest.write_bytes(bytes(obj))
-        print(f"Wrote {len(obj)} raw byte(s) to {dest}")  # type: ignore[arg-type]
+        print(f"Wrote {len(obj)} raw byte(s) to {dest}")
     elif args.force_repr:
         dest.write_text(repr(obj), encoding="utf-8")
         print(f"Wrote repr to {dest}")
@@ -147,7 +116,6 @@ def cmd_to_raw(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Pickle -> JSON / inspect / raw (trusted files only!).")
     sub = parser.add_subparsers(dest="command", required=True)
     tj = sub.add_parser("to-json", help="Convert .pkl to .json")
@@ -169,7 +137,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

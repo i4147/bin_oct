@@ -15,21 +15,23 @@ from dh import atomic_write
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "node_modules",
-    "__pycache__",
-    ".tox",
-    ".eggs",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    "site-packages",
-})
+SKIP_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "node_modules",
+        "__pycache__",
+        ".tox",
+        ".eggs",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        "site-packages",
+    }
+)
 TYPE_COMMENT_RE: re.Pattern[str] = re.compile(r"#\s*type:\s*(?!ignore\b)")
 NUM_WIDTH: int = 10
 SUFFIX: str = ""

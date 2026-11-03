@@ -2,7 +2,6 @@
 import importlib
 import importlib.metadata
 import sys
-
 from dh import PKG_MAPPING as pkg_mapping
 
 GREEN = "\033[32m"

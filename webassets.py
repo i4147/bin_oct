@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import contextlib
 import json
@@ -502,9 +501,9 @@ _MESON_DB: dict[str, Any] = {}
 
 
 def _v_keys(prefix: str, actual: dict, expected: dict) -> dict:
-    assert set(actual.keys()).issuperset(expected.keys()), (
-        f"{prefix}:DIFF:{set(actual.keys()).difference(expected.keys())}"
-    )
+    assert set(actual.keys()).issuperset(
+        expected.keys()
+    ), f"{prefix}:DIFF:{set(actual.keys()).difference(expected.keys())}"
     kept: dict[str, Any] = {}
     for k, t in expected.items():
         v = actual.pop(k)

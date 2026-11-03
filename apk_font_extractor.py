@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""(No content in stream)
-
----"""
 
 import argparse
 import contextlib
@@ -75,11 +72,13 @@ class APKFontExtractor:
                             exc,
                         )
                         continue
-                    fonts.append((
-                        internal_path,
-                        font_data,
-                        internal_path.suffix.lower(),
-                    ))
+                    fonts.append(
+                        (
+                            internal_path,
+                            font_data,
+                            internal_path.suffix.lower(),
+                        )
+                    )
                     logger.debug(
                         "Extracted font candidate: {} from {}",
                         internal_path,

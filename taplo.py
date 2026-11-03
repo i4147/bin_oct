@@ -1,11 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from io import StringIO
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
 
 if TYPE_CHECKING:

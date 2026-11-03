@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Report added and removed paths for every reachable Git commit."""
 
 import argparse
 import json
@@ -12,7 +11,7 @@ from typing import Sequence
 
 
 class GitError(RuntimeError):
-    """Raised when a Git command cannot be completed."""
+    pass
 
 
 @dataclass
@@ -43,31 +42,25 @@ def run_git(cwd: Path, *args: str) -> bytes:
         )
     except OSError as exc:
         raise GitError(f"Could not run Git: {exc}") from exc
-
     if result.returncode != 0:
         detail = result.stderr.decode("utf-8", errors="replace").strip()
         command = " ".join(["git", *args])
         raise GitError(f"{command} failed: {detail or 'unknown Git error'}")
-
     return result.stdout
 
 
 def find_repository(path: Path) -> Path:
-    """Resolve a supplied directory to the repository root using pathlib."""
     candidate = path.expanduser().resolve()
     if not candidate.is_dir():
         raise GitError(f"Not a directory: {candidate}")
-
     is_bare = run_git(candidate, "rev-parse", "--is-bare-repository").strip() == b"true"
     if is_bare:
         return candidate
-
     root = os.fsdecode(run_git(candidate, "rev-parse", "--show-toplevel").rstrip(b"\n"))
     return Path(root).expanduser().resolve()
 
 
 def read_commits(repo: Path) -> list[CommitInfo]:
-    # --all includes every ref; adding HEAD also covers detached checkouts.
     revisions = ["--all"]
     try:
         run_git(repo, "rev-parse", "--verify", "--quiet", "HEAD")
@@ -75,7 +68,6 @@ def read_commits(repo: Path) -> list[CommitInfo]:
         pass
     else:
         revisions.append("HEAD")
-
     output = run_git(
         repo,
         "log",
@@ -84,7 +76,6 @@ def read_commits(repo: Path) -> list[CommitInfo]:
         "--topo-order",
         "--format=tformat:%H%x00%P%x00%cs%x00%s",
     )
-
     commits: list[CommitInfo] = []
     for record in output.split(b"\n"):
         if not record:
@@ -92,7 +83,6 @@ def read_commits(repo: Path) -> list[CommitInfo]:
         fields = record.split(b"\x00", 3)
         if len(fields) != 4:
             raise GitError("Could not parse Git commit metadata.")
-
         commits.append(
             CommitInfo(
                 commit_hash=fields[0].decode("ascii"),
@@ -105,7 +95,6 @@ def read_commits(repo: Path) -> list[CommitInfo]:
 
 
 def read_added_and_removed(repo: Path, commit: CommitInfo) -> tuple[list[str], list[str]]:
-    # Compare merge commits with their first parent, matching normal git log history.
     if commit.parents:
         output = run_git(
             repo,
@@ -118,7 +107,6 @@ def read_added_and_removed(repo: Path, commit: CommitInfo) -> tuple[list[str], l
             commit.commit_hash,
         )
     else:
-        # A root commit is compared with Git's empty tree.
         output = run_git(
             repo,
             "diff-tree",
@@ -131,13 +119,11 @@ def read_added_and_removed(repo: Path, commit: CommitInfo) -> tuple[list[str], l
             "-z",
             commit.commit_hash,
         )
-
     fields = output.split(b"\x00")
     if fields and fields[-1] == b"":
         fields.pop()
     if len(fields) % 2:
         raise GitError(f"Could not parse changed paths for {commit.commit_hash}.")
-
     added: list[str] = []
     removed: list[str] = []
     for index in range(0, len(fields), 2):
@@ -147,7 +133,6 @@ def read_added_and_removed(repo: Path, commit: CommitInfo) -> tuple[list[str], l
             added.append(path)
         elif status == b"D":
             removed.append(path)
-
     return sorted(added), sorted(removed)
 
 
@@ -172,7 +157,6 @@ def print_text(repo: Path, reports: list[CommitReport]) -> None:
     if not reports:
         print("No commits found.")
         return
-
     for report in reports:
         print(f"\n{report.hash[:12]}  {report.date}  {report.subject or '(no subject)'}")
         for label, paths in (("Added", report.added), ("Removed", report.removed)):
@@ -206,14 +190,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="write a JSON report, including commits with no added or removed paths",
     )
     args = parser.parse_args(argv)
-
     try:
         repo = find_repository(args.repo)
         reports = build_report(repo)
     except GitError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-
     if args.json_output:
         payload = {"repository": str(repo), "commits": [asdict(report) for report in reports]}
         json.dump(payload, sys.stdout, indent=2, ensure_ascii=True)

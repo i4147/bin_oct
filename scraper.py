@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import contextlib
 import hashlib
@@ -20,7 +19,6 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -211,7 +209,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
-
     from loguru import logger
 
     logger.remove()
@@ -433,11 +430,13 @@ def _yt_recent_videos(yt, channel_id: str, days: int = 30, max_videos: int = 100
             vid = item["id"]["videoId"]
             info = yt.videos().list(part="snippet", id=vid).execute()
             snip = info["items"][0]["snippet"]
-            out.append({
-                "title": snip["title"],
-                "description": snip["description"],
-                "url": f"https://www.youtube.com/watch?v={vid}",
-            })
+            out.append(
+                {
+                    "title": snip["title"],
+                    "description": snip["description"],
+                    "url": f"https://www.youtube.com/watch?v={vid}",
+                }
+            )
         req = yt.search().list_next(req, resp)
         if len(out) > max_videos:
             break
@@ -510,11 +509,13 @@ def cmd_coc_youtube(args: argparse.Namespace) -> int:
         for v in vids:
             links = _extract_th18_links(v["description"])
             if links:
-                collected.append({
-                    "title": v["title"],
-                    "video_url": v["url"],
-                    "links": list(set(links)),
-                })
+                collected.append(
+                    {
+                        "title": v["title"],
+                        "video_url": v["url"],
+                        "links": list(set(links)),
+                    }
+                )
         if collected:
             _write_coc_youtube_report(name, collected, out_dir)
         else:

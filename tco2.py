@@ -470,12 +470,14 @@ def _fallback_order() -> list[str]:
     order.append("deep_translator")
     if os.getenv("LIBRETRANSLATE_URL"):
         order.append("libretranslate_remote")
-    order.extend([
-        "translate",
-        "translators_bing",
-        "googletrans",
-        "pygoogletranslation",
-    ])
+    order.extend(
+        [
+            "translate",
+            "translators_bing",
+            "googletrans",
+            "pygoogletranslation",
+        ]
+    )
     return order
 
 

@@ -221,8 +221,7 @@ _CREATE_RE = re.compile(
     re.IGNORECASE,
 )
 _INSERT_RE = re.compile(
-    r'INSERT\s+(?:OR\s+\w+\s+)?INTO\s+[`"\[\]]?(\w+)[`"\[\]]?\s*'
-    r"(?:\(([^)]*)\))?\s*VALUES\s*",
+    r'INSERT\s+(?:OR\s+\w+\s+)?INTO\s+[`"\[\]]?(\w+)[`"\[\]]?\s*' r"(?:\(([^)]*)\))?\s*VALUES\s*",
     re.IGNORECASE,
 )
 _NON_COLUMN_KEYWORDS = {

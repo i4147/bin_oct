@@ -92,11 +92,6 @@ def extract_exports(init_path: Path) -> set[str]:
 
 
 def iter_py_files(target: Path) -> Iterator[Path]:
-    """Yield .py files under `target`.
-    A file target is yielded as-is (even if it is a symlink — the user
-    explicitly asked for it). Discovered symlinks inside directories are
-    skipped, as are entries in SKIP_DIRS.
-    """
     if target.is_file():
         if target.suffix == ".py":
             yield target

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import importlib.metadata
 import io
@@ -14,7 +13,6 @@ import sysconfig
 import time
 from pathlib import Path
 from typing import Any, Optional, Sequence
-
 import requests
 from packaging import version
 

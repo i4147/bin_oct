@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import json
 import logging
@@ -13,7 +12,6 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-
 from googletrans import Translator
 
 MAX_WORKERS = 16
@@ -21,7 +19,6 @@ RETRY_ATTEMPTS = 4
 RETRY_DELAY = 0.6
 MAX_CHUNK_SIZE = 2000
 SAVE_INTERVAL = 10
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -139,10 +136,6 @@ class TranslationCache:
 
 
 def translate_text(text, source_lang, target_lang):
-    """Translate one string with googletrans 4.0.0rc1 and retry failures.
-
-    Each call owns its Translator, so its HTTP client is not shared by threads.
-    """
     translator = None
     try:
         for attempt in range(1, RETRY_ATTEMPTS + 1):
@@ -260,7 +253,6 @@ def main():
         parser.error("-i/--input is required unless --cache-stats is used")
     if args.max_workers < 1 or args.max_chunk_size < 1 or args.save_interval < 1:
         parser.error("--max-workers, --max-chunk-size, and --save-interval must be positive")
-
     db_path = Path(os.path.expanduser(args.db))
     cache = TranslationCache(db_path)
     try:
@@ -277,7 +269,6 @@ def main():
             else:
                 print("  (no entries)")
             return 0
-
         input_path = Path(args.input)
         if not input_path.exists():
             logger.error("Input file not found: %s", input_path)
@@ -291,7 +282,6 @@ def main():
         if not all_lines:
             logger.info("No non-empty lines found in %s", input_path.name)
             return 0
-
         source_lang = args.source
         target_lang = args.target
         if source_lang.lower().startswith("ru"):
@@ -307,7 +297,6 @@ def main():
         if not to_translate_raw:
             logger.info("No lines to translate for source_lang=%s", source_lang)
             return 0
-
         to_translate_unique = list(dict.fromkeys(to_translate_raw))
         logger.info(
             "Deduplicated: %d unique lines to translate (from %d total flagged)",

@@ -93,7 +93,6 @@ def get_terminal_size():
 
 
 def compute_layout():
-    """Return (cols_per_row, page_size). Everything fits the screen."""
     term_w, term_h = get_terminal_size()
     cols = max(1, term_w // CELL_PITCH)
     rows = max(1, term_h - 4)

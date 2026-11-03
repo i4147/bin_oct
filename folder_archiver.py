@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Create archives of folders (tar / tar.gz / zip …) with optional cleanup.
-"""
 
 import argparse
 import shutil
@@ -19,7 +16,6 @@ FORMAT_SUFFIX: dict[str, str] = {
 
 
 def create_archive(folder: Path, fmt: str, output: Path | None, cleanup: bool, dry_run: bool) -> Path:
-    """Archive *folder* and optionally delete the original. Return archive path."""
     archive: Path = output or folder.parent / f"{folder.name}{FORMAT_SUFFIX[fmt]}"
     if dry_run:
         print(f"Would create {archive} from {folder}" + (" and delete the folder" if cleanup else ""))
@@ -40,7 +36,6 @@ def create_archive(folder: Path, fmt: str, output: Path | None, cleanup: bool, d
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(
         description="Archive creation and cleanup tool.",
         epilog="Example: %(prog)s create myfolder -f gztar --cleanup",
@@ -58,7 +53,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     if args.output is not None and len(args.folders) != 1:
         print("Error: --output requires exactly one folder.", file=sys.stderr)

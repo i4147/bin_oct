@@ -1,34 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Line-oriented text file editing operations.
-
-Analysis / deduplication (12 micro-scripts -> subcommands)
-----------------------------------------------------------
-  add2lines.py  prefix each non-empty line          -> prefix
-  appender.py   append a fixed comment to *.py      -> append
-  bnn.py        literal \\n -> real newlines        -> unescape-nl
-  nnb.py        real newlines -> literal \\n        -> escape-nl
-  f45.py        wrap text to terminal width         -> wrap
-  gll.py        copy lines X..Y to a new file       -> get-range
-  joinlines.py  join non-empty lines into one       -> join
-  mvl.py        move lines X..Y to another file     -> move-range
-  sortbylen.py  sort lines by length                -> sort-length
-  striper.py    strip whitespace off every line     -> strip-ws
-  tnn.py        tabs -> 4 spaces (tree-wide)        -> tabs
-  xlr.py        separate lines with blank lines     -> space-out
-
-Simplifications: ``bnn``'s chunked joblib machinery (and its broken
-dataclass) became a plain replace; ``gll`` prints to stdout unless
-``-o``/``--auto-name`` is given. Single-file commands rewrite in
-place unless ``-o FILE`` or ``--stdout`` is used.
-
-Examples
---------
-  python3 line_edit_tool.py prefix notes.txt "TODO:"
-  python3 line_edit_tool.py get-range big.log 100 200
-  python3 line_edit_tool.py sort-length words.txt -r
-  python3 line_edit_tool.py tabs src/
-  python3 line_edit_tool.py wrap essay.txt -w 72 -i
-"""
 
 import argparse
 import shutil
@@ -43,12 +13,10 @@ DEFAULT_BLANKS: int = 4
 
 
 def read_lines(path: Path) -> list[str]:
-    """Read a text file keeping line endings."""
     return path.read_text(encoding="utf-8", errors="replace").splitlines(keepends=True)
 
 
 def emit(text: str, source: Path, output: Path | None, to_stdout: bool) -> None:
-    """Write *text* to stdout, -o file, or back over *source*."""
     if to_stdout:
         print(text, end="" if text.endswith("\n") or not text else "\n")
     elif output is not None:
@@ -60,7 +28,6 @@ def emit(text: str, source: Path, output: Path | None, to_stdout: bool) -> None:
 
 
 def collect_text_files(inputs: Sequence[Path], glob: str = "*") -> list[Path]:
-    """Collect non-binary files from file/dir/glob arguments."""
     roots: list[Path] = list(inputs) or [Path.cwd()]
     found: set[Path] = set()
     for root in roots:
@@ -78,11 +45,10 @@ def collect_text_files(inputs: Sequence[Path], glob: str = "*") -> list[Path]:
 
 
 def transform_files(inputs: Sequence[Path], fn: object, label: str, glob: str = "*") -> int:
-    """Apply a str->str transform to many files in place."""
     changed: int = 0
     for path in collect_text_files(inputs, glob):
         original: str = path.read_text(encoding="utf-8", errors="replace")
-        updated: str = fn(original)  # type: ignore[operator]
+        updated: str = fn(original)
         if updated != original:
             path.write_text(updated, encoding="utf-8")
             changed += 1
@@ -92,7 +58,6 @@ def transform_files(inputs: Sequence[Path], fn: object, label: str, glob: str = 
 
 
 def cmd_prefix(args: argparse.Namespace) -> int:
-    """Prepend ``TEXT `` to every non-empty line."""
     lines: list[str] = read_lines(args.file)
     joiner: str = "" if args.no_space else " "
     out: str = "".join(f"{args.text}{joiner}{line}" if line.strip() else line for line in lines)
@@ -101,7 +66,6 @@ def cmd_prefix(args: argparse.Namespace) -> int:
 
 
 def cmd_append(args: argparse.Namespace) -> int:
-    """Append text (or a file's contents) to each target file."""
     addition: str = args.text_file.read_text(encoding="utf-8") if args.text_file else args.text
     files: list[Path] = (
         collect_text_files(args.paths, glob=args.glob) if args.paths else sorted(Path.cwd().glob("*.py"))
@@ -116,19 +80,16 @@ def cmd_append(args: argparse.Namespace) -> int:
 
 
 def cmd_unescape_nl(args: argparse.Namespace) -> int:
-    """Replace literal backslash-n with real newlines (tree-wide)."""
     return transform_files(args.paths, lambda t: t.replace("\\n", "\n"), "unescaped")
 
 
 def cmd_escape_nl(args: argparse.Namespace) -> int:
-    """Replace real newlines with literal backslash-n."""
     text: str = args.file.read_text(encoding="utf-8")
     emit(text.replace("\n", "\\n"), args.file, args.output, args.stdout)
     return 0
 
 
 def cmd_wrap(args: argparse.Namespace) -> int:
-    """Wrap paragraphs/lines to a target width (default: terminal)."""
     width: int = max(args.width or shutil.get_terminal_size().columns, 20)
     content: str = args.file.read_text(encoding="utf-8")
     wrapped: list[str] = []
@@ -158,7 +119,6 @@ def cmd_wrap(args: argparse.Namespace) -> int:
 
 
 def cmd_get_range(args: argparse.Namespace) -> int:
-    """Copy lines START..END out of a file (1-based, inclusive)."""
     lines: list[str] = read_lines(args.file)
     end: int = len(lines) if args.end is None else args.end
     selected: str = "".join(lines[args.start - 1 : end])
@@ -177,7 +137,6 @@ def cmd_get_range(args: argparse.Namespace) -> int:
 
 
 def cmd_join(args: argparse.Namespace) -> int:
-    """Join all non-empty lines into a single line."""
     lines: list[str] = read_lines(args.file)
     joined: str = args.sep.join(line.rstrip("\n") for line in lines if line.strip()) + "\n"
     emit(joined, args.file, args.output, args.stdout)
@@ -185,7 +144,6 @@ def cmd_join(args: argparse.Namespace) -> int:
 
 
 def cmd_move_range(args: argparse.Namespace) -> int:
-    """Move (cut+paste) lines START..END into another file."""
     lines: list[str] = read_lines(args.src)
     moved: list[str] = lines[args.start - 1 : args.end]
     kept: list[str] = lines[: args.start - 1] + lines[args.end :]
@@ -202,7 +160,6 @@ def cmd_move_range(args: argparse.Namespace) -> int:
 
 
 def cmd_sort_length(args: argparse.Namespace) -> int:
-    """Sort lines by length."""
     lines: list[str] = read_lines(args.file)
     ordered: list[str] = sorted(lines, key=lambda ln: len(ln.rstrip("\n")), reverse=args.reverse)
     emit("".join(ordered), args.file, args.output, args.stdout)
@@ -210,7 +167,6 @@ def cmd_sort_length(args: argparse.Namespace) -> int:
 
 
 def cmd_strip_ws(args: argparse.Namespace) -> int:
-    """Strip leading/trailing whitespace from every line."""
     lines: list[str] = read_lines(args.file)
     cleaned: str = "".join(line.strip() + "\n" for line in lines)
     emit(cleaned, args.file, args.output, args.stdout)
@@ -218,13 +174,11 @@ def cmd_strip_ws(args: argparse.Namespace) -> int:
 
 
 def cmd_tabs(args: argparse.Namespace) -> int:
-    """Expand tabs to spaces (tree-wide)."""
     spaces: str = " " * args.width
     return transform_files(args.paths, lambda t: t.replace("\t", spaces), "tabs expanded")
 
 
 def cmd_space_out(args: argparse.Namespace) -> int:
-    """Separate every line with N blank lines."""
     lines: list[str] = args.file.read_text(encoding="utf-8").splitlines()
     separator: str = "\n" * (args.blanks + 1)
     emit(separator.join(lines) + "\n", args.file, args.output, args.stdout)
@@ -232,13 +186,11 @@ def cmd_space_out(args: argparse.Namespace) -> int:
 
 
 def add_io(child: argparse.ArgumentParser) -> None:
-    """-o/--stdout options shared by single-file commands."""
     child.add_argument("-o", "--output", type=Path, default=None, help="Write here instead of in place")
     child.add_argument("--stdout", action="store_true", help="Print the result")
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Line-oriented file editing operations.")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -320,7 +272,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     try:
         return int(args.handler(args))

@@ -12,37 +12,14 @@ from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeo
 from pathlib import Path
 from typing import Any, Callable
 
-from dh import atomic_write
+from dh import atomic_write, SKIP_DIRS
 from loguru import logger
-
-__version__ = "3.1.0"
 
 BACKENDS: tuple[str, ...] = ("black", "yapf", "autopep8", "ruff", "isort", "autoflake")
 DEFAULT_LINE_LENGTH: int = 120
 DEFAULT_TARGET: str = "3.12"
 DEFAULT_EXTS: tuple[str, ...] = (".py", ".pyi", ".pyw")
 
-SKIP_DIRS: set[str] = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "node_modules",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "build",
-    "dist",
-    ".eggs",
-    ".cache",
-    "site-packages",
-}
 
 Result = dict[str, Any]
 Job = tuple[str, list[str], dict[str, Any], bool, bool, bool, str, int]
@@ -97,7 +74,7 @@ def is_python_file(path: Path, include_exts: tuple[str, ...]) -> bool:
 
 def _load_gitignore_spec() -> Any:
     try:
-        import pathspec  # type: ignore
+        import pathspec
     except ImportError:
         return None
     gi = Path.cwd() / ".gitignore"
@@ -270,7 +247,7 @@ def _format_autopep8(src: str, opts: dict[str, Any]) -> str:
 
 def _format_ruff(src: str, opts: dict[str, Any]) -> str:
     try:
-        import ruff  # type: ignore
+        import ruff
     except ImportError as exc:
         raise RuntimeError("ruff is not installed") from exc
     for name in ("format_str", "format_code"):
@@ -371,7 +348,7 @@ def process_file(job: Job) -> Result:
                 atomic_write(path_str + ".bak", old_full)
             atomic_write(path_str, new_full)
 
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         result["error"] = f"{type(exc).__name__}: {exc}"
     return result
 
@@ -439,7 +416,7 @@ def _run_jobs(jobs: list[Job], workers: int, timeout: float | None, emit: Emit) 
                         "error": err,
                     }
                     logger.error(f"{jobs[i][0]}: {err}")
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     res = {
                         "path": jobs[i][0],
                         "old_size": 0,
@@ -457,7 +434,7 @@ def _run_jobs(jobs: list[Job], workers: int, timeout: float | None, emit: Emit) 
         for i, job in enumerate(jobs):
             try:
                 res = process_file(job)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 res = {
                     "path": job[0],
                     "old_size": 0,
@@ -479,7 +456,7 @@ def _handle_stdin(args: argparse.Namespace, backends: list[str], opts: dict[str,
     newline = "\r\n" if "\r\n" in src else "\n"
     try:
         out = run_backends(src.replace("\r\n", "\n"), backends, opts)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.opt(exception=exc).error("failed to format <stdin>")
         return 1
     if newline == "\r\n":
@@ -715,13 +692,15 @@ def main() -> int:
         s = _summarize(results)
         print()
         print(
-            " | ".join([
-                f"{s['total']} file{'s' if s['total'] != 1 else ''}",
-                f"{s['changed']} changed",
-                f"{s['unchanged']} unchanged",
-                f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
-                f"{s['delta_bytes']:+d} bytes",
-            ])
+            " | ".join(
+                [
+                    f"{s['total']} file{'s' if s['total'] != 1 else ''}",
+                    f"{s['changed']} changed",
+                    f"{s['unchanged']} unchanged",
+                    f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
+                    f"{s['delta_bytes']:+d} bytes",
+                ]
+            )
         )
 
     if any(r["error"] for r in results):

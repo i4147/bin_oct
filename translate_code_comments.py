@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import ast
 import io
@@ -11,38 +10,41 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
-
 from deep_translator import GoogleTranslator
 
 LOGGER = logging.getLogger("merged_translator")
-DEFAULT_EXCLUDED_DIRS = frozenset({
-    "lazy",
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".venv",
-})
-DEFAULT_MARKERS = frozenset({
-    "TODO",
-    "FIXME",
-    "HACK",
-    "XXX",
-    "NOTE",
-    "BUG",
-    "PYLINT",
-    "NOQA",
-    "TYPE:IGNORE",
-    "PRAGMA",
-    "CODING:",
-    "ENCODING:",
-    "CHARSET:",
-    "DRYRUN",
-    "DRY-RUN",
-    "RESCURSIVE MODE ENABLED",
-    ".GITIGNORE",
-})
+DEFAULT_EXCLUDED_DIRS = frozenset(
+    {
+        "lazy",
+        ".git",
+        "__pycache__",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        ".venv",
+    }
+)
+DEFAULT_MARKERS = frozenset(
+    {
+        "TODO",
+        "FIXME",
+        "HACK",
+        "XXX",
+        "NOTE",
+        "BUG",
+        "PYLINT",
+        "NOQA",
+        "TYPE:IGNORE",
+        "PRAGMA",
+        "CODING:",
+        "ENCODING:",
+        "CHARSET:",
+        "DRYRUN",
+        "DRY-RUN",
+        "RESCURSIVE MODE ENABLED",
+        ".GITIGNORE",
+    }
+)
 JAPANESE_RE = re.compile(r"[\u3040-\u30ff\u4e00-\u9fff]")
 NON_ASCII_RE = re.compile(r"[^\x00-\x7f]")
 PYCLD2_CODES_TO_SKIP = {"en", "un"}

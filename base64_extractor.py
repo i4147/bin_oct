@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""(No content in stream)
-
----"""
 
 import argparse
 import base64 as _b64

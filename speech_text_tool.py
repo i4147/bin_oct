@@ -1,37 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Speech <-> text utilities: transcribe audio, speak text, play audio.
-
-Analysis / deduplication
-------------------------
-- ``audio2text.py`` (WAV, chunked Google STT) and ``audio2txt.py`` (M4A,
-  single-shot Google STT) are the same job with different chunking; they
-  are one ``transcribe`` command with ``--engine google`` and
-  ``--chunk-seconds`` (0 = whole file, the old M4A behaviour).
-- ``whisper2txt.py`` is ``transcribe --engine whisper``.
-- ``tts_from_file.py`` and ``txt2wav.py`` are functionally identical
-  (chunk a text file and speak each chunk); the hardcoded
-  ``/sdcard/Download/sample.txt`` became a required positional argument.
-- ``mp3play.py`` (GStreamer via PyGObject) is the ``play`` command.
-
-Third-party packages (only needed for the subcommand that uses them):
-``SpeechRecognition`` + ``pydub`` (google), ``openai-whisper`` (whisper),
-``PyGObject`` (play). The speaker command defaults to ``termux-tts-speak``
-as in the originals; on desktop Linux try ``--speaker "espeak-ng"`` or
-``--speaker "festival --tts"`` (see ``--speaker`` help).
-
-Original script mapping
------------------------
-  audio2text.py   -> transcribe -e google in.wav [--chunk-seconds 30]
-  audio2txt.py    -> transcribe -e google in.m4a --chunk-seconds 0
-  whisper2txt.py  -> transcribe -e whisper in.m4a
-  tts_from_file.py / txt2wav.py -> speak file.txt
-  mp3play.py      -> play song.mp3
-
-Examples
---------
-  python3 speech_text_tool.py transcribe -e whisper -m base talk.m4a -o talk.txt
-  python3 speech_text_tool.py speak notes.txt --max-chars 1500
-"""
 
 import argparse
 import shlex
@@ -49,12 +16,10 @@ DEFAULT_WHISPER_MODEL: str = "base"
 
 
 def _missing(package: str, pip_name: str) -> SystemExit:
-    """Exit with an install hint for an optional dependency."""
     return SystemExit(f"Missing optional dependency '{package}'. Install it with: pip install {pip_name}")
 
 
 def chunk_text(text: str, max_chars: int = DEFAULT_MAX_CHARS) -> list[str]:
-    """Split *text* into chunks of at most *max_chars* on line boundaries."""
     chunks: list[str] = []
     current: str = ""
     for raw_line in text.splitlines():
@@ -78,13 +43,11 @@ def chunk_text(text: str, max_chars: int = DEFAULT_MAX_CHARS) -> list[str]:
 
 
 def transcribe_google(audio_path: Path, output: Path, chunk_seconds: int) -> int:
-    """Transcribe with Google Web Speech (via SpeechRecognition + pydub)."""
     try:
         import speech_recognition as sr
         from pydub import AudioSegment
     except ImportError:
         raise _missing("speech_recognition/pydub", "SpeechRecognition pydub") from None
-
     audio = AudioSegment.from_file(str(audio_path))
     total_ms: int = len(audio)
     chunk_ms: int = chunk_seconds * 1000 if chunk_seconds > 0 else total_ms
@@ -117,7 +80,6 @@ def transcribe_google(audio_path: Path, output: Path, chunk_seconds: int) -> int
 
 
 def transcribe_whisper(audio_path: Path, output: Path, model_name: str) -> int:
-    """Transcribe locally with OpenAI Whisper."""
     try:
         import whisper
     except ImportError:
@@ -133,7 +95,6 @@ def transcribe_whisper(audio_path: Path, output: Path, model_name: str) -> int:
 
 
 def cmd_transcribe(args: argparse.Namespace) -> int:
-    """Run the ``transcribe`` subcommand."""
     if not args.input.is_file():
         print(f"Error: input not found: {args.input}", file=sys.stderr)
         return 1
@@ -143,7 +104,6 @@ def cmd_transcribe(args: argparse.Namespace) -> int:
 
 
 def cmd_speak(args: argparse.Namespace) -> int:
-    """Read a text file aloud, chunk by chunk."""
     if not args.file.is_file():
         print(f"Error: file not found: {args.file}", file=sys.stderr)
         return 1
@@ -164,7 +124,6 @@ def cmd_speak(args: argparse.Namespace) -> int:
 
 
 def cmd_play(args: argparse.Namespace) -> int:
-    """Play an audio file or URL with GStreamer (blocking)."""
     try:
         import gi
 
@@ -188,10 +147,8 @@ def cmd_play(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Speech <-> text utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     tr = sub.add_parser("transcribe", help="Audio -> text (Google Web Speech or Whisper)")
     tr.add_argument("input", type=Path, help="Input audio file (wav/m4a/mp3/...)")
     tr.add_argument(
@@ -206,7 +163,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     tr.add_argument("-m", "--model", default=DEFAULT_WHISPER_MODEL, help="Whisper engine: model name (default: base)")
     tr.set_defaults(handler=cmd_transcribe)
-
     sp = sub.add_parser("speak", help="Read a text file aloud in chunks")
     sp.add_argument("file", type=Path, help="Text file to speak")
     sp.add_argument(
@@ -219,7 +175,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.add_argument("-n", "--dry-run", action="store_true", help="Only list the chunks")
     sp.set_defaults(handler=cmd_speak)
-
     pl = sub.add_parser("play", help="Play an audio file/URL with GStreamer")
     pl.add_argument("sound", help="Audio file path or http(s) URL")
     pl.set_defaults(handler=cmd_play)
@@ -227,7 +182,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     handler = args.handler
     return int(handler(args))

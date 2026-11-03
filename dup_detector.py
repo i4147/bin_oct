@@ -54,16 +54,18 @@ def extract_objects(path):
         if obj_type and name:
             src_code = ast.unparse(node)
             content_hash = hashlib.sha256(src_code.encode("utf-8")).hexdigest()
-            objects.append({
-                "object_type": obj_type,
-                "object_name": name,
-                "source_code": src_code,
-                "reference_file": path,
-                "content_hash": content_hash,
-                "start_line": node.lineno,
-                "end_line": node.end_lineno,
-                "ssdeep_hash": ssdeep.hash(src_code),
-            })
+            objects.append(
+                {
+                    "object_type": obj_type,
+                    "object_name": name,
+                    "source_code": src_code,
+                    "reference_file": path,
+                    "content_hash": content_hash,
+                    "start_line": node.lineno,
+                    "end_line": node.end_lineno,
+                    "ssdeep_hash": ssdeep.hash(src_code),
+                }
+            )
     return objects
 
 
@@ -84,16 +86,18 @@ def save_exact_duplicates(
         if occurrence_count <= 1:
             continue
         for obj in group:
-            duplicate_objects.append({
-                "object_type": obj["object_type"],
-                "object_name": obj["object_name"],
-                "source_code": obj["source_code"],
-                "reference_file": obj["reference_file"],
-                "content_hash": content_hash,
-                "occurrence_count": occurrence_count,
-                "start_line": obj["start_line"],
-                "end_line": obj["end_line"],
-            })
+            duplicate_objects.append(
+                {
+                    "object_type": obj["object_type"],
+                    "object_name": obj["object_name"],
+                    "source_code": obj["source_code"],
+                    "reference_file": obj["reference_file"],
+                    "content_hash": content_hash,
+                    "occurrence_count": occurrence_count,
+                    "start_line": obj["start_line"],
+                    "end_line": obj["end_line"],
+                }
+            )
     duplicate_objects.sort(
         key=lambda obj: (
             -obj["occurrence_count"],
@@ -176,22 +180,24 @@ def generate_fuzzy_report(all_objects, output_file="fuzzy_duplicates.json"):
             if ssdeep_sim > 0:
                 ratio = fuzz.ratio(obj1["source_code"], obj2["source_code"])
                 if ratio > 50.0:
-                    report.append({
-                        "object_1": {
-                            "type": obj1["object_type"],
-                            "name": obj1["object_name"],
-                            "file": obj1["reference_file"],
-                            "source_code": obj1["source_code"],
-                        },
-                        "object_2": {
-                            "type": obj2["object_type"],
-                            "name": obj2["object_name"],
-                            "file": obj2["reference_file"],
-                            "source_code": obj2["source_code"],
-                        },
-                        "similarity_percentage": round(ratio, 2),
-                        "ssdeep_score": ssdeep_sim,
-                    })
+                    report.append(
+                        {
+                            "object_1": {
+                                "type": obj1["object_type"],
+                                "name": obj1["object_name"],
+                                "file": obj1["reference_file"],
+                                "source_code": obj1["source_code"],
+                            },
+                            "object_2": {
+                                "type": obj2["object_type"],
+                                "name": obj2["object_name"],
+                                "file": obj2["reference_file"],
+                                "source_code": obj2["source_code"],
+                            },
+                            "similarity_percentage": round(ratio, 2),
+                            "ssdeep_score": ssdeep_sim,
+                        }
+                    )
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=4)
     print(f"[+] Saved {len(report)} fuzzy duplicate pairs to {output_file}")

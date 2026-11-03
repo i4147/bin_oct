@@ -4,9 +4,6 @@ from pathlib import Path
 
 
 def is_git_repo_simple(folder_path: str | Path) -> bool:
-    """
-    Checks if a folder contains a '.git' directory using pathlib.
-    """
     try:
         target_dir = Path(folder_path).expanduser().resolve()
         return target_dir.is_dir() and (target_dir / ".git").is_dir()
@@ -16,10 +13,6 @@ def is_git_repo_simple(folder_path: str | Path) -> bool:
 
 
 def clean_non_git_dir():
-    """
-    Recursively removes .github folders and .gitignore files in the current working
-    directory ONLY if the current directory is not a Git repository.
-    """
     current_dir = Path.cwd().resolve()
 
     if is_git_repo_simple(current_dir):

@@ -41,26 +41,28 @@ FAMILY_KWARGS: Final[dict[str, frozenset[str]]] = {
 }
 ATTR_TO_VALUE: Final[dict[str, str]] = {"s": "value", "n": "value"}
 VISITOR_PREFIXES: Final[dict[str, str]] = {f"visit_{name}": "visit_Constant" for name in DEPRECATED_FAMILY}
-DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".eggs",
-    "node_modules",
-    "build",
-    "dist",
-    ".pixi",
-    ".idea",
-    ".vscode",
-})
+DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        "__pycache__",
+        ".venv",
+        "venv",
+        ".tox",
+        ".nox",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".eggs",
+        "node_modules",
+        "build",
+        "dist",
+        ".pixi",
+        ".idea",
+        ".vscode",
+    }
+)
 DEFAULT_INCLUDES: Final[list[str]] = ["*.py"]
 DRY_RUN_HINT: Final[str] = "dry run: no files were modified - re-run with -a/--apply to write changes"
 _DEF_NAME_RE: Final[re.Pattern[str]] = re.compile(r"(?:async[ \t]+)?def[ \t]+([A-Za-z_][A-Za-z0-9_]*)")

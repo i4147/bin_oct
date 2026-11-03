@@ -32,12 +32,10 @@ except ImportError:
 
 
 def format_row(backend: str, encoding: str, confidence: str) -> str:
-    """Formats a single row to fit standard terminal spacing parameters."""
     return f"║ {backend:<24} ║ {encoding:<18} ║ {confidence:<12} ║"
 
 
 def normalize_encoding_name(name: str | None) -> str | None:
-    """Normalizes variation in backend strings (e.g., 'UTF8', 'utf-8', 'UTF-8-SIG' -> 'utf-8')"""
     if not name:
         return None
     cleaned = name.strip().lower().replace("_", "-")

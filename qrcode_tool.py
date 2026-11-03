@@ -1,26 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Read QR/barcodes from images (and optionally generate QR codes).
-
-Analysis / deduplication
-------------------------
-``qrcode_reader.py`` and ``qrcoder.py`` are functionally identical:
-both open an image with Pillow and decode it with pyzbar. The only
-real differences - the reader prints type/position and every code,
-``qrcoder`` keeps only ``QRCODE`` symbols - are now ``--verbose`` and
-``--qr-only``. A ``make`` subcommand (via the optional ``qrcode``
-package) was added since a read-only "qrcode_tools" folder begs for
-its inverse; decoding prefers pyzbar and falls back to OpenCV's
-``QRCodeDetector`` when pyzbar/zbar is unavailable.
-
-Needs Pillow + (pyzbar or opencv-python); pyzbar needs the system
-``zbar`` library (``apt install libzbar0``).
-
-Examples
---------
-  python3 qrcode_tool.py read code.png
-  python3 qrcode_tool.py read photos/ --data-only
-  python3 qrcode_tool.py make "https://example.com" -o code.png
-"""
 
 import argparse
 import json
@@ -32,7 +10,6 @@ from pathlib import Path
 
 @dataclass(slots=True)
 class DecodedCode:
-    """One decoded symbol."""
 
     data: str
     kind: str
@@ -40,13 +17,12 @@ class DecodedCode:
 
 
 def decode_with_pyzbar(image: object, qr_only: bool) -> list[DecodedCode] | None:
-    """Decode with pyzbar; None means "library unavailable"."""
     try:
         from pyzbar.pyzbar import decode
     except ImportError:
         return None
     results: list[DecodedCode] = []
-    for symbol in decode(image):  # type: ignore[arg-type]
+    for symbol in decode(image):
         kind: str = str(symbol.type)
         if qr_only and kind != "QRCODE":
             continue
@@ -62,15 +38,14 @@ def decode_with_pyzbar(image: object, qr_only: bool) -> list[DecodedCode] | None
 
 
 def decode_with_opencv(path: Path) -> list[DecodedCode] | None:
-    """Decode a single QR code with OpenCV; None = unavailable."""
     try:
         import cv2
     except ImportError:
         return None
-    image = cv2.imread(str(path))  # type: ignore[attr-defined]
+    image = cv2.imread(str(path))
     if image is None:
         return []
-    detector = cv2.QRCodeDetector()  # type: ignore[attr-defined]
+    detector = cv2.QRCodeDetector()
     data: str
     points: object
     data, points, _ = detector.detectAndDecode(image)
@@ -87,7 +62,6 @@ def decode_with_opencv(path: Path) -> list[DecodedCode] | None:
 
 
 def decode_image(path: Path, qr_only: bool) -> list[DecodedCode]:
-    """Decode all codes in one image file."""
     try:
         from PIL import Image
     except ImportError:
@@ -104,7 +78,6 @@ def decode_image(path: Path, qr_only: bool) -> list[DecodedCode]:
 
 
 def find_images(inputs: Sequence[Path]) -> list[Path]:
-    """Collect image files from file/dir arguments."""
     suffixes: frozenset[str] = frozenset({".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"})
     found: list[Path] = []
     for root in inputs:
@@ -116,7 +89,6 @@ def find_images(inputs: Sequence[Path]) -> list[Path]:
 
 
 def cmd_read(args: argparse.Namespace) -> int:
-    """Decode QR/barcodes in image(s)."""
     images: list[Path] = find_images(args.images)
     if not images:
         print("No images found.", file=sys.stderr)
@@ -152,22 +124,20 @@ def cmd_read(args: argparse.Namespace) -> int:
 
 
 def cmd_make(args: argparse.Namespace) -> int:
-    """Generate a QR code PNG for the given data."""
     try:
         import qrcode
     except ImportError:
         print("Missing optional dependency: pip install qrcode", file=sys.stderr)
         return 1
-    image: object = qrcode.make(args.data)  # type: ignore[attr-defined]
+    image: object = qrcode.make(args.data)
     if args.size is not None:
-        image = image.resize((args.size, args.size))  # type: ignore[attr-defined]
-    image.save(str(args.output))  # type: ignore[attr-defined]
+        image = image.resize((args.size, args.size))
+    image.save(str(args.output))
     print(f"Wrote QR code to {args.output}")
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="Read (and make) QR codes.")
     sub = parser.add_subparsers(dest="command", required=True)
     rd = sub.add_parser("read", help="Decode codes in image file(s)/dir(s)")
@@ -186,7 +156,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

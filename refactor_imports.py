@@ -80,13 +80,15 @@ def analyze_files() -> list[dict[str, Any]]:
     for key, paths in definitions.items():
         unique_paths: list[str] = list(set(paths))
         if len(unique_paths) > DUPLICATE_THRESHOLD:
-            repeated.append({
-                "type": key[0],
-                "name": key[1],
-                "source": source_map[key],
-                "count": len(unique_paths),
-                "files": unique_paths,
-            })
+            repeated.append(
+                {
+                    "type": key[0],
+                    "name": key[1],
+                    "source": source_map[key],
+                    "count": len(unique_paths),
+                    "files": unique_paths,
+                }
+            )
     return repeated
 
 

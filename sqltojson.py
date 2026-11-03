@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import absolute_import, annotations
-
 import calendar
 import contextlib
 import csv
@@ -11,7 +10,6 @@ import sys
 from decimal import Decimal
 from typing import Optional
 from zoneinfo import ZoneInfo
-
 import fire
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import create_engine
@@ -316,7 +314,6 @@ def list_queries(
     return global_query_names
 
 
-# The command-line option names shadow these public helpers in the handler.
 _list_connections = list_connections
 _list_queries = list_queries
 

@@ -1,22 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Language detection scanner with pluggable backends.
-
-Usage:
-    python langscan.py -b pycld2 .
-    python langscan.py --backend lingua /path/to/dir
-    python langscan.py -b fast_langdetect --only-non-english .
-    python langscan.py -b langdetect .
-
-Available backends (install the one you need):
-    pycld2           -> pip install pycld2
-    gcld3            -> pip install gcld3
-    cld3             -> pip install cld3
-    langdetect       -> pip install langdetect
-    pylangid         -> pip install py3langid
-    fast_langdetect  -> pip install fast-langdetect
-    lingua           -> pip install lingua-language-detector
-"""
 
 import os
 import sys
@@ -24,12 +6,7 @@ import math
 import argparse
 from typing import Callable
 
-DetectionResult = tuple[str, float]  # (lang_code, probability in [0,1])
-
-
-# --- Backend implementations -------------------------------------------------
-# Each function lazy-imports its library so a missing package only breaks
-# that specific backend, not the whole program.
+DetectionResult = tuple[str, float]
 
 
 def _detect_pycld2(text: str) -> DetectionResult:
@@ -68,7 +45,7 @@ def _detect_cld3(text: str) -> DetectionResult:
 def _detect_langdetect(text: str) -> DetectionResult:
     from langdetect import detect_langs, DetectorFactory
 
-    DetectorFactory.seed = 0  # deterministic output
+    DetectorFactory.seed = 0
     results = detect_langs(text)
     if not results:
         return "unknown", 0.0
@@ -77,14 +54,12 @@ def _detect_langdetect(text: str) -> DetectionResult:
 
 
 def _detect_pylangid(text: str) -> DetectionResult:
-    # `py3langid` installs the `langid` module name
     import langid
 
-    rankings = langid.rank(text)  # [(lang, log_score), ...] sorted desc
+    rankings = langid.rank(text)
     if not rankings:
         return "unknown", 0.0
     top_lang, top_score = rankings[0]
-    # Softmax over the top-K candidates to turn log-scores into probabilities
     top_k = rankings[:10]
     max_s = top_k[0][1]
     total = sum(math.exp(s - max_s) for _, s in top_k)
@@ -96,7 +71,6 @@ def _detect_fast_langdetect(text: str) -> DetectionResult:
     from fast_langdetect import detect
 
     result = detect(text)
-    # Different versions return either a dict or a list of dicts
     if isinstance(result, dict):
         return result.get("lang", "unknown").lower(), float(result.get("score", 0.0))
     if isinstance(result, list) and result:
@@ -112,8 +86,6 @@ def _detect_lingua(text: str) -> DetectionResult:
     if _lingua_detector is None:
         from lingua import LanguageDetectorBuilder
 
-        # NOTE: from_all_languages() loads all models (~few seconds startup).
-        # For speed, restrict with: .from_languages(Language.ENGLISH, Language.FRENCH, ...)
         _lingua_detector = LanguageDetectorBuilder.from_all_languages().build()
     confidences = _lingua_detector.compute_language_confidence_values(text)
     if not confidences:
@@ -150,9 +122,6 @@ def detect_language(text: str, backend: str) -> DetectionResult:
         return f"error", float("nan")
 
 
-# --- Scanner ----------------------------------------------------------------
-
-
 def scan_and_detect(root_dir: str, backend: str, only_non_english: bool) -> None:
     print(f"Backend : {backend}", flush=True)
     print(f"Scanning: {os.path.abspath(root_dir)}\n", flush=True)
@@ -184,9 +153,6 @@ def scan_and_detect(root_dir: str, backend: str, only_non_english: bool) -> None
             print(f"{file_path:<50} | {lang:<10} | {conf_str:<6} | {snippet}", flush=True)
 
 
-# --- Entry point ------------------------------------------------------------
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Scan a directory and detect the language of each file.",
@@ -199,7 +165,6 @@ def main():
     parser.add_argument("--only-non-english", action="store_true", help="Only print files detected as non-English")
     args = parser.parse_args()
 
-    # Pre-flight: verify the chosen backend is usable before walking the tree
     try:
         detect_language("hello world", args.backend)
     except ImportError as e:

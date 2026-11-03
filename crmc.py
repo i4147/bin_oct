@@ -36,21 +36,23 @@ TARGET_PYTHON: Final[str] = "3.12"
 TARGET_VERSION: Final[tuple[int, int]] = (3, 12)
 PY_SUFFIXES: Final[frozenset[str]] = frozenset({".py", ".pyw", ".pyi"})
 """Extensions picked up while walking directories."""
-DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    ".eggs",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "node_modules",
-})
+DEFAULT_EXCLUDES: Final[frozenset[str]] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".tox",
+        ".nox",
+        ".venv",
+        "venv",
+        ".eggs",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        "node_modules",
+    }
+)
 """Directory names that are never descended into while walking a directory."""
 PoolMethod = Literal["map", "imap", "imap_unordered", "apply", "apply_async", "starmap"]
 POOL_METHODS: Final[tuple[str, ...]] = get_args(PoolMethod)

@@ -25,24 +25,26 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 WORKERS: int = 8
 _PARSERS: dict[str, Parser] = {}
-_SUPPORTED_EXTS: frozenset[str] = frozenset({
-    ".rs",
-    ".sh",
-    ".c",
-    ".cpp",
-    ".cc",
-    ".h",
-    ".hh",
-    ".hpp",
-    ".js",
-    ".ts",
-    ".css",
-    ".jsx",
-    ".tsx",
-    ".html",
-    ".toml",
-    ".lua",
-})
+_SUPPORTED_EXTS: frozenset[str] = frozenset(
+    {
+        ".rs",
+        ".sh",
+        ".c",
+        ".cpp",
+        ".cc",
+        ".h",
+        ".hh",
+        ".hpp",
+        ".js",
+        ".ts",
+        ".css",
+        ".jsx",
+        ".tsx",
+        ".html",
+        ".toml",
+        ".lua",
+    }
+)
 
 
 def get_parser(lang_key: str) -> Parser:

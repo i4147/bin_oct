@@ -9,7 +9,6 @@ from pip._internal.commands import main as pip_main
 
 
 def installer(batch):
-    """Reinstalls a batch of packages using pip internal main."""
     if not batch:
         return
     print(f"[+] Reinstalling batch: {batch}")
@@ -21,7 +20,6 @@ def installer(batch):
 
 
 def _inspect_distribution(dist):
-    """Helper worker to inspect a single distribution for multiprocessing speedup."""
     try:
         name = dist.metadata.get("Name", "")
         if not name:
@@ -51,7 +49,6 @@ def _inspect_distribution(dist):
 
 
 def get_pure_python_packages_sorted():
-    """Finds pure Python packages, calculates installed size in parallel, and sorts smallest-first."""
     dists = list(importlib.metadata.distributions())
     print(f"[*] Scanning {len(dists)} distributions using multiprocessing...")
     with multiprocessing.Pool(processes=min(4, multiprocessing.cpu_count())) as pool:
@@ -62,13 +59,11 @@ def get_pure_python_packages_sorted():
 
 
 def chunked(iterable, n):
-    """Yield successive n-sized chunks from iterable."""
     for i in range(0, len(iterable), n):
         yield iterable[i : i + n]
 
 
 def parse_package_file(file_path):
-    """Reads packages from a file, one per line, ignoring comments and empty lines."""
     path = Path(file_path)
     if not path.exists():
         print(f"[!] Error: File '{file_path}' not found.")

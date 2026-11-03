@@ -5,7 +5,6 @@ from pathlib import Path
 
 
 def render_to_html(input_path_str: str) -> None:
-    # 1. Parse and validate the input path
     input_path = Path(input_path_str).resolve()
     if not input_path.is_file():
         print(f"Error: File not found at '{input_path}'", file=sys.stderr)
@@ -14,16 +13,12 @@ def render_to_html(input_path_str: str) -> None:
     suffix = input_path.suffix.lower()
     output_path = input_path.with_suffix(".html")
 
-    # 2. Process content based on the file extension type
     if suffix == ".svg":
-        # Read SVG file content
         svg_content = input_path.read_text(encoding="utf-8").strip()
 
-        # Encode SVG content to safe base64 data URL string
         svg_b64 = base64.b64encode(svg_content.encode("utf-8")).decode("utf-8")
         data_url = f"data:image/svg+xml;base64,{svg_b64}"
 
-        # Build fully standalone HTML page with centered image container
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,12 +58,8 @@ def render_to_html(input_path_str: str) -> None:
 """
 
     elif suffix == ".mmd":
-        # Read raw text-based Mermaid code block content
         mermaid_code = input_path.read_text(encoding="utf-8").strip()
 
-        # To keep it completely self-contained without internet access,
-        # we inline the official Mermaid JS engine library script bundle as base64.
-        # This falls back gracefully to a public reliable CDN network mirror script.
         mermaid_cdn_url = "https://jsdelivr.net"
 
         html_content = f"""<!DOCTYPE html>
@@ -113,7 +104,6 @@ def render_to_html(input_path_str: str) -> None:
         )
         sys.exit(1)
 
-    # 3. Write out the constructed markup string next to input file location
     output_path.write_text(html_content, encoding="utf-8")
     print(f"Successfully generated standalone layout at: {output_path}")
 

@@ -25,14 +25,16 @@ except ImportError:
 if not (HAS_GOOGLETRANS or HAS_DEEP_TRANSLATOR):
     logger.error("Please install either googletrans (4.0.0rc1) or deep-translator.")
     sys.exit(1)
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    "lazy",
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-})
+SKIP_DIRS: Final[frozenset[str]] = frozenset(
+    {
+        "lazy",
+        ".git",
+        "__pycache__",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+    }
+)
 CHINESE_PATTERN: Final[re.Pattern] = re.compile(
     r"[\u4e00-\u9fff\u3400-\u4dbf\u20000-\u2a6df\u2a700-\u2b73f\u2b740-\u2b81f\u2b820-\u2ceaf\uf900-\ufaff]"
 )

@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""(No content in stream)
-
----"""
 
 import argparse
 import contextlib
@@ -19,16 +16,18 @@ BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
 DEFAULT_SUFFIXES: tuple[str, ...] = (".html", ".htm", ".xhtml")
 DEFAULT_JOBS: int = 8
 TMP_SUFFIX: str = "..tmp"
-SKIP_DIR_NAMES: frozenset[str] = frozenset({
-    ".git",
-    ".venv",
-    "node_modules",
-    "__pycache__",
-    ".idea",
-    ".vscode",
-    "dist",
-    "build",
-})
+SKIP_DIR_NAMES: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".venv",
+        "node_modules",
+        "__pycache__",
+        ".idea",
+        ".vscode",
+        "dist",
+        "build",
+    }
+)
 
 
 def _is_html(path: Path, suffixes: frozenset[str]) -> bool:

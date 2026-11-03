@@ -128,11 +128,13 @@ def analyze_wheels(source_dir, dest_dir_name: str = "empty_wheels", check_instal
                         print(f"  📍 Installed at: {location}")
                         if not has_files:
                             print("  ⚠ Installation appears incomplete!")
-                    installed_empty_wheels.append({
-                        "wheel": wheel_file,
-                        "package": pkg_name,
-                        "version": installed_version,
-                    })
+                    installed_empty_wheels.append(
+                        {
+                            "wheel": wheel_file,
+                            "package": pkg_name,
+                            "version": installed_version,
+                        }
+                    )
                 else:
                     print(f"  ℹ Package '{pkg_name}' not found in installed packages")
             empty_wheels.append(wheel_file)
@@ -147,10 +149,8 @@ def analyze_wheels(source_dir, dest_dir_name: str = "empty_wheels", check_instal
     print(f"Valid wheels: {len(valid_wheels)}")
     print(f"Empty wheels: {len(empty_wheels)}")
     if installed_empty_wheels:
-        print(
-            f"""
-⚠ CRITICAL: {len(installed_empty_wheels)} empty wheels correspond to INSTALLED packages!"""
-        )
+        print(f"""
+⚠ CRITICAL: {len(installed_empty_wheels)} empty wheels correspond to INSTALLED packages!""")
         for item in installed_empty_wheels:
             print(f"  - {item['wheel'].name} -> {item['package']}=={item['version']}")
         print("\nRECOMMENDATIONS:")

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import fnmatch
 import glob as _glob
@@ -20,7 +19,6 @@ from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
-
 from loguru import logger
 
 try:
@@ -51,26 +49,28 @@ DEFAULT_BASE_ARGS: tuple[str, ...] = (
     "--minify-css",
     "--minify-js",
 )
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "node_modules",
-    "venv",
-    ".venv",
-    "env",
-    ".env",
-    "dist",
-    "build",
-    ".next",
-    ".nuxt",
-    "target",
-    "__pycache__",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
+DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        "node_modules",
+        "venv",
+        ".venv",
+        "env",
+        ".env",
+        "dist",
+        "build",
+        ".next",
+        ".nuxt",
+        "target",
+        "__pycache__",
+        ".tox",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+    }
+)
 GREEN: str = "\x1b[32m"
 RED: str = "\x1b[31m"
 YELLOW: str = "\x1b[33m"

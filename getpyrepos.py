@@ -21,18 +21,20 @@ def get_user_repos(username: str) -> list[dict]:
                 break
             for repo in page_repos:
                 if repo.get("language") == "Python":
-                    repos.append({
-                        "name": repo["name"],
-                        "full_name": repo["full_name"],
-                        "description": repo.get("description", ""),
-                        "url": repo["html_url"],
-                        "stars": repo["stargazers_count"],
-                        "forks": repo["forks_count"],
-                        "language": repo["language"],
-                        "created_at": repo["created_at"],
-                        "updated_at": repo["updated_at"],
-                        "private": repo["private"],
-                    })
+                    repos.append(
+                        {
+                            "name": repo["name"],
+                            "full_name": repo["full_name"],
+                            "description": repo.get("description", ""),
+                            "url": repo["html_url"],
+                            "stars": repo["stargazers_count"],
+                            "forks": repo["forks_count"],
+                            "language": repo["language"],
+                            "created_at": repo["created_at"],
+                            "updated_at": repo["updated_at"],
+                            "private": repo["private"],
+                        }
+                    )
             if len(page_repos) < 100:
                 break
             page += 1
@@ -61,14 +63,16 @@ def get_top_trending_users() -> list[dict]:
             user_response = requests.get(user_url)
             user_response.raise_for_status()
             user_data = user_response.json()
-            trending_users.append({
-                "username": user_data["login"],
-                "name": user_data.get("name", ""),
-                "followers": user_data["followers"],
-                "repos_url": user_data["repos_url"],
-                "html_url": user_data["html_url"],
-                "repositories": get_user_repos(user_data["login"]),
-            })
+            trending_users.append(
+                {
+                    "username": user_data["login"],
+                    "name": user_data.get("name", ""),
+                    "followers": user_data["followers"],
+                    "repos_url": user_data["repos_url"],
+                    "html_url": user_data["html_url"],
+                    "repositories": get_user_repos(user_data["login"]),
+                }
+            )
         return trending_users
     except requests.exceptions.RequestException as e:
         print(f"Error fetching trending users: {e}", file=sys.stderr)

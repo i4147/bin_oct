@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import re
 import sys
 import unicodedata
@@ -10,7 +9,6 @@ from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
 from loguru import logger
 
 try:

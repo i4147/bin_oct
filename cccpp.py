@@ -13,17 +13,19 @@ from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-CPP_EXTS: frozenset[str] = frozenset({
-    ".cc",
-    ".cpp",
-    ".cxx",
-    ".c++",
-    ".hpp",
-    ".hh",
-    ".hxx",
-    ".h++",
-    ".inl",
-})
+CPP_EXTS: frozenset[str] = frozenset(
+    {
+        ".cc",
+        ".cpp",
+        ".cxx",
+        ".c++",
+        ".hpp",
+        ".hh",
+        ".hxx",
+        ".h++",
+        ".inl",
+    }
+)
 C_EXTS: frozenset[str] = frozenset({".c", ".h"})
 ALL_EXTS: frozenset[str] = C_EXTS | CPP_EXTS
 WORKERS: int = 8
@@ -79,14 +81,16 @@ def get_comment_info(content: bytes, ext: str) -> list[dict[str, object]]:
             if next_newline != -1:
                 context_end = next_newline + 1
         context: str = content[context_start:context_end].decode("utf-8", errors="replace")
-        comment_info.append({
-            "start": start,
-            "end": end,
-            "start_line": start_line,
-            "end_line": end_line,
-            "text": comment_text,
-            "context": context,
-        })
+        comment_info.append(
+            {
+                "start": start,
+                "end": end,
+                "start_line": start_line,
+                "end_line": end_line,
+                "text": comment_text,
+                "context": context,
+            }
+        )
     return comment_info
 
 

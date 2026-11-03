@@ -11,25 +11,27 @@ from typing import TYPE_CHECKING, Final, Protocol
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-EXCLUDED_SUFFIXES: Final[frozenset[str]] = frozenset({
-    ".py",
-    ".h",
-    ".c",
-    ".js",
-    ".ts",
-    ".hpp",
-    ".cpp",
-    ".pyx",
-    ".jsx",
-    ".lua",
-    ".tsx",
-    ".pl",
-    ".am",
-    ".pm",
-    ".syntax",
-    ".so",
-    ".rmeta",
-})
+EXCLUDED_SUFFIXES: Final[frozenset[str]] = frozenset(
+    {
+        ".py",
+        ".h",
+        ".c",
+        ".js",
+        ".ts",
+        ".hpp",
+        ".cpp",
+        ".pyx",
+        ".jsx",
+        ".lua",
+        ".tsx",
+        ".pl",
+        ".am",
+        ".pm",
+        ".syntax",
+        ".so",
+        ".rmeta",
+    }
+)
 SHELL_SHEBANG_TOKENS: Final[tuple[str, ...]] = (
     "bash",
     "sh",

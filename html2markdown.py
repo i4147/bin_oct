@@ -1,35 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Convert HTML files to Markdown (or plain text) with pluggable engines.
-
-Analysis / deduplication
-------------------------
-Eight scripts converted ``.html`` -> ``.md`` next to the source,
-differing only in engine and side effects:
-- ``h2md.py`` / ``tomd.py``: markdownify (+ readability in ``tomd``,
-  and ``tomd`` imported ``markdownify(content)`` but wrote an
-  undefined ``md_content`` in ``h2md`` - fixed here).
-- ``html_to_md.py``: readability ``Document`` + html2text, and
-  unconditionally deleted the source -> now needs ``--remove-original``.
-- ``trafila.py``: trafilatura with markdownify fallback, ``-r`` to
-  delete -> same flag.
-- ``htmltomd.py``: BeautifulSoup cleaning + ``html_to_markdown`` pkg.
-- ``htm2md.py``: external ``rhtml2md`` binary -> ``--engine command``.
-- ``strip_html_tags.py``: stdlib text extraction (parallel slicing
-  removed; plain parser below) -> ``to-text`` / ``--engine text``.
-- ``html_to_text_with_pyppeteer.py``: render a URL in Chromium ->
-  ``fetch`` (pyppeteer optional; plain HTTP fallback included).
-
-One engine flag now covers all: ``auto`` tries trafilatura ->
-html_to_markdown -> html2text -> markdownify -> built-in text, using
-the first installed. Only the chosen engine's package is required.
-
-Examples
---------
-  python3 html_to_markdown_tool.py to-md site/
-  python3 html_to_markdown_tool.py to-md a.html --engine html2text --main-content
-  python3 html_to_markdown_tool.py to-text site/ -o text_out/
-  python3 html_to_markdown_tool.py fetch https://example.com -o example.txt
-"""
 
 import argparse
 import html.parser
@@ -43,47 +12,48 @@ from pathlib import Path
 
 HTML_SUFFIXES: frozenset[str] = frozenset({".html", ".htm", ".xhtml", ".xhtm"})
 SKIP_TAGS: frozenset[str] = frozenset({"script", "style", "noscript", "template", "head"})
-BLOCK_TAGS: frozenset[str] = frozenset({
-    "address",
-    "article",
-    "aside",
-    "blockquote",
-    "br",
-    "dd",
-    "div",
-    "dl",
-    "dt",
-    "fieldset",
-    "figcaption",
-    "figure",
-    "footer",
-    "form",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "header",
-    "hr",
-    "li",
-    "main",
-    "nav",
-    "ol",
-    "p",
-    "pre",
-    "section",
-    "table",
-    "td",
-    "th",
-    "tr",
-    "ul",
-})
+BLOCK_TAGS: frozenset[str] = frozenset(
+    {
+        "address",
+        "article",
+        "aside",
+        "blockquote",
+        "br",
+        "dd",
+        "div",
+        "dl",
+        "dt",
+        "fieldset",
+        "figcaption",
+        "figure",
+        "footer",
+        "form",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "header",
+        "hr",
+        "li",
+        "main",
+        "nav",
+        "ol",
+        "p",
+        "pre",
+        "section",
+        "table",
+        "td",
+        "th",
+        "tr",
+        "ul",
+    }
+)
 BLANK_RUN: re.Pattern[str] = re.compile(r"\n{3,}")
 
 
 class TextExtractor(html.parser.HTMLParser):
-    """Very small HTML -> text converter (headings become ``#`` lines)."""
 
     def __init__(self, markdown: bool = False) -> None:
         super().__init__(convert_charrefs=True)
@@ -127,7 +97,6 @@ class TextExtractor(html.parser.HTMLParser):
             self._parts.append(data)
 
     def get_text(self) -> str:
-        """Collapsed, trimmed extracted text with a final newline."""
         text: str = "".join(self._parts)
         lines: list[str] = [" ".join(line.split()) for line in text.splitlines()]
         joined: str = BLANK_RUN.sub("\n\n", "\n".join(lines)).strip()
@@ -135,7 +104,6 @@ class TextExtractor(html.parser.HTMLParser):
 
 
 def html_to_text(source: str, markdown: bool = False) -> str:
-    """Extract readable text (or light Markdown) with the stdlib parser."""
     parser = TextExtractor(markdown=markdown)
     parser.feed(source)
     parser.close()
@@ -143,7 +111,6 @@ def html_to_text(source: str, markdown: bool = False) -> str:
 
 
 def clean_with_soup(source: str, keep_forms: bool) -> str:
-    """Drop scripts/styles/nav/footer/forms with BeautifulSoup."""
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(source, "html.parser")
@@ -156,14 +123,12 @@ def clean_with_soup(source: str, keep_forms: bool) -> str:
 
 
 def main_content(source: str) -> str:
-    """Readability main-content HTML (needs readability-lxml)."""
     from readability import Document
 
     return str(Document(source).summary())
 
 
 def convert_engine(source: str, engine: str, keep_forms: bool, only_main: bool, command: str, source_path: Path) -> str:
-    """Convert *source* HTML to Markdown with the requested engine."""
     body: str = main_content(source) if only_main else source
     if engine == "trafilatura":
         import trafilatura
@@ -211,7 +176,6 @@ def convert_engine(source: str, engine: str, keep_forms: bool, only_main: bool, 
 
 
 def pick_engine(requested: str) -> str:
-    """Resolve ``auto`` to the first installed real engine."""
     if requested != "auto":
         return requested
     candidates: list[tuple[str, str]] = [
@@ -229,7 +193,6 @@ def pick_engine(requested: str) -> str:
 
 
 def convert_one(job: tuple[Path, str, bool, bool, str, bool]) -> tuple[Path, bool, str]:
-    """Convert one file to ``.md``; return (path, ok, note)."""
     path, engine, keep_forms, only_main, command, remove_original = job
     dest: Path = path.with_suffix(".md")
     if dest.exists():
@@ -249,7 +212,6 @@ def convert_one(job: tuple[Path, str, bool, bool, str, bool]) -> tuple[Path, boo
 
 
 def find_html(inputs: Sequence[Path], recursive: bool) -> list[Path]:
-    """Collect HTML files from file/dir arguments."""
     roots: list[Path] = list(inputs) or [Path.cwd()]
     found: set[Path] = set()
     for root in roots:
@@ -262,7 +224,6 @@ def find_html(inputs: Sequence[Path], recursive: bool) -> list[Path]:
 
 
 def run_batch(files: list[Path], engine: str, args: argparse.Namespace) -> int:
-    """Convert *files* in parallel and summarise."""
     jobs: list[tuple[Path, str, bool, bool, str, bool]] = [
         (p, engine, args.keep_forms, args.main_content, args.command, args.remove_original) for p in files
     ]
@@ -276,7 +237,6 @@ def run_batch(files: list[Path], engine: str, args: argparse.Namespace) -> int:
 
 
 def cmd_to_md(args: argparse.Namespace) -> int:
-    """Run the ``to-md`` subcommand."""
     files: list[Path] = find_html(args.paths, args.recursive)
     if not files:
         print("No HTML files found.")
@@ -285,7 +245,6 @@ def cmd_to_md(args: argparse.Namespace) -> int:
 
 
 def cmd_to_text(args: argparse.Namespace) -> int:
-    """Strip tags to plain .txt files (stdlib only)."""
     files: list[Path] = find_html(args.paths, args.recursive)
     count: int = 0
     for path in files:
@@ -304,7 +263,6 @@ def cmd_to_text(args: argparse.Namespace) -> int:
 
 
 def fetch_plain(url: str) -> str:
-    """Fetch *url* over HTTP and extract its text."""
     request = urllib.request.Request(url, headers={"User-Agent": "html-to-markdown-tool"})
     with urllib.request.urlopen(request, timeout=30) as response:
         source: str = response.read().decode("utf-8", errors="replace")
@@ -312,7 +270,6 @@ def fetch_plain(url: str) -> str:
 
 
 def cmd_fetch(args: argparse.Namespace) -> int:
-    """Fetch a URL's text, rendering with pyppeteer when asked."""
     if args.render:
         try:
             import asyncio
@@ -340,7 +297,6 @@ def cmd_fetch(args: argparse.Namespace) -> int:
 
 
 def write_fetch(args: argparse.Namespace, text: str) -> None:
-    """Write fetched text to -o (default: <host>.txt) or stdout."""
     if args.output is not None:
         args.output.write_text(text, encoding="utf-8")
         print(f"Wrote {args.output} ({len(text)} chars)")
@@ -349,7 +305,6 @@ def write_fetch(args: argparse.Namespace, text: str) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
     parser = argparse.ArgumentParser(description="HTML -> Markdown/text conversion.")
     sub = parser.add_subparsers(dest="command", required=True)
     md = sub.add_parser("to-md", help="Convert HTML files to Markdown")
@@ -382,7 +337,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     args: argparse.Namespace = build_parser().parse_args(argv)
     return int(args.handler(args))
 

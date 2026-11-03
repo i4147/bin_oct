@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
 import functools
 import multiprocessing as mp
@@ -10,7 +9,6 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
-
 from dh import atomic_write
 
 try:
@@ -22,23 +20,25 @@ COLUMN_WIDTH = 80
 INDENT = "  "
 ALLOWED_BLANK_LINES = 2
 CHUNK_MAX = 32
-SKIP_DIRS = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    ".nox",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".eggs",
-    "site-packages",
-})
+SKIP_DIRS = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "env",
+        ".tox",
+        ".nox",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".eggs",
+        "site-packages",
+    }
+)
 WS_RE = re.compile(r"[ \t]*")
 BARE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
 BASIC_STRING_RE = re.compile(r'"(?:[^"\\\n]|\\.)*"')

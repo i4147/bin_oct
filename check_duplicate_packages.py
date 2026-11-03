@@ -1,3 +1,4 @@
+#!/data/data/com.termux/files/usr/bin/env python
 import concurrent.futures
 import pathlib
 import site
