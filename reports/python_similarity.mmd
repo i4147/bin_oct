@@ -1,0 +1,138 @@
+flowchart LR
+    %% D = code similarity, F = functional overlap; see report for ranges and caveats.
+    subgraph D01["D01 · Tree reconstruction"]
+        D01n0["mk_tree.py"]
+        D01n1["mktree.py"]
+        D01n0 -->|D| D01n1
+    end
+    subgraph D02["D02 · Resumable translation"]
+        D02n0["dt3.py"]
+        D02n1["dtluna.py"]
+        D02n0 -->|D| D02n1
+    end
+    subgraph D03["D03 · In-place AI translation"]
+        D03n0["aitrans.py"]
+        D03n1["inplace_translator.py"]
+        D03n0 -->|D| D03n1
+    end
+    subgraph D04["D04 · Highlighted file viewer"]
+        D04n0["pbat.py"]
+        D04n1["pybat.py"]
+        D04n0 -->|D| D04n1
+    end
+    subgraph D05["D05 · Python compression"]
+        D05n0["compy.py"]
+        D05n1["compy2.py"]
+        D05n0 -->|D| D05n1
+    end
+    subgraph D06["D06 · Python object deduplication"]
+        D06n0["dduper.py"]
+        D06n1["deduplicate_python.py"]
+        D06n0 -->|D| D06n1
+    end
+    subgraph D07["D07 · Python duplicate finder"]
+        D07n0["pydup.py"]
+        D07n1["python_duplicate_finder.py"]
+        D07n0 -->|D| D07n1
+    end
+    subgraph D08["D08 · PyPI artifact downloader"]
+        D08n0["simple_pipdown.py"]
+        D08n1["spdown.py"]
+        D08n0 -->|D| D08n1
+    end
+    subgraph D09["D09 · Fuzzy file grouping"]
+        D09n0["fssim.py"]
+        D09n1["ssdim.py"]
+        D09n0 -->|D| D09n1
+    end
+    subgraph D10["D10 · Git identity migration"]
+        D10n0["migrate_git.py"]
+        D10n1["migrate_repos.py"]
+        D10n0 -->|D| D10n1
+    end
+    subgraph D11["D11 · Language-specific cleaners"]
+        D11n0["clean-js.py"]
+        D11n1["clean-ts.py"]
+        D11n2["clean-css.py"]
+        D11n3["clean-lua.py"]
+        D11n4["clean-toml.py"]
+        D11n5["clean-html.py"]
+        D11n0 -->|D| D11n1
+        D11n0 -->|D| D11n2
+        D11n0 -->|D| D11n3
+        D11n0 -->|D| D11n4
+        D11n0 -->|D| D11n5
+    end
+    subgraph D12["D12 · Terminal PDF viewer"]
+        D12n0["pdfv2.py"]
+        D12n1["tpv.py"]
+        D12n2["pdfviewer.py"]
+        D12n0 -->|D| D12n1
+        D12n0 -->|D| D12n2
+    end
+    subgraph D13["D13 · PDF toolkits"]
+        D13n0["pdftools2.py"]
+        D13n1["pdftoolz.py"]
+        D13n0 -->|D| D13n1
+    end
+    subgraph D14["D14 · SQL dump conversion inside toolkit"]
+        D14n0["dbtools.py"]
+        D14n1["sql2json.py"]
+        D14n0 -->|D| D14n1
+    end
+    subgraph D15["D15 · Python consolidation transforms"]
+        D15n0["consolidate.py"]
+        D15n1["rassingle.py"]
+        D15n0 -->|D| D15n1
+    end
+    subgraph D16["D16 · Text reformatter core"]
+        D16n0["docstring_formatter.py"]
+        D16n1["prompt-reformatter.py"]
+        D16n0 -->|D| D16n1
+    end
+    subgraph D17["D17 · Encoding diagnostics"]
+        D17n0["detect_encoding.py"]
+        D17n1["showenc.py"]
+        D17n2["getenc.py"]
+        D17n0 -->|D| D17n1
+        D17n0 -->|D| D17n2
+    end
+    subgraph F01["F01 · CSV to JSON"]
+        F01n0["csv2json.py"]
+        F01n1["csv2json2.py"]
+        F01n2["csvtojson.py"]
+        F01n0 -.->|F| F01n1
+        F01n0 -.->|F| F01n2
+    end
+    subgraph F02["F02 · Web page to PDF"]
+        F02n0["url2pdf.py"]
+        F02n1["url2pdf2.py"]
+        F02n2["url2pdf3.py"]
+        F02n3["web2pdf.py"]
+        F02n0 -.->|F| F02n1
+        F02n0 -.->|F| F02n2
+        F02n0 -.->|F| F02n3
+    end
+    subgraph F03["F03 · HTML to Markdown"]
+        F03n0["html2markdown.py"]
+        F03n1["htmltomarkdown.py"]
+        F03n0 -.->|F| F03n1
+    end
+    subgraph F04["F04 · Non-English content scanning"]
+        F04n0["detect_noneng.py"]
+        F04n1["detect_nonenglish.py"]
+        F04n2["noneng.py"]
+        F04n0 -.->|F| F04n1
+        F04n0 -.->|F| F04n2
+    end
+    subgraph F05["F05 · Empty wheel identification"]
+        F05n0["ewhl.py"]
+        F05n1["ewhl2.py"]
+        F05n2["find_empty_wheels.py"]
+        F05n3["emptypkg.py"]
+        F05n4["emptywhl.py"]
+        F05n0 -.->|F| F05n1
+        F05n0 -.->|F| F05n2
+        F05n0 -.->|F| F05n3
+        F05n0 -.->|F| F05n4
+    end
