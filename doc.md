@@ -6,7 +6,6 @@ Add useful comments and docstrings to the Python files in this repository.
    and existing documentation conventions in a few representative files.
 3. Note the established docstring style (Google / NumPy / reST / plain).
    If none is established, use Google style.
-ommit & push changes after every batch
 ## Scope rules
 - Documentation-only changes.
   Do NOT refactor, rename, reorder, reformat unrelated code, change imports, change signatures,
@@ -71,3 +70,9 @@ After all batches are complete:
      alter orig files
 save the helper scripts (bash, python, ...) thst you used during this session under arena folder in
 root of connected repo commit the changes.
+
+i thinked it again and decided:
+- no batch limit
+- no need for approve after each batch (continue til all batches done)
+- save documented versions in `documented` folder
+so you dont need to stop and can go all the way to the end
