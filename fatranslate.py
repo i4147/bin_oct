@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -228,7 +229,7 @@ def cmd_lines(args: argparse.Namespace) -> int:
         chunks=chunks,
         source=args.source,
         target=args.target,
-        processes=args.processes,
+        processes=MAX_WORKERS,
         retries=args.retries,
         retry_delay=args.retry_delay,
     )
@@ -269,13 +270,13 @@ def cmd_words(args: argparse.Namespace) -> int:
     logger.info(
         "Loaded {} Persian words. Starting translation with {} workers...",
         len(words),
-        args.processes,
+        MAX_WORKERS,
     )
     translations = translate_words(
         words=words,
         source=args.source,
         target=args.target,
-        processes=args.processes,
+        processes=MAX_WORKERS,
         retries=args.retries,
         retry_delay=args.retry_delay,
     )
@@ -314,13 +315,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--target",
         default="en",
         help="Target language (default: en).",
-    )
-    lines_parser.add_argument(
-        "-p",
-        "--processes",
-        type=int,
-        default=8,
-        help="Worker processes (default: 8).",
     )
     lines_parser.add_argument(
         "-r",
@@ -387,13 +381,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--target",
         default="en",
         help="Target language (default: en).",
-    )
-    words_parser.add_argument(
-        "-p",
-        "--processes",
-        type=int,
-        default=8,
-        help="Worker processes; use 1 for sequential behavior (default: 8).",
     )
     words_parser.add_argument(
         "-r",

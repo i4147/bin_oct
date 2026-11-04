@@ -77,7 +77,7 @@ def process_small_file(input_path: Path, output_path: Path, methods: list[str], 
             shuffle_lines(shuffled_lines, method)
         target_path = output_path
         if output_path == input_path and len(methods) > 1:
-            base, ext = os.path.splitext(input_path)
+            base, ext = (str(Path(input_path).with_suffix("")), Path(input_path).suffix)
             target_path = Path(f"{base}_{method}{ext}")
         try:
             with target_path.open("w", encoding="utf-8") as f:

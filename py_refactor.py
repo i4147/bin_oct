@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import WORKERS
 import argparse
 import ast
 import contextlib
@@ -11,8 +12,6 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
-
-WORKERS: int = 6
 BACKUP_SUFFIX: str = ".bak"
 
 

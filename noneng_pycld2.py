@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import os
 import pycld2 as cld2
 
@@ -14,7 +15,7 @@ def detect_language(text):
 
 
 def scan_and_detect(root_dir="."):
-    print(f"Scanning directory: {os.path.abspath(root_dir)}\n", flush=True)
+    print(f"Scanning directory: {Path(root_dir).absolute()}\n", flush=True)
     print(f"{'File Path':<40} | {'pycld2':<15} | Snippet", flush=True)
     print("-" * 100, flush=True)
 
@@ -24,7 +25,7 @@ def scan_and_detect(root_dir="."):
             if file.startswith("."):
                 continue
 
-            file_path = os.path.join(root, file)
+            file_path = Path(root).joinpath(file)
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read().strip()

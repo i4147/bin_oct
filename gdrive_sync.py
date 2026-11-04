@@ -72,7 +72,7 @@ class DriveClient:
 
     def _authenticate(self):
         creds: Optional[Credentials] = None
-        if os.path.exists(self.token_file):
+        if Path(self.token_file).exists():
             with open(self.token_file, "rb") as fh:
                 creds = pickle.load(fh)
         if not creds or not creds.valid:
@@ -87,7 +87,7 @@ class DriveClient:
         return build("drive", "v3", credentials=creds)
 
     def _installed_oauth_flow(self):
-        if os.path.exists(self.credentials_file):
+        if Path(self.credentials_file).exists():
             flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
         else:
             if not self.client_id or not self.client_secret:
@@ -190,7 +190,7 @@ class DriveClient:
     def download_file(self, file_id: str, name: str, dest: str) -> bool:
         try:
             request = self.service.files().get_media(fileId=file_id)
-            os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+            os.makedirs(Path(dest).parent or ".", exist_ok=True)
             with open(dest, "wb") as fh:
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False
@@ -222,7 +222,7 @@ class DriveClient:
         for item in self.list_children(folder_id):
             raw_name = item["name"]
             name = _sanitize(raw_name) if sanitize else raw_name
-            path = os.path.join(dest, name)
+            path = Path(dest).joinpath(name)
             if item["mimeType"] == FOLDER_MIME:
                 self.sync_folder(
                     item["id"],
@@ -234,9 +234,9 @@ class DriveClient:
                 )
                 continue
             modified = item.get("modifiedTime")
-            if skip_existing and os.path.exists(path) and modified:
+            if skip_existing and Path(path).exists() and modified:
                 remote_ts = _iso_to_timestamp(modified)
-                if remote_ts is not None and os.path.getmtime(path) >= remote_ts:
+                if remote_ts is not None and Path(path).stat().st_mtime >= remote_ts:
                     print(f"{prefix}  ⏭ Up to date: {raw_name}")
                     continue
             if self.download_file(item["id"], raw_name, path) and modified:
@@ -264,7 +264,7 @@ def cmd_download(args: argparse.Namespace) -> int:
             msg = f"Folder '{args.folder}' not found in Google Drive"
             raise SystemExit(msg)
         print(f"Found folder '{args.folder}' with ID: {folder['id']}")
-        dest = args.dest or os.path.join(os.getcwd(), args.folder)
+        dest = args.dest or Path(os.getcwd()).joinpath(args.folder)
         os.makedirs(dest, exist_ok=True)
         client.sync_folder(
             folder["id"],

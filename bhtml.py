@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIR_NAMES
 import argparse
 import contextlib
 import os
@@ -16,16 +17,6 @@ BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
 DEFAULT_SUFFIXES: tuple[str, ...] = (".html", ".htm", ".xhtml")
 DEFAULT_JOBS: int = 8
 TMP_SUFFIX: str = "..tmp"
-SKIP_DIR_NAMES: frozenset[str] = frozenset({
-    ".git",
-    ".venv",
-    "node_modules",
-    "__pycache__",
-    ".idea",
-    ".vscode",
-    "dist",
-    "build",
-})
 
 
 def _is_html(path: Path, suffixes: frozenset[str]) -> bool:
@@ -119,13 +110,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Files or directories to process",
     )
     parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=DEFAULT_JOBS,
-        help=f"Worker processes (default: {DEFAULT_JOBS}).",
-    )
-    parser.add_argument(
         "--ext",
         action="append",
         default=None,
@@ -155,8 +139,8 @@ def main() -> int:
             BEAUTIFIER[0],
         )
         return 127
-    if args.jobs < 1:
-        logger.critical("--jobs must be >= 1 (got {})", args.jobs)
+    if MAX_WORKERS < 1:
+        logger.critical("--jobs must be >= 1 (got {})", MAX_WORKERS)
         return 2
     suffixes: frozenset[str] = (
         frozenset(s.lower() if s.startswith(".") else f".{s.lower()}" for s in (args.ext or DEFAULT_SUFFIXES))
@@ -167,9 +151,9 @@ def main() -> int:
     if not targets:
         logger.warning("No HTML files found for: {}", ", ".join(args.paths or ["."]))
         return 0
-    logger.info("Beautifying {} file(s) with {} workers", len(targets), args.jobs)
+    logger.info("Beautifying {} file(s) with {} workers", len(targets), MAX_WORKERS)
     failures: list[tuple[Path, BaseException]] = []
-    with ProcessPoolExecutor(max_workers=args.jobs) as executor:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(beautify, p): p for p in targets}
         for future in as_completed(futures):
             path = futures[future]

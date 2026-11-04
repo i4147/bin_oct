@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import json
-import logging
 import multiprocessing as mp
 import re
 import shutil
@@ -46,10 +47,9 @@ NON_ASCII = re.compile(r"[^\x00-\x7F]")
 CHINESE_RUN = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+")
 DEFAULT_CHUNK_SIZE = 32768
 DEFAULT_TARGET = "en"
-DEFAULT_WORKERS = 8
 DEFAULT_RETRIES = 3
 DEFAULT_DELAY = 0.5
-log = logging.getLogger("xtranslate")
+log = logger
 
 
 def is_binary(path: Path) -> bool:
@@ -138,7 +138,7 @@ def iter_files(
     for p_str in paths:
         p = Path(p_str).expanduser().resolve()
         if not p.exists():
-            log.warning("Path does not exist: %s", p)
+            log.warning("Path does not exist: {}", p)
             continue
         if p.is_file():
             if p not in exclude_resolved and not is_binary(p):
@@ -188,7 +188,7 @@ class Translator:
                 if attempt < self.retries - 1:
                     time.sleep(self.delay * (attempt + 1))
         if last_exc is not None:
-            log.debug("Translation failed after %d attempts: %s", self.retries, last_exc)
+            log.debug("Translation failed after {} attempts: {}", self.retries, last_exc)
         return text
 
 
@@ -309,13 +309,13 @@ def mode_inline(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-    print(f"Found {len(files)} files. Workers={args.workers}")
+    print(f"Found {len(files)} files. Workers={MAX_WORKERS}")
     opts = _common_opts(args)
     opts["use_file_api"] = getattr(args, "use_file_api", False)
     if opts["use_file_api"]:
-        return _run_file_api_mode(files, opts, args.workers)
+        return _run_file_api_mode(files, opts, MAX_WORKERS)
     tasks = [(str(f), opts) for f in files]
-    for status in _run_workers(_inline_file_worker, tasks, args.workers):
+    for status in _run_workers(_inline_file_worker, tasks, MAX_WORKERS):
         print(status)
     return 0
 
@@ -364,12 +364,12 @@ def mode_copy(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-    print(f"Found {len(files)} files. Workers={args.workers}")
+    print(f"Found {len(files)} files. Workers={MAX_WORKERS}")
     for path in files:
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
-            log.error("Cannot read %s: %s", path, exc)
+            log.error("Cannot read {}: {}", path, exc)
             continue
         if not args.force and not has_non_ascii(text):
             print(f"~ {path.name} (already English)")
@@ -377,13 +377,13 @@ def mode_copy(args: argparse.Namespace) -> int:
         chunks = list(chunk_by_size(text, args.chunk_size))
         print(f"→ {path.name}: {len(chunks)} chunks")
         tasks = [(c, args.source, args.target, args.retries, args.delay) for c in chunks]
-        results = _run_workers(_chunk_worker, tasks, args.workers)
+        results = _run_workers(_chunk_worker, tasks, MAX_WORKERS)
         result_text = "".join(results)
         if args.check_python_syntax and path.suffix == ".py":
             try:
                 ast.parse(result_text)
             except SyntaxError as exc:
-                log.error("Syntax error in translated Python for %s: %s", path, exc)
+                log.error("Syntax error in translated Python for {}: {}", path, exc)
                 continue
         out_path = _resolve_output_path(path, args)
         if args.dry_run:
@@ -418,12 +418,12 @@ def mode_json(args: argparse.Namespace) -> int:
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
-            log.error("Cannot read %s: %s", path, exc)
+            log.error("Cannot read {}: {}", path, exc)
             continue
         chunks = chunk_with_lines(text, args.chunk_size)
         print(f"→ {path.name}: {len(chunks)} chunks")
         tasks = [(c[2], args.source, args.target, args.retries, args.delay) for c in chunks]
-        results = _run_workers(_chunk_worker, tasks, args.workers)
+        results = _run_workers(_chunk_worker, tasks, MAX_WORKERS)
         records = []
         for (start, end, original), translated in zip(chunks, results):
             records.append({
@@ -458,7 +458,7 @@ def mode_pair(args: argparse.Namespace) -> int:
         try:
             text = path.read_text(encoding="utf-8")
         except OSError as exc:
-            log.error("Cannot read %s: %s", path, exc)
+            log.error("Cannot read {}: {}", path, exc)
             continue
         lines = text.splitlines()
         buf: list[str] = []
@@ -495,7 +495,7 @@ def mode_marked(args: argparse.Namespace) -> int:
     opts["replace"] = args.replace
     opts["backup_suffix"] = args.backup_suffix
     tasks = [(str(f), opts) for f in files]
-    for status in _run_workers(_marked_file_worker, tasks, args.workers):
+    for status in _run_workers(_marked_file_worker, tasks, MAX_WORKERS):
         print(status)
     return 0
 
@@ -522,7 +522,7 @@ def _segment_one(path: Path, args: argparse.Namespace, pattern: re.Pattern[str])
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
-        log.error("Cannot read %s: %s", path, exc)
+        log.error("Cannot read {}: {}", path, exc)
         return
     lines = text.splitlines(keepends=True)
     tasks: list[tuple[int, int, int, str]] = []
@@ -542,7 +542,7 @@ def _segment_one(path: Path, args: argparse.Namespace, pattern: re.Pattern[str])
     pending = [t for t in tasks if str(t[0]) not in progress or f"{t[1]},{t[2]}" not in progress[str(t[0])]]
     print(f"→ {path.name}: {len(pending)}/{len(tasks)} segments to translate")
     chunk_tasks = [(t[3], args.source, args.target, args.retries, args.delay) for t in pending]
-    results = _run_workers(_chunk_worker, chunk_tasks, args.workers) if pending else []
+    results = _run_workers(_chunk_worker, chunk_tasks, MAX_WORKERS) if pending else []
     for (line_idx, s, e, _), tr in zip(pending, results):
         progress.setdefault(str(line_idx), {})[f"{s},{e}"] = tr
     if args.dry_run:
@@ -576,7 +576,7 @@ _shutdown = False
 
 def _handle_signal(signum: int, _frame) -> None:
     global _shutdown
-    log.warning("Received signal %s — finishing current work and saving…", signum)
+    log.warning("Received signal {} — finishing current work and saving…", signum)
     _shutdown = True
 
 
@@ -623,7 +623,7 @@ def _resume_one(path: Path, args: argparse.Namespace) -> None:
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
-        log.error("Cannot read %s: %s", path, exc)
+        log.error("Cannot read {}: {}", path, exc)
         return
     lines = text.splitlines()
     if not lines:
@@ -636,8 +636,8 @@ def _resume_one(path: Path, args: argparse.Namespace) -> None:
     batches = [indexed[i : i + batch_size] for i in range(0, len(indexed), batch_size)]
     tasks = [(args.source, args.target, b, args.retries, args.delay) for b in batches]
     translations: dict[int, str] = {}
-    print(f"→ {path.name}: {len(lines)} lines / {len(batches)} batches (workers={args.workers}) -> {out_path}")
-    pool = mp.Pool(processes=args.workers) if args.workers > 1 else None
+    print(f"→ {path.name}: {len(lines)} lines / {len(batches)} batches (workers={MAX_WORKERS}) -> {out_path}")
+    pool = mp.Pool(processes=MAX_WORKERS) if MAX_WORKERS > 1 else None
     last_save = time.time()
     try:
         for i, task in enumerate(tasks):
@@ -695,13 +695,6 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         "--target",
         default=DEFAULT_TARGET,
         help=f"Target language code (default: {DEFAULT_TARGET}).",
-    )
-    p.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of parallel workers (default: {DEFAULT_WORKERS}).",
     )
     p.add_argument(
         "--extensions",
@@ -850,7 +843,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.paths:

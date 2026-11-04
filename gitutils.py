@@ -1,9 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from loguru import logger
 import argparse
 import csv
 import fnmatch
 import json
-import logging
 import os
 import subprocess
 import sys
@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
-LOG = logging.getLogger("gitaddedfiles")
+LOG = logger
 EXIT_OK = 0
 EXIT_NO_COMMITS = 1
 EXIT_USAGE = 2
@@ -651,7 +651,7 @@ def _load_config_file(path: Path | None) -> dict[str, Any]:
             with p.open("rb") as f:
                 data = tomllib.load(f)
         except Exception as e:
-            LOG.warning("could not read config %s: %s", p, e)
+            LOG.warning("could not read config {}: {}", p, e)
             continue
         if p.name == "pyproject.toml":
             return data.get("tool", {}).get("gitaddedfiles", {})
@@ -724,8 +724,7 @@ def _resolve(cli_val: Any, key: str, env_key: str, config: dict[str, Any], defau
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    level = logging.ERROR if args.quiet else (logging.DEBUG if args.verbose else logging.INFO)
-    logging.basicConfig(level=level, format="%(levelname)s %(message)s")
+    level = "ERROR" if args.quiet else ("DEBUG" if args.verbose else "INFO")
     config = _load_config_file(Path(args.config) if args.config else None)
     repo_path = _resolve(args.repo_path, "repo_path", "GAF_REPO_PATH", config, ".")
     output_path = _resolve(args.output_path, "output_path", "GAF_OUTPUT_PATH", config, None)
@@ -745,16 +744,16 @@ def main(argv: list[str] | None = None) -> int:
         try:
             max_count = int(max_count)
         except (TypeError, ValueError):
-            LOG.error("invalid max_count: %r", max_count)
+            LOG.error("invalid max_count: {}", max_count)
             return EXIT_USAGE
     if backend not in BACKENDS:
-        LOG.error("unknown backend: %s (choose from %s)", backend, ", ".join(BACKENDS))
+        LOG.error("unknown backend: {} (choose from {})", backend, ", ".join(BACKENDS))
         return EXIT_USAGE
     if fmt not in WRITERS:
-        LOG.error("unknown format: %s (choose from %s)", fmt, ", ".join(WRITERS))
+        LOG.error("unknown format: {} (choose from {})", fmt, ", ".join(WRITERS))
         return EXIT_USAGE
     if rename and not BACKEND_CAPS[backend]["rename"]:
-        LOG.warning("backend %s does not support rename detection; ignoring --rename", backend)
+        LOG.warning("backend {} does not support rename detection; ignoring --rename", backend)
         rename = False
     opts = Options(
         repo_path=str(repo_path),
@@ -772,16 +771,16 @@ def main(argv: list[str] | None = None) -> int:
     try:
         records = BACKENDS[backend](opts)
     except ImportError as e:
-        LOG.error("missing dependency for backend %s: %s", backend, e)
+        LOG.error("missing dependency for backend {}: {}", backend, e)
         return EXIT_REPO
     except Exception as e:
-        LOG.error("failed to open repository: %s", e)
+        LOG.error("failed to open repository: {}", e)
         if args.verbose:
             LOG.exception("traceback")
         return EXIT_REPO
     if args.dry_run:
         n = sum(1 for _ in records)
-        LOG.info("dry run: would write %d commits (backend=%s, format=%s)", n, backend, fmt)
+        LOG.info("dry run: would write {} commits (backend={}, format={})", n, backend, fmt)
         return EXIT_OK if n else EXIT_NO_COMMITS
     try:
         if output_path in (None, "-"):
@@ -790,11 +789,11 @@ def main(argv: list[str] | None = None) -> int:
             with open(output_path, "w", newline="") as f:
                 n = WRITERS[fmt](records, f)
     except Exception as e:
-        LOG.error("output error: %s", e)
+        LOG.error("output error: {}", e)
         if args.verbose:
             LOG.exception("traceback")
         return EXIT_REPO
-    LOG.info("wrote %d commits (backend=%s, format=%s)", n, backend, fmt)
+    LOG.info("wrote {} commits (backend={}, format={})", n, backend, fmt)
     return EXIT_OK if n else EXIT_NO_COMMITS
 
 

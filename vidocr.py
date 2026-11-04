@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import re
@@ -240,12 +241,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=2.0,
         help="Frames per second to sample (default: 2.0)",
     )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of OCR worker processes (default: 4)",
-    )
     p.add_argument("--lang", default="fas", help="Tesseract language code (default: fas)")
     p.add_argument(
         "--crop-bottom",
@@ -289,7 +284,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         end=end,
         resume=args.resume,
         sample_fps=args.sample_fps,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         lang=args.lang,
         crop_bottom=args.crop_bottom,
         diff_threshold=args.diff_threshold,

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import base64
 import csv
@@ -328,13 +329,6 @@ def main():
         help="Disable parallel processing (use serial mode)",
     )
     parser.add_argument(
-        "--workers",
-        "-w",
-        type=int,
-        default=None,
-        help="Number of worker processes (default: CPU count, max 8)",
-    )
-    parser.add_argument(
         "--site-packages",
         "-s",
         type=Path,
@@ -362,7 +356,7 @@ def main():
         args.output,
         args.all,
         parallel=parallel,
-        max_workers=args.workers,
+        max_workers=MAX_WORKERS,
     )
     if args.package:
         matches = list(site_packages.glob(f"{args.package}*.dist-info"))

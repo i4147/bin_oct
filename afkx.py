@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import concurrent.futures
@@ -585,12 +586,6 @@ Examples:
         default=[],
         help="Regex pattern to exclude files (repeatable)",
     )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Number of parallel workers (default: 8)",
-    )
     p.add_argument("--no-color", action="store_true", help="Disable ANSI colors")
     return p
 
@@ -605,10 +600,10 @@ def main() -> int:
         return 1
     if args.verbose:
         mode = "autoflake" if args.autoflake else "built-in AST analyzer"
-        print(f"Scanning {len(args.paths)} path(s) with {args.workers} worker(s) using {mode} …")
+        print(f"Scanning {len(args.paths)} path(s) with {MAX_WORKERS} worker(s) using {mode} …")
         print(f"  {len(py_files)} .py file(s), {len(archive_members)} archive member(s) queued.\n")
     results: list[FileResult] = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         if args.autoflake:
             if shutil.which("autoflake") is None:
                 print(

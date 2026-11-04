@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import math
 import os
@@ -145,7 +146,7 @@ class Viewer:
         return "".join(out)
 
     def _status(self, cols: int) -> str:
-        name = os.path.basename(self.path)
+        name = Path(self.path).name
         total = self.doc.page_count
         _, h = self.page_px_size()
         max_y = max(0, h - self.view_rows() * 2)
@@ -288,7 +289,7 @@ def main(argv: list[str] | None = None) -> int:
         help="initial zoom factor (default 1.0)",
     )
     args = parser.parse_args(argv)
-    if not os.path.isfile(args.file):
+    if not Path(args.file).is_file():
         parser.error(f"no such file: {args.file}")
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         parser.error("must be run from an interactive terminal")

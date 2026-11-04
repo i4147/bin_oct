@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import ast
 import re
@@ -12,19 +13,6 @@ from pathlib import Path
 from typing import Final
 
 from loguru import logger
-
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".venv",
-    "venv",
-    "lazy",
-    ".env",
-    "node_modules",
-})
 POOL_SIZE: Final[int] = 8
 
 

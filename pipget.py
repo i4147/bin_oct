@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import asyncio
 import contextlib
@@ -460,7 +461,7 @@ async def run(args) -> int:
             seen.add(key)
             unique.append(p)
     packages = unique
-    concurrency = max(1, args.jobs)
+    concurrency = max(1, MAX_WORKERS)
     print(f"Mirror:        {mirror_key} ({mirror_base})")
     print(f"Download dir:  {DOWNLOAD_DIR}")
     print(f"Concurrency:   {concurrency}")
@@ -560,15 +561,6 @@ def main():
         dest="directory",
         metavar="DIR",
         help="Download directory (default: current directory).",
-    )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        dest="jobs",
-        type=int,
-        default=DEFAULT_CONCURRENCY,
-        metavar="N",
-        help=f"Concurrent downloads (default: {DEFAULT_CONCURRENCY}).",
     )
     parser.add_argument(
         "--max-size",

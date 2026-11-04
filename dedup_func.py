@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import concurrent.futures
@@ -15,10 +17,7 @@ from typing import Any, Iterable, Optional
 try:
     from loguru import logger
 except ImportError:
-    import logging
-
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    logger = logging.getLogger("dedup_tool")
+    pass
 
 
 def iter_python_files(root: Path, exclude_paths: Iterable[Path] = ()) -> list[Path]:
@@ -404,7 +403,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         excludes.append(shared)
     files = iter_python_files(root, exclude_paths=excludes)
     print(f"[*] Found {len(files)} files. Starting parallel extraction...")
-    workers = args.workers or multiprocessing.cpu_count()
+    workers = MAX_WORKERS or multiprocessing.cpu_count()
     if workers > 1 and len(files) > 1:
         with multiprocessing.Pool(processes=workers) as pool:
             results = pool.map(_scan_worker, [str(f) for f in files])
@@ -495,7 +494,7 @@ def cmd_consolidate(args: argparse.Namespace) -> int:
         return 0
     print(f"🔍 Scanning {len(files)} files concurrently...")
     groups: dict[tuple[str, str, str], list[tuple[str, dict[str, Any]]]] = defaultdict(list)
-    workers = args.workers or os.cpu_count() or 1
+    workers = MAX_WORKERS or os.cpu_count() or 1
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as ex:
         futures = {ex.submit(_consolidate_worker, str(f)): f for f in files}
         for fut in concurrent.futures.as_completed(futures):
@@ -660,7 +659,7 @@ def cmd_prune(args: argparse.Namespace) -> int:
     print("-" * 40)
     found_count = 0
     removed_count = 0
-    workers = args.workers or 8
+    workers = MAX_WORKERS or 8
     with multiprocessing.Pool(processes=workers) as pool:
         async_results = [pool.apply_async(_prune_worker, (str(f), ref_hashes, args.apply)) for f in targets]
         for ar in async_results:
@@ -750,12 +749,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=50.0,
         help="Fuzzy similarity threshold in %% (default: 50).",
     )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=None,
-        help="Parallel worker count (default: CPU count).",
-    )
     p.set_defaults(func=cmd_scan)
     p = sub.add_parser(
         "consolidate",
@@ -773,12 +766,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="dh.py",
         help="Shared module filename (default: dh.py).",
     )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=None,
-        help="Parallel worker count (default: CPU count).",
-    )
     p.set_defaults(func=cmd_consolidate)
     p = sub.add_parser(
         "prune",
@@ -791,7 +778,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Target files/directories (default: current directory).",
     )
     p.add_argument("-a", "--apply", action="store_true", help="Apply changes (default: dry-run).")
-    p.add_argument("--workers", type=int, default=8, help="Parallel worker count (default: 8).")
     p.set_defaults(func=cmd_prune)
     return parser
 

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import queue
@@ -650,14 +651,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="HTTP backend to use (default: pure / stdlib)",
     )
     p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=4,
-        metavar="N",
-        help="parallel downloads (default: 4)",
-    )
-    p.add_argument(
         "--no-resume",
         action="store_true",
         help="ignore partial .part files and restart from scratch",
@@ -694,7 +687,7 @@ def main(argv=None) -> int:
         parser.error("no URLs provided (pass URLs or use -f FILE)")
     if args.output and len(urls) > 1:
         parser.error("-o/--output can only be used with a single URL")
-    if args.jobs < 1:
+    if MAX_WORKERS < 1:
         parser.error("-j/--jobs must be >= 1")
     try:
         backend = make_backend(args.backend)
@@ -717,7 +710,7 @@ def main(argv=None) -> int:
     failed: list[tuple[str, BaseException]] = []
     interrupted = False
     t0 = time.monotonic()
-    pool = ThreadPoolExecutor(max_workers=min(args.jobs, len(urls)))
+    pool = ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(urls)))
     try:
         with progress:
             futures = []

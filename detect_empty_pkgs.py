@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import ast
 import multiprocessing as mp
@@ -7,8 +8,6 @@ import shutil
 import tarfile
 import zipfile
 from pathlib import Path
-
-WORKERS = 4
 MIN_ARCHIVE_BYTES = 300
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
 METADATA_NAMES = {

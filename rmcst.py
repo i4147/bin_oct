@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import contextlib
@@ -13,27 +14,7 @@ from pathlib import Path
 from typing import Iterable, Iterator
 
 import libcst as cst
-
-NUM_WORKERS = 8
 CHUNKSIZE = 4
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "node_modules",
-    "build",
-    "dist",
-    ".eggs",
-})
 
 
 class InlineCommentRemover(cst.CSTTransformer):

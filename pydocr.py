@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
+from dh import MAX_WORKERS, SKIP_DIRS
 
 import argparse
 import ast
@@ -13,24 +14,6 @@ from pathlib import Path
 from typing import Any
 
 DOC_SUFFIXES: frozenset[str] = frozenset({".py", ".pyi", ".pyx", ".pxd"})
-SKIP_DIRS: frozenset[str] = frozenset({
-    "__pycache__",
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".venv",
-    "venv",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".eggs",
-    ".idea",
-    ".vscode",
-    "node_modules",
-    "build",
-    "dist",
-})
 FENCE: str = "```"
 FileTask = tuple[str, str, str, str]
 ModuleTask = tuple[str, str, str]
@@ -577,7 +560,6 @@ def build_parser() -> argparse.ArgumentParser:
         "-b", "--backend", choices=tuple(BACKENDS), default="libcst", help="parsing backend (default: %(default)s)"
     )
     parser.add_argument("-o", "--out", default=None, help="output directory (default: ./<cwd-name>_doc)")
-    parser.add_argument("-j", "--workers", type=int, default=8, help="worker processes (default: %(default)s)")
     return parser
 
 
@@ -594,7 +576,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if total == 0:
         print("nothing to process")
         return 0
-    workers = max(1, min(args.workers, total))
+    workers = max(1, min(MAX_WORKERS, total))
     print(f"processing {total} target(s) with backend {backend_name} using {workers} worker(s)")
     documented: int
     if workers == 1:

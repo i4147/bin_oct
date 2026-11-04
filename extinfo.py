@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import os
 import sys
@@ -8,42 +9,10 @@ from pathlib import Path
 
 from dh import fsz
 
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".env",
-    "env",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".ipynb_checkpoints",
-    "eggs",
-    ".eggs",
-    "node_modules",
-    ".next",
-    ".nuxt",
-    ".parcel-cache",
-    "build",
-    "dist",
-    "target",
-    "out",
-    ".idea",
-    ".vscode",
-    ".cache",
-    ".sass-cache",
-}
-
 
 def iter_files(cwd: Path):
     for root, dirnames, filenames in os.walk(cwd, topdown=True, followlinks=False):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not os.path.islink(os.path.join(root, d))]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not Path(Path(root).joinpath(d)).is_symlink()]
         for name in filenames:
             p = Path(root) / name
             if p.is_symlink():

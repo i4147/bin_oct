@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write_file
 import argparse
 import ast
 import dataclasses
@@ -392,18 +393,6 @@ def read_file_safely(path: Path) -> str | None:
         except (UnicodeDecodeError, PermissionError):
             continue
     return None
-
-
-def atomic_write_file(path: Path, content: str) -> None:
-    temp_fd, temp_path = tempfile.mkstemp(dir=path.parent, prefix=".strip_tmp_")
-    try:
-        with open(temp_fd, "w", encoding="utf-8") as f:
-            f.write(content)
-        os.replace(temp_path, path)
-    except Exception:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        raise
 
 
 def is_python_file(path: Path) -> bool:

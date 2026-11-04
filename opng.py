@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, SKIP_DIRS
 import argparse
 import contextlib
 import os
@@ -15,31 +16,9 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    "__pycache__",
-    "node_modules",
-    ".cache",
-    ".idea",
-    ".vscode",
-    "build",
-    "dist",
-    "target",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
 PNG_SUFFIXES: Final[frozenset[str]] = frozenset({".png"})
 PNG_MAGIC: Final[bytes] = b"\x89PNG\r\n\x1a\n"
 WALK_CHUNK: Final[int] = 512
-DEFAULT_WORKERS: Final[int] = 8
 IMAP_CHUNKSIZE: Final[int] = 4
 DEFAULT_TIMEOUT: Final[float] = 300.0
 COMPARE_CHUNK: Final[int] = 1 << 16

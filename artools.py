@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import bz2
 import contextlib
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 CHUNK: int = 1024 * 1024
 """Read/write block size for streaming codecs (matches originals)."""
-DEFAULT_WORKERS: int = 8
 """Default worker count (matches the originals' `c` / `q4`)."""
 DEFAULT_LEVEL: int = 9
 """Default compression level for codecs that accept one."""
@@ -263,7 +263,7 @@ def run_tar_codec(args: argparse.Namespace) -> int:
         print("No *.tar.<codec> files found recursively in current directory.")
         return 0
     initial = dir_total_size(root)
-    results = parallel_imap(_tar_codec_job, [(str(p), target, args.level) for p in files], args.workers)
+    results = parallel_imap(_tar_codec_job, [(str(p), target, args.level) for p in files], MAX_WORKERS)
     final = dir_total_size(root)
     delta = final - initial
     ok = sum(1 for _, o, _ in results if o)
@@ -450,7 +450,7 @@ def run_archive_convert(args: argparse.Namespace) -> int:
         return 0
     logger.info("Found {} archive(s); converting to {}", len(files), args.to)
     jobs = [(str(p), args.to, args.level) for p in files]
-    results = parallel_imap(_archive_convert_job, jobs, args.workers)
+    results = parallel_imap(_archive_convert_job, jobs, MAX_WORKERS)
     ok = sum(1 for _, _, o, _ in results if o)
     delta = sum(r for _, r, _, _ in results)
     logger.info("Summary: total={} ok={} failed/skipped={}", len(files), ok, len(files) - ok)
@@ -588,11 +588,11 @@ def run_gz2xz(args: argparse.Namespace) -> int:
     jobs = [(str(p), ".xz", "gz", "xz", args.level, args.legacy_percent) for p in files]
     results = (
         [_single_transcode(Path(j[0]), j[1], j[2], j[3], j[4], j[5]) for j in jobs]
-        if args.workers <= 1
+        if MAX_WORKERS <= 1
         else parallel_map(
             lambda j: _single_transcode(Path(j[0]), j[1], j[2], j[3], j[4], j[5]),
             jobs,
-            args.workers,
+            MAX_WORKERS,
         )
     )
     return _report_single_transcode(results)
@@ -612,11 +612,11 @@ def run_xz2gz(args: argparse.Namespace) -> int:
     jobs = [(str(p), ".gz", "xz", "gz", args.level, args.legacy_percent) for p in good_files]
     results = (
         [_single_transcode(Path(j[0]), j[1], j[2], j[3], j[4], j[5]) for j in jobs]
-        if args.workers <= 1
+        if MAX_WORKERS <= 1
         else parallel_map(
             lambda j: _single_transcode(Path(j[0]), j[1], j[2], j[3], j[4], j[5]),
             jobs,
-            args.workers,
+            MAX_WORKERS,
         )
     )
     return _report_single_transcode(results)
@@ -834,7 +834,7 @@ def run_whl_txz(args: argparse.Namespace) -> int:
     if args.remove_original:
         print("Original files will be removed after successful conversion")
     jobs = [(str(p), args.remove_original) for p in files]
-    results = parallel_imap(_whl_txz_job, jobs, args.workers) if args.workers > 1 else [_whl_txz_job(j) for j in jobs]
+    results = parallel_imap(_whl_txz_job, jobs, MAX_WORKERS) if MAX_WORKERS > 1 else [_whl_txz_job(j) for j in jobs]
     ok = fail = 0
     lines = ["", "=" * 40, "CONVERSION RESULTS", "-" * 40]
     for src, good, msg, out in results:
@@ -873,7 +873,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path.cwd(),
         help="Directory to scan recursively (default: cwd).",
     )
-    p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_tar_codec)
     p = sub.add_parser("archive-convert", help="Convert archives between tar/zip/whl formats.")
@@ -890,7 +889,6 @@ def build_parser() -> argparse.ArgumentParser:
         choices=sorted(ARCHIVE_FORMATS),
         help="Target format, e.g. .tar.xz or .zip.",
     )
-    p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_archive_convert)
     p = sub.add_parser("br2zst", help="Recursively convert *.json.br -> *.json.zst.")
@@ -900,7 +898,6 @@ def build_parser() -> argparse.ArgumentParser:
     for name, fn in (("gz2xz", run_gz2xz), ("xz2gz", run_xz2gz)):
         p = sub.add_parser(name, help=f"Convert *.{name[:2]} -> *.{name[3:]} in --root.")
         p.add_argument("--root", type=Path, default=Path.cwd())
-        p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
         p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
         p.add_argument(
             "--legacy-percent",
@@ -927,7 +924,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="auto",
         help="Restrict direction when scanning directories.",
     )
-    p.add_argument("-w", "--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("-v", "--verbose", action="store_true")
     p.add_argument("-q", "--quiet", action="store_true")
     p.set_defaults(func=run_whl_txz)

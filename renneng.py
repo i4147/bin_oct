@@ -11,7 +11,7 @@ non_english_pattern = re.compile(r"[^\x00-\x7F]")
 
 
 def translate_if_needed(name: str) -> str:
-    base, ext = os.path.splitext(name)
+    base, ext = (str(Path(name).with_suffix("")), Path(name).suffix)
     if not non_english_pattern.search(base):
         return name
     try:

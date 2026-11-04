@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing
 import subprocess
@@ -116,7 +117,7 @@ def cmd_convert(args: argparse.Namespace) -> int:
     if not files:
         print(f"No font files to convert to {target_suffix}", file=sys.stderr)
         return 1
-    run_parallel(_convert_worker, files, args.workers, args.to, args.rm)
+    run_parallel(_convert_worker, files, MAX_WORKERS, args.to, args.rm)
     return 0
 
 
@@ -180,8 +181,8 @@ def cmd_otf2ttf(args: argparse.Namespace) -> int:
         print("No OTF files found.", file=sys.stderr)
         return 1
     print(f"Found {len(files)} OTF file(s)")
-    print(f"Using {args.workers} worker processes")
-    results = run_parallel(_otf2ttf_worker, files, args.workers, args.keep_source)
+    print(f"Using {MAX_WORKERS} worker processes")
+    results = run_parallel(_otf2ttf_worker, files, MAX_WORKERS, args.keep_source)
     summary = {
         "total": len(results),
         "success": 0,
@@ -336,7 +337,7 @@ def cmd_woff22ttf(args: argparse.Namespace) -> int:
         print("No WOFF2 files found.", file=sys.stderr)
         return 1
     print(f"Found {len(files)} WOFF2 file(s)")
-    run_parallel(_woff22ttf_worker, files, args.workers, args.keep_source)
+    run_parallel(_woff22ttf_worker, files, MAX_WORKERS, args.keep_source)
     return 0
 
 
@@ -360,26 +361,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Delete source file after successful conversion",
     )
-    p_convert.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of parallel workers (default: 4)",
-    )
     p_convert.set_defaults(func=cmd_convert)
     p_otf2ttf = subparsers.add_parser(
         "otf2ttf",
         help="Convert OTF to TTF using fontTools (pure Python).",
     )
     p_otf2ttf.add_argument("paths", nargs="*", help="OTF files or directories (default: scan cwd)")
-    p_otf2ttf.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=6,
-        help="Number of parallel workers (default: 6)",
-    )
     p_otf2ttf.add_argument(
         "-k",
         "--keep-source",
@@ -416,13 +403,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Decompress WOFF2 to TTF using fontTools.",
     )
     p_woff22.add_argument("paths", nargs="*", help="WOFF2 files or directories (default: scan cwd)")
-    p_woff22.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of parallel workers (default: 4)",
-    )
     p_woff22.add_argument(
         "-k",
         "--keep-source",

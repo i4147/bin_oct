@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import re
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -14,7 +15,7 @@ try:
     _HAS_BS4 = True
 except ImportError:
     _HAS_BS4 = False
-log = logging.getLogger("remove_images")
+log = logger
 _REMOTE_PREFIXES = ("http://", "https://", "//")
 _BADGE_PATTERNS = tuple(
     re.compile(p, re.IGNORECASE)
@@ -325,7 +326,7 @@ def discover_files(paths: Sequence[Path], exts: Sequence[str]) -> list[Path]:
                 if f.is_file() and f.suffix.lower() in norm:
                     found.add(f.resolve())
         else:
-            log.warning("Path does not exist: %s", p)
+            log.warning("Path does not exist: {}", p)
     return sorted(found)
 
 
@@ -389,7 +390,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Remove every link definition line, even non-image ones",
     )
-    p.add_argument("--workers", type=int, default=8, help="Parallel worker processes (default: 8)")
     p.add_argument(
         "--backup",
         action="store_true",
@@ -413,10 +413,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.WARNING,
-        format="%(levelname)s: %(message)s",
-    )
     exts = args.ext or [".md", ".markdown", ".rst", ".html", ".htm"]
     paths = args.paths or [Path.cwd()]
     files = discover_files(paths, exts)
@@ -424,10 +420,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("No matching files found.")
         return 0
     if args.report != "none":
-        print(f"Processing {len(files)} file(s) with {args.workers} worker(s)...")
+        print(f"Processing {len(files)} file(s) with {MAX_WORKERS} worker(s)...")
     results: list[Result] = []
     try:
-        with ProcessPoolExecutor(max_workers=args.workers) as ex:
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
             futures = {
                 ex.submit(
                     process_file,
@@ -444,7 +440,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 try:
                     r = fut.result()
                 except Exception as e:
-                    log.error("Worker failed: %s", e)
+                    log.error("Worker failed: {}", e)
                     continue
                 results.append(r)
                 if args.report != "none":

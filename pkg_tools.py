@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import io
 import os
@@ -340,7 +341,7 @@ def cmd_wheel_install(args: argparse.Namespace) -> int:
         plan.append((str(w), pure))
     print("=" * 40)
     print("Starting parallel installation...")
-    results = parallel_map(_install_one_wheel, plan, workers=args.workers)
+    results = parallel_map(_install_one_wheel, plan, workers=MAX_WORKERS)
     successes, failures = [], []
     for _, ok, msg in results:
         print(msg)
@@ -580,7 +581,7 @@ def _reinstall_one_subprocess(
 def cmd_pip_reinstall_list(args: argparse.Namespace) -> int:
     path = Path(args.file).expanduser()
     print(f"Reading packages from: {path}")
-    print(f"Using {args.workers} parallel workers")
+    print(f"Using {MAX_WORKERS} parallel workers")
     if args.dry_run:
         print("DRY RUN MODE — no packages will be installed")
     print("-" * 40)
@@ -597,7 +598,7 @@ def cmd_pip_reinstall_list(args: argparse.Namespace) -> int:
     print(f"Found {len(pkgs)} package(s) to reinstall.")
     print("-" * 40)
     plan = [(p, pip_cmd, args.timeout, args.with_deps, args.dry_run) for p in pkgs]
-    results = parallel_map(_reinstall_one_subprocess, plan, workers=args.workers)
+    results = parallel_map(_reinstall_one_subprocess, plan, workers=MAX_WORKERS)
     ok = fail = 0
     failed_names: list[str] = []
     for pkg, success, msg in results:
@@ -660,7 +661,7 @@ def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
         batch = pending[: args.batch_size]
         pending = pending[args.batch_size :]
         plan = [(n, args.with_deps, args.skip_pypi_check) for n in batch]
-        results = parallel_map(_reinstall_pypi_one, plan, workers=args.workers)
+        results = parallel_map(_reinstall_pypi_one, plan, workers=MAX_WORKERS)
         for pkg, ok in results:
             if ok:
                 remaining.discard(pkg)
@@ -796,7 +797,7 @@ def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
         print("Skipping confirmation — will reinstall all packages")
     print(f"\nStarting reinstallation of {len(selected)} selected packages...")
     plan = [(n, args.include_deps) for n in sorted(selected)]
-    results = parallel_map(_reinstall_one_api, plan, workers=args.workers)
+    results = parallel_map(_reinstall_one_api, plan, workers=MAX_WORKERS)
     successes = [n for n, ok, _ in results if ok]
     failures = [(n, msg) for n, ok, msg in results if not ok]
     print("\n" + "=" * 40)
@@ -837,7 +838,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=".",
         help="Directory containing wheels (default: .).",
     )
-    c.add_argument("-j", "--workers", type=int, default=8, help="Parallel workers (default: 8).")
     c.set_defaults(func=cmd_wheel_install)
     d = sub.add_parser("wheel-install-local", help="Install local wheel files (piu.py).")
     d.add_argument("wheels", nargs="+", help="One or more .whl paths.")
@@ -928,13 +928,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(Path.home() / "missing.txt"),
         help="Path to the package list (default: ~/missing.txt).",
     )
-    h.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=default_workers(),
-        help="Parallel workers (default: cpu//2, capped at 8).",
-    )
     h.add_argument("--dry-run", action="store_true", help="Print commands but do not run them.")
     h.add_argument("--with-deps", action="store_true", help="Allow pip to resolve dependencies.")
     h.add_argument(
@@ -947,7 +940,6 @@ def build_parser() -> argparse.ArgumentParser:
     h.set_defaults(func=cmd_pip_reinstall_list)
     i = sub.add_parser("pip-reinstall-pypi", help="Reinstall PyPI packages and prune successes.")
     i.add_argument("file", nargs="?", default="pure.txt", help="List file (default: pure.txt).")
-    i.add_argument("-j", "--workers", type=int, default=8, help="Parallel workers (default: 8).")
     i.add_argument(
         "--batch-size",
         type=int,
@@ -977,7 +969,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also reinstall dependencies (risky).",
     )
     j.add_argument("-y", "--yes", action="store_true", help="Skip interactive confirmation.")
-    j.add_argument("-j", "--workers", type=int, default=8, help="Parallel workers (default: 8).")
     j.add_argument("-v", "--verbose", action="store_true", help="More verbose output.")
     j.set_defaults(func=cmd_pip_reinstall_entry_points)
     return p

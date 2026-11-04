@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import difflib
 import fnmatch
 import io
 import json
-import logging
 import os
 import re
 import shlex
@@ -17,7 +18,6 @@ import tempfile
 import tokenize
 import traceback
 from dataclasses import asdict, dataclass
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import perf_counter
 from typing import Iterator
@@ -26,7 +26,7 @@ from dh import SKIP_DIRS
 from codeutils import CSTStripper, TSStripper
 from atomicio import atomic_write
 
-LOGGER = logging.getLogger("striper_termux")
+LOGGER = logger
 _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
 
 
@@ -272,13 +272,13 @@ def excluded(path: Path, root: Path, patterns: tuple[str, ...]) -> bool:
 
 def normalize_inputs(inputs: list[Path]) -> list[Path]:
     paths = sorted(
-        {Path(os.path.abspath(path.expanduser())) for path in inputs},
+        {Path(Path(path.expanduser()).absolute()) for path in inputs},
         key=lambda path: (len(path.parts), str(path)),
     )
     roots: list[Path] = []
     for path in paths:
         if has_symlink_component(path):
-            LOGGER.warning("Skipping symlink input: %s", path)
+            LOGGER.warning("Skipping symlink input: {}", path)
             continue
         if not path.exists():
             raise FileNotFoundError(f"Input does not exist: {path}")
@@ -311,7 +311,7 @@ def walk_python_files(
     def visit(directory: Path, root: Path, depth: int) -> Iterator[Path]:
         if depth > limits.max_depth:
             stats.skipped += 1
-            LOGGER.warning("Depth limit reached: %s", directory)
+            LOGGER.warning("Depth limit reached: {}", directory)
             return
         try:
             if directory.is_symlink():
@@ -331,10 +331,10 @@ def walk_python_files(
                             yield path
                     except OSError:
                         stats.errors += 1
-                        LOGGER.exception("Cannot inspect %s", path)
+                        LOGGER.exception("Cannot inspect {}", path)
         except OSError:
             stats.errors += 1
-            LOGGER.exception("Cannot traverse %s", directory)
+            LOGGER.exception("Cannot traverse {}", directory)
 
     for root in roots:
         if root.is_dir():
@@ -346,7 +346,7 @@ def walk_python_files(
                     yield root
             except OSError:
                 stats.errors += 1
-                LOGGER.exception("Cannot inspect %s", root)
+                LOGGER.exception("Cannot inspect {}", root)
 
 
 class StreamingReport:
@@ -384,23 +384,11 @@ class StreamingReport:
 
 
 def configure_logging(error_log: Path, log_file: Path | None, level: str) -> None:
-    LOGGER.setLevel(logging.DEBUG)
-    LOGGER.propagate = False
-    for handler in LOGGER.handlers[:]:
-        handler.close()
-        LOGGER.removeHandler(handler)
-    console = logging.StreamHandler()
-    console.setLevel(level)
-    console.setFormatter(logging.Formatter("%(levelname)s | %(message)s"))
-    LOGGER.addHandler(console)
-    errors = RotatingFileHandler(error_log, maxBytes=1_000_000, backupCount=2, encoding="utf-8", delay=True)
-    errors.setLevel(logging.ERROR)
-    errors.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
-    LOGGER.addHandler(errors)
+    logger.remove()
+    logger.add(sys.stderr, level=level, format="{level} | {message}")
+    logger.add(error_log, level="ERROR", rotation="1 MB", retention=2, encoding="utf-8")
     if log_file is not None:
-        full = RotatingFileHandler(log_file, maxBytes=2_000_000, backupCount=2, encoding="utf-8", delay=True)
-        full.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
-        LOGGER.addHandler(full)
+        logger.add(log_file, level=level, rotation="2 MB", retention=2, encoding="utf-8")
 
 
 def main() -> int:
@@ -446,9 +434,8 @@ def main() -> int:
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--mp", action="store_true", help="Use multiprocessing.Pool.imap_unordered")
     group.add_argument("--cf", action="store_true", help="Use concurrent.futures.ProcessPoolExecutor")
-    parser.add_argument("--workers", type=int, default=4, help="Number of worker processes (default: 4)")
     args = parser.parse_intermixed_args()
-    if any(value < 1 for value in (args.max_bytes, args.max_lines, args.max_tokens, args.max_depth, args.workers)):
+    if any(value < 1 for value in (args.max_bytes, args.max_lines, args.max_tokens, args.max_depth, MAX_WORKERS)):
         parser.error("All resource limits and workers must be positive; zero/unlimited is not supported")
     if any(not name or "/" in name or "\\" in name for name in args.exclude_dir):
         parser.error("--exclude-dir requires a directory basename")
@@ -465,7 +452,7 @@ def main() -> int:
         if args.report_json is not None:
             report = StreamingReport(args.report_json)
         outputs = {
-            Path(os.path.abspath(path))
+            Path(Path(path).absolute())
             for path in (
                 args.error_log,
                 args.log_file,
@@ -536,11 +523,11 @@ def main() -> int:
             stats.files += 1
             if result.skipped:
                 stats.skipped += 1
-                LOGGER.warning("%s: skipped: %s", result.path.name, result.skipped)
+                LOGGER.warning("{}: skipped: {}", result.path.name, result.skipped)
                 line = format_line(idx, result.path.name, "SKIP")
             elif result.error:
                 stats.errors += 1
-                LOGGER.error("%s: %s\n%s", result.path, result.error, result.traceback)
+                LOGGER.error("{}: {}\n{}", result.path, result.error, result.traceback)
                 line = format_line(idx, result.path.name, "ERR")
             else:
                 stats.changed += result.modified
@@ -549,7 +536,7 @@ def main() -> int:
                     print(colorize_diff(result.diff, color), end="")
                 line = format_line(idx, result.path.name, result.saved)
                 LOGGER.debug(
-                    "%s: modified=%s, saved=%s, seconds=%.6f",
+                    "{}: modified={}, saved={}, seconds={}",
                     result.path,
                     result.modified,
                     result.saved,
@@ -575,7 +562,7 @@ def main() -> int:
                 remove_blank_lines_flag=remove_blank_lines_flag,
                 force_utf8=force_utf8,
             )
-            with mp.Pool(args.workers) as pool:
+            with mp.Pool(MAX_WORKERS) as pool:
                 for idx, result in enumerate(pool.imap_unordered(worker, paths), 1):
                     handle_result(result, idx)
         elif args.cf:
@@ -592,7 +579,7 @@ def main() -> int:
                 remove_blank_lines_flag=remove_blank_lines_flag,
                 force_utf8=force_utf8,
             )
-            with cf.ProcessPoolExecutor(max_workers=args.workers) as executor:
+            with cf.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 futures = [executor.submit(worker, path) for path in paths]
                 for idx, future in enumerate(cf.as_completed(futures), 1):
                     result = future.result()

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import re
 import shutil
@@ -15,7 +16,6 @@ WHEEL_SUFFIX: Final[str] = ".whl"
 METADATA_SUFFIX: Final[str] = ".dist-info/METADATA"
 WHEEL_METADATA_SUFFIX: Final[str] = ".dist-info/WHEEL"
 BACKUP_DIR_NAME: Final[str] = "whl_backup"
-POOL_WORKERS: Final[int] = 8
 TAG_PATTERNS: Final[tuple[str, ...]] = (
     (
         r".*?-.*?-.*?-(py3|py2\.py3|py2|cp[0-9]+)-(none|abi[0-9]+|cp[0-9]+m?)-"

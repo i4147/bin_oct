@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS, SKIP_DIR_NAMES
 import argparse
 import os
 import sys
@@ -8,9 +9,6 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import xxhash
-
-NUM_WORKERS = 8
-SKIP_DIR_NAMES = {".git"}
 HASH_CHUNK_SIZE = 1 << 20
 MAX_DEPTH = 64
 

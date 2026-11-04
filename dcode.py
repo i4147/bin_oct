@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
+from loguru import logger
 import argparse
 import base64
 import binascii
 import bz2
 import gzip
 import json
-import logging
 import lzma
 import os
 import re
@@ -15,9 +16,6 @@ import urllib.parse
 import urllib.request
 import zlib
 from typing import Callable
-
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger("decoder")
 ENGLISH_FREQS = {
     "E": 12.02,
     "T": 9.10,
@@ -345,7 +343,7 @@ def main():
     if args.string:
         input_str = args.string
     elif args.input:
-        if os.path.exists(args.input):
+        if Path(args.input).exists():
             with open(args.input, "r", encoding="utf-8", errors="ignore") as f:
                 input_str = f.read()
     elif not sys.stdin.isatty():

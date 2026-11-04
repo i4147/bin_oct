@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write_text
+from dh import SKIP_DIRS
 import argparse
 import contextlib
 import json
@@ -12,22 +14,6 @@ from pathlib import Path
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"
 JSON_PATH = CWD / "word_freq.json"
-SKIP_DIRS = {
-    ".git",
-    "node_modules",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "target",
-    "build",
-    "dist",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".tox",
-    ".idea",
-    ".vscode",
-    ".eggs",
-}
 BINARY_EXT = {
     ".png",
     ".jpg",
@@ -243,12 +229,6 @@ def process_file(path_str):
     if not text:
         return Counter()
     return Counter(_TOKENIZER(text))
-
-
-def atomic_write_text(path, text):
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    os.replace(tmp, path)
 
 
 def write_json_stream(path, pairs):

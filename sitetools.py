@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import base64
 import contextlib
 import csv
 import hashlib
 import json
-import logging
 import multiprocessing
 import os
 import re
@@ -13,9 +14,6 @@ import shutil
 import sys
 import tarfile
 from pathlib import Path
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s", stream=sys.stderr)
-logger = logging.getLogger(__name__)
 
 
 def cprint(text: str, color: str = "reset") -> None:
@@ -309,7 +307,7 @@ def cmd_update_record(args):
         sys.exit(0)
     print(f"Found {len(h_dirs)} distribution(s)")
     e_cnt, g_cnt = 0, 0
-    with multiprocessing.Pool(processes=args.processes) as pool:
+    with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
         for res in pool.imap_unordered(_update_single_record, h_dirs):
             if res:
                 e_cnt += 1
@@ -328,7 +326,7 @@ def _hash_file(q: Path) -> str:
         encoded = base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
         return f"sha256={encoded}"
     except Exception:
-        logger.exception("Error hashing %s", q)
+        logger.exception("Error hashing {}", q)
         return ""
 
 
@@ -336,7 +334,7 @@ def _get_size(q: Path) -> int:
     try:
         return q.stat().st_size
     except Exception:
-        logger.exception("Error getting size for %s", q)
+        logger.exception("Error getting size for {}", q)
         return 0
 
 
@@ -358,13 +356,13 @@ def _update_single_record(i_dir: Path) -> bool:
     p_file = i_dir / "RECORD"
     print(f"Processing {p_file}")
     if not p_file.exists():
-        logger.error("RECORD not found: %s", p_file)
+        logger.error("RECORD not found: {}", p_file)
         return False
     try:
         with p_file.open("r", encoding="utf-8") as f:
             lines = f.readlines()
     except Exception:
-        logger.exception("Failed to read %s", p_file)
+        logger.exception("Failed to read {}", p_file)
         return False
     v_list = []
     missing = []
@@ -377,15 +375,15 @@ def _update_single_record(i_dir: Path) -> bool:
             continue
         u_file = i_dir.parent / l_path
         if not _is_valid_record_file(u_file):
-            logger.debug("Skipping excluded file: %s", l_path)
+            logger.debug("Skipping excluded file: {}", l_path)
             continue
         if not u_file.exists():
             missing.append(l_path)
-            logger.warning("Missing file: %s", l_path)
+            logger.warning("Missing file: {}", l_path)
             continue
         new_hash = _hash_file(u_file)
         if not new_hash:
-            logger.warning("Hash failed for %s, keeping original line", l_path)
+            logger.warning("Hash failed for {}, keeping original line", l_path)
             v_list.append(line.rstrip("\n").rstrip("\r"))
             continue
         new_size = _get_size(u_file)
@@ -393,12 +391,12 @@ def _update_single_record(i_dir: Path) -> bool:
     rel_p = str(p_file.relative_to(i_dir.parent))
     v_list.append(f"{rel_p},,")
     if missing:
-        logger.warning("%d missing files in %s: %s", len(missing), i_dir.name, ",".join(missing))
+        logger.warning("{} missing files in {}: {}", len(missing), i_dir.name, ",".join(missing))
     try:
         p_file.write_text("\n".join(v_list) + "\n", encoding="utf-8")
         print(f"Updated {p_file}")
     except Exception:
-        logger.exception("Failed to write %s", p_file)
+        logger.exception("Failed to write {}", p_file)
         return False
     try:
         self_hash = _hash_file(p_file)
@@ -410,9 +408,9 @@ def _update_single_record(i_dir: Path) -> bool:
             if len(last_parts) >= 1:
                 n_lines[-1] = f"{last_parts[0]},{self_hash},{self_size}\n"
         p_file.write_text("".join(n_lines), encoding="utf-8")
-        logger.debug("Self-hash updated for %s", p_file)
+        logger.debug("Self-hash updated for {}", p_file)
     except Exception:
-        logger.exception("Failed to update self-hash for %s", p_file)
+        logger.exception("Failed to update self-hash for {}", p_file)
     return True
 
 
@@ -501,7 +499,6 @@ def main():
     p_rm.add_argument("--target-dir", default="/data/data/com.termux/files/home/tmp/metadata", help="Target directory")
     subparsers.add_parser("clean-pyc-record", help="Remove .pyc and license entries from purelib RECORD files")
     p_ur = subparsers.add_parser("update-record", help="Update SHA256 hashes and sizes in dist-info RECORD files")
-    p_ur.add_argument("--processes", type=int, default=8, help="Number of multiprocessing processes")
     p_cu = subparsers.add_parser(
         "clean-urecord", help="Remove .pyc, direct_url.json, INSTALLER, LICENSE from RECORD files"
     )

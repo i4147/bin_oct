@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_WORKERS, SKIP_DIRS
 import argparse
 import contextlib
 import os
@@ -10,30 +11,8 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
-
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    "__pycache__",
-    ".cache",
-    ".idea",
-    ".vscode",
-    "build",
-    "dist",
-    "target",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
 JS_SUFFIXES: Final[frozenset[str]] = frozenset({".js", ".mjs", ".cjs"})
 WALK_CHUNK: Final[int] = 512
-DEFAULT_WORKERS: Final[int] = 8
 IMAP_CHUNKSIZE: Final[int] = 4
 DEFAULT_TIMEOUT: Final[float] = 300.0
 COMPARE_CHUNK: Final[int] = 1 << 16
@@ -56,7 +35,7 @@ def walk_files(directory: str) -> Iterator[str]:
     for root, dirs, files in os.walk(directory):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in files:
-            yield os.path.join(root, name)
+            yield Path(root).joinpath(name)
 
 
 def format_bytes(n: int) -> str:
@@ -73,7 +52,7 @@ def format_bytes(n: int) -> str:
 
 def display_path(path: Path) -> str:
     try:
-        return os.path.relpath(path, Path.cwd())
+        return Path(path).relative_to(Path.cwd())
     except (OSError, ValueError):
         return str(path)
 

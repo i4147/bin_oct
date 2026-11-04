@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
+from loguru import logger
 import argparse
 import json
-import logging
 import random
 import re
 import signal
@@ -20,12 +21,9 @@ try:
     _HAS_TENACITY = True
 except ImportError:
     _HAS_TENACITY = False
-DEFAULT_SKIP_DIRS: Final = frozenset({"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"})
 ENCODINGS: Final = ("utf-8", "utf-8-sig", "utf-16", "cp1258", "gb18030")
 CYRILLIC_RE: Final = re.compile(r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]")
 NON_ASCII_RE: Final = re.compile(r"[^\x00-\x7F]")
-logger = logging.getLogger("translate_files")
-logging.basicConfig(level=logging.WARNING)
 
 
 class RateLimitError(Exception):
@@ -335,7 +333,7 @@ def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     def _worker(chunk: str) -> str:
         return translate_single_shot(chunk, source=args.source, target=args.target)
 
-    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         pieces = list(ex.map(_worker, chunks))
     translated = "".join(pieces)
     out = path.with_name(f"{path.stem}_eng{path.suffix}")
@@ -353,7 +351,7 @@ def run_zh(args: argparse.Namespace) -> int:
         return 1
     candidates = [p for p in root.rglob("*") if p.is_file() and is_text_file(p)]
     print(f"Found {len(candidates)} text files to process")
-    with ThreadPoolExecutor(args.workers) as ex:
+    with ThreadPoolExecutor(MAX_WORKERS) as ex:
         futures = {ex.submit(_translate_zh_file, p, args): p for p in candidates}
         for fut in as_completed(futures):
             path = futures[fut]
@@ -376,7 +374,7 @@ def _ru_translate_chunk(line_group: list[str], args: argparse.Namespace):
             delay = args.retry_base_delay * 2 ** (attempt - 1)
             delay += random.uniform(0, delay * 0.25)
             logger.warning(
-                "Translate attempt %d/%d failed for chunk starting %r: %s. Retrying in %.2fs",
+                "Translate attempt {}/{} failed for chunk starting {}: {}. Retrying in {}s",
                 attempt,
                 args.attempts,
                 (line_group[0][:60] + "...") if line_group else "",
@@ -395,7 +393,7 @@ def _ru_per_line(lines: Iterable[str], args: argparse.Namespace) -> dict[str, st
             translated = GoogleTranslator(source=args.source, target=args.target).translate(line)
             out[line] = translated if translated is not None else line
         except Exception as exc:
-            logger.error("Per-line fallback failed for %r: %s", line[:50], exc)
+            logger.error("Per-line fallback failed for {}: {}", line[:50], exc)
             out[line] = line
     return out
 
@@ -410,7 +408,7 @@ def _ru_store_chunk(
 ) -> None:
     if translated is None:
         logger.error(
-            "Failed to translate chunk starting with: %s",
+            "Failed to translate chunk starting with: {}",
             (line_group[0][:60] + "...") if line_group else "",
         )
         return
@@ -420,7 +418,7 @@ def _ru_store_chunk(
             mapping[orig] = new
     else:
         logger.warning(
-            "Line-count mismatch (%d vs %d). Falling back to per-line translation.",
+            "Line-count mismatch ({} vs {}). Falling back to per-line translation.",
             len(line_group),
             len(split),
         )
@@ -464,11 +462,11 @@ def run_ru(args: argparse.Namespace) -> int:
         return 0
     print(
         f"Created {len(groups)} chunk(s) from {len(unique)} unique lines "
-        f"(max {args.chunk_size} chars/chunk), using {args.workers} worker(s)"
+        f"(max {args.chunk_size} chars/chunk), using {MAX_WORKERS} worker(s)"
     )
     mapping: dict[str, str] = {}
     total = len(groups)
-    pool = Pool(processes=args.workers)
+    pool = Pool(processes=MAX_WORKERS)
     try:
         async_results = [pool.apply_async(_ru_translate_chunk, (g, args)) for g in groups]
         for idx, async_res in enumerate(async_results, start=1):
@@ -478,7 +476,7 @@ def run_ru(args: argparse.Namespace) -> int:
                 _ru_store_chunk(line_group, translated, mapping, idx, total, args)
             except Exception as exc:
                 logger.error(
-                    "Unexpected error processing chunk starting with %r: %s",
+                    "Unexpected error processing chunk starting with {}: {}",
                     (group[0][:60] + "...") if group else "",
                     exc,
                 )
@@ -491,7 +489,7 @@ def run_ru(args: argparse.Namespace) -> int:
             json.dump(mapping, fh, ensure_ascii=False, indent=2)
         print(f"Saved {len(mapping)} translations to {json_out.name}")
     except Exception as exc:
-        logger.error("Error saving JSON file: %s", exc)
+        logger.error("Error saving JSON file: {}", exc)
     try:
         with src.open("w", encoding="utf-8") as fh:
             replaced = 0
@@ -503,7 +501,7 @@ def run_ru(args: argparse.Namespace) -> int:
                     fh.write(f"{line}\n")
         print(f"Updated {src.name}: translated {replaced} lines, kept {len(lines) - replaced} lines unchanged")
     except Exception as exc:
-        logger.error("Error updating input file: %s", exc)
+        logger.error("Error updating input file: {}", exc)
     return 0
 
 
@@ -590,7 +588,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=32768,
         help="Characters per chunk (default: 32768).",
     )
-    p_zh.add_argument("--workers", type=int, default=8, help="ThreadPool workers (default: 8).")
     _add_common_translation_args(p_zh)
     p_zh.set_defaults(source="auto", _handler=run_zh)
     p_ru = sub.add_parser("ru", help="Russian → English, line-based single file (trans_ru.py).")
@@ -601,7 +598,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=2000,
         help="Max characters per line-group (default: 2000).",
     )
-    p_ru.add_argument("--workers", type=int, default=8, help="Multiprocessing workers (default: 8).")
     p_ru.add_argument("--attempts", type=int, default=4, help="Max attempts per chunk (default: 4).")
     p_ru.add_argument(
         "--retry-base-delay",

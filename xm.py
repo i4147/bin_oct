@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, WORKERS
 import argparse
 import ast
 import concurrent.futures as cf
@@ -10,7 +11,6 @@ from pathlib import Path
 
 OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
 MAX_LINE: int = 80
-WORKERS: int = 4
 LIVEDOC_RE: re.Pattern[str] = re.compile(r"^LiveDoc:\s*https?://\S+\s*$")
 JSON_INDEX_NAME: str = "modules.json"
 
@@ -195,20 +195,13 @@ def main() -> None:
         default=OUTPUT_DIR,
         help=f"Output directory (default: {OUTPUT_DIR}).",
     )
-    parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=WORKERS,
-        help=f"Interpreter-pool workers (default: {WORKERS}).",
-    )
     args: argparse.Namespace = parser.parse_args()
     process(
         args.root.resolve(),
         args.out_dir,
         args.json,
         args.remove,
-        args.workers,
+        MAX_WORKERS,
     )
 
 

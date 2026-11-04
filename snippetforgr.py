@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from loguru import logger
+from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -328,10 +330,10 @@ def cmd_snips(args: argparse.Namespace) -> int:
     if not targets:
         print("No files found.")
         return 0
-    print(f"📂 Found {len(targets)} files. Processing with {args.workers} workers...")
+    print(f"📂 Found {len(targets)} files. Processing with {MAX_WORKERS} workers...")
     total, errors = 0, 0
-    if args.workers > 1:
-        with Pool(args.workers) as pool:
+    if MAX_WORKERS > 1:
+        with Pool(MAX_WORKERS) as pool:
             futures = [pool.apply_async(_snips_worker, ((t, out_dir),)) for t in targets]
             for fut in futures:
                 try:
@@ -452,7 +454,7 @@ def cmd_pytext(args: argparse.Namespace) -> int:
         return 0
     print(f"Found {len(targets)} target file(s). Processing...")
     total = 0
-    workers = max(1, args.workers)
+    workers = max(1, MAX_WORKERS)
     if workers > 1:
         with Pool(processes=workers) as pool:
             futures = [pool.apply_async(_pytext_worker, ((t, out_dir),)) for t in targets]
@@ -780,7 +782,7 @@ def cmd_html(args: argparse.Namespace) -> int:
             print(f"No HTML files found in {args.path}")
             return 0
         print(f"Found {len(files)} HTML file(s)")
-        total += _html_run_multi(files, output_dir, args.workers)
+        total += _html_run_multi(files, output_dir, MAX_WORKERS)
     else:
         print("Processing HTML files in current directory recursively")
         files = _collect_html_files(Path())
@@ -788,7 +790,7 @@ def cmd_html(args: argparse.Namespace) -> int:
             print("No HTML files found.")
             return 0
         print(f"Found {len(files)} HTML file(s)")
-        total += _html_run_multi(files, output_dir, args.workers)
+        total += _html_run_multi(files, output_dir, MAX_WORKERS)
     print(f"Total code blocks extracted: {total}")
     print(f"Results saved to: {Path(args.output)}")
     return 0
@@ -854,13 +856,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_snips.add_argument("paths", nargs="*", help="Files or dirs to scan (default: cwd)")
     p_snips.add_argument("-o", "--output", default="output", help="Output directory (default: output)")
     p_snips.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of worker processes (default: 4)",
-    )
-    p_snips.add_argument(
         "--ext",
         nargs="+",
         default=[".md", ".rst", ".txt", ".METADATA", ".PKG-INFO", ".cfg", ".ini"],
@@ -878,13 +873,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="extracted_code",
         help="Output directory (default: extracted_code)",
     )
-    p_py.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=8,
-        help="Number of worker processes (default: 8)",
-    )
     p_py.set_defaults(func=cmd_pytext)
     p_html = sub.add_parser(
         "html",
@@ -899,13 +887,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         default="./output",
         help="Output directory (default: ./output)",
-    )
-    p_html.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=8,
-        help="Number of worker processes (default: 8)",
     )
     p_html.set_defaults(func=cmd_html)
     return parser

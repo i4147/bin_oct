@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
+from loguru import logger
 import argparse
 import codecs
 import contextlib
 import ctypes
 import locale
-import logging
 import os
 import re
 import shutil
@@ -19,7 +20,6 @@ from types import SimpleNamespace
 if sys.version_info < (3, 4):
     msg = "PyOCR requires Python 3.4+"
     raise ImportError(msg)
-logger = logging.getLogger(__name__)
 VERSION = (0, 8, 5)
 __version__ = "0.8.5"
 _XHTML_HEADER = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
@@ -633,20 +633,20 @@ def _set_environment():
     if getattr(sys, "frozen", False):
         if "TESSDATA_PREFIX" in os.environ:
             return
-        tesspath = os.path.join(sys._MEIPASS, "tesseract")
-        tessprefix = os.path.join(sys._MEIPASS, "data")
+        tesspath = Path(sys._MEIPASS).joinpath("tesseract")
+        tessprefix = Path(sys._MEIPASS).joinpath("data")
         logger.info("Running in packaged environment")
-        if not os.path.exists(tesspath):
+        if not Path(tesspath).exists():
             logger.warning("Running from container, but no tesseract ({}) found !".format(tesspath))
         else:
             logger.info("[{}] added to PATH".format(tesspath))
             os.environ["PATH"] = tesspath + os.pathsep + os.environ["PATH"]
-        if not os.path.exists(os.path.join(tessprefix, "tessdata")):
+        if not Path(Path(tessprefix).joinpath("tessdata")).exists():
             logger.warning("Running from container, but no tessdata ({}) found !".format(tessprefix))
         else:
             version = tess_get_version(set_env=False)
             if version[0] > 3:
-                tessprefix = os.path.join(tessprefix, "tessdata")
+                tessprefix = Path(tessprefix).joinpath("tessdata")
             logger.info("TESSDATA_PREFIX set to [{}]".format(tessprefix))
             os.environ["TESSDATA_PREFIX"] = tessprefix
 
@@ -656,10 +656,9 @@ def psm_parameter():
         version = tess_get_version()
         return "--psm" if version[0] > 3 else "-psm"
     except Exception as exc:
-        logger.warning(
+        logger.opt(exception=exc).warning(
             "psm_parameter(): failed to get Tesseract version. Assuming Tesseract >= 4 --> using option '--psm'",
-            exc_info=exc,
-        )
+            )
         return "--psm"
 
 
@@ -681,7 +680,7 @@ def tess_detect_orientation(image, lang=None):
                 command += ["-l", "osd"]
         if image.mode != "RGB":
             image = image.convert("RGB")
-        image.save(os.path.join(tmpdir, "input.bmp"))
+        image.save(Path(tmpdir).joinpath("input.bmp"))
         proc = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -780,7 +779,7 @@ def tess_image_to_string(image, lang=None, builder=None):
     with tempfile.TemporaryDirectory() as tmpdir:
         if image.mode != "RGB":
             image = image.convert("RGB")
-        image.save(os.path.join(tmpdir, "input.bmp"))
+        image.save(Path(tmpdir).joinpath("input.bmp"))
         status, errors = tess_run_tesseract(
             "input.bmp",
             "output",
@@ -794,7 +793,7 @@ def tess_image_to_string(image, lang=None, builder=None):
         tested_files = []
         for file_extension in builder.file_extensions:
             output_file_name = "%s.%s" % (
-                os.path.join(tmpdir, "output"),
+                Path(tmpdir).joinpath("output"),
                 file_extension,
             )
             tested_files.append(output_file_name)
@@ -874,13 +873,13 @@ TESSDATA_PREFIX = os.getenv("TESSDATA_PREFIX", None)
 DPI_DEFAULT = 70
 libnames = []
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-    libnames += [os.path.join(sys._MEIPASS, "libtesseract-4.dll")]
-    libnames += [os.path.join(sys._MEIPASS, "libtesseract-3.dll")]
-    tessdata = os.path.join(sys._MEIPASS, "data")
-    if not os.path.exists(os.path.join(tessdata, "tessdata")):
+    libnames += [Path(sys._MEIPASS).joinpath("libtesseract-4.dll")]
+    libnames += [Path(sys._MEIPASS).joinpath("libtesseract-3.dll")]
+    tessdata = Path(sys._MEIPASS).joinpath("data")
+    if not Path(Path(tessdata).joinpath("tessdata")).exists():
         logger.warning("Running from container, but no tessdata ({}) found !".format(tessdata))
     else:
-        TESSDATA_PREFIX = os.path.join(tessdata, "tessdata")
+        TESSDATA_PREFIX = Path(tessdata).joinpath("tessdata")
 if sys.platform[:3] == "win":
     libnames += [
         "../vs2010/DLL_Release/libtesseract302.dll",

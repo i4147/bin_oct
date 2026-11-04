@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write_json
+from dh import MAX_WORKERS
 import argparse
 import json
 import signal
@@ -331,21 +333,6 @@ class TranslationState:
         )
 
 
-def atomic_write_json(path: Path, payload: dict) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.parent.mkdir(parents=True, exist_ok=True)
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-        f.flush()
-        try:
-            import os
-
-            os.fsync(f.fileno())
-        except OSError:
-            pass
-    tmp.replace(path)
-
-
 def load_state(path: Path) -> Optional[TranslationState]:
     if not path.exists():
         return None
@@ -607,12 +594,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="Comma-separated backend order (default: " + ",".join(DEFAULT_BACKEND_ORDER) + ")",
     )
     parser.add_argument("--chunk-size", type=int, default=2500, help="Chunk size in characters")
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=2,
-        help="Max concurrent workers (<=2 recommended)",
-    )
     parser.add_argument("--save-every", type=int, default=10, help="Save state every N chunks")
     parser.add_argument(
         "--debug-log",
@@ -657,7 +638,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             target_lang=args.target,
             backend_order=backend_order,
             chunk_size=args.chunk_size,
-            max_workers=max(1, min(2, args.workers)),
+            max_workers=max(1, min(2, MAX_WORKERS)),
             save_every=max(1, args.save_every),
         )
     except FileNotFoundError as e:

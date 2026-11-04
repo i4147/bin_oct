@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import concurrent.futures
-import logging
 import multiprocessing
 import re
 import string
@@ -24,7 +25,6 @@ try:
     from nltk.tokenize import sent_tokenize as _sent_tokenize
 except ImportError:
     _sent_tokenize = None
-logger = logging.getLogger(__name__)
 PART_RE = re.compile(r"^(?P<prefix>.+)\.part(?P<num>\d+)$")
 SENTENCE_RE = re.compile(r"[.!?]\s+")
 WHITESPACE_RE = re.compile(r"\s+")
@@ -32,7 +32,7 @@ WORD_RE = re.compile(r"\S+\s*", re.DOTALL)
 
 
 def setup_logging() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    pass
 
 
 def is_binary(path: Path) -> bool:
@@ -323,8 +323,8 @@ def cmd_split_chars(args: argparse.Namespace) -> int:
     )
     total_parts = 0
     processed = 0
-    if args.jobs > 1:
-        with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as executor:
+    if MAX_WORKERS > 1:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = [executor.submit(process_split_chars_file, f, config) for f in files]
             for fut in concurrent.futures.as_completed(futures):
                 try:
@@ -332,7 +332,7 @@ def cmd_split_chars(args: argparse.Namespace) -> int:
                     total_parts += n
                     processed += 1
                 except Exception as exc:
-                    logger.error("Failed to process a file: %s", exc)
+                    logger.error("Failed to process a file: {}", exc)
     else:
         for f in files:
             _path, n = process_split_chars_file(f, config)
@@ -619,12 +619,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=3,
         help="Zero-pad width for part numbers. 0 disables padding. Default: 3",
-    )
-    p.add_argument(
-        "--jobs",
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help="Number of parallel jobs. Default: CPU count",
     )
     p.add_argument("--extensions", nargs="+", help="Only process these extensions.")
     p.set_defaults(func=cmd_split_chars)

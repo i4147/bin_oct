@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
+from loguru import logger
 import argparse
 import curses
 import json
-import logging
 import multiprocessing as mp
 import os
 import shutil
@@ -16,44 +17,28 @@ from typing import Any, Iterator
 
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"
-WORKERS: int = 8
-LOG = logging.getLogger("ncdu2")
+LOG = logger
 
 
 def setup_logging(verbosity: int, logfile: Path | None) -> None:
-    level = {0: logging.WARNING, 1: logging.INFO}.get(verbosity, logging.DEBUG)
-    fmt = "%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s"
-    handlers: list[logging.Handler] = []
-    if logfile is not None:
-        handlers.append(logging.FileHandler(logfile, mode="w", encoding="utf-8"))
-    else:
-        handlers.append(logging.StreamHandler(sys.stderr))
-    logging.basicConfig(level=level, format=fmt, datefmt="%H:%M:%S", handlers=handlers)
+    level = {0: "WARNING", 1: "INFO"}.get(verbosity, "DEBUG")
+    logger.remove()
+    logger.add(logfile if logfile is not None else sys.stderr, level=level)
     LOG.info(
-        "%s v%s starting, verbosity=%d, pid=%d, python=%s",
+        "{} v{} starting, verbosity={}, pid={}, python={}",
         PROGNAME,
         __version__,
         verbosity,
         os.getpid(),
         sys.version.split()[0],
     )
-    LOG.debug("logging destination: %s", logfile or "<stderr>")
+    LOG.debug("logging destination: {}", logfile or "<stderr>")
 
 
 def redirect_logging_to_file(path: Path) -> None:
-    root = logging.getLogger()
-    for h in list(root.handlers):
-        root.removeHandler(h)
-        h.close()
-    fh = logging.FileHandler(path, mode="a", encoding="utf-8")
-    fh.setFormatter(
-        logging.Formatter(
-            "%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s",
-            datefmt="%H:%M:%S",
-        )
-    )
-    root.addHandler(fh)
-    LOG.info("--- logging redirected to %s (curses UI active) ---", path)
+    logger.remove()
+    logger.add(path)
+    LOG.info("--- logging redirected to {} (curses UI active) ---", path)
 
 
 def fmt_size(n: int, si: bool = False) -> str:
@@ -98,8 +83,7 @@ def scan_subtree(
     exclude: tuple[str, ...],
     verbosity: int,
 ) -> dict[str, Any]:
-    log = logging.getLogger("ncdu2.worker")
-    log.setLevel(logging.DEBUG if verbosity >= 2 else logging.INFO)
+    log = logger
     root = Path(path_str)
     t0 = time.perf_counter()
     counter = {"files": 0, "dirs": 0, "errors": 0}
@@ -109,7 +93,7 @@ def scan_subtree(
             st = p.lstat()
         except OSError as exc:
             counter["errors"] += 1
-            log.debug("lstat failed on %s: %s", p, exc)
+            log.debug("lstat failed on {}: {}", p, exc)
             return {
                 "n": p.name,
                 "d": False,
@@ -136,7 +120,7 @@ def scan_subtree(
             return node
         counter["dirs"] += 1
         if one_filesystem and st.st_dev != root_dev:
-            log.debug("skipping %s: other filesystem (dev=%s != %s)", p, st.st_dev, root_dev)
+            log.debug("skipping {}: other filesystem (dev={} != {})", p, st.st_dev, root_dev)
             node["c"] = []
             return node
         try:
@@ -145,12 +129,12 @@ def scan_subtree(
             counter["errors"] += 1
             node["e"] = True
             node["c"] = []
-            log.debug("cannot list %s: %s", p, exc)
+            log.debug("cannot list {}: {}", p, exc)
             return node
         children: list[dict[str, Any]] = []
         for child in entries:
             if child.name in exclude:
-                log.debug("excluded by name: %s", child)
+                log.debug("excluded by name: {}", child)
                 continue
             if stat.S_ISLNK(child.lstat().st_mode) if False else False:
                 continue
@@ -161,7 +145,7 @@ def scan_subtree(
     result = walk(root)
     dt = time.perf_counter() - t0
     log.info(
-        "scanned %-60s dirs=%-6d files=%-7d errors=%-4d in %6.2fs",
+        "scanned {} dirs={} files={} errors={} in {}s",
         str(root)[-60:],
         counter["dirs"],
         counter["files"],
@@ -238,7 +222,7 @@ def dedup_hardlinks(root: Node) -> int:
             dups += 1
         else:
             seen.add(key)
-    LOG.info("hard-link de-duplication: %d duplicate entries neutralised", dups)
+    LOG.info("hard-link de-duplication: {} duplicate entries neutralised", dups)
     return dups
 
 
@@ -270,10 +254,10 @@ def parallel_scan(
     verbosity: int,
 ) -> Node:
     root = root.resolve()
-    LOG.info("scan root      : %s", root)
-    LOG.info("worker processes: %d (fixed)", WORKERS)
+    LOG.info("scan root      : {}", root)
+    LOG.info("worker processes: {} (fixed)", WORKERS)
     LOG.info(
-        "options        : one_filesystem=%s follow_symlinks=%s exclude=%s",
+        "options        : one_filesystem={} follow_symlinks={} exclude={}",
         one_filesystem,
         follow_symlinks,
         exclude or "()",
@@ -294,16 +278,16 @@ def parallel_scan(
         msg = f"{PROGNAME}: cannot read {root}: {exc}"
         raise SystemExit(msg)
     top_entries = [p for p in top_entries if p.name not in exclude]
-    LOG.info("top-level entries to dispatch: %d", len(top_entries))
+    LOG.info("top-level entries to dispatch: {}", len(top_entries))
     root_node = build_tree(_stat_to_node(root, rst, True))
     root_node.name = str(root)
     ctx = mp.get_context("fork" if sys.platform != "win32" else "spawn")
-    LOG.debug("multiprocessing start method: %s", ctx.get_start_method())
+    LOG.debug("multiprocessing start method: {}", ctx.get_start_method())
     results: list[tuple[Path, "mp.pool.AsyncResult[dict[str, Any]]"]] = []
     with ctx.Pool(processes=WORKERS) as pool:
-        LOG.info("pool created with %d workers", WORKERS)
+        LOG.info("pool created with {} workers", WORKERS)
         for entry in top_entries:
-            LOG.debug("apply_async -> %s", entry)
+            LOG.debug("apply_async -> {}", entry)
             ar = pool.apply_async(
                 scan_subtree,
                 args=(
@@ -317,14 +301,14 @@ def parallel_scan(
             )
             results.append((entry, ar))
         pool.close()
-        LOG.info("all %d jobs submitted, collecting results ...", len(results))
+        LOG.info("all {} jobs submitted, collecting results ...", len(results))
         done = 0
         totals = {"dirs": 0, "files": 0, "errors": 0}
         for entry, ar in results:
             try:
                 node_dict = ar.get()
             except Exception as exc:
-                LOG.error("worker failed on %s: %r", entry, exc)
+                LOG.error("worker failed on {}: {}", entry, exc)
                 node_dict = {
                     "n": entry.name,
                     "d": entry.is_dir(),
@@ -346,7 +330,7 @@ def parallel_scan(
             root_node.children.append(child)
             done += 1
             LOG.info(
-                "[%3d/%3d] collected %-40s (%s)",
+                "[{}/{}] collected {} ({})",
                 done,
                 len(results),
                 entry.name[:40],
@@ -358,14 +342,14 @@ def parallel_scan(
     aggregate(root_node)
     elapsed = time.perf_counter() - t_start
     LOG.info("=" * 72)
-    LOG.info("scan complete: %s", root)
-    LOG.info("  directories : %s", fmt_count(totals["dirs"] + 1))
-    LOG.info("  files       : %s", fmt_count(totals["files"]))
-    LOG.info("  errors      : %s", fmt_count(totals["errors"]))
-    LOG.info("  apparent    : %s", fmt_size(root_node.size))
-    LOG.info("  disk usage  : %s", fmt_size(root_node.dsize))
+    LOG.info("scan complete: {}", root)
+    LOG.info("  directories : {}", fmt_count(totals["dirs"] + 1))
+    LOG.info("  files       : {}", fmt_count(totals["files"]))
+    LOG.info("  errors      : {}", fmt_count(totals["errors"]))
+    LOG.info("  apparent    : {}", fmt_size(root_node.size))
+    LOG.info("  disk usage  : {}", fmt_size(root_node.dsize))
     LOG.info(
-        "  elapsed     : %.2fs (%.0f items/s)",
+        "  elapsed     : {}s ({} items/s)",
         elapsed,
         root_node.items / max(elapsed, 1e-9),
     )
@@ -374,7 +358,7 @@ def parallel_scan(
 
 
 def export_json(root: Node, out: Path) -> None:
-    LOG.info("exporting JSON v2 to %s", out)
+    LOG.info("exporting JSON v2 to {}", out)
 
     def enc(n: Node) -> Any:
         d: dict[str, Any] = {
@@ -401,16 +385,16 @@ def export_json(root: Node, out: Path) -> None:
         enc(root),
     ]
     out.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
-    LOG.info("export finished: %s (%s)", out, fmt_size(out.stat().st_size))
+    LOG.info("export finished: {} ({})", out, fmt_size(out.stat().st_size))
 
 
 def import_json(path: Path) -> Node:
-    LOG.info("importing JSON from %s", path)
+    LOG.info("importing JSON from {}", path)
     data = json.loads(path.read_text(encoding="utf-8"))
     if not (isinstance(data, list) and len(data) >= 4):
         msg = f"{PROGNAME}: {path}: not an ncdu export"
         raise SystemExit(msg)
-    LOG.info("export header: major=%s minor=%s meta=%s", data[0], data[1], data[2])
+    LOG.info("export header: major={} minor={} meta={}", data[0], data[1], data[2])
 
     def dec(item: Any, parent: Node | None) -> Node:
         if isinstance(item, list):
@@ -438,7 +422,7 @@ def import_json(path: Path) -> Node:
 
     root = dec(data[3], None)
     aggregate(root)
-    LOG.info("import done: %s items, %s", fmt_count(root.items), fmt_size(root.dsize))
+    LOG.info("import done: {} items, {}", fmt_count(root.items), fmt_size(root.dsize))
     return root
 
 
@@ -459,7 +443,7 @@ class Browser:
         self.offset = 0
         self.message = ""
         self.stack: list[tuple[Node, int, int]] = []
-        LOG.info("browser initialised at %s", root.path)
+        LOG.info("browser initialised at {}", root.path)
 
     def val(self, n: Node) -> int:
         return n.size if self.apparent else n.dsize
@@ -489,7 +473,7 @@ class Browser:
             items = self.listing()
             self.draw(scr, items)
             ch = scr.getch()
-            LOG.debug("key=%r cursor=%d dir=%s", ch, self.cursor, self.cur.path)
+            LOG.debug("key={} cursor={} dir={}", ch, self.cursor, self.cur.path)
             if not self.handle(scr, ch, items):
                 LOG.info("quitting browser")
                 return
@@ -569,13 +553,13 @@ class Browser:
                 self.cursor = max(len(items) - 1, 0)
             case curses.KEY_RIGHT | 10 | 13 | curses.KEY_ENTER:
                 if sel is not None and sel.is_dir:
-                    LOG.info("entering %s", sel.path)
+                    LOG.info("entering {}", sel.path)
                     self.stack.append((self.cur, self.cursor, self.offset))
                     self.cur, self.cursor, self.offset = sel, 0, 0
             case curses.KEY_LEFT | 127 | curses.KEY_BACKSPACE | 104:
                 if self.stack:
                     self.cur, self.cursor, self.offset = self.stack.pop()
-                    LOG.info("back to %s", self.cur.path)
+                    LOG.info("back to {}", self.cur.path)
             case 110:
                 self.sort = "name"
                 LOG.info("sort by name")
@@ -595,7 +579,7 @@ class Browser:
                     self.info_popup(scr, sel)
             case 97:
                 self.apparent = not self.apparent
-                LOG.info("size mode -> %s", "apparent" if self.apparent else "disk")
+                LOG.info("size mode -> {}", "apparent" if self.apparent else "disk")
             case 103 if False:
                 pass
             case 71 if False:
@@ -687,17 +671,17 @@ class Browser:
     def do_delete(self, scr, n: Node) -> None:
         target = n.path
         if not self.confirm(scr, f"Delete {target}?"):
-            LOG.info("deletion of %s cancelled", target)
+            LOG.info("deletion of {} cancelled", target)
             self.message = " deletion cancelled "
             return
-        LOG.warning("DELETING %s", target)
+        LOG.warning("DELETING {}", target)
         try:
             if n.is_dir:
                 shutil.rmtree(target)
             else:
                 Path(target).unlink()
         except OSError as exc:
-            LOG.error("delete failed: %s", exc)
+            LOG.error("delete failed: {}", exc)
             self.message = f" error: {exc.strerror or exc} "
             return
         s, d, it = n.size, n.dsize, n.items
@@ -709,7 +693,7 @@ class Browser:
             p = p.parent
         if n.parent:
             n.parent.children.remove(n)
-        LOG.info("deleted %s (freed %s)", target, fmt_size(d))
+        LOG.info("deleted {} (freed {})", target, fmt_size(d))
         self.message = f" deleted {target.name} ({fmt_size(d).strip()} freed) "
 
     def do_export(self, scr) -> None:
@@ -718,7 +702,7 @@ class Browser:
             export_json(self.root, out)
             self.message = f" exported to {out} "
         except OSError as exc:
-            LOG.error("export failed: %s", exc)
+            LOG.error("export failed: {}", exc)
             self.message = f" export failed: {exc} "
 
     def rescan(self, scr) -> None:
@@ -732,7 +716,7 @@ class Browser:
             curses.color_pair(1),
         )
         scr.refresh()
-        LOG.info("rescan requested for %s", target)
+        LOG.info("rescan requested for {}", target)
         try:
             new = parallel_scan(
                 target,
@@ -856,7 +840,7 @@ def main(argv: list[str] | None = None) -> int:
         export_json(root, args.output)
         return 0
     if args.no_ui or not sys.stdout.isatty():
-        LOG.info("no TUI (no_ui=%s, tty=%s)", args.no_ui, sys.stdout.isatty())
+        LOG.info("no TUI (no_ui={}, tty={})", args.no_ui, sys.stdout.isatty())
         print_summary(root, args.top, args.apparent_size, args.si)
         return 0
     redirect_logging_to_file(args.log)
@@ -866,7 +850,7 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         LOG.warning("interrupted by user")
     finally:
-        LOG.info("%s exiting", PROGNAME)
+        LOG.info("{} exiting", PROGNAME)
     return 0
 
 

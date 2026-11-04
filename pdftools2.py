@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import io
@@ -338,7 +339,7 @@ def cmd_rename_pages(args: argparse.Namespace) -> int:
     if not files:
         print("No PDF files found.")
         return 0
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         for _ in ex.map(_rename_one, files):
             pass
     return 0
@@ -507,7 +508,7 @@ def cmd_shrink(args: argparse.Namespace) -> int:
         print("No PDF files found.")
         return 1
     fn = _SHRINK_ENGINES[args.engine]
-    if len(files) == 1 or args.workers <= 1:
+    if len(files) == 1 or MAX_WORKERS <= 1:
         before = total_size(Path.cwd())
         for f in files:
             fn(f)
@@ -517,7 +518,7 @@ def cmd_shrink(args: argparse.Namespace) -> int:
                 print(f"space freed: {human_size(freed)}")
         return 0
     before = total_size(Path.cwd())
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         list(ex.map(_shrink_dispatch, [str(f) for f in files], [args.engine] * len(files)))
     freed = before - total_size(Path.cwd())
     if freed > 0:
@@ -631,11 +632,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_to_img)
     p = sub.add_parser("rename-pages", help="Rename PDFs appending their page count.")
-    p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_rename_pages)
     p = sub.add_parser("shrink", help="Shrink PDF files with Ghostscript or qpdf.")
     p.add_argument("--engine", choices=sorted(_SHRINK_ENGINES.keys()), required=True)
-    p.add_argument("--workers", type=int, default=4)
     p.add_argument("inputs", nargs="*")
     p.set_defaults(func=cmd_shrink)
     p = sub.add_parser("split-size", help="Split PDFs into chunks no larger than --max-mb.")

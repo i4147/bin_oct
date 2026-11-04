@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS
 import multiprocessing as mp
 import subprocess
 import sys
@@ -10,7 +11,6 @@ C_EXTS = {".c"}
 HEADER_CPP_EXTS = {".hpp", ".hh", ".hxx"}
 HEADER_C_EXTS = {".h"}
 ALL_EXTS = CPP_EXTS | C_EXTS | HEADER_CPP_EXTS | HEADER_C_EXTS
-NUM_WORKERS = 8
 
 
 def run(cmd, input_bytes=None):

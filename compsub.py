@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import SKIP_DIRS, WORKER_COUNT
 import argparse
 import lzma
 import shutil
@@ -12,18 +13,6 @@ import brotli
 import zstandard as zstd
 from dh import fsz
 from loguru import logger
-
-SKIP_DIRS: set[str] = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "node_modules",
-}
-WORKER_COUNT: int = 8
 ZSTD_LEVEL: int = 19
 BROTLI_QUALITY: int = 11
 LZMA_LEVEL: int = 9

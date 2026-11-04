@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 import argparse
 import ast
 import os
@@ -17,19 +19,6 @@ from typing import Any, Iterable, Iterator
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8
 DEFAULT_PY2_THRESHOLD: int = 85
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "build",
-    "dist",
-    "egg-info",
-    ".tox",
-    ".eggs",
-})
 STDLIB_MODULES: frozenset[str] = frozenset({
     "abc",
     "argparse",
@@ -434,10 +423,7 @@ def _make_logger():
 
         return _log
     except ImportError:
-        import logging
-
-        logging.basicConfig(level=logging.INFO, format="%(message)s")
-        return logging.getLogger("import_tools")
+        return logger
 
 
 LOG = _make_logger()
@@ -627,8 +613,8 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
     if not files:
         print("No Python files found.")
         return 0
-    print(f"Scanning {len(files)} Python file(s) with {ns.jobs} worker(s) (strategy={ns.strategy})...")
-    with Pool(processes=ns.jobs) as pool:
+    print(f"Scanning {len(files)} Python file(s) with {MAX_WORKERS} worker(s) (strategy={ns.strategy})...")
+    with Pool(processes=MAX_WORKERS) as pool:
         results = pool.map(_worker_check_missing, [(f, ns.strategy) for f in files])
     total = 0
     fixed = 0
@@ -1021,7 +1007,6 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
     cm = sub.add_parser("check-missing", help="Find missing imports (spec/stdlib/mapped).")
     cm.add_argument("-d", "--directory", type=Path, default=Path.cwd())
-    cm.add_argument("-j", "--jobs", type=int, default=cpu_count())
     cm.add_argument(
         "--strategy",
         choices=("spec", "stdlib", "mapped"),

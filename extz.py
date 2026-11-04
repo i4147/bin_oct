@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import shutil
 import sys
@@ -7,28 +8,6 @@ from collections import defaultdict
 from pathlib import Path
 
 TOP_N_PIE = 30
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".pytest_cache",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    "node_modules",
-    ".next",
-    "dist",
-    "build",
-    ".egg-info",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".coverage",
-    "htmlcov",
-    ".tmp",
-    ".cache",
-}
 
 
 class Colors:

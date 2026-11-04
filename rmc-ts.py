@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import ast
 import functools
@@ -178,7 +179,7 @@ class Stripper:
 
     def run(self, path: str) -> Result:
         try:
-            real = os.path.realpath(path)
+            real = Path(path).resolve()
             src = Path(real).read_bytes()
             new = self.strip(src)
             if new == src:
@@ -269,21 +270,21 @@ class Walker:
 
     def __iter__(self) -> Iterator[str]:
         for root in self.roots:
-            if os.path.isdir(root):
+            if Path(root).is_dir():
                 for folder, dirs, names in os.walk(root):
                     dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.endswith(".dist-info"))
                     for name in sorted(names):
-                        path = os.path.join(folder, name)
-                        if name.endswith(".py") and not os.path.islink(path) and self.fresh(path):
+                        path = Path(folder).joinpath(name)
+                        if name.endswith(".py") and not Path(path).is_symlink() and self.fresh(path):
                             yield path
-            elif os.path.isfile(root):
+            elif Path(root).is_file():
                 if self.fresh(root):
                     yield root
             else:
                 self.err.print(Text.assemble(("warning", "yellow"), f": {root}: not found"))
 
     def fresh(self, path: str) -> bool:
-        real = os.path.realpath(path)
+        real = Path(path).resolve()
         if real in self.seen:
             return False
         self.seen.add(real)
@@ -294,7 +295,7 @@ class App:
     def __init__(self, argv: list[str] | None = None) -> None:
         args = self.build_parser().parse_args(argv)
         self.paths: list[str] = args.paths
-        self.workers: int = args.j
+        self.workers: int = MAX_WORKERS
         self.stripper = Stripper(Options(full=args.c or args.a, docs=args.d or args.a, all=args.a))
         self.out = Console()
         self.err = Console(stderr=True)
@@ -310,7 +311,6 @@ class App:
             action="store_true",
             help="strip everything, even shebang/module docstring/directives/commented-out code",
         )
-        ap.add_argument("-j", type=int, default=1, help="worker processes (>1 enables ProcessPoolExecutor)")
         return ap
 
     def results(self) -> Iterator[Result]:

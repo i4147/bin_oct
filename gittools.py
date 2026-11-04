@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import concurrent.futures
 import json
@@ -131,7 +132,7 @@ def cmd_scan_changes(args: argparse.Namespace) -> int:
         except Exception as e:
             return (repo, False, f"Error: {e}")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         results = list(executor.map(check_repo, repos))
     dirty_repos = [r for r in results if r[1]]
     for repo, dirty, detail in results:
@@ -165,7 +166,7 @@ def cmd_pull_all(args: argparse.Namespace) -> int:
         except Exception as e:
             return (repo, False, str(e))
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         results = list(executor.map(pull_repo, repos))
     for repo, success, msg in results:
         if success:
@@ -241,11 +242,9 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
     p_scan = subparsers.add_parser("scan-changes")
     p_scan.add_argument("path", nargs="?", default=".")
-    p_scan.add_argument("--jobs", type=int, default=None)
     p_scan.set_defaults(func=cmd_scan_changes)
     p_pull = subparsers.add_parser("pull-all")
     p_pull.add_argument("path", nargs="?", default=".")
-    p_pull.add_argument("--jobs", type=int, default=None)
     p_pull.set_defaults(func=cmd_pull_all)
     p_new = subparsers.add_parser("newrepo")
     p_new.add_argument("--name", default=None)

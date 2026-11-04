@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import mmap
 import shutil
@@ -16,10 +18,6 @@ try:
     if not hasattr(logger, "success"):
         logger.success = logger.info
 except ImportError:
-    import logging
-
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-    logger = logging.getLogger("br")
     logger.success = logger.info
 
 
@@ -121,7 +119,7 @@ def _untar(tar_path: Path, dest: Path) -> bool:
 def _compress_to(src: Path, dst: Path, args) -> bool:
     size = src.stat().st_size
     if args.chunk_threshold > 0 and size >= args.chunk_threshold:
-        return _chunked_compress(src, dst, size, args.chunk_size, args.quality, args.lgwin, args.workers)
+        return _chunked_compress(src, dst, size, args.chunk_size, args.quality, args.lgwin, MAX_WORKERS)
     return _stream_compress(src, dst, args.buffer_size, args.quality, args.lgwin)
 
 
@@ -253,9 +251,9 @@ def cmd_compress(args) -> int:
         logger.warning("No files or subdirectories found to compress.")
         return 0
     print(f"Found {len(dirs)} subdirs and {len(files)} files to compress.")
-    print(f"Starting parallel compression (quality={args.quality}, lgwin={args.lgwin}, workers={args.workers})...")
+    print(f"Starting parallel compression (quality={args.quality}, lgwin={args.lgwin}, workers={MAX_WORKERS})...")
     Executor = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
-    with Executor(max_workers=args.workers) as ex:
+    with Executor(max_workers=MAX_WORKERS) as ex:
         futures = [ex.submit(compress_dir, d, args) for d in dirs]
         futures += [ex.submit(compress_file, f, args) for f in files]
         for fut in as_completed(futures):
@@ -276,7 +274,7 @@ def cmd_decompress(args) -> int:
     tar_brs = [p for p in archives if p.name.endswith(".tar.br")]
     brs = [p for p in archives if not p.name.endswith(".tar.br")]
     print(f"Found {len(tar_brs)} .tar.br archives and {len(brs)} .br files to decompress.")
-    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futures = [ex.submit(decompress_tar_br, p, args) for p in tar_brs]
         futures += [ex.submit(decompress_br, p, args) for p in brs]
         for fut in as_completed(futures):
@@ -298,7 +296,6 @@ def build_parser() -> argparse.ArgumentParser:
     c = sub.add_parser("compress", help="Compress files (.br) and dirs (.tar.br)")
     c.add_argument("-q", "--quality", type=int, default=11, help="Brotli quality 0-11. Default 11.")
     c.add_argument("--lgwin", type=int, default=24, help="Brotli window bits 10-24. Default 24.")
-    c.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers. Default 8.")
     c.add_argument("--buffer-size", type=int, default=65536, help="Stream buffer size (bytes). Default 65536.")
     c.add_argument("--chunk-size", type=int, default=32768, help="Chunk size for chunked mode (bytes). Default 32768.")
     c.add_argument(
@@ -324,7 +321,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-ext", default=".br,.xz,.gz,.bz2,.7z,.zip,.tar", help="Comma-separated list of extensions to skip."
     )
     d = sub.add_parser("decompress", help="Decompress .br files and .tar.br archives")
-    d.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers. Default 8.")
     d.add_argument("--buffer-size", type=int, default=65536, help="Stream buffer size (bytes). Default 65536.")
     return parser
 

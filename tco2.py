@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import importlib
 import json
@@ -603,12 +605,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("-s", "--source", default="fr")
     parser.add_argument("-t", "--target", default="en")
     parser.add_argument("-b", "--backend")
-    parser.add_argument("-w", "--workers", type=int, default=2)
     parser.add_argument("-d", "--delay", type=float, default=0.5)
     parser.add_argument("--save-every", type=int, default=50)
     parser.add_argument("--no-continue", action="store_true")
     args = parser.parse_args()
-    if args.workers < 1:
+    if MAX_WORKERS < 1:
         parser.error("--workers must be at least 1")
     if args.save_every < 1:
         parser.error("--save-every must be at least 1")
@@ -639,7 +640,7 @@ def _run(args: argparse.Namespace) -> int:
         str(Path(__file__).resolve()),
     )
     _print(f"Using backend: {backend_name}")
-    executor = ThreadPoolExecutor(max_workers=min(args.workers, 2))
+    executor = ThreadPoolExecutor(max_workers=min(MAX_WORKERS, 2))
     futures: dict[Future[tuple[str, str | None]], str] = {}
     try:
         for word in pending:

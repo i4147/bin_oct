@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
@@ -12,7 +13,6 @@ from loguru import logger
 if TYPE_CHECKING:
     from collections.abc import Generator
     from multiprocessing.pool import AsyncResult
-MAX_WORKERS: Final[int] = 8
 SAMPLE_SIZE: Final[int] = 100_000
 ConvertResult = tuple[Path, bool, str]
 

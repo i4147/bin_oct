@@ -335,7 +335,7 @@ def _entrypoints_pip_show(_: argparse.Namespace) -> int:
             low = line.strip().lower()
             if "bin/" not in low and "scripts/" not in low:
                 continue
-            ext = os.path.splitext(low)[1]
+            ext = (str(Path(low).with_suffix("")), Path(low).suffix)[1]
             if ext in (".py", "") and not any(s in low for s in ("__pycache__", ".dist-info", ".egg-info", ".pth")):
                 has_bin = True
                 break

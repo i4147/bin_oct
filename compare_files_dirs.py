@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from string import Template
 from typing import Optional
 
 try:
@@ -19,7 +20,7 @@ except ImportError:
 
 
 def _resolve(p: str) -> Path:
-    return Path(os.path.expandvars(p)).expanduser().resolve()
+    return Path(Template(p).substitute(os.environ)).expanduser().resolve()
 
 
 def _sha256_file(path: Path, chunk_size: int = 65536) -> str:

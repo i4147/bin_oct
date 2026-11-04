@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, WORKERS_DEFAULT
 import argparse
 import csv
 import fnmatch
@@ -15,7 +16,6 @@ from typing import Final, TextIO
 from loguru import logger
 
 __version__: Final[str] = "2.0.0"
-WORKERS_DEFAULT: Final[int] = 8
 READ_SIZE: Final[int] = 1 << 20
 BINARY_PROBE: Final[int] = 8192
 MAX_HEX_DIGITS: Final[int] = 8
@@ -472,13 +472,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     run = parser.add_argument_group("runtime")
     run.add_argument(
-        "--workers",
-        type=int,
-        default=WORKERS_DEFAULT,
-        metavar="N",
-        help="Worker process count",
-    )
-    run.add_argument(
         "--dry-run",
         action="store_true",
         help="List selected files and exit",
@@ -512,7 +505,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(f"extract_colors {__version__}\n")
         return 0
     _configure_logging(args.verbose, args.quiet)
-    if args.workers < 1:
+    if MAX_WORKERS < 1:
         logger.error("--workers must be >= 1")
         return 2
     if args.max_size is not None and args.max_size < 0:
@@ -563,8 +556,8 @@ def main(argv: list[str] | None = None) -> int:
         logger.warning("No files matched after filtering")
         return 0 if missing == 0 else 1
     config = ScanConfig(dedupe=opts.dedupe, no_alpha=opts.no_alpha)
-    chunksize = max(1, min(64, len(files) // (args.workers * 8)))
-    logger.info("Scanning {} file(s) with {} workers", len(files), args.workers)
+    chunksize = max(1, min(64, len(files) // (MAX_WORKERS * 8)))
+    logger.info("Scanning {} file(s) with {} workers", len(files), MAX_WORKERS)
     out: TextIO
     closer = False
     if args.output is not None:
@@ -580,7 +573,7 @@ def main(argv: list[str] | None = None) -> int:
     exit_code = 0
     try:
         context = get_context("fork")
-        with context.Pool(processes=args.workers) as pool:
+        with context.Pool(processes=MAX_WORKERS) as pool:
             results = pool.imap_unordered(
                 process_file,
                 ((path, config) for path in files),

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import base64
 import contextlib
@@ -19,25 +21,6 @@ from typing import Iterator, NamedTuple
 
 import libcst as cst
 from loguru import logger
-
-SKIP_DIRS = frozenset({
-    ".git",
-    "__pycache__",
-    ".tox",
-    ".venv",
-    "venv",
-    "env",
-    "node_modules",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".eggs",
-    "build",
-    "dist",
-    ".idea",
-    ".vscode",
-    ".hg",
-    ".svn",
-})
 CAMEL_RE = re.compile(r"^(?P<pre>_*)(?P<body>[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+)(?P<post>_*)$")
 PARTIAL_RE = re.compile(r"[a-z][A-Z]")
 SNAKE_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
@@ -113,29 +96,6 @@ def detect_encoding(data: bytes) -> str:
         return enc
     except (SyntaxError, LookupError):
         return "utf-8"
-
-
-def atomic_write(path: Path, data: bytes) -> None:
-    d = path.parent
-    fd, tmp = tempfile.mkstemp(dir=str(d), prefix=path.name + ".", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)
-        try:
-            dfd = os.open(str(d), os.O_DIRECTORY)
-            try:
-                os.fsync(dfd)
-            finally:
-                os.close(dfd)
-        except OSError:
-            pass
-    except BaseException:
-        with contextlib.suppress(OSError):
-            os.unlink(tmp)
-        raise
 
 
 def load_json(path: Path) -> dict:
@@ -559,7 +519,6 @@ def main() -> int:
     logger.add(sys.stderr, level="INFO", format="<level>{level}</level>: {message}")
     parser = argparse.ArgumentParser(description="Refactor camelCase identifiers to snake_case.")
     parser.add_argument("paths", nargs="*", type=Path, default=[Path.cwd()])
-    parser.add_argument("-j", "--jobs", type=int, default=min(8, os.cpu_count() or 4))
     parser.add_argument("--targets", type=parse_targets, default=set(ALLOWED_TARGETS))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--diff", action="store_true")
@@ -598,8 +557,8 @@ def main() -> int:
     combined: dict[str, str] = {}
     conflicts: set[str] = set()
     payloads = [(f, args.targets) for f in files]
-    if len(files) >= 64 and args.jobs > 1:
-        with Pool(processes=args.jobs) as pool:
+    if len(files) >= 64 and MAX_WORKERS > 1:
+        with Pool(processes=MAX_WORKERS) as pool:
             for path, mapping in pool.imap_unordered(collect_worker, payloads, chunksize=16):
                 for k, v in mapping.items():
                     if k in combined and combined[k] != v and k not in conflicts:
@@ -631,8 +590,8 @@ def main() -> int:
     total_files = 0
     total_edits = 0
     errors = 0
-    if len(files) >= 64 and args.jobs > 1:
-        with Pool(processes=args.jobs) as pool:
+    if len(files) >= 64 and MAX_WORKERS > 1:
+        with Pool(processes=MAX_WORKERS) as pool:
             results = pool.imap_unordered(process_file, payloads, chunksize=8)
             for res in results:
                 errors += _handle_result(res, apply, args.no_undo, cache, undo_store, args.diff)

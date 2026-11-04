@@ -449,7 +449,7 @@ def cmd_split_count(args: argparse.Namespace) -> int:
             for f in chunk:
                 target = dst_dir / f["name"]
                 k = 1
-                stem, suf = os.path.splitext(f["name"])
+                stem, suf = (str(Path(f["name"]).with_suffix("")), Path(f["name"]).suffix)
                 while target.exists():
                     target = dst_dir / f"{stem}_{k}{suf}"
                     k += 1

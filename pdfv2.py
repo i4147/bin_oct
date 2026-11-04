@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import contextlib
 import os
@@ -116,11 +117,11 @@ class Renderer:
     def _wipe_tmp(self) -> None:
         for name in os.listdir(self._tmp):
             with contextlib.suppress(OSError):
-                os.unlink(os.path.join(self._tmp, name))
+                os.unlink(Path(self._tmp).joinpath(name))
 
     def _run_pdftoppm(self, index: int, width: int) -> bytes:
         self._wipe_tmp()
-        root = os.path.join(self._tmp, "page")
+        root = Path(self._tmp).joinpath("page")
         argv = [
             "pdftoppm",
             "-f",
@@ -139,8 +140,8 @@ class Renderer:
         if res.returncode != 0:
             raise RenderError(res.stderr.decode("utf-8", "replace").strip() or "pdftoppm failed")
         out = root + ".ppm"
-        if not os.path.exists(out):
-            leftovers = [os.path.join(self._tmp, f) for f in sorted(os.listdir(self._tmp))]
+        if not Path(out).exists():
+            leftovers = [Path(self._tmp).joinpath(f) for f in sorted(os.listdir(self._tmp))]
             if not leftovers:
                 msg = "pdftoppm produced no output"
                 raise RenderError(msg)
@@ -149,7 +150,7 @@ class Renderer:
             return fh.read()
 
     def _run_mutool(self, index: int, width: int) -> bytes:
-        out = os.path.join(self._tmp, "page.ppm")
+        out = Path(self._tmp).joinpath("page.ppm")
         argv = [
             "mutool",
             "draw",
@@ -289,7 +290,7 @@ class Viewer:
         return "".join(out)
 
     def _status(self, cols: int, note: str = "") -> str:
-        name = os.path.basename(self.path)
+        name = Path(self.path).name
         if note:
             line = f" {note} "
         else:
@@ -439,7 +440,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-p", "--page", type=int, default=1, help="page to open first (1-based, default 1)")
     parser.add_argument("-z", "--zoom", type=float, default=1.0, help="initial zoom factor (default 1.0)")
     args = parser.parse_args(argv)
-    if not os.path.isfile(args.file):
+    if not Path(args.file).is_file():
         parser.error(f"no such file: {args.file}")
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         parser.error("must be run from an interactive terminal")

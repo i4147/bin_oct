@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import bz2
 import contextlib
 import gzip
 import hashlib
-import logging
 import lzma
 import multiprocessing as mp
 import os
@@ -46,7 +47,7 @@ try:
     import cramjam as cj
 except ImportError:
     cj = None
-log = logging.getLogger("compressor")
+log = logger
 
 
 @dataclass(frozen=True)
@@ -261,7 +262,7 @@ def _mp_chunk_worker(args: tuple[str, bytes]) -> bytes:
 def cmd_bench(args: argparse.Namespace) -> int:
     src = Path(args.path).expanduser()
     if not src.exists():
-        log.error("Path does not exist: %s", src)
+        log.error("Path does not exist: {}", src)
         return 1
     out_dir = Path(args.output).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -288,7 +289,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
             if args.mp_chunks and name in CODECS:
                 chunk_size = args.chunk_size * 1024 * 1024
                 chunks = [payload[i : i + chunk_size] for i in range(0, total, chunk_size)]
-                with mp.Pool(processes=args.workers or mp.cpu_count()) as pool:
+                with mp.Pool(processes=MAX_WORKERS or mp.cpu_count()) as pool:
                     parts = pool.map(_mp_chunk_worker, [(name, c) for c in chunks])
                 out = b"".join(parts)
             else:
@@ -327,7 +328,7 @@ def _archive_one_file(job: tuple[str, str, list[str], bool]) -> Optional[str]:
     try:
         data = p.read_bytes()
     except OSError as e:
-        log.error("Cannot read %s: %s", p, e)
+        log.error("Cannot read {}: {}", p, e)
         return None
     total = len(data)
     best: Optional[tuple[str, str, int, bytes]] = None
@@ -347,17 +348,17 @@ def _archive_one_file(job: tuple[str, str, list[str], bool]) -> Optional[str]:
     name, ext, level, blob = best
     dst = Path(out_dir) / f"{p.name}{ext}"
     dst.write_bytes(blob)
-    log.info("  %s → %s (%s, level=%d, %s)", p.name, dst.name, name, level, human(len(blob)))
+    log.info("  {} → {} ({}, level={}, {})", p.name, dst.name, name, level, human(len(blob)))
     return str(dst)
 
 
 def cmd_archive(args: argparse.Namespace) -> int:
     target = Path(args.path).expanduser()
     if not target.exists():
-        log.error("Path does not exist: %s", target)
+        log.error("Path does not exist: {}", target)
         return 1
     codecs = args.algos or list(CODECS.keys())
-    workers = args.workers or (mp.cpu_count() or 1)
+    workers = MAX_WORKERS or (mp.cpu_count() or 1)
     if target.is_file():
         out_dir = Path(args.output).expanduser() if args.output else target.parent
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -366,18 +367,18 @@ def cmd_archive(args: argparse.Namespace) -> int:
     if target.is_dir():
         files = [p for p in target.rglob("*") if p.is_file() and not is_archive(p)]
         if not files:
-            log.info("No compressible files in %s", target)
+            log.info("No compressible files in {}", target)
             return 0
         out_dir = Path(args.output).expanduser() if args.output else target
         out_dir.mkdir(parents=True, exist_ok=True)
         jobs = [(str(f), str(out_dir), codecs, args.keep_all) for f in files]
-        log.info("Found %d file(s); using %d worker(s)", len(files), min(workers, len(files)))
+        log.info("Found {} file(s); using {} worker(s)", len(files), min(workers, len(files)))
         with mp.Pool(processes=min(workers, len(files))) as pool:
             outcomes = pool.map(_archive_one_file, jobs)
         ok = sum(1 for o in outcomes if o)
-        log.info("Done: %d/%d compressed", ok, len(files))
+        log.info("Done: {}/{} compressed", ok, len(files))
         return 0
-    log.error("Not a file or directory: %s", target)
+    log.error("Not a file or directory: {}", target)
     return 1
 
 
@@ -392,20 +393,20 @@ def _compress_one_file(
     try:
         data = src.read_bytes()
     except OSError as e:
-        log.error("read %s: %s", src, e)
+        log.error("read {}: {}", src, e)
         return None
     try:
         blob = codec.compress(data, level)
     except Exception as e:
-        log.error("compress %s with %s: %s", src, codec.name, e)
+        log.error("compress {} with {}: {}", src, codec.name, e)
         return None
     if verify and codec.decompress is not None:
         try:
             if codec.decompress(blob) != data:
-                log.error("round-trip mismatch for %s — refusing to write", src)
+                log.error("round-trip mismatch for {} — refusing to write", src)
                 return None
         except Exception as e:
-            log.error("verify %s: %s", src, e)
+            log.error("verify {}: {}", src, e)
             return None
     dst = (out_dir or src.parent) / f"{src.name}{codec.ext}"
     tmp = dst.with_suffix(dst.suffix + ".tmp")
@@ -414,9 +415,9 @@ def _compress_one_file(
         os.replace(tmp, dst)
     except OSError as e:
         tmp.unlink(missing_ok=True)
-        log.error("write %s: %s", dst, e)
+        log.error("write {}: {}", dst, e)
         return None
-    log.info("✓ %s -> %s  [%s -> %s]", src, dst.name, human(len(data)), human(len(blob)))
+    log.info("✓ {} -> {}  [{} -> {}]", src, dst.name, human(len(data)), human(len(blob)))
     if not keep:
         with contextlib.suppress(OSError):
             src.unlink()
@@ -435,11 +436,11 @@ def _compress_dir_as_tar(
     try:
         blob = codec.compress(data, level)
     except Exception as e:
-        log.error("compress %s: %s", src, e)
+        log.error("compress {}: {}", src, e)
         return None
     dst = (out_dir or src.parent) / f"{src.name}{codec.ext}"
     dst.write_bytes(blob)
-    log.info("✓ %s -> %s  [%s -> %s]", src, dst.name, human(len(data)), human(len(blob)))
+    log.info("✓ {} -> {}  [{} -> {}]", src, dst.name, human(len(data)), human(len(blob)))
     if not keep:
         shutil.rmtree(src, ignore_errors=True)
     return dst
@@ -449,7 +450,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
     codec = CODECS.get(args.algo)
     if codec is None:
         log.error(
-            "Unknown or unavailable codec: %s (available: %s)",
+            "Unknown or unavailable codec: {} (available: {})",
             args.algo,
             ", ".join(sorted(CODECS)),
         )
@@ -457,7 +458,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
     level = args.level if args.level is not None else codec.default_level
     src = Path(args.path).expanduser()
     if not src.exists():
-        log.error("Path does not exist: %s", src)
+        log.error("Path does not exist: {}", src)
         return 1
     out_dir = Path(args.output).expanduser() if args.output else None
     if src.is_file():
@@ -465,7 +466,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if args.recursive:
         targets = [p for p in sorted(src.rglob("*")) if p.is_file() and not is_archive(p)]
         if not targets:
-            log.info("No compressible files in %s", src)
+            log.info("No compressible files in {}", src)
             return 0
         jobs = [
             (
@@ -478,7 +479,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
             )
             for t in targets
         ]
-        workers = args.workers or (mp.cpu_count() or 1)
+        workers = MAX_WORKERS or (mp.cpu_count() or 1)
         with mp.Pool(processes=min(workers, len(targets))) as pool:
             pool.map(_compress_worker, jobs)
         return 0
@@ -500,14 +501,14 @@ def _guess_codec_from_name(name: str) -> Optional[Codec]:
 
 def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[Path] = None) -> Optional[Path]:
     if codec.decompress is None:
-        log.error("No decompressor implemented for codec %s", codec.name)
+        log.error("No decompressor implemented for codec {}", codec.name)
         return None
     base = src.name.removesuffix(codec.ext)
     dst = (out_dir or src.parent) / base
     try:
         blob = src.read_bytes()
     except OSError as e:
-        log.error("read %s: %s", src, e)
+        log.error("read {}: {}", src, e)
         return None
     if codec.name == "7z" and py7zr is not None:
         try:
@@ -522,13 +523,13 @@ def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[
                     for e in entries:
                         shutil.move(str(e), str(dst / e.name))
         except Exception as e:
-            log.error("7z extract %s: %s", src, e)
+            log.error("7z extract {}: {}", src, e)
             return None
     else:
         try:
             out = codec.decompress(blob)
         except Exception as e:
-            log.error("decompress %s: %s", src, e)
+            log.error("decompress {}: {}", src, e)
             return None
         dst.write_bytes(out)
         if dst.name.endswith(".tar"):
@@ -541,7 +542,7 @@ def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[
                 dst = target
             except tarfile.TarError:
                 pass
-    log.info("✓ %s -> %s", src, dst)
+    log.info("✓ {} -> {}", src, dst)
     if not keep:
         with contextlib.suppress(OSError):
             src.unlink()
@@ -556,12 +557,12 @@ def _decompress_worker(job: tuple[str, str, bool, Optional[str]]):
 def cmd_decompress(args: argparse.Namespace) -> int:
     src = Path(args.path).expanduser()
     if not src.exists():
-        log.error("Path does not exist: %s", src)
+        log.error("Path does not exist: {}", src)
         return 1
     out_dir = Path(args.output).expanduser() if args.output else None
     explicit = CODECS.get(args.algo) if args.algo else None
     if args.algo and explicit is None:
-        log.error("Unknown codec: %s", args.algo)
+        log.error("Unknown codec: {}", args.algo)
         return 1
     if src.is_file():
         if args.algo == "zlib":
@@ -573,15 +574,15 @@ def cmd_decompress(args: argparse.Namespace) -> int:
                         fout.write(d.decompress(chunk))
                     fout.write(d.flush())
             except zlib.error as e:
-                log.error("zlib stream error: %s", e)
+                log.error("zlib stream error: {}", e)
                 return 2
-            log.info("✓ %s -> %s", src, dst)
+            log.info("✓ {} -> {}", src, dst)
             if not args.keep:
                 src.unlink()
             return 0
         codec = explicit or _guess_codec_from_name(src.name)
         if codec is None:
-            log.error("Cannot infer codec from %s — pass --algo", src.name)
+            log.error("Cannot infer codec from {} — pass --algo", src.name)
             return 1
         return 0 if _decompress_one_file(src, codec, args.keep, out_dir) else 1
     if args.recursive:
@@ -589,18 +590,18 @@ def cmd_decompress(args: argparse.Namespace) -> int:
     else:
         candidates = [p for p in sorted(src.iterdir()) if p.is_file() and is_archive(p)]
     if not candidates:
-        log.info("No archives found under %s", src)
+        log.info("No archives found under {}", src)
         return 0
     jobs = []
     for c in candidates:
         codec = explicit or _guess_codec_from_name(c.name)
         if codec is None:
-            log.warning("skip (unknown suffix): %s", c)
+            log.warning("skip (unknown suffix): {}", c)
             continue
         jobs.append((str(c), codec.name, args.keep, str(out_dir) if out_dir else None))
     if not jobs:
         return 0
-    workers = args.workers or (mp.cpu_count() or 1)
+    workers = MAX_WORKERS or (mp.cpu_count() or 1)
     with mp.Pool(processes=min(workers, len(jobs))) as pool:
         pool.map(_decompress_worker, jobs)
     return 0
@@ -614,11 +615,11 @@ def _subdir_compress(job: tuple[str, str, int]) -> bool:
         data, _arcname = tar_bytes(src)
         blob = codec.compress(data, level)
     except Exception as e:
-        log.error("subdir compress %s: %s", src, e)
+        log.error("subdir compress {}: {}", src, e)
         return False
     dst = src.parent / f"{src.name}.tar{codec.ext}"
     dst.write_bytes(blob)
-    log.info("✓ %s -> %s  [%s -> %s]", src, dst.name, human(len(data)), human(len(blob)))
+    log.info("✓ {} -> {}  [{} -> {}]", src, dst.name, human(len(data)), human(len(blob)))
     shutil.rmtree(src, ignore_errors=True)
     return True
 
@@ -648,22 +649,22 @@ def _subdir_decompress(job: tuple[str, bool]) -> bool:
         finally:
             tpath.unlink(missing_ok=True)
     except Exception as e:
-        log.error("subdir decompress %s: %s", src, e)
+        log.error("subdir decompress {}: {}", src, e)
         return False
     if not keep:
         src.unlink(missing_ok=True)
-    log.info("✓ %s -> %s", src, base)
+    log.info("✓ {} -> {}", src, base)
     return True
 
 
 def cmd_subdirs(args: argparse.Namespace) -> int:
     codec = CODECS.get(args.algo)
     if codec is None:
-        log.error("Unknown codec: %s", args.algo)
+        log.error("Unknown codec: {}", args.algo)
         return 1
     level = args.level if args.level is not None else codec.default_level
     paths = [Path(p).expanduser() for p in (args.paths or ["."])]
-    workers = args.workers or 8
+    workers = MAX_WORKERS or 8
     if args.compress:
         dirs = [d for p in paths if p.is_dir() for d in p.iterdir() if d.is_dir() and not d.name.startswith(".")]
         if not dirs:
@@ -690,13 +691,7 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
 
 
 def _common_workers(p: argparse.ArgumentParser) -> None:
-    p.add_argument(
-        "--workers",
-        "-j",
-        type=int,
-        default=None,
-        help="worker processes (default: cpu_count)",
-    )
+    pass
 
 
 def _common_output(p: argparse.ArgumentParser) -> None:
@@ -816,8 +811,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = build_parser()
     ns = ap.parse_args(argv)
-    level = logging.DEBUG if ns.verbose else (logging.WARNING if ns.quiet else logging.INFO)
-    logging.basicConfig(level=level, format="%(asctime)s [%(levelname)s] %(message)s")
+    level = "DEBUG" if ns.verbose else ("WARNING" if ns.quiet else "INFO")
     try:
         return int(ns.func(ns) or 0)
     except KeyboardInterrupt:

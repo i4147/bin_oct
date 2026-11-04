@@ -1,15 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 import argparse
-import logging
 import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
 from typing import Final
-
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
 try:
     from googletrans import Translator
 
@@ -25,14 +23,6 @@ except ImportError:
 if not (HAS_GOOGLETRANS or HAS_DEEP_TRANSLATOR):
     logger.error("Please install either googletrans (4.0.0rc1) or deep-translator.")
     sys.exit(1)
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    "lazy",
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-})
 CHINESE_PATTERN: Final[re.Pattern] = re.compile(
     r"[\u4e00-\u9fff\u3400-\u4dbf\u20000-\u2a6df\u2a700-\u2b73f\u2b740-\u2b81f\u2b820-\u2ceaf\uf900-\ufaff]"
 )
@@ -70,7 +60,7 @@ class UniversalTranslator:
             else:
                 return self.translator.translate(text, dest="en").text
         except Exception as e:
-            logger.warning("Translation error: %s", e)
+            logger.warning("Translation error: {}", e)
             return text
 
 
@@ -98,7 +88,7 @@ def process_file(path: Path, batch_size: int = 10) -> None:
         path.write_text("".join(lines), encoding="utf-8", errors="ignore")
         print("  ✓ Completed: %d lines translated", translated_count)
     except Exception as e:
-        logger.error("  ✗ Error processing %s: %s", path, e)
+        logger.error("  ✗ Error processing {}: {}", path, e)
 
 
 def worker(args: tuple[Path, int]) -> None:
@@ -113,12 +103,6 @@ def main() -> None:
         nargs="+",
         default=[".txt", ".md", ".py", ".js", ".html", ".css", ".json", ".xml", ".csv"],
         help="File extensions to process",
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=4,
-        help=f"Number of parallel workers (default: {mp.cpu_count()})",
     )
     parser.add_argument("--batch-size", type=int, default=10, help="Batch size for progress logging")
     parser.add_argument("--exclude", nargs="+", default=[], help="Paths to exclude")
@@ -142,13 +126,13 @@ def main() -> None:
     if not files_to_process:
         print("No files to process.")
         return
-    print("Found %d files. Using %d workers...", len(files_to_process), args.workers)
+    print("Found %d files. Using %d workers...", len(files_to_process), MAX_WORKERS)
     tasks = [(fp, args.batch_size) for fp in files_to_process]
-    if args.workers == 1:
+    if MAX_WORKERS == 1:
         for t in tasks:
             worker(t)
     else:
-        with mp.Pool(processes=args.workers) as pool:
+        with mp.Pool(processes=MAX_WORKERS) as pool:
             pool.map(worker, tasks)
     print("\n✓ All translations completed!")
 

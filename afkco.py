@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import ast
 import re
 import sys
@@ -489,7 +490,6 @@ def main():
         action="store_true",
         help="Detailed output with per-name breakdown",
     )
-    parser.add_argument("--workers", type=int, default=8, help="Number of parallel workers (default: 8)")
     parser.add_argument(
         "--exclude",
         action="append",
@@ -505,10 +505,10 @@ def main():
         print("No Python files found to analyze.", file=sys.stderr)
         return 1
     if args.verbose:
-        print(f"Scanning {len(args.paths)} path(s) with {args.workers} worker(s) …\n")
+        print(f"Scanning {len(args.paths)} path(s) with {MAX_WORKERS} worker(s) …\n")
         print(f"  {len(py_files)} .py file(s), {len(archive_members)} archive member(s) queued.\n")
     reports = []
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         if py_files:
             reports.extend(pool.map(_process_py_file_worker, py_files))
         if archive_members:

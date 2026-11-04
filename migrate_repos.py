@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
+from loguru import logger
 import argparse
-import logging
 import os
 import shutil
 import subprocess
@@ -44,36 +45,10 @@ TEXT_FILENAMES = {
     ".npmrc",
     "Makefile",
 }
-SKIP_DIRS = {
-    "node_modules",
-    ".venv",
-    "venv",
-    "env",
-    "pycache",
-    "dist",
-    "build",
-    ".tox",
-    "site-packages",
-    ".git",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".idea",
-    ".vscode",
-    "target",
-    ".cache",
-}
 MAX_FILE_SIZE = 5 * 1024 * 1024
 LOG_FILE = "github_identity_migrate.log"
-logger = logging.getLogger("gh_migrate")
-logger.setLevel(logging.DEBUG)
-_console = logging.StreamHandler(sys.stdout)
-_console.setLevel(logging.INFO)
-_console.setFormatter(logging.Formatter("%(message)s"))
-_file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
-_file_handler.setLevel(logging.DEBUG)
-_file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-logger.addHandler(_console)
-logger.addHandler(_file_handler)
+_console = logger.add(sys.stdout)
+_file_handler = logger.add(LOG_FILE, )
 
 
 class C:

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import re
 from multiprocessing import Pool, cpu_count
@@ -106,12 +107,5 @@ if __name__ == "__main__":
         action="store_true",
         help="Automatically correct misspelled words in the file",
     )
-    parser.add_argument(
-        "-p",
-        "--processes",
-        type=int,
-        default=None,
-        help="Number of processes to use (defaults to CPU count)",
-    )
     args = parser.parse_args()
-    process_file(args.file, args.autofix, args.processes)
+    process_file(args.file, args.autofix, MAX_WORKERS)

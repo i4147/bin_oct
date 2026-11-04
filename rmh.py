@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import re
 import sys
 from dataclasses import dataclass
@@ -288,12 +289,6 @@ if __name__ == "__main__":
         help="Files or directories to process (default: current directory)",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        help="Number of parallel workers (default: CPU count)",
-    )
-    parser.add_argument(
         "--no-backup",
         action="store_true",
         help="Remove .bak backup files after processing",
@@ -303,7 +298,7 @@ if __name__ == "__main__":
     targets = args.targets or None
     exit_code = main(
         targets=targets,
-        num_workers=args.workers,
+        num_workers=MAX_WORKERS,
         keep_backups=not args.no_backup,
         dry_run=args.dry_run,
     )

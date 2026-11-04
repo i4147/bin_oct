@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 from collections import defaultdict
 from multiprocessing.pool import AsyncResult, Pool
@@ -13,7 +14,6 @@ from xxhash import xxh64
 if TYPE_CHECKING:
     from collections.abc import Sequence
 CHUNKSIZE: int = 32768
-POOL_WORKERS: int = 8
 SKIP_PARTS: tuple[str, ...] = (".git", "__pycache__", ".mypy_cache", ".ruff_cache")
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "imap_unordered", "apply_async")
 HashResult: TypeAlias = tuple[str | None, Path]

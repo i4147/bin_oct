@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import ast
 import contextlib
@@ -537,13 +538,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="After writing, run mypy on the updated file (slow, annotate mode).",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=None,
-        help="Number of parallel worker processes (default: min(8, n_files)).",
-    )
     return parser
 
 
@@ -587,10 +581,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 3
-    use_pool: bool = len(files) > 1 and (args.jobs is None or args.jobs > 1)
+    use_pool: bool = len(files) > 1 and (MAX_WORKERS is None or MAX_WORKERS > 1)
     results: list[Result]
     if use_pool:
-        jobs: int = args.jobs or min(8, len(files))
+        jobs: int = MAX_WORKERS or min(8, len(files))
         with mp.Pool(processes=jobs) as pool:
             results = pool.starmap(process_file, [(str(f), options) for f in files])
     else:

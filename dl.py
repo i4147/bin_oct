@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import hashlib
@@ -486,17 +488,17 @@ def cmd_batch(args: argparse.Namespace) -> int:
             return 0
     dest = Path(args.dir)
     dest.mkdir(parents=True, exist_ok=True)
-    print(f"Downloading {len(urls)} URL(s) with engine={args.engine} workers={args.workers} ...")
+    print(f"Downloading {len(urls)} URL(s) with engine={args.engine} workers={MAX_WORKERS} ...")
     succeeded: set[str] = set()
     failed: list[str] = []
-    if args.workers <= 1:
+    if MAX_WORKERS <= 1:
         for i, url in enumerate(urls, 1):
             u, ok, msg = _batch_worker(url, str(dest), args.engine, args.resume, args.timeout, args.user_agent)
             print(f"[{i}/{len(urls)}] {'OK ' if ok else 'ERR'} {u} -> {msg}")
             (succeeded.add(u) if ok else failed.append(u))
     else:
         original_sigint = signal.getsignal(signal.SIGINT)
-        with mp.Pool(processes=args.workers, initializer=_sig_ignore) as pool:
+        with mp.Pool(processes=MAX_WORKERS, initializer=_sig_ignore) as pool:
             results = [
                 (
                     url,
@@ -718,7 +720,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
                 total=size,
                 completed=sum(ranges[i][1] - ranges[i][0] + 1 for i in completed),
             )
-            with mp.Pool(processes=args.workers) as pool:
+            with mp.Pool(processes=MAX_WORKERS) as pool:
                 futures = []
                 for idx, s, e in todo:
                     futures.append(
@@ -801,7 +803,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pb.add_argument("--urls", default="urls.txt", help="URL list file")
     pb.add_argument("--dir", default="downloads", help="Destination directory")
     pb.add_argument("--engine", choices=["auto", "pycurl", "requests", "urllib"], default="auto")
-    pb.add_argument("--workers", type=int, default=1, help="Parallel worker processes (1 = serial)")
     pb.add_argument("--resume", action="store_true")
     pb.add_argument(
         "--update-file",
@@ -827,7 +828,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pk.add_argument("url")
     pk.add_argument("output", nargs="?", default=None)
     pk.add_argument("sha256", nargs="?", default=None)
-    pk.add_argument("--workers", type=int, default=8)
     pk.add_argument("--chunk-size", type=int, default=32768)
     pk.add_argument("--timeout", type=float, default=15.0)
     pk.add_argument(

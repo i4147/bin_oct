@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import importlib.metadata
 import json
@@ -477,7 +478,7 @@ def cmd_size(args: argparse.Namespace) -> int:
         print("No .whl files found!")
         return 0
     print(f"Found {len(wheels)} .whl file(s)\n")
-    jobs = max(1, args.jobs)
+    jobs = max(1, MAX_WORKERS)
     print(f"Processing wheels ({jobs} worker(s))...\n")
     results: list[tuple[Path, int]] = []
     errors: list[tuple[Path, str]] = []
@@ -685,13 +686,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory to scan (default: current directory)",
     )
     p.add_argument("-r", "--recursive", action="store_true", help="scan subdirectories recursively")
-    p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=cpu_count(),
-        help=f"number of parallel jobs (default: {cpu_count()})",
-    )
     p.add_argument("-v", "--verbose", action="store_true", help="show detailed summary")
     p.add_argument("--json", action="store_true", help="output results as JSON")
     p.add_argument(

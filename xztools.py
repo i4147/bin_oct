@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
+from dh import DEFAULT_SKIP_DIRS, DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import io
@@ -57,16 +59,6 @@ except ImportError:
             pass
 
     logger = _FallbackLogger()
-DEFAULT_SKIP_DIRS: set[str] = {
-    ".git",
-    ".svn",
-    ".hg",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".env",
-    "node_modules",
-}
 DEFAULT_SKIP_EXTS: set[str] = {
     ".zip",
     ".br",
@@ -135,7 +127,6 @@ DEFAULT_SKIP_EXTS: set[str] = {
     ".o",
     ".obj",
 }
-DEFAULT_WORKERS: int = 8
 DEFAULT_THREADS: int = 4
 DEFAULT_PRESET: int = 9
 DEFAULT_CHUNK_SIZE: int = 1024 * 1024
@@ -685,7 +676,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if args.dry_run:
         print("[dry-run] no files will be modified")
     if args.tar_subdirs or args.auto_tar_dirs:
-        _tar_top_level_dirs(root, args.preset, args.workers)
+        _tar_top_level_dirs(root, args.preset, MAX_WORKERS)
     if args.no_skip_compressed:
         skip_exts: set[str] = {XZ_SUFFIX}
     else:
@@ -702,7 +693,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
         print("No files found to compress")
         return 0
     print(
-        f"Compressing {len(files)} file(s) with {'sequential mode' if args.sequential else f'{args.workers} workers'}"
+        f"Compressing {len(files)} file(s) with {'sequential mode' if args.sequential else f'{MAX_WORKERS} workers'}"
     )
     print(f"Preset: {args.preset}, threads/job: {args.threads}, backend: {args.backend}")
     if args.dry_run:
@@ -718,7 +709,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
             if args.verbose:
                 _print_file_result(root, r, i, len(files))
     else:
-        with Pool(processes=args.workers) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             futures = [pool.apply_async(_worker_compress_xz, (wa,)) for wa in worker_args]
             for i, fut in enumerate(futures, 1):
                 r = fut.get()
@@ -752,7 +743,7 @@ def cmd_decompress(args: argparse.Namespace) -> int:
             results.append(r)
             _print_file_result(root, r, i, len(files))
     else:
-        with Pool(processes=args.workers) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             futures = [pool.apply_async(_worker_decompress_xz, (wa,)) for wa in worker_args]
             for i, fut in enumerate(futures, 1):
                 r = fut.get()
@@ -774,7 +765,7 @@ def cmd_tar_dirs(args: argparse.Namespace) -> int:
     if not subdirs:
         print(f"No non-hidden top-level subdirectories found in: {root}")
         return 0
-    workers = min(args.workers, len(subdirs))
+    workers = min(MAX_WORKERS, len(subdirs))
     print(f"Directory:      {root}")
     print(f"Subdirectories: {len(subdirs)}")
     print(f"Workers:        {workers}")
@@ -821,8 +812,8 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
     if not files:
         logger.error(f"No files found in {cwd}")
         return 1
-    print(f"Reading {len(files)} file(s) with {args.workers} worker(s)...")
-    with Pool(processes=args.workers) as pool:
+    print(f"Reading {len(files)} file(s) with {MAX_WORKERS} worker(s)...")
+    with Pool(processes=MAX_WORKERS) as pool:
         payload = pool.map(_read_file_bytes, [(str(f),) for f in files])
     print(f"Writing archive: {archive}")
     try:
@@ -932,12 +923,12 @@ def cmd_7z(args: argparse.Namespace) -> int:
     if not targets:
         print(f"No items found to {mode}")
         return 0
-    print(f"{mode.capitalize()}ing {len(targets)} item(s) with {args.workers} workers...")
+    print(f"{mode.capitalize()}ing {len(targets)} item(s) with {MAX_WORKERS} workers...")
     if out_dir:
         print(f"Output directory: {out_dir}")
     worker = _worker_pylzma_un7z if mode == "decompress" else _worker_pylzma_7z
     worker_args = [(str(t), args.keep, str(out_dir) if out_dir else None, args.tar_subdirs) for t in targets]
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         for r in pool.imap_unordered(worker, worker_args):
             mark = "✓" if r.success else "✗"
             print(f"  {mark} {r.path}: {r.message}")
@@ -970,11 +961,11 @@ def cmd_lzma_chunk(args: argparse.Namespace) -> int:
             print("No files to compress")
             return 0
         print(f"Compressing {len(files)} file(s) with chunk size {format_size(args.chunk_size)}...")
-        worker_args = [(str(f), args.chunk_size, args.workers, not args.keep_orig) for f in files]
+        worker_args = [(str(f), args.chunk_size, MAX_WORKERS, not args.keep_orig) for f in files]
         worker = _worker_lzma_chunk_compress
     ok = 0
     total_orig = total_new = 0
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         for r in pool.imap_unordered(worker, worker_args):
             mark = "✓" if r.success else "✗"
             extra = ""
@@ -1003,12 +994,6 @@ def _add_common_xz_opts(p: argparse.ArgumentParser) -> None:
         nargs="?",
         default=".",
         help="Directory to process (default: current directory)",
-    )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel workers (default: {DEFAULT_WORKERS})",
     )
     p.add_argument(
         "--sequential",
@@ -1120,12 +1105,6 @@ def build_parser() -> argparse.ArgumentParser:
         choices=range(10),
         help=f"xz preset 0-9 (default: {DEFAULT_PRESET})",
     )
-    p_t.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel workers (default: {DEFAULT_WORKERS})",
-    )
     p_t.add_argument("--keep-orig", action="store_true", help="Keep the source subdirectory")
     p_t.add_argument(
         "--no-verify",
@@ -1134,12 +1113,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_t.set_defaults(func=cmd_tar_dirs)
     p_a = sub.add_parser("archive-cwd", help="Archive cwd to ../<cwd>.tar.xz and delete it")
-    p_a.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel readers (default: {DEFAULT_WORKERS})",
-    )
     p_a.set_defaults(func=cmd_archive_cwd)
     p_7 = sub.add_parser("7z", help="pylzma-based .7z / .tar.7z codec")
     p_7.add_argument("paths", nargs="*", help="Files / directories (default: cwd recursively)")
@@ -1155,22 +1128,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="(Accepted for parity; directories are always tarred)",
     )
-    p_7.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel workers (default: {DEFAULT_WORKERS})",
-    )
     p_7.set_defaults(func=cmd_7z)
     p_l = sub.add_parser("lzma-chunk", help="pylzma chunked .lzma codec (max compression)")
     p_l.add_argument("-c", "--compress", action="store_true", default=True, help="Compress (default)")
     p_l.add_argument("-d", "--decompress", action="store_true", help="Decompress .lzma files")
-    p_l.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel workers (default: {DEFAULT_WORKERS})",
-    )
     p_l.add_argument(
         "--chunk-size",
         type=int,

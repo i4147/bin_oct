@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import subprocess
 
@@ -8,9 +9,9 @@ IGNORE = {"cpython", "neovim-source", ".git"}
 
 
 def migrate():
-    for repo in [d for d in os.listdir(".") if os.path.isdir(d) and d not in IGNORE]:
+    for repo in [d for d in os.listdir(".") if Path(d).is_dir() and d not in IGNORE]:
         os.chdir(repo)
-        if not os.path.exists(".git"):
+        if not Path(".git").exists():
             os.chdir("..")
             continue
         subprocess.run(["git", "add", "."], capture_output=True)

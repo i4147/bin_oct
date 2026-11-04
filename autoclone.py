@@ -103,7 +103,7 @@ def get_repo_size(repo, token=None, cache_data=None):
 def clone_repo(repo):
     clone_url = f"https://github.com/{repo}.git"
     repo_name = repo.split("/")[-1]
-    if os.path.exists(repo_name):
+    if Path(repo_name).exists():
         print(f"  ⏭️  {repo_name} already exists, skipping...")
         return True
     try:

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import SKIP_DIRS, WORKERS
 import re
 import sys
 import unicodedata
@@ -29,7 +30,6 @@ except ImportError:
     REGEX_AVAILABLE = False
     regex = re
 SUPPORTED_EXTENSIONS: set[str] = {".html", ".htm"}
-WORKERS: int = 8
 CHUNK_SIZE: int = 8192
 MAX_FILE_SIZE: int = 50 * 1024 * 1024
 MIN_TITLE_LENGTH: int = 2
@@ -623,11 +623,6 @@ class HtmlFileProcessor:
 
 
 class FileDiscovery:
-    SKIP_DIRS: set[str] = {
-        ".git",
-        "__pycache__",
-        ".mypy_cache",
-    }
 
     @staticmethod
     def discover_files(paths: list[str]) -> list[Path]:

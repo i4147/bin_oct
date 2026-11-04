@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_replace
+from dh import SKIP_DIR_NAMES
 import argparse
 import ast
 import contextlib
@@ -18,24 +20,6 @@ from dh import DOC_TH1, DOC_TH2
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4
 PY_SUFFIXES = (".py", ".pyi")
-SKIP_DIR_NAMES = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "node_modules",
-    "build",
-    "dist",
-    ".eggs",
-})
 PROTECTED_COMMENT_PREFIXES = (
     "#!",
     "#-*-",
@@ -373,28 +357,6 @@ def collapse_blank_lines(source: str) -> str:
         result.append(line)
         prev_was_blank = False
     return "".join(result)
-
-
-def atomic_replace(path: Path, data: bytes) -> None:
-    try:
-        mode = path.stat().st_mode
-    except OSError:
-        mode = None
-    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "wb") as fh:
-            fh.write(data)
-            fh.flush()
-            os.fsync(fh.fileno())
-        if mode is not None:
-            with contextlib.suppress(OSError):
-                os.chmod(tmp_path, mode)
-        os.replace(tmp_path, path)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            tmp_path.unlink()
-        raise
 
 
 def backup_path_for(path: Path) -> Path:

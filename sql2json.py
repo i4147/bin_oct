@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import WORKERS
+from loguru import logger
 import argparse
 import codecs
 import json
@@ -10,8 +12,6 @@ from dataclasses import dataclass
 from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from typing import Any
-
-WORKERS = 8
 READ_CHUNK_BYTES = 1024 * 1024
 DEFAULT_ENCODING = "utf-8"
 INSERT_START_RE = re.compile(
@@ -111,18 +111,18 @@ def discover_sql_files(inputs: Sequence[Path]) -> list[Path]:
                 if root.suffix.lower() == ".sql":
                     discovered.add(root.resolve())
                 else:
-                    logging.warning("Skipping non-SQL file: %s", root)
+                    logger.warning("Skipping non-SQL file: {}", root)
             elif root.is_dir():
                 for path in root.rglob("*"):
                     try:
                         if path.is_file() and path.suffix.lower() == ".sql":
                             discovered.add(path.resolve())
                     except OSError as exc:
-                        logging.warning("Cannot inspect %s: %s", path, exc)
+                        logger.warning("Cannot inspect {}: {}", path, exc)
             else:
-                logging.warning("Input does not exist or is inaccessible: %s", root)
+                logger.warning("Input does not exist or is inaccessible: {}", root)
         except OSError as exc:
-            logging.warning("Cannot inspect input %s: %s", root, exc)
+            logger.warning("Cannot inspect input {}: {}", root, exc)
     return sorted(discovered)
 
 
@@ -352,7 +352,7 @@ def convert_file(job: Job, encoding: str, strict: bool) -> Result:
                     except (ValueError, TypeError) as exc:
                         if strict:
                             raise
-                        logging.warning("Skipping malformed INSERT in %s: %s", source, exc)
+                        logger.warning("Skipping malformed INSERT in {}: {}", source, exc)
                 output.flush()
                 os.fsync(output.fileno())
             temp_path.replace(destination)
@@ -372,7 +372,7 @@ def main() -> int:
     args = parse_args()
     files = discover_sql_files(args.inputs)
     if not files:
-        logging.error("No .sql files found.")
+        logger.error("No .sql files found.")
         return 2
     output_dir = args.output_dir.resolve() if args.output_dir else None
     jobs = [
@@ -391,7 +391,7 @@ def main() -> int:
         for result in pool.imap_unordered(worker, payloads, chunksize=chunksize):
             if result.error is not None:
                 failures += 1
-                logging.error("%s: %s", result.source, result.error)
+                logger.error("{}: {}", result.source, result.error)
             else:
                 total_rows += result.rows
                 print(

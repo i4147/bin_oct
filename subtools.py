@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import os
@@ -193,7 +194,7 @@ def cmd_folderize(args: argparse.Namespace) -> int:
     print(f"📊 Found {len(files)} SRT file(s)")
     buckets: dict[str, list[Path]] = {}
     if args.engine == "lingua":
-        workers = args.workers or os.cpu_count() or 1
+        workers = MAX_WORKERS or os.cpu_count() or 1
         print(f"⚙️  Using {workers} worker processes (batch size={args.batch_size})\n")
         print("=" * 80)
         with mp.Pool(initializer=_lingua_init, processes=workers) as pool:
@@ -349,9 +350,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_folder.add_argument("--engine", choices=["lingua", "cld2"], default="lingua")
     p_folder.add_argument(
         "-b", "--batch-size", type=int, default=8, help="(lingua only) lines per detection batch (default: 8)"
-    )
-    p_folder.add_argument(
-        "--workers", type=int, default=None, help="(lingua only) worker process count (default: CPU count)"
     )
     p_folder.set_defaults(func=cmd_folderize)
     p_s2t = sub.add_parser("srt2txt", help="Convert .srt to plain text.")

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import shutil
@@ -103,7 +104,7 @@ def run_tgz(args: argparse.Namespace) -> int:
         if args.cleanup_scope == "folder":
             remove_path(source, safe_symlinks=False, quiet=True)
         elif args.cleanup_scope == "contents":
-            cleanup_contents(source, output, args.workers)
+            cleanup_contents(source, output, MAX_WORKERS)
     print("Cleanup complete.")
     return 0
 
@@ -120,7 +121,6 @@ def build_parser() -> argparse.ArgumentParser:
     tgz_parser = subparsers.add_parser("tgz")
     tgz_parser.add_argument("folder", type=Path, nargs="?", default=Path.cwd())
     tgz_parser.add_argument("--output", type=Path, default=None)
-    tgz_parser.add_argument("--workers", type=positive_int, default=8)
     tgz_parser.add_argument("--keep", action="store_true")
     tgz_parser.add_argument(
         "--cleanup-scope",

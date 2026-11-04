@@ -1,9 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import os
-from os.path import dirname as dirn
-from os.path import isfile as isf
-from os.path import join as jn
 from pathlib import Path
 
 
@@ -23,8 +20,8 @@ class DirectoryWalker:
                 self.files = os.listdir(self.directory)
                 self.index = 0
             else:
-                fullname = jn(self.directory, file)
-                if os.path.isdir(fullname) and not os.path.islink(fullname):
+                fullname = Path(self.directory) / file
+                if Path(fullname).is_dir() and not Path(fullname).is_symlink():
                     self.stack.append(fullname)
                 return fullname
         return None
@@ -33,15 +30,14 @@ class DirectoryWalker:
 if __name__ == "__main__":
     cwd = Path.cwd()
     for file in DirectoryWalker(str(cwd)):
-        if isf(file) and file.endswith("README.pdf"):
-            dirname1 = dirn(file)
+        if Path(file).is_file() and file.endswith("README.pdf"):
+            dirname1 = Path(file).parent
             full_name = file
-            dirs = dirname1.split("/")
-            last_dir = dirs[len(dirs) - 1]
+            last_dir = dirname1.name
             new_name = last_dir + ".pdf"
-            if not os.path.exists(new_name):
+            if not Path(new_name).exists():
                 try:
-                    os.rename(file, jn(dirname1, new_name))
+                    Path(file).rename(dirname1 / new_name)
                     print(f"file {full_name} renamed to {new_name}")
                 except OSError as e:
                     print(e)

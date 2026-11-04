@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import base64
 import contextlib
@@ -28,10 +30,7 @@ try:
         format="<red>{level}</red> | <cyan>{message}</cyan>",
     )
 except ImportError:
-    import logging
-
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s | %(message)s")
-    logger = logging.getLogger("htmltool")
+    pass
 try:
     import pycurl
 except ImportError:
@@ -431,11 +430,11 @@ def cmd_inline(args: argparse.Namespace) -> int:
     if not files:
         logger.warning("No HTML or CSS files found.")
         return 1
-    print(f"Processing {len(files)} files with {args.workers} workers...\n")
+    print(f"Processing {len(files)} files with {MAX_WORKERS} workers...\n")
     total_l = total_r = 0
     t0 = time.perf_counter()
     payload = [(p, args.timeout) for p in files]
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         results = pool.map(_inline_dispatch, payload)
     for r in results:
         path = Path(r["path"])
@@ -862,8 +861,8 @@ def cmd_standalone(args: argparse.Namespace) -> int:
     print(f"Found {len(all_urls)} unique remote asset URL(s).")
     cache = _download_remote_batch(all_urls, args.timeout, args.max_size, not args.no_prompt)
     print(f"Cached {len(cache)} remote asset reference(s).")
-    print(f"Processing with {args.workers} workers...")
-    with Pool(processes=args.workers, initializer=_init_standalone_worker, initargs=(cache,)) as pool:
+    print(f"Processing with {MAX_WORKERS} workers...")
+    with Pool(processes=MAX_WORKERS, initializer=_init_standalone_worker, initargs=(cache,)) as pool:
         results = pool.map(_process_standalone_html, [str(f) for f in files])
     ok = sum(bool(r) for r in results)
     print(f"\nProcessed {ok}/{len(files)} file(s).")
@@ -1102,7 +1101,6 @@ def build_parser() -> argparse.ArgumentParser:
     i = sub.add_parser("inline", help="Inline local/remote assets into HTML/CSS files in place")
     i.add_argument("paths", nargs="*", default=["."])
     i.add_argument("--timeout", type=int, default=15)
-    i.add_argument("--workers", type=int, default=8)
     i.set_defaults(func=cmd_inline)
     s = sub.add_parser("isolate", help="Produce a <name>_standalone.html with local assets embedded")
     s.add_argument("input")
@@ -1111,7 +1109,6 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_isolate)
     st = sub.add_parser("standalone", help="Multi-process standalone builder with remote cache")
     st.add_argument("paths", nargs="*")
-    st.add_argument("--workers", type=int, default=8)
     st.add_argument("--timeout", type=int, default=30)
     st.add_argument("--max-size", type=int, default=5 * 1024 * 1024)
     st.add_argument(

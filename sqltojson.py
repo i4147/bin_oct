@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import absolute_import, annotations
+from pathlib import Path
 import calendar
 import contextlib
 import csv
@@ -141,11 +142,11 @@ def handle_run_query2json(
     **kwargs,
 ):
     try:
-        if isinstance(name, str) and name.endswith(".sql") and os.path.isfile(name):
+        if isinstance(name, str) and name.endswith(".sql") and Path(name).is_file():
             if query == "default":
                 query = "@" + name
             if output is None:
-                output = os.path.splitext(name)[0] + ".json"
+                output = (str(Path(name).with_suffix("")), Path(name).suffix)[0] + ".json"
             name = "default"
         if list_connections:
             config_path = kwargs.get("config")
@@ -229,12 +230,12 @@ def load_config_file(config_path: str) -> dict:
 
 def _find_config() -> str:
     candidates = [
-        os.path.join(os.getcwd(), "sql2json.json"),
-        os.path.join(os.getcwd(), ".sql2json", "config.json"),
-        os.path.join(os.path.expanduser("~"), ".sql2json", "config.json"),
+        Path(os.getcwd()).joinpath("sql2json.json"),
+        Path(os.getcwd()).joinpath(".sql2json", "config.json"),
+        Path(Path("~").expanduser()).joinpath(".sql2json", "config.json"),
     ]
     for path in candidates:
-        if os.path.exists(path):
+        if Path(path).exists():
             return path
     return candidates[-1]
 
@@ -520,11 +521,11 @@ def handle_run_query2json(
     **kwargs,
 ):
     try:
-        if isinstance(name, str) and name.endswith(".sql") and os.path.isfile(name):
+        if isinstance(name, str) and name.endswith(".sql") and Path(name).is_file():
             if query == "default":
                 query = "@" + name
             if output is None:
-                output = os.path.splitext(name)[0] + ".json"
+                output = (str(Path(name).with_suffix("")), Path(name).suffix)[0] + ".json"
             name = "default"
         if list_connections:
             config_path = kwargs.get("config")

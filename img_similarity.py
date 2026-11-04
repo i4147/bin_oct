@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import re
 import shutil
@@ -353,9 +354,9 @@ def _pipeline(args: argparse.Namespace):
     info(f"Found {len(paths)} image(s) under {root}")
     if not paths:
         return None
-    info(f"Computing features (method={args.method}, hash_size={hash_size}, workers={args.workers})...")
+    info(f"Computing features (method={args.method}, hash_size={hash_size}, workers={MAX_WORKERS})...")
     t0 = time.time()
-    items = compute_features(paths, args.method, hash_size, args.workers)
+    items = compute_features(paths, args.method, hash_size, MAX_WORKERS)
     info(f"Computed {len(items)} feature(s) in {time.time() - t0:.2f}s")
     if not items:
         warn("No readable images found.")
@@ -638,7 +639,6 @@ def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
         help="Threshold interpretation (default: hamming distance)",
     )
     sp.add_argument("-r", "--recursive", action="store_true", help="Scan subdirectories recursively")
-    sp.add_argument("--workers", type=int, default=4, help="Parallel worker threads (default: 4)")
     sp.add_argument(
         "--exclude",
         action="append",

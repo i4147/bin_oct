@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import asyncio
 import base64
@@ -7,7 +9,6 @@ import csv
 import email
 import hashlib
 import json
-import logging
 import platform
 import shutil
 import site
@@ -40,7 +41,7 @@ except ImportError:
         return it
 
 
-log = logging.getLogger("repack_tool")
+log = logger
 
 
 def _b64_nopad(data: bytes) -> str:
@@ -116,7 +117,7 @@ def _read_metadata(dist_info: Path) -> dict[str, str]:
             msg = email.parser.Parser().parsestr(txt)
             return dict(msg.items())
         except Exception:
-            log.debug("Could not parse %s", p, exc_info=True)
+            log.opt(exception=True).debug("Could not parse {}", p, )
     return {}
 
 
@@ -246,7 +247,7 @@ def discover_packages(
     if wanted is not None:
         found = {p.name.lower().replace("-", "_") for p in out}
         for missing in sorted(wanted - found):
-            log.warning("Package not found: %s", missing)
+            log.warning("Package not found: {}", missing)
     return out
 
 
@@ -341,13 +342,13 @@ def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tup
             _zip_directory(tmp_p, wheel_path)
         if verbose:
             log.info(
-                "  simple: wrote %s (%s)",
+                "  simple: wrote {} ({})",
                 wheel_path.name,
                 _human_size(wheel_path.stat().st_size),
             )
         return True, f"created {wheel_path.name}", wheel_path
     except Exception as e:
-        log.debug("build_wheel_simple failed", exc_info=True)
+        log.opt(exception=True).debug("build_wheel_simple failed", )
         return False, f"error: {e}", None
 
 
@@ -385,7 +386,7 @@ def build_wheel_from_record(
                 shutil.copytree(pkg.site_packages / pkg.top_level, dest)
             return False, f"copied to {missing_dir}: {msg}", None
         if on_missing == "warn" and verbose:
-            log.warning("  %s: %s", pkg.name, msg)
+            log.warning("  {}: {}", pkg.name, msg)
     has_bin = any(s.suffix.lower() in BINARY_SUFFIXES for s, _ in resolved)
     if has_bin:
         tag = "-".join(current_sys_tag())
@@ -425,14 +426,14 @@ def build_wheel_from_record(
             _zip_directory(tmp_p, wheel_path)
         if verbose:
             log.info(
-                "  record: wrote %s (%s) [%d files]",
+                "  record: wrote {} ({}) [{} files]",
                 wheel_path.name,
                 _human_size(wheel_path.stat().st_size),
                 len(resolved),
             )
         return True, f"created {wheel_path.name}", wheel_path
     except Exception as e:
-        log.debug("build_wheel_from_record failed", exc_info=True)
+        log.opt(exception=True).debug("build_wheel_from_record failed", )
         return False, f"error: {e}", None
 
 
@@ -466,7 +467,7 @@ def build_wheel_via_subprocess(src_unpacked: Path, output_dir: Path, verbose: bo
         return False, f"wheel pack failed: {res.stderr.strip()[:200]}", None
     wheels = sorted(output_dir.glob("*.whl"), key=lambda p: p.stat().st_mtime, reverse=True)
     if verbose and wheels:
-        log.info("  wheelpack: %s", wheels[0].name)
+        log.info("  wheelpack: {}", wheels[0].name)
     return True, "ok", wheels[0] if wheels else None
 
 
@@ -508,7 +509,7 @@ class Repacker:
     def repack_one(self, pkg: PackageInfo) -> tuple[bool, str, Optional[Path]]:
         if self.dry_run:
             tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
-            log.info("[dry-run] would build %s", pkg.wheel_filename(tag))
+            log.info("[dry-run] would build {}", pkg.wheel_filename(tag))
             return True, "dry-run", None
         if self.method == "simple":
             ok, msg, path = build_wheel_simple(pkg, self.output_dir, self.verbose)
@@ -540,7 +541,7 @@ class Repacker:
         iterator = _tqdm(packages, desc="Repacking", disable=not _HAS_TQDM)
         for i, pkg in enumerate(iterator, 1):
             self.stats.total += 1
-            log.info("[%d/%d] %s %s", i, len(packages), pkg.name, pkg.version)
+            log.info("[{}/{}] {} {}", i, len(packages), pkg.name, pkg.version)
             ok, msg, path = self.repack_one(pkg)
             if ok:
                 self.stats.success += 1
@@ -548,10 +549,10 @@ class Repacker:
                     self.stats.pure += 1
                 else:
                     self.stats.with_c_ext += 1
-                log.info("  ✓ %s", msg)
+                log.info("  ✓ {}", msg)
             else:
                 self.stats.failed += 1
-                log.error("  ✗ %s", msg)
+                log.error("  ✗ {}", msg)
             self.results.append({
                 "package": pkg.name,
                 "version": pkg.version,
@@ -605,7 +606,7 @@ def _find_dist_info_dir(root: Path) -> Optional[Path]:
     if not cands:
         return None
     if len(cands) > 1:
-        log.warning("Multiple dist-info dirs in %s; using %s", root, cands[0].name)
+        log.warning("Multiple dist-info dirs in {}; using {}", root, cands[0].name)
     return cands[0]
 
 
@@ -642,7 +643,7 @@ def pack_unpacked_dir_library(src: Path, output_dir: Path, verbose: bool) -> tup
                 if f.is_file():
                     wf.write_to(str(f), f.relative_to(src).as_posix())
         if verbose:
-            log.info("  packed %s -> %s", src.name, wheel_path.name)
+            log.info("  packed {} -> {}", src.name, wheel_path.name)
         return True, wheel_path.name, wheel_path
     except Exception as e:
         if wheel_path.exists():
@@ -681,14 +682,14 @@ def run_pack_dirs(
     verbose: bool,
 ) -> int:
     if not directory.is_dir():
-        log.error("directory not found: %s", directory)
+        log.error("directory not found: {}", directory)
         return 1
     output_dir.mkdir(parents=True, exist_ok=True)
     dirs = [d for d in sorted(directory.iterdir()) if d.is_dir() and not d.name.endswith(".dist-info")]
     if not dirs:
-        log.warning("no unpacked wheel directories found under %s", directory)
+        log.warning("no unpacked wheel directories found under {}", directory)
         return 0
-    log.info("Found %d candidate directories in %s", len(dirs), directory)
+    log.info("Found {} candidate directories in {}", len(dirs), directory)
     successes = 0
     failures = 0
     if mode == "async":
@@ -705,24 +706,24 @@ def run_pack_dirs(
                 msg, ok = await q.get()
                 if ok:
                     successes += 1
-                    log.info("✓ %s", msg)
+                    log.info("✓ {}", msg)
                 else:
                     failures += 1
-                    log.error("✗ %s", msg)
+                    log.error("✗ {}", msg)
 
         asyncio.run(_run_all())
     elif parallel and len(dirs) > 1:
         workers = workers or min(cpu_count(), 8)
-        log.info("Using %d parallel workers", workers)
+        log.info("Using {} parallel workers", workers)
         payload = [(d, output_dir, mode, verbose) for d in dirs]
         with Pool(processes=workers) as pool:
             for ok, msg in pool.imap_unordered(_pack_worker, payload):
                 if ok:
                     successes += 1
-                    log.info("✓ %s", msg)
+                    log.info("✓ {}", msg)
                 else:
                     failures += 1
-                    log.error("✗ %s", msg)
+                    log.error("✗ {}", msg)
     else:
         for d in dirs:
             if mode == "subprocess":
@@ -731,11 +732,11 @@ def run_pack_dirs(
                 ok, msg, _ = pack_unpacked_dir_library(d, output_dir, verbose)
             if ok:
                 successes += 1
-                log.info("✓ %s", msg)
+                log.info("✓ {}", msg)
             else:
                 failures += 1
-                log.error("✗ %s", msg)
-    log.info("Done: %d successful, %d failed", successes, failures)
+                log.error("✗ {}", msg)
+    log.info("Done: {} successful, {} failed", successes, failures)
     return 0 if failures == 0 else 1
 
 
@@ -806,7 +807,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="low-level wheel writer (default: zip)",
     )
     rp.add_argument("--parallel", action="store_true", help="multiprocessing mode")
-    rp.add_argument("--workers", type=int, default=None, help="worker count (parallel mode)")
     rp.add_argument("--dry-run", action="store_true", help="don't write any files")
     rp.add_argument(
         "--report",
@@ -843,7 +843,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="packing strategy (default: library)",
     )
     pd.add_argument("--parallel", action="store_true", help="multiprocessing mode")
-    pd.add_argument("--workers", type=int, default=None, help="worker count (parallel mode)")
     return p
 
 
@@ -853,9 +852,9 @@ def cmd_repack(args: argparse.Namespace) -> int:
         site_packages = explicit.expanduser().resolve()
     else:
         site_packages = resolve_source(args.source, None)
-    log.info("Source:  %s", site_packages)
-    log.info("Output:  %s", args.output)
-    log.info("Method:  %s", args.method)
+    log.info("Source:  {}", site_packages)
+    log.info("Output:  {}", args.output)
+    log.info("Method:  {}", args.method)
     if args.parallel:
         log.info("Mode:    parallel")
     packages = discover_packages(site_packages, args.packages if not args.all else None)
@@ -877,7 +876,7 @@ def cmd_repack(args: argparse.Namespace) -> int:
     stats = rep.run(packages)
     log.info("=" * 40)
     log.info(
-        "Total=%d success=%d failed=%d pure=%d c-ext=%d",
+        "Total={} success={} failed={} pure={} c-ext={}",
         stats.total,
         stats.success,
         stats.failed,
@@ -886,15 +885,15 @@ def cmd_repack(args: argparse.Namespace) -> int:
     )
     if args.report:
         out = rep.save_report(args.report)
-        log.info("Report saved: %s", out)
+        log.info("Report saved: {}", out)
     if args.list_wheels:
         _list_wheels(args.output)
     return 0 if stats.failed == 0 else 1
 
 
 def _run_parallel(args: argparse.Namespace, packages: Sequence[PackageInfo]) -> int:
-    workers = args.workers or min(cpu_count(), 8)
-    log.info("Running with %d workers", workers)
+    workers = MAX_WORKERS or min(cpu_count(), 8)
+    log.info("Running with {} workers", workers)
     cfg = {
         "method": args.method,
         "output_dir": str(args.output),
@@ -917,10 +916,10 @@ def _run_parallel(args: argparse.Namespace, packages: Sequence[PackageInfo]) -> 
                     cext += 1
             else:
                 failed += 1
-                log.error("✗ %s: %s", row["package"], row["message"])
+                log.error("✗ {}: {}", row["package"], row["message"])
     log.info("=" * 40)
     log.info(
-        "Total=%d success=%d failed=%d pure=%d c-ext=%d",
+        "Total={} success={} failed={} pure={} c-ext={}",
         len(packages),
         success,
         failed,
@@ -941,7 +940,7 @@ def _run_parallel(args: argparse.Namespace, packages: Sequence[PackageInfo]) -> 
         }
         out = args.output / args.report
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        log.info("Report saved: %s", out)
+        log.info("Report saved: {}", out)
     if args.list_wheels:
         _list_wheels(args.output)
     return 0 if failed == 0 else 1
@@ -950,15 +949,15 @@ def _run_parallel(args: argparse.Namespace, packages: Sequence[PackageInfo]) -> 
 def _list_wheels(output_dir: Path) -> None:
     wheels = sorted(output_dir.glob("*.whl"))
     if not wheels:
-        log.info("No .whl files in %s", output_dir)
+        log.info("No .whl files in {}", output_dir)
         return
     total = 0
-    log.info("Generated wheels in %s:", output_dir)
+    log.info("Generated wheels in {}:", output_dir)
     for w in wheels:
         size = w.stat().st_size
         total += size
-        log.info("  %-60s %s", w.name, _human_size(size))
-    log.info("Total: %s", _human_size(total))
+        log.info("  {} {}", w.name, _human_size(size))
+    log.info("Total: {}", _human_size(total))
 
 
 def cmd_pack_dirs(args: argparse.Namespace) -> int:
@@ -968,7 +967,7 @@ def cmd_pack_dirs(args: argparse.Namespace) -> int:
         output_dir=output.resolve(),
         mode=args.mode,
         parallel=args.parallel,
-        workers=args.workers or 0,
+        workers=MAX_WORKERS or 0,
         verbose=args.verbose,
     )
 
@@ -976,11 +975,6 @@ def cmd_pack_dirs(args: argparse.Namespace) -> int:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%H:%M:%S",
-    )
     if not _HAS_TQDM:
         log.debug("tqdm not available; progress bars disabled")
     try:

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import gzip
 import io
 import lzma
@@ -20,8 +21,6 @@ try:
     import brotli
 except ImportError:
     import brotlicffi as brotli
-
-MAX_WORKERS: int = 4
 CHUNK_SIZE: int = 1024 * 1024
 
 SUFFIX_TYPES: tuple[tuple[str, str], ...] = (

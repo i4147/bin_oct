@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import re
 import sys
@@ -18,16 +19,16 @@ class LicenseError(Exception):
         super().__init__(self.message)
 
 
-CACHE_PATH: Final[str] = os.path.join(os.environ["HOME"], ".license")
+CACHE_PATH: Final[str] = Path(os.environ["HOME"]).joinpath(".license")
 HIT_MESSAGE: Final[str] = ecstasy.beautify("Cache-<Hit> for {0}: '{1}'.", ecstasy.Color.Green)
 MISS_MESSAGE: Final[str] = ecstasy.beautify("Cache-<Miss> for {0}.", ecstasy.Color.Red)
 
 
 def get_license_kinds() -> set[str]:
     kinds: set[str] = set()
-    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
-    for license_path in os.listdir(os.path.join(root, "files")):
-        name = os.path.splitext(os.path.basename(license_path))[0]
+    root = Path(Path(Path(__file__).absolute()).parent).joinpath(os.pardir)
+    for license_path in os.listdir(Path(root).joinpath("files")):
+        name = (str(Path(Path(license_path).name).with_suffix("")), Path(Path(license_path).name).suffix)[0]
         kinds.add(name)
     return kinds
 
@@ -63,7 +64,7 @@ def read_kind(cache: str) -> str:
 
 
 def read(author: str | None, kind: str | None) -> tuple[str, str]:
-    if not os.path.exists(CACHE_PATH):
+    if not Path(CACHE_PATH).exists():
         msg = "No cache found. You must supply at least -a and -k."
         raise LicenseError(msg)
     cache_data = read_cache()
@@ -82,7 +83,7 @@ def write(author: str, kind: str) -> None:
 
 
 def fetch(kind: str) -> str:
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, f"files/{kind}.txt")
+    path = Path(Path(Path(__file__).absolute()).parent).joinpath(os.pardir, f"files/{kind}.txt")
     with open(path, "rt") as source:
         return source.read()
 

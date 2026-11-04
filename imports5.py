@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import ast
 import json
@@ -330,7 +331,7 @@ def scan_project(
     ignores: set[str] = set(ignore_set or ())
     if ignore:
         for item in ignore:
-            ignores.add(os.path.basename(os.path.realpath(item)))
+            ignores.add(Path(Path(item).resolve()).name)
     seen: set[str] = set()
     ordered: list[str] = []
     for dirpath, dirnames, filenames in os.walk(root, followlinks=follow_links):
@@ -340,7 +341,7 @@ def scan_project(
             if d not in ignores and not d.endswith(".egg-info") and (not d.startswith(".") or ignore_set is None)
         ]
         for fname in filenames:
-            full = os.path.join(dirpath, fname)
+            full = Path(dirpath).joinpath(fname)
             found: Iterable[str] = ()
             try:
                 if fname.endswith((".py", ".pyw")):
@@ -398,7 +399,7 @@ def get_installed(pip_cmd: str = "pip3") -> tuple[list[str], set[str]]:
 
 def detect_local_modules(root: str) -> set[str]:
     local: set[str] = set()
-    root_abs = os.path.realpath(root)
+    root_abs = Path(root).resolve()
     for dirpath, dirnames, filenames in os.walk(root_abs):
         dirnames[:] = [
             d
@@ -406,7 +407,7 @@ def detect_local_modules(root: str) -> set[str]:
             if d not in IGNORES_OFFLINE_FULL and not d.endswith(".egg-info") and not d.startswith(".")
         ]
         if "__init__.py" in filenames:
-            local.add(_norm(os.path.basename(dirpath)))
+            local.add(_norm(Path(dirpath).name))
         for fname in filenames:
             if fname.endswith(".py") and fname not in {
                 "setup.py",
@@ -414,7 +415,7 @@ def detect_local_modules(root: str) -> set[str]:
                 "__init__.py",
             }:
                 local.add(_norm(fname[:-3]))
-    base = os.path.basename(root_abs)
+    base = Path(root_abs).name
     if base and base not in {".", "/"}:
         local.add(_norm(base))
     return local
@@ -423,10 +424,10 @@ def detect_local_modules(root: str) -> set[str]:
 def detect_local_names(root: str) -> set[str]:
     names: set[str] = set()
     for dirpath, _dirnames, filenames in os.walk(root):
-        names.add(os.path.basename(dirpath))
+        names.add(Path(dirpath).name)
         for fname in filenames:
-            if os.path.splitext(fname)[1] in (".py", ".pyw"):
-                names.add(os.path.splitext(fname)[0])
+            if (str(Path(fname).with_suffix("")), Path(fname).suffix)[1] in (".py", ".pyw"):
+                names.add((str(Path(fname).with_suffix("")), Path(fname).suffix)[0])
     return names
 
 
@@ -441,14 +442,14 @@ def get_local_packages(encoding: str = "utf-8") -> dict[str, dict[str, Optional[
     result: dict[str, dict[str, Optional[str]]] = {}
     skip = {"tests", "_tests", "egg", "EGG", "info"}
     for p in sys.path:
-        if not p or not os.path.isdir(p):
+        if not p or not Path(p).is_dir():
             continue
         for dirpath, _dirnames, filenames in os.walk(p):
             for fname in filenames:
                 if "top_level" not in fname:
                     continue
-                full = os.path.join(dirpath, fname)
-                parts = os.path.basename(dirpath).split("-")
+                full = Path(dirpath).joinpath(fname)
+                parts = Path(dirpath).name.split("-")
                 try:
                     with open(full, "r", encoding=encoding) as f:
                         contents = f.read().strip().split("\n")
@@ -634,7 +635,7 @@ def run_offline(args: argparse.Namespace) -> int:
     if unknown:
         label = "unknown" if args.detect_local else "local/unknown"
         print(f"[i] Skipped {len(unknown)} {label} modules:{','.join(unknown)}")
-    out_path = os.path.join(path, "requirements.txt")
+    out_path = Path(path).joinpath("requirements.txt")
     final = sorted(set(keep))
     with open(out_path, "w", encoding="utf-8") as f:
         if final:
@@ -644,7 +645,7 @@ def run_offline(args: argparse.Namespace) -> int:
 
 
 def run_online(args: argparse.Namespace) -> int:
-    path = os.path.abspath(args.path or os.curdir)
+    path = Path(args.path or os.curdir).absolute()
     imports = scan_project(
         root=path,
         encoding=args.encoding,
@@ -689,8 +690,8 @@ def run_online(args: argparse.Namespace) -> int:
         delim = "~="
     else:
         delim = "=="
-    out_path = args.savepath or os.path.join(path, "requirements.txt")
-    if not args.print_only and not args.savepath and not args.force and os.path.exists(out_path):
+    out_path = args.savepath or Path(path).joinpath("requirements.txt")
+    if not args.print_only and not args.savepath and not args.force and Path(out_path).exists():
         print("[!] requirements.txt already exists, use --force to overwrite it")
         return 1
     if args.print_only:

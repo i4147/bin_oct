@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import os
 import cv2
 import numpy as np
@@ -11,7 +12,7 @@ def load_tiles(tiles_folder, tile_size=(50, 50)):
     print("Loading and processing tile images...")
     for filename in os.listdir(tiles_folder):
         if filename.lower().endswith(valid_extensions):
-            img_path = os.path.join(tiles_folder, filename)
+            img_path = Path(tiles_folder).joinpath(filename)
             img = cv2.imread(img_path, cv2.IMREAD_COLOR)
             if img is not None:
                 img_resized = cv2.resize(img, tile_size)

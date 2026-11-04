@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import json
-import logging
 import os
 import random
 import re
@@ -13,18 +14,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from googletrans import Translator
-
-MAX_WORKERS = 16
 RETRY_ATTEMPTS = 4
 RETRY_DELAY = 0.6
 MAX_CHUNK_SIZE = 2000
 SAVE_INTERVAL = 10
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
-logger = logging.getLogger(__name__)
 interrupted = False
 
 
@@ -153,12 +146,12 @@ def translate_text(text, source_lang, target_lang):
                 if interrupted:
                     return None
                 if attempt == RETRY_ATTEMPTS:
-                    logger.error("Translation failed after %d attempts for '%s': %s", attempt, text[:60], exc)
+                    logger.error("Translation failed after {} attempts for '{}': {}", attempt, text[:60], exc)
                     break
                 delay = RETRY_DELAY * (2 ** (attempt - 1))
                 delay += random.uniform(0, delay * 0.25)
                 logger.warning(
-                    "Translate attempt %d/%d failed for '%s': %s; retrying in %.2fs",
+                    "Translate attempt {}/{} failed for '{}': {}; retrying in {}s",
                     attempt,
                     RETRY_ATTEMPTS,
                     text[:60],
@@ -172,7 +165,7 @@ def translate_text(text, source_lang, target_lang):
             try:
                 translator.client.close()
             except Exception as exc:
-                logger.debug("Could not close translator client: %s", exc)
+                logger.debug("Could not close translator client: {}", exc)
 
 
 def translate_chunk_factory(source_lang, target_lang):
@@ -207,14 +200,14 @@ def save_progress(all_lines, results, output_path, json_path, source_lang, targe
         with json_path.open("w", encoding="utf-8") as f:
             json.dump(json_data, f, ensure_ascii=False, indent=2)
         logger.info(
-            "Progress saved: %d/%d lines translated (Output: %s, JSON: %s)",
+            "Progress saved: {}/{} lines translated (Output: {}, JSON: {})",
             translated_count,
             len(all_lines),
             output_path.name,
             json_path.name,
         )
     except Exception as exc:
-        logger.error("Error saving progress: %s", exc)
+        logger.error("Error saving progress: {}", exc)
 
 
 def main():
@@ -233,9 +226,6 @@ def main():
         help="SQLite DB path for cache (default: ~/.translate/translate.db)",
     )
     parser.add_argument(
-        "--max-workers", type=int, default=MAX_WORKERS, help=f"Max worker threads (default: {MAX_WORKERS})"
-    )
-    parser.add_argument(
         "--max-chunk-size",
         type=int,
         default=MAX_CHUNK_SIZE,
@@ -251,9 +241,9 @@ def main():
     args = parser.parse_args()
     if not args.input and not args.cache_stats:
         parser.error("-i/--input is required unless --cache-stats is used")
-    if args.max_workers < 1 or args.max_chunk_size < 1 or args.save_interval < 1:
+    if MAX_WORKERS < 1 or args.max_chunk_size < 1 or args.save_interval < 1:
         parser.error("--max-workers, --max-chunk-size, and --save-interval must be positive")
-    db_path = Path(os.path.expanduser(args.db))
+    db_path = Path(Path(args.db).expanduser())
     cache = TranslationCache(db_path)
     try:
         if args.cache_stats:
@@ -271,16 +261,16 @@ def main():
             return 0
         input_path = Path(args.input)
         if not input_path.exists():
-            logger.error("Input file not found: %s", input_path)
+            logger.error("Input file not found: {}", input_path)
             return 1
         try:
             with input_path.open(encoding="utf-8") as f:
                 all_lines = [line.rstrip("\n") for line in f if line.strip()]
         except OSError as exc:
-            logger.error("Error reading input file: %s", exc)
+            logger.error("Error reading input file: {}", exc)
             return 1
         if not all_lines:
-            logger.info("No non-empty lines found in %s", input_path.name)
+            logger.info("No non-empty lines found in {}", input_path.name)
             return 0
         source_lang = args.source
         target_lang = args.target
@@ -289,22 +279,22 @@ def main():
         else:
             to_translate_raw = list(all_lines)
         logger.info(
-            "Loaded %d lines: %d flagged for translation, %d skipped",
+            "Loaded {} lines: {} flagged for translation, {} skipped",
             len(all_lines),
             len(to_translate_raw),
             len(all_lines) - len(to_translate_raw),
         )
         if not to_translate_raw:
-            logger.info("No lines to translate for source_lang=%s", source_lang)
+            logger.info("No lines to translate for source_lang={}", source_lang)
             return 0
         to_translate_unique = list(dict.fromkeys(to_translate_raw))
         logger.info(
-            "Deduplicated: %d unique lines to translate (from %d total flagged)",
+            "Deduplicated: {} unique lines to translate (from {} total flagged)",
             len(to_translate_unique),
             len(to_translate_raw),
         )
         results = cache.get_many(to_translate_unique, source_lang, target_lang)
-        logger.info("Cache hit: %d/%d", len(results), len(to_translate_unique))
+        logger.info("Cache hit: {}/{}", len(results), len(to_translate_unique))
         remaining = [line for line in to_translate_unique if line not in results]
         output_path = input_path.with_name(f"{input_path.stem}_{target_lang}{input_path.suffix}")
         json_path = input_path.with_name(f"{input_path.stem}_{target_lang}.json")
@@ -319,9 +309,9 @@ def main():
         save()
         if remaining and not interrupted:
             chunks = create_chunks(remaining, args.max_chunk_size)
-            num_workers = min(args.max_workers, len(chunks))
+            num_workers = min(MAX_WORKERS, len(chunks))
             logger.info(
-                "Created %d chunk(s) from %d remaining lines (max %d chars per chunk), using %d worker(s)",
+                "Created {} chunk(s) from {} remaining lines (max {} chars per chunk), using {} worker(s)",
                 len(chunks),
                 len(remaining),
                 args.max_chunk_size,
@@ -354,7 +344,7 @@ def main():
                             else:
                                 if translated_text:
                                     logger.warning(
-                                        "Line-count mismatch (%d original vs %d translated); falling back to per-line translation",
+                                        "Line-count mismatch ({} original vs {} translated); falling back to per-line translation",
                                         len(original_lines),
                                         len(translated_lines),
                                     )
@@ -368,12 +358,12 @@ def main():
                                     if text is not None:
                                         translations[line] = text
                                     else:
-                                        logger.error("Per-line translation failed for '%s'", line[:50])
+                                        logger.error("Per-line translation failed for '{}'", line[:50])
                             with results_lock:
                                 results.update(translations)
                             to_cache.update(translations)
                             logger.info(
-                                "Processed chunk %d/%d (%d/%d lines translated)",
+                                "Processed chunk {}/{} ({}/{} lines translated)",
                                 completed,
                                 total,
                                 len(translations),
@@ -383,19 +373,19 @@ def main():
                                 cache.set_many(to_cache, source_lang, target_lang)
                                 to_cache.clear()
                         except Exception as exc:
-                            logger.error("Unexpected error processing chunk starting with '%s': %s", chunk[0][:60], exc)
+                            logger.error("Unexpected error processing chunk starting with '{}': {}", chunk[0][:60], exc)
             finally:
                 stop_saving.set()
                 save_thread.join()
                 if to_cache:
                     cache.set_many(to_cache, source_lang, target_lang)
-                    logger.info("Saved %d new translations to cache", len(to_cache))
+                    logger.info("Saved {} new translations to cache", len(to_cache))
         save()
         if interrupted:
             logger.warning("Process was interrupted. Progress has been saved; rerun to resume.")
             return 130
         translated_count = sum(1 for line in all_lines if line in results and results[line] != line)
-        logger.info("Translation complete: %d/%d lines changed", translated_count, len(all_lines))
+        logger.info("Translation complete: {}/{} lines changed", translated_count, len(all_lines))
         return 0
     finally:
         cache.close()

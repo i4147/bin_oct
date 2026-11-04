@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import csv
 import importlib
@@ -1209,13 +1210,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         default=None,
         help="directory for outputs (default: next to input)",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=os.cpu_count() or 1,
-        help="parallel workers for multiple inputs",
-    )
     return parser.parse_args(argv)
 
 
@@ -1245,8 +1239,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         logger.error("no usable inputs")
         return 2
     jobs = [(str(p), target_fmt, str(args.output_dir) if args.output_dir else None) for p in sources]
-    if len(jobs) > 1 and args.jobs > 1:
-        workers = min(args.jobs, len(jobs))
+    if len(jobs) > 1 and MAX_WORKERS > 1:
+        workers = min(MAX_WORKERS, len(jobs))
         logger.info(f"converting {len(jobs)} files with {workers} workers")
         with Pool(processes=workers) as pool:
             results = pool.map(convert_job, jobs, chunksize=1)

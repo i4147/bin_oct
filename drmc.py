@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import POOL_WORKERS, SKIP_DIRS, SKIP_DIR_GLOBS
 import argparse
 import ast
 import contextlib
@@ -20,18 +22,6 @@ from pathlib import Path
 from typing import Callable, Iterable, Iterator
 
 from loguru import logger
-
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    "lazy",
-    ".tox",
-})
-SKIP_DIR_GLOBS: tuple[str, ...] = ("*.egg-info",)
-POOL_WORKERS: int = 8
 ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")
 GREEN = "\033[32m"
 GRAY = "\033[90m"
@@ -462,37 +452,6 @@ def process_source(source: str, opts: Options) -> Stripped:
     result = BACKENDS[opts.backend](source, opts)
     ast.parse(result.code)
     return result
-
-
-def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
-    tmp_name: str | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            "w",
-            encoding=encoding,
-            dir=path.parent,
-            delete=False,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            newline="",
-        ) as tmp:
-            tmp_name = tmp.name
-            tmp.write(text)
-            tmp.flush()
-            os.fsync(tmp.fileno())
-        with contextlib.suppress(OSError):
-            shutil.copymode(path, tmp_name)
-        try:
-            shutil.move(tmp_name, path)
-        except OSError:
-            path.write_text(text, encoding=encoding)
-            if tmp_name and os.path.exists(tmp_name):
-                os.unlink(tmp_name)
-        tmp_name = None
-    finally:
-        if tmp_name and os.path.exists(tmp_name):
-            with contextlib.suppress(OSError):
-                os.unlink(tmp_name)
 
 
 def _print_diff(path: Path, before: str, after: str) -> None:

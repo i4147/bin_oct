@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import os
 
 from fontTools.ttLib import TTFont
@@ -29,12 +30,12 @@ def main():
         for file_name in files:
             if file_name.lower().endswith(FONT_EXTENSIONS):
                 font_count += 1
-                file_path = os.path.join(root, file_name)
+                file_path = Path(root).joinpath(file_name)
                 ps_name = get_font_ps_name(file_path)
                 if not ps_name:
                     print(f"⚠️ Skipped (could not read metadata): {file_path}")
                     continue
-                file_size = os.path.getsize(file_path)
+                file_size = Path(file_path).stat().st_size
                 if ps_name in seen_fonts:
                     existing_path, existing_size = seen_fonts[ps_name]
                     if file_size > existing_size:

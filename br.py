@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -1145,13 +1146,6 @@ Examples:
         help="Brotli compression quality (0-11, default: 11). Only valid with -c/--compress.",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=mp.cpu_count(),
-        help=f"Number of parallel workers (default: {mp.cpu_count()})",
-    )
-    parser.add_argument(
         "--chunk-size",
         type=int,
         default=DEFAULT_CHUNK_SIZE,
@@ -1238,7 +1232,7 @@ Examples:
         if p.is_dir() and p == Path(p.anchor) and not args.keep_originals and not args.dry_run:
             print(f"❌ Error: refusing to run destructively on the filesystem root: {p}")
             return 1
-    workers: int = 1 if args.no_parallel else max(1, args.workers)
+    workers: int = 1 if args.no_parallel else max(1, MAX_WORKERS)
     keep_original: bool = args.keep_originals
     exclude_patterns: list[str] = list(args.exclude)
     exclude_extensions: set[str] = set() if args.no_skip_compressed else set(EXCLUDED_EXTENSIONS)

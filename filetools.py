@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import ctypes
 import ctypes.util
@@ -20,7 +21,6 @@ SECONDS_PER_MINUTE: Final[float] = 60.0
 SECONDS_24H: Final[float] = 24 * 60 * 60
 EXCLUDE_DIRS: Final[frozenset[str]] = frozenset({".git"})
 EXCLUDED_DIRS: Final[frozenset[str]] = frozenset({".git", "__pycache__"})
-POOL_WORKERS: Final[int] = 8
 AT_FDCWD: Final[int] = -100
 STATX_BTIME: Final[int] = 2048
 _ANSI: Final[dict[str, str]] = {

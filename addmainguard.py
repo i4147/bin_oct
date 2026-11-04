@@ -1,15 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
-import logging
 import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Sequence
-
-logger = logging.getLogger("add_main_guard")
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",
     "__pycache__",
@@ -21,7 +20,6 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".pytest_cache",
     ".mypy_cache",
 )
-DEFAULT_WORKERS: int = 8
 DEFAULT_INDENT: int = 4
 MAIN_GUARD_RE: re.Pattern[str] = re.compile(r'if\s+__name__\s*==\s*["\']__main__["\']\s*:')
 MAIN_TEMPLATE: str = (
@@ -229,7 +227,7 @@ def run_check(args: argparse.Namespace) -> int:
     if not files:
         logger.warning("No Python files found")
         return 0
-    print(f"Found {len(files)} Python files (detect={args.detect}, workers={args.workers}, excludes={len(excludes)})")
+    print(f"Found {len(files)} Python files (detect={args.detect}, workers={MAX_WORKERS}, excludes={len(excludes)})")
     missing: list[Path] = []
     skipped = 0
     errors: list[tuple[Path, str]] = []
@@ -244,8 +242,8 @@ def run_check(args: argparse.Namespace) -> int:
         else:
             errors.append((path, message))
 
-    if args.workers > 1 and len(files) > 1:
-        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(files) > 1:
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
             for path, status, message in pool.map(_check_worker, payloads):
                 handle(path, status, message)
     else:
@@ -292,15 +290,15 @@ def run_fix(args: argparse.Namespace) -> int:
     print(
         f"Found {len(files)} Python files "
         f"(strategy={args.strategy}, dry_run={args.dry_run}, "
-        f"workers={args.workers}, indent={args.indent})"
+        f"workers={MAX_WORKERS}, indent={args.indent})"
     )
     added: list[Path] = []
     would_add: list[Path] = []
     skipped: list[Path] = []
     errors: list[tuple[Path, str]] = []
     payloads = [(str(p), args.strategy, args.dry_run, args.indent) for p in files]
-    if args.workers > 1 and len(files) > 1:
-        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(files) > 1:
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
             for path, status, message in pool.map(_fix_worker, payloads):
                 _classify(status, path, message, added, would_add, skipped, errors)
     else:
@@ -323,12 +321,6 @@ def run_fix(args: argparse.Namespace) -> int:
 
 
 def _add_common_options(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
-    )
     parser.add_argument(
         "--exclude",
         action="append",
@@ -409,10 +401,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(levelname)s: %(message)s",
-    )
     if args.command == "check":
         return run_check(args)
     if args.command == "fix":

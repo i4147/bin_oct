@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import sys
@@ -11,7 +12,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
-MAX_WORKERS: Final[int] = 8
 StripResult = tuple[Path, bool, str]
 
 

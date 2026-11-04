@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import os
 import random
 import re
@@ -13,17 +14,9 @@ from pathlib import Path
 from typing import Final
 
 from deep_translator import GoogleTranslator
-
-MAX_WORKERS: Final[int] = 16
 RETRY_ATTEMPTS: Final[int] = 4
 RETRY_DELAY: Final[float] = 0.6
 MAX_CHUNK_SIZE: Final[int] = 2000
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
-logger = logging.getLogger(__name__)
 
 
 def contains_cyrillic(text: str) -> bool:
@@ -142,7 +135,7 @@ def translate_chunk_factory(source_lang: str, target_lang: str):
                 jitter = random.uniform(0, delay * 0.25)
                 sleep_time = delay + jitter
                 logger.warning(
-                    "Translate attempt %d/%d failed for chunk starting '%s...': %s. Retrying in %.2fs",
+                    "Translate attempt {}/{} failed for chunk starting '{}...': {}. Retrying in {}s",
                     attempt,
                     RETRY_ATTEMPTS,
                     (chunk[0][:60] + "...") if chunk else "",
@@ -167,12 +160,6 @@ def main() -> None:
         help="SQLite DB path for cache (default: ~/.translate/translate.db)",
     )
     parser.add_argument(
-        "--max-workers",
-        type=int,
-        default=MAX_WORKERS,
-        help=f"Max worker threads (default: {MAX_WORKERS})",
-    )
-    parser.add_argument(
         "--max-chunk-size",
         type=int,
         default=MAX_CHUNK_SIZE,
@@ -180,7 +167,7 @@ def main() -> None:
     )
     parser.add_argument("--cache-stats", action="store_true", help="Show cache statistics and exit")
     args = parser.parse_args()
-    db_path = Path(os.path.expanduser(args.db))
+    db_path = Path(Path(args.db).expanduser())
     cache = TranslationCache(db_path)
     if args.cache_stats:
         stats = cache.stats()
@@ -201,14 +188,14 @@ def main() -> None:
         parser.error("the following arguments are required: -i/--input (unless --cache-stats is used)")
     input_path = Path(args.input)
     if not input_path.exists():
-        logger.error("Input file not found: %s", input_path)
+        logger.error("Input file not found: {}", input_path)
         cache.close()
         return
     try:
         with input_path.open(encoding="utf-8") as f:
             all_lines = [w.rstrip("\n") for w in f if w.strip() != ""]
     except Exception as e:
-        logger.error("Error reading input file: %s", e)
+        logger.error("Error reading input file: {}", e)
         cache.close()
         return
     if not all_lines:
@@ -250,7 +237,7 @@ def main() -> None:
     remaining_to_translate = [l for l in to_translate_unique if l not in results]
     if remaining_to_translate:
         chunks = create_chunks(remaining_to_translate, args.max_chunk_size)
-        num_workers = min(max(1, args.max_workers), len(chunks))
+        num_workers = min(max(1, MAX_WORKERS), len(chunks))
         print(
             "Created %d chunk(s) from %d remaining lines (max %d chars per chunk), using %d worker(s)",
             len(chunks),
@@ -278,7 +265,7 @@ def main() -> None:
                                 to_cache[original_line] = tgt
                         else:
                             logger.warning(
-                                "Line-count mismatch in chunk (%d original vs %d translated). Falling back to per-line translation for this chunk.",
+                                "Line-count mismatch in chunk ({} original vs {} translated). Falling back to per-line translation for this chunk.",
                                 len(original_lines),
                                 len(translated_lines),
                             )
@@ -292,7 +279,7 @@ def main() -> None:
                                     to_cache[line] = t
                                 except Exception as e:
                                     logger.error(
-                                        "Per-line fallback failed for '%s': %s",
+                                        "Per-line fallback failed for '{}': {}",
                                         line[:50],
                                         e,
                                     )
@@ -307,7 +294,7 @@ def main() -> None:
                         )
                     else:
                         logger.error(
-                            "Failed to translate chunk starting with: %s",
+                            "Failed to translate chunk starting with: {}",
                             (chunk[0][:60] + "...") if chunk else "",
                         )
                         for line in chunk:
@@ -318,12 +305,12 @@ def main() -> None:
                                 results[line] = t
                                 to_cache[line] = t
                             except Exception as e:
-                                logger.error("Per-line retry failed for '%s': %s", line[:50], e)
+                                logger.error("Per-line retry failed for '{}': {}", line[:50], e)
                                 results[line] = line
                                 to_cache[line] = line
                 except Exception as e:
                     logger.error(
-                        "Unexpected error processing chunk starting with '%s': %s",
+                        "Unexpected error processing chunk starting with '{}': {}",
                         (chunk[0][:60] + "...") if chunk else "",
                         e,
                     )
@@ -349,7 +336,7 @@ def main() -> None:
             len(all_lines) - translated_count,
         )
     except Exception as e:
-        logger.error("Error writing output file: %s", e)
+        logger.error("Error writing output file: {}", e)
     cache.close()
 
 

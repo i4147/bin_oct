@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import hashlib
 import shutil
@@ -124,14 +125,13 @@ def main() -> None:
         action="store_true",
         help="with -s, if files match, move both into a group_N subdir in the current folder",
     )
-    parser.add_argument("-w", "--workers", type=int, default=2, help="number of worker processes")
     args = parser.parse_args()
     report_diff_lines(
         args.file1,
         args.file2,
         strip=args.strip,
         move=args.move,
-        num_workers=args.workers,
+        num_workers=MAX_WORKERS,
     )
 
 

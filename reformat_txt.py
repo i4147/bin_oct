@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+from dh import MAX_WORKERS, SKIP_DIRS
 
 import argparse
 import codecs
@@ -26,17 +27,6 @@ BACKUP_SUFFIX: Final[str] = ".bak"
 TEXT_SUFFIXES: Final[frozenset[str]] = frozenset({".txt"})
 MARKDOWN_SUFFIXES: Final[frozenset[str]] = frozenset({".md", ".markdown", ".mdx"})
 SUPPORTED_SUFFIXES: Final[frozenset[str]] = TEXT_SUFFIXES | MARKDOWN_SUFFIXES
-SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".idea",
-    ".tox",
-    ".venv",
-    "venv",
-    "node_modules",
-    "__pycache__",
-})
 ABBREVIATIONS: Final[frozenset[str]] = frozenset({
     "mr.",
     "mrs.",
@@ -679,9 +669,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("inputs", nargs="*", type=Path, help="files or directories to process (default: '.')")
     parser.add_argument("-w", "--width", type=int, default=DEFAULT_WIDTH, help="maximum line width (default: 100)")
-    parser.add_argument(
-        "-j", "--workers", type=int, default=os.cpu_count() or 1, help="parallel workers (default: CPU count)"
-    )
     parser.add_argument("-n", "--dry-run", action="store_true", help="show what would change without writing")
     parser.add_argument("--diff", action="store_true", help="print a colored unified diff for changed files")
     parser.add_argument("--backup", action="store_true", help="save each original as <name>.bak before writing")
@@ -727,7 +714,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     color = choose_color(args.color)
     name_width = max(len(path.name) for path in files)
-    workers = max(1, min(args.workers, len(files)))
+    workers = max(1, min(MAX_WORKERS, len(files)))
     worker = partial(process_file, options=options)
     results: list[Result] = []
     with ProcessPoolExecutor(max_workers=workers) as pool:

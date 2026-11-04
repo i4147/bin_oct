@@ -1,17 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
-import logging
 import shutil
 import sys
 from pathlib import Path
 from loguru import logger
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
 
 
 class PackageRepacker:
@@ -54,7 +46,7 @@ class PackageRepacker:
                         site_packages_dirs.append(dist_pkg)
                         print("Found dist-packages: %s", dist_pkg)
             except (PermissionError, OSError) as e:
-                logger.debug("Permission denied scanning %s: %s", search_path, e)
+                logger.debug("Permission denied scanning {}: {}", search_path, e)
         unique_dirs = list(set(site_packages_dirs))
         unique_dirs.sort()
         self.found_site_packages = unique_dirs
@@ -84,7 +76,7 @@ class PackageRepacker:
                             dep = line.split(":", 1)[1].strip()
                             metadata["dependencies"].append(dep)
             except Exception as e:
-                logger.warning("Could not read metadata from %s: %s", metadata_file, e)
+                logger.warning("Could not read metadata from {}: {}", metadata_file, e)
         return metadata
 
     def create_wheel_structure(
@@ -117,7 +109,7 @@ class PackageRepacker:
                 abi_tag = best_tag.abi
                 platform_tag = best_tag.platform
                 logger.debug(
-                    "Using 'packaging' lib. Tags: %s-%s-%s",
+                    "Using 'packaging' lib. Tags: {}-{}-{}",
                     python_tag,
                     abi_tag,
                     platform_tag,
@@ -131,7 +123,7 @@ class PackageRepacker:
                 python_tag = f"cp{python_ver.major}{python_ver.minor}"
                 abi_tag = python_tag
                 platform_tag = f"{platform.system().lower()} _{platform.machine()} "
-                logger.debug("Fallback tags: %s-%s-%s", python_tag, abi_tag, platform_tag)
+                logger.debug("Fallback tags: {}-{}-{}", python_tag, abi_tag, platform_tag)
         wheel_name = f"{package_name.replace('-', '_')} -{version} -{python_tag} -{abi_tag} -{platform_tag} "
         wheel_dir = base_output_dir / wheel_name
         dist_info_dir = wheel_dir / f"{package_name}-{version}.dist-info"
@@ -149,7 +141,7 @@ class PackageRepacker:
             if source_path.exists():
                 shutil.copy2(source_path, target_path)
             else:
-                logger.warning("File from RECORD not found at %s", source_path)
+                logger.warning("File from RECORD not found at {}", source_path)
         wheel_file = dist_info_dir / "WHEEL"
         with Path(wheel_file).open("w", encoding="utf-8") as f:
             f.write("Wheel-Version: 1.0\n")
@@ -169,7 +161,7 @@ class PackageRepacker:
         if original_record.exists():
             shutil.copy2(original_record, dist_info_dir / "RECORD")
         else:
-            logger.warning("Could not find original RECORD file at %s", original_record)
+            logger.warning("Could not find original RECORD file at {}", original_record)
         return wheel_dir
 
     def copy_package_files(self, dist_info_dir: Path, site_packages_path: Path, output_dir: Path) -> bool:
@@ -181,7 +173,7 @@ class PackageRepacker:
             metadata = self.get_package_info_from_dist_info(dist_info_dir)
             package_name = metadata["name"]
             if not package_name:
-                logger.warning("Could not determine package name for %s", dist_info_dir)
+                logger.warning("Could not determine package name for {}", dist_info_dir)
                 return False
             files_to_include = []
             is_pure_python = True
@@ -195,7 +187,7 @@ class PackageRepacker:
                         if full_path.exists():
                             files_to_include.append(Path(path_str))
             if not files_to_include:
-                logger.warning("No files found for package %s", package_name)
+                logger.warning("No files found for package {}", package_name)
                 return False
             package_structure_path = self.create_wheel_structure(
                 package_name,
@@ -257,7 +249,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        pass
     try:
         repacker = PackageRepacker(output_base=args.output)
         if args.skip_scan:
@@ -278,7 +270,7 @@ def main() -> int:
             return 1
         repacker.copy_all_packages()
     except Exception as e:
-        logger.exception("Fatal error: %s", e)
+        logger.exception("Fatal error: {}", e)
         return 1
     return 0
 

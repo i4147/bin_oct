@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import ast
 import sys
@@ -15,7 +16,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__"})
 PRESERVED_COMMENT_MARKERS: tuple[str, ...] = ("# fmt", "# type")
 DEFAULT_POOL_SIZE: int = 8
 

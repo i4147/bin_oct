@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import re
 import shutil
@@ -26,30 +27,6 @@ KANA_RE = re.compile(r"[\u3040-\u309f\u30a0-\u30ff]")
 HANGUL_RE = re.compile(r"[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]")
 ARABIC_RE = re.compile(r"[\u0600-\u06ff\u0750-\u077f\ufb50-\ufdff\ufe70-\ufeff]")
 MAX_BYTES: int = 10 * 1024 * 1024
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".tox",
-    ".venv",
-    "venv",
-    "env",
-    "dist",
-    "build",
-    ".next",
-    ".nuxt",
-    ".cache",
-    ".idea",
-    ".vscode",
-    "target",
-    "vendor",
-})
 
 
 def _looks_like_text(data: bytes) -> bool:

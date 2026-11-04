@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
+from dh import SKIP_DIRS
 import argparse
 import csv
 import json
@@ -16,7 +18,6 @@ from typing import Callable, Iterable, Optional, Sequence
 
 UNIT_SEP = "\x1f"
 DIFF_FILTER = "AD"
-SKIP_DIRS = frozenset({".git"})
 RESET = "\033[0m"
 STYLES = {
     "bold": "\033[1m",

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import mmap
 import multiprocessing
 import shutil
@@ -35,21 +36,21 @@ def _log_info(msg: str, *args: Any) -> None:
     if _log is not None:
         _log.info(msg.format(*args) if args else msg)
     else:
-        logging.info(msg, *args)
+        logger.info(msg, *args)
 
 
 def _log_warning(msg: str, *args: Any) -> None:
     if _log is not None:
         _log.warning(msg.format(*args) if args else msg)
     else:
-        logging.warning(msg, *args)
+        logger.warning(msg, *args)
 
 
 def _log_error(msg: str, *args: Any) -> None:
     if _log is not None:
         _log.error(msg.format(*args) if args else msg)
     else:
-        logging.error(msg, *args)
+        logger.error(msg, *args)
 
 
 def _human_size(num: float) -> str:
@@ -72,17 +73,9 @@ def _sevenzip_write(
 
 
 def _basic_setup_logging(log_file: Path) -> None:
-    fmt = logging.Formatter("%(asctime)s [%(levelname)s]%(processName)s%(message)s")
-    fh = logging.FileHandler(log_file, encoding="utf-8")
-    fh.setFormatter(fmt)
-    sh = logging.StreamHandler()
-    sh.setFormatter(fmt)
-    root = logging.getLogger()
-    root.setLevel(logging.INFO)
-    for handler in list(root.handlers):
-        root.removeHandler(handler)
-    root.addHandler(fh)
-    root.addHandler(sh)
+    logger.remove()
+    logger.add(log_file)
+    logger.add(sys.stderr)
 
 
 def _basic_iter_dirs(base: Path):
@@ -115,12 +108,12 @@ def _basic_compress_dir(payload: tuple[str, int]) -> tuple[str, bool, str]:
         tar_path.unlink(missing_ok=True)
         return (str(path), True, f"Compressed directory -> {archive_path.name}")
     except Exception as exc:
-        logging.exception("Error compressing directory %s", path)
+        logger.exception("Error compressing directory {}", path)
         try:
             if tar_path.exists():
                 tar_path.unlink()
         except Exception:
-            logging.exception("Failed to cleanup tar %s", tar_path)
+            logger.exception("Failed to cleanup tar {}", tar_path)
         return (str(path), False, f"{type(exc).__name__}: {exc}")
 
 
@@ -136,12 +129,12 @@ def _basic_compress_file(payload: tuple[str, int]) -> tuple[str, bool, str]:
         path.unlink()
         return (str(path), True, f"Compressed file -> {archive_path.name}")
     except Exception as exc:
-        logging.exception("Error compressing file %s", path)
+        logger.exception("Error compressing file {}", path)
         try:
             if archive_path.exists():
                 archive_path.unlink()
         except Exception:
-            logging.exception("Failed to cleanup archive %s", archive_path)
+            logger.exception("Failed to cleanup archive {}", archive_path)
         return (str(path), False, f"{type(exc).__name__}: {exc}")
 
 
@@ -149,26 +142,26 @@ def run_basic(args: argparse.Namespace) -> int:
     base = Path.cwd()
     log_file = base / args.log_file
     _basic_setup_logging(log_file)
-    logging.info("Starting compression in %s", base)
+    logger.info("Starting compression in {}", base)
     preset = args.preset
     dirs = list(_basic_iter_dirs(base))
     if dirs:
-        logging.info("Found %d top-level directories", len(dirs))
-        with multiprocessing.Pool(processes=args.workers) as pool:
+        logger.info("Found {} top-level directories", len(dirs))
+        with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
             for src, ok, msg in pool.imap_unordered(_basic_compress_dir, [(str(d), preset) for d in dirs]):
-                (logging.info if ok else logging.error)("%s: %s", src, msg)
+                (logger.info if ok else logger.error)("{}: {}", src, msg)
     else:
-        logging.info("No top-level directories found")
+        logger.info("No top-level directories found")
     files = list(_basic_iter_files(base))
     if files:
-        logging.info("Found %d top-level files", len(files))
+        logger.info("Found {} top-level files", len(files))
         file_workers = max(1, multiprocessing.cpu_count() - 1)
         with multiprocessing.Pool(processes=file_workers) as pool:
             for src, ok, msg in pool.imap_unordered(_basic_compress_file, [(str(f), preset) for f in files]):
-                (logging.info if ok else logging.error)("%s: %s", src, msg)
+                (logger.info if ok else logger.error)("{}: {}", src, msg)
     else:
-        logging.info("No top-level files found")
-    logging.info("Done.")
+        logger.info("No top-level files found")
+    logger.info("Done.")
     return 0
 
 
@@ -222,13 +215,13 @@ def _named_compress_dir(path_str: str) -> NamedResult:
         if tar_path.exists():
             msg = f"{tar_path} exists"
             raise FileExistsError(msg)
-        logging.info("Tar directory: %s -> %s", path, tar_path)
+        logger.info("Tar directory: {} -> {}", path, tar_path)
         with tarfile.open(tar_path, "w") as tar:
             tar.add(path, arcname=path.name)
         _named_remove(path)
         return NamedResult(str(path), str(tar_path), True)
     except Exception as exc:
-        logging.exception("Directory failed: %s", path)
+        logger.exception("Directory failed: {}", path)
         return NamedResult(str(path), str(tar_path), False, str(exc))
 
 
@@ -240,14 +233,14 @@ def _named_compress_file(path_str: str) -> NamedResult:
         if archive_path.exists():
             msg = f"{archive_path} exists"
             raise FileExistsError(msg)
-        logging.info("Compress file: %s -> %s", path, archive_path)
+        logger.info("Compress file: {} -> {}", path, archive_path)
         filters = [{"id": method, "preset": 9}]
         with py7zr.SevenZipFile(archive_path, mode="w", filters=filters) as archive:
             archive.write(path, arcname=path.name)
         _named_remove(path)
         return NamedResult(str(path), str(archive_path), True)
     except Exception as exc:
-        logging.exception("File failed: %s", path)
+        logger.exception("File failed: {}", path)
         return NamedResult(str(path), str(archive_path), False, str(exc))
 
 
@@ -257,16 +250,16 @@ def run_named(args: argparse.Namespace) -> int:
     _basic_setup_logging(log_file)
     workers = max(1, multiprocessing.cpu_count() - 1)
     method = _named_best_method()
-    logging.info("Base dir: %s", base)
-    logging.info("Workers: %d", workers)
-    logging.info("Best py7zr method: %s", method)
+    logger.info("Base dir: {}", base)
+    logger.info("Workers: {}", workers)
+    logger.info("Best py7zr method: {}", method)
     exclude = {log_file.name}
     if "__file__" in globals():
         exclude.add(Path(__file__).name)
     entries = list(_named_iter_entries(base, exclude))
     dirs = [p for p in entries if p.is_dir()]
     files = [p for p in entries if p.is_file()]
-    logging.info("Found %d dirs and %d files", len(dirs), len(files))
+    logger.info("Found {} dirs and {} files", len(dirs), len(files))
     results: list[NamedResult] = []
     if dirs:
         with multiprocessing.Pool(processes=min(workers, len(dirs))) as pool:
@@ -276,10 +269,10 @@ def run_named(args: argparse.Namespace) -> int:
             results.extend(pool.map(_named_compress_file, [str(f) for f in files]))
     ok = sum(1 for r in results if r.ok)
     fail = len(results) - ok
-    logging.info("Completed. success=%d fail=%d", ok, fail)
+    logger.info("Completed. success={} fail={}", ok, fail)
     for r in results:
         if not r.ok:
-            logging.error("FAILED: %s -> %s | %s", r.src, r.dst, r.error)
+            logger.error("FAILED: {} -> {} | {}", r.src, r.dst, r.error)
     return 0
 
 
@@ -492,7 +485,7 @@ def _full_compress(base: Path, args: argparse.Namespace) -> None:
     print("   Solid compression: Yes")
     print("   Header compression: Yes")
     print("   Block size: 4 MB")
-    print(f"   Parallel workers: {args.workers}")
+    print(f"   Parallel workers: {MAX_WORKERS}")
     print(f"   Chunk size: {_human_size(args.chunk_size)}")
     dirs = _full_list_dirs(base)
     if dirs:
@@ -513,7 +506,7 @@ def _full_compress(base: Path, args: argparse.Namespace) -> None:
     orig_total = comp_total = ok_count = 0
     for i, f in enumerate(files, 1):
         print(f"\n[{i}/{len(files)}] {f.name}")
-        ok, orig, comp = _full_compress_file(f, args.chunk_size, args.min_size, args.workers)
+        ok, orig, comp = _full_compress_file(f, args.chunk_size, args.min_size, MAX_WORKERS)
         if ok:
             ok_count += 1
             orig_total += orig
@@ -569,7 +562,6 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     p_basic = sub.add_parser("basic", help="7zer.py: tar->7z dirs + 7z files")
     p_basic.add_argument("--log-file", default="compress.log")
-    p_basic.add_argument("--workers", type=int, default=4)
     p_basic.add_argument("--preset", type=int, default=9)
     p_basic.set_defaults(func=run_basic)
     p_named = sub.add_parser("named", help="7zer2.py: dirs->tar, files->7z, best method")
@@ -582,7 +574,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="compress",
         help="Compress or decompress; matches the original -c/-d flags",
     )
-    p_full.add_argument("--workers", type=int, default=8)
     p_full.add_argument("--chunk-size", type=int, default=524288)
     p_full.add_argument("--min-size", type=int, default=1024)
     p_full.add_argument("--preset", type=int, default=9)

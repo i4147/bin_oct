@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import io
@@ -15,7 +16,6 @@ DEFAULT_SKIP_EXT = {".gz", ".br", ".xz", ".zst", ".bz2", ".zip", ".whl", ".lz4",
 DEFAULT_MIN_SIZE = 1024
 DEFAULT_CHUNK_SIZE = 32768
 DEFAULT_CHUNK_THRESHOLD = 524288
-DEFAULT_WORKERS = 8
 DEFAULT_LEVEL = 3
 BLOCK_SIZE_MAX = lz4.frame.BLOCKSIZE_MAX
 
@@ -174,7 +174,7 @@ def cmd_compress(args) -> int:
             f,
             dst,
             level=args.level,
-            workers=args.workers,
+            workers=MAX_WORKERS,
             chunk_size=args.chunk_size,
             chunk_threshold=args.chunk_threshold,
             checksum=checksum,
@@ -292,12 +292,6 @@ def build_parser() -> argparse.ArgumentParser:
         "Default: auto",
     )
     c.add_argument("--level", type=int, default=DEFAULT_LEVEL, help=f"LZ4 compression level (default: {DEFAULT_LEVEL})")
-    c.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Workers for chunked parallel compression (default: {DEFAULT_WORKERS})",
-    )
     c.add_argument(
         "--min-size",
         type=int,

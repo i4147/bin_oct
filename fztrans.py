@@ -1,8 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
 import json
-import logging
 import readline
 import shutil
 import subprocess
@@ -12,15 +12,12 @@ from pathlib import Path
 from typing import Final
 
 from faprint import faprint
-
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
 DICT_FILE: Final[str] = Path("~/dic.json").expanduser()
 
 
 def load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     if not path.exists():
-        logger.error("Error: Dictionary file %s not found", path)
+        logger.error("Error: Dictionary file {} not found", path)
         sys.exit(1)
     try:
         with path.open(encoding="utf-8") as f:
@@ -29,7 +26,7 @@ def load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
         en_fa = {v: k for k, v in fa_en.items()}
         return (fa_en, en_fa)
     except Exception as e:
-        logger.error("Error loading dictionary: %s", e)
+        logger.error("Error loading dictionary: {}", e)
         sys.exit(1)
 
 
@@ -74,7 +71,7 @@ def fzf_select(all_words: set[str]) -> str | None:
         selection = proc.stdout.strip()
         return selection or None
     except Exception as e:
-        logger.error("fzf execution error: %s", e)
+        logger.error("fzf execution error: {}", e)
         return None
 
 

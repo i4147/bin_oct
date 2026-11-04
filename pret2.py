@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import shutil
 import subprocess
 from multiprocessing.pool import Pool
@@ -7,8 +8,6 @@ from pathlib import Path
 from typing import Final, NamedTuple
 
 from loguru import logger
-
-MAX_WORKERS: Final[int] = 8
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900
 ERROR_DIR_NAME: Final[str] = "error"
 EXTENSIONS: Final[tuple[str, ...]] = (

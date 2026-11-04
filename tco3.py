@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_save
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import importlib
@@ -411,33 +413,6 @@ def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
         return {}
 
 
-def atomic_save(path: Path, results: dict[str, str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=str(path.parent),
-        text=True,
-    )
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(
-                results,
-                handle,
-                ensure_ascii=False,
-                indent=2,
-            )
-            handle.write("\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary_name, path)
-        logger.debug("Saved {} translated chunks to {}", len(results), path)
-    except Exception:
-        with contextlib.suppress(FileNotFoundError):
-            os.unlink(temporary_name)
-        raise
-
-
 def append_failed(path: Path, index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
@@ -526,13 +501,6 @@ def parse_args() -> argparse.Namespace:
         help="Translator backend.",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=2,
-        help="Number of concurrent translation workers.",
-    )
-    parser.add_argument(
         "-d",
         "--delay",
         type=float,
@@ -560,7 +528,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    if not 1 <= args.workers <= 2:
+    if not 1 <= MAX_WORKERS <= 2:
         msg = "--workers must be between 1 and 2"
         raise ValueError(msg)
     if args.delay < 0:
@@ -603,7 +571,7 @@ def run(args: argparse.Namespace) -> int:
         return 0
     completed_since_save = 0
     with ThreadPoolExecutor(
-        max_workers=args.workers,
+        max_workers=MAX_WORKERS,
         thread_name_prefix="translator",
     ) as executor:
         futures: dict[Future[tuple[int, str]], int] = {

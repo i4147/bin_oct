@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import concurrent.futures as cf
@@ -592,27 +593,6 @@ def process_file_wire(payload: bytes) -> bytes:
     return json.dumps(result_to_wire(result), ensure_ascii=False).encode("utf-8")
 
 
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".ipynb_checkpoints",
-    "build",
-    "pip",
-    "numpy",
-    "scipy",
-    "pandas",
-    "setuptools",
-    ".idea",
-    ".vscode",
-    "packaging",
-    "lazy",
-    "numba",
-})
-
-
 class WalkFiles(Protocol):
     def __call__(self, root: str | Path, /) -> list[Path]: ...
 
@@ -735,7 +715,7 @@ def iter_python_files(
     excludes: tuple[str, ...] = (),
     issues: list[DiscoveryIssue] | None = None,
 ) -> Iterator[Path]:
-    root_dir = Path(os.path.abspath(root_dir.expanduser()))
+    root_dir = Path(Path(root_dir.expanduser()).absolute())
     mode = root_dir.lstat().st_mode
     if stat.S_ISLNK(mode):
         return
@@ -969,7 +949,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="cf.process",
         help="Execution backend (default: cf.process)",
     )
-    parser.add_argument("-j", "--workers", type=int, default=4, help="Worker count (default: 4)")
     parser.add_argument("--chunksize", type=int, help="Pool batch size (default: adaptive, up to 64)")
     parser.add_argument(
         "--exclude-dir",
@@ -1050,7 +1029,7 @@ def main() -> int:
         args.c = args.d = True
     if args.check:
         args.dryrun = True
-    if args.workers < 1:
+    if MAX_WORKERS < 1:
         parser.error("--workers must be at least 1")
     if args.chunksize is not None and args.chunksize < 1:
         parser.error("--chunksize must be at least 1")
@@ -1083,12 +1062,12 @@ def main() -> int:
         inputs: list[Path] = args.inputs or [Path.cwd()]
         for input_path in inputs:
             expanded = input_path.expanduser()
-            if not os.path.lexists(expanded):
+            if not Path(expanded).exists() or Path(expanded).is_symlink():
                 raise FileNotFoundError(f"Input does not exist: {input_path}")
         if args.fastwalk and not callable(getattr(importlib.import_module("fastwalk"), "walk_files", None)):
             raise AttributeError("fastwalk.walk_files is missing or is not callable")
         outputs = {
-            Path(os.path.abspath(output))
+            Path(Path(output).absolute())
             for output in (args.error_log, args.log_file, args.report_json)
             if output is not None
         }
@@ -1125,7 +1104,7 @@ def main() -> int:
         len(paths),
         args.backend,
         args.pool_method,
-        args.workers,
+        MAX_WORKERS,
         args.dryrun,
     )
     if args.all:
@@ -1145,7 +1124,7 @@ def main() -> int:
         if progress is not None:
             progress_id = progress.add_task("Processing", total=len(paths))
         try:
-            for result in run_tasks(tasks, args.pool_method, args.workers, args.chunksize):
+            for result in run_tasks(tasks, args.pool_method, MAX_WORKERS, args.chunksize):
                 processed += 1
                 if args.report_json is not None:
                     report_rows.append({

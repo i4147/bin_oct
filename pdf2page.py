@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
@@ -256,7 +257,7 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
         print(f"  Skipped {skipped} existing page file(s)")
     if not to_process:
         return 0
-    workers = max(1, args.workers)
+    workers = max(1, MAX_WORKERS)
     if len(to_process) <= workers:
         chunks: list[list[int]] = [[idx] for idx in to_process]
     else:
@@ -319,13 +320,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-dir",
         default=None,
         help="Base output directory (default: <pdf_dir>/<stem>/).",
-    )
-    p.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of parallel workers (default: 4).",
     )
     p.add_argument(
         "-P",
@@ -417,7 +411,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.workers < 1:
+    if MAX_WORKERS < 1:
         parser.error("--workers must be >= 1")
     pdfs = _collect_pdfs(args.inputs, recursive=not args.no_recursive)
     if not pdfs:

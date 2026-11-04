@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import hashlib
-import logging
 import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -11,11 +12,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
-log = logging.getLogger("dh_tools")
+log = logger
 DEFAULT_DH_PATH: Path = Path.home() / "projects" / "py" / "dh" / "src" / "dh"
 DEFAULT_BIN_DIR: Path = Path.home() / "bin"
 DEFAULT_REPORT_PATH: Path = Path.home() / "dh_usage.txt"
-DEFAULT_WORKERS: int = 8
 DEFAULT_SKIP: frozenset[str] = frozenset({"dh_reverse.py"})
 
 
@@ -90,7 +90,7 @@ def _build_dh_map(dh_path: Path, match: str) -> dict[str, tuple[str, str]]:
             if isinstance(node, ast.FunctionDef):
                 h = _function_hash(source, node, match)
                 if node.name in result:
-                    log.warning("Duplicate function '%s' in dh package", node.name)
+                    log.warning("Duplicate function '{}' in dh package", node.name)
                 result[node.name] = (stem, h)
     return result
 
@@ -181,9 +181,9 @@ def _apply_reverse_to_file(
             matched[node.name] = module
     if debug:
         if matched:
-            log.debug("%s matched: %s", path.name, sorted(matched))
+            log.debug("{} matched: {}", path.name, sorted(matched))
         else:
-            log.debug("%s: no dh functions matched", path.name)
+            log.debug("{}: no dh functions matched", path.name)
     if not matched:
         return (path, False, "")
     lines = source.splitlines(keepends=True)
@@ -212,7 +212,7 @@ def _reverse_worker(args: tuple) -> tuple[Path, bool, str]:
 def cmd_reverse(args: argparse.Namespace) -> int:
     dh_path: Path = args.dh_path
     if not dh_path.is_dir():
-        log.error("dh package not found at %s", dh_path)
+        log.error("dh package not found at {}", dh_path)
         return 1
     print(f"Loading dh functions from {dh_path} (match={args.match}) ...")
     dh_map = _build_dh_map(dh_path, args.match)
@@ -238,7 +238,7 @@ def cmd_reverse(args: argparse.Namespace) -> int:
         for f in files
     ]
     updated = 0
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for path, changed, msg in pool.map(_reverse_worker, worker_args):
             if msg:
                 print(msg)
@@ -399,13 +399,13 @@ def _inline_worker(args: tuple) -> tuple[Path, bool, str]:
 def cmd_inline(args: argparse.Namespace) -> int:
     dh_path: Path = args.dh_path
     if not dh_path.is_dir():
-        log.error("dh package not found at %s", dh_path)
+        log.error("dh package not found at {}", dh_path)
         return 1
     print(f"Building function map from {dh_path}...")
     try:
         dh_map = _build_dh_export_map(dh_path)
     except FileNotFoundError as e:
-        log.error("%s", e)
+        log.error("{}", e)
         return 1
     print(f"Found {len(dh_map)} functions in dh package\n")
     files = _iter_py_files(args.paths)
@@ -417,7 +417,7 @@ def cmd_inline(args: argparse.Namespace) -> int:
     print(f"Processing {len(files)} Python files...\n")
     worker_args = [(f, dh_map, args.apply) for f in files]
     updated = 0
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for path, changed, msg in pool.map(_inline_worker, worker_args):
             if msg:
                 print(msg)
@@ -564,12 +564,6 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable debug logging and per-file match details.",
     )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of worker processes (default: {DEFAULT_WORKERS}).",
-    )
     sub = parser.add_subparsers(dest="command", required=True)
     r = sub.add_parser(
         "reverse",
@@ -675,10 +669,6 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(levelname)s: %(message)s",
-    )
     if args.command == "reverse":
         return cmd_reverse(args)
     if args.command == "inline":

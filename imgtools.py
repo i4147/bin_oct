@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import base64
 import contextlib
@@ -210,7 +211,7 @@ def cmd_auto_enhance(args: argparse.Namespace) -> int:
     print("[WARNING] Images will be ENHANCED IN-PLACE (originals will be overwritten)!")
     tasks = [(f, args.verbose) for f in files]
     if args.parallel:
-        workers = args.jobs or os.cpu_count() or 1
+        workers = MAX_WORKERS or os.cpu_count() or 1
         print(f"[SYSTEM] Utilizing {workers} parallel CPU threads.")
         results = parallel_map(_auto_enhance_one, tasks, workers=workers, desc="Enhancing")
     else:
@@ -266,7 +267,7 @@ def cmd_downscale(args: argparse.Namespace) -> int:
     if not files:
         print("[WARN] No images to process!")
         return 0
-    workers = args.workers or os.cpu_count() or 1
+    workers = MAX_WORKERS or os.cpu_count() or 1
     print(f"\n[PROCESS] Downscaling {len(files)} image(s) with {workers} process(es)...")
     tasks = [(f, args.scale_factor) for f in files]
     results = parallel_map(_downscale_one, tasks, workers=workers, desc="Downscaling")
@@ -491,7 +492,7 @@ def cmd_embed_optimize(args: argparse.Namespace) -> int:
         return 0
     tasks = [(f, args) for f in files]
     results: list[dict[str, Any]] = []
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = [executor.submit(_process_embed_file_task, task) for task in tasks]
         iterator: Iterable[Any] = as_completed(futures)
         if tqdm is not None:
@@ -562,7 +563,7 @@ def cmd_optimize_png(args: argparse.Namespace) -> int:
         return 0
     print(f"Found {len(files)} PNG files to optimize.")
     tasks = [(f, args.tool, args.optipng_args, args.oxipng_args, args.show_output) for f in files]
-    workers = args.workers or os.cpu_count() or 1
+    workers = MAX_WORKERS or os.cpu_count() or 1
     results = parallel_map(_optimize_png_one, tasks, workers=workers, desc="Optimizing PNGs")
     ok = 0
     fail = 0
@@ -614,7 +615,7 @@ def cmd_pil_enhance(args: argparse.Namespace) -> int:
         return 0
     print(f"Found {len(files)} image file(s) to process...")
     tasks = [(f, args.contrast, args.brightness, args.sharpness, args.color) for f in files]
-    workers = args.workers or os.cpu_count() or 1
+    workers = MAX_WORKERS or os.cpu_count() or 1
     parallel_map(_pil_enhance_one, tasks, workers=workers, desc="Enhancing")
     print("All images processed!")
     return 0
@@ -645,7 +646,7 @@ def cmd_resize(args: argparse.Namespace) -> int:
         return 0
     print(f"Found {len(files)} image file(s) to process...")
     tasks = [(f, args.scale, args.quality) for f in files]
-    workers = args.workers or os.cpu_count() or 1
+    workers = MAX_WORKERS or os.cpu_count() or 1
     parallel_map(_resize_one, tasks, workers=workers, desc="Resizing")
     print("All images processed!")
     return 0
@@ -716,12 +717,12 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
         for parent in parents:
             size_before[parent] = dir_size(parent)
     print(f"📸 Found {len(files)} image file(s)")
-    print(f"🔧 Using {args.workers} parallel worker(s)")
+    print(f"🔧 Using {MAX_WORKERS} parallel worker(s)")
     print(f"💾 Backup: {'Yes' if args.backup else 'No'}")
     print(f"📁 Recursive: {'Yes' if recursive else 'No'}")
     print("-" * 40)
     tasks = [(f, args.backup, args.verbose) for f in files]
-    results = parallel_map(_strip_exif_one, tasks, workers=args.workers, desc="Stripping EXIF")
+    results = parallel_map(_strip_exif_one, tasks, workers=MAX_WORKERS, desc="Stripping EXIF")
     ok = 0
     fail = 0
     total_original = 0
@@ -827,13 +828,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("inputs", nargs="*", help="Files or folders. Defaults to recursive '.'.")
     p.add_argument("-v", "--verbose", action="store_true", help="Print per-image details.")
     p.add_argument("--parallel", action="store_true", help="Enable multiprocessing.")
-    p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=None,
-        help="Parallel jobs. Default: CPU count.",
-    )
     p.set_defaults(func=cmd_auto_enhance)
     p = sub.add_parser("downscale", help="Downscale images in-place by a scale factor")
     p.add_argument(
@@ -848,13 +842,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=".",
         help="Root directory to scan. Default: current directory.",
     )
-    p.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=None,
-        help="Worker processes. Default: CPU count.",
-    )
     p.set_defaults(func=cmd_downscale)
     p = sub.add_parser("embed-optimize", help="Optimize base64 resources inside CSS/HTML/JS")
     p.add_argument(
@@ -863,7 +850,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Files or directories. Default: current directory.",
     )
-    p.add_argument("-j", "--workers", type=int, default=4, help="Parallel workers. Default: 4.")
     p.add_argument("--dry-run", action="store_true", help="List files without processing.")
     p.add_argument("-v", "--verbose", action="store_true", help="Verbose logging.")
     p.add_argument("--timeout", type=int, default=300, help="External command timeout in seconds.")
@@ -882,7 +868,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="optipng",
         help="PNG optimizer tool.",
     )
-    p.add_argument("-j", "--workers", type=int, default=4, help="Worker processes. Default: 4.")
     p.add_argument("--optipng-args", default="-o7", help="Arguments for optipng.")
     p.add_argument(
         "--oxipng-args",
@@ -912,13 +897,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Recurse into directories.",
     )
     p.add_argument("--no-recursive", dest="recursive", action="store_false", help="Do not recurse.")
-    p.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=None,
-        help="Worker processes. Default: CPU count.",
-    )
     p.set_defaults(func=cmd_pil_enhance)
     p = sub.add_parser("resize", help="PIL in-place downscale by scale factor")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
@@ -934,13 +912,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Recurse into directories.",
-    )
-    p.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=None,
-        help="Worker processes. Default: CPU count.",
     )
     p.set_defaults(func=cmd_resize)
     p = sub.add_parser("strip-exif", help="Strip EXIF data from images")
@@ -965,7 +936,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-v", "--verbose", action="store_true", help="Show detailed output.")
     p.add_argument("--no-size-report", action="store_true", help="Skip folder size change report.")
-    p.add_argument("-j", "--workers", type=int, default=8, help="Worker processes. Default: 8.")
     p.set_defaults(func=cmd_strip_exif)
     p = sub.add_parser("upscale", help="Upscale small images by width-based factors")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")

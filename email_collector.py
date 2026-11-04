@@ -1,9 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-import curses
-import logging
-import logging.config
-import logging.handlers
+from loguru import logger
 import os
 import re
 import sys
@@ -16,101 +13,13 @@ from pathlib import Path
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
 
 DEBUG = True
-USE_COLORS = True
 DATABASE_NAME = "data/crawler.sqlite"
 HTML_DIR = "data/html/"
 EMAILS_FILENAME = "data/emails.csv"
 DOMAINS_FILENAME = "data/domains.csv"
 MAX_SEARCH_RESULTS = 150
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "console": {
-            "format": "[%(asctime)s] %(levelname)s::%(module)s - %(message)s",
-        },
-        "file": {
-            "format": "[%(asctime)s] %(levelname)s::(P:%(process)d T:%(thread)d)::%(module)s - %(message)s",
-        },
-    },
-    "handlers": {
-        "console": {
-            "()": "ColorStreamHandler",
-            "formatter": "console",
-            "level": "DEBUG",
-            "use_colors": USE_COLORS,
-        },
-        "file": {
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "formatter": "file",
-            "level": "INFO",
-            "when": "midnight",
-            "filename": "logs/pycrawler.log",
-            "interval": 1,
-            "backupCount": 0,
-            "encoding": None,
-            "delay": False,
-            "utc": False,
-        },
-    },
-    "loggers": {
-        "crawler_logger": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG" if DEBUG else "INFO",
-            "propagate": True,
-        },
-    },
-}
 
-
-class ColorStreamHandler(logging.Handler):
-    def __init__(self, use_colors=True):
-        logging.Handler.__init__(self)
-        self.use_colors = use_colors
-        try:
-            curses.setupterm()
-            self.fcap = curses.tigetstr("setaf")
-            self.COLOR_NORMAL = curses.tigetstr("sgr0")
-            self.COLOR_INFO = curses.tparm(self.fcap, curses.COLOR_GREEN)
-            self.COLOR_ERROR = curses.tparm(self.fcap, curses.COLOR_RED)
-            self.COLOR_WARNING = curses.tparm(self.fcap, curses.COLOR_YELLOW)
-            self.COLOR_DEBUG = curses.tparm(self.fcap, curses.COLOR_BLUE)
-        except Exception:
-            self.use_colors = False
-            self.COLOR_NORMAL = self.COLOR_INFO = self.COLOR_ERROR = b""
-            self.COLOR_WARNING = self.COLOR_DEBUG = b""
-
-    def color(self, msg, level):
-        if level == "INFO":
-            return "%s%s%s" % (self.COLOR_INFO, msg, self.COLOR_NORMAL)
-        elif level == "WARNING":
-            return "%s%s%s" % (self.COLOR_WARNING, msg, self.COLOR_NORMAL)
-        elif level == "ERROR":
-            return "%s%s%s" % (self.COLOR_ERROR, msg, self.COLOR_NORMAL)
-        elif level == "DEBUG":
-            return "%s%s%s" % (self.COLOR_DEBUG, msg, self.COLOR_NORMAL)
-        return msg
-
-    def emit(self, record):
-        try:
-            if isinstance(record.msg, str):
-                record.msg = record.msg.encode("utf-8", "ignore").decode("utf-8", "ignore")
-            msg = self.format(record)
-            temp = msg.split("]")
-            if len(temp) > 1:
-                msg = "[" + temp[0].split(" ")[1].split(",")[0] + "]" + temp[1]
-            if self.use_colors:
-                msg = self.color(msg, record.levelname)
-            print(msg)
-        except Exception:
-            self.handleError(record)
-
-
-import sys as _sys
-
-_sys.modules[__name__].ColorStreamHandler = ColorStreamHandler
-logging.config.dictConfig(LOGGING)
-logger = logging.getLogger("crawler_logger")
+logger.add("logs/pycrawler.log", rotation="midnight", retention=1, level="DEBUG" if DEBUG else "INFO")
 
 
 class CrawlerDb:
@@ -210,7 +119,7 @@ class CrawlerDb:
 
     def save_html(self, filename, html):
         Path(HTML_DIR).mkdir(parents=True, exist_ok=True)
-        path = os.path.join(HTML_DIR, filename)
+        path = Path(HTML_DIR).joinpath(filename)
         with open(path, "w+", encoding="utf-8", errors="replace") as f:
             f.writelines(html)
 

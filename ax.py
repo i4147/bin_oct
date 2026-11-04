@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import contextlib
 import hashlib
 import html
@@ -389,7 +390,7 @@ def get_content(response_body: bytes, title: str, language: str, url: str) -> tu
     return date, body
 
 
-CACHE = diskcache.Cache(os.path.expanduser("~/.auto_extract"))
+CACHE = diskcache.Cache(Path("~/.auto_extract").expanduser())
 
 
 class Article:
@@ -645,19 +646,19 @@ class Storage:
 
     @property
     def path(self) -> str:
-        return os.path.join(self.root, self.project_name)
+        return Path(self.root).joinpath(self.project_name)
 
     @property
     def index_path(self) -> str:
-        return os.path.join(self.path, "index.jsonl")
+        return Path(self.path).joinpath("index.jsonl")
 
     @property
     def articles_path(self) -> str:
-        return os.path.join(self.path, "articles.jsonl")
+        return Path(self.path).joinpath("articles.jsonl")
 
     @property
     def index_path_exists(self) -> bool:
-        return os.path.isfile(os.path.expanduser(self.index_path))
+        return Path(Path(self.index_path).expanduser()).is_file()
 
     def add_articles(self, articles: list[Article]) -> int:
         if articles:

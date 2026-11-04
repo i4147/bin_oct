@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 from fastwalk import walk_dirs
 import os
 import shutil
@@ -38,9 +39,6 @@ KEEP: list[Path] = [
 ]
 
 
-SKIP_DIRS = frozenset({".git", ".hg", ".svn"})
-
-
 def fsz(nbytes: int) -> str:
     if nbytes >= 1 << 30:
         return f"{nbytes / (1 << 30):.2f} GB"
@@ -61,12 +59,12 @@ def gsz(path: Path) -> int:
     for dirpath, dirnames, filenames in os.walk(path, followlinks=False):
         for name in filenames:
             try:
-                total += os.lstat(os.path.join(dirpath, name)).st_size
+                total += os.lstat(Path(dirpath).joinpath(name)).st_size
             except OSError:
                 pass
         for name in dirnames:
             try:
-                total += os.lstat(os.path.join(dirpath, name)).st_size
+                total += os.lstat(Path(dirpath).joinpath(name)).st_size
             except OSError:
                 pass
     return total

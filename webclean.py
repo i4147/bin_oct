@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import re
@@ -8,8 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 from dh import atomic_write
-
-DEFAULT_WORKERS: int = 8
 EXT_TO_LANG: dict[str, str] = {
     ".html": "html",
     ".htm": "html",
@@ -611,13 +610,6 @@ def _add_common_flags(p: argparse.ArgumentParser) -> None:
         help="Files or directories to process (default: cwd).",
     )
     p.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Worker processes (default: {DEFAULT_WORKERS}).",
-    )
-    p.add_argument(
         "--dry-run",
         action="store_true",
         help="Report what would change without writing.",
@@ -760,7 +752,7 @@ def cmd_language(args: argparse.Namespace, lang: str) -> int:
     exts = set(args.extensions) if args.extensions else set(LANG_TO_EXTS[lang])
     files = discover_files(args.paths or ["."], exts, args.follow_symlinks)
     jobs = [_make_job(f, lang, args) for f in files]
-    return run_jobs(jobs, args.workers, args.dry_run)
+    return run_jobs(jobs, MAX_WORKERS, args.dry_run)
 
 
 def cmd_all(args: argparse.Namespace) -> int:
@@ -781,7 +773,7 @@ def cmd_all(args: argparse.Namespace) -> int:
         if lang is None:
             continue
         jobs.append(_make_job(f, lang, args))
-    return run_jobs(jobs, args.workers, args.dry_run)
+    return run_jobs(jobs, MAX_WORKERS, args.dry_run)
 
 
 def cmd_regex(args: argparse.Namespace) -> int:
@@ -806,7 +798,7 @@ def cmd_regex(args: argparse.Namespace) -> int:
             dry_run=args.dry_run,
         )
         jobs.append(job)
-    return run_jobs(jobs, args.workers, args.dry_run)
+    return run_jobs(jobs, MAX_WORKERS, args.dry_run)
 
 
 def main(argv: Optional[list[str]] = None) -> int:

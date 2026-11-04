@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS
 import argparse
 import ast
 import codecs
@@ -26,7 +27,6 @@ from loguru import logger
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from multiprocessing.pool import AsyncResult, Pool
-NUM_WORKERS: Final[int] = 8
 """Exact number of worker processes in the pool (a hard requirement)."""
 CHUNKSIZE: Final[int] = 16
 """Chunk size for map-like pool methods; amortises IPC overhead on big trees."""

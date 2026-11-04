@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 from collections import Counter
 from multiprocessing.pool import AsyncResult, Pool
@@ -13,7 +14,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 EXCLUDED_EXTENSIONS: frozenset[str] = frozenset(BINARY_EXTENSIONS)
-POOL_WORKERS: int = 8
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "imap_unordered", "apply_async")
 LineCounter: TypeAlias = Counter[str]
 

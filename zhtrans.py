@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import re
 import sys
@@ -214,7 +215,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     )
     tasks = [(chunk, args.retries, args.retry_delay, args.source, args.target) for chunk in chunks]
     translations: dict = {}
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         results = [pool.apply_async(_worker_chunked_chunk, (t,)) for t in tasks]
         for async_res, chunk in zip(results, chunks):
             try:
@@ -271,10 +272,10 @@ def cmd_line(args: argparse.Namespace) -> int:
     if not chinese_lines:
         print(f"No Chinese lines to translate in {input_path.name}")
         return 0
-    print(f"Starting translation with {args.workers} workers...")
+    print(f"Starting translation with {MAX_WORKERS} workers...")
     translations: dict = {}
     tasks = [(ln, args.retries, args.retry_delay, args.source, args.target) for ln in chinese_lines]
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         results = [pool.apply_async(_worker_single_line, (t,)) for t in tasks]
         for original, async_res in zip(chinese_lines, results):
             try:
@@ -326,7 +327,7 @@ def cmd_walk(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-    print(f"Found {len(files)} files. Using {args.workers} workers (Threshold: {args.threshold * 100:.0f}%)")
+    print(f"Found {len(files)} files. Using {MAX_WORKERS} workers (Threshold: {args.threshold * 100:.0f}%)")
     tasks = [
         (
             str(p),
@@ -340,10 +341,10 @@ def cmd_walk(args: argparse.Namespace) -> int:
         )
         for p in files
     ]
-    if args.workers == 1:
+    if MAX_WORKERS == 1:
         results = [_worker_walk_file(t) for t in tasks]
     else:
-        with Pool(processes=args.workers) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             results = pool.map(_worker_walk_file, tasks)
     print("\n" + "=" * 40)
     print("SUMMARY")
@@ -460,7 +461,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=5000,
         help="Max characters per chunk (default: 5000).",
     )
-    p.add_argument("--workers", "-w", type=int, default=8, help="Worker processes (default: 8).")
     p.add_argument("--retries", type=int, default=3, help="Retry attempts per chunk (default: 3).")
     p.add_argument(
         "--retry-delay",
@@ -476,7 +476,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="In-place translate one line per API call (was transchin.py).",
     )
     p.add_argument("input_file", help="File to translate in place.")
-    p.add_argument("--workers", "-w", type=int, default=8, help="Worker processes (default: 8).")
     p.add_argument("--retries", type=int, default=3, help="Retry attempts per line (default: 3).")
     p.add_argument(
         "--retry-delay",
@@ -498,13 +497,6 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=list(DEFAULT_EXTENSIONS),
         help="File extensions to process when walking directories.",
-    )
-    p.add_argument(
-        "--workers",
-        "-w",
-        type=int,
-        default=cpu_count(),
-        help=f"Worker processes (default: {cpu_count()}).",
     )
     p.add_argument("--exclude", "-x", nargs="+", default=[], help="Paths to exclude.")
     p.add_argument(

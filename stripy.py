@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import ast
 import multiprocessing as mp
 import sys
@@ -9,8 +10,6 @@ from typing import Sequence
 
 import libcst as cst
 from loguru import logger
-
-WORKERS: int = 8
 
 
 @dataclass(slots=True)

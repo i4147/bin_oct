@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import json
 from collections import defaultdict
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
 
 QUICK_READ: int = 4096
 CHUNK_SIZE: int = 32768
-POOL_WORKERS: int = 4
 CACHE_FILENAME: str = ".cache.json"
 
 DeletionGroup = tuple[int, list[tuple[Path, Path]]]

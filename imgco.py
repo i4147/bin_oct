@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import concurrent.futures
 import os
@@ -341,14 +342,6 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="output format/extension (default: jpg)",
     )
     p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=1,
-        metavar="N",
-        help="parallel workers (default 1 = sequential). Use -j 0 for cpu_count",
-    )
-    p.add_argument(
         "-q",
         "--quality",
         type=int,
@@ -435,7 +428,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         )
         return 2
     quality = max(1, min(100, args.quality))
-    jobs = args.jobs
+    jobs = MAX_WORKERS
     if jobs == 0:
         jobs = os.cpu_count() or 1
     jobs = max(1, jobs)

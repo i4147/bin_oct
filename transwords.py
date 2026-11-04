@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import json
 import time
 from multiprocessing import Pool
@@ -12,7 +13,6 @@ from loguru import logger
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
 CHUNK_SIZE: Final[int] = 4500
-MAX_WORKERS: Final[int] = 8
 INPUT_FILE: Final[Path] = Path("words.txt")
 OUTPUT_FILE: Final[Path] = Path("fa_en.json")
 

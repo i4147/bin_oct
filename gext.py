@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
+from pathlib import Path
 import ast
 import multiprocessing as mp
 import os
 import sys
 
 OUTPUT_DIR = "output"
-CLASSES_DIR = os.path.join(OUTPUT_DIR, "classes")
-FUNCTIONS_DIR = os.path.join(OUTPUT_DIR, "functions")
-CONST_DIR = os.path.join(OUTPUT_DIR, "const")
+CLASSES_DIR = Path(OUTPUT_DIR).joinpath("classes")
+FUNCTIONS_DIR = Path(OUTPUT_DIR).joinpath("functions")
+CONST_DIR = Path(OUTPUT_DIR).joinpath("const")
 EXCLUDE_DIRS = {"test", "tests", "examples", "output"}
-WORKERS = 8
 
 
 def is_python_script(path: str) -> bool:
@@ -27,14 +28,14 @@ def is_python_script(path: str) -> bool:
 def collect_files(inputs: list[str]) -> list[str]:
     files: list[str] = []
     for inp in inputs:
-        if os.path.isfile(inp):
+        if Path(inp).is_file():
             if is_python_script(inp):
                 files.append(inp)
-        elif os.path.isdir(inp):
+        elif Path(inp).is_dir():
             for root, dirs, fnames in os.walk(inp):
                 dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
                 for fname in fnames:
-                    p = os.path.join(root, fname)
+                    p = Path(root).joinpath(fname)
                     if is_python_script(p):
                         files.append(p)
     return files
@@ -92,7 +93,7 @@ def extract_from_file(path: str):
 
 def write_entity(directory: str, name: str, src: str) -> None:
     safe = name.replace(os.sep, "_").replace("/", "_")
-    fpath = os.path.join(directory, safe + ".py")
+    fpath = Path(directory).joinpath(safe + ".py")
     with open(fpath, "w", encoding="utf-8") as f:
         f.write(src.rstrip() + "\n")
 

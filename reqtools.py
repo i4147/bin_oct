@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from loguru import logger
 import argparse
 import csv
 import importlib.metadata
@@ -404,10 +405,6 @@ def cmd_trim_imports(args):
         logger.add(str(log_path), diagnose=True)
         has_loguru = True
     except ImportError:
-        import logging
-
-        logging.basicConfig(filename=str(log_path), level=logging.DEBUG)
-        logger = logging.getLogger()
         has_loguru = False
 
     def test_import(mod_name):

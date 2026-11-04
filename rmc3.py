@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS, SKIP_DIR_PATTERNS
 import argparse
 import ast
 import codecs
@@ -34,24 +36,6 @@ except ImportError:
 if TYPE_CHECKING:
     import libcst as cst
     from tree_sitter import Node, Parser
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    "lazy",
-    "pip",
-    "setuptools",
-    "numpy",
-    "scipy",
-    "pandas",
-    "packaging",
-    "numba",
-    "build",
-})
-SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.egg-info",)
-MAX_WORKERS: int = 8
 MAX_SNIFF_SIZE: int = 2_000_000
 DEFAULT_BACKENDS: tuple[str, ...] = ("libcst", "tree-sitter")
 INSTALL_HINTS: dict[str, str] = {
@@ -540,22 +524,6 @@ def strip_source(text: str, opts: Options) -> Stripped:
     if syntax_error is not None:
         raise syntax_error
     raise errors[-1] if errors else RuntimeError("no backend available")
-
-
-def atomic_write(path: Path, data: bytes) -> None:
-    target = path.resolve()
-    descriptor, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
-    temporary = Path(name)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(data)
-            handle.flush()
-            os.fsync(handle.fileno())
-        with suppress(OSError):
-            temporary.chmod(target.stat().st_mode & 0o7777)
-        temporary.replace(target)
-    finally:
-        temporary.unlink(missing_ok=True)
 
 
 def process_file(path: Path, opts: Options) -> FileResult:

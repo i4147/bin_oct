@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import multiprocessing as mp
@@ -14,8 +15,6 @@ from typing import Any, Final
 
 from deep_translator import GoogleTranslator
 from loguru import logger
-
-MAX_WORKERS: Final[int] = 8
 RETRY_ATTEMPTS: Final[int] = 4
 RETRY_DELAY: Final[float] = 0.6
 MAX_CHUNK_SIZE: Final[int] = 2000
@@ -186,12 +185,6 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "--max-workers",
-        type=int,
-        default=MAX_WORKERS,
-        help=f"Max worker processes (default: {MAX_WORKERS})",
-    )
-    parser.add_argument(
         "--max-chunk-size",
         type=int,
         default=MAX_CHUNK_SIZE,
@@ -260,7 +253,7 @@ def main() -> None:
     )
     if remaining_to_translate and not interrupted:
         chunks = create_chunks(remaining_to_translate, args.max_chunk_size)
-        num_workers = min(max(1, args.max_workers), len(chunks))
+        num_workers = min(max(1, MAX_WORKERS), len(chunks))
         print(
             f"Created {len(chunks)} chunk(s) from {len(remaining_to_translate)} "
             f"remaining lines (max {args.max_chunk_size} chars per chunk), "

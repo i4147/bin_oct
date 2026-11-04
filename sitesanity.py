@@ -1,17 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
 import importlib.metadata
-import logging
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
 
 
 def parse_arguments():
@@ -70,7 +64,7 @@ def check_package_dependencies(dist, installed_map: dict[str, str]) -> tuple[lis
 
 def main():
     args = parse_arguments()
-    logging.info("Starting Termux site-packages verification scan...\n")
+    logger.info("Starting Termux site-packages verification scan...\n")
     distributions = list(importlib.metadata.distributions())
     installed_map = {d.metadata["Name"].lower(): d.version for d in distributions}
     unique_missing_deps = set()
@@ -105,11 +99,11 @@ def main():
         with open(req_file, "w", encoding="utf-8") as f:
             for dep in sorted(unique_missing_deps):
                 f.write(f"{dep}\n")
-        logging.info(f"📝 Saved {len(unique_missing_deps)} unique main dependencies to: {req_file.resolve()}")
-    logging.info("=== SCAN SUMMARY ===")
-    logging.info(f"Total packages evaluated: {len(distributions)}")
-    logging.info(f"Packages with missing files: {corrupted_packages_count}")
-    logging.info(f"Packages with missing dependencies: {broken_deps_count}")
+        logger.info(f"📝 Saved {len(unique_missing_deps)} unique main dependencies to: {req_file.resolve()}")
+    logger.info("=== SCAN SUMMARY ===")
+    logger.info(f"Total packages evaluated: {len(distributions)}")
+    logger.info(f"Packages with missing files: {corrupted_packages_count}")
+    logger.info(f"Packages with missing dependencies: {broken_deps_count}")
 
 
 if __name__ == "__main__":

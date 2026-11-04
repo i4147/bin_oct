@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import os
@@ -552,7 +553,7 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
             os.fsync(handle.fileno())
         os.replace(temporary_name, path)
     finally:
-        if os.path.exists(temporary_name):
+        if Path(temporary_name).exists():
             os.unlink(temporary_name)
 
 
@@ -626,13 +627,6 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=2,
-        help="concurrent worker threads (default: 2)",
-    )
-    parser.add_argument(
         "-d",
         "--delay",
         type=float,
@@ -651,7 +645,7 @@ def _parse_args() -> argparse.Namespace:
         help="ignore an existing output file and start fresh",
     )
     args = parser.parse_args()
-    if args.workers < 1:
+    if MAX_WORKERS < 1:
         parser.error("--workers must be at least 1")
     if args.delay < 0:
         parser.error("--delay cannot be negative")
@@ -693,7 +687,7 @@ def main() -> int:
             return 0
         completed = 0
         with ThreadPoolExecutor(
-            max_workers=args.workers,
+            max_workers=MAX_WORKERS,
             thread_name_prefix="translator",
         ) as executor:
             futures = {

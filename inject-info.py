@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import difflib
 import json
@@ -16,25 +17,6 @@ TARGET_FILENAMES = {
     "MANIFEST.in",
     "tox.ini",
     "Pipfile",
-}
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    "build",
-    "dist",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".pytest_cache",
-    "node_modules",
-    ".eggs",
-    ".idea",
-    ".vscode",
 }
 REQUIRED_KEYS = ("name", "email", "github_username")
 

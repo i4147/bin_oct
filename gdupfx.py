@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import hashlib
 import os
@@ -21,23 +22,6 @@ except ImportError:
     sys.exit(1)
 CHUNK_SIZE = 128 * 1024
 PARTIAL_SIZE = 8 * 1024
-MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)
-DEFAULT_SKIP_DIRS: set[str] = {
-    ".git",
-    ".svn",
-    ".hg",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    "env",
-    ".idea",
-    ".vscode",
-    ".build",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-}
 
 
 def format_size(size_bytes: int) -> str:
@@ -226,7 +210,7 @@ class Finder:
         valid_files = []
         for path in sample_files:
             try:
-                sz = os.path.getsize(path)
+                sz = Path(path).stat().st_size
                 total_bytes += sz
                 valid_files.append(path)
             except OSError:

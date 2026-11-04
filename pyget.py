@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import hashlib
 import os
@@ -599,14 +600,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="output filename (single URL only); relative paths use the CWD",
     )
     p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=4,
-        metavar="N",
-        help="number of parallel downloads (default: 4)",
-    )
-    p.add_argument(
         "--no-resume",
         action="store_true",
         help="ignore partial files and restart from scratch",
@@ -655,7 +648,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("no URLs provided (give them positionally or with -f)")
     if args.output and len(urls) > 1:
         parser.error("-o/--output can only be used with a single URL")
-    if args.jobs < 1:
+    if MAX_WORKERS < 1:
         parser.error("-j/--jobs must be >= 1")
     outdir = Path.cwd()
     dest_hint: Path | None = None
@@ -677,7 +670,7 @@ def main(argv: list[str] | None = None) -> int:
     results: list[tuple[str, Path | None, bool, BaseException | None]] = []
     interrupted = False
     t0 = time.monotonic()
-    pool = ThreadPoolExecutor(max_workers=min(args.jobs, len(urls)))
+    pool = ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(urls)))
     try:
         with progress:
             futures = {

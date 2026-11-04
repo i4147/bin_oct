@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import hashlib
 import json
@@ -101,8 +102,8 @@ def cmd_info_to_md(args: argparse.Namespace) -> int:
     if not files:
         print("No .info files found.")
         return 0
-    info(f"Converting {len(files)} .info file(s) with {args.workers} worker(s).")
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    info(f"Converting {len(files)} .info file(s) with {MAX_WORKERS} worker(s).")
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = [pool.submit(_convert_one_info, f) for f in files]
         for fut in futures:
             try:
@@ -445,11 +446,11 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
     if not sources:
         print(f"No source files found in {root}")
         return 0
-    info(f"Found {len(sources)} file(s) to convert (workers={args.workers})")
+    info(f"Found {len(sources)} file(s) to convert (workers={MAX_WORKERS})")
     jobs = [(s, stylesheet) for s in sources]
     converted = 0
     failures = 0
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = [pool.submit(_convert_one_to_html, j) for j in jobs]
         for fut in futures:
             try:
@@ -628,7 +629,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_chat_export)
     p = sub.add_parser("info-to-md", help="Convert .info files to .md via `info` CLI")
     p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
-    p.add_argument("-w", "--workers", type=int, default=8, help="Worker processes (default: 8)")
     p.set_defaults(func=cmd_info_to_md)
     p = sub.add_parser("man-to-md", help="Convert a man page (roff) to Markdown")
     p.add_argument("input", help="Man page file (e.g. /usr/share/man/man1/ls.1)")
@@ -648,7 +648,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_md_to_html)
     p = sub.add_parser("rst-to-html", help=".rst / .txt / .md -> HTML via docutils")
     p.add_argument("-d", "--directory", default=".", help="Root directory to process (default: .)")
-    p.add_argument("-w", "--workers", type=int, default=8, help="Worker processes (default: 8)")
     p.add_argument("--force", action="store_true", help="Force re-conversion even if HTML is newer")
     p.set_defaults(func=cmd_rst_to_html)
     p = sub.add_parser("mobi-to-html", help="Extract a .mobi to HTML")

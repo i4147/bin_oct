@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -10,8 +11,6 @@ from typing import Final, Iterable, Iterator, Optional
 import libcst as cst
 from libcst import BaseStatement, ClassDef, EmptyLine, FunctionDef, Module, SimpleStatementLine, TrailingWhitespace
 from loguru import logger
-
-DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")
 SHEBANG_PREFIX: Final[str] = "#!"
 PY_EXTENSIONS: Final[frozenset[str]] = frozenset({".py", ".pyi", ".pyw"})
@@ -266,12 +265,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="Files or directories to process. Defaults to current directory (recursive).",
     )
     parser.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of worker processes (default: {DEFAULT_WORKERS}).",
-    )
-    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Report what would change without writing any files.",
@@ -287,7 +280,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     configure_logging(verbose=args.verbose)
-    workers = max(1, args.workers)
+    workers = max(1, MAX_WORKERS)
     if workers != DEFAULT_WORKERS:
         logger.debug(f"Using {workers} workers (overridden from default {DEFAULT_WORKERS}).")
     try:

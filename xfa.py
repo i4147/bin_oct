@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from typing import Any
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import re
 import sys
 from collections import Counter
@@ -82,20 +84,15 @@ STOPWORDS = {
 }
 DEFAULT_OUTPUT = "fa.txt"
 DEFAULT_MIN_LENGTH = 0
-DEFAULT_WORKERS = None
 
 
-def setup_logger(verbose: bool) -> logging.Logger:
-    logger = logging.getLogger("PersianExtraction")
-    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-    if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-        logger.addHandler(handler)
+def setup_logger(verbose: bool) -> Any:
+    logger.remove()
+    logger.add(sys.stdout, level="DEBUG" if verbose else "INFO")
     return logger
 
 
-def ensure_nltk_data(logger: logging.Logger) -> None:
+def ensure_nltk_data(logger: Any) -> None:
     if not NLTK_AVAILABLE:
         return
     try:
@@ -184,7 +181,7 @@ def process_file(path_str: str, min_length: int) -> list[str]:
         tokenizer = PersianTokenizer()
         return list(tokenizer.clean_and_tokenize(content, min_length))
     except Exception as e:
-        logging.getLogger("PersianExtraction").debug(f"Error processing {file_path}: {e}", exc_info=True)
+        logger.opt(exception=True).debug(f"Error processing {file_path}: {e}", )
         return []
 
 
@@ -225,7 +222,6 @@ def main() -> None:
     parser.add_argument(
         "--output", type=str, default=DEFAULT_OUTPUT, help=f"Output file path (default: {DEFAULT_OUTPUT})"
     )
-    parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help=f"Number of worker processes")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
     parser.add_argument("--stats", action="store_true", help="Print statistics after extraction")
     parser.add_argument(
@@ -250,7 +246,7 @@ def main() -> None:
     if not valid_files:
         logger.warning("No valid text files found.")
         sys.exit(0)
-    worker_count = args.workers or cpu_count()
+    worker_count = MAX_WORKERS or cpu_count()
     logger.info(f"Processing {len(valid_files)} file(s) with {worker_count} worker(s)...")
     counter: Counter = Counter()
     worker = partial(process_file, min_length=args.min_length)

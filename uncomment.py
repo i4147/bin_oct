@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import hashlib
 import importlib
@@ -33,25 +34,6 @@ POOL_METHODS: Final[tuple[PoolMethod, ...]] = (
     "apply_async",
     "apply",
 )
-DEFAULT_SKIP_DIRS: Final[frozenset[str]] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".idea",
-    ".vscode",
-    ".venv",
-    "venv",
-    "node_modules",
-    "__pycache__",
-    ".tox",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".cache",
-    "target",
-    "dist",
-    "build",
-})
 COMMENT_TYPES: Final[frozenset[str]] = frozenset({"comment", "line_comment", "block_comment", "Comment"})
 TEXT_TYPES: Final[frozenset[str]] = frozenset({"text", "CharData"})
 _COMMON: Final[str] = (
@@ -445,7 +427,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("-b", "--backup", action="store_true")
     parser.add_argument("-n", "--dry-run", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 1)
     parser.add_argument("--pool-method", choices=POOL_METHODS, default="imap_unordered")
     parser.add_argument("--chunksize", type=int, default=8)
     parser.add_argument("--max-size", type=int, default=5 * 1024 * 1024)
@@ -465,7 +446,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     logger.info("languages: {}", ", ".join(sorted(AVAILABLE)) or "none")
     tasks = (Task(path, args.backup, args.max_size, args.dry_run) for path in iter_files(root, skip_dirs))
     summary = Summary()
-    with mp.Pool(processes=max(1, args.jobs)) as pool:
+    with mp.Pool(processes=max(1, MAX_WORKERS)) as pool:
         for outcome in run_pool(pool, args.pool_method, tasks, args.chunksize):
             report(outcome)
             summary.record(outcome)

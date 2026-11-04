@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
+from dh import SKIP_DIRS
 
 import argparse
 import ast
@@ -19,19 +20,6 @@ OUT_DIR.mkdir(exist_ok=True)
 
 ALL_KINDS = {"class", "function", "const", "import"}
 ORDER = ("const", "class", "function", "import")
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    "node_modules",
-    ".tox",
-    ".venv",
-    "venv",
-    ".mypy_cache",
-    ".pytest_cache",
-    "site-packages",
-}
 
 _FILENAME_MAP = {
     frozenset({"const"}): "const.py",

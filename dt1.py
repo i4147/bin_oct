@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_save
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import json
@@ -263,37 +265,6 @@ def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
     return {str(index): str(value) for index, value in data.items() if isinstance(value, str)}
 
 
-def atomic_save(path: Path, translations: dict[str, str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_name: str | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as temporary:
-            temporary_name = temporary.name
-            json.dump(
-                translations,
-                temporary,
-                ensure_ascii=False,
-                indent=2,
-            )
-            temporary.write("\n")
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        os.replace(temporary_name, path)
-        temporary_name = None
-        logger.debug("Saved {} translated chunks to {}", len(translations), path)
-    finally:
-        if temporary_name is not None:
-            with contextlib.suppress(FileNotFoundError):
-                os.unlink(temporary_name)
-
-
 def append_failed(path: Path, chunk_index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as file:
@@ -420,13 +391,6 @@ def parse_args() -> argparse.Namespace:
         help="Translation backend. Default: automatic fallback order.",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=2,
-        help="Concurrent worker threads, maximum 2. Default: 2",
-    )
-    parser.add_argument(
         "-d",
         "--delay",
         type=float,
@@ -454,7 +418,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    if not 1 <= args.workers <= 2:
+    if not 1 <= MAX_WORKERS <= 2:
         msg = "--workers must be between 1 and 2"
         raise ValueError(msg)
     if args.delay < 0:
@@ -510,7 +474,7 @@ def run(args: argparse.Namespace) -> int:
     limiter = RequestLimiter(args.delay)
     completed_since_save = 0
     with ThreadPoolExecutor(
-        max_workers=args.workers,
+        max_workers=MAX_WORKERS,
         thread_name_prefix="translator",
     ) as executor:
         future_to_index: dict[Future[tuple[int, str]], int] = {

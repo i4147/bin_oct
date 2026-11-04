@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import os
 from dataclasses import dataclass
 from typing import Optional
@@ -46,7 +47,7 @@ def detect_language(text: str) -> Detection:
 
 
 def scan_and_detect(root_dir: str = ".") -> None:
-    print(f"Scanning directory: {os.path.abspath(root_dir)}\n")
+    print(f"Scanning directory: {Path(root_dir).absolute()}\n")
     print(f"{'File Path':<40} | {'Language':<12} | {'Prob':>6} | {'Source':<10} | Snippet")
     print("-" * 110)
     for root, dirs, files in os.walk(root_dir):
@@ -54,7 +55,7 @@ def scan_and_detect(root_dir: str = ".") -> None:
         for file in files:
             if file.startswith("."):
                 continue
-            file_path = os.path.join(root, file)
+            file_path = Path(root).joinpath(file)
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read().strip()

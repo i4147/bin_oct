@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import bz2
 import hashlib
@@ -521,7 +522,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("-o", "--out-dir", type=Path)
     p.add_argument("-p", "--preset", choices=list(LEVELS), default="max")
     p.add_argument("-a", "--algos", nargs="+", choices=ORDER, default=ORDER, metavar="ALGO")
-    p.add_argument("-w", "--workers", type=int, default=min(4, os.cpu_count() or 1))
     p.add_argument("--verify", action="store_true")
     p.add_argument("--force", action="store_true")
     p.add_argument("--keep-tar", action="store_true")
@@ -536,7 +536,7 @@ def run(args: argparse.Namespace, console: Console) -> int:
         raise CliError(f"not found: {src}")
     if not (src.is_file() or src.is_dir()):
         raise CliError(f"unsupported path type: {src}")
-    if args.workers < 1:
+    if MAX_WORKERS < 1:
         raise CliError("--workers must be >= 1")
     out_dir: Path = args.out_dir.expanduser().resolve() if args.out_dir else src.parent
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -565,7 +565,7 @@ def run(args: argparse.Namespace, console: Console) -> int:
         console.print(f"Input   : {input_path}")
         console.print(f"Size    : {orig:,} bytes")
         console.print(
-            f"Preset  : {args.preset}   Algorithms: {', '.join(names)}   Workers: {min(args.workers, len(names))}"
+            f"Preset  : {args.preset}   Algorithms: {', '.join(names)}   Workers: {min(MAX_WORKERS, len(names))}"
         )
         digest: str | None = None
         if args.verify:
@@ -584,7 +584,7 @@ def run(args: argparse.Namespace, console: Console) -> int:
         )
         t0 = time.perf_counter()
         with Progress(*columns, console=console, refresh_per_second=10) as progress:
-            results = run_jobs(jobs, min(args.workers, len(jobs)), progress)
+            results = run_jobs(jobs, min(MAX_WORKERS, len(jobs)), progress)
         wall = time.perf_counter() - t0
     console.print()
     print_report(console, results, orig, wall)

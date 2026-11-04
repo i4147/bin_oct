@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import fnmatch
 import os
@@ -56,16 +57,6 @@ ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".whl",
     ".apk",
 )
-SKIP_DIRS: set[str] = {
-    ".git",
-    ".hg",
-    ".svn",
-    "node_modules",
-    "__pycache__",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".mypy_cache",
-}
 RESET = "\x1b[0m"
 CYAN = "\x1b[5;96m"
 RED = "\x1b[91m"
@@ -280,8 +271,8 @@ def cmd_fast(args: argparse.Namespace) -> int:
     print(f"Files queued: {len(files)}")
     total = 0
     jobs = [(str(f), args.search_string, args.content) for f in files]
-    if args.workers > 1 and len(jobs) > 1:
-        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(jobs) > 1:
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
             for res in pool.map(_fast_worker, jobs, chunksize=16):
                 for path_str, line in res:
                     if line is not None:
@@ -385,8 +376,8 @@ def cmd_find(args: argparse.Namespace) -> int:
     total = 0
 
     def iter_results():
-        if args.workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        if MAX_WORKERS > 1 and len(jobs) > 1:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 yield from pool.map(_find_worker, jobs, chunksize=32)
         else:
             for j in jobs:
@@ -472,8 +463,8 @@ def cmd_grep(args: argparse.Namespace) -> int:
     jobs = [(str(p), pattern, args.ignore_case, args.fixed_strings, True) for p in files]
 
     def iter_results():
-        if args.workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        if MAX_WORKERS > 1 and len(jobs) > 1:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 yield from pool.map(_grep_worker, jobs, chunksize=16)
         else:
             for j in jobs:
@@ -642,8 +633,8 @@ def cmd_strings(args: argparse.Namespace) -> int:
     jobs = [(str(f), str(output)) for f in files]
 
     def iter_results():
-        if args.workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        if MAX_WORKERS > 1 and len(jobs) > 1:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 yield from pool.map(_strings_worker, jobs, chunksize=4)
         else:
             for j in jobs:
@@ -692,13 +683,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Exclude a dir name or glob (repeatable)",
     )
-    p.add_argument("-w", "--workers", type=int, default=8)
     p.add_argument("--no-pause", action="store_true", help="Disable SPACE/p pause hotkey")
     p.set_defaults(func=cmd_fast)
     p = sub.add_parser("find", help="Search filenames incl. archives (pfind.py)")
     p.add_argument("pattern")
     p.add_argument("directories", nargs="*", default=["."])
-    p.add_argument("-w", "--workers", type=int, default=8)
     p.set_defaults(func=cmd_find)
     p = sub.add_parser("grep", help="ripgrep-like content search")
     p.add_argument("pattern", nargs="?")
@@ -710,7 +699,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-line-number", dest="line_number", action="store_false")
     p.add_argument("-l", "--files-with-matches", action="store_true")
     p.add_argument("-c", "--count", action="store_true")
-    p.add_argument("-w", "--workers", type=int, default=8)
     p.add_argument("--hidden", action="store_true")
     p.add_argument("-g", "--glob", action="append", help="Include glob (repeatable)")
     p.add_argument("-x", "--exclude", action="append", help="Exclude glob (repeatable)")
@@ -730,7 +718,6 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("strings", help="Extract strings from binaries (stringr.py)")
     p.add_argument("files", nargs="*")
     p.add_argument("-o", "--output", default="all_strings.txt")
-    p.add_argument("-w", "--workers", type=int, default=8)
     p.set_defaults(func=cmd_strings)
     return parser
 

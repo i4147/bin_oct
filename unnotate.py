@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import multiprocessing as mp
 import os
@@ -15,21 +16,6 @@ from dh import atomic_write
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "node_modules",
-    "__pycache__",
-    ".tox",
-    ".eggs",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    "site-packages",
-})
 TYPE_COMMENT_RE: re.Pattern[str] = re.compile(r"#\s*type:\s*(?!ignore\b)")
 NUM_WIDTH: int = 10
 SUFFIX: str = ""
@@ -173,7 +159,7 @@ def gather_files(paths: Sequence[str]) -> tuple[list[Path], list[str]]:
 
 def display_path(path: Path) -> str:
     try:
-        return os.path.relpath(path)
+        return Path(path).relative_to(Path())
     except ValueError:
         return str(path)
 
@@ -221,13 +207,6 @@ def main(argv: list[str] | None = None) -> int:
         nargs="*",
         help="Files or directories to process (default: current directory, recursively)",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=os.cpu_count() or 1,
-        help="Number of worker processes (default: CPU count)",
-    )
     args: argparse.Namespace = parser.parse_args(argv)
     console: Console = Console(highlight=False, markup=False)
     err_console: Console = Console(stderr=True, highlight=False, markup=False)
@@ -244,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     longest: int = max(len(display_path(f)) for f in files)
     overhead: int = counter_width + 2 + 2 + NUM_WIDTH + len(SUFFIX)
     path_width: int = max(MIN_PATH_WIDTH, min(longest, console.size.width - overhead))
-    workers: int = max(1, min(args.jobs, total))
+    workers: int = max(1, min(MAX_WORKERS, total))
     results: list[Result] = []
     try:
         with mp.Pool(processes=workers) as pool:

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS
 import re
 from pathlib import Path
 from multiprocessing import Pool
@@ -9,7 +10,6 @@ from PIL import Image
 
 TESSDATA = str(Path.home() / ".local" / "share" / "tessdata")
 LANGS = "eng+fas+rus"
-NUM_WORKERS = 4
 OVERWRITE = False
 
 IMAGE_EXTS = {

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, NUM_WORKERS
 import argparse
 import hashlib
 import html.parser
@@ -12,7 +13,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-NUM_WORKERS = 8
 ASSETS_DIR_NAME = "assets"
 CSS_SUBDIR = "css"
 JS_SUBDIR = "js"
@@ -260,13 +260,6 @@ Examples:
         type=Path,
         help="Files or directories to process (default: current directory)",
     )
-    parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=NUM_WORKERS,
-        help=f"Number of worker processes (default: {NUM_WORKERS})",
-    )
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress progress output")
     parser.add_argument(
         "--min-size",
@@ -290,7 +283,7 @@ def main() -> int:
         return 0
     if not args.quiet:
         print(f"Found {len(html_files)} HTML file(s) to process.", file=sys.stderr)
-    num_workers = min(args.workers, len(html_files), mp.cpu_count() * 2)
+    num_workers = min(MAX_WORKERS, len(html_files), mp.cpu_count() * 2)
     num_workers = max(1, num_workers)
     if not args.quiet:
         print(f"Using {num_workers} worker(s)...", file=sys.stderr)

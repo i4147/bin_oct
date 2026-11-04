@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
-import logging
 import re
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
@@ -13,7 +13,7 @@ try:
 except ImportError:
     BeautifulSoup = None
     HAS_BS4 = False
-LOG = logging.getLogger("htmlstrip")
+LOG = logger
 DEFAULT_TAG_EXTS: tuple[str, ...] = (".html", ".txt")
 DEFAULT_META_EXTS: tuple[str, ...] = (".html",)
 DEFAULT_META_PATTERN: str = r"<meta[^>]*>"
@@ -48,23 +48,23 @@ def _remove_tag_from_file(path: Path, tag: str) -> bool:
     try:
         src = _read_text(path)
     except OSError as e:
-        LOG.error("Cannot read %s: %s", path, e)
+        LOG.error("Cannot read {}: {}", path, e)
         return False
     try:
         soup = BeautifulSoup(src, "html.parser")
     except Exception as e:
-        LOG.error("Parse failed for %s: %s", path, e)
+        LOG.error("Parse failed for {}: {}", path, e)
         return False
     found = soup.find_all(tag)
     if not found:
-        LOG.info("No <%s> found in %s", tag, path)
+        LOG.info("No <{}> found in {}", tag, path)
         return False
     for el in found:
         el.decompose()
     try:
         path.write_text(str(soup), encoding="utf-8")
     except OSError as e:
-        LOG.error("Cannot write %s: %s", path, e)
+        LOG.error("Cannot write {}: {}", path, e)
         return False
     print(f"Removed <{tag}> from {path}")
     return True
@@ -76,7 +76,7 @@ def cmd_tag(args: argparse.Namespace) -> int:
         return 2
     root = Path(args.directory)
     if not root.is_dir():
-        LOG.error("Not a directory: %s", root)
+        LOG.error("Not a directory: {}", root)
         return 1
     exts = _normalize_exts(args.extensions, DEFAULT_TAG_EXTS)
     total = 0
@@ -100,7 +100,7 @@ def _remove_meta_from_file(path: Path, pattern: str) -> Optional[bool]:
     try:
         src = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as e:
-        LOG.error("Cannot read %s: %s", path, e)
+        LOG.error("Cannot read {}: {}", path, e)
         return None
     rx = _meta_rx(pattern)
     new_src = rx.sub("", src)
@@ -110,7 +110,7 @@ def _remove_meta_from_file(path: Path, pattern: str) -> Optional[bool]:
     try:
         path.write_text(new_src, encoding="utf-8")
     except OSError as e:
-        LOG.error("Cannot write %s: %s", path, e)
+        LOG.error("Cannot write {}: {}", path, e)
         return None
     print(f"Removed meta tags from: {path}")
     return True
@@ -149,12 +149,12 @@ def _strip_all_tags(
 def cmd_all(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
-        LOG.error("Not a file: %s", path)
+        LOG.error("Not a file: {}", path)
         return 1
     try:
         source = path.read_text(encoding="utf-8")
     except OSError as e:
-        LOG.error("Cannot read %s: %s", path, e)
+        LOG.error("Cannot read {}: {}", path, e)
         return 1
     markers = list(args.preserve_marker) if args.preserve_marker else list(DEFAULT_PRESERVE_MARKERS)
     new_source, removed = _strip_all_tags(source, markers)
@@ -164,7 +164,7 @@ def cmd_all(args: argparse.Namespace) -> int:
         try:
             path.write_text(new_source, encoding="utf-8")
         except OSError as e:
-            LOG.error("Cannot write %s: %s", path, e)
+            LOG.error("Cannot write {}: {}", path, e)
             return 1
         print(f"\nFile updated: {path}")
     else:
@@ -225,14 +225,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     try:
         return args.func(args)
     except KeyboardInterrupt:
         LOG.warning("Operation cancelled by user")
         return 130
     except Exception as e:
-        LOG.error("Unexpected error: %s", e, exc_info=True)
+        LOG.opt(exception=True).error("Unexpected error: {}", e, )
         return 1
 
 

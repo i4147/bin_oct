@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import difflib
 import shutil
@@ -23,7 +24,6 @@ from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-WORKERS: int = 8
 _PARSERS: dict[str, Parser] = {}
 _SUPPORTED_EXTS: frozenset[str] = frozenset({
     ".rs",

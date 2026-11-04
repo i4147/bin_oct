@@ -22,6 +22,7 @@ Examples
   python3 filename_translate_tool.py translate ~/Downloads --apply
   python3 filename_translate_tool.py finglish ~/Music --apply
 """
+from dh import MAX_WORKERS
 
 import argparse
 import re
@@ -153,7 +154,7 @@ def cmd_translate(args: argparse.Namespace) -> int:
         print("No non-English filenames found.")
         return 0
     unique_stems: list[str] = sorted({p.stem for p in candidates})
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         translated: dict[str, str] = dict(
             zip(unique_stems, pool.map(translator.translate_stem, unique_stems), strict=True)
         )
@@ -213,7 +214,6 @@ def build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--target-lang", default="en")
     tr.add_argument("--space", default=" ", metavar="CHAR", help="Replace spaces with CHAR (e.g. _)")
     tr.add_argument("--include-dirs", action="store_true", help="Also rename directories")
-    tr.add_argument("-j", "--workers", type=int, default=8)
     tr.add_argument("--apply", action="store_true", help="Actually rename (default: dry run)")
     tr.set_defaults(handler=cmd_translate)
     fi = sub.add_parser("finglish", help="Persian filenames -> Finglish (local)")

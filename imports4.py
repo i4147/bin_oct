@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
 import ast
 import concurrent.futures
 import contextlib
 import hashlib
 import json
-import logging
 import os
 import re
 import subprocess
@@ -42,7 +42,7 @@ DEFAULT_EXCLUDE_DIRS = {
     ".vscode",
 }
 OPTIONAL_EXC = ("ImportError", "ModuleNotFoundError")
-log = logging.getLogger("piplist")
+log = logger
 _MISSING = object()
 
 
@@ -85,7 +85,7 @@ def load_pypi_index(path=PYPI_INDEX_PATH):
     try:
         data = json.loads(Path(path).read_text())
     except Exception as e:
-        log.warning("could not load PyPI index %s: %s", path, e)
+        log.warning("could not load PyPI index {}: {}", path, e)
         return set()
     keys = data.keys() if isinstance(data, dict) else data
     return {normalize(k) for k in keys}
@@ -122,7 +122,7 @@ def get_imports_info(module, pypi_server="https://pypi.python.org/pypi/", proxy=
     except HTTPError:
         return None
     except requests.RequestException as e:
-        log.debug("network error for %s: %s", module, e)
+        log.debug("network error for {}: {}", module, e)
         return None
     return str(module) + "==" + str(data.latest_release_id)
 
@@ -193,7 +193,7 @@ def get_project_imports(directory, ignore_dirs, include_optional=False):
     for path, subdirs, files in os.walk(directory):
         subdirs[:] = [d for d in subdirs if d not in ignore and not d.startswith(".")]
         for name in files:
-            full = os.path.join(path, name)
+            full = Path(path).joinpath(name)
             if name.endswith(".py"):
                 try:
                     source = Path(full).read_text(encoding="utf-8", errors="ignore")
@@ -208,17 +208,17 @@ def get_project_imports(directory, ignore_dirs, include_optional=False):
 
 
 def is_local_module(name, source_file):
-    d = os.path.dirname(os.path.abspath(source_file))
-    if os.path.exists(os.path.join(d, name + ".py")):
+    d = Path(Path(source_file).absolute()).parent
+    if Path(Path(d).joinpath(name + ".py")).exists():
         return True
-    if os.path.exists(os.path.join(d, name, "__init__.py")):
+    if Path(Path(d).joinpath(name, "__init__.py")).exists():
         return True
     cur = d
     while True:
-        parent = os.path.dirname(cur)
+        parent = Path(cur).parent
         if parent == cur:
             break
-        if os.path.exists(os.path.join(parent, name, "__init__.py")):
+        if Path(Path(parent).joinpath(name, "__init__.py")).exists():
             return True
         cur = parent
     return False
@@ -250,16 +250,15 @@ def read_ignores(path):
             if line and not line.startswith("#"):
                 out.add(line)
     except Exception as e:
-        log.warning("could not read ignore file %s: %s", path, e)
+        log.warning("could not read ignore file {}: {}", path, e)
     return out
 
 
 def init(args):
-    level = logging.WARNING if args["quiet"] else (logging.DEBUG if args["verbose"] else logging.INFO)
-    logging.basicConfig(level=level, format="%(message)s")
+    level = "WARNING" if args["quiet"] else ("DEBUG" if args["verbose"] else "INFO")
     root = args["path"] or os.curdir
-    if not os.path.isdir(root):
-        log.error("path does not exist: %s", root)
+    if not Path(root).is_dir():
+        log.error("path does not exist: {}", root)
         return 2
     ignore_dirs = DEFAULT_EXCLUDE_DIRS | set(args["ignore_dir"] or [])
     exclude = {normalize(e) for e in (args["exclude"] or [])}
@@ -301,15 +300,15 @@ def init(args):
                 try:
                     info = fut.result()
                 except Exception as e:
-                    log.debug("lookup error %s: %s", pkg, e)
+                    log.debug("lookup error {}: {}", pkg, e)
                     info = None
                 if info and "==" in info:
                     n, v = info.split("==", 1)
                     results[pkg] = (n, v)
                 elif index and normalize(pkg) not in index:
-                    log.warning("%s not on PyPI, skipping", pkg)
+                    log.warning("{} not on PyPI, skipping", pkg)
                 else:
-                    log.warning("could not resolve version for %s", pkg)
+                    log.warning("could not resolve version for {}", pkg)
                     results[pkg] = (pkg, None)
     lines = []
     for pkg in results:
@@ -321,8 +320,8 @@ def init(args):
     if args["stdout"] or args["dry_run"]:
         sys.stdout.write("\n".join(lines) + ("\n" if lines else ""))
         return 0
-    target = os.path.join(args["path"], "requirements.txt") if args["path"] else "requirements.txt"
-    if os.path.exists(target) and not args["overwrite"]:
+    target = Path(args["path"]).joinpath("requirements.txt") if args["path"] else "requirements.txt"
+    if Path(target).exists() and not args["overwrite"]:
         try:
             existing = [l.strip() for l in Path(target).read_text().splitlines() if l.strip() and not l.startswith("#")]
         except Exception:
@@ -330,7 +329,7 @@ def init(args):
         merged = set(lines) | set(existing)
         lines = sorted(merged, key=str.lower)
     Path(target).write_text("\n".join(lines) + ("\n" if lines else ""))
-    log.info("wrote %d entries to %s", len(lines), target)
+    log.info("wrote {} entries to {}", len(lines), target)
     return 0
 
 

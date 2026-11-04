@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS, SKIP_DIRS
 import argparse
 import shlex
 import subprocess
@@ -8,11 +9,8 @@ from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-
-DEFAULT_WORKERS: int = 4
 TIMEOUT_SECONDS: int = 60
 COMPILERS: dict[str, str] = {".c": "clang", ".cpp": "clang++", ".cc": "clang++", ".cxx": "clang++"}
-SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__", "venv", ".venv"})
 
 
 @dataclass(slots=True)
@@ -90,8 +88,8 @@ def cmd_build(args: argparse.Namespace) -> int:
         return 0
     flags: tuple[str, ...] = tuple(shlex.split(args.cflags))
     jobs: list[tuple[Path, str, tuple[str, ...], bool]] = [(s, "", flags, args.strip) for s in sources]
-    print(f"Compiling {len(sources)} file(s) with {args.workers} worker(s)...")
-    failed: int = run_parallel(jobs, "compile", args.workers)
+    print(f"Compiling {len(sources)} file(s) with {MAX_WORKERS} worker(s)...")
+    failed: int = run_parallel(jobs, "compile", MAX_WORKERS)
     print(f"Summary: {len(sources) - failed} ok, {failed} failed")
     return 1 if failed else 0
 
@@ -101,7 +99,7 @@ def cmd_cythonize(args: argparse.Namespace) -> int:
     if not sources:
         print("No .pyx files found.")
         return 0
-    failed: int = run_parallel(sources, "cython", args.workers)
+    failed: int = run_parallel(sources, "cython", MAX_WORKERS)
     print(f"Summary: {len(sources) - failed} ok, {failed} failed")
     return 1 if failed else 0
 
@@ -112,7 +110,6 @@ def build_parser() -> argparse.ArgumentParser:
     for name, help_text in (("build", "Compile .c/.cpp files"), ("cythonize", "Cythonize .pyx files")):
         child = sub.add_parser(name, help=help_text)
         child.add_argument("paths", nargs="*", type=Path, help="Files or dirs (default: current dir)")
-        child.add_argument("-j", "--workers", type=int, default=DEFAULT_WORKERS, help="Parallel workers (default: 4)")
     build = sub.choices["build"]
     build.add_argument("--strip", action="store_true", help="Strip each binary after compiling")
     build.add_argument("--cflags", default="", help='Extra compiler flags, e.g. --cflags="-O2 -Wall"')

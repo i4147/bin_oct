@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import SKIP_DIRS
 import argparse
 import ast
 import io
@@ -39,17 +40,6 @@ except ImportError:
     zstd = None
     HAS_ZSTD = False
 UPPER_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
-SKIP_DIRS: set[str] = {
-    ".git",
-    "__pycache__",
-    "site-packages",
-    ".venv",
-    "venv",
-    "node_modules",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-}
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".whl",
     ".zip",

@@ -1,33 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import ast
 from collections.abc import Iterator
 from pathlib import Path
 
 from loguru import logger
-
-SKIP_DIRS: set[str] = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "node_modules",
-    "build",
-    "dist",
-    ".eggs",
-    ".idea",
-    ".vscode",
-}
 ICONS = {"functions": "🔧", "classes": "🏛️ ", "constants": "📌"}
 
 

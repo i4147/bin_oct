@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import contextlib
 import shutil
@@ -12,7 +13,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
     "starmap",
     "map",

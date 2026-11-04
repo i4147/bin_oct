@@ -1,19 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import shutil
 import subprocess
 import sys
 import textwrap
 
-HOME = os.path.expanduser("~")
-AGE_DIR = os.path.join(HOME, ".config", "age")
-AGE_KEY = os.path.join(AGE_DIR, "keys.txt")
-AGE_PUB = os.path.join(AGE_DIR, "public.key")
-FILTER_PATH = os.path.join(HOME, ".local", "bin", "git-age-filter")
-REPO_DIR = os.path.join(HOME, "dotfiles.git")
-GITATTRIBUTES = os.path.join(HOME, ".gitattributes")
-GITIGNORE = os.path.join(HOME, ".gitignore")
+HOME = Path("~").expanduser()
+AGE_DIR = Path(HOME).joinpath(".config", "age")
+AGE_KEY = Path(AGE_DIR).joinpath("keys.txt")
+AGE_PUB = Path(AGE_DIR).joinpath("public.key")
+FILTER_PATH = Path(HOME).joinpath(".local", "bin", "git-age-filter")
+REPO_DIR = Path(HOME).joinpath("dotfiles.git")
+GITATTRIBUTES = Path(HOME).joinpath(".gitattributes")
+GITIGNORE = Path(HOME).joinpath(".gitignore")
 SECRET_PATTERNS = [
     "secrets/**",
     "*.secret",
@@ -35,7 +36,7 @@ def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
 
 def which(binary: str) -> str | None:
     return shutil.which(binary) or (
-        os.path.exists(f"/data/data/com.termux/files/usr/bin/{binary}")
+        Path(f"/data/data/com.termux/files/usr/bin/{binary}").exists()
         and f"/data/data/com.termux/files/usr/bin/{binary}"
     )
 
@@ -50,7 +51,7 @@ def ensure_tools() -> None:
 
 def ensure_age_key() -> str:
     os.makedirs(AGE_DIR, mode=0o700, exist_ok=True)
-    if not os.path.exists(AGE_KEY):
+    if not Path(AGE_KEY).exists():
         print("Generating age keypair...")
         out = subprocess.run(
             [which("age-keygen") or "age-keygen", "-o", AGE_KEY],
@@ -79,14 +80,15 @@ def ensure_age_key() -> str:
 FILTER_SOURCE = r'''#!/data/data/com.termux/files/usr/bin/python
 """Git clean/smudge filter using age. Managed by setup_dotfiles.py."""
 import os, subprocess, sys
+from pathlib import Path
 AGE_BIN = "age"
-AGE_KEY_FILE = os.path.expanduser("~/.config/age/keys.txt")
-AGE_PUBKEY_FILE = os.path.expanduser("~/.config/age/public.key")
+AGE_KEY_FILE = Path("~/.config/age/keys.txt").expanduser()
+AGE_PUBKEY_FILE = Path("~/.config/age/public.key").expanduser()
 def die(msg, code=1):
     print(f"git-age-filter: {msg}", file=sys.stderr)
     sys.exit(code)
 def clean():
-    if not os.path.exists(AGE_PUBKEY_FILE):
+    if not AGE_PUBKEY_FILE.exists():
         die(f"missing public key: {AGE_PUBKEY_FILE}")
     pubkey = open(AGE_PUBKEY_FILE).read().strip()
     p = subprocess.run([AGE_BIN, "-r", pubkey, "-a"],
@@ -99,7 +101,7 @@ def smudge():
     data = sys.stdin.buffer.read()
     if not data.lstrip().startswith(b"-----BEGIN AGE ENCRYPTED FILE-----"):
         sys.stdout.buffer.write(data); return
-    if not os.path.exists(AGE_KEY_FILE):
+    if not AGE_KEY_FILE.exists():
         print("git-age-filter: no private key; leaving ciphertext", file=sys.stderr)
         sys.stdout.buffer.write(data); return
     p = subprocess.run([AGE_BIN, "-d", "-i", AGE_KEY_FILE],
@@ -116,7 +118,7 @@ if __name__ == "__main__":
 
 
 def write_filter() -> None:
-    os.makedirs(os.path.dirname(FILTER_PATH), exist_ok=True)
+    os.makedirs(Path(FILTER_PATH).parent, exist_ok=True)
     with open(FILTER_PATH, "w") as f:
         f.write(FILTER_SOURCE)
     os.chmod(FILTER_PATH, 0o755)
@@ -133,7 +135,7 @@ def write_gitattributes() -> None:
 
 def write_gitignore() -> None:
     existing = ""
-    if os.path.exists(GITIGNORE):
+    if Path(GITIGNORE).exists():
         existing = open(GITIGNORE).read()
     lines = ["# Managed by setup_dotfiles.py"]
     lines += [p for p in IGNORE_PATTERNS if p not in existing]
@@ -151,7 +153,7 @@ def git(*args: str, cwd: str | None = None) -> None:
 
 
 def init_repo() -> None:
-    if not os.path.isdir(REPO_DIR):
+    if not Path(REPO_DIR).is_dir():
         run(["git", "init", "--bare", REPO_DIR])
         print(f"initialized bare repo: {REPO_DIR}")
     git("config", "filter.age.clean", FILTER_PATH + " clean")

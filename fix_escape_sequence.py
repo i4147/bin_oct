@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import io
 import multiprocessing as mp
@@ -10,27 +11,6 @@ from pathlib import Path
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")
-SKIP_DIRS: frozenset[str] = frozenset({
-    "__pycache__",
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".venv",
-    "venv",
-    "env",
-    "virtualenv",
-    "node_modules",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".cache",
-    "build",
-    "dist",
-    ".eggs",
-    ".idea",
-    ".vscode",
-})
 SELF_PATH: Path = Path(__file__).resolve()
 Fix = tuple[tuple[int, int], tuple[int, int], str]
 Result = tuple[str, str, int, int]
@@ -183,7 +163,6 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("paths", nargs="+", type=Path)
     ap.add_argument("-n", "--dry-run", action="store_true")
     ap.add_argument("-q", "--quiet", action="store_true")
-    ap.add_argument("-j", "--jobs", type=int, default=8)
     args = ap.parse_args(argv)
     targets: list[str] = []
     for p in args.paths:
@@ -199,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
         print("no files to process")
         return 0
     tasks: list[tuple[str, bool, bool]] = [(t, args.dry_run, args.quiet) for t in targets]
-    with mp.Pool(args.jobs) as pool:
+    with mp.Pool(MAX_WORKERS) as pool:
         results: list[Result] = pool.starmap(process_file, tasks)
     counts: dict[str, int] = {}
     for path, status, before, after in results:

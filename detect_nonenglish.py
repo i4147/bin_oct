@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import json
 import sys
@@ -81,7 +82,6 @@ DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
     ".vscode",
 })
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024
-DEFAULT_WORKERS = 8
 DEFAULT_MIN_CONFIDENCE = 0.5
 SAMPLE_CHARS = 10_000
 MIN_LINE_LEN = 3
@@ -485,13 +485,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"Minimum confidence (0.0-1.0) for a detection to be reported (default: {DEFAULT_MIN_CONFIDENCE}).",
     )
     parser.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of worker processes (default: {DEFAULT_WORKERS}).",
-    )
-    parser.add_argument(
         "--max-size-mb",
         type=int,
         default=DEFAULT_MAX_BYTES // (1024 * 1024),
@@ -538,7 +531,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     results: list[FileResult] = []
     errors: list[FileResult] = []
     if tasks:
-        workers = max(1, min(args.workers, len(tasks)))
+        workers = max(1, min(MAX_WORKERS, len(tasks)))
         with ProcessPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(_process_file, t): t for t in tasks}
             total = len(futures)

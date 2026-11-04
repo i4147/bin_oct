@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import json
-import logging
 import lzma
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -19,7 +20,6 @@ MARKDOWN_BASE_EXTENSIONS = [
     "pymdownx.superfences",
 ]
 DEFAULT_CSS = Path("/sdcard/_static/css/markdown.css.xz")
-logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
@@ -30,7 +30,7 @@ def md2pdf(pdf, raw=None, md=None, css=None, base_url=None, extras=None, extras_
     extras_config = extras_config or {}
     extras = extras if extras and len(extras) else []
     if md:
-        logger.debug("Reading markdown content from file %s", md)
+        logger.debug("Reading markdown content from file {}", md)
         raw = md.read_text()
     if raw is None or not len(raw):
         msg = "No markdown content to process (empty file or raw string)"
@@ -91,7 +91,6 @@ def main():
     parser.add_argument("--css", help="CSS file to style the PDF (supports .xz)")
     parser.add_argument("--extras", nargs="*", help="Extra markdown extensions")
     parser.add_argument("--config", help="JSON configuration for extensions")
-    parser.add_argument("--workers", type=int, default=4, help="Number of worker threads (default: 4)")
     args = parser.parse_args()
     if not args.md:
         print("🤷‍♂️ No markdown input file. See `--help`")
@@ -114,7 +113,7 @@ def main():
     if args.config:
         extras_config = parse_config(args.config)
         print(f"🔧 Configuration: {extras_config}")
-    convert_batch(args.workers, md_files, pdf, css, extras, extras_config)
+    convert_batch(MAX_WORKERS, md_files, pdf, css, extras, extras_config)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import re
 import sys
@@ -179,13 +180,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=1,
-        help="Parallel workers. Default: 1",
-    )
-    parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
@@ -205,8 +199,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"Found {len(files)} file(s). Shifting by {args.shift:+.3f} seconds ({args.time_math} math).")
     payloads = [(str(f), args.shift, args.time_math, args.encoding) for f in files]
     failures = 0
-    if args.jobs > 1:
-        with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+    if MAX_WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
             for path_str, err in pool.map(_worker, payloads):
                 if err:
                     failures += 1

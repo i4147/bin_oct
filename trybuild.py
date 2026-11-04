@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS, WORKERS
 import argparse
 import contextlib
 import functools
@@ -20,27 +21,7 @@ try:
     import tomllib
 except ImportError:
     tomllib = None
-WORKERS = 4
 MARKERS = ("setup.py", "pyproject.toml")
-SKIP_DIRS = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    ".nox",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "build",
-    "dist",
-    ".eggs",
-    "site-packages",
-})
 TAIL_LINES = 40
 
 
@@ -54,7 +35,7 @@ class Result:
 
 
 def relpath(path: Path, base: Path) -> str:
-    return os.path.relpath(path, base)
+    return Path(path).relative_to(base)
 
 
 def find_projects(root: Path) -> list[Path]:

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS
 import argparse
 import json
 import multiprocessing as mp
@@ -12,8 +13,6 @@ from typing import Final
 import ffmpeg
 from dh import fsz
 from loguru import logger
-
-NUM_WORKERS: Final[int] = 8
 MIN_BITRATE_KBPS: Final[int] = 8
 STDERR_PREVIEW_LEN: Final[int] = 100
 MP3_GLOBS: Final[tuple[str, ...]] = ("*.mp3", "*.MP3", "*.Mp3")

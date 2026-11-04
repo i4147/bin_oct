@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import bisect
 import fnmatch
@@ -58,7 +59,6 @@ TYPE_PRESETS: dict[str, set[str]] = {
     "xml": {".xml"},
     "csv": {".csv", ".tsv"},
 }
-DEFAULT_WORKERS = 8
 ANSI_RESET = "\x1b[0m"
 ANSI_BOLD = "\x1b[1m"
 ANSI_BLUE = "\x1b[94m"
@@ -87,7 +87,7 @@ def _stable_hash(s: str) -> int:
 def color_for_path(path: str, enabled: bool) -> str:
     if not enabled:
         return ""
-    d = os.path.dirname(path) or "."
+    d = Path(path).parent or "."
     return _PATH_PALETTE[_stable_hash(d) % len(_PATH_PALETTE)]
 
 
@@ -888,14 +888,6 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--stats", action="store_true", help="Print a summary to stderr at the end")
     p.add_argument("--no-messages", action="store_true", help="Suppress per-file error reporting")
     p.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        metavar="N",
-        help="Number of worker processes",
-    )
-    p.add_argument(
         "paths",
         nargs="*",
         default=["."],
@@ -968,9 +960,9 @@ def _search_quiet(
         }
         for p in files
     ]
-    if args.workers <= 1:
+    if MAX_WORKERS <= 1:
         return any(worker(j).match_count for j in jobs)
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futures = [ex.submit(worker, j) for j in jobs]
         for fut in as_completed(futures):
             try:
@@ -1079,10 +1071,10 @@ def main(argv: list[str] | None = None) -> int:
                 _emit_path(result.path, out_fh, color)
 
     try:
-        if args.workers <= 1:
+        if MAX_WORKERS <= 1:
             _consume(worker(j) for j in jobs)
         else:
-            with ProcessPoolExecutor(max_workers=args.workers) as ex:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
                 futures = [ex.submit(worker, j) for j in jobs]
 
                 def _gen() -> Iterator[FileResult]:

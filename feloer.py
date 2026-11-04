@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import ast
 import asyncio
@@ -36,13 +37,6 @@ IGNORED_NAMES: frozenset[str] = frozenset({
     "constants.py",
     "tests.py",
     "conftest.py",
-})
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
 })
 PROMPT_HEAD: str = (
     "You are an expert software requirements writer. Analyze the Python code provided between the "

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import NUM_WORKERS
 import multiprocessing as mp
 import sys
 import time
@@ -15,7 +16,6 @@ except ImportError:
     print("Error: tree-sitter and tree-sitter-rust are required.")
     print("Install with: pip install tree-sitter tree-sitter-rust")
     sys.exit(1)
-NUM_WORKERS = 8
 RUST_EXTENSIONS = {".rs"}
 
 

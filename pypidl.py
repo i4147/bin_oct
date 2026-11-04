@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import hashlib
 import io
@@ -348,7 +349,7 @@ def cmd_wheels(args: argparse.Namespace) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Saving wheels to: {out_dir}\n")
     downloaded = 0
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = {pool.submit(_download_wheel_worker, pkg, out_dir, args.python): pkg for pkg in args.packages}
         for fut in as_completed(futures):
             pkg, success, err = fut.result()
@@ -877,7 +878,6 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("wheels", help="Parallel wheel downloads scored by Python version (pdown2.py)")
     p.add_argument("packages", nargs="+", help="Package names")
     p.add_argument("--python", default="3.12", help="Target Python version (default: 3.12)")
-    p.add_argument("--workers", type=int, default=4, help="Parallel worker threads (default: 4)")
     p.add_argument(
         "--output",
         type=Path,

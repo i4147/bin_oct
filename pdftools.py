@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import os
 import re
@@ -228,11 +229,10 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         help="extract embedded images, fonts and attached files into <stem>/images, fonts and attachments",
     )
     parser.add_argument("-o", "--output-dir", type=Path, default=Path(), help="base output directory")
-    parser.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 1, help="number of worker processes")
     args = parser.parse_args(argv)
     if not (args.per_page or args.split or args.merge or args.extract):
         parser.error("choose at least one of -p, -s, -m, -x")
-    if args.jobs < 1:
+    if MAX_WORKERS < 1:
         parser.error("--jobs must be at least 1")
     return args
 
@@ -251,7 +251,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     out_root: Path = args.output_dir
     out_root.mkdir(parents=True, exist_ok=True)
-    jobs: int = args.jobs
+    jobs: int = MAX_WORKERS
     with ProcessPoolExecutor(max_workers=jobs) as pool:
         for pdf in pdfs:
             try:

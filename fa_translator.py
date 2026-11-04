@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import json
-import logging
 import os
 import re
 import shutil
@@ -54,15 +55,11 @@ try:
     _HAVE_READLINE = True
 except ImportError:
     _HAVE_READLINE = False
-log = logging.getLogger("merged_translator")
+log = logger
 
 
 def setup_logging(verbose: bool = False) -> None:
-    logging.basicConfig(
-        level=logging.DEBUG if verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%H:%M:%S",
-    )
+    pass
 
 
 PERSIAN_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
@@ -107,7 +104,7 @@ def translate_google(
                 return result
         except Exception as exc:
             log.warning(
-                "google translate failed for %r (attempt %d/%d): %s",
+                "google translate failed for {} (attempt {}/{}): {}",
                 text[:40],
                 attempt + 1,
                 retries,
@@ -136,7 +133,7 @@ def translate_pypackage(
                 return result
         except Exception as exc:
             log.warning(
-                "translate-package failed for %r (attempt %d/%d): %s",
+                "translate-package failed for {} (attempt {}/{}): {}",
                 text[:40],
                 attempt + 1,
                 retries,
@@ -194,7 +191,7 @@ def _translate_item(
         backend = get_backend(backend_name)
         result = backend(text, source=source, target=target, retries=retries, delay=delay)
     except Exception as exc:
-        log.warning("worker error for %r: %s", text[:40], exc)
+        log.warning("worker error for {}: {}", text[:40], exc)
         result = None
     return text, result
 
@@ -226,12 +223,12 @@ def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, 
 def cmd_file(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     if not input_path.is_file():
-        log.error("Input file not found: %s", input_path)
+        log.error("Input file not found: {}", input_path)
         return 1
     try:
         raw_lines = input_path.read_text(encoding="utf-8").splitlines()
     except Exception as exc:
-        log.error("Error reading %s: %s", input_path, exc)
+        log.error("Error reading {}: {}", input_path, exc)
         return 1
     lines = [ln.strip() for ln in raw_lines if ln.strip()]
     if not lines:
@@ -254,18 +251,18 @@ def cmd_file(args: argparse.Namespace) -> int:
         work_units = list(pending)
     else:
         work_units = [text for _s, _e, text in split_into_chunks(pending, args.chunk_size)]
-    print(f"Translating {len(work_units)} unit(s) with {args.workers} workers via {backend_name} ({args.executor})...")
+    print(f"Translating {len(work_units)} unit(s) with {MAX_WORKERS} workers via {backend_name} ({args.executor})...")
     PoolClass = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
     packed = [(text, backend_name, source, target, retries, delay) for text in work_units]
     results: list[tuple[str, Optional[str]]] = []
     try:
-        with PoolClass(max_workers=args.workers) as pool:
+        with PoolClass(max_workers=MAX_WORKERS) as pool:
             futures = [pool.submit(_translate_item, item) for item in packed]
             for i, fut in enumerate(futures, 1):
                 try:
                     results.append(fut.result())
                 except Exception as exc:
-                    log.error("Unexpected worker error: %s", exc)
+                    log.error("Unexpected worker error: {}", exc)
                     results.append(("", None))
                 if args.progress and (i % 5 == 0 or i == len(futures)):
                     print(f"  progress: {i}/{len(futures)}")
@@ -288,7 +285,7 @@ def cmd_file(args: argparse.Namespace) -> int:
                     translations[src_line] = dst_lines[i]
                 else:
                     log.error(
-                        "Line-count mismatch in chunk, missing translation for: %s",
+                        "Line-count mismatch in chunk, missing translation for: {}",
                         src_line[:50],
                     )
     if not translations:
@@ -322,14 +319,14 @@ def cmd_file(args: argparse.Namespace) -> int:
         save_json(payload, output_path)
         print(f"Saved {len(translations)} translations to {output_path.name}")
     except Exception as exc:
-        log.error("Error saving JSON: %s", exc)
+        log.error("Error saving JSON: {}", exc)
     if args.in_place:
         try:
             out_lines = [translations.get(ln, ln) for ln in lines]
             input_path.write_text("\n".join(out_lines) + "\n", encoding="utf-8")
             print(f"Updated {input_path.name}")
         except Exception as exc:
-            log.error("Error updating input file: %s", exc)
+            log.error("Error updating input file: {}", exc)
             return 1
     return 0
 
@@ -337,7 +334,7 @@ def cmd_file(args: argparse.Namespace) -> int:
 def cmd_words(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     if not input_path.is_file():
-        log.error("Input file not found: %s", input_path)
+        log.error("Input file not found: {}", input_path)
         return 1
     output_path = Path(args.output)
     seen: set[str] = set()
@@ -360,7 +357,7 @@ def cmd_words(args: argparse.Namespace) -> int:
             existing = load_json_dict(output_path)
             print(f"Loaded {len(existing)} existing translations from {output_path}")
         except Exception as exc:
-            log.warning("Could not load existing %s: %s", output_path, exc)
+            log.warning("Could not load existing {}: {}", output_path, exc)
     pending = [w for w in words if w not in existing]
     print(f"{len(pending)} to translate (skipping {len(words) - len(pending)} already translated)")
     if not pending:
@@ -372,13 +369,13 @@ def cmd_words(args: argparse.Namespace) -> int:
     packed = [(w, args.backend, args.source, args.target, args.retries, args.delay) for w in pending]
     saved_count = 0
     try:
-        with PoolClass(max_workers=args.workers) as pool:
+        with PoolClass(max_workers=MAX_WORKERS) as pool:
             futures = [pool.submit(_translate_item, item) for item in packed]
             for fut in as_completed(futures):
                 try:
                     word, trans = fut.result()
                 except Exception as exc:
-                    log.error("Worker error: %s", exc)
+                    log.error("Worker error: {}", exc)
                     progress.update(1)
                     continue
                 is_error = isinstance(trans, str) and trans.startswith("__ERROR__")
@@ -387,14 +384,14 @@ def cmd_words(args: argparse.Namespace) -> int:
                     print(f"{word} → {trans}")
                     saved_count += 1
                 else:
-                    log.error("Could not translate: %s", word)
+                    log.error("Could not translate: {}", word)
                 progress.update(1)
                 if args.save_every and saved_count and (saved_count % args.save_every == 0):
                     try:
                         save_json(results, output_path)
-                        log.info("Checkpoint: saved %d entries", len(results))
+                        log.info("Checkpoint: saved {} entries", len(results))
                     except Exception as exc:
-                        log.error("Checkpoint save failed: %s", exc)
+                        log.error("Checkpoint save failed: {}", exc)
     except KeyboardInterrupt:
         print("Interrupted by user. Saving progress...")
     finally:
@@ -403,11 +400,11 @@ def cmd_words(args: argparse.Namespace) -> int:
             save_json(results, output_path)
             print(f"Saved {len(results)} entries to {output_path}")
         except Exception as exc:
-            log.error("Error saving results: %s", exc)
+            log.error("Error saving results: {}", exc)
             return 1
     failures = len(pending) - saved_count
     if failures:
-        log.warning("%d entr(ies) failed.", failures)
+        log.warning("{} entr(ies) failed.", failures)
     return 0
 
 
@@ -427,12 +424,12 @@ def _setup_readline(candidates: list[str]) -> None:
 
 def _load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     if not path.exists():
-        log.error("Dictionary file not found: %s", path)
+        log.error("Dictionary file not found: {}", path)
         sys.exit(1)
     try:
         fwd = load_json_dict(path)
     except Exception as exc:
-        log.error("Error loading dictionary: %s", exc)
+        log.error("Error loading dictionary: {}", exc)
         sys.exit(1)
     rev = {v: k for k, v in fwd.items()}
     return fwd, rev
@@ -465,7 +462,7 @@ def _fzf_select(candidates: Iterable[str], prompt: str = "Select word: ") -> Opt
             check=False,
         )
     except Exception as exc:
-        log.error("fzf execution error: %s", exc)
+        log.error("fzf execution error: {}", exc)
         return None
     out = proc.stdout.strip()
     return out or None
@@ -496,7 +493,7 @@ def _interactive_loop(fwd: dict[str, str], rev: dict[str, str]) -> int:
 
 
 def cmd_lookup(args: argparse.Namespace) -> int:
-    dict_path = Path(os.path.expanduser(args.dict))
+    dict_path = Path(Path(args.dict).expanduser())
     fwd, rev = _load_dictionary(dict_path)
     candidates = set(fwd) | set(rev)
     if args.prefix:
@@ -580,7 +577,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_file.add_argument("--source", default="fa", help="Source language")
     p_file.add_argument("--target", default="en", help="Target language")
-    p_file.add_argument("--workers", type=int, default=8, help="Parallel workers (default: 8)")
     p_file.add_argument(
         "--executor",
         choices=["process", "thread"],
@@ -637,7 +633,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_words.add_argument("--source", default="auto", help="Source language (default: auto)")
     p_words.add_argument("--target", default="en", help="Target language (default: en)")
-    p_words.add_argument("--workers", type=int, default=8, help="Parallel workers (default: 8)")
     p_words.add_argument(
         "--executor",
         choices=["process", "thread"],

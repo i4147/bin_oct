@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import contextlib
 import os
@@ -42,7 +44,6 @@ SHELL_SHEBANG_TOKENS: Final[tuple[str, ...]] = (
 FUNCTION_RE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:function\s+)?(\w[\w\-]*)\s*(?:\(\))?\s*\{")
 UNSAFE_NAME_RE: Final[re.Pattern[str]] = re.compile(r"[^\w\-]")
 DEFAULT_MAX_FILE_SIZE: Final[int] = 1_000_000
-DEFAULT_WORKERS: Final[int] = 8
 DEFAULT_OUTPUT_DIR: Final[Path] = Path("extracted_functions")
 IS_TERMUX: Final[bool] = "TERMUX_VERSION" in os.environ or "com.termux" in os.environ.get("PREFIX", "")
 
@@ -303,9 +304,9 @@ def _process_scripts(scripts: list[Path], args: argparse.Namespace, log: _Logger
     chmod_files = not args.no_chmod
     total = 0
     if args.parallel and len(scripts) > 1:
-        print(f"Processing files in parallel with {args.workers} workers...")
+        print(f"Processing files in parallel with {MAX_WORKERS} workers...")
         tasks = [(p, args.output, use_extension, add_header, chmod_files, args.verbose) for p in scripts]
-        with Pool(processes=args.workers) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             for path, written in pool.imap_unordered(_process_one, tasks):
                 total += len(written)
                 if args.verbose or written:
@@ -323,7 +324,7 @@ def _process_scripts(scripts: list[Path], args: argparse.Namespace, log: _Logger
 def run(args: argparse.Namespace) -> int:
     log = make_logger(args.use_loguru, args.verbose)
     if IS_TERMUX:
-        print(f"Running in Termux environment (workers={args.workers})")
+        print(f"Running in Termux environment (workers={MAX_WORKERS})")
     inputs: list[Path] = args.inputs or [Path()]
     include_extensionless = not args.sh_only
     print("Searching for shell scripts...")
@@ -433,12 +434,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--parallel",
         action="store_true",
         help="Use multiprocessing.Pool for file processing (xbash_functions.py behavior). Default is sequential.",
-    )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of worker processes for --parallel (default: {DEFAULT_WORKERS}).",
     )
     p.add_argument(
         "--max-size",

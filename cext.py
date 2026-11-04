@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import FIXED_WORKERS, MAX_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import io
@@ -26,7 +27,6 @@ try:
     HAS_ZSTD: bool = True
 except ImportError:
     HAS_ZSTD = False
-FIXED_WORKERS: int = 8
 """Number of worker processes used for parallel extraction."""
 
 
@@ -301,7 +301,6 @@ def parse_python_source(source: str, virtual_path: str) -> tuple[list[Entity], l
 
 PYTHON_EXTENSIONS: set[str] = {".py"}
 ARCHIVE_EXTENSIONS: set[str] = {".zip", ".whl", ".tar", ".gz", ".tgz", ".zst", ".xz"}
-SKIP_DIRS: set[str] = {".git", "__pycache__"}
 
 
 def _looks_like_python(data: bytes) -> bool:
@@ -549,13 +548,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Write output to ~/tmp/output/ instead of ./output/",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=FIXED_WORKERS,
-        help=f"Number of parallel workers (default: {FIXED_WORKERS})",
-    )
-    parser.add_argument(
         "-d",
         "--dir",
         type=Path,
@@ -579,8 +571,8 @@ def main(argv: list[str] | None = None) -> int:
     tasks: list[tuple[Callable[[Path], tuple[list[Entity], list[str], str]], Path]] = [
         (_worker_py, p) for p in py_files
     ] + [(_worker_archive, p) for p in archives]
-    print("Processing {} file(s) with {} worker(s)…", len(tasks), args.workers)
-    with mp.Pool(processes=args.workers) as pool:
+    print("Processing {} file(s) with {} worker(s)…", len(tasks), MAX_WORKERS)
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         async_results: list[tuple[Callable[[Path], tuple[list[Entity], list[str], str]], Path, Any]] = []
         for fn, path in tasks:
             async_results.append((fn, path, pool.apply_async(fn, (path,))))

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import concurrent.futures
 import json
@@ -174,12 +175,6 @@ def main() -> int:
         help="Delete the source .xml file after successful conversion (original xml2json.py behavior)",
     )
     xml_parser.add_argument(
-        "--workers",
-        type=int,
-        default=16,
-        help="Number of concurrent workers for batch processing (default: 16)",
-    )
-    xml_parser.add_argument(
         "--exts",
         nargs="+",
         default=[".xml", ".svg"],
@@ -264,7 +259,7 @@ def main() -> int:
         if not target_files:
             print("No XML files found to process.", file=sys.stderr)
             return 1
-        with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = [executor.submit(process_xml_file, f, args.engine, args.delete_source) for f in target_files]
             concurrent.futures.wait(futures)
         return 0

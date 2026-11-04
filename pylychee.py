@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import base64
 import mimetypes
@@ -33,7 +34,6 @@ HTML_ATTR_RE: Final[re.Pattern[str]] = re.compile(
 MD_IMAGE_RE: Final[re.Pattern[str]] = re.compile(r"!\[([^\]]*?)\]\((?P<url>[^)\s]+)(?:\s+\"[^\"]*\")?\)")
 MD_LINK_RE: Final[re.Pattern[str]] = re.compile(r"\[(?P<text>[^\]]*?)\]\((?P<url>[^)\s]+)(?:\s+\"[^\"]*\")?\)")
 DEFAULT_TIMEOUT: Final[int] = 8
-POOL_WORKERS: Final[int] = 8
 TARGET_EXTS: Final[tuple[str, ...]] = (".md", ".html", ".htm")
 
 

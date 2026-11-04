@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import csv
@@ -10,7 +12,6 @@ import hashlib
 import importlib.util
 import io
 import json
-import logging
 import os
 import random
 import re
@@ -65,7 +66,7 @@ except ImportError:
     except ImportError:
         _tomllib = None
 __version__ = "1.0.0"
-LOGGER = logging.getLogger("pydup")
+LOGGER = logger
 DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
     ".venv",
     ".git",
@@ -484,7 +485,7 @@ def _load_ignore_patterns(root: Path) -> list[str]:
         try:
             patterns.extend(_strip_lines(ignore_file.read_text(encoding="utf-8")))
         except OSError as error:
-            LOGGER.warning("cannot read %s: %s", ignore_file, error)
+            LOGGER.warning("cannot read {}: {}", ignore_file, error)
     pyproject = root / "pyproject.toml"
     if pyproject.is_file() and _tomllib is not None:
         try:
@@ -493,9 +494,9 @@ def _load_ignore_patterns(root: Path) -> list[str]:
             if isinstance(configured, list):
                 patterns.extend(str(item) for item in configured)
         except Exception as error:
-            LOGGER.warning("cannot parse %s: %s", pyproject, error)
+            LOGGER.warning("cannot parse {}: {}", pyproject, error)
     elif pyproject.is_file() and _tomllib is None:
-        LOGGER.warning("tomllib/tomli unavailable; ignoring [tool.pydup] in %s", pyproject)
+        LOGGER.warning("tomllib/tomli unavailable; ignoring [tool.pydup] in {}", pyproject)
     return patterns
 
 
@@ -506,7 +507,7 @@ def _load_gitignore_patterns(root: Path) -> list[str]:
     try:
         return _strip_lines(gitignore.read_text(encoding="utf-8"))
     except OSError as error:
-        LOGGER.warning("cannot read %s: %s", gitignore, error)
+        LOGGER.warning("cannot read {}: {}", gitignore, error)
         return []
 
 
@@ -558,7 +559,7 @@ def get_pyfiles(root: Path, cfg: ScanConfig) -> tuple[list[Path], list[ScanIssue
                     if dir_entry.name in DEFAULT_EXCLUDE_DIRS:
                         continue
                     if is_link and not cfg.follow_symlinks:
-                        LOGGER.debug("skipping symlinked directory %s", path)
+                        LOGGER.debug("skipping symlinked directory {}", path)
                         continue
                     if root_filter.ignored(rel, True):
                         continue
@@ -577,14 +578,14 @@ def get_pyfiles(root: Path, cfg: ScanConfig) -> tuple[list[Path], list[ScanIssue
                 if is_link and not cfg.follow_symlinks:
                     if not _is_candidate_file(dir_entry.name, cfg.include_notebooks):
                         continue
-                    if not os.path.exists(path):
+                    if not Path(path).exists():
                         issues.append((str(path), "broken symlink"))
                     else:
-                        LOGGER.debug("skipping symlinked file %s", path)
+                        LOGGER.debug("skipping symlinked file {}", path)
                     continue
                 if not _is_candidate_file(dir_entry.name, cfg.include_notebooks):
                     continue
-                if is_link and not os.path.exists(path):
+                if is_link and not Path(path).exists():
                     issues.append((str(path), "broken symlink"))
                     continue
                 if root_filter.ignored(rel, False):
@@ -864,7 +865,7 @@ def _process_source(path_text: str, raw: bytes, cfg: WorkerConfig) -> WorkerResu
         tree, parse_error = _parse_source(source, path)
         if tree is None:
             if cfg.mode == "strict":
-                LOGGER.debug("definitions unavailable for %s: %s", path_text, parse_error)
+                LOGGER.debug("definitions unavailable for {}: {}", path_text, parse_error)
             else:
                 return WorkerResult(path=path_text, error=parse_error, ngrams=ngrams)
     ast_hash: str | None = None
@@ -1016,7 +1017,7 @@ def _run_joblib(
         from joblib import Parallel, delayed
     except ImportError as error:
         raise RuntimeError("--mp-method joblib requires the joblib package (pip install joblib)") from error
-    absolute_paths = [os.path.abspath(path_text) for path_text in paths]
+    absolute_paths = [Path(path_text).absolute() for path_text in paths]
     results = list(
         Parallel(n_jobs=workers, prefer="processes")(
             delayed(process_file)(abs_path, cfg) for abs_path in absolute_paths
@@ -1057,7 +1058,7 @@ def process_files(
     results: list[WorkerResult] = []
     cache_hits = 0
     for entry in entries:
-        key = os.path.abspath(str(entry.path))
+        key = Path(str(entry.path)).absolute()
         cached = cache.get(key) if use_cache else None
         if (
             cached is not None
@@ -1541,10 +1542,10 @@ def _load_cache(cache_path: Path, mode_key: str) -> dict[str, CacheEntry]:
     try:
         data = json.loads(cache_path.read_text(encoding="utf-8"))
     except Exception as error:
-        LOGGER.warning("ignoring unreadable cache %s: %s", cache_path, error)
+        LOGGER.warning("ignoring unreadable cache {}: {}", cache_path, error)
         return {}
     if data.get("version") != CACHE_VERSION or data.get("mode") != mode_key:
-        LOGGER.debug("cache %s is stale; rebuilding", cache_path)
+        LOGGER.debug("cache {} is stale; rebuilding", cache_path)
         return {}
     entries: dict[str, CacheEntry] = {}
     raw_entries = data.get("entries", {})
@@ -1580,7 +1581,7 @@ def _save_cache(
         entry = entries.get(result.path)
         if entry is None:
             continue
-        cache[os.path.abspath(result.path)] = CacheEntry(
+        cache[Path(result.path).absolute()] = CacheEntry(
             mtime_ns=entry.mtime_ns,
             size=entry.size,
             digest=result.digest,
@@ -1591,7 +1592,7 @@ def _save_cache(
             minhash_sig=result.minhash_sig,
             simhash_hash=result.simhash_hash,
         )
-    for key in [key for key in cache if not os.path.exists(key)]:
+    for key in [key for key in cache if not Path(key).exists()]:
         del cache[key]
     payload = {
         "version": CACHE_VERSION,
@@ -1616,7 +1617,7 @@ def _save_cache(
         temp_path.write_text(json.dumps(payload), encoding="utf-8")
         os.replace(temp_path, cache_path)
     except OSError as error:
-        LOGGER.warning("cannot write cache %s: %s", cache_path, error)
+        LOGGER.warning("cannot write cache {}: {}", cache_path, error)
 
 
 def _nonneg_int(value: str) -> int:
@@ -1829,14 +1830,6 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="report format (default: text)",
     )
     parser.add_argument("--rich", action="store_true", help="show rich progress while processing")
-    parser.add_argument(
-        "-j",
-        "--workers",
-        type=_nonneg_int,
-        default=0,
-        metavar="N",
-        help="worker processes; 0 auto-detects CPU count (default: 0)",
-    )
     parser.add_argument("--no-cache", action="store_true", help="disable the .pydup-cache.json fingerprint cache")
     parser.add_argument(
         "--baseline", type=Path, metavar="FILE", help="only report duplicate groups not present in FILE"
@@ -1858,36 +1851,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-class _JsonLogFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:
-        payload = {
-            "time": datetime.now(timezone.utc).isoformat(),
-            "level": record.levelname,
-            "message": record.getMessage(),
-        }
-        if record.exc_info:
-            payload["exc_info"] = self.formatException(record.exc_info)
-        return json.dumps(payload, ensure_ascii=False)
-
-
 def _configure_logging(verbose: int, quiet: bool, log_format: str) -> None:
     if quiet:
-        level = logging.ERROR
+        level = "ERROR"
     elif verbose >= 2:
-        level = logging.DEBUG
+        level = "DEBUG"
     elif verbose == 1:
-        level = logging.INFO
+        level = "INFO"
     else:
-        level = logging.WARNING
-    handler = logging.StreamHandler(sys.stderr)
-    if log_format == "json":
-        handler.setFormatter(_JsonLogFormatter())
-    else:
-        handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-    LOGGER.handlers.clear()
-    LOGGER.addHandler(handler)
-    LOGGER.setLevel(level)
-    LOGGER.propagate = False
+        level = "WARNING"
+    logger.remove()
+    logger.add(sys.stderr, level=level, serialize=log_format == "json")
 
 
 def _human_bytes(count: int) -> str:
@@ -1941,7 +1915,7 @@ def _choose_keeper(
         matches = [path for path in paths if any(fnmatch.fnmatch(candidate, pattern) for candidate in variants(path))]
         if matches:
             return min(matches, key=str)
-        LOGGER.warning("--pattern %s matched no member of group %s; keeping first path", pattern, group.digest[:12])
+        LOGGER.warning("--pattern {} matched no member of group {}; keeping first path", pattern, group.digest[:12])
         return min(paths, key=str)
     if policy == "prefer":
         if prefer is None:
@@ -1949,7 +1923,7 @@ def _choose_keeper(
         matches = [path for path in paths if any(candidate.startswith(prefer) for candidate in variants(path))]
         if matches:
             return min(matches, key=str)
-        LOGGER.warning("--prefer %s matched no member of group %s; keeping first path", prefer, group.digest[:12])
+        LOGGER.warning("--prefer {} matched no member of group {}; keeping first path", prefer, group.digest[:12])
         return min(paths, key=str)
     return min(paths, key=str)
 
@@ -2014,18 +1988,18 @@ def _changed_since_paths(roots: Sequence[Path], ref: str) -> set[str] | None:
                     check=False,
                 )
             except OSError as error:
-                LOGGER.error("git unavailable: %s", error)
+                LOGGER.error("git unavailable: {}", error)
                 return None
             if proc.returncode != 0:
                 stderr_text = proc.stderr.decode("utf-8", errors="replace").strip()
-                LOGGER.error("git command failed in %s: %s", root, stderr_text or f"exit {proc.returncode}")
+                LOGGER.error("git command failed in {}: {}", root, stderr_text or f"exit {proc.returncode}")
                 return None
             repositories += 1
             for raw_path in proc.stdout.split(b"\0"):
                 if not raw_path:
                     continue
                 rel = raw_path.decode("utf-8", errors="replace")
-                changed.add(os.path.abspath(os.path.join(str(root), rel)))
+                changed.add(Path(Path(str(root)).joinpath(rel)).absolute())
     if repositories == 0:
         LOGGER.error("--changed-since requires at least one directory root inside a git repository")
         return None
@@ -2074,7 +2048,7 @@ def _finalize_entries(
             continue
         inode_key = (entry.dev, entry.ino)
         if inode_key in seen_inodes:
-            LOGGER.debug("skipping %s: same inode as %s", path, seen_inodes[inode_key])
+            LOGGER.debug("skipping {}: same inode as {}", path, seen_inodes[inode_key])
             continue
         seen_inodes[inode_key] = str(path)
         entries.append(entry)
@@ -2546,7 +2520,7 @@ def _apply_removals(
         try:
             _write_manifest(args.manifest, records)
         except OSError as error:
-            LOGGER.error("cannot write manifest %s: %s", args.manifest, error)
+            LOGGER.error("cannot write manifest {}: {}", args.manifest, error)
             return 2
     if not args.remove or args.dry_run:
         if args.manifest is not None and not args.quiet:
@@ -2594,7 +2568,7 @@ def _apply_removals(
             error = _delete_one(path, entry, args, record)
             if error is not None:
                 failed += 1
-                LOGGER.error("failed to remove %s: %s", path, error)
+                LOGGER.error("failed to remove {}: {}", path, error)
                 continue
             removed += 1
             if not args.quiet:
@@ -2609,7 +2583,7 @@ def _apply_removals(
         try:
             _write_manifest(args.manifest, records)
         except OSError as error:
-            LOGGER.error("cannot update manifest %s: %s", args.manifest, error)
+            LOGGER.error("cannot update manifest {}: {}", args.manifest, error)
             return 2
     if not args.quiet:
         if removed:
@@ -2628,24 +2602,24 @@ def _run_diff(args: argparse.Namespace) -> int:
         try:
             raw = path.read_bytes()
         except OSError as error:
-            LOGGER.error("cannot read %s: %s", path, error)
+            LOGGER.error("cannot read {}: {}", path, error)
             return 2
         source, error = _decode_source(path, raw)
         if source is None:
-            LOGGER.error("cannot decode %s: %s", path, error)
+            LOGGER.error("cannot decode {}: {}", path, error)
             return 2
         if args.mode == "strict":
             texts.append(source)
             continue
         tree, parse_error = _parse_source(source, path)
         if tree is None:
-            LOGGER.error("cannot parse %s: %s", path, parse_error)
+            LOGGER.error("cannot parse {}: {}", path, parse_error)
             return 2
         normalized = _normalize_tree(tree, args.mode, args.ignore_imports)
         try:
             texts.append(ast.unparse(normalized) + "\n")
         except Exception as error:
-            LOGGER.error("cannot unparse %s: %s", path, error)
+            LOGGER.error("cannot unparse {}: {}", path, error)
             return 2
     diff = difflib.unified_diff(
         texts[0].splitlines(keepends=True),
@@ -2713,12 +2687,12 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
     try:
         entries, scan_skipped = _collect_entries(args, cfg, issues)
     except RuntimeError as error:
-        LOGGER.error("%s", error)
+        LOGGER.error("{}", error)
         return None
     stats.scanned = len(entries)
     stats.skipped += scan_skipped
     entries.sort(key=lambda entry: str(entry.path))
-    LOGGER.info("scanned %d candidate files", len(entries))
+    LOGGER.info("scanned {} candidate files", len(entries))
     mode_key = json.dumps(
         {
             "mode": args.mode,
@@ -2740,12 +2714,12 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
             worker_cfg,
             cache,
             use_cache,
-            args.workers,
+            MAX_WORKERS,
             args.rich,
             args.mp_method,
         )
     except Exception as error:
-        LOGGER.error("processing failed: %s", error)
+        LOGGER.error("processing failed: {}", error)
         return None
     stats.cache_hits = cache_hits
     failures: list[Failure] = list(issues)
@@ -2754,7 +2728,7 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
             failures.append((result.path, result.error))
         elif result.skipped is not None:
             stats.skipped += 1
-            LOGGER.debug("skipped %s (%s)", result.path, result.skipped)
+            LOGGER.debug("skipped {} ({})", result.path, result.skipped)
         elif result.digest is not None:
             if not result.from_cache:
                 stats.parsed += 1
@@ -2776,7 +2750,7 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
         try:
             _write_simz(Path.cwd() / SIMILAR_FILENAME, similar_pairs, fuzzy_methods)
         except OSError as error:
-            LOGGER.error("cannot write %s: %s", SIMILAR_FILENAME, error)
+            LOGGER.error("cannot write {}: {}", SIMILAR_FILENAME, error)
     failures.sort()
     stats.failures = len(failures)
     stats.duplicate_groups = len(groups)
@@ -2784,7 +2758,7 @@ def _scan(args: argparse.Namespace) -> ScanOutcome | None:
     stats.wasted_bytes = sum(_group_wasted(group) for group in groups)
     stats.elapsed_seconds = time.monotonic() - started
     for path_text, error in failures:
-        LOGGER.debug("failure for %s: %s", path_text, error)
+        LOGGER.debug("failure for {}: {}", path_text, error)
     return ScanOutcome(
         entries=entries_map,
         groups=groups,
@@ -2837,7 +2811,7 @@ def _emit_outcome(outcome: ScanOutcome, args: argparse.Namespace) -> None:
             raise RuntimeError(str(error)) from error
         outcome.groups, suppressed = _filter_baseline(outcome.groups, baseline)
         if suppressed and not args.quiet:
-            LOGGER.info("suppressed %d baseline duplicate groups", suppressed)
+            LOGGER.info("suppressed {} baseline duplicate groups", suppressed)
         outcome.stats.duplicate_groups = len(outcome.groups)
         outcome.stats.duplicate_files = sum(len(group.paths) for group in outcome.groups)
         outcome.stats.wasted_bytes = sum(_group_wasted(group) for group in outcome.groups)
@@ -2868,7 +2842,7 @@ def _watch(args: argparse.Namespace) -> int:
             )
             _emit_outcome(outcome, args)
         except Exception as error:
-            LOGGER.error("scan failed: %s", error)
+            LOGGER.error("scan failed: {}", error)
 
     def schedule(_event: "FileSystemEvent") -> None:
         nonlocal pending
@@ -2901,7 +2875,7 @@ def _watch(args: argparse.Namespace) -> int:
     if not roots:
         LOGGER.error("--watch needs at least one directory to watch")
         return 2
-    LOGGER.info("watching %s", ", ".join(str(root) for root in roots))
+    LOGGER.info("watching {}", ", ".join(str(root) for root in roots))
     run_scan()
     observer.start()
     try:
@@ -2918,7 +2892,7 @@ def _watch(args: argparse.Namespace) -> int:
 def _run(args: argparse.Namespace) -> int:
     validation_error = _validate_args(args)
     if validation_error is not None:
-        LOGGER.error("%s", validation_error)
+        LOGGER.error("{}", validation_error)
         return 2
     if args.diff is not None:
         return _run_diff(args)
@@ -2931,7 +2905,7 @@ def _run(args: argparse.Namespace) -> int:
     try:
         _emit_outcome(outcome, args)
     except RuntimeError as error:
-        LOGGER.error("%s", error)
+        LOGGER.error("{}", error)
         return 2
     deletion_code = _apply_removals(outcome, args)
     return _exit_code(args, outcome, deletion_code)

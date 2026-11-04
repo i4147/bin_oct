@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import SKIP_DIRECTORY_NAMES, WORKERS
 import os
 import stat
 import sys
@@ -7,26 +9,7 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
-WORKERS = 8
 ROOT = Path.cwd()
-SKIP_DIRECTORY_NAMES = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".idea",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".tox",
-    ".venv",
-    "__pycache__",
-    "node_modules",
-    "target",
-    "build",
-    "dist",
-    "vendor",
-})
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,24 +129,6 @@ def remove_comment_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes
         previous_end = end
     output.extend(source[previous_end:])
     return bytes(output)
-
-
-def atomic_write(path: Path, content: bytes) -> None:
-    if not content:
-        return
-    original_stat = path.stat()
-    mode = stat.S_IMODE(original_stat.st_mode)
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.comments.tmp")
-    try:
-        with temporary.open("xb") as file:
-            file.write(content)
-            file.flush()
-            os.fsync(file.fileno())
-        os.chmod(temporary, mode)
-        os.replace(temporary, path)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
 
 
 def process_file(path_text: str) -> tuple[str, int, str | None]:

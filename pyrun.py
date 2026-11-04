@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKER_COUNT
 import argparse
 import subprocess
 import sys
@@ -10,8 +11,6 @@ from multiprocessing import Pool
 from pathlib import Path
 
 from loguru import logger
-
-WORKER_COUNT = 8
 DEFAULT_TIMEOUT = 30.0
 MAX_ERROR_MSG_LEN = 200
 

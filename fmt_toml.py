@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import sys
 from dataclasses import dataclass
@@ -243,12 +244,6 @@ Examples:
         default=80,
         help="Column width for line wrapping (default: 80)",
     )
-    parser_obj.add_argument(
-        "--workers",
-        type=int,
-        default=None,
-        help="Number of worker processes (default: CPU count)",
-    )
     args: argparse.Namespace = parser_obj.parse_args()
     init_tree_sitter()
     if not args.paths:
@@ -265,7 +260,7 @@ Examples:
         print("No .toml files found")
         return 0
     config: FormatConfig = FormatConfig(indent_size=args.indent, column_width=args.column_width)
-    num_workers: int = args.workers or cpu_count()
+    num_workers: int = MAX_WORKERS or cpu_count()
     with Pool(num_workers) as pool_obj:
         results: Any = pool_obj.imap_unordered(lambda f: format_file(f, config), toml_files)
         success_count: int = 0

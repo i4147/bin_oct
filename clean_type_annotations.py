@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import contextlib
 import io
 import multiprocessing as mp
@@ -13,7 +14,6 @@ import libcst as cst
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-WORKERS = 8
 
 from dh import SKIP_DIR
 

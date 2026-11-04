@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 from multiprocessing import Pool
@@ -15,7 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from multiprocessing.pool import AsyncResult
 PY_EXTS: set[str] = {".py"}
-MAX_WORKERS: int = 8
 _PARSER: Parser | None = None
 
 

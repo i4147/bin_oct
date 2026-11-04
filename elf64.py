@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -9,8 +10,6 @@ from typing import Iterator
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
-
-WORKERS = 8
 ELF_TYPES = {
     "ET_NONE": "no file type",
     "ET_REL": "relocatable object",

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, _MAX_WORKERS
 import argparse
 import re
 import sys
@@ -11,7 +12,6 @@ import requests
 from packaging.version import InvalidVersion, Version
 
 _TIMEOUT: Final[float] = 10.0
-_MAX_WORKERS: Final[int] = 16
 _DEFAULT_INPUT: Final[str] = "requirements.txt"
 _DEFAULT_OUTPUT: Final[str] = "upgradable.txt"
 _DIM: Final[str] = "\033[2m"
@@ -124,19 +124,12 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help=f"file to write upgradable pins to (default: {_DEFAULT_OUTPUT})",
     )
-    parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=_MAX_WORKERS,
-        help=f"concurrent requests (default: {_MAX_WORKERS})",
-    )
     args = parser.parse_args(argv)
     if not args.src.is_file():
         print(f"error: file not found: {args.src}", file=sys.stderr)
         return 1
     installed = parse_freeze(args.src)
-    upgradable = find_upgradable(installed, max_workers=args.workers)
+    upgradable = find_upgradable(installed, max_workers=MAX_WORKERS)
     write_upgradable(args.output, upgradable)
     report = render(installed, upgradable)
     if report:

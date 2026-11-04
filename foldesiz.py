@@ -44,7 +44,7 @@ def create_range_folders(cwd: Path, files, num_folders: int):
             min_size, max_size = (min(folder_files), max(folder_files))
             folder_name = f"{fsz(min_size)}-{fsz(max_size)}"
             folder_ranges.append((min_size, max_size, folder_name))
-            folder_path = os.path.join(cwd, folder_name)
+            folder_path = Path(cwd).joinpath(folder_name)
             Path(folder_path).mkdir(exist_ok=True, parents=True)
         start_idx = end_idx
     return folder_ranges
@@ -58,8 +58,8 @@ def distribute_files(files, folders, cwd: Path) -> None:
     for path, size in files:
         for (min_size, max_size), folder_name in size_to_folder.items():
             if min_size <= size <= max_size:
-                dest_folder = os.path.join(cwd, folder_name)
-                dest_path = os.path.join(dest_folder, Path(path).name)
+                dest_folder = Path(cwd).joinpath(folder_name)
+                dest_path = Path(dest_folder).joinpath(Path(path).name)
                 try:
                     dest_path = unique_path(dest_path)
                     shutil.move(path, dest_path)

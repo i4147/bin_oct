@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import json
 import os
@@ -275,7 +276,6 @@ def cli(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--exclude", action="append", default=None, help="exclude directory name (repeatable)")
     p.add_argument("--include-hidden", action="store_true", help="also process dotfiles")
     p.add_argument("--on-conflict", choices=["suffix", "skip", "error"], default="suffix")
-    p.add_argument("--workers", type=int, default=None, help="parallel workers")
     p.add_argument("--lower", action="store_true", help="lowercase stems")
     p.add_argument("--upper", action="store_true", help="uppercase stems")
     p.add_argument("--collapse", action="store_true", help="collapse repeated separators")
@@ -309,7 +309,7 @@ def cli(argv: Optional[list[str]] = None) -> int:
         recursive=args.recursive,
         max_depth=args.max_depth,
         on_conflict=args.on_conflict,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         dry_run=args.dry_run,
         log_path=Path(args.log) if args.log else None,
     )

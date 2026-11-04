@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -293,7 +294,7 @@ def cmd_lines_to_en(args: argparse.Namespace) -> int:
     dst = derive_output_path(src, args.output_suffix)
     print(f"Translating {len(lines)} lines from {src.name}...")
     results: list[tuple[str, str]] = []
-    with ProcessPoolExecutor(max_workers=args.workers) as executor:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(_worker_line_to_en, line): line for line in lines}
         for fut in as_completed(futures):
             res = fut.result()
@@ -325,7 +326,7 @@ def cmd_inplace_to_en(args: argparse.Namespace) -> int:
     for path in files:
         _inplace_translate_one(
             path,
-            workers=args.workers,
+            workers=MAX_WORKERS,
             chunk_size=args.chunk_size,
             sleep=args.sleep,
             final_sleep=args.final_sleep,
@@ -370,12 +371,12 @@ def cmd_batch_json(args: argparse.Namespace) -> int:
         logger.error(f"❌ No files matching {args.glob!r} found in {directory}")
         return 1
     print(f"📚 Found {len(files)} file(s) to translate")
-    print(f"🚀 Starting translation with {args.workers} parallel workers")
+    print(f"🚀 Starting translation with {MAX_WORKERS} parallel workers")
     print("-" * 40)
     start = time.time()
     ok = 0
     fail = 0
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         async_results = [pool.apply_async(_worker_file_to_dict, (f,)) for f in files]
         for path, ar in zip(files, async_results):
             try:
@@ -474,12 +475,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="en",
         help="Suffix for the output file (default: en).",
     )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=4,
-        help="ProcessPoolExecutor workers (default: 4).",
-    )
     p.add_argument("--encoding", default="utf-8", help="Input encoding (default: utf-8).")
     p.set_defaults(func=cmd_lines_to_en)
     p = sub.add_parser(
@@ -492,7 +487,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=".",
         help="Root directory to walk (default: current dir).",
     )
-    p.add_argument("--workers", type=int, default=8, help="Pool workers per file (default: 8).")
     p.add_argument(
         "--chunk-size",
         type=int,
@@ -534,7 +528,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=".",
         help="Directory containing the .txt files (default: current dir).",
     )
-    p.add_argument("--workers", type=int, default=8, help="Pool workers (default: 8).")
     p.add_argument("--glob", default="*.txt", help="Glob pattern for input files (default: *.txt).")
     p.add_argument(
         "--out-dir",

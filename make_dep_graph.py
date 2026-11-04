@@ -18,8 +18,8 @@ def get_installed_packages_dependencies():
         return "Could not find site-packages directory."
     for package_dir in os.listdir(site_packages_path):
         if package_dir.endswith(".dist-info"):
-            dist_info_path = os.path.join(site_packages_path, package_dir)
-            metadata_path = os.path.join(dist_info_path, "METADATA")
+            dist_info_path = Path(site_packages_path).joinpath(package_dir)
+            metadata_path = Path(dist_info_path).joinpath("METADATA")
             if Path(metadata_path).exists():
                 package_name = package_dir.split(".dist-info")[0]
                 package_dependencies = []

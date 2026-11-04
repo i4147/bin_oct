@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import io
 import os
@@ -26,7 +27,7 @@ from selenium.webdriver.common.by import By
 
 
 def validDir(userDir):
-    if userDir and os.path.exists(userDir):
+    if userDir and Path(userDir).exists():
         return userDir
     elif not userDir:
         return userDir
@@ -246,7 +247,7 @@ def getParamValue(k, v, imgQuery):
         return 3
     elif k == "outputDir":
         safe_folder = re.sub(r"[^\w\s-]", "_", imgQuery).strip()
-        return os.path.join(os.getcwd(), safe_folder)
+        return Path(os.getcwd()).joinpath(safe_folder)
     elif k == "SafeSearch":
         return "images"
     else:
@@ -416,7 +417,7 @@ def single_download_worker(index, url, backend, output_dir, headers):
             raise ValueError(msg)
         ext = get_extension_from_content_type(content_type)
         filename = f"image_{index:03d}{ext}"
-        filepath = os.path.join(output_dir, filename)
+        filepath = Path(output_dir).joinpath(filename)
         with open(filepath, "wb") as f:
             f.write(file_content)
         print(f"[+] [{backend.upper()}] Downloaded: {filename}")

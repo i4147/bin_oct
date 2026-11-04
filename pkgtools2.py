@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from loguru import logger
+from dh import MAX_WORKERS
 import argparse
 import csv
 import hashlib
@@ -253,7 +255,7 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
     if not packages:
         print("No installed dpkg packages found.")
         return 1
-    workers = args.workers or (os.cpu_count() or 1)
+    workers = MAX_WORKERS or (os.cpu_count() or 1)
     print(f"Scanning {len(packages)} packages...")
     results: list[dict[str, Any]] = []
     with ProcessPoolExecutor(max_workers=workers) as executor:
@@ -605,8 +607,8 @@ def cmd_make_deb(args: argparse.Namespace) -> int:
     if not packages:
         logger.error("No packages to process")
         return 1
-    print(f"Processing {len(packages)} packages with {args.workers} workers...")
-    with Pool(processes=args.workers) as pool:
+    print(f"Processing {len(packages)} packages with {MAX_WORKERS} workers...")
+    with Pool(processes=MAX_WORKERS) as pool:
         results = pool.starmap(
             _make_deb_one,
             [(pkg, str(out_dir), str(log_path)) for pkg in packages],
@@ -743,11 +745,11 @@ def cmd_show_big_packages(args: argparse.Namespace) -> int:
         print("❌ No packages found.")
         return 1
     print(f"📦 Found {len(package_names)} available packages.")
-    print(f"🚀 Using {args.workers} parallel processes...")
+    print(f"🚀 Using {MAX_WORKERS} parallel processes...")
     large_packages: dict[str, int] = {}
     all_packages: dict[str, int] = {}
     no_size = 0
-    with Pool(processes=args.workers) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         for index, (pkg, size, has_size) in enumerate(
             pool.imap_unordered(_show_big_worker, package_names, chunksize=10),
             1,
@@ -878,7 +880,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="parts",
         help="parts = check_system_missing_files.py filter; substring = chk_sys_missing.py filter.",
     )
-    p.add_argument("--workers", type=int, default=None)
     p.add_argument("--timeout", type=float, default=5.0)
     p.add_argument("--output", default=None)
     p.add_argument("--missing-txt", default="missing.txt")
@@ -917,7 +918,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("packages", nargs="*")
     p.add_argument("--output-dir", default="~/debs")
     p.add_argument("--log", default="~/make_deb.log")
-    p.add_argument("--workers", type=int, default=8)
     p.add_argument(
         "--exclude-exact",
         default=",".join(sorted(DEFAULT_DEB_EXCLUDES)),
@@ -952,7 +952,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Scan apt packages by download size.",
     )
     p.add_argument("--threshold-mb", type=float, default=10.0)
-    p.add_argument("--workers", type=int, default=12)
     p.add_argument("--save-large", default=None)
     p.add_argument("--save-all", default=None)
     p.add_argument("--save-simple", default=None)

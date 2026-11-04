@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import base64 as _b64
 import concurrent.futures as _cf
@@ -40,33 +41,6 @@ MIME2EXT: dict[str, str] = {
     "audio/mpeg": ".mp3",
     "application/pdf": ".pdf",
     "application/octet-stream": ".bin",
-}
-DEFAULT_SKIP_DIRS = {
-    ".git",
-    ".svn",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".env",
-    ".egg-info",
-    "dist",
-    "build",
-    ".idea",
-    ".vscode",
-    ".pytest_cache",
-    ".tox",
-    "coverage",
-    ".mypy_cache",
-    "target",
-    "out",
-    "bin",
-    ".gradle",
-    "assets",
-    "extracted_images",
-    "extracted_base64",
-    "_static",
-    "output",
 }
 TEXTY_EXT = {
     ".css",
@@ -216,7 +190,7 @@ def relurl(target: Path, from_dir: Path) -> str:
     try:
         return target.relative_to(from_dir).as_posix()
     except ValueError:
-        return Path(os.path.relpath(target, from_dir)).as_posix()
+        return Path(Path(target).relative_to(from_dir)).as_posix()
 
 
 def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
@@ -249,7 +223,7 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
         return (
             relurl(out / name, match.string_dir)
             if False
-            else (Path(os.path.relpath(out / name, match.string_dir)).as_posix())
+            else (Path(Path(out / name).relative_to(match.string_dir)).as_posix())
         )
 
     changed_files = 0
@@ -541,8 +515,8 @@ def cmd_extract_assets(args: argparse.Namespace) -> int:
     total_extracted = 0
     total_replaced = 0
     processed = 0
-    if args.workers > 1 and len(files) > 1:
-        with _cf.ProcessPoolExecutor(max_workers=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(files) > 1:
+        with _cf.ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
             futures = {
                 pool.submit(
                     _process_asset_file,
@@ -841,7 +815,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--hash", default="sha256")
     sp.add_argument("--hash-len", type=int, default=16)
     sp.add_argument("--no-magic", action="store_true", help="Disable magic-byte MIME sniffing")
-    sp.add_argument("--workers", type=int, default=1, help="Parallel workers (default 1)")
     sp.set_defaults(func=cmd_extract_assets)
     sp = sub.add_parser("extract-elements", help="Extract all data:...;base64 blobs into flat dir.")
     add_common(sp)
