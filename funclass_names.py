@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WorkerResult
 import ast
 import json
 import multiprocessing as mp
@@ -174,13 +175,6 @@ EXCLUDED_DIRS: set[str] = {
 }
 ARCHIVE_SUFFIXES: tuple[str, ...] = (".whl", ".tar.gz", ".tar.xz", ".tar.zst")
 HAS_NATIVE_ZSTD: bool = sys.version_info >= (3, 14)
-WorkerResult = tuple[
-    dict[str, int],
-    dict[str, int],
-    dict[str, int],
-    dict[str, int],
-    list[str],
-]
 
 
 def _is_relevant(path: Path) -> bool:

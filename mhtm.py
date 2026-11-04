@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -183,13 +184,6 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_POOL_METHOD,
         help=f"multiprocessing.Pool dispatch strategy (default: {DEFAULT_POOL_METHOD}).",
     )
-    ap.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=mp.cpu_count(),
-        help="Number of worker processes (default: CPU count).",
-    )
     return ap.parse_args()
 
 
@@ -216,7 +210,7 @@ def main() -> int:
     error_count = 0
     total_before = 0
     total_after = 0
-    for rel, before, after, err in run_pool(files, args.backend, args.pool_method, args.jobs):
+    for rel, before, after, err in run_pool(files, args.backend, args.pool_method, MAX_WORKERS):
         total_before += before
         total_after += after
         if err:

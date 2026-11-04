@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import os
 import subprocess
 import sys
@@ -14,7 +15,7 @@ def run_command(command: list[str]) -> subprocess.CompletedProcess:
 
 def auto_git_workflow():
     repo_path = os.getcwd()
-    repo_name = os.path.basename(repo_path)
+    repo_name = Path(repo_path).name
 
     try:
         repo = Repo(repo_path)

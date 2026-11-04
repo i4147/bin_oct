@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import json
 import re
@@ -12,7 +13,6 @@ from typing import Iterator, Sequence
 
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8
-DEFAULT_SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"})
 DEFAULT_HEADER_REGEX: str = r"^# Author\s*:.*\n# Email\s*:.*\n# Time\s*:.*\n\n?"
 HISTORICAL_LINE_PATTERNS: tuple[str, ...] = (
     "dist-info",
@@ -212,7 +212,7 @@ def cmd_pattern(args: argparse.Namespace) -> int:
     total_hits = 0
     total_bytes = 0
     errors = 0
-    with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
+    with ThreadPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
         for path, count, nbytes, err in pool.map(_process, files):
             if err:
                 print(f"{path}: ERROR — {err}", file=sys.stderr)
@@ -438,13 +438,6 @@ def build_parser() -> argparse.ArgumentParser:
         dest="apply",
         action="store_true",
         help="Actually remove the pattern (default: list matches only).",
-    )
-    p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=DEFAULT_JOBS,
-        help=f"Parallel worker threads (default: {DEFAULT_JOBS}).",
     )
     p.set_defaults(func=cmd_pattern)
     p = sub.add_parser("lines", help="Remove lines matching substrings (or regexes).")

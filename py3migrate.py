@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
-import logging
 import pkgutil
 import re
 import shutil
@@ -15,9 +16,8 @@ from functools import partial
 from pathlib import Path
 from typing import Iterable, Sequence
 
-log = logging.getLogger("py3migrate")
+log = logger
 DEFAULT_EXT: tuple[str, ...] = (".py",)
-DEFAULT_WORKERS: int = 8
 DEFAULT_FIXER_MODULE: str = "lib2to3.fixes"
 DEFAULT_MAX_DIFF_LINES: int = 50
 DEFAULT_CONTEXT_CHARS: int = 80
@@ -304,8 +304,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
     if not files:
         print("No Python files found.")
         return 1
-    print(f"Scanning {len(files)} file(s) with {args.workers} worker(s).\n")
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    print(f"Scanning {len(files)} file(s) with {MAX_WORKERS} worker(s).\n")
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for path, version, reason in pool.map(detect_file, files):
             if version is None:
                 print(f"⚠️  {path.name}: {reason}")
@@ -341,8 +341,8 @@ def cmd_refactor(args: argparse.Namespace) -> int:
     )
     changed = 0
     failed = 0
-    print(f"Processing {len(files)} file(s) with {args.workers} workers.\n")
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    print(f"Processing {len(files)} file(s) with {MAX_WORKERS} workers.\n")
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for i, (path, was_changed, msg) in enumerate(pool.map(worker, files), 1):
             if msg:
                 print(f"[{i}/{len(files)}] {msg}")
@@ -461,8 +461,8 @@ def cmd_fixprint(args: argparse.Namespace) -> int:
         with_ruff=args.with_ruff,
     )
     changed = 0
-    print(f"Processing {len(files)} file(s) with {args.workers} workers.\n")
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    print(f"Processing {len(files)} file(s) with {MAX_WORKERS} workers.\n")
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for i, (path, was_changed, msg) in enumerate(pool.map(worker, files), 1):
             if msg:
                 print(f"[{i}/{len(files)}] {msg}")
@@ -496,7 +496,7 @@ def cmd_run2to3(args: argparse.Namespace) -> int:
         print("No Python files found.")
         return 0
     print(f"Running external 2to3 on {len(files)} file(s).\n")
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for path, _changed, msg in pool.map(_run_2to3_cli, files):
             if msg:
                 print(msg)
@@ -613,7 +613,7 @@ def cmd_strip_tag(args: argparse.Namespace) -> int:
         return 0
     worker = partial(_strip_tag_file, targets=targets, tag=args.tag)
     total = 0
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for path, changed, msg in pool.map(worker, paths):
             if msg:
                 print(msg)
@@ -631,12 +631,6 @@ def _add_common_opts(p: argparse.ArgumentParser) -> None:
         type=Path,
         default=[Path.cwd()],
         help="Files or directories to process (default: current directory).",
-    )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Worker processes (default: {DEFAULT_WORKERS}).",
     )
 
 
@@ -794,10 +788,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
-        format="%(levelname)s: %(message)s",
-    )
     dispatch = {
         "detect": cmd_detect,
         "refactor": cmd_refactor,

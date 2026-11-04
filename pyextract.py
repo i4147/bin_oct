@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import io
 import json
-import logging
 import multiprocessing as mp
 import os
 import re
@@ -35,8 +36,7 @@ try:
     HAS_ZSTD = True
 except Exception:
     HAS_ZSTD = False
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-log = logging.getLogger("pyextract")
+log = logger
 ARCHIVE_EXTS = (
     ".whl",
     ".zip",
@@ -48,17 +48,6 @@ ARCHIVE_EXTS = (
     ".zst",
 )
 UPPER_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
-DEFAULT_SKIP_DIRS = {
-    "__pycache__",
-    ".git",
-    ".venv",
-    "venv",
-    "site-packages",
-    ".mypy_cache",
-    ".pytest_cache",
-    "node_modules",
-    "output",
-}
 DEFAULT_SKIP_TESTS = {"test", "tests", "examples"}
 
 
@@ -139,19 +128,19 @@ def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
                     except Exception:
                         continue
         except (zipfile.BadZipFile, OSError) as e:
-            log.error("bad zip %s: %s", archive, e)
+            log.error("bad zip {}: {}", archive, e)
         return
     try:
         if n.endswith(".zst"):
             if not HAS_ZSTD:
-                log.warning("zstandard not installed, skipping %s", archive)
+                log.warning("zstandard not installed, skipping {}", archive)
                 return
             raw = zstd.ZstdDecompressor().decompress(archive.read_bytes())
             tf = tarfile.open(fileobj=io.BytesIO(raw))
         else:
             tf = tarfile.open(archive, "r:*")
     except (tarfile.TarError, OSError) as e:
-        log.error("cannot open %s: %s", archive, e)
+        log.error("cannot open {}: {}", archive, e)
         return
     with tf:
         for member in tf.getmembers():
@@ -309,7 +298,7 @@ def extract_ast(
     try:
         tree = ast.parse(source, filename=path)
     except SyntaxError as e:
-        log.warning("syntax error in %s: %s", path, e)
+        log.warning("syntax error in {}: {}", path, e)
         return [], []
     ex = _ASTExtractor(source, path, include_nested, constants_only)
     ex.visit(tree)
@@ -325,7 +314,7 @@ def _extract_libcst_impl(
     try:
         module = cst.parse_module(source)
     except Exception as e:
-        log.warning("libcst parse error in %s: %s", path, e)
+        log.warning("libcst parse error in {}: {}", path, e)
         return [], []
     entities: list[Entity] = []
     imports: list[str] = []
@@ -594,7 +583,7 @@ def write_per_entity(entities: list[Entity], out_dir: Path, write_metadata: bool
         try:
             ast.parse(body)
         except SyntaxError:
-            log.debug("generated file %s has parse warnings (kept)", fp)
+            log.debug("generated file {} has parse warnings (kept)", fp)
         fp.write_text(body, encoding="utf-8")
         counts[e.type] += 1
         if write_metadata:
@@ -782,7 +771,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
             pfs, ars = discover(r, skip, args.skip_tests, args.archives)
             py_files.extend(pfs)
             archives.extend(ars)
-    log.info("Found %d Python file(s), %d archive(s)", len(py_files), len(archives))
+    log.info("Found {} Python file(s), {} archive(s)", len(py_files), len(archives))
     if not py_files and not archives:
         log.warning("nothing to process")
         return 0
@@ -790,30 +779,30 @@ def cmd_extract(args: argparse.Namespace) -> int:
     work += [(str(p), args.parser, args.include_nested, args.constants_only, True) for p in archives]
     all_entities: list[Entity] = []
     all_imports: list[str] = []
-    if args.workers <= 1 or len(work) <= 1:
+    if MAX_WORKERS <= 1 or len(work) <= 1:
         for item in work:
             path_str, ents, imps, err = _worker(item)
             if err:
-                log.error("%s: %s", path_str, err)
+                log.error("{}: {}", path_str, err)
             else:
-                log.info("processed %s (%d entities)", path_str, len(ents))
+                log.info("processed {} ({} entities)", path_str, len(ents))
             all_entities.extend(ents)
             all_imports.extend(imps)
     else:
-        with mp.Pool(processes=args.workers) as pool:
+        with mp.Pool(processes=MAX_WORKERS) as pool:
             for path_str, ents, imps, err in pool.imap_unordered(_worker, work):
                 if err:
-                    log.error("%s: %s", path_str, err)
+                    log.error("{}: {}", path_str, err)
                 else:
-                    log.info("processed %s (%d entities)", path_str, len(ents))
+                    log.info("processed {} ({} entities)", path_str, len(ents))
                 all_entities.extend(ents)
                 all_imports.extend(imps)
     if args.dedupe:
         before = len(all_entities)
         all_entities = _dedupe_entities(all_entities)
-        log.info("dedupe: %d -> %d", before, len(all_entities))
+        log.info("dedupe: {} -> {}", before, len(all_entities))
     all_entities.sort(key=lambda e: (e.type, e.full_name, e.path))
-    log.info("total entities: %d", len(all_entities))
+    log.info("total entities: {}", len(all_entities))
     if args.layout == "per-entity":
         write_per_entity(all_entities, out_dir, write_metadata=args.metadata)
     elif args.layout == "by-type":
@@ -982,13 +971,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("ext.db"),
         help="SQLite file (used by --layout sqlite).",
-    )
-    e.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=min(8, os.cpu_count() or 1),
-        help="Parallel workers (default: min(8, cpu)).",
     )
     e.add_argument(
         "--include-nested",

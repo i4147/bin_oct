@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 import argparse
 import io
 import os
@@ -19,13 +21,9 @@ import zstandard as zstd
 try:
     from loguru import logger
 except ImportError:
-    import logging
-
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    logger = logging.getLogger("zstd_toolkit")
+    pass
 DEFAULT_LEVEL: int = 19
 DEFAULT_THREADS: int = 4
-DEFAULT_WORKERS: int = min(os.cpu_count() or 4, 8)
 DEFAULT_ARCHIVE_LEVEL: int = 3
 ZST_EXT: str = ".zst"
 TAR_ZST_EXT: str = ".tar.zst"
@@ -82,18 +80,6 @@ SKIP_EXTENSIONS: frozenset[str] = frozenset({
     ".exe",
     ".dll",
     ".so",
-})
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    "node_modules",
-    ".venv",
-    "venv",
-    "dist",
-    "build",
 })
 
 
@@ -505,7 +491,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
         return 0
     print(
         f"Targets: {len(files)} file(s), {len(dirs)} dir(s) "
-        f"(level {args.level}, threads {args.threads}, workers {args.workers})"
+        f"(level {args.level}, threads {args.threads}, workers {MAX_WORKERS})"
     )
     results: list[TaskResult] = []
     if dirs:
@@ -515,7 +501,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
             threads=args.threads,
             keep=args.keep,
         )
-        results += run_parallel(dirs, worker, args.workers, "compress", dry_run=args.dry_run)
+        results += run_parallel(dirs, worker, MAX_WORKERS, "compress", dry_run=args.dry_run)
     if files:
         worker = partial(
             _compress_file_task,
@@ -524,7 +510,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
             keep=args.keep,
             only_if_smaller=args.only_if_smaller,
         )
-        results += run_parallel(files, worker, args.workers, "compress", dry_run=args.dry_run)
+        results += run_parallel(files, worker, MAX_WORKERS, "compress", dry_run=args.dry_run)
     print_summary(results, "compress")
     return 0 if all(r.success or not r.original_size for r in results) else 1
 
@@ -539,9 +525,9 @@ def cmd_decompress(args: argparse.Namespace) -> int:
     if not targets:
         print("No .zst files found.")
         return 0
-    print(f"Decompressing {len(targets)} file(s) (workers {args.workers}, keep={args.keep})")
+    print(f"Decompressing {len(targets)} file(s) (workers {MAX_WORKERS}, keep={args.keep})")
     worker = partial(_decompress_task, keep=args.keep, untar=not args.no_untar)
-    results = run_parallel(targets, worker, args.workers, "decompress", dry_run=args.dry_run)
+    results = run_parallel(targets, worker, MAX_WORKERS, "decompress", dry_run=args.dry_run)
     print_summary(results, "decompress")
     return 0 if all(r.success for r in results) else 1
 
@@ -712,13 +698,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"zstd intra-file threads (default: {DEFAULT_THREADS})",
     )
     p_c.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
-    )
-    p_c.add_argument(
         "-k",
         "--keep",
         action="store_true",
@@ -759,13 +738,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_c.set_defaults(func=cmd_compress)
     p_d = sub.add_parser("decompress", help="Decompress .zst / .tar.zst files")
     p_d.add_argument("directory", nargs="?", default=".", help="Root directory (default: current)")
-    p_d.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
-    )
     p_d.add_argument("-r", "--recursive", action="store_true", help="Recurse into subdirectories")
     p_d.add_argument(
         "-k",

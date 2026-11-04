@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 import argparse
 import ast
 import bz2
@@ -19,10 +21,6 @@ try:
 
     _HAS_LOGURU = True
 except ImportError:
-    import logging
-
-    logger = logging.getLogger("pydedup")
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     _HAS_LOGURU = False
 try:
     import zstandard as zstd
@@ -59,7 +57,6 @@ PYTHON_SUFFIX = ".py"
 KIND_ORDER = ("func", "class", "const")
 KIND_TO_FILE_DEFAULT = {"func": "funcs.py", "class": "classes.py", "const": "const.py"}
 TYPEVAR_NAMES = {"TypeVar", "NewType", "ParamSpec", "TypeVarTuple"}
-SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", ".venv", "venv", "node_modules"}
 
 
 @dataclass
@@ -108,7 +105,6 @@ def _setup_logging(level: str, verbose: bool) -> None:
         )
     else:
         valid = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
-        logging.getLogger().setLevel(lvl if lvl in valid else "INFO")
 
 
 def _safe_read_text(path: Path) -> Optional[str]:
@@ -585,12 +581,6 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
         help="root directory to scan (default: current directory)",
     )
     p.add_argument(
-        "--workers",
-        type=int,
-        default=max(1, cpu_count() - 1),
-        help="number of worker processes (default: cpu_count-1)",
-    )
-    p.add_argument(
         "--min-occurs",
         type=int,
         default=2,
@@ -679,7 +669,7 @@ def _extract_and_group(
     sources = _load_sources(args)
     if not sources:
         return [], {}
-    defs = _collect_all(sources, args.workers, args.const_mode)
+    defs = _collect_all(sources, MAX_WORKERS, args.const_mode)
     logger.info(f"extracted {len(defs)} top-level definition(s)")
     groups = group_duplicates(defs, args.min_occurs, args.match_mode)
     logger.info(f"found {len(groups)} duplicate group(s) (min-occurs={args.min_occurs}, match-mode={args.match_mode})")

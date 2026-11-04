@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import html
 import re
@@ -8,8 +9,6 @@ from importlib import metadata
 from pathlib import Path
 
 from joblib import Parallel, delayed
-
-WORKERS = 8
 
 
 def normalize_name(name: str) -> str:

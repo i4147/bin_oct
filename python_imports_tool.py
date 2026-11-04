@@ -24,6 +24,7 @@ Examples
   python3 python_imports_tool.py lines ~/project -o imports_out/
   python3 python_imports_tool.py requirements ~/project
 """
+from dh import MAX_WORKERS, SKIP_DIRS
 
 import argparse
 import ast
@@ -50,7 +51,6 @@ PACKAGE_MAPPING: dict[str, str] = {
     "jwt": "PyJWT",
     "OpenGL": "PyOpenGL",
 }
-SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__", "venv", ".venv", "node_modules"})
 
 
 def is_python_file(path: Path) -> bool:
@@ -189,7 +189,7 @@ def cmd_modules(args: argparse.Namespace) -> int:
                     print(f"  {note}")
         return 0
     names: set[str] = set()
-    with ProcessPoolExecutor(max_workers=max(1, args.workers)) as pool:
+    with ProcessPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
         for _path, found in pool.map(top_level_modules_of, files):
             names |= found
     local: set[str] = local_module_names(args.root)
@@ -212,7 +212,7 @@ def cmd_modules(args: argparse.Namespace) -> int:
 def cmd_requirements(args: argparse.Namespace) -> int:
     """Write requirements (+ install script for the missing ones)."""
     files: list[Path] = find_python_files(args.root)
-    deps: list[str] = third_party(args.root, files, args.workers)
+    deps: list[str] = third_party(args.root, files, MAX_WORKERS)
     if not deps:
         print("No third-party imports found.")
         return 0
@@ -246,13 +246,11 @@ def build_parser() -> argparse.ArgumentParser:
     mo.add_argument("--filter", choices=("all", "stdlib", "third-party"), default="all")
     mo.add_argument("--details", action="store_true", help="Per-file imports with nesting context")
     mo.add_argument("-o", "--output", type=Path, default=None, help="Output file (original: importz.txt)")
-    mo.add_argument("-j", "--workers", type=int, default=8)
     mo.set_defaults(handler=cmd_modules)
 
     rq = sub.add_parser("requirements", help="Write pip requirements for third-party imports")
     rq.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     rq.add_argument("-o", "--out", type=Path, default=Path("requirements.txt"))
-    rq.add_argument("-j", "--workers", type=int, default=8)
     rq.set_defaults(handler=cmd_requirements)
     return parser
 

@@ -1,15 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
 import html
-import logging
 from collections import namedtuple
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Sequence
 
-LOG = logging.getLogger("fontpreview")
+LOG = logger
 FONT_EXTS: frozenset[str] = frozenset({
     ".ttf",
     ".otf",
@@ -56,16 +56,16 @@ def find_fonts(
         try:
             p = Path(raw).expanduser().resolve()
         except (OSError, ValueError) as e:
-            LOG.warning("Invalid path %r: %s", raw, e)
+            LOG.warning("Invalid path {}: {}", raw, e)
             continue
         if not p.exists():
-            LOG.warning("Path does not exist: %s", p)
+            LOG.warning("Path does not exist: {}", p)
             continue
         if p.is_file():
             if p.suffix.lower() in FONT_EXTS:
                 found.append(p)
             else:
-                LOG.debug("Skipping non-font file: %s", p)
+                LOG.debug("Skipping non-font file: {}", p)
             continue
         for f in p.rglob("*"):
             if f in seen:
@@ -77,7 +77,7 @@ def find_fonts(
                 continue
             found.append(f)
             if max_fonts is not None and len(found) >= max_fonts:
-                LOG.warning("Reached maximum font limit (%d)", max_fonts)
+                LOG.warning("Reached maximum font limit ({})", max_fonts)
                 return found
     return sorted(found, key=lambda x: (x.parent, x.name))
 
@@ -105,9 +105,9 @@ def _parse_paths(raw: Sequence[str]) -> list[Path]:
             if p.exists():
                 out.append(p)
             else:
-                LOG.warning("Path does not exist: %s", r)
+                LOG.warning("Path does not exist: {}", r)
         except (OSError, ValueError) as e:
-            LOG.warning("Invalid path %r: %s", r, e)
+            LOG.warning("Invalid path {}: {}", r, e)
     return out or [Path.cwd()]
 
 
@@ -143,15 +143,15 @@ def cmd_simple(args: argparse.Namespace) -> int:
     sizes: list[int] = list(args.sizes) if args.sizes else list(preset["sizes"])
     output: Path = Path(args.output) if args.output else Path(preset["output"])
     paths = _parse_paths(args.paths)
-    LOG.info("Searching for fonts in %d location(s)...", len(paths))
+    LOG.info("Searching for fonts in {} location(s)...", len(paths))
     fonts = find_fonts(paths)
     if not fonts:
-        LOG.warning("No font files found. Supported: %s", ", ".join(sorted(FONT_EXTS)))
+        LOG.warning("No font files found. Supported: {}", ", ".join(sorted(FONT_EXTS)))
         return 1
-    LOG.info("Found %d font(s)", len(fonts))
+    LOG.info("Found {} font(s)", len(fonts))
     doc = _generate_simple_html(fonts, text, sizes)
     output.write_text(doc, encoding="utf-8")
-    LOG.info("Wrote %s (%s)", output, format_size(output.stat().st_size))
+    LOG.info("Wrote {} ({})", output, format_size(output.stat().st_size))
     return 0
 
 
@@ -168,7 +168,7 @@ def _collect_font_infos(
         try:
             st = p.stat()
         except OSError as e:
-            LOG.debug("Skipping %s: %s", p, e)
+            LOG.debug("Skipping {}: {}", p, e)
             continue
         infos.append(FontInfo(p, i, st.st_size, font_format(p.suffix)))
     infos.sort(key=lambda f: (f.path.parent, f.path.name))
@@ -367,28 +367,28 @@ def _atomic_write(text: str, dest: Path) -> bool:
         tmp.replace(dest)
         return True
     except OSError as e:
-        LOG.error("Failed to write %s: %s", dest, e)
+        LOG.error("Failed to write {}: {}", dest, e)
         return False
 
 
 def cmd_rich(args: argparse.Namespace) -> int:
     root = Path.cwd()
     paths = _parse_paths(args.paths)
-    LOG.info("Searching for fonts in %d location(s)...", len(paths))
+    LOG.info("Searching for fonts in {} location(s)...", len(paths))
     infos = _collect_font_infos(paths, max_fonts=args.max_fonts)
     if not infos:
-        LOG.warning("No font files found. Supported formats: %s", ", ".join(sorted(FONT_EXTS)))
+        LOG.warning("No font files found. Supported formats: {}", ", ".join(sorted(FONT_EXTS)))
         return 1
-    LOG.info("Found %d font(s)", len(infos))
+    LOG.info("Found {} font(s)", len(infos))
     LOG.info("Generating preview HTML...")
     doc = _generate_rich_html(infos, root, RICH_TEXT_DEFAULT)
     output = Path(args.output)
     if not output.is_absolute():
         output = root / output
-    LOG.info("Writing to %s...", output)
+    LOG.info("Writing to {}...", output)
     if _atomic_write(doc, output):
-        LOG.info("Successfully generated %s", output)
-        LOG.info("  File size: %s", format_size(output.stat().st_size))
+        LOG.info("Successfully generated {}", output)
+        LOG.info("  File size: {}", format_size(output.stat().st_size))
         return 0
     return 1
 
@@ -449,17 +449,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
-        format="%(levelname)s: %(message)s",
-    )
     try:
         return args.func(args)
     except KeyboardInterrupt:
         LOG.warning("Operation cancelled by user")
         return 130
     except Exception as e:
-        LOG.error("Unexpected error: %s", e, exc_info=True)
+        LOG.opt(exception=True).error("Unexpected error: {}", e, )
         return 1
 
 

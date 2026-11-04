@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import ast
 import io
@@ -552,13 +553,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Detailed output with per-name breakdown and progress.",
     )
     parser.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        metavar="N",
-        help="Number of parallel worker processes (default: 8).",
-    )
-    parser.add_argument(
         "--exclude",
         action="append",
         default=[],
@@ -593,7 +587,7 @@ def main(argv: list[str] | None = None) -> int:
         autofix=args.autofix,
         dry_run=args.dry_run,
         verbose=args.verbose,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         exclude_patterns=exclude_patterns,
         ignore_init=args.ignore_init,
     )

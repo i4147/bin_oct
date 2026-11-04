@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import html.parser
 import re
@@ -225,7 +226,7 @@ def run_batch(files: list[Path], engine: str, args: argparse.Namespace) -> int:
         (p, engine, args.keep_forms, args.main_content, args.command, args.remove_original) for p in files
     ]
     ok: int = 0
-    with ProcessPoolExecutor(max_workers=max(1, args.workers)) as pool:
+    with ProcessPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
         for path, success, note in pool.map(convert_one, jobs):
             ok += 1 if success else 0
             print(f"{'OK ' if success else 'FAIL'} {path.name} {note}")
@@ -316,7 +317,6 @@ def build_parser() -> argparse.ArgumentParser:
     md.add_argument("--keep-forms", action="store_true", help="Keep <form> (html_to_markdown engine)")
     md.add_argument("-r", "--remove-original", action="store_true", help="Delete HTML after success")
     md.add_argument("--no-recursive", dest="recursive", action="store_false")
-    md.add_argument("-j", "--workers", type=int, default=4)
     md.set_defaults(handler=cmd_to_md, recursive=True)
     tx = sub.add_parser("to-text", help="Strip HTML tags to plain text (stdlib)")
     tx.add_argument("paths", nargs="*", type=Path)

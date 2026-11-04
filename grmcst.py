@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import sys
@@ -12,7 +13,6 @@ import libcst as cst
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from multiprocessing.pool import AsyncResult
-MAX_WORKERS: Final[int] = 8
 PRESERVE_PREFIXES: Final[tuple[str, ...]] = ("#!", "# type:", "# fmt:")
 PRESERVE_EXACT: Final[frozenset[str]] = frozenset({"# fmt: skip", "# fmt: on", "# fmt: off"})
 

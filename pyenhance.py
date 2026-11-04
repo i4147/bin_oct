@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from atomicio import atomic_write
+from dh import SKIP_DIRS, WORKERS
 import argparse
 import ast
 import difflib
@@ -19,21 +21,7 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-WORKERS: int = 8
 PYTHON_SUFFIXES: frozenset[str] = frozenset({".py", ".pyw", ".pyi"})
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "node_modules",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
 ALL_FIXES: frozenset[str] = frozenset({"regex", "escape", "bytes", "is"})
 RE_FUNCS: frozenset[str] = frozenset({
     "compile",
@@ -364,18 +352,6 @@ def looks_like_python(text: str) -> bool:
     except Exception:
         return False
     return True
-
-
-def atomic_write(path: Path, data: bytes, backup: bool) -> None:
-    if backup:
-        shutil.copy2(path, path.with_name(path.name + ".bak"))
-    tmp = path.with_name(f".{path.name}.pyenhance-tmp")
-    try:
-        tmp.write_bytes(data)
-        shutil.copymode(path, tmp)
-        os.replace(tmp, path)
-    finally:
-        tmp.unlink(missing_ok=True)
 
 
 def process_file(path: Path, cfg: Config) -> FileReport:

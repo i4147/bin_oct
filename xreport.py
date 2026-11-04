@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import SKIP_DIRS
 import argparse
 import bz2
 import gzip
@@ -340,9 +341,6 @@ def cmd_scan(
             else:
                 print(f"  \x1b[31m[\u2717]\x1b[0m Failed {info['filename']}: {out}")
     return 0
-
-
-SKIP_DIRS: frozenset[str] = frozenset({"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"})
 
 
 def _count_stream(reader: Any) -> int:

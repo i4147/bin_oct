@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import bz2
@@ -396,13 +397,6 @@ def main() -> None:
         action="store_true",
         help="Copy duplicate objects to utils.py without changing source files",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=mp.cpu_count(),
-        help="Number of worker processes",
-    )
     args = parser.parse_args()
     if args.move and args.copy:
         logger.error("Use either --move or --copy, not both.")
@@ -413,7 +407,7 @@ def main() -> None:
         print("No Python files found.")
         return
     file_args = [str(p) for p in files]
-    with mp.Pool(processes=max(1, args.jobs)) as pool:
+    with mp.Pool(processes=max(1, MAX_WORKERS)) as pool:
         nested_results = pool.map(process_file, file_args)
     all_objects = [obj for sub in nested_results for obj in sub]
     if not all_objects:

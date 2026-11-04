@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import bz2
 import contextlib
@@ -609,7 +610,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
             return 0
     if not args.quiet:
         print(
-            f"Processing {len(archives)} archive(s)  engine={args.engine}  jobs={args.jobs}  organize={args.organize}"
+            f"Processing {len(archives)} archive(s)  engine={args.engine}  jobs={MAX_WORKERS}  organize={args.organize}"
         )
     opts = dict(
         engine=args.engine,
@@ -623,10 +624,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
     )
     start = time.time()
     results: list[ExtractResult]
-    if args.jobs == 1 or len(archives) == 1:
+    if MAX_WORKERS == 1 or len(archives) == 1:
         results = [extract_one(a, **opts) for a in archives]
     else:
-        jobs = args.jobs if args.jobs > 0 else min(len(archives), mp.cpu_count())
+        jobs = MAX_WORKERS if MAX_WORKERS > 0 else min(len(archives), mp.cpu_count())
         with mp.Pool(processes=jobs) as pool:
             results = pool.map(_worker, [(a, opts) for a in archives])
     elapsed = time.time() - start
@@ -782,13 +783,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Keep the original archive after extraction.",
     )
     pe.add_argument("-n", "--dry-run", action="store_true", help="Only print what would be done.")
-    pe.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=DEFAULT_JOBS,
-        help=f"Parallel workers (default: {DEFAULT_JOBS}; 1 = no pooling).",
-    )
     pe.add_argument(
         "--organize",
         choices=("flat", "stem", "versioned"),

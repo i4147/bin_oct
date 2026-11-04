@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import json
 import os
@@ -434,13 +435,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=sorted(BACKEND_FACTORIES),
         help="Translator backend. If omitted, tries the fallback order automatically.",
     )
-    ap.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=2,
-        help="Concurrent threads (keep <= 4 per memory constraints; default 2).",
-    )
     ap.add_argument("-d", "--delay", type=float, default=0.5, help="Seconds between requests.")
     ap.add_argument("--chunk-size", type=int, default=2500, help="Characters per chunk.")
     ap.add_argument("--save-every", type=int, default=10, help="Save JSON every N completed chunks.")
@@ -454,7 +448,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    workers = max(1, min(args.workers, 4))
+    workers = max(1, min(MAX_WORKERS, 4))
     log_file = args.output.with_suffix(".log")
     configure_logging(log_file)
     signal.signal(signal.SIGINT, _handle_sigint)

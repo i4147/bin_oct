@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_PARALLEL_WORKERS
 import argparse
 import hashlib
 import json
@@ -71,7 +72,6 @@ HASH_PREFERENCE = {
 }
 CHUNK_SIZE = 1024 * 1024
 PARALLEL_DOWNLOAD_THRESHOLD = 5 * 1024 * 1024
-DEFAULT_PARALLEL_WORKERS = min(8, max(2, os.cpu_count() or 2))
 SIMPLE_ACCEPT_HEADER = (
     "application/vnd.pypi.simple.v1+json, application/vnd.pypi.simple.v1+html; q=0.1, text/html; q=0.01"
 )

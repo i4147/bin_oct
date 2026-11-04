@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
-import logging
 import shutil
 import subprocess
 import sys
@@ -10,9 +10,6 @@ import tempfile
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Optional
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
 LOCAL_WHEELS = Path("/sdcard/whl")
 
 

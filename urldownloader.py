@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from hashlib import sha224
-from logging import error, exception, info
 from pathlib import Path
 from re import findall
 from shutil import move

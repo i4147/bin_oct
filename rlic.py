@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import sys
@@ -439,7 +440,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         min_lines=min_lines,
         min_chars=args.min_chars,
         extensions=extensions,
-        workers=args.workers,
+        workers=MAX_WORKERS,
     )
     if args.half and groups:
         scanned = collect_files(root, block_mode=args.block_mode, extensions=extensions)
@@ -467,7 +468,7 @@ def cmd_remove(args: argparse.Namespace) -> int:
         min_lines=min_lines,
         min_chars=args.min_chars,
         extensions=extensions,
-        workers=args.workers,
+        workers=MAX_WORKERS,
     )
     if args.half and groups:
         scanned = collect_files(root, block_mode=args.block_mode, extensions=extensions)
@@ -536,12 +537,6 @@ def build_parser() -> argparse.ArgumentParser:
             nargs="+",
             default=None,
             help="Extension filter, e.g. .py .md (default: per block-mode)",
-        )
-        p.add_argument(
-            "--workers",
-            type=int,
-            default=4,
-            help="Parallel worker threads (default: 4)",
         )
 
     p = sub.add_parser("scan", help="Find repeated blocks and report them")

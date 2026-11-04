@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, MDB_DEFAULT_WORKERS, SQL_DEFAULT_WORKERS
+from loguru import logger
 import argparse
 import base64
 import codecs
 import contextlib
 import io
 import json
-import logging
 import os
 import re
 import sqlite3
@@ -31,14 +32,11 @@ try:
     import pyodbc
 except ImportError:
     pyodbc = None
-log = logging.getLogger("merged")
+log = logger
 
 
 def _setup_logging(verbose: bool = False) -> None:
-    logging.basicConfig(
-        level=logging.DEBUG if verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-    )
+    pass
 
 
 DEFAULT_TEXT_ENCODINGS: tuple[str, ...] = ("utf-8", "latin-1", "cp1252", "iso-8859-1")
@@ -425,7 +423,6 @@ def cmd_search_rule(args: argparse.Namespace) -> int:
 
 MDB_EXTS = {".mdb", ".accdb"}
 MDB_FETCH = 1000
-MDB_DEFAULT_WORKERS = 8
 
 
 def _mdb_serialize(v: Any) -> Any:
@@ -520,7 +517,7 @@ def _mdb_convert(
                                 fh.write(json.dumps(obj, ensure_ascii=False, default=str))
                         fh.write("\n    ]")
                     except Exception as exc:
-                        log.warning("Table %s in %s failed: %s", tbl, src_path, exc)
+                        log.warning("Table {} in {} failed: {}", tbl, src_path, exc)
                         fh.write(f'    {json.dumps(tbl)}: {{"_error": {json.dumps(str(exc))}}}')
                     fh.write(",\n" if idx < len(names) - 1 else "\n")
                 fh.write("  }\n}\n")
@@ -530,7 +527,7 @@ def _mdb_convert(
             with contextlib.suppress(Exception):
                 conn.close()
     except Exception as exc:
-        log.debug("Failure on %s:\n%s", src_path, traceback.format_exc(limit=3))
+        log.debug("Failure on {}:\n{}", src_path, traceback.format_exc(limit=3))
         return str(src_path), False, f"{type(exc).__name__}: {exc}"
 
 
@@ -554,7 +551,7 @@ def _mdb_collect(paths: Sequence[str]) -> list[Path]:
             if p.suffix.lower() in MDB_EXTS:
                 add(p)
             else:
-                log.warning("Skipping non-MDB file: %s", p)
+                log.warning("Skipping non-MDB file: {}", p)
         elif p.is_dir():
             for ext in MDB_EXTS:
                 for f in p.rglob(f"*{ext}"):
@@ -564,7 +561,7 @@ def _mdb_collect(paths: Sequence[str]) -> list[Path]:
                     if f.is_file():
                         add(f)
         else:
-            log.warning("Path does not exist: %s", p)
+            log.warning("Path does not exist: {}", p)
     return out
 
 
@@ -573,9 +570,9 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
     inputs = args.inputs or ["."]
     files = _mdb_collect(inputs)
     if not files:
-        log.error("No .mdb/.accdb files found in: %s", inputs)
+        log.error("No .mdb/.accdb files found in: {}", inputs)
         return 2
-    print(f"Found {len(files)} MDB file(s). Using {args.workers} workers.")
+    print(f"Found {len(files)} MDB file(s). Using {MAX_WORKERS} workers.")
     tasks: list[tuple[str, str | None]] = []
     for f in files:
         if args.output_dir:
@@ -589,7 +586,7 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
     total = len(tasks)
     done = 0
     try:
-        with ProcessPoolExecutor(max_workers=max(1, args.workers)) as pool:
+        with ProcessPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
             futures = {pool.submit(_mdb_convert, s, d, args.overwrite, args.pretty, args.tables): s for s, d in tasks}
             for fut in as_completed(futures):
                 src = futures[fut]
@@ -603,15 +600,12 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
                     print(f"[{done}/{total}] OK   {src} — {msg}")
                 else:
                     fail += 1
-                    log.error("[%d/%d] FAIL %s — %s", done, total, src, msg)
+                    log.error("[{}/{}] FAIL {} — {}", done, total, src, msg)
     except KeyboardInterrupt:
         log.warning("Interrupted by user.")
         return 130
     print(f"Done. Successes: {ok}, Failures: {fail}, Total: {total}")
     return 0 if fail == 0 else 1
-
-
-SQL_DEFAULT_WORKERS = 8
 SQL_CHUNK = 1024 * 1024
 SQL_DEFAULT_ENCODING = "utf-8"
 _SQL_INSERT_RE = re.compile(
@@ -875,7 +869,7 @@ def _convert_sql_file(job: SqlJob, encoding: str, strict: bool) -> SqlResult:
                     except (ValueError, TypeError) as exc:
                         if strict:
                             raise
-                        log.warning("Skipping malformed INSERT in %s: %s", src, exc)
+                        log.warning("Skipping malformed INSERT in {}: {}", src, exc)
                 out.flush()
                 os.fsync(out.fileno())
             tmp.replace(dst)
@@ -900,18 +894,18 @@ def _collect_sql_inputs(paths: Sequence[Path]) -> list[Path]:
                 if root.suffix.lower() == ".sql":
                     seen.add(root.resolve())
                 else:
-                    log.warning("Skipping non-SQL file: %s", root)
+                    log.warning("Skipping non-SQL file: {}", root)
             elif root.is_dir():
                 for f in root.rglob("*"):
                     try:
                         if f.is_file() and f.suffix.lower() == ".sql":
                             seen.add(f.resolve())
                     except OSError as exc:
-                        log.warning("Cannot inspect %s: %s", f, exc)
+                        log.warning("Cannot inspect {}: {}", f, exc)
             else:
-                log.warning("Input does not exist or is inaccessible: %s", root)
+                log.warning("Input does not exist or is inaccessible: {}", root)
         except OSError as exc:
-            log.warning("Cannot inspect input %s: %s", root, exc)
+            log.warning("Cannot inspect input {}: {}", root, exc)
     return sorted(seen)
 
 
@@ -945,7 +939,7 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
         for res in pool.imap_unordered(_convert_sql_file_star, tasks, chunksize=chunksize):
             if res.error is not None:
                 fails += 1
-                log.error("%s: %s", res.source, res.error)
+                log.error("{}: {}", res.source, res.error)
             else:
                 total_rows += res.rows
                 print(f"{res.source} -> {res.destination} ({res.rows} rows)")
@@ -1021,7 +1015,6 @@ def _build_parser() -> argparse.ArgumentParser:
     xp = sub.add_parser("mdb-to-json", help="Convert .mdb/.accdb files to JSON (requires pyodbc).")
     xp.add_argument("inputs", nargs="*", help="Files or directories. Defaults to CWD recursively.")
     xp.add_argument("-o", "--output-dir", help="Directory for generated JSON.")
-    xp.add_argument("-w", "--workers", type=int, default=MDB_DEFAULT_WORKERS)
     xp.add_argument("-f", "--overwrite", action="store_true")
     xp.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
     xp.add_argument("-t", "--tables", nargs="+", help="Only convert the specified tables.")

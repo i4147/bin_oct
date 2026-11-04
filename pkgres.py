@@ -1,21 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS, SKIPPED_DIRS
 import argparse
 import re
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
-SKIPPED_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    "build",
-    "dist",
-    ".eggs",
-})
 REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (
         re.compile(r"pkg_resources\.get_distribution\(\s*([^)]+?)\s*\)\.version"),
@@ -188,13 +177,6 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Autofix pkg_resources usage",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=4,
-        help="Number of parallel processes",
-    )
     args = parser.parse_args(argv)
     paths = args.paths or ["."]
     py_files = collect_python_files(paths)
@@ -204,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Found {len(py_files)} file(s) | Mode: {'AUTOFIX' if args.autofix else 'REPORT'}\n")
     try:
         if args.autofix:
-            with Pool(processes=args.jobs) as pool:
+            with Pool(processes=MAX_WORKERS) as pool:
                 results = pool.map(autofix_file, py_files)
             fixed_count = 0
             for result in results:
@@ -220,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
                         print(f"- {result['file']}: {reason}")
             print(f"\nFixed {fixed_count}/{len(py_files)} file(s)")
         else:
-            with Pool(processes=args.jobs) as pool:
+            with Pool(processes=MAX_WORKERS) as pool:
                 results = pool.map(scan_file, py_files)
             found_count = 0
             for result in results:

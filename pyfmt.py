@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import json
-import logging
 import shutil
 import subprocess
 import sys
@@ -14,7 +15,7 @@ from dh import atomic_write
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-LOG = logging.getLogger("fmt")
+LOG = logger
 HTML_EXTS: set[str] = {".html", ".htm", ".xhtml"}
 JSBEAUTIFIER_EXTS: set[str] = {".js", ".css", ".html", ".htm", ".json"}
 PRETTIER_EXTS: set[str] = {
@@ -50,15 +51,15 @@ class FileResult:
 def read_text(path: Path, max_bytes: int = 0) -> Optional[str]:
     try:
         if max_bytes and path.stat().st_size > max_bytes:
-            LOG.warning("File too large (%d bytes): %s", path.stat().st_size, path)
+            LOG.warning("File too large ({} bytes): {}", path.stat().st_size, path)
             return None
         try:
             return path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
-            LOG.debug("UTF-8 decode failed, trying latin-1: %s", path)
+            LOG.debug("UTF-8 decode failed, trying latin-1: {}", path)
             return path.read_text(encoding="latin-1")
     except OSError as exc:
-        LOG.error("Failed to read %s: %s", path, exc)
+        LOG.error("Failed to read {}: {}", path, exc)
         return None
 
 
@@ -88,7 +89,7 @@ def discover(
                 seen.add(key)
                 out.append(f)
         else:
-            LOG.warning("Path does not exist: %s", p)
+            LOG.warning("Path does not exist: {}", p)
     return out
 
 
@@ -111,7 +112,7 @@ def _move_to_error(path: Path, dest_dir: str) -> None:
         dest = _unique_path(target_dir / path.name)
         shutil.move(str(path), str(dest))
     except Exception as exc:
-        LOG.error("Failed to move %s -> %s: %s", path, target_dir, exc)
+        LOG.error("Failed to move {} -> {}: {}", path, target_dir, exc)
 
 
 class HtmlTagFormatter:
@@ -155,7 +156,7 @@ class HtmlTagFormatter:
                 out = out[:pos] + replacement + out[pos + length :]
             return self._collapse_blank_lines(out), len(edits)
         except Exception as exc:
-            LOG.error("Error formatting HTML: %s", exc)
+            LOG.error("Error formatting HTML: {}", exc)
             return src, 0
 
     def _collect_edits(self, root, src: str) -> list[tuple[int, str, int]]:
@@ -370,10 +371,10 @@ def run_batch(
                 stats["modified"] += 1
                 print(f"✓ Formatted: {result.path}")
             else:
-                LOG.debug("✓ Already formatted: %s", result.path)
+                LOG.debug("✓ Already formatted: {}", result.path)
         else:
             stats["fail"] += 1
-            LOG.error("✗ Failed: %s - %s", result.path, result.error)
+            LOG.error("✗ Failed: {} - {}", result.path, result.error)
             if move_errors_dir:
                 _move_to_error(result.path, move_errors_dir)
         if pbar is not None:
@@ -412,7 +413,7 @@ def cmd_list_large(args: argparse.Namespace) -> int:
                     shown = f
                 print(shown)
         except OSError as exc:
-            LOG.debug("stat failed for %s: %s", f, exc)
+            LOG.debug("stat failed for {}: {}", f, exc)
     return 0
 
 
@@ -473,7 +474,7 @@ def cmd_format(args: argparse.Namespace) -> int:
         stats = run_batch(
             targets,
             worker,
-            jobs=args.jobs,
+            jobs=MAX_WORKERS,
             executor=executor,
             progress=args.progress,
             move_errors_dir=args.move_errors_to,
@@ -557,13 +558,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override file extensions (e.g. --ext .js .css).",
     )
     fmt.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=8,
-        help="Number of parallel workers (default: 8).",
-    )
-    fmt.add_argument(
         "--executor",
         choices=["auto", "process", "thread", "serial"],
         default="auto",
@@ -632,11 +626,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
     if args.command == "list-large":
         return cmd_list_large(args)
     if args.command == "format":

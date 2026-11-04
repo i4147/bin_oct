@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import bz2
 import fnmatch
@@ -244,7 +245,7 @@ def _compress_one(task: CompressTask) -> Result:
     archive = directory.with_name(directory.name + EXTENSIONS[compressor])
 
     try:
-        if os.path.lexists(archive) and not force:
+        if Path(archive).exists() or Path(archive).is_symlink() and not force:
             return archive, "skipped", "Archive already exists"
 
         with tempfile.TemporaryDirectory(prefix=".tardirs-", dir=directory.parent) as temporary:
@@ -302,7 +303,7 @@ def _decompress_one(task: DecompressTask) -> Result:
     try:
         compressor, name = archive_format(archive)
         destination = archive.parent / name
-        if os.path.lexists(destination):
+        if Path(destination).exists() or Path(destination).is_symlink():
             return archive, "skipped", f"Destination already exists: {destination}"
 
         with tempfile.TemporaryDirectory(prefix=".tardirs-", dir=archive.parent) as temporary:
@@ -391,13 +392,6 @@ def main() -> None:
         help="Decompress recognized archives",
     )
     parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=4,
-        help="Concurrent workers; 0 selects automatically",
-    )
-    parser.add_argument(
         "-f",
         "--force",
         action="store_true",
@@ -471,7 +465,7 @@ def main() -> None:
 
     if sys.version_info < (3, 12):
         parser.error("Python 3.12 or later is required")
-    if ns.jobs < 0:
+    if MAX_WORKERS < 0:
         parser.error("--jobs must be nonnegative")
     if ns.min_size is not None and ns.max_size is not None:
         if ns.min_size > ns.max_size:
@@ -559,7 +553,7 @@ def main() -> None:
         except ImportError as exc:
             parser.error(f"Missing dependency for {algorithm}: {exc}")
 
-    workers = min(ns.jobs or (os.cpu_count() or 1), len(targets))
+    workers = min(MAX_WORKERS or (os.cpu_count() or 1), len(targets))
     method = cast(Method, ns.mp_method)
     action = "Decompressing" if ns.decompress else "Compressing"
     print(f"{action} {len(targets)} target(s), {workers} worker(s), {method}")

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import hashlib
 import os
@@ -61,7 +62,6 @@ GITHUB_RE = re.compile(
 GITHUB_REPO_RE = re.compile(
     r"https?://(?:www\.)?github\.com/[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+",
 )
-DEFAULT_SKIP_DIRS = ".git,__pycache__,.venv,venv,node_modules,.env,dist,build"
 DEFAULT_GIT_HOSTS = "github.com,gitlab.com,gitea.io,bitbucket.org,git.sr.ht,codeberg.org,gitbucket.org,gogs.io"
 DEFAULT_FILE_EXTS = ",".join(
     sorted({
@@ -378,8 +378,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
     log_info(f"Scanning {len(files)} files…")
     tasks = [(str(f), args.max_size, args.archives_only, args.files_only) for f in files]
     all_urls: set[str] = set()
-    if args.workers > 1 and len(tasks) > 1:
-        with Pool(processes=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(tasks) > 1:
+        with Pool(processes=MAX_WORKERS) as pool:
             for result in _tqdm(
                 pool.imap_unordered(_scan_worker, tasks),
                 total=len(tasks),
@@ -656,8 +656,8 @@ def _has_fetch_ext(url: str) -> bool:
 
 def _download_filename(url: str) -> str:
     p = urlparse(url)
-    name = os.path.basename(unquote(p.path)) or "downloaded_file"
-    stem, ext = os.path.splitext(name)
+    name = Path(unquote(p.path)).name or "downloaded_file"
+    stem, ext = (str(Path(name).with_suffix("")), Path(name).suffix)
     digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:10]
     safe_stem = re.sub(r"[^A-Za-z0-9._-]", "_", stem)
     return f"{safe_stem}_{digest}{ext}"
@@ -703,8 +703,8 @@ def cmd_fetch_files(args: argparse.Namespace) -> int:
         dest = Path(args.download)
         dest.mkdir(parents=True, exist_ok=True)
         tasks = [(u, str(dest)) for u in out_urls]
-        if args.workers > 1:
-            with Pool(processes=args.workers) as pool:
+        if MAX_WORKERS > 1:
+            with Pool(processes=MAX_WORKERS) as pool:
                 for url, ok, info in pool.imap_unordered(_download_one, tasks):
                     print(f"[{'OK' if ok else 'FAIL'}] {url} -> {info}")
         else:
@@ -734,7 +734,6 @@ def build_parser() -> argparse.ArgumentParser:
     ps.add_argument("inputs", nargs="*", help="Files/dirs to scan (default: cwd).")
     ps.add_argument("-o", "--output", default="urls.txt")
     ps.add_argument("-g", "--git-output", default="gitlinks.txt")
-    ps.add_argument("-w", "--workers", type=int, default=8)
     ps.add_argument(
         "--append",
         action="store_true",
@@ -831,7 +830,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR",
         help="Download matching files into DIR (default: downloads).",
     )
-    pf.add_argument("-w", "--workers", type=int, default=os.cpu_count() or 4)
     pf.set_defaults(func=cmd_fetch_files)
     return p
 
@@ -839,7 +837,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if getattr(args, "workers", 1) is not None and getattr(args, "workers", 1) < 1:
+    if MAX_WORKERS is not None and MAX_WORKERS < 1:
         parser.error("--workers must be at least 1")
     return args.func(args)
 

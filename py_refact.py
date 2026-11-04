@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import WORKERS
 import argparse
 import ast
 import hashlib
 import re
 import sys
 from pathlib import Path
-
-WORKERS: int = 6
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.copyreg": "copyreg",

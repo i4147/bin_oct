@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 
+from dh import MAX_WORKERS
 import argparse
 import shutil
 import tempfile
@@ -13,7 +14,6 @@ import rmc3 as sc
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("path", nargs="?", type=Path, default=Path.cwd())
-    parser.add_argument("-j", "--jobs", type=int, default=min(8, sc.os.cpu_count() or 1))
     args = parser.parse_args()
     sources = list(sc.iter_python_files([args.path], []))
     if not sources:
@@ -37,7 +37,7 @@ def main() -> int:
             shutil.copyfile(source, destination)
             copies.append(destination)
         started = time.perf_counter()
-        results = list(sc._result_iterator(copies, options, args.jobs, sc.DEFAULT_CHUNK_SIZE))
+        results = list(sc._result_iterator(copies, options, MAX_WORKERS, sc.DEFAULT_CHUNK_SIZE))
         elapsed = time.perf_counter() - started
     errors = sum(result.error is not None for result in results)
     total_bytes = sum(result.old_size for result in results)

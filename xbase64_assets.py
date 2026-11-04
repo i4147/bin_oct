@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import SKIP_DIRS, WORKERS
 import base64
 import hashlib
 import mimetypes
@@ -16,7 +17,6 @@ from loguru import logger
 
 SUPPORTED_EXTENSIONS = {".html", ".css", ".js", ".jsx", ".tsx", ".ts"}
 ASSETS_DIR = Path("assets")
-WORKERS = 8
 CHUNK_SIZE = 8192
 MAX_FILE_SIZE = 100 * 1024 * 1024
 BASE64_SIGNATURES: dict[str, tuple[bytes, str, str]] = {
@@ -400,29 +400,6 @@ class FileProcessor:
 
 
 class FileDiscovery:
-    SKIP_DIRS = {
-        ".git",
-        ".svn",
-        "__pycache__",
-        "node_modules",
-        ".venv",
-        "venv",
-        ".env",
-        ".egg-info",
-        "dist",
-        "build",
-        ".idea",
-        ".vscode",
-        ".pytest_cache",
-        ".tox",
-        ".coverage",
-        ".mypy_cache",
-        "target",
-        "out",
-        "bin",
-        ".gradle",
-        "assets",
-    }
 
     @staticmethod
     def discover_files(paths: list[str]) -> list[Path]:

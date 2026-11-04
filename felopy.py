@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import os
 import re
@@ -7,7 +8,7 @@ import subprocess
 import sys
 from datetime import datetime
 
-SAVE_DIR = os.path.expanduser("~/tmp/apps")
+SAVE_DIR = Path("~/tmp/apps").expanduser()
 
 
 def extract_code_blocks(text: str) -> list[str]:
@@ -56,7 +57,7 @@ def main() -> None:
     os.makedirs(SAVE_DIR, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"felo_{timestamp}.py"
-    filepath = os.path.join(SAVE_DIR, filename)
+    filepath = Path(SAVE_DIR).joinpath(filename)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(code)
     print(filepath)

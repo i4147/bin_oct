@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import multiprocessing as mp
 import os
 import re
@@ -8,7 +9,6 @@ from pathlib import Path
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}
 SO_RE = re.compile(r".*\.so(?:\.\d+)*$")
-WORKERS = 8
 
 
 def has_shebang(p):

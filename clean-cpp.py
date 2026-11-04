@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import sys
 from multiprocessing import Pool
@@ -26,7 +27,6 @@ CPP_EXTS: frozenset[str] = frozenset({
 })
 C_EXTS: frozenset[str] = frozenset({".c", ".h"})
 ALL_EXTS: frozenset[str] = C_EXTS | CPP_EXTS
-WORKERS: int = 8
 _PARSERS: dict[str, Parser] = {}
 
 

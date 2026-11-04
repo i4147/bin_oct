@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_PREPARE_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import csv
 import json
@@ -88,7 +90,6 @@ IMAGE_EXTENSIONS: set[str] = {
 }
 TEXT_EXTENSIONS: set[str] = {".txt", ".md", ".csv", ".json", ".py"}
 PHOTO_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png"}
-DEFAULT_PREPARE_WORKERS = 8
 DEFAULT_GRID_VARIANTS_PSM = [3, 4, 6, 11]
 DEFAULT_GRID_VARIANTS_OEM = [1, 3]
 DEFAULT_GRID_VARIANTS_DPI = [150, 300]
@@ -246,7 +247,7 @@ def cmd_enhance(args: argparse.Namespace) -> int:
             ok &= _enhance_one(f, backend, "_enhanced_cv")
         return ok
 
-    _pmap(work, files, args.workers)
+    _pmap(work, files, MAX_WORKERS)
     after = _dir_size(Path.cwd())
     print(f"space saved: {_fmt_size(before - after)}")
     return 0
@@ -300,7 +301,7 @@ def cmd_prepare(args: argparse.Namespace) -> int:
         return 1
     print(f"found {len(files)} image(s) to process")
     worker = _prepare_cv if backend == "cv" else _prepare_pillow
-    results = _pmap(worker, files, args.workers)
+    results = _pmap(worker, files, MAX_WORKERS)
     ok = sum(1 for r in results if r)
     fail = len(results) - ok
     print("=" * 40)
@@ -522,7 +523,7 @@ def cmd_ocr(args: argparse.Namespace) -> int:
         return 1
     if len(files) == 1:
         return 0 if _ocr_single(files[0], args.lang) else 1
-    workers = args.workers or cpu_count()
+    workers = MAX_WORKERS or cpu_count()
     print(f"processing {len(files)} image(s) with {workers} worker(s)")
     results = _pmap(lambda f: _ocr_file(f, args.lang), files, workers)
     ok = sum(1 for r in results if r["success"])
@@ -648,7 +649,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default="auto",
         help="Output suffix set. 'auto' = pil for one file, both for many (matches image2text.py).",
     )
-    pe.add_argument("--workers", type=int, default=None)
     pe.set_defaults(func=cmd_enhance)
     pp = sub.add_parser("prepare", help="Prepare images for Tesseract OCR, in-place (ocr_prepare.py).")
     pp.add_argument("paths", nargs="*", type=Path)
@@ -665,7 +665,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Enable DEBUG logging (requires loguru).",
     )
     pp.add_argument("--backend", choices=["auto", "cv", "pillow"], default="auto")
-    pp.add_argument("--workers", type=int, default=DEFAULT_PREPARE_WORKERS)
     pp.set_defaults(func=cmd_prepare)
     pv = sub.add_parser("grid-variants", help="Tesseract grid over 5 image variants (ocrgrid.py).")
     pv.add_argument("image", type=Path)
@@ -692,7 +691,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Tesseract language(s), e.g. 'eng' or 'rus+eng'. Default: tesseract default (pyocr.py behaviour).",
     )
-    po.add_argument("-w", "--workers", type=int, default=None)
     po.add_argument(
         "-j",
         "--json",

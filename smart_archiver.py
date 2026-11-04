@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import bz2
 import gzip
@@ -433,7 +434,6 @@ Examples:
     compress_parser.add_argument("files", nargs="+", help="Files to compress")
     compress_parser.add_argument("-o", "--output-dir", help="Output directory")
     compress_parser.add_argument("-p", "--parallel", action="store_true", help="Enable parallel compression")
-    compress_parser.add_argument("-j", "--jobs", type=int, default=8, help="Number of parallel jobs (default: 8)")
     compress_parser.add_argument("--remove", action="store_true", help="Remove original files after compression")
     compress_parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     archive_parser = subparsers.add_parser("archive", help="Create compressed archive")
@@ -476,7 +476,7 @@ Examples:
             results = compress_multiple_files(
                 files,
                 output_dir=args.output_dir,
-                max_workers=args.jobs,
+                max_workers=MAX_WORKERS,
                 remove_original=args.remove,
                 verbose=args.verbose,
             )
@@ -502,7 +502,7 @@ Examples:
             compression=args.compression,
             level=args.level,
             parallel=args.parallel,
-            max_workers=args.jobs,
+            max_workers=MAX_WORKERS,
         )
     elif args.command == "decompress":
         for path in args.files:

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from pathlib import Path
 import argparse
 import re
 import sys
@@ -67,7 +69,7 @@ def process_file(
         return
     import os
 
-    if not os.path.exists(dic_path) or not os.path.exists(aff_path):
+    if not Path(dic_path).exists() or not Path(aff_path).exists():
         print(f"Error: Hunspell dictionary files not found at:")
         print(f"  Dictionary: {dic_path}")
         print(f"  Affix file: {aff_path}")
@@ -148,11 +150,11 @@ def find_hunspell_dicts():
     ]
     found_dicts = []
     for path in common_paths:
-        if os.path.exists(path):
-            dic_files = glob.glob(os.path.join(path, "*.dic"))
+        if Path(path).exists():
+            dic_files = glob.glob(Path(path).joinpath("*.dic"))
             for dic_file in dic_files:
                 aff_file = dic_file.replace(".dic", ".aff")
-                if os.path.exists(aff_file):
+                if Path(aff_file).exists():
                     found_dicts.append((dic_file, aff_file))
     return found_dicts
 
@@ -168,13 +170,6 @@ if __name__ == "__main__":
         "--autofix",
         action="store_true",
         help="Automatically correct misspelled words in the file",
-    )
-    parser.add_argument(
-        "-p",
-        "--processes",
-        type=int,
-        default=None,
-        help="Number of processes to use (defaults to CPU count)",
     )
     parser.add_argument(
         "-d",
@@ -196,7 +191,7 @@ if __name__ == "__main__":
         if dicts:
             print("Available Hunspell dictionaries:")
             for dic, _aff in dicts:
-                lang = os.path.basename(dic).replace(".dic", "")
+                lang = Path(dic).name.replace(".dic", "")
                 print(f"  {lang}: {dic}")
         else:
             print("No Hunspell dictionaries found in common locations.")
@@ -214,4 +209,4 @@ if __name__ == "__main__":
         else:
             dic_path = "/usr/share/hunspell/en_US.dic"
             aff_path = "/usr/share/hunspell/en_US.aff"
-    process_file(args.file, args.autofix, args.processes, dic_path, aff_path)
+    process_file(args.file, args.autofix, MAX_WORKERS, dic_path, aff_path)

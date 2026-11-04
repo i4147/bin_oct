@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import NUM_WORKERS
 import re
 from pathlib import Path
 from dh import cprint, fsz, get_nobinary, gsz
 
 LIC_FILE = Path("/sdcard/lic")
 MIN_BLANK_LINES = 3
-NUM_WORKERS = 8
 
 
 def load_patterns(lic_path: Path) -> list[str]:

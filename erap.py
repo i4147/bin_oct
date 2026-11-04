@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import json
 import multiprocessing
@@ -23,7 +24,6 @@ REPORT_TOOLS: dict[str, list[str]] = {
     "pylint": ["pylint", "--errors-only"],
 }
 DEFAULT_APPEND_TOOLS: list[str] = ["ty", "pyright", "pyrefly"]
-DEFAULT_WORKERS: int = 4
 DEFAULT_REPORT_DIR: str = "report"
 _DH_IMPORT_PATTERN = "error[unresolved-import]:cannot resolve imported module `dh`"
 
@@ -129,7 +129,7 @@ def _cmd_append(args: argparse.Namespace) -> int:
     if not files:
         print("No .py files found.")
         return 0
-    with multiprocessing.Pool(processes=args.workers) as pool:
+    with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
         futures = [pool.apply_async(_process_append, args=(f, tools)) for f in files]
         for fut in futures:
             print(fut.get())
@@ -188,13 +188,6 @@ def _build_parser() -> argparse.ArgumentParser:
     ap.add_argument("-r", "--pyrefly", action="store_true", help="Run pyrefly")
     ap.add_argument("-t", "--ty", action="store_true", help="Run ty")
     ap.add_argument("-m", "--mypy", action="store_true", help="Run mypy")
-    ap.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Number of parallel workers (default:{DEFAULT_WORKERS})",
-    )
     ap.set_defaults(func=_cmd_append)
     rp = sub.add_parser(
         "report",

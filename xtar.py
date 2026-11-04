@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import gzip
 import lzma
 import subprocess
@@ -8,8 +9,6 @@ import zipfile
 from multiprocessing import Pool
 from pathlib import Path
 import py7zr
-
-MAX_WORKERS: int = 4
 SUPPORTED_EXTENSIONS: set[str] = {
     ".tar",
     ".tar.gz",

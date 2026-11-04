@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import shutil
 import sys
@@ -10,10 +11,10 @@ import zstandard as zstd
 
 
 def delete_from_tar_zst(archive_path, file_to_delete):
-    if not os.path.exists(archive_path):
+    if not Path(archive_path).exists():
         print(f"Error: Archive '{archive_path}' not found", file=sys.stderr)
         sys.exit(1)
-    base, ext = os.path.splitext(archive_path)
+    base, ext = (str(Path(archive_path).with_suffix("")), Path(archive_path).suffix)
     if ext == ".zst":
         output_path = f"{base}_modified.tar.zst"
     else:
@@ -58,9 +59,9 @@ def delete_from_tar_zst(archive_path, file_to_delete):
         with open(output_path, "wb") as f:
             f.write(compressed_output)
         print(f"✅ Success! New archive created: {output_path}")
-        print(f"   Size: {os.path.getsize(output_path)} bytes")
+        print(f"   Size: {Path(output_path).stat().st_size} bytes")
     finally:
-        if os.path.exists(tmp_path):
+        if Path(tmp_path).exists():
             os.unlink(tmp_path)
 
 

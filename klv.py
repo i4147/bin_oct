@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import multiprocessing as mp
 import re
 import shutil
@@ -9,15 +10,12 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional, Sequence
-
-logger = logging.getLogger(__name__)
 ANDROID_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+)-py3-none-android_24_([^/]+)\.whl")
 LINUX_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+(?:\.\d+)?)-cp\d+-cp\d+-linux_([^/]+)\.whl")
 PY_RE = re.compile(r"python3\.(\d+)")
 METADATA_RE = re.compile(r"^(.+?)-(\d[\d._]*[a-zA-Z]*[\d]*)$")
 NORMALIZE_RE = re.compile(r"[-_.]+")
 DEFAULT_ARM_KEYWORDS = ["armeabi_v7a", "armv7l", "linux_arm", "arm"]
-DEFAULT_WORKERS = 8
 DEFAULT_BATCH_SIZE = 100
 
 
@@ -126,7 +124,7 @@ def parse_metadata_filename(path: Path) -> tuple[str, str, Path]:
     stem = path.stem
     m = METADATA_RE.match(stem)
     if not m:
-        logger.warning("Could not parse version from %s", path.name)
+        logger.warning("Could not parse version from {}", path.name)
         return stem.lower(), "0.0.0", path
     pkg = m.group(1).lower()
     ver = m.group(2).replace("_", ".")
@@ -266,7 +264,7 @@ def remove_old_versions(
                     print(f"  Deleted: {ver}-{path.name}")
                     deleted += 1
                 except Exception as e:
-                    logger.error("  Error deleting %s: %s", path.name, e)
+                    logger.error("  Error deleting {}: {}", path.name, e)
         kept += 1
     return deleted, kept
 
@@ -333,7 +331,7 @@ def cmd_urls(args: argparse.Namespace) -> int:
 def cmd_clean(args: argparse.Namespace) -> int:
     directory = Path(args.dir).resolve()
     if not directory.exists():
-        logger.error("Directory '%s' does not exist", directory)
+        logger.error("Directory '{}' does not exist", directory)
         return 1
     extensions = extensions_for_type(args.type)
     files = find_files(directory, extensions, args.recursive)
@@ -346,7 +344,7 @@ def cmd_clean(args: argparse.Namespace) -> int:
     if not files:
         print("No matching package files found.")
         return 0
-    package_map = process_clean_files(files, args.workers)
+    package_map = process_clean_files(files, MAX_WORKERS)
     total_versions = sum(len(v) for v in package_map.values())
     print(f"\nFound {len(package_map)} package(s) with {total_versions} total version(s):")
     if args.verbose:
@@ -373,7 +371,7 @@ def cmd_clean(args: argparse.Namespace) -> int:
 def cmd_metadata(args: argparse.Namespace) -> int:
     directory = Path(args.directory).resolve()
     if not directory.exists():
-        logger.error("Directory '%s' does not exist", directory)
+        logger.error("Directory '{}' does not exist", directory)
         return 1
     files = find_files(directory, (".metadata",), recursive=False)
     print(f"Scanning directory: {directory}")
@@ -381,7 +379,7 @@ def cmd_metadata(args: argparse.Namespace) -> int:
     if not files:
         print("No metadata files found")
         return 0
-    package_map = process_metadata_batches(files, args.workers, args.batch_size)
+    package_map = process_metadata_batches(files, MAX_WORKERS, args.batch_size)
     print(f"Processing {len(package_map)} unique packages...")
     if args.verbose:
         for pkg, versions in package_map.items():
@@ -433,7 +431,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_clean.add_argument("--dir", default=".", help="Directory to scan")
     p_clean.add_argument("--verbose", action="store_true", help="Show detailed information")
     p_clean.add_argument("--recursive", action="store_true", help="Scan recursively")
-    p_clean.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help="Worker processes")
     p_clean.add_argument("--backup-dir", help="Move old files to backup directory")
     p_clean.set_defaults(func=cmd_clean)
     p_meta = sub.add_parser("metadata", help="Keep latest .metadata files in a directory")
@@ -441,7 +438,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_meta.add_argument("--dry-run", action="store_true", help="Simulate deletion")
     p_meta.add_argument("--backup-dir", help="Move old files to backup directory")
     p_meta.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size")
-    p_meta.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help="Worker processes")
     p_meta.add_argument("--verbose", action="store_true", help="Show detailed information")
     p_meta.set_defaults(func=cmd_metadata)
     return parser
@@ -450,7 +446,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     return args.func(args)
 
 

@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import os
 from collections import defaultdict
 
@@ -17,13 +18,13 @@ def main():
         for file_name in files:
             if file_name.lower().endswith(IMAGE_EXTENSIONS):
                 image_count += 1
-                file_path = os.path.join(root, file_name)
+                file_path = Path(root).joinpath(file_name)
                 try:
                     with Image.open(file_path) as img:
                         v_hash = imagehash.phash(img)
                         width, height = img.size
                         total_pixels = width * height
-                        file_size = os.path.getsize(file_path)
+                        file_size = Path(file_path).stat().st_size
                         hash_groups[v_hash].append((file_path, total_pixels, file_size))
                 except Exception:
                     print(f"⚠️ Could not read image: {file_path}")

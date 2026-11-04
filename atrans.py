@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from pathlib import Path
 import argparse
 import json
 import os
@@ -38,8 +40,8 @@ def _make_translate(source, target, script_path):
     except ImportError as e:
         msg = f"cannot import 'translate': {e}"
         raise BackendError(msg)
-    mod_file = os.path.abspath(getattr(translate, "__file__", "") or "")
-    if mod_file and mod_file == os.path.abspath(script_path):
+    mod_file = Path(getattr(translate, "__file__", "") or "").absolute()
+    if mod_file and mod_file == Path(script_path).absolute():
         msg = "'translate' resolves to this script itself (rename the script to avoid shadowing the package)"
         raise BackendError(msg)
     cls = getattr(translate, "Translator", None) or getattr(translate, "GoogleTranslator", None)
@@ -134,7 +136,7 @@ class TranslatorWrapper:
 
 
 def load_progress(out_path):
-    if not os.path.exists(out_path):
+    if not Path(out_path).exists():
         return {}
     try:
         with open(out_path, "r", encoding="utf-8") as f:
@@ -188,13 +190,6 @@ def parse_args():
         help="Preferred translation backend (default: translate); falls back automatically if unusable",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of concurrent worker threads (default: 4)",
-    )
-    parser.add_argument(
         "-d",
         "--delay",
         type=float,
@@ -220,7 +215,7 @@ def main():
     input_path = args.input
     out_path = args.output
     failed_path = args.failed
-    if not os.path.exists(input_path):
+    if not Path(input_path).exists():
         print(f"Error: Input file '{input_path}' not found.")
         sys.exit(1)
     with open(input_path, "r", encoding="utf-8") as f:
@@ -242,7 +237,7 @@ def main():
     )
     print(
         f"Backend: {translator.backend_name} | "
-        f"Workers: {args.workers} | Delay: {args.delay}s | "
+        f"Workers: {MAX_WORKERS} | Delay: {args.delay}s | "
         f"Save every: {args.save_every} | Retries: {MAX_RETRIES}"
     )
     print(f"Words to translate: {len(pending)}")
@@ -282,7 +277,7 @@ def main():
         return word, None
 
     try:
-        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = {executor.submit(translate_word, w): w for w in pending}
             for future in as_completed(futures):
                 word, translation = future.result()
@@ -310,7 +305,7 @@ def main():
     save_output(out_path, results, save_lock)
     print(f"\n✅ Done! Translated {len(results)} words total.")
     print(f"Output: {out_path}")
-    if os.path.exists(failed_path):
+    if Path(failed_path).exists():
         with open(failed_path, "r", encoding="utf-8") as f:
             failed_count = sum(1 for _ in f if _.strip())
         print(f"Failed words ({failed_count}): {failed_path}")

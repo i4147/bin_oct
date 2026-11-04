@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import json
@@ -326,7 +327,7 @@ def cmd_jsonl2json(args: argparse.Namespace) -> int:
     written = 0
     invalid = 0
     failures = 0
-    with multiprocessing.Pool(processes=args.workers) as pool:
+    with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
         for res in pool.imap_unordered(_convert_one, _jobs(), chunksize=1):
             total += 1
             written += res["records"]
@@ -402,7 +403,7 @@ def cmd_merge_json(args: argparse.Namespace) -> int:
     if not files:
         print("There is no data to write to the output file.")
         return 0
-    with multiprocessing.Pool(processes=args.workers) as pool:
+    with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
         chunks = pool.map(_load_json_as_list, files)
     merged: list[Any] = []
     for chunk in chunks:
@@ -645,7 +646,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--ensure-ascii", action="store_true")
     p.add_argument("--skip-invalid", action="store_true")
     p.add_argument("--overwrite", action="store_true")
-    p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_jsonl2json)
     p = sub.add_parser("lowerkeys")
     p.add_argument("file")
@@ -653,7 +653,6 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("merge-json")
     p.add_argument("inputs", nargs="*")
     p.add_argument("-o", "--output", default="merged.json")
-    p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_merge_json)
     p = sub.add_parser("mergejson")
     p.add_argument("inputs", nargs="+")

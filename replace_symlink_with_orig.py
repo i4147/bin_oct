@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import shutil
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
 
 from loguru import logger
-
-MAX_WORKERS: Final[int] = 8
 REPLACED_LOG_NAME: Final[str] = "replaced.txt"
 ERRORS_LOG_NAME: Final[str] = "errors.txt"
 

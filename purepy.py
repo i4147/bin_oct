@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
@@ -10,7 +11,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
     "map",
     "starmap",

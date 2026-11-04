@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import contextlib
 import sys
@@ -40,7 +41,6 @@ FLAVORS = {
     "woff2": "woff2",
 }
 DEFAULT_OUTPUT_FORMAT = "woff2"
-WORKERS = 4
 CFF_TABLES = frozenset({"CFF ", "CFF2"})
 TRUETYPE_TABLE = "glyf"
 

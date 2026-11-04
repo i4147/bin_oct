@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import shutil
 import subprocess
@@ -7,7 +8,7 @@ import sys
 
 
 def pdf_to_png(pdf_path, output_dir=None, dpi=200):
-    if not os.path.isfile(pdf_path):
+    if not Path(pdf_path).is_file():
         print(f"Error: file not found: {pdf_path}", file=sys.stderr)
         sys.exit(1)
     if shutil.which("pdftoppm") is None:
@@ -16,11 +17,11 @@ def pdf_to_png(pdf_path, output_dir=None, dpi=200):
             file=sys.stderr,
         )
         sys.exit(1)
-    base_name = os.path.splitext(os.path.basename(pdf_path))[0]
+    base_name = (str(Path(Path(pdf_path).name).with_suffix("")), Path(Path(pdf_path).name).suffix)[0]
     if output_dir is None:
         output_dir = base_name
     os.makedirs(output_dir, exist_ok=True)
-    prefix = os.path.join(output_dir, f"{base_name}_page")
+    prefix = Path(output_dir).joinpath(f"{base_name}_page")
     cmd = [
         "pdftoppm",
         "-png",
@@ -43,7 +44,7 @@ def pdf_to_png(pdf_path, output_dir=None, dpi=200):
         except ValueError:
             continue
         new_name = f"{base_name}_page_{num:03d}.png"
-        os.rename(os.path.join(output_dir, f), os.path.join(output_dir, new_name))
+        os.rename(Path(output_dir).joinpath(f), Path(output_dir).joinpath(new_name))
         print(f"  {new_name}")
     print(f"Done. {len(generated)} image(s) saved to '{output_dir}/'")
 

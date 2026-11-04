@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import heapq
 import json
@@ -16,7 +17,6 @@ from typing import Any, Callable, Iterable, Optional, Sequence
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000
 DEFAULT_ENCODING = "utf-8"
-DEFAULT_WORKERS = 8
 
 
 def info(msg: str) -> None:
@@ -179,7 +179,7 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             key=key,
             reverse=args.reverse,
             chunk_size=args.chunk_size,
-            workers=args.workers,
+            workers=MAX_WORKERS,
         )
     removed: list[str] = []
     if args.unique:
@@ -465,12 +465,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=DEFAULT_CHUNK_SIZE,
         help=f"External-sort chunk size in lines (default: {DEFAULT_CHUNK_SIZE})",
-    )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Worker count for external sort (default: 1)",
     )
     p.add_argument(
         "--encoding",

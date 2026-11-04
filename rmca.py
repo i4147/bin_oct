@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS
+from loguru import logger
 import argparse
 import ast as ast_module
 import multiprocessing as mp
@@ -26,12 +28,7 @@ try:
     HAS_LOGURU = True
 except ImportError:
     HAS_LOGURU = False
-    import logging
-
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
 SUPPORTED_BACKENDS = ("libcst", "tree-sitter", "ast")
-DEFAULT_WORKERS = 8
 PRESERVED_COMMENTS = ("# type", "# fmt")
 SHEBANG_PREFIX = "#!"
 
@@ -45,7 +42,7 @@ def setup_logger(verbose: bool = False) -> None:
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
         )
     else:
-        logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+        pass
 
 
 def parse_args() -> argparse.Namespace:

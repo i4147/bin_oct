@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import sys
 import math
@@ -124,7 +125,7 @@ def detect_language(text: str, backend: str) -> DetectionResult:
 
 def scan_and_detect(root_dir: str, backend: str, only_non_english: bool) -> None:
     print(f"Backend : {backend}", flush=True)
-    print(f"Scanning: {os.path.abspath(root_dir)}\n", flush=True)
+    print(f"Scanning: {Path(root_dir).absolute()}\n", flush=True)
     print(f"{'File Path':<50} | {'Lang':<10} | {'Conf':<6} | Snippet", flush=True)
     print("-" * 120, flush=True)
 
@@ -134,7 +135,7 @@ def scan_and_detect(root_dir: str, backend: str, only_non_english: bool) -> None
             if file.startswith("."):
                 continue
 
-            file_path = os.path.join(root, file)
+            file_path = Path(root).joinpath(file)
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read().strip()

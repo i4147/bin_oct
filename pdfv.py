@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import contextlib
 import os
@@ -188,7 +189,7 @@ class Viewer:
         sys.stdout.flush()
 
     def _status(self, cols: int, note: str, total: int, rows: int) -> str:
-        name = os.path.basename(self.path)
+        name = Path(self.path).name
         if note:
             line = f" {note} "
         else:
@@ -262,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("file", help="path to the PDF file")
     parser.add_argument("-p", "--page", type=int, default=1, help="page to open first (1-based, default 1)")
     args = parser.parse_args(argv)
-    if not os.path.isfile(args.file):
+    if not Path(args.file).is_file():
         parser.error(f"no such file: {args.file}")
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         parser.error("must be run from an interactive terminal")

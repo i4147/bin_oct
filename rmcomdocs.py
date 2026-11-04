@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import multiprocessing as mp
@@ -373,9 +374,9 @@ def cmd_strip(args: argparse.Namespace) -> int:
         print("No Python files found.", file=sys.stderr)
         return 0
     if not args.quiet:
-        print(f"Processing {len(files)} file(s) [engine={cfg.engine}, workers={args.workers}, dry_run={args.dry_run}]")
+        print(f"Processing {len(files)} file(s) [engine={cfg.engine}, workers={MAX_WORKERS}, dry_run={args.dry_run}]")
     t0 = time.perf_counter()
-    results = _parallel_map(files, cfg, write=not args.dry_run, workers=args.workers)
+    results = _parallel_map(files, cfg, write=not args.dry_run, workers=MAX_WORKERS)
     elapsed = time.perf_counter() - t0
     failed = 0
     if not args.quiet:
@@ -407,7 +408,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
             preserve_lines=True,
         )
         t0 = time.perf_counter()
-        results = _parallel_map(files, cfg, write=False, workers=args.workers)
+        results = _parallel_map(files, cfg, write=False, workers=MAX_WORKERS)
         dt = time.perf_counter() - t0
         timings[engine] = dt
         ok = sum(1 for r in results if r.success)
@@ -485,12 +486,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extra comment prefix to preserve (repeatable).",
     )
     sp.add_argument(
-        "--workers",
-        type=int,
-        default=os.cpu_count() or 4,
-        help="Number of worker processes (default: CPU count).",
-    )
-    sp.add_argument(
         "--dry-run",
         action="store_true",
         help="Parse and report, but do not write files.",
@@ -503,12 +498,6 @@ def build_parser() -> argparse.ArgumentParser:
         "paths",
         nargs="*",
         help="Files or directories to scan (default: current directory).",
-    )
-    cp.add_argument(
-        "--workers",
-        type=int,
-        default=os.cpu_count() or 4,
-        help="Number of worker processes (default: CPU count).",
     )
     cp.set_defaults(func=cmd_compare)
     return parser

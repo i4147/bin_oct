@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
@@ -10,8 +11,6 @@ import tree_sitter_javascript
 import tree_sitter_typescript
 from loguru import logger
 from tree_sitter import Language, Parser
-
-MAX_WORKERS: Final[int] = 8
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")
 _JS_LANGUAGE: Final[Language] = Language(tree_sitter_javascript.language())
 _TS_LANGUAGE: Final[Language] = Language(tree_sitter_typescript.language_typescript())

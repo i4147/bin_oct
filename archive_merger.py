@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import shutil
@@ -66,7 +67,6 @@ def main() -> int:
     tar_parser.add_argument("--cleanup", action="store_true", default=False, help="Remove folder after compression")
     tgz_parser = subparsers.add_parser("tgz", help="Create TAR.GZ archive and cleanup contents")
     tgz_parser.add_argument("folder", type=Path, help="Folder to archive")
-    tgz_parser.add_argument("--workers", type=int, default=8, help="Number of parallel workers")
     tgz_parser.add_argument("--no-cleanup", action="store_true", help="Keep original files")
     args = parser.parse_args()
     folder = Path(args.folder)
@@ -79,7 +79,7 @@ def main() -> int:
     if args.mode == "tar":
         success = compress_tar(folder, args.output, args.cleanup)
     elif args.mode == "tgz":
-        success = compress_tgz_parallel(folder, args.workers, not args.no_cleanup)
+        success = compress_tgz_parallel(folder, MAX_WORKERS, not args.no_cleanup)
     else:
         return 1
     return 0 if success else 1

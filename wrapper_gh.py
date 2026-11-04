@@ -13,16 +13,16 @@ REAL_GH = "/data/data/com.termux/files/usr/bin/gh"
 
 def find_real_gh():
     if (
-        os.path.isfile(REAL_GH)
+        Path(REAL_GH).is_file()
         and os.access(REAL_GH, os.X_OK)
-        and (os.path.realpath(REAL_GH) != os.path.realpath(__file__))
+        and (Path(REAL_GH).resolve() != Path(__file__).resolve())
     ):
         return REAL_GH
     path_dirs = os.environ.get("PATH", "").split(":")
-    script_path = os.path.realpath(__file__)
+    script_path = Path(__file__).resolve()
     for path_dir in path_dirs:
-        candidate = os.path.join(path_dir, "gh")
-        if os.path.isfile(candidate) and os.access(candidate, os.X_OK) and (os.path.realpath(candidate) != script_path):
+        candidate = Path(path_dir).joinpath("gh")
+        if Path(candidate).is_file() and os.access(candidate, os.X_OK) and (Path(candidate).resolve() != script_path):
             return candidate
     return None
 

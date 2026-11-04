@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRECTORIES, WORKER_COUNT
 import argparse
 import sys
 from dataclasses import dataclass
@@ -359,8 +360,6 @@ MIME_TO_EXTENSIONS: Final[dict[str, list[str]]] = {
 }
 SKIP_EXTENSIONS: Final[set[str]] = {".css", ".js", ".ts", ".jsx", ".tsx"}
 SKIP_MIME_TYPES: Final[set[str]] = {"text/plain", "application/octet-stream"}
-SKIP_DIRECTORIES: Final[frozenset[str]] = frozenset({".git", "__pycache__", ".venv", "node_modules", ".env"})
-WORKER_COUNT: Final[int] = 8
 
 
 @dataclass

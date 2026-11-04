@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import base64
 import json
@@ -228,12 +229,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Include sqlite_% internal tables",
     )
     parser.add_argument(
-        "--jobs",
-        type=int,
-        default=1,
-        help="Number of parallel processes (default: 1)",
-    )
-    parser.add_argument(
         "--fail-fast",
         action="store_true",
         help="Stop at first table error",
@@ -255,7 +250,7 @@ def main(argv: list[str] | None = None) -> int:
             ensure_ascii=args.ensure_ascii,
             text_errors=args.text_errors,
             include_internal=args.include_internal,
-            jobs=max(1, args.jobs),
+            jobs=max(1, MAX_WORKERS),
             fail_fast=args.fail_fast,
         )
     except sqlite3.Error as exc:

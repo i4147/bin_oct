@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import copy
 import json
@@ -12,8 +13,6 @@ import zipfile
 from collections import OrderedDict
 from contextlib import closing, suppress
 from io import BytesIO
-from os import path
-from os.path import abspath, basename, dirname, exists, join, splitext
 from shutil import get_terminal_size
 from traceback import format_exc
 from typing import Any, Optional
@@ -107,7 +106,7 @@ def num_to_cn(number: str) -> str:
 
 
 def extract_name(name: str, en: bool = False) -> str:
-    name, suffix = path.splitext(name)
+    name, suffix = (str(Path(name).with_suffix("")), Path(name).suffix)
     c_pattern: str = "[一-鿿]"
     e_pattern: str = "[a-zA-Z]"
     c_indices: list[int] = [m.start(0) for m in re.finditer(c_pattern, name)]
@@ -254,11 +253,11 @@ def guess_subtitle(sublist: list[str], video_detail: dict[str, Any]) -> tuple[bo
     scores: list[int] = []
     subs: list[str] = []
     for one_sub in sublist:
-        _, ftype = path.splitext(one_sub)
+        _, ftype = (str(Path(one_sub).with_suffix("")), Path(one_sub).suffix)
         if ftype not in SUB_FORMATS:
             continue
         subs.append(one_sub)
-        subname: str = path.split(one_sub)[-1]
+        subname: str = (Path(one_sub).parent, Path(one_sub).name)[-1]
         with suppress(Exception):
             subname = subname.encode("cp437").decode("gbk")
         score: int = compute_subtitle_score(video_detail, subname)
@@ -288,12 +287,12 @@ def get_file_list(data: bytes, datatype: str) -> dict[str, Any]:
         file_handler = rarfile.RarFile(sub_buff, mode="r")
     sub_lists_dict: dict[str, Any] = dict()
     for one_file in file_handler.namelist():
-        if path.splitext(one_file)[-1] in SUB_FORMATS:
+        if (str(Path(one_file).with_suffix("")), Path(one_file).suffix)[-1] in SUB_FORMATS:
             sub_lists_dict[one_file] = file_handler
             continue
-        if path.splitext(one_file)[-1] in ARCHIVE_TYPES:
+        if (str(Path(one_file).with_suffix("")), Path(one_file).suffix)[-1] in ARCHIVE_TYPES:
             data = file_handler.read(one_file)
-            datatype = path.splitext(one_file)[-1]
+            datatype = (str(Path(one_file).with_suffix("")), Path(one_file).suffix)[-1]
             sub_lists_dict.update(get_file_list(data, datatype))
     return sub_lists_dict
 
@@ -318,14 +317,14 @@ class P7ZIP:
                 break
             parts: list[str] = re.split(r"\s", line.strip())
             file_name: str = parts[-1].strip()
-            if path.basename(file_name) == file_name:
+            if Path(file_name).name == file_name:
                 continue
             file_names.append(file_name)
         return file_names
 
     def namelist(self) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp_dir:
-            file_path: str = path.join(tmp_dir, "archive.7z")
+            file_path: str = Path(tmp_dir).joinpath("archive.7z")
             with open(file_path, "wb") as f:
                 f.write(self.data)
             cmd: str = "7z l " + file_path
@@ -337,7 +336,7 @@ class P7ZIP:
 
     def read(self, name: str) -> bytes:
         with tempfile.TemporaryDirectory() as tmp_dir:
-            file_path: str = path.join(tmp_dir, "archive.7z")
+            file_path: str = Path(tmp_dir).joinpath("archive.7z")
             with open(file_path, "wb") as f:
                 f.write(self.data)
             cmd_lists: list[str] = ["7z", "e", file_path, "-o" + tmp_dir, name]
@@ -345,7 +344,7 @@ class P7ZIP:
             _output, err, status = run_command(cmd)
             if status != 0:
                 raise ValueError(err)
-            sub_file_path: str = path.join(tmp_dir, path.basename(name))
+            sub_file_path: str = Path(tmp_dir).joinpath(Path(name).name)
             with open(sub_file_path, "rb") as f:
                 sub_data: bytes = f.read()
         return sub_data
@@ -355,14 +354,14 @@ class Video:
     @classmethod
     def sub_exists(cls, video_name: str, store_path: str, identifier: str) -> bool:
         sub_types: list[str] = [identifier + sub_type for sub_type in SUB_FORMATS]
-        return any(exists(join(store_path, video_name + sub_type)) for sub_type in sub_types)
+        return any(Path(Path(store_path).joinpath(video_name + sub_type)).exists() for sub_type in sub_types)
 
     def __init__(self, video_path: str, sub_store_path: str = "", identifier: str = "") -> None:
         self.name: str
         self.type: str
-        self.name, self.type = splitext(basename(video_path))
-        self.path: str = abspath(dirname(video_path))
-        self.sub_store_path: str = abspath(sub_store_path) if sub_store_path else self.path
+        self.name, self.type = (str(Path(Path(video_path).name).with_suffix("")), Path(Path(video_path).name).suffix)
+        self.path: str = Path(Path(video_path).parent).absolute()
+        self.sub_store_path: str = Path(sub_store_path).absolute() if sub_store_path else self.path
         self.sub_identifier: str = identifier
         self.has_subtitle: bool = Video.sub_exists(self.name, self.sub_store_path, self.sub_identifier)
         self.extracted_name: str = extract_name(self.name)
@@ -373,8 +372,8 @@ class Video:
             return
         for one_sub_type in SUB_FORMATS:
             delete_name: str = self.name + self.sub_identifier + one_sub_type
-            delete_file: str = join(self.sub_store_path, delete_name)
-            if exists(delete_file):
+            delete_file: str = Path(self.sub_store_path).joinpath(delete_name)
+            if Path(delete_file).exists():
                 os.remove(delete_file)
 
 
@@ -784,7 +783,7 @@ class GetSubtitles:
         self.failed_list: list[dict[str, Any]] = []
         self.sub_identifier: str = "" if not self.plex else ".zh"
         self.sub_store_path: str = sub_path.replace('"', "")
-        if not path.isdir(self.sub_store_path):
+        if not Path(self.sub_store_path).is_dir():
             if self.sub_store_path:
                 print("store path is invalid: " + self.sub_store_path)
             self.sub_store_path = ""
@@ -794,20 +793,20 @@ class GetSubtitles:
     def get_videos(self, raw_path: str) -> list[Video]:
         raw_path = raw_path.replace('"', "")
         videos: list[Video] = []
-        if path.isdir(raw_path):
+        if Path(raw_path).is_dir():
             for root, dirs, files in os.walk(raw_path):
                 for file in files:
-                    v_type: str = path.splitext(file)[-1]
+                    v_type: str = (str(Path(file).with_suffix("")), Path(file).suffix)[-1]
                     if v_type not in VIDEO_FORMATS:
                         continue
                     video: Video = Video(
-                        path.join(root, file),
+                        Path(root).joinpath(file),
                         sub_store_path=self.sub_store_path,
                         identifier=self.sub_identifier,
                     )
                     videos.append(video)
-        elif path.isabs(raw_path):
-            v_type = path.splitext(raw_path)[-1]
+        elif Path(raw_path).is_absolute():
+            v_type = (str(Path(raw_path).with_suffix("")), Path(raw_path).suffix)[-1]
             if v_type in VIDEO_FORMATS:
                 video = Video(
                     raw_path,
@@ -865,12 +864,12 @@ class GetSubtitles:
             sub_name = choose_subtitle(list(sub_lists_dict.keys()))
         sub_title: str
         sub_type: str
-        _sub_title, sub_type = path.splitext(sub_name)
+        _sub_title, sub_type = (str(Path(sub_name).with_suffix("")), Path(sub_name).suffix)
         extract_subs: list[list[str]] = [[sub_name, sub_type]]
         if self.both:
             another_sub_type: str = ".srt" if sub_type == ".ass" else ".ass"
             another_sub: str = sub_name.replace(sub_type, another_sub_type)
-            another_sub = path.basename(another_sub)
+            another_sub = Path(another_sub).name
             for subname in list(sub_lists_dict.keys()):
                 if another_sub in subname:
                     extract_subs.append([subname, another_sub_type])
@@ -880,7 +879,7 @@ class GetSubtitles:
         video.delete_existed_subtitles()
         for one_sub, one_sub_type in extract_subs:
             sub_new_name: str = video.name + video.sub_identifier + one_sub_type
-            extract_path: str = path.join(video.sub_store_path, sub_new_name)
+            extract_path: str = Path(video.sub_store_path).joinpath(sub_new_name)
             with open(extract_path, "wb") as sub:
                 file_handler = sub_lists_dict[one_sub]
                 sub.write(file_handler.read(one_sub))
@@ -889,7 +888,7 @@ class GetSubtitles:
     def process_subtitle(self, video: Video, sub_data: bytes, datatype: str) -> tuple[str, list[list[str]]]:
         video.delete_existed_subtitles()
         sub_name: str = video.name + video.sub_identifier + datatype
-        extract_path: str = path.join(video.sub_store_path, sub_name)
+        extract_path: str = Path(video.sub_store_path).joinpath(sub_name)
         with open(extract_path, "wb") as sub:
             sub.write(sub_data)
         extract_subs: list[list[str]] = [[sub_name, datatype]]
@@ -931,7 +930,7 @@ class GetSubtitles:
             except UnicodeDecodeError:
                 print("\nExtracted:".encode("gbk"), extract_sub_name.encode("gbk"))
         if self.more and datatype in ARCHIVE_TYPES:
-            archive_path: str = path.join(video.sub_store_path, chosen_sub + datatype)
+            archive_path: str = Path(video.sub_store_path).joinpath(chosen_sub + datatype)
             with open(archive_path, "wb") as f:
                 assert data is not None
                 f.write(data)

@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import importlib.metadata
 import io
 import json
-import logging
 import multiprocessing
 import os
 import re
@@ -213,8 +214,8 @@ def process_packages(packages: dict[str, str], args: argparse.Namespace) -> dict
     items = list(packages.items())
     if not items:
         return {}
-    if args.workers > 1:
-        with multiprocessing.Pool(processes=args.workers) as pool:
+    if MAX_WORKERS > 1:
+        with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
             results = pool.starmap(
                 check_one,
                 [
@@ -228,7 +229,7 @@ def process_packages(packages: dict[str, str], args: argparse.Namespace) -> dict
                     )
                     for name, ver in items
                 ],
-                chunksize=max(1, len(items) // args.workers),
+                chunksize=max(1, len(items) // MAX_WORKERS),
             )
     else:
         results = []
@@ -309,23 +310,12 @@ def print_summary(results: dict[str, dict[str, Any]]) -> None:
 
 
 def setup_logging(log_file: Path, level: str) -> None:
-    logger = logging.getLogger("pkg_updater")
-    logger.setLevel(getattr(logging, level))
-    formatter = logging.Formatter(
-        "[%(asctime)s]%(levelname)-8s|%(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    fh = logging.FileHandler(log_file)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(formatter)
-    logger.addHandler(sh)
+    fh = logger.add(log_file)
+    sh = logger.add(sys.stdout)
 
 
 def add_common_args(parser: argparse.ArgumentParser, defaults: dict[str, Any]) -> None:
     parser.add_argument("--backend", choices=["requests", "pycurl"], default=defaults["backend"])
-    parser.add_argument("--workers", type=int, default=defaults["workers"])
     parser.add_argument("--timeout", type=int, default=defaults["timeout"])
     parser.add_argument("--user-agent", default=defaults["user_agent"])
     parser.add_argument(
@@ -376,7 +366,6 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     c4u_defaults = {
         "backend": "requests",
-        "workers": min(os.cpu_count() or 1, 8),
         "timeout": 10,
         "user_agent": "Package-Updater/1.0",
         "normalize": "none",
@@ -397,7 +386,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_args(p_c4u, c4u_defaults)
     c4u2_defaults = {
         "backend": "pycurl",
-        "workers": 1,
         "timeout": 15,
         "user_agent": "Package-Updater/1.0",
         "normalize": "none",
@@ -418,7 +406,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_args(p_c4u2, c4u2_defaults)
     check4update_defaults = {
         "backend": "pycurl",
-        "workers": 8,
         "timeout": 30,
         "user_agent": "Package-Checker/1.0",
         "normalize": "pypi",
@@ -439,7 +426,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_args(p_check4update, check4update_defaults)
     checkforupdate_defaults = {
         "backend": "requests",
-        "workers": 1,
         "timeout": 10,
         "user_agent": "Package-Updater/1.0",
         "normalize": "underscore",
@@ -460,7 +446,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_args(p_checkforupdate, checkforupdate_defaults)
     check_defaults = {
         "backend": "requests",
-        "workers": 1,
         "timeout": 10,
         "user_agent": "Package-Updater/1.0",
         "normalize": "none",

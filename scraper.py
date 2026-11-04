@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from loguru import logger
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import hashlib
@@ -774,7 +776,7 @@ def _movie_parallel(args: argparse.Namespace) -> int:
     if not base.endswith("/"):
         base += "/"
     max_mb = args.size
-    processes = args.processes
+    processes = MAX_WORKERS
     state_file = Path(args.state_file)
     movies_file = Path(args.movies_file)
     json_out = Path(args.json_out)
@@ -1330,7 +1332,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--movies-file", default="movies.txt")
     sp.add_argument("--state-file", default="crawler_state.json")
     sp.add_argument("--json-out", default="movies.json", help="JSON output for --engine parallel.")
-    sp.add_argument("--processes", type=int, default=8, help="Processes for --engine parallel.")
     sp.add_argument("--timeout", type=float, default=15)
     sp.add_argument("--extensions", nargs="+", default=[".mkv", ".mp4"])
     sp.add_argument("--qualities", nargs="+", default=["480p", "720p"])

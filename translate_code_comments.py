@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import io
-import logging
 import re
 import shutil
 import tokenize
@@ -12,7 +13,7 @@ from pathlib import Path
 from typing import Iterator, Sequence
 from deep_translator import GoogleTranslator
 
-LOGGER = logging.getLogger("merged_translator")
+LOGGER = logger
 DEFAULT_EXCLUDED_DIRS = frozenset({
     "lazy",
     ".git",
@@ -85,7 +86,7 @@ class Translator:
                 time.sleep(self.config.delay)
             return result or text
         except Exception as exc:
-            LOGGER.warning("Translation failed for %r: %s", text[:80], exc)
+            LOGGER.warning("Translation failed for {}: {}", text[:80], exc)
             return text
 
     def translate_many(self, texts: Sequence[str]) -> list[str]:
@@ -104,12 +105,12 @@ class Translator:
             if len(translated) == len(texts):
                 return translated
             LOGGER.warning(
-                "Batch translation count mismatch: got %d, expected %d; falling back to individual translation",
+                "Batch translation count mismatch: got {}, expected {}; falling back to individual translation",
                 len(translated),
                 len(texts),
             )
         except Exception as exc:
-            LOGGER.warning("Batch translation failed: %s", exc)
+            LOGGER.warning("Batch translation failed: {}", exc)
         return [self.translate(text) for text in texts]
 
 
@@ -157,7 +158,7 @@ def should_translate_pycld2(
         language_code = details[0][1]
         return language_code not in PYCLD2_CODES_TO_SKIP
     except Exception as exc:
-        LOGGER.warning("pycld2 detection failed: %s", exc)
+        LOGGER.warning("pycld2 detection failed: {}", exc)
         return False
 
 
@@ -323,7 +324,7 @@ def translate_python_tokens(
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
         tree = ast.parse(source)
     except (tokenize.TokenError, IndentationError, SyntaxError) as exc:
-        LOGGER.warning("Skipping Python source with parse error: %s", exc)
+        LOGGER.warning("Skipping Python source with parse error: {}", exc)
         return source, 0
     offsets = line_offsets(source)
     print_locations, docstring_locations = ast_string_locations(tree)
@@ -371,10 +372,10 @@ def translate_python_tokens(
                     original_token,
                 )
         except ValueError as exc:
-            LOGGER.warning("Skipping literal at offset %d: %s", start, exc)
+            LOGGER.warning("Skipping literal at offset {}: {}", start, exc)
             continue
         LOGGER.info(
-            "  [%s] %s -> %s",
+            "  [{}] {} -> {}",
             kind,
             original_text,
             translated_text,
@@ -385,7 +386,7 @@ def translate_python_tokens(
     try:
         ast.parse(updated)
     except SyntaxError as exc:
-        LOGGER.error("Generated invalid Python; discarding changes: %s", exc)
+        LOGGER.error("Generated invalid Python; discarding changes: {}", exc)
         return source, 0
     return updated, changed
 
@@ -416,31 +417,31 @@ def translate_file(
     try:
         original = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as exc:
-        LOGGER.error("Could not read %s: %s", path, exc)
+        LOGGER.error("Could not read {}: {}", path, exc)
         return path, False, 0
     try:
         updated, count = transform(original)
     except Exception as exc:
-        LOGGER.error("Failed to process %s: %s", path, exc)
+        LOGGER.error("Failed to process {}: {}", path, exc)
         return path, False, 0
     if count == 0 or updated == original:
         return path, False, 0
     if config.dry_run:
-        LOGGER.info("[dry-run] Would update %s", path)
+        LOGGER.info("[dry-run] Would update {}", path)
         return path, True, count
     if config.backup:
         backup_path = path.with_suffix(path.suffix + ".bak")
         try:
             shutil.copyfile(path, backup_path)
         except OSError as exc:
-            LOGGER.error("Could not create backup %s: %s", backup_path, exc)
+            LOGGER.error("Could not create backup {}: {}", backup_path, exc)
             return path, False, 0
     try:
         path.write_text(updated, encoding="utf-8")
     except OSError as exc:
-        LOGGER.error("Could not write %s: %s", path, exc)
+        LOGGER.error("Could not write {}: {}", path, exc)
         return path, False, 0
-    LOGGER.info("[updated] %s", path)
+    LOGGER.info("[updated] {}", path)
     return path, True, count
 
 
@@ -464,7 +465,7 @@ def process_in_parallel(
                 stats.translated_items += count
             except Exception as exc:
                 stats.failed_items += 1
-                LOGGER.error("Worker failed: %s", exc)
+                LOGGER.error("Worker failed: {}", exc)
     return stats
 
 
@@ -522,11 +523,11 @@ def run_python_mode(
         )
         return path, changed, count
 
-    print(f"Found {len(files)} Python files. Processing with {args.workers} workers...")
+    print(f"Found {len(files)} Python files. Processing with {MAX_WORKERS} workers...")
     stats = process_in_parallel(
         files,
         process,
-        workers=args.workers,
+        workers=MAX_WORKERS,
     )
     print(f"Done. Modified {stats.changed_files} files; translated {stats.translated_items} items.")
     return 0
@@ -582,7 +583,7 @@ def run_batch_mode(args: argparse.Namespace) -> int:
         elif path.is_file():
             paths.append(path)
         else:
-            LOGGER.warning("Path does not exist: %s", path)
+            LOGGER.warning("Path does not exist: {}", path)
     if not paths:
         print("No files to process.")
         return 0
@@ -621,11 +622,11 @@ def run_batch_mode(args: argparse.Namespace) -> int:
         )
         return path, changed, count
 
-    print(f"Processing {len(paths)} files with {args.workers} workers...")
+    print(f"Processing {len(paths)} files with {MAX_WORKERS} workers...")
     stats = process_in_parallel(
         paths,
         process,
-        workers=args.workers,
+        workers=MAX_WORKERS,
     )
     print(f"Done. Modified {stats.changed_files} files; translated {stats.translated_items} items.")
     return 0
@@ -653,12 +654,6 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=float,
         default=0.5,
         help="Delay between individual translations; default: 0.5.",
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Number of worker threads; default: 8.",
     )
     parser.add_argument(
         "--exclude",
@@ -769,7 +764,6 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--target", default="en")
     batch.add_argument("--source", default="auto")
     batch.add_argument("--delay", type=float, default=0.5)
-    batch.add_argument("--workers", type=int, default=8)
     batch.add_argument(
         "--exclude",
         action="append",
@@ -794,8 +788,4 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-    )
     raise SystemExit(main())

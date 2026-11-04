@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import ast
 import builtins
@@ -16,7 +17,6 @@ from pathlib import Path
 from dh import append_text, runcmd
 
 OUTPUT_FILE = Path("compressed.txt")
-WORKERS = 8
 PROTECTED_NAMES = {
     "__name__",
     "__main__",

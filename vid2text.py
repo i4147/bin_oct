@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import os
 import sys
@@ -72,7 +73,7 @@ def run_threaded(video: Path, out_path: Path, opts: argparse.Namespace) -> None:
     in_q: "Queue" = Queue(maxsize=opts.queue_size)
     done_q: "Queue" = Queue()
     workers = [
-        threading.Thread(target=worker, args=(in_q, done_q, out_path, opts), daemon=False) for _ in range(opts.workers)
+        threading.Thread(target=worker, args=(in_q, done_q, out_path, opts), daemon=False) for _ in range(MAX_WORKERS)
     ]
     for w in workers:
         w.start()
@@ -127,12 +128,6 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("threaded", "sequential"),
         default="threaded",
         help="Execution strategy (default: threaded).",
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=os.cpu_count() or 1,
-        help="Worker threads in threaded mode (default: CPU count).",
     )
     parser.add_argument(
         "--queue-size",

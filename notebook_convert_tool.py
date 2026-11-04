@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -232,7 +233,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
     files: list[Path] = find_files(args.paths, ".ipynb")
     jobs: list[tuple[Path, bool]] = [(p, args.dry_run) for p in files]
     stripped: int = 0
-    with ProcessPoolExecutor(max_workers=max(1, args.workers)) as pool:
+    with ProcessPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
         for path, changed, note in pool.map(strip_one, jobs):
             stripped += 1 if changed else 0
             print(f"{path}: {note}")
@@ -291,7 +292,6 @@ def build_parser() -> argparse.ArgumentParser:
     st = sub.add_parser("strip", help="Clear outputs/execution counts")
     st.add_argument("paths", nargs="*", type=Path)
     st.add_argument("-n", "--dry-run", action="store_true")
-    st.add_argument("-j", "--workers", type=int, default=8)
     st.set_defaults(handler=cmd_strip)
     mt = sub.add_parser("meta-to-ipynb", help="Markdown doc -> notebook")
     mt.add_argument("input", type=Path)

@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-import logging
+from loguru import logger
 import shutil
 import sys
 import time
@@ -8,16 +8,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 from tqdm import tqdm
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(Path.home() / "face_detection.log"),
-        logging.StreamHandler(),
-    ],
-)
-logger = logging.getLogger(__name__)
 try:
     import cv2
 

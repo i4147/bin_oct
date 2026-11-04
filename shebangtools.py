@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import os
@@ -12,7 +13,6 @@ TERMUX_PREFIX = "/data/data/com.termux/files/usr"
 DEFAULT_SHEBANG_FIX = "#!/data/data/com.termux/usr"
 DEFAULT_SHEBANG_ADD = f"#!{TERMUX_PREFIX}/bin/env python"
 DEFAULT_SHEBANG_SH = f"#!{TERMUX_PREFIX}/bin/bash"
-DEFAULT_WORKERS = 8
 _TERMUX_PY_SHEBANGS = {
     f"#!{TERMUX_PREFIX}/bin/python",
     f"#!{TERMUX_PREFIX}/bin/python3.14",
@@ -223,7 +223,7 @@ def _detect_ext_simple(path: Path) -> Optional[str]:
     if "/env " in cmd:
         cmd = cmd.split("/env ")[-1]
     else:
-        cmd = os.path.basename(cmd)
+        cmd = Path(cmd).name
     lower = cmd.lower()
     for name, ext in _SHEBANG_TO_EXT.items():
         if name in lower:
@@ -405,7 +405,7 @@ def _cmd_fix_sh(args: argparse.Namespace) -> int:
     if not files:
         print("No .sh files found.")
         return 0
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         for msg in ex.map(_worker_fix_sh, [str(f) for f in files], [args.shebang] * len(files)):
             if msg:
                 print(msg)
@@ -460,7 +460,7 @@ def _cmd_fix(args: argparse.Namespace) -> int:
     skipped_non_py = 0
     unchanged = 0
     errors: list[tuple[str, str]] = []
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futures = [ex.submit(_worker_fix_python, str(f), args.shebang, args.cv2_shebang) for f in files]
         for fut in futures:
             path_str, changed, reason, status = fut.result()
@@ -549,7 +549,7 @@ def _cmd_rm(args: argparse.Namespace) -> int:
     if not files:
         print("No .py files found.")
         return 0
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         for msg in ex.map(_worker_rm, [str(f) for f in files]):
             if msg:
                 print(msg)
@@ -562,7 +562,7 @@ def _cmd_add(args: argparse.Namespace) -> int:
     if not files:
         print("No files found.")
         return 0
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         for msg in ex.map(_worker_add_python, [str(f) for f in files], [args.shebang] * len(files)):
             if msg:
                 print(msg)
@@ -585,7 +585,7 @@ def _cmd_to_cloud(args: argparse.Namespace) -> int:
     successes = 0
     skipped = 0
     failed = 0
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         for path_str, ok, reason in ex.map(_convert_to_cloud, [str(f) for f in files]):
             if ok:
                 successes += 1
@@ -620,7 +620,6 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("fix-sh", help="rewrite .sh shebangs")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--shebang", default=DEFAULT_SHEBANG_SH)
-    sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_fix_sh)
     sp = sub.add_parser("fix-ext", help="rename files to match shebang extension")
     sp.add_argument("paths", nargs="*")
@@ -631,7 +630,6 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--shebang", default=DEFAULT_SHEBANG_FIX)
     sp.add_argument("--cv2-shebang", default=DEFAULT_SHEBANG_FIX)
-    sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_fix)
     sp = sub.add_parser("rename", help="rename by broad shebang map")
     sp.add_argument("paths", nargs="*")
@@ -639,16 +637,13 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=_cmd_rename)
     sp = sub.add_parser("rm", help="remove shebang from .py files")
     sp.add_argument("paths", nargs="*")
-    sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_rm)
     sp = sub.add_parser("add", help="add Termux python shebang")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--shebang", default=DEFAULT_SHEBANG_ADD)
-    sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_add)
     sp = sub.add_parser("to-cloud", help="convert Termux shebang -> env")
     sp.add_argument("paths", nargs="*")
-    sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_to_cloud)
     return p
 

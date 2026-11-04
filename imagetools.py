@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -57,16 +58,11 @@ try:
 except ImportError:
     convert_from_bytes = None
     _HAS_PDF2IMAGE = False
-LOG = logging.getLogger("imgtool")
+LOG = logger
 
 
 def setup_logging(verbose: bool = False) -> None:
-    logging.basicConfig(
-        level=logging.DEBUG if verbose else logging.INFO,
-        format="%(asctime)s  %(levelname)-8s  %(message)s",
-        datefmt="%H:%M:%S",
-        stream=sys.stdout,
-    )
+    pass
 
 
 DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
@@ -150,7 +146,7 @@ def find_files(
                 _add(root)
             continue
         if not root.is_dir():
-            LOG.warning("Not a file or directory: %s", root)
+            LOG.warning("Not a file or directory: {}", root)
             continue
         iterator = root.rglob("*") if recursive else root.iterdir()
         for f in iterator:
@@ -210,7 +206,7 @@ def _run_parallel(
             try:
                 results.append(fut.result())
             except Exception as exc:
-                LOG.error("Worker raised: %s", exc)
+                LOG.error("Worker raised: {}", exc)
     return results
 
 
@@ -375,11 +371,11 @@ def _extract_gif_frames(path: Path, dup_mean: float, dup_frac: float) -> list["n
                 canvas.paste(rgba, mask=rgba.split()[3])
                 arr = np.asarray(canvas.convert("RGB"))
                 if frames and is_dup(frames[-1], arr):
-                    LOG.debug("  skipping near-duplicate frame %d in %s", idx, path.name)
+                    LOG.debug("  skipping near-duplicate frame {} in {}", idx, path.name)
                     continue
                 frames.append(arr)
     except (UnidentifiedImageError, OSError) as exc:
-        LOG.error("Cannot open %s: %s", path, exc)
+        LOG.error("Cannot open {}: {}", path, exc)
     return frames
 
 
@@ -407,7 +403,7 @@ def _worker_gif(task):
             im.save(dst, format="JPEG", quality=quality, optimize=True)
             written += 1
         except OSError as exc:
-            LOG.error("Failed to save %s: %s", dst, exc)
+            LOG.error("Failed to save {}: {}", dst, exc)
     return (str(src), True, f"{src.name}: {written} frame(s) -> JPG")
 
 
@@ -427,17 +423,17 @@ def cmd_to_jpg(args: argparse.Namespace) -> int:
             continue
         dst = (out_dir / (src.stem + ".jpg")) if out_dir else src.with_suffix(".jpg")
         if dst.exists() and not args.overwrite:
-            LOG.debug("skip (exists): %s", dst)
+            LOG.debug("skip (exists): {}", dst)
             continue
         tasks.append((src, dst, args.quality, args.backend, args.delete_source))
     if not tasks:
         LOG.info("Nothing to do.")
         return 0
-    LOG.info("Converting %d file(s) to JPEG (%d worker(s))…", len(tasks), args.workers)
-    results = _run_parallel(_worker_jpg, tasks, args.workers)
+    LOG.info("Converting {} file(s) to JPEG ({} worker(s))…", len(tasks), MAX_WORKERS)
+    results = _run_parallel(_worker_jpg, tasks, MAX_WORKERS)
     ok = sum(1 for _, s, _ in results if s)
     fail = len(results) - ok
-    LOG.info("Done. %d succeeded, %d failed.", ok, fail)
+    LOG.info("Done. {} succeeded, {} failed.", ok, fail)
     return 0 if fail == 0 else 1
 
 
@@ -457,17 +453,17 @@ def cmd_to_png(args: argparse.Namespace) -> int:
             continue
         dst = (out_dir / (src.stem + ".png")) if out_dir else src.with_suffix(".png")
         if dst.exists() and not args.overwrite:
-            LOG.debug("skip (exists): %s", dst)
+            LOG.debug("skip (exists): {}", dst)
             continue
         tasks.append((src, dst, args.backend, args.delete_source, args.preserve_alpha))
     if not tasks:
         LOG.info("Nothing to do.")
         return 0
-    LOG.info("Converting %d file(s) to PNG (%d worker(s))…", len(tasks), args.workers)
-    results = _run_parallel(_worker_png, tasks, args.workers)
+    LOG.info("Converting {} file(s) to PNG ({} worker(s))…", len(tasks), MAX_WORKERS)
+    results = _run_parallel(_worker_png, tasks, MAX_WORKERS)
     ok = sum(1 for _, s, _ in results if s)
     fail = len(results) - ok
-    LOG.info("Done. %d succeeded, %d failed.", ok, fail)
+    LOG.info("Done. {} succeeded, {} failed.", ok, fail)
     return 0 if fail == 0 else 1
 
 
@@ -477,12 +473,12 @@ def cmd_gif_to_jpg(args: argparse.Namespace) -> int:
     if not files:
         LOG.info("No GIF files found.")
         return 0
-    LOG.info("Found %d GIF file(s). Converting…", len(files))
+    LOG.info("Found {} GIF file(s). Converting…", len(files))
     tasks = [(f, args.quality, args.dup_mean, args.dup_frac, args.overwrite) for f in files]
-    results = _run_parallel(_worker_gif, tasks, args.workers)
+    results = _run_parallel(_worker_gif, tasks, MAX_WORKERS)
     ok = sum(1 for _, s, _ in results if s)
     fail = len(results) - ok
-    LOG.info("Done. %d GIF(s) processed, %d failed.", ok, fail)
+    LOG.info("Done. {} GIF(s) processed, {} failed.", ok, fail)
     return 0 if fail == 0 else 1
 
 
@@ -494,16 +490,16 @@ def cmd_invert(args: argparse.Namespace) -> int:
         LOG.warning("No image files found to invert.")
         return 0
     LOG.info(
-        "Inverting %d file(s) (%d worker(s))%s…",
+        "Inverting {} file(s) ({} worker(s)){}…",
         len(files),
-        args.workers,
+        MAX_WORKERS,
         " [DRY RUN]" if args.dry_run else "",
     )
     tasks = [(f, args.dry_run) for f in files]
-    results = _run_parallel(_worker_invert, tasks, args.workers)
+    results = _run_parallel(_worker_invert, tasks, MAX_WORKERS)
     ok = sum(1 for _, s, _ in results if s)
     fail = len(results) - ok
-    LOG.info("Done. %d succeeded, %d failed.", ok, fail)
+    LOG.info("Done. {} succeeded, {} failed.", ok, fail)
     return 0 if fail == 0 else 1
 
 
@@ -571,12 +567,12 @@ def cmd_html_to_png(args: argparse.Namespace) -> int:
         dst = (out_dir / f"{stem}.png") if out_dir else Path(f"{stem}.png")
         try:
             _html_to_png(src, dst, args.method, args.width, args.dpi, args.scale)
-            LOG.info("PNG saved to: %s", dst)
+            LOG.info("PNG saved to: {}", dst)
             ok += 1
         except Exception as exc:
-            LOG.error("Failed to render %s: %s", src, exc)
+            LOG.error("Failed to render {}: {}", src, exc)
             fail += 1
-    LOG.info("Done. %d succeeded, %d failed.", ok, fail)
+    LOG.info("Done. {} succeeded, {} failed.", ok, fail)
     return 0 if fail == 0 else 1
 
 
@@ -602,13 +598,6 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         help="Output directory (default: alongside the source).",
     )
     p.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
-    p.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=0,
-        help="Worker processes (0 = CPU count, 1 = sequential).",
-    )
     p.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
 
 
@@ -754,13 +743,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not getattr(args, "command", None):
         parser.print_help()
         return 2
-    if hasattr(args, "workers") and (args.workers is None or args.workers <= 0):
-        try:
-            import os
-
-            args.workers = os.cpu_count() or 1
-        except Exception:
-            args.workers = 1
     setup_logging(getattr(args, "verbose", False))
     try:
         return args.func(args)

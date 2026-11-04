@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
-import logging
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -12,8 +13,6 @@ from joblib import Parallel, delayed
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -155,13 +154,6 @@ Examples:
         help="Files or directories to process (default: current directory)",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=4,
-        help="Number of parallel workers (default: 4)",
-    )
-    parser.add_argument(
         "-c",
         "--chunk-size",
         default="1M",
@@ -175,7 +167,7 @@ Examples:
     parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed logging")
     args = parser.parse_args()
     if args.verbose:
-        logger.setLevel(logging.DEBUG)
+        pass
     chunk_size_str = args.chunk_size.upper()
     multipliers = {"K": 1024, "M": 1024**2, "G": 1024**3}
     try:
@@ -199,8 +191,8 @@ Examples:
         logger.warning("No files found to process")
         return 0
     print(f"Found {len(files)} files to process")
-    print(f"Starting parallel processing with {args.workers} workers")
-    results = Parallel(n_jobs=args.workers, verbose=0)(
+    print(f"Starting parallel processing with {MAX_WORKERS} workers")
+    results = Parallel(n_jobs=MAX_WORKERS, verbose=0)(
         delayed(process_file_chunked)(path, chunk_size) for path in files
     )
     print("\n" + "=" * 40)

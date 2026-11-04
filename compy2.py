@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import WORKERS
 import argparse
 import ast
 import builtins
@@ -16,7 +17,6 @@ from pathlib import Path
 from dh import runcmd
 
 OUTPUT_FILE = Path("compressed.txt")
-WORKERS = 8
 COMPRESSION_NOTE = (
     "# NOTE: This code is compressed. Standard library imports have been removed. "
     "You may rename variables and functions freely."

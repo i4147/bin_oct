@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import os
@@ -257,7 +258,6 @@ def optimize_one(args: tuple[Path, dict, bool]) -> Result:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4)
     ap.add_argument("-n", "--dry-run", action="store_true")
     ap.add_argument(
         "-v", "--verbose", action="store_true", help="Forward tool stdout/stderr (drops the tools' -q flag)."
@@ -306,7 +306,7 @@ def main() -> int:
         print("No processable files (all required tools missing).")
         return 1
     print(f"Root: {root}")
-    print(f"Files: {len(files)} | jobs: {args.jobs} | dry-run: {args.dry_run}")
+    print(f"Files: {len(files)} | jobs: {MAX_WORKERS} | dry-run: {args.dry_run}")
     print(
         f"jpg-quality: {args.jpg_quality} | png-quality: {args.png_quality} | "
         f"svg-multipass: {not args.no_svg_multipass}"
@@ -336,7 +336,7 @@ def main() -> int:
     total_saved = 0
     counts = {"optimized": 0, "unchanged": 0, "error": 0}
     by_kind: dict[str, int] = {}
-    with mp.Pool(processes=args.jobs) as pool:
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         for r in pool.imap_unordered(optimize_one, tasks):
             if args.verbose and (r.stdout or r.stderr):
                 if r.stdout:

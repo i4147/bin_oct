@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS
 import argparse
 import difflib
 import importlib
@@ -366,16 +368,6 @@ def validate(
     return None
 
 
-def atomic_write(target: Path, data: bytes, mode_from: Path) -> None:
-    tmp = target.with_name(f".{target.name}.tmp")
-    try:
-        tmp.write_bytes(data)
-        shutil.copymode(mode_from, tmp)
-        os.replace(tmp, target)
-    finally:
-        tmp.unlink(missing_ok=True)
-
-
 def process_file(path: Path, opts: Options) -> Result:
     try:
         if path.is_symlink() or not path.is_file():
@@ -487,7 +479,7 @@ def discover(inputs: list[str], excludes: frozenset[str]) -> tuple[list[Path], l
 
 def display_path(path: Path) -> str:
     try:
-        return os.path.relpath(path.resolve(), Path.cwd())
+        return Path(path.resolve()).relative_to(Path.cwd())
     except ValueError:
         return str(path)
 
@@ -596,7 +588,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--keep-doc", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--exclude", action="append", default=[], metavar="NAME")
     parser.add_argument("--max-size", type=int, default=5 * 1024 * 1024)
-    parser.add_argument("--jobs", "-j", type=int, default=8)
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("-q", "--quiet", action="store_true")
     return parser
@@ -605,7 +596,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.jobs < 1:
+    if MAX_WORKERS < 1:
         parser.error("--jobs must be >= 1")
     color = use_color(args.color)
     excludes = DEFAULT_EXCLUDES | frozenset(args.exclude)
@@ -627,7 +618,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     worker = partial(process_file, opts=opts)
     results: list[Result] = []
-    with mp.Pool(processes=args.jobs) as pool:
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         for res in pool.imap_unordered(worker, files, chunksize=4):
             results.append(res)
     print_report(results, args, color)

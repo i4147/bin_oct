@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import difflib
@@ -639,7 +640,6 @@ def build_parser() -> argparse.ArgumentParser:
     backups = parser.add_mutually_exclusive_group()
     backups.add_argument("--backup", action="store_true", help="write a .bak file beside each change")
     backups.add_argument("--backup-dir", type=Path, help="write .bak files under this directory")
-    parser.add_argument("--workers", type=positive_integer, default=4, help="worker process count")
     parser.add_argument(
         "--pool-method",
         choices=("imap_unordered", "imap", "map"),
@@ -697,7 +697,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         backup_directory,
     )
     try:
-        processed = run_pool(work_items, arguments.workers, arguments.pool_method)
+        processed = run_pool(work_items, MAX_WORKERS, arguments.pool_method)
     except Exception as error:
         logger.error(f"worker pool failed: {type(error).__name__}: {error}")
         processed = [

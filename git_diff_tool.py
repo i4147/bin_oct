@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import subprocess
@@ -109,7 +110,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     if not repos:
         print(f"No git repositories under {args.root}")
         return 0
-    with ProcessPoolExecutor(max_workers=max(1, args.workers)) as pool:
+    with ProcessPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
         results: list[dict[str, object]] = list(pool.map(repo_status, repos))
     shown: int = 0
     for info in sorted(results, key=lambda item: str(item["repo"])):
@@ -158,7 +159,6 @@ def build_parser() -> argparse.ArgumentParser:
     st = sub.add_parser("status", help="Status of every repo under a root")
     st.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     st.add_argument("--dirty-only", action="store_true")
-    st.add_argument("-j", "--workers", type=int, default=8)
     st.set_defaults(handler=cmd_status)
     af = sub.add_parser("added-files", help="Files added per commit (JSON)")
     af.add_argument("repo", nargs="?", type=Path, default=Path.cwd())

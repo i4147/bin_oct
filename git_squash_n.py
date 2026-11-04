@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import argparse
 import json
 import os
@@ -30,7 +31,7 @@ def is_git_repo(path="."):
 
 class Backend:
     def __init__(self, repo_path="."):
-        self.repo_path = os.path.abspath(repo_path)
+        self.repo_path = Path(repo_path).absolute()
         self.fallback = SubprocessBackend(self.repo_path)
 
     def ensure_clean_worktree(self, force=False):
@@ -66,7 +67,7 @@ class Backend:
 
 class SubprocessBackend(Backend):
     def __init__(self, repo_path="."):
-        self.repo_path = os.path.abspath(repo_path)
+        self.repo_path = Path(repo_path).absolute()
 
     def ensure_clean_worktree(self, force=False):
         st = run(["git", "status", "--porcelain"], cwd=self.repo_path, capture=True)
@@ -207,7 +208,7 @@ class GenericBackend(Backend):
     def __init__(self, name, repo_path="."):
         super().__init__(repo_path)
         self.name = name
-        self.repo_path = os.path.abspath(repo_path)
+        self.repo_path = Path(repo_path).absolute()
         self.subprocess = SubprocessBackend(self.repo_path)
         self._available = {}
         if name == "gitpython":
@@ -374,8 +375,8 @@ def main():
     print("Commits to squash (oldest->newest):")
     for c in commits:
         print("  ", c)
-    patch_path = os.path.abspath(args.patch_file)
-    meta_path = os.path.abspath(args.meta_file)
+    patch_path = Path(args.patch_file).absolute()
+    meta_path = Path(args.meta_file).absolute()
     if args.dry_run:
         print(
             "[dry-run] Would write combined diff and metadata here:",

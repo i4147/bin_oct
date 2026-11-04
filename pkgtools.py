@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import concurrent.futures
 import csv
 import fnmatch
 import importlib.metadata
-import logging
 import os
 import shutil
 import site
@@ -12,17 +13,9 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
-logger = logging.getLogger("pkgtool")
-
 
 def configure_logging(verbose: bool = False) -> None:
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format="%(levelname)s | %(message)s",
-        stream=sys.stderr,
-    )
-    logger.setLevel(level)
+    level = "DEBUG" if verbose else "INFO"
 
 
 def get_user_site() -> Path:
@@ -72,14 +65,14 @@ def find_site_packages_dirs(start: Path) -> list[Path]:
                         if sp.is_dir():
                             found.add(sp.resolve())
         except (PermissionError, OSError) as exc:
-            logger.debug("Permission denied while scanning %s: %s", venv, exc)
+            logger.debug("Permission denied while scanning {}: {}", venv, exc)
     for name in ("site-packages", "dist-packages"):
         try:
             for sp in start.rglob(name):
                 if sp.is_dir():
                     found.add(sp.resolve())
         except (PermissionError, OSError) as exc:
-            logger.debug("Permission denied while scanning %s: %s", name, exc)
+            logger.debug("Permission denied while scanning {}: {}", name, exc)
     return sorted(found)
 
 
@@ -93,7 +86,7 @@ def find_dist_info(root: Path, pkg: str) -> Path:
         raise FileNotFoundError(msg)
     if len(candidates) > 1:
         logger.warning(
-            "Multiple dist-info directories found for %r, using %s",
+            "Multiple dist-info directories found for {}, using {}",
             pkg,
             candidates[0],
         )
@@ -135,7 +128,7 @@ def read_metadata(dist_info: Path) -> dict[str, Any]:
                 elif line.startswith("Requires-Python:"):
                     meta["requires_python"] = line.split(":", 1)[1].strip()
         except Exception as exc:
-            logger.warning("Could not read metadata from %s: %s", metadata_file, exc)
+            logger.warning("Could not read metadata from {}: {}", metadata_file, exc)
     if meta["version"] is None:
         parts = dist_info.stem.split("-")
         if len(parts) >= 2:
@@ -172,7 +165,7 @@ def copy_record_files(
 ) -> tuple[int, int, int]:
     record = dist_info / "RECORD"
     if not record.exists():
-        logger.warning("RECORD not found in %s", dist_info)
+        logger.warning("RECORD not found in {}", dist_info)
         return 0, 0, 0
     package_name = dist_info.name.replace(".dist-info", "").split("-")[0]
     base_dest = dest_root / package_name if per_package_subdir else dest_root
@@ -197,7 +190,7 @@ def copy_record_files(
                     continue
                 if src.suffix != ".pyc":
                     if warn_missing:
-                        logger.warning("Missing file listed in RECORD: %s", src)
+                        logger.warning("Missing file listed in RECORD: {}", src)
                     missing += 1
                     continue
                 continue
@@ -212,7 +205,7 @@ def copy_record_files(
                 shutil.copy2(src, dst)
             copied += 1
         except Exception as exc:
-            logger.exception("Error processing RECORD entry %r: %s", row, exc)
+            logger.exception("Error processing RECORD entry {}: {}", row, exc)
             errors += 1
     return copied, missing, errors
 
@@ -286,7 +279,7 @@ def repack_package(
 ) -> Path | None:
     record = dist_info / "RECORD"
     if not record.exists():
-        logger.warning("Skipping %s: RECORD file not found", dist_info.name)
+        logger.warning("Skipping {}: RECORD file not found", dist_info.name)
         return None
     meta = read_metadata(dist_info)
     name = meta["name"]
@@ -304,7 +297,7 @@ def repack_package(
         src = site_packages / path_str
         if not src.exists():
             if verbose:
-                logger.debug("Missing file from RECORD: %s", src)
+                logger.debug("Missing file from RECORD: {}", src)
             continue
         if ".dist-info" in path_str:
             dst = dist_info_dest / Path(path_str).name
@@ -372,7 +365,7 @@ def cmd_record(args: argparse.Namespace) -> int:
             warn_missing=args.warn_missing,
         )
         logger.info(
-            "%s: copied=%d missing=%d errors=%d",
+            "{}: copied={} missing={} errors={}",
             pkg,
             copied,
             missing,
@@ -380,8 +373,8 @@ def cmd_record(args: argparse.Namespace) -> int:
         )
         return copied
 
-    if args.workers > 1:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+    if MAX_WORKERS > 1:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             list(executor.map(lambda item: process(*item), packages))
     else:
         for pkg, dist_info in packages:
@@ -393,7 +386,7 @@ def cmd_site_copy(args: argparse.Namespace) -> int:
     site_paths = get_site_packages_paths(include_user=not args.no_user_site)
     output = Path(args.output).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {
             executor.submit(
                 copy_package_tree,
@@ -409,11 +402,11 @@ def cmd_site_copy(args: argparse.Namespace) -> int:
             try:
                 name, ok, msg = future.result()
                 if ok:
-                    logger.info("%s: %s", name, msg)
+                    logger.info("{}: {}", name, msg)
                 else:
-                    logger.error("%s: %s", name, msg)
+                    logger.error("{}: {}", name, msg)
             except Exception as exc:
-                logger.exception("Package %s failed: %s", pkg, exc)
+                logger.exception("Package {} failed: {}", pkg, exc)
     return 0
 
 
@@ -437,7 +430,7 @@ def cmd_repack(args: argparse.Namespace) -> int:
     if not tasks:
         logger.warning("No dist-info directories found to repack")
         return 0
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = [
             executor.submit(
                 repack_package,
@@ -452,9 +445,9 @@ def cmd_repack(args: argparse.Namespace) -> int:
             try:
                 result = future.result()
                 if result:
-                    logger.info("Repacked to %s", result)
+                    logger.info("Repacked to {}", result)
             except Exception as exc:
-                logger.exception("Repack failed: %s", exc)
+                logger.exception("Repack failed: {}", exc)
     return 0
 
 
@@ -533,18 +526,18 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
             f"Copied {copied} files to {dest_root / name} (missing={missing}, errors={errors})",
         )
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(extract, name, dist): name for name, dist in selected}
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
             try:
                 pkg_name, ok, msg = future.result()
                 if ok:
-                    logger.info("%s: %s", pkg_name, msg)
+                    logger.info("{}: {}", pkg_name, msg)
                 else:
-                    logger.error("%s: %s", pkg_name, msg)
+                    logger.error("{}: {}", pkg_name, msg)
             except Exception as exc:
-                logger.exception("Package %s failed: %s", name, exc)
+                logger.exception("Package {} failed: {}", name, exc)
     return 0
 
 
@@ -620,12 +613,6 @@ def build_parser() -> argparse.ArgumentParser:
         dest="warn_missing",
         help="Do not warn about missing files.",
     )
-    p_record.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Number of worker threads (default: 1).",
-    )
     p_site = subparsers.add_parser(
         "site-copy",
         help="Copy installed package directories from site-packages.",
@@ -636,12 +623,6 @@ def build_parser() -> argparse.ArgumentParser:
         "-o",
         default="~/tmp/pkgs",
         help="Output base directory (default: ~/tmp/pkgs).",
-    )
-    p_site.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Number of worker threads (default: 8).",
     )
     p_site.add_argument(
         "--no-user-site",
@@ -685,12 +666,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not include the user site-packages directory.",
     )
-    p_repack.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Number of worker threads (default: 1).",
-    )
     p_ep = subparsers.add_parser(
         "entry-points",
         help="Extract packages that declare entry points.",
@@ -730,12 +705,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--dest",
         default=None,
         help=("Destination root (default: ~/tmp/pkgs for --user-site-only, else ~/tmp/packages)."),
-    )
-    p_ep.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Number of worker threads (default: 8).",
     )
     p_ep.add_argument(
         "--skip-pyc",

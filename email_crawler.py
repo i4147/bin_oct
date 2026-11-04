@@ -1,9 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-import curses
-import logging
-import logging.config
-import logging.handlers
+from typing import Any
+from loguru import logger
 import re
 import sys
 import traceback
@@ -15,7 +13,6 @@ from pathlib import Path
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
 
 DEBUG = True
-USE_COLORS = True
 DATABASE_NAME = "data/crawler.sqlite"
 HTML_DIR = Path("data/html")
 EMAILS_FILENAME = Path("data/emails.csv")
@@ -24,94 +21,10 @@ LOG_DIR = Path("logs")
 MAX_SEARCH_RESULTS = 150
 
 
-class ColorStreamHandler(logging.Handler):
-    def __init__(self, use_colors: bool = True):
-        super().__init__()
-        self.use_colors = use_colors
-        try:
-            curses.setupterm()
-            fcap = curses.tigetstr("setaf")
-            self.COLOR_NORMAL = curses.tigetstr("sgr0") or b""
-            self.COLOR_INFO = curses.tparm(fcap, curses.COLOR_GREEN) if fcap else b""
-            self.COLOR_ERROR = curses.tparm(fcap, curses.COLOR_RED) if fcap else b""
-            self.COLOR_WARNING = curses.tparm(fcap, curses.COLOR_YELLOW) if fcap else b""
-            self.COLOR_DEBUG = curses.tparm(fcap, curses.COLOR_BLUE) if fcap else b""
-        except Exception:
-            self.use_colors = False
-            self.COLOR_NORMAL = self.COLOR_INFO = self.COLOR_ERROR = b""
-            self.COLOR_WARNING = self.COLOR_DEBUG = b""
-
-    def color(self, msg: str, level: str) -> str:
-        if not self.use_colors:
-            return msg
-        mapping = {
-            "INFO": self.COLOR_INFO,
-            "WARNING": self.COLOR_WARNING,
-            "ERROR": self.COLOR_ERROR,
-            "DEBUG": self.COLOR_DEBUG,
-        }
-        prefix = mapping.get(level, b"")
-        try:
-            return (prefix + msg.encode("utf-8") + self.COLOR_NORMAL).decode("utf-8", "replace")
-        except Exception:
-            return msg
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            msg = self.format(record)
-            if "]" in msg:
-                temp = msg.split("]", 1)
-                time_part = temp[0].split(" ")[-1].split(",")[0]
-                msg = f"[{time_part}]{temp[1]}"
-            if self.use_colors:
-                msg = self.color(msg, record.levelname)
-            print(msg)
-        except Exception:
-            self.handleError(record)
 
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "console": {
-            "format": "[%(asctime)s] %(levelname)s::%(module)s - %(message)s",
-        },
-        "file": {
-            "format": "[%(asctime)s] %(levelname)s::(P:%(process)d T:%(thread)d)::%(module)s - %(message)s",
-        },
-    },
-    "handlers": {
-        "console": {
-            "()": ColorStreamHandler,
-            "formatter": "console",
-            "level": "DEBUG",
-            "use_colors": USE_COLORS,
-        },
-        "file": {
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "formatter": "file",
-            "level": "INFO",
-            "when": "midnight",
-            "filename": str(LOG_DIR / "pycrawler.log"),
-            "interval": 1,
-            "backupCount": 7,
-            "encoding": "utf-8",
-            "delay": False,
-            "utc": False,
-        },
-    },
-    "loggers": {
-        "crawler_logger": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG" if DEBUG else "INFO",
-            "propagate": False,
-        },
-    },
-}
-logging.config.dictConfig(LOGGING)
-logger = logging.getLogger("crawler_logger")
+logger.add(LOG_DIR / "pycrawler.log", rotation="midnight", retention=1, level="DEBUG" if DEBUG else "INFO")
 
 
 class CrawlerDb:
@@ -226,13 +139,13 @@ db.connect()
 def retrieve_html(url: str) -> str | None:
     req = urllib.request.Request(url, headers={"User-Agent": "Just-Crawling/0.2"})
     try:
-        logger.info("Crawling %s", url)
+        logger.info("Crawling {}", url)
         with urllib.request.urlopen(req, timeout=15) as resp:
             raw = resp.read()
             charset = resp.headers.get_content_charset() or "utf-8"
             return raw.decode(charset, errors="replace")
     except Exception as exc:
-        logger.error("Exception at url: %s\n%s", url, exc)
+        logger.error("Exception at url: {}\n{}", url, exc)
         return None
 
 
@@ -279,7 +192,7 @@ def find_emails_2_level_deep(url: str) -> set[str]:
 
 def crawl(keywords: str) -> None:
     logger.info("-" * 40)
-    logger.info("Keywords to Google for: %s", keywords)
+    logger.info("Keywords to Google for: {}", keywords)
     logger.info("-" * 40)
     for start in range(0, MAX_SEARCH_RESULTS, 10):
         query = urllib.parse.urlencode({"q": keywords})
@@ -311,18 +224,18 @@ def main() -> None:
         if arg in ("--emails", "-e"):
             logger.info("=" * 40)
             emails = db.get_all_emails() or set()
-            logger.info("There are %d emails", len(emails))
+            logger.info("There are {} emails", len(emails))
             EMAILS_FILENAME.parent.mkdir(parents=True, exist_ok=True)
             EMAILS_FILENAME.write_text("\n".join(sorted(emails)), encoding="utf-8")
-            logger.info("All emails saved to %s", EMAILS_FILENAME)
+            logger.info("All emails saved to {}", EMAILS_FILENAME)
             logger.info("=" * 40)
         elif arg in ("--domains", "-d"):
             logger.info("=" * 40)
             domains = db.get_all_domains() or set()
-            logger.info("There are %d domains", len(domains))
+            logger.info("There are {} domains", len(domains))
             DOMAINS_FILENAME.parent.mkdir(parents=True, exist_ok=True)
             DOMAINS_FILENAME.write_text("\n".join(sorted(domains)), encoding="utf-8")
-            logger.info("All domains saved to %s", DOMAINS_FILENAME)
+            logger.info("All domains saved to {}", DOMAINS_FILENAME)
             logger.info("=" * 40)
         else:
             crawl(sys.argv[1])
@@ -330,7 +243,7 @@ def main() -> None:
         logger.error("Stopping (KeyboardInterrupt)")
         sys.exit(1)
     except Exception as exc:
-        logger.error("EXCEPTION: %s", exc)
+        logger.error("EXCEPTION: {}", exc)
         traceback.print_exc()
     finally:
         db.close()

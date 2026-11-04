@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import concurrent.futures
-import logging
 import mimetypes
 import os
 import re
@@ -317,7 +318,7 @@ FILE_DESC2EXT: dict[str, str] = {
     "wave sound data": ".wav",
     "mpeg audio": ".mp3",
 }
-LOG = logging.getLogger("filefixer")
+LOG = logger
 
 
 @dataclass
@@ -742,7 +743,7 @@ def detect_extension(path: Path, engines: Sequence[str], *, debug: bool = False)
             detection = detector(path)
         except Exception as exc:
             if debug:
-                LOG.debug("Engine %s failed for %s: %s", engine, path, exc)
+                LOG.debug("Engine {} failed for {}: {}", engine, path, exc)
             continue
         if detection and detection.ext:
             return detection
@@ -901,7 +902,7 @@ def run_fix_pass(files: Sequence[Path], args: argparse.Namespace, *, apply: bool
     protect_ext = set() if args.no_protect else parse_ext_set(args.protect_ext)
     ignore_ext = parse_ext_set(args.ignore_ext)
     results: list[FixResult] = []
-    workers = max(1, args.workers)
+    workers = max(1, MAX_WORKERS)
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
         futures = [
             pool.submit(
@@ -1015,10 +1016,10 @@ def cmd_validate(args: argparse.Namespace) -> int:
     if not files:
         print("No files found with target extensions.")
         return 0
-    print(f"Validating {len(files)} files as {args.kind} using {args.workers} workers...")
+    print(f"Validating {len(files)} files as {args.kind} using {MAX_WORKERS} workers...")
     mismatches: list[tuple[Path, str]] = []
     errors = 0
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, MAX_WORKERS)) as pool:
         futures = [pool.submit(validate_one, path, args.kind) for path in files]
         for future in concurrent.futures.as_completed(futures):
             path, binary, desc = future.result()
@@ -1137,13 +1138,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="auto",
         help="Comma list: auto, shebang,puremagic,magic,filetype,file-mime,file-b,signature,mimetypes,text",
     )
-    fix.add_argument(
-        "--workers",
-        "-j",
-        type=int,
-        default=max(1, (os.cpu_count() or 2) - 1),
-        help="Worker threads.",
-    )
     fix.add_argument("--no-recursive", action="store_true", help="Do not recurse into directories.")
     fix.add_argument("--include-hidden", action="store_true", help="Do not skip hidden files/dirs.")
     fix.add_argument("--follow-symlinks", action="store_true", help="Follow symlinks while walking.")
@@ -1184,13 +1178,6 @@ def build_parser() -> argparse.ArgumentParser:
     val.add_argument("kind", choices=("binary", "text"), help="Which extension set to validate.")
     val.add_argument("path", nargs="?", default="/data/data/com.termux", help="Root path to scan.")
     val.add_argument(
-        "--workers",
-        "-j",
-        type=int,
-        default=max(1, (os.cpu_count() or 2) - 1),
-        help="Worker threads.",
-    )
-    val.add_argument(
         "--skip-mount-points",
         action="store_true",
         default=True,
@@ -1209,10 +1196,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not getattr(args, "command", None):
         parser.print_help()
         return 0
-    logging.basicConfig(
-        level=logging.DEBUG if getattr(args, "debug", False) else logging.WARNING,
-        format="%(levelname)s | %(message)s",
-    )
     if args.command == "fix":
         return cmd_fix(args)
     if args.command == "validate":

@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import codecs
 import contextlib
@@ -23,29 +25,6 @@ from loguru import logger
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    ".idea",
-    ".vscode",
-    ".venv",
-    "venv",
-    "env",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".tox",
-    ".nox",
-    ".eggs",
-    ".cache",
-    ".gradle",
-    ".terraform",
-})
 UTF8_NAMES: frozenset[str] = frozenset({"utf-8", "utf-8-sig"})
 
 
@@ -172,33 +151,6 @@ def convert(data: bytes, encoding: str, opts: Options) -> bytes:
     return text.encode("utf-8")
 
 
-def atomic_write(path: Path, payload: bytes, st: os.stat_result, opts: Options) -> None:
-    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
-    tmp = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "wb") as out:
-            out.write(payload)
-            out.flush()
-            os.fsync(out.fileno())
-        os.chmod(tmp, stat.S_IMODE(st.st_mode))
-        if hasattr(os, "chown"):
-            with contextlib.suppress(OSError):
-                os.chown(tmp, st.st_uid, st.st_gid)
-        if opts.preserve_mtime:
-            os.utime(tmp, ns=(st.st_atime_ns, st.st_mtime_ns))
-        if opts.backup:
-            backup = path.with_name(f"{path.name}.bak")
-            backup.unlink(missing_ok=True)
-            try:
-                os.link(path, backup)
-            except OSError:
-                shutil.copy2(path, backup)
-        os.replace(tmp, path)
-    except BaseException:
-        tmp.unlink(missing_ok=True)
-        raise
-
-
 def process_file(path: Path, opts: Options) -> Result:
     encoding = "-"
     try:
@@ -280,7 +232,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         description="Report text file encodings, convert to UTF-8 and normalize CRLF to LF in place.",
     )
     parser.add_argument("root", nargs="?", type=Path, default=Path("."))
-    parser.add_argument("-j", "--jobs", type=int, default=1, metavar="N")
     parser.add_argument("-n", "--dry-run", action="store_true")
     parser.add_argument("-b", "--backup", action="store_true")
     parser.add_argument("--no-dos2unix", action="store_true")
@@ -305,7 +256,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not root.is_dir():
         logger.error("{}: not a directory", root)
         return 2
-    if args.jobs < 1:
+    if MAX_WORKERS < 1:
         logger.error("--jobs must be >= 1")
         return 2
     opts = Options(
@@ -331,7 +282,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     encoding_width = max(10, min(20, console.width // 6))
     counts: Counter[Action] = Counter()
     try:
-        for index, result in enumerate(run(files, opts, args.jobs), 1):
+        for index, result in enumerate(run(files, opts, MAX_WORKERS), 1):
             counts[result.action] += 1
             if result.error is not None:
                 logger.error("{}: {}", result.path, result.error)

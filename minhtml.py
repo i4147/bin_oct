@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import fnmatch
 import glob as _glob
@@ -311,7 +312,7 @@ def _matches_any(rel: str, patterns: Sequence[str]) -> bool:
 
 
 def _expand_arg(raw: str) -> list[Path]:
-    p = os.path.expanduser(raw)
+    p = Path(raw).expanduser()
     m = _glob.glob(p, recursive=True)
     if m:
         return [Path(x) for x in m]
@@ -566,7 +567,6 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument("--no-minify-js", action="store_true")
     g.add_argument("--no-preserve-braces", action="store_true")
     g = p.add_argument_group("execution")
-    g.add_argument("--workers", type=int, default=4, help="worker count (0=auto, default: 4)")
     g.add_argument("--chunksize", type=int, default=4, help="executor chunksize (0=auto, default: 4)")
     g.add_argument(
         "--executor",
@@ -620,7 +620,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         minhtml_ver = (vproc.stdout or vproc.stderr).decode("utf-8", "replace").strip() or "(unknown)"
     except Exception:
         minhtml_ver = "(unknown)"
-    workers = args.workers if args.workers > 0 else (os.cpu_count() or 4)
+    workers = MAX_WORKERS if MAX_WORKERS > 0 else (os.cpu_count() or 4)
     total = len(files)
     chunksize = args.chunksize if args.chunksize > 0 else max(1, total // (workers * 4))
     dry_run = args.dry_run or args.check

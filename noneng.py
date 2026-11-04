@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS, WORKERS
 import argparse
 import codecs
 import multiprocessing
@@ -8,31 +9,11 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 from loguru import logger
-
-WORKERS = 8
 CHUNK_SIZE = 64 * 1024
 DETECTION_SIZE = 4000
 MIN_LETTERS = 20
 _BACKEND: str = ""
 _DETECTOR: Any = None
-SKIP_DIRS = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "node_modules",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".idea",
-    ".vscode",
-})
 
 
 @dataclass(frozen=True)

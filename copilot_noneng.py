@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import json
 import multiprocessing as mp
@@ -220,7 +221,6 @@ def run_per_line(files: list[Path], workers: int, max_len: int):
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Detect non-English lines in text files.")
     parser.add_argument("paths", default=".", nargs="*", help="Files or directories (default: .)")
-    parser.add_argument("--workers", "-w", type=int, default=4, help="Worker threads.")
     parser.add_argument("--out", "-o", default="noneng.json", help="Output JSON file.")
     parser.add_argument("--max-line-length", type=int, default=2000, help="Max chars per line.")
     parser.add_argument(
@@ -236,9 +236,9 @@ def main(argv=None) -> int:
         print("No suitable text files found.", file=sys.stderr)
         return 1
     if args.parallel_mode == "file":
-        run_per_file(files, args.workers, args.max_line_length)
+        run_per_file(files, MAX_WORKERS, args.max_line_length)
     else:
-        run_per_line(files, args.workers, args.max_line_length)
+        run_per_line(files, MAX_WORKERS, args.max_line_length)
     with Path(args.out).open("w", encoding="utf-8") as fh:
         json.dump(_results, fh, ensure_ascii=False, indent=2)
     print(f"\nSaved {len(_results)} non-English lines to {args.out}")

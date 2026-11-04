@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from typing import Any
+from dh import MAX_WORKERS, SKIP_DIR_NAMES
+from loguru import logger
 import argparse
 import concurrent.futures as _futures
 import ctypes
-import logging
 import os
 import shutil
 import subprocess
@@ -11,21 +13,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
-
-SKIP_DIR_NAMES = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    "dist",
-    "build",
-}
 MISSING_LIB_PATTERNS = (
     "error while loading shared libraries",
     "cannot open shared object file",
@@ -120,18 +107,12 @@ def is_shebang_script(path: Path) -> bool:
         return False
 
 
-def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
+def setup_logger(log_path: Path, verbose: bool = False) -> Any:
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    logger = logging.getLogger("binarytoolkit")
-    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-    logger.handlers.clear()
-    fh = logging.FileHandler(log_path, mode="w", encoding="utf-8")
-    fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(fh)
+    logger.remove()
+    logger.add(log_path)
     if verbose:
-        sh = logging.StreamHandler(sys.stderr)
-        sh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-        logger.addHandler(sh)
+        logger.add(sys.stderr, level="DEBUG")
     return logger
 
 
@@ -259,7 +240,7 @@ def cmd_sanity(args: argparse.Namespace) -> int:
         return 0
     print(f"Found {len(candidates)} binaries to test")
     print("Testing binaries in parallel...")
-    workers = args.workers or (os.cpu_count() or 4)
+    workers = MAX_WORKERS or (os.cpu_count() or 4)
     failures: list[tuple[Path, str]] = []
     with _futures.ThreadPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(_test_executable, p, args.timeout): p for p in candidates}
@@ -578,7 +559,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(Path.home() / "tmp" / "err"),
         help="Report file path (default: ~/tmp/err)",
     )
-    p_sanity.add_argument("--workers", type=int, default=0, help="Thread pool size (0 = CPU count)")
     p_sanity.add_argument(
         "--timeout",
         type=float,

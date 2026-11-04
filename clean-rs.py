@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from atomicio import atomic_write
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import functools
@@ -108,19 +110,6 @@ def diff_style(line: str) -> str:
     return ""
 
 
-def atomic_write(path: str, data: bytes) -> None:
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".rsstrip-", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-        shutil.copymode(path, tmp)
-        os.replace(tmp, path)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            os.unlink(tmp)
-        raise
-
-
 class Stripper:
     def __init__(self, opts: Options) -> None:
         self.opts = opts
@@ -167,7 +156,7 @@ class Stripper:
             edits.append((line_start, min(line_end + 1, len(src)), b""))
 
     def run(self, path: str) -> Result:
-        real = os.path.realpath(path)
+        real = Path(path).resolve()
         try:
             src = Path(real).read_bytes()
             new = self.strip(src)
@@ -192,21 +181,21 @@ class Walker:
 
     def __iter__(self) -> Iterator[str]:
         for root in self.roots:
-            if os.path.isdir(root):
+            if Path(root).is_dir():
                 for folder, dirs, names in os.walk(root):
                     dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.endswith(".dist-info"))
                     for name in sorted(names):
-                        path = os.path.join(folder, name)
-                        if name.endswith(".rs") and not os.path.islink(path) and self.fresh(path):
+                        path = Path(folder).joinpath(name)
+                        if name.endswith(".rs") and not Path(path).is_symlink() and self.fresh(path):
                             yield path
-            elif os.path.isfile(root):
+            elif Path(root).is_file():
                 if self.fresh(root):
                     yield root
             else:
                 self.err.print(Text(f"warning: {root}: not found", style="yellow"))
 
     def fresh(self, path: str) -> bool:
-        real = os.path.realpath(path)
+        real = Path(path).resolve()
         if real in self.seen:
             return False
         self.seen.add(real)
@@ -217,7 +206,7 @@ class App:
     def __init__(self, argv: list[str] | None = None) -> None:
         args = self.parser().parse_args(argv)
         self.paths: list[str] = args.paths
-        self.workers: int = max(1, args.j)
+        self.workers: int = max(1, MAX_WORKERS)
         self.stripper = Stripper(Options(diff=args.diff))
         self.out = Console(highlight=False)
         self.err = Console(stderr=True, highlight=False)
@@ -229,7 +218,6 @@ class App:
         )
         ap.add_argument("paths", nargs="*", default=[os.getcwd()], help="files or directories")
         ap.add_argument("-diff", action="store_true", help="show colored diff and leave files untouched")
-        ap.add_argument("-j", type=int, default=1, help="worker processes (>1 enables ProcessPoolExecutor)")
         return ap
 
     def results(self) -> Iterator[Result]:

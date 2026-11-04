@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import os
 import re
@@ -15,7 +16,6 @@ from tqdm import tqdm
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 DIRECTORY: Final[str] = "."
-POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
     "map",
     "starmap",
@@ -29,7 +29,7 @@ NamePair: TypeAlias = tuple[str, str]
 def walk_files(directory: str) -> Iterator[str]:
     for root, _dirs, files in os.walk(directory):
         for name in files:
-            yield os.path.join(root, name)
+            yield Path(root).joinpath(name)
 
 
 def is_english(text: str) -> bool:

@@ -1,16 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
-import logging
 import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
-from os.path import commonpath
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
-log = logging.getLogger("renametools")
+log = logger
 
 
 def iter_paths(
@@ -81,7 +81,14 @@ def safe_rename(src: Path, dst: Path, *, dry_run: bool, verbose: bool = True) ->
 def _common_prefix(strings: Sequence[str]) -> str:
     if not strings:
         return ""
-    return commonpath(list(strings))
+    common = Path(strings[0])
+    for value in strings[1:]:
+        path = Path(value)
+        while common != path and common not in path.parents:
+            if common.parent == common:
+                return ""
+            common = common.parent
+    return str(common)
 
 
 def _common_suffix(strings: Sequence[str]) -> str:
@@ -218,7 +225,7 @@ def cmd_images(args: argparse.Namespace) -> int:
     print(f"[SCAN] Found {len(files)} image file(s) under {root}")
     tasks = [(f, args.separator, args.dry_run) for f in files]
     renamed = skipped = failed = 0
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for path, ok, msg in pool.map(_rename_image, tasks):
             if ok:
                 renamed += 1
@@ -427,7 +434,7 @@ def cmd_suggest_names(args: argparse.Namespace) -> int:
         print("No Python files found.")
         return 1
     cwd = Path.cwd()
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
         results = list(pool.map(_analyze, py_files))
     if args.apply:
         for s in results:
@@ -626,12 +633,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Preview only.",
     )
-    lc.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Accepted for uniformity; unused by this subcommand.",
-    )
     im = sub.add_parser(
         "images",
         help="Rename image files to include WxH dimensions.",
@@ -649,7 +650,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Separator between name and dimensions (default: _).",
     )
     im.add_argument("--dry-run", action="store_true", help="Preview only.")
-    im.add_argument("--workers", type=int, default=8, help="Worker processes (default: 8).")
     cn = sub.add_parser(
         "clean-names",
         help="Strip common prefix/suffix and junk patterns from media files.",
@@ -663,7 +663,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=list(DEFAULT_JUNK_PATTERNS),
         help="Regex of junk to strip (repeatable; overrides defaults).",
     )
-    cn.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
     js = sub.add_parser(
         "jscss",
         help="Normalize .js/.css filenames and optionally HTML content.",
@@ -677,14 +676,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     js.add_argument("--also-html", action="store_true", help="Also rewrite .html/.js content.")
     js.add_argument("--dry-run", action="store_true", help="Preview only.")
-    js.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
     sn = sub.add_parser(
         "suggest-names",
         help="Suggest meaningful names for .py files from their docstrings.",
     )
     _add_paths(sn)
     sn.add_argument("-a", "--apply", action="store_true", help="Rename files in place.")
-    sn.add_argument("--workers", type=int, default=8, help="Worker processes (default: 8).")
     pnr = sub.add_parser("pnr", help="Remove / replace / template-number names.")
     group = pnr.add_mutually_exclusive_group(required=True)
     group.add_argument("-r", "--remove", metavar="STR", help="Remove STR from names.")
@@ -709,17 +706,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path.cwd(),
         help="Directory to operate on (default: cwd).",
     )
-    pnr.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
-        format="%(levelname)s: %(message)s",
-    )
     dispatch = {
         "lowercase": cmd_lowercase,
         "images": cmd_images,
@@ -734,7 +726,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("\nOperation cancelled by user.", file=sys.stderr)
         return 130
     except Exception as e:
-        log.exception("Unexpected error: %s", e)
+        log.exception("Unexpected error: {}", e)
         return 1
 
 

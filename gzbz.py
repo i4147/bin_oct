@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS, workers
 import argparse
 import bz2
 import contextlib
@@ -15,8 +16,6 @@ from pathlib import Path
 from typing import Optional, Self, Sequence
 
 from loguru import logger
-
-DEFAULT_WORKERS: int = 8
 DEFAULT_CHUNK_SIZE: int = 524_288
 DEFAULT_GZIPER_CHUNK: int = 262_144
 DEFAULT_MEM_THRESHOLD: int = 32_768
@@ -88,7 +87,6 @@ def _worker_gzip_file(args: tuple[str, int, int]) -> tuple[str, bool, int, int, 
 class Config:
     algo: str
     level: int
-    workers: int = DEFAULT_WORKERS
     chunk_size: int = DEFAULT_CHUNK_SIZE
     mem_threshold: int = DEFAULT_MEM_THRESHOLD
     min_file_size: int = DEFAULT_MIN_FILE_SIZE
@@ -508,13 +506,6 @@ def _add_pool_options(sp: argparse.ArgumentParser, algo_default_level: int, chun
         help="Files or directories to process (default: current working directory)",
     )
     sp.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
-    )
-    sp.add_argument(
         "-l",
         "--level",
         type=int,
@@ -575,13 +566,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Additional file extensions to exclude (e.g. .pdf .jpg)",
     )
     gf_p.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
-    )
-    gf_p.add_argument(
         "--chunk-size",
         type=int,
         default=DEFAULT_GZIPER_CHUNK,
@@ -608,7 +592,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return run_gzip_files(
                 directories=args.directories or [Path()],
                 excludes=args.exclude,
-                workers=args.workers,
+                workers=MAX_WORKERS,
                 chunk_size=args.chunk_size,
                 level=args.level,
             )
@@ -616,7 +600,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         cfg = Config(
             algo=algo,
             level=args.level,
-            workers=args.workers,
+            workers=MAX_WORKERS,
             chunk_size=args.chunk_size,
             mem_threshold=args.mem_threshold,
             min_file_size=args.min_file_size,

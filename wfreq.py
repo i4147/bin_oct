@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import multiprocessing as mp
 import re
 import sys
@@ -11,47 +12,6 @@ from spellchecker import SpellChecker
 WORD_RE = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*", re.UNICODE)
 _TEXT_CHARS = bytes({7, 8, 9, 10, 12, 13, 27} | (set(range(0x20, 0x100)) - {0x7F}))
 _OUTPUT_PATH = Path.home() / ".personal_dict"
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    ".idea",
-    ".vscode",
-    ".vs",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".cache",
-    "__pycache__",
-    "node_modules",
-    "bower_components",
-    "vendor",
-    "venv",
-    ".venv",
-    "env",
-    ".env",
-    "virtualenv",
-    ".virtualenv",
-    "site-packages",
-    "dist-packages",
-    "dist",
-    "build",
-    "target",
-    "out",
-    ".next",
-    ".nuxt",
-    ".svelte-kit",
-    ".parcel-cache",
-    "coverage",
-    "htmlcov",
-    ".gradle",
-    ".m2",
-    "Pods",
-    "DerivedData",
-    ".terraform",
-}
 SKIP_FILE_SUFFIXES = {
     ".pyc",
     ".pyo",

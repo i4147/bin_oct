@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import hashlib
@@ -39,7 +40,6 @@ except ImportError:
 CHUNK_SIZE = 8192
 BIG_CHUNK_SIZE = 32768
 QUICK_HEAD = 4096
-DEFAULT_WORKERS = 8
 DEFAULT_EXCLUDES = (
     ".git",
     "__pycache__",
@@ -283,7 +283,7 @@ def cmd_report(args: argparse.Namespace) -> int:
     groups = find_duplicates(
         files,
         algorithm=args.algorithm,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         quick_first=args.quick_hash,
         chunk_size=args.chunk_size,
     )
@@ -336,7 +336,7 @@ def cmd_delete(args: argparse.Namespace) -> int:
     groups = find_duplicates(
         files,
         algorithm=args.algorithm,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         quick_first=args.quick_hash,
         chunk_size=args.chunk_size,
     )
@@ -400,7 +400,7 @@ def cmd_symlink(args: argparse.Namespace) -> int:
     groups = find_duplicates(
         files,
         algorithm=args.algorithm,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         quick_first=args.quick_hash,
         chunk_size=args.chunk_size,
     )
@@ -557,12 +557,6 @@ def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> No
         type=int,
         default=1,
         help="Skip files smaller than N bytes (default: 1)",
-    )
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Parallel hashing workers (default: {DEFAULT_WORKERS})",
     )
     p.add_argument(
         "--chunk-size",

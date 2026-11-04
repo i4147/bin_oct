@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import json
@@ -695,7 +696,7 @@ def cmd_html(args: argparse.Namespace) -> int:
         fn: Callable[[Path], Result] = minify_html_hmin
     else:
         fn = partial(minify_html_htmin, timeout=args.timeout)
-    results = parallel_map(fn, files, workers=args.processes)
+    results = parallel_map(fn, files, workers=MAX_WORKERS)
     for r in results:
         print_file_result(r)
     print_summary(results, "HTML Summary")
@@ -713,7 +714,7 @@ def cmd_css(args: argparse.Namespace) -> int:
         fn = minify_css_csso
     else:
         fn = minify_css_rcssmin
-    results = parallel_map(fn, files, workers=args.processes)
+    results = parallel_map(fn, files, workers=MAX_WORKERS)
     for r in results:
         print_file_result(r)
     print_summary(results, "CSS Summary")
@@ -726,7 +727,7 @@ def cmd_js(args: argparse.Namespace) -> int:
     if not files:
         print("No JS files found.")
         return 1
-    results = parallel_map(minify_js_rjsmin, files, workers=args.processes)
+    results = parallel_map(minify_js_rjsmin, files, workers=MAX_WORKERS)
     for r in results:
         print_file_result(r)
     print_summary(results, "JS Summary")
@@ -740,7 +741,7 @@ def cmd_json(args: argparse.Namespace) -> int:
         print("No JSON files found.")
         return 1
     fn = partial(minify_json, dry=args.dry, spaced=args.spaced)
-    results = parallel_map(fn, files, workers=args.processes)
+    results = parallel_map(fn, files, workers=MAX_WORKERS)
     for r in results:
         print_file_result(r)
     print_summary(results, "JSON Summary")
@@ -754,7 +755,7 @@ def cmd_svg(args: argparse.Namespace) -> int:
         print("No SVG files found.")
         return 1
     fn = partial(minify_svg_svgcleaner, skip_parts=tuple(args.skip_part))
-    results = parallel_map(fn, files, workers=args.processes)
+    results = parallel_map(fn, files, workers=MAX_WORKERS)
     for r in results:
         print_file_result(r)
     print_summary(results, "SVG Summary")
@@ -769,7 +770,7 @@ def cmd_truncate(args: argparse.Namespace) -> int:
         return 1
     tags = tuple(args.tag) if args.tag else DEFAULT_TRUNCATE_TAGS
     fn = partial(truncate_at_last_tag, tags=tags)
-    results = parallel_map(fn, files, workers=args.processes)
+    results = parallel_map(fn, files, workers=MAX_WORKERS)
     for r in results:
         print_file_result(r)
     print_summary(results, "Truncate Summary")
@@ -782,7 +783,7 @@ def cmd_mixed(args: argparse.Namespace) -> int:
     if not files:
         print("No supported files found.")
         return 1
-    results = parallel_map(minify_mixed, files, workers=args.processes)
+    results = parallel_map(minify_mixed, files, workers=MAX_WORKERS)
     for _, msg in results:
         print(msg)
     ok = sum(1 for _, m in results if m.startswith(("OK", "SKIP")))
@@ -829,7 +830,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=30,
         help="Subprocess timeout in seconds (htmin backend only; default: 30).",
     )
-    ph.add_argument("-j", "--processes", type=int, default=8, help="Worker processes (default: 8).")
     ph.add_argument(
         "--ext",
         default=".html,.htm",
@@ -845,18 +845,10 @@ def build_parser() -> argparse.ArgumentParser:
         default="rcssmin",
         help="rcssmin = pure Python (default); csso = external CLI.",
     )
-    pc.add_argument(
-        "-j",
-        "--processes",
-        type=int,
-        default=None,
-        help="Worker processes (default: CPU count).",
-    )
     pc.add_argument("--ext", default=".css", help="Comma-separated extensions (default: .css).")
     pc.set_defaults(func=cmd_css)
     pj = sub.add_parser("js", help="Minify JS files (rjsmin).")
     pj.add_argument("paths", nargs="*", default=["."])
-    pj.add_argument("-j", "--processes", type=int, default=None)
     pj.add_argument("--ext", default=".js", help="Comma-separated extensions (default: .js).")
     pj.set_defaults(func=cmd_js)
     pq = sub.add_parser("json", help="Minify JSON files.")
@@ -867,7 +859,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Use default separators (jm2.py style) instead of compact separators (mjb.py style).",
     )
-    pq.add_argument("-j", "--processes", type=int, default=None)
     pq.add_argument("--ext", default=".json")
     pq.set_defaults(func=cmd_json)
     ps = sub.add_parser("svg", help="Optimise SVG files (svgcleaner).")
@@ -878,7 +869,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=["lazy"],
         help="Path part to skip; repeatable (default: lazy).",
     )
-    ps.add_argument("-j", "--processes", type=int, default=None)
     ps.add_argument("--ext", default=".svg")
     ps.set_defaults(func=cmd_svg)
     pt = sub.add_parser("truncate", help="Truncate files at their last closing tag (fixsvg.py).")
@@ -895,12 +885,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Closing tag to search for; repeatable. Defaults to "
         "</svg> </html> </body> </script> </div> in that order.",
     )
-    pt.add_argument("-j", "--processes", type=int, default=None)
     pt.set_defaults(func=cmd_truncate)
     pm = sub.add_parser("mixed", help="Dispatch CSS/JSON/HTML by extension (minjch.py).")
     pm.add_argument("paths", nargs="*", default=["."])
     pm.add_argument("--ext", default=".css,.json,.html,.htm")
-    pm.add_argument("-j", "--processes", type=int, default=None)
     pm.set_defaults(func=cmd_mixed)
     pv = sub.add_parser("validate-meson-json", help="Validate a Meson JSON-docs file.")
     pv.add_argument("doc_file", type=Path, help="Path to the JSON docs file to validate.")

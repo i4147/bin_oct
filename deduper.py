@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import bz2
@@ -48,21 +49,6 @@ SUPPORTED_ARCHIVES = (
     ".zst",
     ".br",
 )
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "env",
-    ".eggs",
-    "site-packages",
-}
 
 
 def sha256(text: str) -> str:
@@ -431,13 +417,6 @@ def main() -> None:
         action="store_true",
         help="Copy duplicate objects to utils.py without modifying source files",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=max(1, mp.cpu_count() - 1),
-        help="Worker process count",
-    )
     parser.add_argument("--log-level", default="INFO", help="DEBUG, INFO, WARNING, ERROR")
     args = parser.parse_args()
     if args.move and args.copy:
@@ -450,7 +429,7 @@ def main() -> None:
     if not files:
         print("No Python files found.")
         return
-    with mp.Pool(processes=max(1, args.jobs)) as pool:
+    with mp.Pool(processes=max(1, MAX_WORKERS)) as pool:
         nested = pool.map(process_file, [str(p) for p in files])
     all_objects = [obj for sub in nested for obj in sub]
     if not all_objects:

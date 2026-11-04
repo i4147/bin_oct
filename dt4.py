@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import json
 import os
@@ -20,7 +21,6 @@ DEFAULT_OUTPUT = "chunks.json"
 DEFAULT_FAILED = "failed.txt"
 DEFAULT_SOURCE = "en"
 DEFAULT_TARGET = "fr"
-DEFAULT_WORKERS = 2
 DEFAULT_DELAY = 0.5
 DEFAULT_CHUNK_SIZE = 2500
 DEFAULT_SAVE_EVERY = 10
@@ -402,7 +402,6 @@ def main() -> None:
     parser.add_argument("-s", "--source", default=DEFAULT_SOURCE, help="Source language code")
     parser.add_argument("-t", "--target", default=DEFAULT_TARGET, help="Target language code")
     parser.add_argument("-b", "--backend", help="Translator backend")
-    parser.add_argument("-w", "--workers", type=int, default=DEFAULT_WORKERS, help="Number of workers")
     parser.add_argument(
         "-d",
         "--delay",
@@ -424,7 +423,7 @@ def main() -> None:
     )
     parser.add_argument("--no-continue", action="store_true", help="Start fresh, ignore existing output")
     args = parser.parse_args()
-    if args.workers < 1 or args.workers > 2:
+    if MAX_WORKERS < 1 or MAX_WORKERS > 2:
         parser.error("Workers must be between 1 and 2")
     setup_logging()
     logger.info(f"Starting translation with args: {vars(args)}")
@@ -465,7 +464,7 @@ def main() -> None:
         process_chunks(
             chunks=chunks,
             translator=translator,
-            workers=args.workers,
+            workers=MAX_WORKERS,
             delay=args.delay,
             save_every=args.save_every,
             output_path=output_path,

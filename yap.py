@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import difflib
 import fnmatch
@@ -538,7 +539,6 @@ def _build_parser() -> argparse.ArgumentParser:
     g.add_argument("--strip-bom", action="store_true")
     g.add_argument("--encoding", default="utf-8")
     g.add_argument("--stdin", action="store_true")
-    g.add_argument("-j", "--jobs", default="1")
     g.add_argument("--timeout", type=float, default=None)
     g.add_argument("--json", action="store_true")
     g.add_argument("--summary", action="store_true")
@@ -622,13 +622,13 @@ def main() -> int:
 
     total = len(files)
 
-    if str(args.jobs).lower() == "auto":
+    if str(MAX_WORKERS).lower() == "auto":
         workers = min(os.cpu_count() or 4, total)
     else:
         try:
-            workers = max(1, int(args.jobs))
+            workers = max(1, int(MAX_WORKERS))
         except ValueError:
-            logger.error(f"invalid -j value: {args.jobs!r}")
+            logger.error(f"invalid -j value: {MAX_WORKERS!r}")
             return 2
 
     if args.verbose and not args.json:

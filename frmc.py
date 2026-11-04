@@ -1,32 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import os
 import sys
 from pathlib import Path
-
-SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    ".tox",
-    ".nox",
-    ".venv",
-    "venv",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "dist",
-    "build",
-    ".idea",
-    ".vscode",
-    ".cache",
-    ".terraform",
-    ".gradle",
-    ".egg-info",
-})
 SKIP_EXTS: frozenset[str] = frozenset({
     ".yaml",
     ".yml",
@@ -263,7 +240,7 @@ def collect_files(roots: list[Path]) -> tuple[list[Path], set[str]]:
     seen: set[str] = set()
 
     def add(p: Path, is_explicit: bool) -> None:
-        key = os.path.realpath(p)
+        key = Path(p).resolve()
         if key in seen:
             if is_explicit:
                 explicit.add(key)
@@ -317,7 +294,7 @@ def main(argv: list[str]) -> int:
     all_files, explicit = collect_files(roots)
     targets: list[Path] = []
     for f in all_files:
-        key = os.path.realpath(f)
+        key = Path(f).resolve()
         if is_allowed(f, key in explicit):
             targets.append(f)
     use_color = sys.stdout.isatty()

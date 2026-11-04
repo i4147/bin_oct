@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from loguru import logger
 import argparse
-import logging
 import sys
 from subliminal import download_best_subtitles, save_subtitles, scan_video
 from babelfish import Language
@@ -21,9 +21,9 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
-        logging.basicConfig(level=logging.INFO)
+        pass
     else:
-        logging.basicConfig(level=logging.WARNING)
+        pass
 
     print(f"Scanning video file: {args.path}...")
     try:

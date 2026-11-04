@@ -29,7 +29,7 @@ def get_all_files(root: str = "."):
     paths = []
     for dirpath, _, filenames in os.walk(root):
         for f in filenames:
-            full_path = os.path.join(dirpath, f)
+            full_path = Path(dirpath).joinpath(f)
             paths.append(full_path)
     return paths
 
@@ -70,7 +70,7 @@ def group_similar_files(hashes, threshold: int):
 def copy_groups(groups, output_dir="output") -> None:
     Path(output_dir).mkdir(exist_ok=True, parents=True)
     for idx, group in enumerate(groups, start=1):
-        group_dir = os.path.join(output_dir, f"group_{idx}")
+        group_dir = Path(output_dir).joinpath(f"group_{idx}")
         Path(group_dir).mkdir(exist_ok=True, parents=True)
         for f in group:
             try:
@@ -82,7 +82,7 @@ def copy_groups(groups, output_dir="output") -> None:
 def write_report(groups, format="csv", output_dir="output") -> None:
     Path(output_dir).mkdir(exist_ok=True, parents=True)
     if format == "csv":
-        report_file = os.path.join(output_dir, "similar_report.csv")
+        report_file = Path(output_dir).joinpath("similar_report.csv")
         with Path(report_file).open("w", encoding="utf-8", newline="") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(["Group", "File"])
@@ -91,7 +91,7 @@ def write_report(groups, format="csv", output_dir="output") -> None:
                     writer.writerow([idx, f])
         print(f"CSV report written to {report_file}")
     elif format == "json":
-        report_file = os.path.join(output_dir, "similar_report.json")
+        report_file = Path(output_dir).joinpath("similar_report.json")
         data = {f"group_{idx}": group for idx, group in enumerate(groups, start=1)}
         with Path(report_file).open("w", encoding="utf-8") as jf:
             json.dump(data, jf, indent=2)
@@ -111,7 +111,7 @@ def colorize_score(score, threshold) -> str:
 def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> None:
     Path(output_dir).mkdir(exist_ok=True, parents=True)
     files = list(hashes.keys())
-    matrix_file = os.path.join(output_dir, "similarity_matrix.csv")
+    matrix_file = Path(output_dir).joinpath("similarity_matrix.csv")
     table = [["File", *files]]
     with Path(matrix_file).open("w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)

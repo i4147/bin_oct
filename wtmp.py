@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import os
 import pathlib
 import shutil
@@ -23,10 +24,7 @@ def copy_if_match(src_path) -> None:
     if src_path.endswith(ALLOWED_EXTENSIONS):
         try:
             pathlib.Path(DEST_DIR).mkdir(exist_ok=True, parents=True)
-            dest = os.path.join(
-                DEST_DIR,
-                pathlib.Path(src_path).name,
-            )
+            dest = Path(DEST_DIR).joinpath(pathlib.Path(src_path).name)
             shutil.copy2(src_path, dest)
             print(src_path)
         except Exception as e:
@@ -36,7 +34,7 @@ def copy_if_match(src_path) -> None:
 def startup_scan(fpath: str) -> None:
     for root, _dirs, files in os.walk(fpath):
         for f in files:
-            full_path = os.path.join(root, f)
+            full_path = Path(root).joinpath(f)
             copy_if_match(full_path)
 
 

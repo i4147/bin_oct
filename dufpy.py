@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import ast
 import json
@@ -322,13 +323,6 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="show a progress bar while processing files",
     )
     parser.add_argument(
-        "-j",
-        "--workers",
-        type=_positive_int,
-        default=None,
-        help="number of worker processes (default: available CPU cores)",
-    )
-    parser.add_argument(
         "--root",
         type=Path,
         default=Path.cwd(),
@@ -392,7 +386,7 @@ def main(argv: list[str] | None = None) -> int:
         cprint("No Python files found.", "green")
         return 0
 
-    results = process_files(files, args.workers, args.rich)
+    results = process_files(files, MAX_WORKERS, args.rich)
     duplicate_groups, failures = identify_duplicates(results)
     if failures:
         _print_failures(failures)

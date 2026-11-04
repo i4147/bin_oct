@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import WORKER_COUNT
 import argparse
 import ast
 import json
@@ -17,8 +19,6 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from loguru import logger
-
-WORKER_COUNT: Final[int] = 8
 DEFAULT_CHUNK_SIZE: Final[int] = 2500
 DEFAULT_DELAY: Final[float] = 1.5
 DEFAULT_TIMEOUT: Final[float] = 60.0
@@ -410,28 +410,6 @@ def validate_python(source: str, path: Path) -> None:
     except SyntaxError as error:
         msg = f"Translated source is invalid for {path}: {error}"
         raise SyntaxError(msg) from error
-
-
-def atomic_write(path: Path, content: str, encoding: str) -> None:
-    original_mode = path.stat().st_mode
-    with NamedTemporaryFile(
-        mode="w",
-        encoding=encoding,
-        newline="",
-        dir=path.parent,
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        delete=False,
-    ) as temporary:
-        temporary_path = Path(temporary.name)
-        temporary.write(content)
-        temporary.flush()
-    try:
-        temporary_path.chmod(original_mode)
-        temporary_path.replace(path)
-    except Exception:
-        temporary_path.unlink(missing_ok=True)
-        raise
 
 
 def process_file(

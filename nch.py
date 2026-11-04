@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS, skip_dirs
 import argparse
 import fnmatch
 import multiprocessing as mp
@@ -34,15 +35,6 @@ DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644
 EXEC_MODE: int = 0o755
 EXEC_BITS: int = st.S_IXUSR | st.S_IXGRP | st.S_IXOTH
-DEFAULT_SKIP_DIRS: frozenset[str] = frozenset({
-    ".git",
-    "__pycache__",
-    ".idea",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".ruff_cache",
-})
 DEFAULT_EXEC_DIRS: frozenset[str] = frozenset({
     "bin",
     "sbin",
@@ -135,7 +127,6 @@ def chmod_remove_x(p: Path) -> bool:
 @dataclass
 class Config:
     root: Path
-    skip_dirs: frozenset[str] = DEFAULT_SKIP_DIRS
     exec_dirs: frozenset[str] = DEFAULT_EXEC_DIRS
     suffix_exec: tuple[str, ...] = DEFAULT_SUFFIX_EXEC
     preserve_existing_exec: bool = True
@@ -607,13 +598,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="print examples of items that would change",
     )
     p.add_argument("-v", "--verbose", action="store_true", help="print detailed change log")
-    p.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=0,
-        help="worker processes (0 = auto, implies --parallel)",
-    )
     p.add_argument("--parallel", action="store_true", help="use multiprocessing (chmodi.py style)")
     return p
 
@@ -698,8 +682,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         report(s, time.time() - t0, verbose=args.verbose)
         print("\n🧪 Dry run — nothing changed.")
         return 0
-    if args.parallel or args.jobs:
-        jobs = args.jobs if args.jobs > 0 else (os.cpu_count() or 1)
+    if args.parallel or MAX_WORKERS:
+        jobs = MAX_WORKERS if MAX_WORKERS > 0 else (os.cpu_count() or 1)
         print(f"⚙️  Parallel workers: {jobs}")
         s = run_parallel(cfg, items, jobs)
     else:

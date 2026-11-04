@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import ast
 import hashlib
@@ -22,7 +23,7 @@ def get_py_files(directory):
     for root, _, files in os.walk(directory):
         for f in files:
             if f.endswith(".py") and f != "utils.py":
-                py_files.append(os.path.join(root, f))
+                py_files.append(Path(root).joinpath(f))
     return py_files
 
 
@@ -124,7 +125,7 @@ def save_exact_duplicates(
 def refactor_duplicates(hash_groups):
     utils_path = "utils.py"
     utils_content = ""
-    if os.path.exists(utils_path):
+    if Path(utils_path).exists():
         with open(utils_path, "r", encoding="utf-8") as f:
             utils_content = f.read()
     file_imports = defaultdict(set)

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import ast
 import collections
 import json
@@ -13,7 +14,6 @@ from loguru import logger
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
 REPEATED_JSON_PATH: Final[Path] = Path("repeated.json")
-MAX_WORKERS: Final[int] = 8
 DUPLICATE_THRESHOLD: Final[int] = 2
 DefinitionKey = tuple[str, str, str]
 DefinitionsMap = collections.defaultdict[DefinitionKey, list[str]]

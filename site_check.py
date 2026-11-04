@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import importlib
 import json
 import os
@@ -12,17 +13,17 @@ def run_sanity_check():
     site_dirs = site.getsitepackages()
     if hasattr(site, "getusersitepackages"):
         user_site = site.getusersitepackages()
-        if os.path.exists(user_site):
+        if Path(user_site).exists():
             site_dirs.append(user_site)
     print(f"Scanning site-packages directories: {site_dirs}")
     seen_modules = set()
     for site_dir in site_dirs:
-        if not os.path.exists(site_dir):
+        if not Path(site_dir).exists():
             continue
         for root, dirs, files in os.walk(site_dir):
             for file in files:
                 if file.endswith(".py"):
-                    full_path = os.path.join(root, file)
+                    full_path = Path(root).joinpath(file)
                     try:
                         py_compile.compile(full_path, doraise=True)
                     except Exception as e:

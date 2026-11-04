@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import json
 import os
 import sys
@@ -6,7 +7,7 @@ import javaobj
 
 
 def read_java_serialization(file_path: str) -> list:
-    if not os.path.exists(file_path):
+    if not Path(file_path).exists():
         raise FileNotFoundError(f"The file {file_path} does not exist.")
     with open(file_path, "rb") as f:
         binary_data = f.read()

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
 import argparse
 import ast
 import io
@@ -45,9 +46,6 @@ except ImportError:
 
     def log_warning(msg: str) -> None:
         print(f"WARNING: {msg}", file=sys.stderr)
-
-
-DEFAULT_WORKERS: int = 8
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({
     ".git",
     "__pycache__",
@@ -350,7 +348,7 @@ if _HAS_LIBCST:
         total_c = total_d = total_changed = total_err = 0
         try:
             ctx = mp.get_context("spawn")
-            with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
+            with ctx.Pool(processes=max(1, min(MAX_WORKERS, len(jobs)))) as pool:
                 for res in pool.imap_unordered(_libcst_process_file, jobs):
                     _libcst_report(res)
                     total_c += res.comments_removed
@@ -545,7 +543,7 @@ def cmd_ast(args: argparse.Namespace) -> int:
     ]
     ctx = mp.get_context("spawn")
     total_d = total_c = changed = errs = 0
-    with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
+    with ctx.Pool(processes=max(1, min(MAX_WORKERS, len(jobs)))) as pool:
         for res in pool.imap_unordered(_ast_process_file, jobs):
             if res.error:
                 print(f"[ERROR] {res.path}: {res.error}")
@@ -655,7 +653,7 @@ def cmd_regex(args: argparse.Namespace) -> int:
     jobs = [(f, lang_override, args.keep_strings, args.hash_only, args.dry_run, True) for f in files]
     ctx = mp.get_context("spawn")
     changed = errs = 0
-    with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
+    with ctx.Pool(processes=max(1, min(MAX_WORKERS, len(jobs)))) as pool:
         for res in pool.imap_unordered(_regex_process_file, jobs):
             if res.error:
                 print(f"[ERROR] {res.path}: {res.error}")
@@ -804,7 +802,7 @@ def cmd_unused(args: argparse.Namespace) -> int:
     print(f"Scanning {len(files)} Python file(s) for unused definitions ...")
     jobs = [(f, args.dry_run) for f in files]
     ctx = mp.get_context("spawn")
-    with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
+    with ctx.Pool(processes=max(1, min(MAX_WORKERS, len(jobs)))) as pool:
         results = list(pool.imap_unordered(_unused_process_file, jobs))
     print("\n=== RESULTS ===\n")
     for res in results:
@@ -894,7 +892,7 @@ def cmd_jtc(args: argparse.Namespace) -> int:
     jobs = [(f, args.language, args.dry_run) for f in files]
     ctx = mp.get_context("spawn")
     changed = errs = 0
-    with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
+    with ctx.Pool(processes=max(1, min(MAX_WORKERS, len(jobs)))) as pool:
         for res in pool.imap_unordered(_jtc_process_file, jobs):
             if res.error:
                 print(f"[ERROR] {res.path}: {res.error}")
@@ -912,12 +910,6 @@ def cmd_jtc(args: argparse.Namespace) -> int:
 
 def _add_common_options(p: argparse.ArgumentParser) -> None:
     p.add_argument("paths", nargs="*", default=["."], help="Files or directories (default: cwd).")
-    p.add_argument(
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Worker processes (default: {DEFAULT_WORKERS}).",
-    )
     p.add_argument(
         "--exclude",
         nargs="*",

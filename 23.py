@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import sys
 from collections import deque
 from multiprocessing import Lock, Pool
@@ -10,7 +11,6 @@ from dh import runcmd
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-MAX_WORKERS = 8
 print_lock = Lock()
 
 

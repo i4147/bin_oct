@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import argparse
-import logging
 import re
 from pathlib import Path
 from typing import Any, Sequence
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logger
 DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]
 DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
@@ -42,21 +42,21 @@ def run_file_mode(args: argparse.Namespace) -> int:
     except ImportError as exc:
         LOGGER.error(
             "File mode requires babelfish and subliminal. Install them with "
-            "'python -m pip install babelfish subliminal': %s",
+            "'python -m pip install babelfish subliminal': {}",
             exc,
         )
         return 1
     video_path: Path = args.video
     if not video_path.exists():
-        LOGGER.error("File not found: %s", video_path)
+        LOGGER.error("File not found: {}", video_path)
         return 1
     if args.warn_non_mkv and video_path.suffix.lower() != ".mkv":
-        LOGGER.warning("File is not an MKV: %s", video_path)
+        LOGGER.warning("File is not an MKV: {}", video_path)
     output_dir: Path = args.output_dir if args.output_dir is not None else video_path.parent
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
-        LOGGER.error("Could not create output directory %s: %s", output_dir, exc)
+        LOGGER.error("Could not create output directory {}: {}", output_dir, exc)
         return 1
     if args.scan_output == "details":
         print(f"Scanning video: {video_path}")
@@ -70,7 +70,7 @@ def run_file_mode(args: argparse.Namespace) -> int:
         elif args.scan_output == "processing":
             print(f"Processing: {video.name}")
     except Exception as exc:
-        LOGGER.error("Error scanning video: %s", exc)
+        LOGGER.error("Error scanning video: {}", exc)
         return 1
     try:
         language = babelfish.Language(args.language)
@@ -78,7 +78,7 @@ def run_file_mode(args: argparse.Namespace) -> int:
         subtitles_by_video = download_best_subtitles([video], {language}, providers=args.providers)
         subtitles = subtitles_by_video.get(video, set())
         if not subtitles:
-            LOGGER.warning("No subtitles found for %s", video_path.name)
+            LOGGER.warning("No subtitles found for {}", video_path.name)
             return 1
         output_path = output_dir / f"{video_path.stem}{args.filename_suffix}{args.extension}"
         save_subtitles(video, subtitles, single=True, path=output_path)
@@ -86,10 +86,10 @@ def run_file_mode(args: argparse.Namespace) -> int:
         print("✓ Subtitles downloaded successfully!")
         return 0
     except ProviderError as exc:
-        LOGGER.error("Provider error: %s", exc)
+        LOGGER.error("Provider error: {}", exc)
         return 1
     except Exception as exc:
-        LOGGER.error("Error downloading subtitles: %s", exc)
+        LOGGER.error("Error downloading subtitles: {}", exc)
         return 1
 
 
@@ -149,7 +149,7 @@ class TitleSubtitleClient:
                     }
             return None
         except Exception as exc:
-            LOGGER.error("Error searching OpenSubtitles: %s", exc)
+            LOGGER.error("Error searching OpenSubtitles: {}", exc)
             return None
 
     def download_srt_from_url(self, url: str) -> str | None:
@@ -164,7 +164,7 @@ class TitleSubtitleClient:
                 return None
             return response.text
         except Exception as exc:
-            LOGGER.error("Error downloading subtitle: %s", exc)
+            LOGGER.error("Error downloading subtitle: {}", exc)
             return None
 
     def download_from_opensubtitles(self, subtitle: dict[str, Any] | None) -> str | None:
@@ -198,7 +198,7 @@ class TitleSubtitleClient:
                             if content:
                                 return content
                 except Exception as exc:
-                    LOGGER.error("Error requesting OpenSubtitles download link: %s", exc)
+                    LOGGER.error("Error requesting OpenSubtitles download link: {}", exc)
         return None
 
     def search_yts(self, title: str) -> str | None:
@@ -236,7 +236,7 @@ class TitleSubtitleClient:
                             return str(subtitle_url)
             return None
         except Exception as exc:
-            LOGGER.error("Error searching YTS subtitles: %s", exc)
+            LOGGER.error("Error searching YTS subtitles: {}", exc)
             return None
 
     def download_subtitles(self, title: str) -> tuple[str | None, str | None]:
@@ -262,7 +262,7 @@ def run_search_mode(args: argparse.Namespace) -> int:
     try:
         client = TitleSubtitleClient(args)
     except RuntimeError as exc:
-        LOGGER.error("%s", exc)
+        LOGGER.error("{}", exc)
         return 1
     content, source = client.download_subtitles(title)
     if not content:
@@ -278,7 +278,7 @@ def run_search_mode(args: argparse.Namespace) -> int:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(content, encoding="utf-8")
     except OSError as exc:
-        LOGGER.error("Error saving subtitle to %s: %s", output_path, exc)
+        LOGGER.error("Error saving subtitle to {}: {}", output_path, exc)
         return 1
     print(f"✅ Subtitles found from {source}")
     print(f"✅ Subtitle saved to: {output_path}")
@@ -352,7 +352,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s")
     if args.command == "file":
         return run_file_mode(args)
     return run_search_mode(args)

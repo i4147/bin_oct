@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, WORKERS
 import argparse
 import shutil
 import subprocess
@@ -17,7 +18,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     import os
-WORKERS: int = 8
 PDF_SUFFIXES: frozenset[str] = frozenset({".pdf"})
 
 
@@ -66,12 +66,6 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help=(
             "Text extraction backend. The default is pdfminer. 'auto' tries Python libraries and then system OCR tools."
         ),
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=WORKERS,
-        help=f"Number of extraction workers; default: {WORKERS}.",
     )
     parser.add_argument(
         "--no-recursive",
@@ -535,7 +529,7 @@ def process_file(path: Path, requested_backend: str, workers: int) -> None:
 def main(argv: Sequence[str]) -> int:
     arguments: argparse.Namespace = parse_arguments(argv)
     configure_logging(arguments.log_level)
-    if arguments.workers < 1:
+    if MAX_WORKERS < 1:
         msg = "--workers must be at least 1"
         raise ValueError(msg)
     paths: list[Path] = find_pdf_files(
@@ -549,7 +543,7 @@ def main(argv: Sequence[str]) -> int:
         process_file(
             path=path,
             requested_backend=arguments.backend,
-            workers=arguments.workers,
+            workers=MAX_WORKERS,
         )
     return 0
 

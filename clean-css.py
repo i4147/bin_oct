@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import _SKIP_DIRS, _WORKERS
 import argparse
 import difflib
 import multiprocessing
@@ -20,8 +21,6 @@ try:
     import csscompressor
 except ImportError:
     csscompressor = None
-_WORKERS = os.cpu_count() or 1
-_SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".idea", ".vscode", "dist", "build"}
 
 
 def process_file_tree_sitter(raw_bytes: bytes) -> tuple[bytes, bool]:
@@ -105,7 +104,7 @@ def process_css_file(
             return (file_path_str, 0, 0, 0, f"Read error: {e}", "", "")
         orig_size = len(raw_bytes)
         if orig_size == 0:
-            rel_path = os.path.relpath(file_path_str, base_dir_str)
+            rel_path = Path(file_path_str).relative_to(base_dir_str)
             return (rel_path, 0, 0, 0, None, "", "")
         try:
             old_text = raw_bytes.decode("utf-8")
@@ -133,7 +132,7 @@ def process_css_file(
                 path.write_bytes(new_bytes)
             except Exception as e:
                 return (file_path_str, 0, 0, 0, f"Write error: {e}", "", "")
-        rel_path = os.path.relpath(file_path_str, base_dir_str)
+        rel_path = Path(file_path_str).relative_to(base_dir_str)
         return (rel_path, orig_size, new_size, saved, None, old_text, new_text)
     except Exception as e:
         return (file_path_str, 0, 0, 0, str(e), "", "")

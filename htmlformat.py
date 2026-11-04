@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-import logging
+from dh import MAX_WORKERS, WORKERS
+from loguru import logger
 import multiprocessing as mp
 import sys
 from dataclasses import dataclass
@@ -18,14 +19,7 @@ except ImportError:
     sys.exit(1)
 HTML_EXTENSIONS = {".html", ".htm", ".xhtml"}
 MAX_FILE_SIZE = 50 * 1024 * 1024
-WORKERS = 8
 CHUNK_SIZE = 1024 * 1024
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -282,13 +276,6 @@ Examples:
         type=Path,
         help="Files or directories to process (default: current directory)",
     )
-    parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=WORKERS,
-        help=f"Number of parallel workers (default: {WORKERS})",
-    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
         "--dry-run",
@@ -297,7 +284,7 @@ Examples:
     )
     args = parser.parse_args()
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        pass
     print("Searching for HTML files...")
     html_files = list(find_html_files(args.paths))
     if not html_files:
@@ -314,7 +301,7 @@ Examples:
     total_bytes = 0
     total_tags = 0
     try:
-        with mp.Pool(processes=args.jobs) as pool:
+        with mp.Pool(processes=MAX_WORKERS) as pool:
             for result in pool.imap_unordered(process_file, html_files, chunksize=1):
                 if result.success:
                     success_count += 1

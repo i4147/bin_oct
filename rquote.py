@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from pathlib import Path
 import json
 import os
 import random
@@ -8,7 +9,7 @@ FILE_NAME = "/sdcard/data/quotes/quotes.json"
 
 
 def display_random_quote():
-    if not os.path.exists(FILE_NAME):
+    if not Path(FILE_NAME).exists():
         return
     with open(FILE_NAME, "r", encoding="utf-8") as f:
         try:

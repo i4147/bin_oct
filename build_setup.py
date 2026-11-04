@@ -48,14 +48,15 @@ def build_setup_py(pkg_name: str, meta: dict[str, str], out_dir: Path) -> str:
     readme_expr: str = "''"
     for readme in ("README.md", "README.rst", "README.txt", "README"):
         if (out_dir / readme).is_file():
-            readme_expr = f"open({readme!r}, encoding='utf-8').read() if os.path.exists({readme!r}) else ''"
+            readme_expr = f"Path({readme!r}).read_text(encoding='utf-8') if Path({readme!r}).is_file() else ''"
             break
     lines: list[str] = [
         '"""Auto-generated setup.py."""',
         "import os",
+        "from pathlib import Path",
         "from setuptools import setup, find_packages",
         "",
-        "HERE = os.path.abspath(os.path.dirname(__file__))",
+        "HERE = Path(__file__).resolve().parent",
         "os.chdir(HERE)",
         "",
         "setup(",

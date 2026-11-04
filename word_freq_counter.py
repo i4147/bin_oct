@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import json
 import re
 from collections import Counter
@@ -9,8 +10,6 @@ from typing import Any
 
 from dh import get_nobinary
 from loguru import logger
-
-MAX_WORKERS: int = 8
 WORD_PATTERN: re.Pattern[str] = re.compile(r"\b[a-z]+\b")
 OUTPUT_FILE: Path = Path("counter.json")
 

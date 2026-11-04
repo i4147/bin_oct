@@ -751,7 +751,7 @@ def main(args: Optional[Sequence[str]] = None) -> int:
         if res.message:
             logger.warning(f"{res.path}: {res.message}")
         if res.status == "changed":
-            rel_path = os.path.relpath(res.path)
+            rel_path = Path(res.path).relative_to(Path())
             action = "would reduce" if run_options.dry_run else "reduced"
             logger.info(f"{rel_path}: {action} {green(f'{res.bytes_saved}')} bytes")
             if show_diff and res.diff:

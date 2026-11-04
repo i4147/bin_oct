@@ -33,7 +33,7 @@ def rename_files(directory: str) -> None:
             new_path = path.with_stem(new_name)
             counter = 1
             while new_path.exists():
-                _, ext = os.path.splitext(new_name)
+                _, ext = (str(Path(new_name).with_suffix("")), Path(new_name).suffix)
                 new_path = path.with_name(f"{new_name}_{counter}{ext}")
                 counter += 1
             Path(original_path).rename(new_path)

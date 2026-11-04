@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import importlib.util
 import json
@@ -611,12 +612,6 @@ def _parse_args() -> argparse.Namespace:
         choices=sorted((*BACKEND_FACTORIES, "auto")),
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        default=2,
-        type=int,
-    )
-    parser.add_argument(
         "-d",
         "--delay",
         default=0.5,
@@ -641,7 +636,7 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-    if not 1 <= args.workers <= 2:
+    if not 1 <= MAX_WORKERS <= 2:
         msg = "--workers must be 1 or 2"
         raise ValueError(msg)
     if args.delay < 0:
@@ -673,14 +668,14 @@ def main() -> int:
     logger.info(
         "Using backend={} workers={} pending={} total={}",
         backend_name,
-        args.workers,
+        MAX_WORKERS,
         len(pending),
         len(chunks),
     )
     limiter = RequestLimiter(args.delay)
     completed_since_save = 0
     executor = ThreadPoolExecutor(
-        max_workers=args.workers,
+        max_workers=MAX_WORKERS,
         thread_name_prefix="translator",
     )
     futures: dict[Future[tuple[int, str]], int] = {}

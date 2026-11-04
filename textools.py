@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import json
 import mimetypes
@@ -91,28 +92,6 @@ BINARY_EXTS: set[str] = {
     ".webm",
     ".wav",
     ".flac",
-}
-SKIP_DIRS: set[str] = {
-    ".git",
-    ".svn",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".env",
-    ".egg-info",
-    "dist",
-    "build",
-    ".idea",
-    ".vscode",
-    ".pytest_cache",
-    ".tox",
-    ".coverage",
-    ".mypy_cache",
-    "target",
-    "out",
-    "bin",
-    ".gradle",
 }
 SPECIAL_NAMES: set[str] = {
     "makefile",
@@ -311,8 +290,8 @@ def cmd_words(args: argparse.Namespace) -> int:
     stopwords = load_stopwords(args.stopwords_source, args.stopwords_file)
     tasks = [(str(p), args.min_length, args.tokenize, stopwords) for p in files]
     results: list[tuple[str, Counter, str | None]] = []
-    if args.workers > 1 and len(tasks) > 1:
-        with Pool(processes=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(tasks) > 1:
+        with Pool(processes=MAX_WORKERS) as pool:
             results = list(pool.imap(_worker_word_counts, tasks))
     else:
         for t in tasks:
@@ -373,11 +352,11 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
         print("No text files found!")
         return 0
     print(f"Found {len(files):,} text files")
-    print(f"\nProcessing files with {args.workers} workers...")
+    print(f"\nProcessing files with {MAX_WORKERS} workers...")
     unique_chars: set[str] = set()
     processed = 0
-    if args.workers > 1 and len(files) > 1:
-        with Pool(processes=args.workers) as pool:
+    if MAX_WORKERS > 1 and len(files) > 1:
+        with Pool(processes=MAX_WORKERS) as pool:
             for chars in pool.imap(_worker_collect_chars, [str(f) for f in files]):
                 unique_chars.update(chars)
                 processed += 1
@@ -523,12 +502,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Wrap JSON output with a metadata block.",
     )
-    p_words.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Parallel worker processes (default: 8).",
-    )
     p_words.set_defaults(func=cmd_words)
     p_chars = sub.add_parser(
         "chars",
@@ -560,12 +533,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("chars.txt"),
         help="Output file (default: chars.txt).",
-    )
-    p_cc.add_argument(
-        "--workers",
-        type=int,
-        default=8,
-        help="Parallel worker processes (default: 8).",
     )
     p_cc.set_defaults(func=cmd_collect_chars)
     return parser

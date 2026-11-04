@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import MAX_WORKERS
 import argparse
 import base64
 import csv
@@ -292,19 +293,13 @@ def main() -> int:
         action="store_true",
         help="Disable parallel builds",
     )
-    parser.add_argument(
-        "--max-workers",
-        type=int,
-        default=None,
-        help="Maximum worker processes (default: min(cpu_count, 8))",
-    )
     args = parser.parse_args()
     builder = WheelBuilder(
         site_packages=args.site_packages,
         output_dir=args.output_dir,
         force_all=args.force,
         parallel=not args.no_parallel,
-        max_workers=args.max_workers,
+        max_workers=MAX_WORKERS,
     )
     wheels = builder.build_all()
     print(f"\n🎉 Built {len(wheels)} wheel(s)")

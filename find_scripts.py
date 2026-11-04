@@ -1,26 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import re
 from concurrent.futures import InterpreterPoolExecutor
 from pathlib import Path
 
 from dh import SHEBANG_MAP, is_binary
-
-SKIP_DIRS = {
-    ".git",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    "dist",
-    "build",
-    ".idea",
-    ".vscode",
-}
 
 
 def normalize(name: str) -> str:

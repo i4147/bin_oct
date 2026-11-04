@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import _SNAPR_WORKERS
+from loguru import logger
 import argparse
 import sys
 import tarfile
@@ -301,7 +303,6 @@ def snapper_cli(args: argparse.Namespace) -> int:
 
 
 _SNAPR_EXT = ".sn"
-_SNAPR_WORKERS = 8
 
 
 def _snapr_compress_file(path: Path, remove_original: bool = True) -> tuple[bool, str]:

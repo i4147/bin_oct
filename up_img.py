@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import os
 import pickle
@@ -17,7 +18,7 @@ from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
 
 SYSTEM = platform.system()
-CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".upimg_config.pkl")
+CONFIG_PATH = Path(Path("~").expanduser()).joinpath(".upimg_config.pkl")
 CONFIG_FIELDS = ["service", "username", "password", "upload_path", "url_base"]
 CONFIG_DEFAULTS = ["", "", "", "/", "https://test.upimg.com"]
 ConfigTuple = namedtuple("ConfigTuple", CONFIG_FIELDS)
@@ -49,7 +50,7 @@ def get_clipboard_file_paths():
                     text=True,
                 )
                 path = file_path_proc.stdout.strip()
-                if path and os.path.exists(path):
+                if path and Path(path).exists():
                     paths.append(path)
         except Exception:
             pass
@@ -81,9 +82,9 @@ class ClipboardFile:
         file_paths = get_clipboard_file_paths()
         if file_paths:
             for path in file_paths:
-                if os.path.isfile(path):
+                if Path(path).is_file():
                     fp = open(path, "rb")
-                    ext = os.path.splitext(path)[1].lower()
+                    ext = (str(Path(path).with_suffix("")), Path(path).suffix)[1].lower()
                     yield fp, ext
             return
         image = ImageGrab.grabclipboard()
@@ -115,8 +116,8 @@ def set_config():
                 r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
             )
             desktop_path = winreg.QueryValueEx(reg_key, "Desktop")[0]
-            exe_path = os.path.abspath(sys.argv[0])
-            lnk_path = os.path.join(desktop_path, "UpImg.lnk")
+            exe_path = Path(sys.argv[0]).absolute()
+            lnk_path = Path(desktop_path).joinpath("UpImg.lnk")
             shortcut = pythoncom.CoCreateInstance(
                 shell.CLSID_ShellLink,
                 None,
@@ -126,7 +127,7 @@ def set_config():
             shortcut.SetPath(sys.executable)
             shortcut.SetArguments(f'"{exe_path}"')
             shortcut.SetHotkey((0x02 << 8) | 0x31)
-            shortcut.SetWorkingDirectory(os.path.dirname(exe_path))
+            shortcut.SetWorkingDirectory(Path(exe_path).parent)
             shortcut.SetShowCmd(7)
             shortcut.QueryInterface(pythoncom.IID_IPersistFile).Save(lnk_path, 0)
         except Exception:
@@ -169,7 +170,7 @@ def main():
         except Exception:
             print_exc()
     else:
-        if not os.path.exists(CONFIG_PATH):
+        if not Path(CONFIG_PATH).exists():
             message = "Config file is not found. Please setup profile parameters first.\nUsage: upimg --config"
             send_notify(
                 "Config Missing",
@@ -197,7 +198,7 @@ def main():
                     message="No valid file object image data parsed from clipboard.",
                 )
         except Exception:
-            error_log = os.path.abspath("./upimg-error.log")
+            error_log = Path("./upimg-error.log").absolute()
             with open(error_log, "w") as fp:
                 print_exc(file=fp)
             send_notify("Execution Error!!!", message=f"Trace log written to: {error_log}")

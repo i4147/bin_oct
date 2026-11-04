@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+from dh import SKIP_DIRS, WORKERS
 import argparse
 import functools
 import multiprocessing as mp
@@ -15,28 +16,10 @@ try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
-WORKERS = 8
 COLUMN_WIDTH = 80
 INDENT = "  "
 ALLOWED_BLANK_LINES = 2
 CHUNK_MAX = 32
-SKIP_DIRS = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    ".nox",
-    "node_modules",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".eggs",
-    "site-packages",
-})
 WS_RE = re.compile(r"[ \t]*")
 BARE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
 BASIC_STRING_RE = re.compile(r'"(?:[^"\\\n]|\\.)*"')
@@ -599,15 +582,15 @@ def collect_files(paths: Sequence[Path]) -> list[str]:
     seen: set[str] = set()
     found: list[str] = []
     for given in paths:
-        if os.path.isdir(given):
-            candidates: Sequence[str] | Iterator[str] = walk_toml(os.path.realpath(given))
-        elif os.path.isfile(given):
-            candidates = (os.path.realpath(given),)
+        if Path(given).is_dir():
+            candidates: Sequence[str] | Iterator[str] = walk_toml(Path(given).resolve())
+        elif Path(given).is_file():
+            candidates = (Path(given).resolve(),)
         else:
             print(f"warning: skipping non-existent path: {given}", file=sys.stderr)
             continue
         for candidate in candidates:
-            key = os.path.normcase(candidate)
+            key = str(Path(candidate)).lower() if os.name == "nt" else str(Path(candidate))
             if key not in seen:
                 seen.add(key)
                 found.append(candidate)
@@ -616,7 +599,7 @@ def collect_files(paths: Sequence[Path]) -> list[str]:
 
 def display_path(path: str) -> str:
     try:
-        return os.path.relpath(path)
+        return Path(path).relative_to(Path())
     except ValueError:
         return path
 

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS, workers
 import argparse
 import base64
 import binascii
@@ -99,7 +101,6 @@ class Options:
     dry_run: bool
     manifest: bool
     verbose: bool
-    workers: int
     overwrite: bool
     max_passes: int
 
@@ -173,17 +174,6 @@ def safe_relative_to(path: Path, start: Path) -> Path:
 def build_link(asset: Path, source: Path) -> str:
     relative = safe_relative_to(asset.resolve(), source.parent.resolve())
     return quote(relative.as_posix())
-
-
-def atomic_write(path: Path, data: bytes) -> None:
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    try:
-        tmp.write_bytes(data)
-        tmp.replace(path)
-    except Exception:
-        if tmp.exists():
-            tmp.unlink(missing_ok=True)
-        raise
 
 
 def should_skip_dir(name: str, exclude: frozenset[str]) -> bool:
@@ -311,7 +301,7 @@ def run_until_clean(opts: Options, stats: Stats) -> None:
         batch = list(queue)
         queue.clear()
         new_assets: list[Path] = []
-        if opts.workers == 1 or len(batch) < 4:
+        if MAX_WORKERS == 1 or len(batch) < 4:
             for path in batch:
                 resolved = path.resolve()
                 if resolved in seen:
@@ -321,7 +311,7 @@ def run_until_clean(opts: Options, stats: Stats) -> None:
                 created = process_file(path, opts, stats, is_asset=is_asset)
                 new_assets.extend(created)
         else:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=opts.workers) as pool:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 futures = {}
                 for path in batch:
                     resolved = path.resolve()
@@ -449,14 +439,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="print per-file actions and pass progress",
     )
     parser.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=1,
-        metavar="N",
-        help="parallel worker threads (1 = sequential)",
-    )
-    parser.add_argument(
         "--max-passes",
         type=int,
         default=32,
@@ -485,7 +467,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         dry_run=args.dry_run,
         manifest=args.manifest,
         verbose=args.verbose,
-        workers=max(1, args.workers),
+        workers=max(1, MAX_WORKERS),
         overwrite=args.overwrite,
         max_passes=max(1, args.max_passes),
     )

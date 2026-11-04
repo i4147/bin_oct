@@ -120,7 +120,7 @@ def find_target_files():
         for pattern in TARGET_FILENAMES:
             for f in files:
                 if Path(f).match(pattern):
-                    matched.add(os.path.join(root, f))
+                    matched.add(Path(root).joinpath(f))
     return matched
 
 
@@ -201,8 +201,8 @@ def fix_git_config_files():
         if should_skip_dir(root):
             continue
         if ".git" in dirs:
-            cfg_path = os.path.join(root, ".git", "config")
-            if os.path.isfile(cfg_path):
+            cfg_path = Path(root).joinpath(".git", "config")
+            if Path(cfg_path).is_file():
                 replace_in_file(cfg_path)
 
 

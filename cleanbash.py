@@ -91,7 +91,7 @@ def validate_bash_source(source: bytes) -> bool:
 
 
 def process_file(path: Path) -> tuple[str, int, str]:
-    rel = os.path.relpath(path)
+    rel = Path(path).relative_to(Path())
     try:
         source = path.read_bytes()
     except OSError as e:

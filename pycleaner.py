@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, _SKIPDIRS_RE, _SKIP_DIRS
 import argparse
 import ast
 import difflib
@@ -72,16 +73,6 @@ def _display_path(p: str) -> str:
 
 def _iter_py_files(root: Path, skip_dirs: set[str]) -> list[Path]:
     return [p for p in root.rglob("*.py") if p.is_file() and not any(part in skip_dirs for part in p.parts)]
-
-
-_SKIP_DIRS: set[str] = {
-    ".git",
-    "__pycache__",
-    "venv",
-    ".venv",
-    "output",
-    "node_modules",
-}
 
 
 @dataclass
@@ -479,7 +470,7 @@ def _cmd_imports(args: argparse.Namespace) -> int:
         except re.error as exc:
             print(red(f"error: invalid --exclude pattern {pat!r}: {exc}"), file=sys.stderr)
             return 2
-    print(bold(f"\nScanning {len(paths)} path(s) with {args.workers} worker(s) …\n"))
+    print(bold(f"\nScanning {len(paths)} path(s) with {MAX_WORKERS} worker(s) …\n"))
     py_files, archive_members = _collect_import_targets(paths, excludes)
     n_py, n_arc = len(py_files), len(archive_members)
     print(f"  {cyan(str(n_py))} .py file(s), {cyan(str(n_arc))} archive member(s) queued.\n")
@@ -488,7 +479,7 @@ def _cmd_imports(args: argparse.Namespace) -> int:
         return 0
     reports: list[_ImportReport] = []
     with Pool(
-        processes=args.workers,
+        processes=MAX_WORKERS,
         initializer=_init_worker_imports,
         initargs=(args.ignore_init,),
     ) as pool:
@@ -740,8 +731,8 @@ def _cmd_defs(args: argparse.Namespace) -> int:
     if not files:
         print(yellow("No .py files found."))
         return 0
-    print(bold(f"Scanning {len(files)} file(s) with {args.workers} worker(s)..."))
-    with Pool(processes=args.workers) as pool:
+    print(bold(f"Scanning {len(files)} file(s) with {MAX_WORKERS} worker(s)..."))
+    with Pool(processes=MAX_WORKERS) as pool:
         scans = list(pool.imap_unordered(_scan_one_defs, files))
     for s in scans:
         if s.error:
@@ -766,7 +757,7 @@ def _cmd_defs(args: argparse.Namespace) -> int:
     if args.extract:
         out_base = Path(args.extract_dir).resolve() if args.extract_dir else root / "output"
         print(bold(f"\nExtracting {len(unused_items)} object(s) into {out_base} ..."))
-        with Pool(processes=args.workers) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             written = list(pool.starmap(_extract_one, [(d, out_base) for d in unused_items]))
         for p in written:
             print(f"  wrote {p}")
@@ -795,9 +786,6 @@ def _cmd_defs(args: argparse.Namespace) -> int:
         if not args.dry_run:
             print(green(f"\nRemoved unused objects from {removed_count} file(s)."))
     return 0
-
-
-_SKIPDIRS_RE = re.compile(r"^(.+?):(\d+):\s+unused variable\s+['\"]SKIP_DIRS['\"]")
 _UNUSED_VAR_RE = re.compile(
     r"^(?P<path>.*?):(?P<lineno>\d+):\s*unused variable '(?P<var>[^']+)'",
     re.IGNORECASE,
@@ -1034,9 +1022,9 @@ def _cmd_replace_func(args: argparse.Namespace) -> int:
         return 0
     mode = "NAME/ARGUMENT CHECK" if args.inspect else "EXACT BODY CHECK"
     print(bold(f"Mode: {mode}"))
-    print(f"Found {len(files)} Python files. Processing with {args.workers} workers...")
+    print(f"Found {len(files)} Python files. Processing with {MAX_WORKERS} workers...")
     print("Changes will be applied automatically.\n")
-    with Pool(args.workers) as pool:
+    with Pool(MAX_WORKERS) as pool:
         for path, ok, msg in pool.starmap(_replace_func_in_file, [(f, args.inspect) for f in files]):
             if ok:
                 print(green(f"[UPDATED] {path}: {msg}"))
@@ -1160,7 +1148,6 @@ def _build_parser() -> argparse.ArgumentParser:
     p_imp.add_argument("-a", "--autofix", action="store_true", help="Remove unused imports in-place.")
     p_imp.add_argument("--dry-run", action="store_true", help="Preview changes without writing.")
     p_imp.add_argument("-v", "--verbose", action="store_true")
-    p_imp.add_argument("--workers", type=int, default=8, metavar="N")
     p_imp.add_argument(
         "--exclude",
         action="append",
@@ -1214,7 +1201,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Override extraction root dir (default: <dir>/output).",
     )
-    p_def.add_argument("--workers", type=int, default=8)
     p_def.set_defaults(func=_cmd_defs)
     p_vul = sub.add_parser("vulture", help="Process vulture output file and fix/annotate findings.")
     p_vul.add_argument("file", nargs="?", help="Vulture output file (default: stdin).")
@@ -1243,7 +1229,6 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Match by name+argcount only (skip full body check).",
     )
-    p_rf.add_argument("--workers", type=int, default=8)
     p_rf.set_defaults(func=_cmd_replace_func)
     p_rb = rep_sub.add_parser("block", help="Remove a fixed block of code from many files.")
     p_rb.add_argument("files", nargs="*", help="Target .py files (default: cwd rglob).")

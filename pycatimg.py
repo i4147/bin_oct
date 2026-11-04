@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import argparse
 import io
 import os
@@ -117,7 +118,7 @@ def get_terminal_size() -> tuple[int, int]:
 
 
 def catimg(image_path, width=None, height=None, use_half_blocks=True, dpi=96, bg_color=None) -> None:
-    if not os.path.exists(image_path):
+    if not Path(image_path).exists():
         print(f"Error: File '{image_path}' not found", file=sys.stderr)
         sys.exit(1)
     try:

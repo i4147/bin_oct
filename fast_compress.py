@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_XZ_POOL_WORKERS, DEFAULT_ZSTD_POOL_WORKERS, skipped_dirs
 import argparse
 import contextlib
 import fnmatch
@@ -35,11 +36,9 @@ except ImportError:
 
 DEFAULT_ZSTD_LEVEL = 3
 DEFAULT_ZSTD_THREADS = 4
-DEFAULT_ZSTD_POOL_WORKERS = 8
 DEFAULT_ZSTD_CHUNK_SIZE = 131_072
 DEFAULT_XZ_PRESET = 9
 DEFAULT_XZ_THREADS = 4
-DEFAULT_XZ_POOL_WORKERS = 8
 ZSTD_EXTENSIONS = frozenset({".zst"})
 ZSTD_SKIP_EXTENSIONS = frozenset({
     ".xz",
@@ -232,7 +231,6 @@ class ScanStats:
     skipped_symlinks: int = 0
     skipped_extensions: int = 0
     skipped_editable: int = 0
-    skipped_dirs: int = 0
     skipped_media: int = 0
     skipped_existing: int = 0
 

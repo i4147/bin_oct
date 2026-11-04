@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS, _SKIP_DIRS, workers
 import argparse
 import ast
 import codecs
@@ -27,27 +28,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 VERSION: Final = "1.0.0"
 FEATURE_VERSION: Final = (3, 12)
-DEFAULT_WORKERS: Final = 4
 PoolMethod = Literal["imap_unordered", "imap", "map"]
 _COOKIE_RE: Final = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*[-\w.]+")
 _DIRECTIVE_RE: Final = re.compile(r"^#\s*(?:type|fmt)\s*:")
 _SUFFIXES: Final = frozenset({".py", ".pyi", ".pyw"})
-_SKIP_DIRS: Final = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "node_modules",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".eggs",
-    "site-packages",
-})
 _TRIVIAL: Final = (ast.Name, ast.Constant, ast.Attribute)
 
 
@@ -110,7 +94,6 @@ class Options:
     check: bool
     backup: bool
     backup_dir: Path | None
-    workers: int
     pool_method: PoolMethod
     quiet: bool
     verbose: bool
@@ -744,12 +727,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="copy originals into this directory before modifying",
     )
     parser.add_argument(
-        "--workers",
-        type=_positive_int,
-        default=DEFAULT_WORKERS,
-        help=f"worker processes (default {DEFAULT_WORKERS})",
-    )
-    parser.add_argument(
         "--pool-method",
         choices=("imap_unordered", "imap", "map"),
         default="imap_unordered",
@@ -785,7 +762,7 @@ def parse_args(argv: Sequence[str] | None) -> Options:
         check=args.check,
         backup=args.backup or args.backup_dir is not None,
         backup_dir=args.backup_dir,
-        workers=args.workers,
+        workers=MAX_WORKERS,
         pool_method=pool_method,
         quiet=args.quiet,
         verbose=args.verbose,
@@ -820,7 +797,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         for path in paths
     ]
     try:
-        results = run_jobs(jobs, options.workers, options.pool_method)
+        results = run_jobs(jobs, MAX_WORKERS, options.pool_method)
     except KeyboardInterrupt:
         logger.error("interrupted")
         return 2

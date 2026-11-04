@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -12,38 +14,6 @@ from typing import Iterable, Iterator
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16
 DIGEST_BYTES = 16
-SKIP_DIRS = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    ".bzr",
-    "node_modules",
-    "bower_components",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".tox",
-    ".cache",
-    ".gradle",
-    ".idea",
-    ".vscode",
-    "dist",
-    "build",
-    "target",
-    ".next",
-    ".nuxt",
-    "Library",
-    "AppData",
-    ".Trash",
-    ".Trashes",
-    "$RECYCLE.BIN",
-    "System Volume Information",
-})
 
 
 def human_size(n: int) -> str:
@@ -68,7 +38,7 @@ def walk_files(roots: Iterable[Path]) -> Iterator[Path]:
         except OSError:
             continue
         for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not os.path.islink(os.path.join(dirpath, d))]
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not Path(Path(dirpath).joinpath(d)).is_symlink()]
             for name in filenames:
                 p = Path(dirpath) / name
                 try:
@@ -178,13 +148,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Delete the duplicates (default: dry run)",
     )
     ap.add_argument(
-        "-j",
-        "--workers",
-        type=int,
-        default=os.cpu_count() or 1,
-        help="Number of worker processes (default: CPU count)",
-    )
-    ap.add_argument(
         "-m",
         "--min-size",
         type=int,
@@ -204,10 +167,10 @@ def main(argv: list[str] | None = None) -> int:
         if not args.quiet:
             print(msg, file=sys.stderr)
 
-    log(f"Scanning {len(args.paths)} root(s) with {args.workers} worker(s)...")
+    log(f"Scanning {len(args.paths)} root(s) with {MAX_WORKERS} worker(s)...")
     groups = find_duplicates(
         roots=list(args.paths),
-        workers=max(1, args.workers),
+        workers=max(1, MAX_WORKERS),
         min_size=args.min_size,
         log=log,
     )

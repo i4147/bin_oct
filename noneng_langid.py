@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import math
 import sys
 from pathlib import Path
@@ -7,18 +8,6 @@ from pathlib import Path
 import py3langid as langid
 
 ROOT = Path.cwd()
-SKIP_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    "env",
-    "dist",
-    "build",
-}
 SKIP_EXTS = {
     ".pyc",
     ".pyo",

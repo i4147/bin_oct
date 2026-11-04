@@ -1,20 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from loguru import logger
 import json
-import logging
 import os
 from pathlib import Path
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
-
 
 def load_existing_translations(json_path: str) -> dict[str, str]:
-    if os.path.exists(json_path):
+    if Path(json_path).exists():
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 existing_data = json.load(f)
@@ -29,7 +22,7 @@ def load_existing_translations(json_path: str) -> dict[str, str]:
 
 
 def load_failed_words(failed_path: str) -> set[str]:
-    if os.path.exists(failed_path):
+    if Path(failed_path).exists():
         try:
             with open(failed_path, "r", encoding="utf-8") as f:
                 failed_words = {line.strip() for line in f if line.strip()}
@@ -82,7 +75,7 @@ def merge_translations(src_dir: str = "."):
     failed_words = load_failed_words(output_failed)
     processed_files = set()
     total_new_translations = 0
-    if not os.path.isdir(src_dir):
+    if not Path(src_dir).is_dir():
         logger.error(f"Source directory '{src_dir}' does not exist")
         return
     try:
@@ -154,7 +147,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Process interrupted by user")
     except Exception as e:
-        logger.error(f"Unexpected error in main execution: {e}", exc_info=True)
+        logger.opt(exception=True).error(f"Unexpected error in main execution: {e}", )
     finally:
         elapsed_time = time.time() - start_time
         print(f"Execution completed in {elapsed_time:.2f} seconds")

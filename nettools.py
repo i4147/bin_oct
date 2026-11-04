@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import io
 import json
@@ -119,7 +120,7 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
     total = len(proxies)
     jobs = [(i, total, p) for i, p in enumerate(proxies, start=1)]
     valid: list[str] = []
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         for line, good in pool.map(lambda t: _probe_one(*t, timeout=args.timeout, delay=args.delay), jobs):
             print(line)
             if good:
@@ -541,13 +542,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--file",
         default="proxies.txt",
         help="Path to proxies file (one per line). Default: proxies.txt",
-    )
-    p_proxy.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=5,
-        help="Number of concurrent workers. Default: 5",
     )
     p_proxy.add_argument(
         "-t",

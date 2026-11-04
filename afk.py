@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS
 import argparse
 import ast
 import bz2
@@ -633,21 +635,6 @@ def run_analysis(items: list[SourceItem], include_init: bool, workers: int) -> I
         yield from pool.map(process_item, items, itertools.repeat(include_init), chunksize=chunk)
 
 
-def atomic_write(path: Path, data: bytes) -> None:
-    real = path.resolve()
-    mode = stat.S_IMODE(real.stat().st_mode)
-    descriptor, temp_name = tempfile.mkstemp(dir=real.parent, prefix=f".{real.name}.", suffix=".tmp")
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(data)
-        os.chmod(temp_name, mode)
-        os.replace(temp_name, real)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            os.unlink(temp_name)
-        raise
-
-
 def format_diff(diff: str, style: Style) -> str:
     rendered: list[str] = []
     for line in diff.splitlines():
@@ -784,14 +771,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="do not skip .git, venv, __pycache__, node_modules and similar",
     )
-    parser.add_argument(
-        "-j",
-        "--workers",
-        type=positive_int,
-        default=None,
-        metavar="N",
-        help="number of parallel worker processes (default: CPU count, max 32)",
-    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--check",
@@ -850,7 +829,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(f"cannot modify archive or compressed input: {target}")
     style = Style(color_enabled(args.color, sys.stdout))
     totals = Totals()
-    workers: int = args.workers or min(32, os.cpu_count() or 1)
+    workers: int = MAX_WORKERS or min(32, os.cpu_count() or 1)
     try:
         items = [item for target in targets for item in discover(target, patterns)]
         for result in run_analysis(items, args.include_init, workers):

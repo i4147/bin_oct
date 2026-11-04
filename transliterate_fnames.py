@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import SKIP_DIRS
 import argparse
 import re
 import sys
@@ -20,7 +21,6 @@ try:
     from unidecode import unidecode
 except ImportError:
     unidecode = None
-SKIP_DIRS = frozenset({".git", ".hg", ".svn"})
 MAX_NAME = 255
 KANA = re.compile(r"[\u3040-\u30ff\u31f0-\u31ff]")
 HAN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002ebef]+")

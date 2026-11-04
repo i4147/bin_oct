@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import re
@@ -194,26 +195,21 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Remove images from documentation")
     subparsers = parser.add_subparsers(dest="mode", required=True)
     fast_parser = subparsers.add_parser("fast", help="Fast MD/HTML removal")
-    fast_parser.add_argument("--workers", type=int, default=8)
     smart_parser = subparsers.add_parser("smart", help="Smart badge/remote removal")
     smart_parser.add_argument("paths", nargs="*", help="Paths to process")
-    smart_parser.add_argument("--workers", type=int, default=8)
     md_parser = subparsers.add_parser("markdown", help="Markdown-only removal")
     md_parser.add_argument("paths", nargs="*", help="Paths to process")
-    md_parser.add_argument("--workers", type=int, default=4)
     remote_parser = subparsers.add_parser("remote", help="Remote URL removal")
     remote_parser.add_argument("extensions", nargs="*", default=[".html", ".md", ".rst"], help="File extensions")
-    remote_parser.add_argument("--workers", type=int, default=8)
     html_parser = subparsers.add_parser("html", help="HTML BeautifulSoup removal")
     html_parser.add_argument("paths", nargs="*", help="Paths to process")
-    html_parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
     if args.mode == "fast":
         files = find_files([], (".md", ".markdown"))
         if not files:
             print("No markdown files found.")
             return 0
-        with mp.Pool(args.workers) as pool:
+        with mp.Pool(MAX_WORKERS) as pool:
             results = pool.map(clean_file_fast, files)
         print(f"Processed {len(results)} files")
         return 0
@@ -222,7 +218,7 @@ def main() -> int:
         if not files:
             print("No files found.")
             return 0
-        with mp.Pool(args.workers) as pool:
+        with mp.Pool(MAX_WORKERS) as pool:
             results = pool.map(clean_file_smart, files)
         print(f"Processed {len(results)} files")
         return 0
@@ -231,7 +227,7 @@ def main() -> int:
         if not files:
             print("No markdown files found.")
             return 0
-        with mp.Pool(args.workers) as pool:
+        with mp.Pool(MAX_WORKERS) as pool:
             results = pool.map(clean_file_markdown, files)
         print(f"Processed {len(results)} files")
         return 0
@@ -241,7 +237,7 @@ def main() -> int:
         if not files:
             print("No files found.")
             return 0
-        with mp.Pool(args.workers) as pool:
+        with mp.Pool(MAX_WORKERS) as pool:
             results = pool.map(clean_file_remote, files)
         print(f"Processed {len(results)} files")
         return 0
@@ -250,7 +246,7 @@ def main() -> int:
         if not files:
             print("No HTML files found.")
             return 0
-        with mp.Pool(args.workers) as pool:
+        with mp.Pool(MAX_WORKERS) as pool:
             results = pool.map(clean_file_fast, files)
         print(f"Processed {len(results)} files")
         return 0

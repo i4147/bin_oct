@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import DEFAULT_WORKERS, MAX_WORKERS
+from loguru import logger
 import argparse
 import ast
 import io
-import logging
 import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -17,8 +18,7 @@ try:
 except ImportError:
     cst = None
     HAS_LIBCST = False
-LOG = logging.getLogger("pyclean")
-DEFAULT_WORKERS = 8
+LOG = logger
 DEFAULT_TOP_LINES = 5
 GREEN = "\x1b[92m"
 WHITE = "\x1b[97m"
@@ -435,8 +435,8 @@ def cmd_strip(args: argparse.Namespace) -> int:
 
     def iter_results():
         jobs = [str(p) for p in files]
-        if args.workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        if MAX_WORKERS > 1 and len(jobs) > 1:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 yield from pool.map(_process_strip, jobs, [opts] * len(jobs), chunksize=8)
         else:
             for j in jobs:
@@ -447,7 +447,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
             continue
         path_str, comments, docstrings, changed, err = res
         if err:
-            LOG.error("Failed: %s - %s", path_str, err)
+            LOG.error("Failed: {} - {}", path_str, err)
             failures += 1
             continue
         if changed:
@@ -516,12 +516,12 @@ def cmd_check(args: argparse.Namespace) -> int:
     if not files:
         print("No Python files found.")
         return 0
-    print(f"Scanning {len(files)} Python files with {args.workers} workers...\n")
+    print(f"Scanning {len(files)} Python files with {MAX_WORKERS} workers...\n")
 
     def iter_results():
         jobs = [str(p) for p in files]
-        if args.workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        if MAX_WORKERS > 1 and len(jobs) > 1:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 yield from pool.map(_scan_file_for_findings, jobs, chunksize=8)
         else:
             for j in jobs:
@@ -604,12 +604,12 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
     if not files:
         LOG.warning("No Python files found.")
         return 0
-    print(f"Scanning top {args.top} lines of {len(files)} files with {args.workers} workers...")
+    print(f"Scanning top {args.top} lines of {len(files)} files with {MAX_WORKERS} workers...")
     jobs = [(str(f), args.top, args.pattern) for f in files]
 
     def iter_results():
-        if args.workers > 1 and len(jobs) > 1:
-            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        if MAX_WORKERS > 1 and len(jobs) > 1:
+            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as pool:
                 yield from pool.map(_clean_module_doc_worker, jobs, chunksize=8)
         else:
             for j in jobs:
@@ -624,7 +624,7 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
             cleaned += 1
             print(f"Cleaned docstring at line {line_no} of: {path_str}")
         else:
-            LOG.error("Refusing to write %s: modified source failed AST validation", path_str)
+            LOG.error("Refusing to write {}: modified source failed AST validation", path_str)
     print(f"Fast cleanup complete! ({cleaned} file(s) modified)")
     return 0
 
@@ -678,13 +678,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Collapse blank-line runs and trim trailing whitespace (text-fallback engine)",
     )
-    p.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=DEFAULT_WORKERS,
-        help=f"Worker processes (default: {DEFAULT_WORKERS})",
-    )
     p.set_defaults(func=cmd_strip)
     p = sub.add_parser("check", help="Find comments and docstrings (check_rmc.py).")
     p.add_argument("directory", nargs="?", default=".")
@@ -694,7 +687,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Automatically remove the found lines",
     )
-    p.add_argument("-w", "--workers", type=int, default=4, help="Worker processes (default: 4)")
     p.set_defaults(func=cmd_check)
     p = sub.add_parser(
         "clean-module-doc",
@@ -713,7 +705,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override the regex; must match the entire line "
         'after stripping (default: \'^\\s*"""\\s*Module for <name>...\')',
     )
-    p.add_argument("-w", "--workers", type=int, default=DEFAULT_WORKERS)
     p.set_defaults(func=cmd_clean_module_doc)
     return parser
 
@@ -721,17 +712,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s: %(message)s",
-    )
     try:
         return args.func(args)
     except KeyboardInterrupt:
         LOG.warning("Operation cancelled by user")
         return 130
     except Exception as e:
-        LOG.error("Unexpected error: %s", e, exc_info=True)
+        LOG.opt(exception=True).error("Unexpected error: {}", e, )
         return 1
 
 

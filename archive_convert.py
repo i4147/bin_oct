@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS, SKIP_DIR_NAMES
 import argparse
 import bz2
 import contextlib
@@ -34,7 +35,6 @@ ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".zip",
 )
 SUFFIXES_BY_LENGTH: tuple[str, ...] = tuple(sorted(ARCHIVE_SUFFIXES, key=len, reverse=True))
-SKIP_DIR_NAMES: frozenset[str] = frozenset({".git"})
 CHUNK: int = 1 << 20
 BIG_TAR_THRESHOLD: int = 10 * 1024 * 1024
 BROTLI_QUALITY_DEFAULT: int = 11
@@ -55,7 +55,7 @@ def human(n: int) -> str:
 
 def relpath(p: Path, base: Path) -> str:
     try:
-        return os.path.relpath(p, base)
+        return Path(p).relative_to(base)
     except ValueError:
         return str(p)
 
@@ -221,13 +221,6 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Files or directories to process (default: current directory).",
     )
     parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=DEFAULT_JOBS,
-        help=f"Worker processes (default: {DEFAULT_JOBS}).",
-    )
-    parser.add_argument(
         "-d",
         "--decompress",
         action="store_true",
@@ -297,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
     failures = 0
     total_in = 0
     total_out = 0
-    with mp.Pool(args.jobs) as pool:
+    with mp.Pool(MAX_WORKERS) as pool:
         for src, dst, ssize, dsize, err in pool.imap_unordered(process, targets, chunksize=1):
             rp = relpath(src, cwd)
             if err is None and dst is not None:

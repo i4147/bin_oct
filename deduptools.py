@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import copy
@@ -210,7 +211,7 @@ def cmd_ast(args: argparse.Namespace) -> int:
         print("No Python files to process.")
         return 0
     jobs = [(str(p), args.suffix) for p in targets]
-    workers = args.workers
+    workers = MAX_WORKERS
     if workers <= 0:
         workers = min(len(jobs), os.cpu_count() or 1)
     moved_total = 0
@@ -431,7 +432,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="_dups.py",
         help="Suffix for per-file archive (default: _dups.py).",
     )
-    p_ast.add_argument("--workers", type=int, default=0, help="Parallel workers (0 = auto).")
     p_ast.set_defaults(func=cmd_ast)
     p_ts = sub.add_parser(
         "ts",

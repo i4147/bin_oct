@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import POOL_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -24,7 +25,6 @@ DEFAULT_CHUNK_SIZE: int = 100
 DEFAULT_ENCODING: str = "utf-8"
 DEFAULT_BATCH_SIZE: int = 50
 MAX_FILE_SIZE_BYTES: int = 10 * 1024 * 1024
-POOL_WORKERS: int = 8
 PREVIEW_LENGTH: int = 200
 REPORT_PREVIEW_LENGTH: int = 150
 

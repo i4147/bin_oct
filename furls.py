@@ -71,7 +71,7 @@ def decode_bytes_to_text(b):
 
 def scan_bytes_for_urls(b: bytes, max_bytes, exts, name_hint=None):
     if exts is not None and name_hint:
-        _, ext = os.path.splitext(name_hint)
+        _, ext = (str(Path(name_hint).with_suffix("")), Path(name_hint).suffix)
         if ext and ext.lower() not in exts:
             return set()
     if len(b) > max_bytes:

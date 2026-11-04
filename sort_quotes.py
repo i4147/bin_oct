@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from pathlib import Path
 import json
 import os
 import sys
@@ -17,7 +18,7 @@ def dedup_quotes(quotes):
 
 
 def sort_quotes_by_author(path):
-    if not os.path.exists(path):
+    if not Path(path).exists():
         print(f"Error: '{path}' could not be found.")
         return
     with open(path, "r", encoding="utf-8") as f:

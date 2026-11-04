@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from dh import MAX_WORKERS
+from pathlib import Path
 import argparse
 import json
 import os
@@ -229,7 +231,7 @@ def hls_entry(url: str, quality: str, args, extra: dict | None = None) -> dict:
         entry["size_is_estimate"] = True
         entry["note"] = "estimated from BANDWIDTH x duration (--skip-segments)"
         return entry
-    total, ok, unknown = sum_sizes(segs, args.timeout, args.workers)
+    total, ok, unknown = sum_sizes(segs, args.timeout, MAX_WORKERS)
     entry["size_bytes"] = total if ok else None
     entry["size_human"] = human_size(entry["size_bytes"])
     entry["size_is_estimate"] = False
@@ -330,7 +332,7 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
         return entries
     entries.append({
         "url": final,
-        "quality": guess_quality(final, os.path.basename(urlparse(final).path)),
+        "quality": guess_quality(final, Path(urlparse(final).path).name),
         "kind": "file",
         "content_type": ctype,
         "size_bytes": size,
@@ -365,9 +367,9 @@ def write_json(path: str, data: dict) -> str:
 def save_reports(report: dict, outdir: str) -> list:
     os.makedirs(outdir, exist_ok=True)
     p = urlparse(report["source"])
-    base = sanitize(f"{p.netloc}_{os.path.basename(p.path) or 'index'}")
+    base = sanitize(f"{p.netloc}_{Path(p.path).name or 'index'}")
     written = []
-    written.append(write_json(os.path.join(outdir, f"{base}_all.json"), report))
+    written.append(write_json(Path(outdir).joinpath(f"{base}_all.json"), report))
     groups = {}
     for v in report["videos"]:
         groups.setdefault(v.get("quality", "unknown"), []).append(v)
@@ -383,7 +385,7 @@ def save_reports(report: dict, outdir: str) -> list:
                 "total_human": human_size(sum(known)) if known else "unknown",
                 "videos": vids,
             }
-            written.append(write_json(os.path.join(outdir, f"{base}_{q}.json"), sub))
+            written.append(write_json(Path(outdir).joinpath(f"{base}_{q}.json"), sub))
     return written
 
 
@@ -417,7 +419,6 @@ def main(argv=None) -> int:
     ap.add_argument("urls", nargs="+", help="video url / web page / m3u8 playlist")
     ap.add_argument("--outdir", default="reports", help="where to write JSON (default: reports)")
     ap.add_argument("--timeout", type=float, default=25.0, help="HTTP timeout in seconds")
-    ap.add_argument("--workers", type=int, default=16, help="parallel segment checks")
     ap.add_argument("--max-depth", type=int, default=2, help="how deep to follow links inside pages (default 2)")
     ap.add_argument(
         "--skip-segments", action="store_true", help="do not HEAD every HLS segment; estimate from BANDWIDTH"

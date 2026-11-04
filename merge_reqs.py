@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+from dh import MAX_WORKERS
 import argparse
 import ast
 import hashlib
@@ -732,7 +733,7 @@ def run_scan(args: argparse.Namespace) -> int:
         cache = load_cache(cache_path)
         print(f"[i] Loaded cache ({len(cache)} entries)")
     results: list[tuple[str, dict[str, set[str]]]] = []
-    workers = max(1, args.workers)
+    workers = max(1, MAX_WORKERS)
     if workers > 1 and len(files) > 1:
         with mp.Pool(
             workers,
@@ -947,7 +948,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="pip",
         help="Command used for the installed-check (default: pip)",
     )
-    s.add_argument("-j", "--workers", type=int, default=1, help="Parallel workers (default: 1)")
     s.add_argument("--cache", default=None, help=f"Enable cache file (e.g. {DEFAULT_CACHE_FILE})")
     s.add_argument("--no-cache", action="store_true", help="Disable cache even if --cache is set")
     s.add_argument("--clear-cache", action="store_true", help="Delete the cache file and exit")
