@@ -155,15 +155,13 @@ def parse_master_playlist(text: str, base_url: str) -> list:
             except ValueError:
                 height = None
         bw = attrs.get("BANDWIDTH", "")
-        variants.append(
-            {
-                "url": full,
-                "height": height,
-                "resolution": res or None,
-                "bandwidth": int(bw) if bw.isdigit() else None,
-                "codecs": attrs.get("CODECS"),
-            }
-        )
+        variants.append({
+            "url": full,
+            "height": height,
+            "resolution": res or None,
+            "bandwidth": int(bw) if bw.isdigit() else None,
+            "codecs": attrs.get("CODECS"),
+        })
     return variants
 
 
@@ -277,16 +275,14 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
         try:
             text = fetch_text(final, args.timeout)
         except requests.RequestException as e:
-            entries.append(
-                {
-                    "url": final,
-                    "quality": guess_quality(final),
-                    "kind": "hls",
-                    "size_bytes": None,
-                    "size_human": "unknown",
-                    "error": str(e),
-                }
-            )
+            entries.append({
+                "url": final,
+                "quality": guess_quality(final),
+                "kind": "hls",
+                "size_bytes": None,
+                "size_human": "unknown",
+                "error": str(e),
+            })
             return entries
         if "#EXT-X-STREAM-INF" in text.upper():
             for v in parse_master_playlist(text, final):
@@ -299,31 +295,27 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
                 try:
                     entries.append(hls_entry(v["url"], q, args, extra))
                 except requests.RequestException as e:
-                    entries.append(
-                        {
-                            "url": v["url"],
-                            "quality": q,
-                            "kind": "hls",
-                            "size_bytes": None,
-                            "size_human": "unknown",
-                            "error": str(e),
-                            **extra,
-                        }
-                    )
+                    entries.append({
+                        "url": v["url"],
+                        "quality": q,
+                        "kind": "hls",
+                        "size_bytes": None,
+                        "size_human": "unknown",
+                        "error": str(e),
+                        **extra,
+                    })
             return entries
         try:
             entries.append(hls_entry(final, guess_quality(final), args))
         except requests.RequestException as e:
-            entries.append(
-                {
-                    "url": final,
-                    "quality": guess_quality(final),
-                    "kind": "hls",
-                    "size_bytes": None,
-                    "size_human": "unknown",
-                    "error": str(e),
-                }
-            )
+            entries.append({
+                "url": final,
+                "quality": guess_quality(final),
+                "kind": "hls",
+                "size_bytes": None,
+                "size_human": "unknown",
+                "error": str(e),
+            })
         return entries
     if is_html:
         try:
@@ -336,17 +328,15 @@ def analyze(url: str, args, depth: int = 0, entries=None, seen=None) -> list:
         for link in links:
             analyze(link, args, depth + 1, entries, seen)
         return entries
-    entries.append(
-        {
-            "url": final,
-            "quality": guess_quality(final, os.path.basename(urlparse(final).path)),
-            "kind": "file",
-            "content_type": ctype,
-            "size_bytes": size,
-            "size_human": human_size(size),
-            "size_is_estimate": False,
-        }
-    )
+    entries.append({
+        "url": final,
+        "quality": guess_quality(final, os.path.basename(urlparse(final).path)),
+        "kind": "file",
+        "content_type": ctype,
+        "size_bytes": size,
+        "size_human": human_size(size),
+        "size_is_estimate": False,
+    })
     return entries
 
 

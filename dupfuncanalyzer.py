@@ -66,14 +66,12 @@ def analyze_files(target_dirs: list[Path] | None = None) -> list[RepeatedItem]:
     for key, paths in definitions.items():
         unique_paths: list[str] = list(set(paths))
         if len(unique_paths) >= 2:
-            repeated.append(
-                {
-                    "name": key[0],
-                    "source": source_map.get(key, ""),
-                    "count": len(unique_paths),
-                    "files": unique_paths,
-                }
-            )
+            repeated.append({
+                "name": key[0],
+                "source": source_map.get(key, ""),
+                "count": len(unique_paths),
+                "files": unique_paths,
+            })
     repeated.sort(key=lambda x: x["count"], reverse=True)
     return repeated
 

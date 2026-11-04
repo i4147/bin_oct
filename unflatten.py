@@ -9,18 +9,16 @@ from pathlib import Path
 
 _S = r'(?:"""(?:\\.|[^\\])*?"""' r"|'''(?:\\.|[^\\])*?'''" r'|"(?:\\.|[^"\\\n])*"' r"|'(?:\\.|[^'\\\n])*')"
 TOKEN_RE = re.compile(
-    "|".join(
-        [
-            r"(?P<ws>[ \t\r]+)",
-            r"(?P<nl>\n)",
-            r"(?P<comment>#[^\n]*)",
-            r"(?P<string>[rRbBuUfF]{0,2}" + _S + ")",
-            r"(?P<number>\d[\d_]*(?:\.\d*)?(?:[eE][+-]?\d+)?[jJ]?)",
-            r"(?P<name>[^\W\d]\w*)",
-            r"(?P<op>\.\.\.|->|:=|\*\*=?|//=?|>>=?|<<=?|[=!<>+\-*/%&|^@]=|" r"[-+*/%&|^~@<>=!.,:;()\[\]{}])",
-            r"(?P<other>.)",
-        ]
-    ),
+    "|".join([
+        r"(?P<ws>[ \t\r]+)",
+        r"(?P<nl>\n)",
+        r"(?P<comment>#[^\n]*)",
+        r"(?P<string>[rRbBuUfF]{0,2}" + _S + ")",
+        r"(?P<number>\d[\d_]*(?:\.\d*)?(?:[eE][+-]?\d+)?[jJ]?)",
+        r"(?P<name>[^\W\d]\w*)",
+        r"(?P<op>\.\.\.|->|:=|\*\*=?|//=?|>>=?|<<=?|[=!<>+\-*/%&|^@]=|" r"[-+*/%&|^~@<>=!.,:;()\[\]{}])",
+        r"(?P<other>.)",
+    ]),
     re.S,
 )
 OPEN, CLOSE = "([{", ")]}"
@@ -258,13 +256,11 @@ class Frame:
 
 
 def is_terminator(st: Stmt, text: str) -> bool:
-    return st.kind in ("return", "raise", "continue", "break") or text.startswith(
-        (
-            "pytest.skip(",
-            "sys.exit(",
-            "exit(",
-        )
-    )
+    return st.kind in ("return", "raise", "continue", "break") or text.startswith((
+        "pytest.skip(",
+        "sys.exit(",
+        "exit(",
+    ))
 
 
 def rebuild_python(source: str) -> str:

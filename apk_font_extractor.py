@@ -72,13 +72,11 @@ class APKFontExtractor:
                             exc,
                         )
                         continue
-                    fonts.append(
-                        (
-                            internal_path,
-                            font_data,
-                            internal_path.suffix.lower(),
-                        )
-                    )
+                    fonts.append((
+                        internal_path,
+                        font_data,
+                        internal_path.suffix.lower(),
+                    ))
                     logger.debug(
                         "Extracted font candidate: {} from {}",
                         internal_path,

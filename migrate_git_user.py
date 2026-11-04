@@ -68,19 +68,17 @@ def remove_old_ssh_keys():
 
 def generate_new_ssh_key():
     SSH_DIR.mkdir(mode=0o700, exist_ok=True)
-    run(
-        [
-            "ssh-keygen",
-            "-t",
-            "ed25519",
-            "-C",
-            NEW_EMAIL,
-            "-f",
-            str(SSH_KEY_PATH),
-            "-N",
-            "",
-        ]
-    )
+    run([
+        "ssh-keygen",
+        "-t",
+        "ed25519",
+        "-C",
+        NEW_EMAIL,
+        "-f",
+        str(SSH_KEY_PATH),
+        "-N",
+        "",
+    ])
     os.chmod(SSH_KEY_PATH, 0o600)
     os.chmod(f"{SSH_KEY_PATH}.pub", 0o644)
 

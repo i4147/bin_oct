@@ -32,19 +32,17 @@ DEFAULT_WORKERS: int = 8
 DEFAULT_LEVEL: int = 9
 """Default compression level for codecs that accept one."""
 TAR_CODECS: frozenset[str] = frozenset({"gz", "zst", "xz", "bz2", "lz4", "br", "7z"})
-TAR_FORMATS: frozenset[str] = frozenset(
-    {
-        ".tar",
-        ".tar.gz",
-        ".tar.bz2",
-        ".tar.xz",
-        ".tar.zst",
-        ".tar.br",
-        ".tar.lz4",
-        ".tar.7z",
-        ".tar.sz",
-    }
-)
+TAR_FORMATS: frozenset[str] = frozenset({
+    ".tar",
+    ".tar.gz",
+    ".tar.bz2",
+    ".tar.xz",
+    ".tar.zst",
+    ".tar.br",
+    ".tar.lz4",
+    ".tar.7z",
+    ".tar.sz",
+})
 ZIP_FORMATS: frozenset[str] = frozenset({".zip", ".whl"})
 ARCHIVE_FORMATS: frozenset[str] = TAR_FORMATS | ZIP_FORMATS
 _ARCHIVE_SUFFIXES: tuple[str, ...] = tuple(sorted(ARCHIVE_FORMATS, key=len, reverse=True))

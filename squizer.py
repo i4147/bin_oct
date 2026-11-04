@@ -225,23 +225,21 @@ _UNARY_OPS: dict[type[ast.unaryop], Callable[[object], object]] = {
     ast.Invert: operator.invert,
     ast.Not: operator.not_,
 }
-_AUG_OPS: frozenset[type[ast.operator]] = frozenset(
-    [
-        ast.Add,
-        ast.Sub,
-        ast.Mult,
-        ast.Div,
-        ast.FloorDiv,
-        ast.Mod,
-        ast.Pow,
-        ast.LShift,
-        ast.RShift,
-        ast.BitOr,
-        ast.BitXor,
-        ast.BitAnd,
-        ast.MatMult,
-    ]
-)
+_AUG_OPS: frozenset[type[ast.operator]] = frozenset([
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.FloorDiv,
+    ast.Mod,
+    ast.Pow,
+    ast.LShift,
+    ast.RShift,
+    ast.BitOr,
+    ast.BitXor,
+    ast.BitAnd,
+    ast.MatMult,
+])
 _TERMINATORS: tuple[type[ast.stmt], ...] = (
     ast.Return,
     ast.Raise,

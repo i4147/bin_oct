@@ -43,7 +43,6 @@ logger.add(
 
 @dataclass(slots=True, frozen=True)
 class StripOptions:
-
     backend: str = "libcst"
     remove_comments: bool = False
     inline_comments_only: bool = True
@@ -79,7 +78,6 @@ class StripOptions:
 
 
 class ASTStripper(ast.NodeTransformer):
-
     def __init__(self, options: StripOptions) -> None:
         super().__init__()
         self.options = options
@@ -183,7 +181,6 @@ def transform_ast(source: str, options: StripOptions) -> str:
 if HAS_LIBCST:
 
     class LibCSTStripper(cst.CSTTransformer):
-
         def __init__(self, options: StripOptions) -> None:
             super().__init__()
             self.options = options

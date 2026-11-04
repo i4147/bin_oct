@@ -91,19 +91,17 @@ def cmd_clean_meta(args):
                 v.append("\n")
                 a += 1
                 continue
-            if j.startswith(
-                (
-                    "Metadata-Version",
-                    "Home-page",
-                    "Author",
-                    "Maintainer",
-                    "License",
-                    "Platform",
-                    "Requires-Python",
-                    "Description-Content-Type",
-                    "Provides-Extra",
-                )
-            ):
+            if j.startswith((
+                "Metadata-Version",
+                "Home-page",
+                "Author",
+                "Maintainer",
+                "License",
+                "Platform",
+                "Requires-Python",
+                "Description-Content-Type",
+                "Provides-Extra",
+            )):
                 v.append("\n")
                 a += 1
                 continue

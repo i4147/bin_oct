@@ -37,16 +37,14 @@ DEFAULT_INDEXES = (
     TSINGHUA_SIMPLE_URL,
     YANDEX_SIMPLE_URL,
 )
-HASH_ALGORITHMS = frozenset(
-    {
-        "sha256",
-        "sha512",
-        "sha384",
-        "sha224",
-        "sha1",
-        "md5",
-    }
-)
+HASH_ALGORITHMS = frozenset({
+    "sha256",
+    "sha512",
+    "sha384",
+    "sha224",
+    "sha1",
+    "md5",
+})
 SOURCE_SUFFIXES = (
     ".tar.gz",
     ".tar.bz2",
@@ -77,17 +75,13 @@ DEFAULT_PARALLEL_WORKERS = min(8, max(2, os.cpu_count() or 2))
 SIMPLE_ACCEPT_HEADER = (
     "application/vnd.pypi.simple.v1+json, application/vnd.pypi.simple.v1+html; q=0.1, text/html; q=0.01"
 )
-JSON_SIMPLE_CONTENT_TYPES = frozenset(
-    {
-        "application/vnd.pypi.simple.v1+json",
-    }
-)
-HTML_SIMPLE_CONTENT_TYPES = frozenset(
-    {
-        "application/vnd.pypi.simple.v1+html",
-        "text/html",
-    }
-)
+JSON_SIMPLE_CONTENT_TYPES = frozenset({
+    "application/vnd.pypi.simple.v1+json",
+})
+HTML_SIMPLE_CONTENT_TYPES = frozenset({
+    "application/vnd.pypi.simple.v1+html",
+    "text/html",
+})
 
 
 @dataclass(frozen=True, slots=True)

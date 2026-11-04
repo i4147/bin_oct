@@ -379,15 +379,13 @@ def cmd_grid_variants(args: argparse.Namespace) -> int:
                 ),
                 encoding="utf-8",
             )
-            index.append(
-                {
-                    "variant": name,
-                    "psm": psm,
-                    "oem": oem,
-                    "dpi": dpi,
-                    "text_file": str(d / f"{tag}.txt"),
-                }
-            )
+            index.append({
+                "variant": name,
+                "psm": psm,
+                "oem": oem,
+                "dpi": dpi,
+                "text_file": str(d / f"{tag}.txt"),
+            })
     (out_root / "index.json").write_text(json.dumps(index, indent=2), encoding="utf-8")
     print(f"done: {len(index)} runs -> {out_root}")
     return 0
@@ -444,17 +442,15 @@ def cmd_grid_search(args: argparse.Namespace) -> int:
                 err = str(e)
             elapsed = time.time() - t0
             (out_dir / f"{w2.stem}__oem{oem}_psm{psm}.txt").write_text(text, encoding="utf-8")
-            rows.append(
-                {
-                    "image": w2.name,
-                    "config": config,
-                    "oem": oem,
-                    "psm": psm,
-                    "duration_sec": elapsed,
-                    "error": err,
-                    "text": text,
-                }
-            )
+            rows.append({
+                "image": w2.name,
+                "config": config,
+                "oem": oem,
+                "psm": psm,
+                "duration_sec": elapsed,
+                "error": err,
+                "text": text,
+            })
     _write_csv(rows, out_dir / "ocr_summary.csv")
     print(f"\ndone. all results saved in: {out_dir}")
     return 0

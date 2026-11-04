@@ -592,27 +592,25 @@ def process_file_wire(payload: bytes) -> bytes:
     return json.dumps(result_to_wire(result), ensure_ascii=False).encode("utf-8")
 
 
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".ipynb_checkpoints",
-        "build",
-        "pip",
-        "numpy",
-        "scipy",
-        "pandas",
-        "setuptools",
-        ".idea",
-        ".vscode",
-        "packaging",
-        "lazy",
-        "numba",
-    }
-)
+SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".ipynb_checkpoints",
+    "build",
+    "pip",
+    "numpy",
+    "scipy",
+    "pandas",
+    "setuptools",
+    ".idea",
+    ".vscode",
+    "packaging",
+    "lazy",
+    "numba",
+})
 
 
 class WalkFiles(Protocol):
@@ -1150,18 +1148,16 @@ def main() -> int:
             for result in run_tasks(tasks, args.pool_method, args.workers, args.chunksize):
                 processed += 1
                 if args.report_json is not None:
-                    report_rows.append(
-                        {
-                            "path": str(result.path),
-                            "modified": result.modified,
-                            "bytes_reduced": result.saved,
-                            "elapsed_seconds": result.elapsed,
-                            "error": result.error,
-                            "skipped": result.skipped,
-                            "skip_reason": result.skip_reason or None,
-                            "backup": str(result.backup) if result.backup else None,
-                        }
-                    )
+                    report_rows.append({
+                        "path": str(result.path),
+                        "modified": result.modified,
+                        "bytes_reduced": result.saved,
+                        "elapsed_seconds": result.elapsed,
+                        "error": result.error,
+                        "skipped": result.skipped,
+                        "skip_reason": result.skip_reason or None,
+                        "backup": str(result.backup) if result.backup else None,
+                    })
                 if result.error:
                     errors += 1
                     logger.bind(traceback=result.traceback, file_path=str(result.path)).error(

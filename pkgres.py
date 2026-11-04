@@ -5,19 +5,17 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
 
-SKIPPED_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".venv",
-        "venv",
-        "env",
-        ".tox",
-        "build",
-        "dist",
-        ".eggs",
-    }
-)
+SKIPPED_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "env",
+    ".tox",
+    "build",
+    "dist",
+    ".eggs",
+})
 REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (
         re.compile(r"pkg_resources\.get_distribution\(\s*([^)]+?)\s*\)\.version"),

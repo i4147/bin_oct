@@ -236,17 +236,15 @@ def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
             continue
         source = ast.unparse(node)
         content_hash = hashlib.sha256(source.encode("utf-8")).hexdigest()
-        objects.append(
-            {
-                "object_type": obj_type,
-                "object_name": obj_name,
-                "source_code": source,
-                "reference_file": str(path),
-                "content_hash": content_hash,
-                "start_line": node.lineno,
-                "end_line": node.end_lineno,
-            }
-        )
+        objects.append({
+            "object_type": obj_type,
+            "object_name": obj_name,
+            "source_code": source,
+            "reference_file": str(path),
+            "content_hash": content_hash,
+            "start_line": node.lineno,
+            "end_line": node.end_lineno,
+        })
     return objects
 
 
@@ -375,24 +373,22 @@ def find_fuzzy_duplicates(
                 continue
             ratio = fuzz.ratio(a["source_code"], b["source_code"])
             if ratio > similarity_threshold:
-                pairs.append(
-                    {
-                        "object_1": {
-                            "type": a["object_type"],
-                            "name": a["object_name"],
-                            "file": a["reference_file"],
-                            "source_code": a["source_code"],
-                        },
-                        "object_2": {
-                            "type": b["object_type"],
-                            "name": b["object_name"],
-                            "file": b["reference_file"],
-                            "source_code": b["source_code"],
-                        },
-                        "similarity_percentage": round(ratio, 2),
-                        "ssdeep_score": score,
-                    }
-                )
+                pairs.append({
+                    "object_1": {
+                        "type": a["object_type"],
+                        "name": a["object_name"],
+                        "file": a["reference_file"],
+                        "source_code": a["source_code"],
+                    },
+                    "object_2": {
+                        "type": b["object_type"],
+                        "name": b["object_name"],
+                        "file": b["reference_file"],
+                        "source_code": b["source_code"],
+                    },
+                    "similarity_percentage": round(ratio, 2),
+                    "ssdeep_score": score,
+                })
     output_path.write_text(json.dumps(pairs, indent=4), encoding="utf-8")
     print(f"[+] Saved {len(pairs)} fuzzy duplicate pairs to {output_path}")
 
@@ -596,14 +592,12 @@ def _prune_worker(path_str: str, ref_hashes: dict[str, str], apply: bool) -> dic
     dups: list[dict[str, Any]] = []
     for name, info in defs.items():
         if info["hash"] in ref_hashes:
-            dups.append(
-                {
-                    "name": name,
-                    "lineno": info["lineno"],
-                    "end_lineno": info["end_lineno"],
-                    "ref_name": ref_hashes[info["hash"]],
-                }
-            )
+            dups.append({
+                "name": name,
+                "lineno": info["lineno"],
+                "end_lineno": info["end_lineno"],
+                "ref_name": ref_hashes[info["hash"]],
+            })
     if not dups:
         return {"file": path, "status": "ok", "duplicates": []}
     if not apply:

@@ -46,13 +46,11 @@ def Z(ag, ai=70):
             try:
                 R = ssdeep.compare(aa, ab)
                 if ai <= R:
-                    D.append(
-                        {
-                            "file1": str(Path(u).relative_to(cwd)),
-                            "file2": str(Path(v).relative_to(cwd)),
-                            "similarity_score": R,
-                        }
-                    )
+                    D.append({
+                        "file1": str(Path(u).relative_to(cwd)),
+                        "file2": str(Path(v).relative_to(cwd)),
+                        "similarity_score": R,
+                    })
             except ssdeep.error as c:
                 print(f"Error comparing hashes for {u} and {v}: {c}")
             except Exception as c:

@@ -20,26 +20,24 @@ from typing import Iterator, NamedTuple
 import libcst as cst
 from loguru import logger
 
-SKIP_DIRS = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".tox",
-        ".venv",
-        "venv",
-        "env",
-        "node_modules",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".eggs",
-        "build",
-        "dist",
-        ".idea",
-        ".vscode",
-        ".hg",
-        ".svn",
-    }
-)
+SKIP_DIRS = frozenset({
+    ".git",
+    "__pycache__",
+    ".tox",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    "build",
+    "dist",
+    ".idea",
+    ".vscode",
+    ".hg",
+    ".svn",
+})
 CAMEL_RE = re.compile(r"^(?P<pre>_*)(?P<body>[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+)(?P<post>_*)$")
 PARTIAL_RE = re.compile(r"[a-z][A-Z]")
 SNAKE_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")

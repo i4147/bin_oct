@@ -7,26 +7,24 @@ from typing import Iterable, Iterator
 import rignore
 from dh import atomic_write
 
-SKIP_DIRS = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".tox",
-        ".nox",
-        ".venv",
-        "venv",
-        "env",
-        "__pycache__",
-        "node_modules",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".eggs",
-        ".idea",
-        ".vscode",
-    }
-)
+SKIP_DIRS = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    "node_modules",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".eggs",
+    ".idea",
+    ".vscode",
+})
 FUTURE_ANNOTATIONS_RE = re.compile(
     r"""^[ \t]*
         from[ \t]+__future__[ \t]+import[ \t]+

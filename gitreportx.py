@@ -38,14 +38,12 @@ if HAS_DULWICH:
 
 @dataclass(frozen=True, slots=True)
 class FileChange:
-
     path: str
     status: Literal["A", "D"]
 
 
 @dataclass(frozen=True, slots=True)
 class CommitReport:
-
     sha: str
     short_sha: str
     summary: str
@@ -55,7 +53,6 @@ class CommitReport:
 
 
 class GitBackend(Protocol):
-
     def iter_commits(self) -> Iterator[CommitReport]: ...
 
 

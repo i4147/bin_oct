@@ -498,17 +498,15 @@ def write_csv(path: Path, entries: Sequence[CommitEntry]) -> None:
         for entry in entries:
             for status, paths in (("added", entry.added), ("removed", entry.removed)):
                 for item in paths:
-                    writer.writerow(
-                        [
-                            entry.commit.sha,
-                            entry.commit.short,
-                            entry.commit.date,
-                            entry.commit.author,
-                            entry.commit.subject,
-                            status,
-                            item,
-                        ]
-                    )
+                    writer.writerow([
+                        entry.commit.sha,
+                        entry.commit.short,
+                        entry.commit.date,
+                        entry.commit.author,
+                        entry.commit.subject,
+                        status,
+                        item,
+                    ])
 
 
 def write_markdown(path: Path, repo: Path, revision: str, entries: Sequence[CommitEntry], summary: Summary) -> None:

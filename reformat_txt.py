@@ -26,65 +26,59 @@ BACKUP_SUFFIX: Final[str] = ".bak"
 TEXT_SUFFIXES: Final[frozenset[str]] = frozenset({".txt"})
 MARKDOWN_SUFFIXES: Final[frozenset[str]] = frozenset({".md", ".markdown", ".mdx"})
 SUPPORTED_SUFFIXES: Final[frozenset[str]] = TEXT_SUFFIXES | MARKDOWN_SUFFIXES
-SKIP_DIRS: Final[frozenset[str]] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".idea",
-        ".tox",
-        ".venv",
-        "venv",
-        "node_modules",
-        "__pycache__",
-    }
-)
-ABBREVIATIONS: Final[frozenset[str]] = frozenset(
-    {
-        "mr.",
-        "mrs.",
-        "ms.",
-        "dr.",
-        "prof.",
-        "sr.",
-        "jr.",
-        "st.",
-        "vs.",
-        "cf.",
-        "fig.",
-        "figs.",
-        "vol.",
-        "inc.",
-        "ltd.",
-        "co.",
-        "corp.",
-        "dept.",
-        "approx.",
-        "al.",
-        "pp.",
-        "eq.",
-        "ref.",
-    }
-)
-SMALL_WORDS: Final[frozenset[str]] = frozenset(
-    {
-        "a",
-        "an",
-        "the",
-        "of",
-        "and",
-        "or",
-        "for",
-        "to",
-        "in",
-        "on",
-        "at",
-        "by",
-        "with",
-        "vs",
-        "as",
-    }
-)
+SKIP_DIRS: Final[frozenset[str]] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".idea",
+    ".tox",
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+})
+ABBREVIATIONS: Final[frozenset[str]] = frozenset({
+    "mr.",
+    "mrs.",
+    "ms.",
+    "dr.",
+    "prof.",
+    "sr.",
+    "jr.",
+    "st.",
+    "vs.",
+    "cf.",
+    "fig.",
+    "figs.",
+    "vol.",
+    "inc.",
+    "ltd.",
+    "co.",
+    "corp.",
+    "dept.",
+    "approx.",
+    "al.",
+    "pp.",
+    "eq.",
+    "ref.",
+})
+SMALL_WORDS: Final[frozenset[str]] = frozenset({
+    "a",
+    "an",
+    "the",
+    "of",
+    "and",
+    "or",
+    "for",
+    "to",
+    "in",
+    "on",
+    "at",
+    "by",
+    "with",
+    "vs",
+    "as",
+})
 CLOSERS: Final[str] = "\"'”’)\\]"
 OPENERS: Final[str] = "\"'“‘(\\["
 SENTENCE_END: Final[re.Pattern[str]] = re.compile(rf"([.!?…]+[{CLOSERS}]*)\s+(?=[{OPENERS}]*[A-Z0-9À-ÖØ-Þ])")
@@ -138,7 +132,6 @@ Status = Literal["changed", "unchanged", "converted", "skipped", "error"]
 
 
 class Result(NamedTuple):
-
     path: Path
     status: Status
     before: int = 0
@@ -152,7 +145,6 @@ class Result(NamedTuple):
 
 @dataclass(frozen=True)
 class Options:
-
     width: int
     dry_run: bool
     to_markdown: bool
@@ -164,7 +156,6 @@ class Options:
 
 @dataclass(frozen=True)
 class Heading:
-
     level: int
     text: str
     raw: str
@@ -173,7 +164,6 @@ class Heading:
 
 @dataclass
 class ListItem:
-
     indent: str
     marker: str
     parts: list[str] = field(default_factory=list)
@@ -329,7 +319,6 @@ def to_markdown_marker(marker: str) -> tuple[str, str]:
 
 
 class Formatter:
-
     def __init__(self, width: int, markdown: bool) -> None:
         self.width = width
         self.markdown = markdown

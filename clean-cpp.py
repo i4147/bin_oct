@@ -13,19 +13,17 @@ from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-CPP_EXTS: frozenset[str] = frozenset(
-    {
-        ".cc",
-        ".cpp",
-        ".cxx",
-        ".c++",
-        ".hpp",
-        ".hh",
-        ".hxx",
-        ".h++",
-        ".inl",
-    }
-)
+CPP_EXTS: frozenset[str] = frozenset({
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".c++",
+    ".hpp",
+    ".hh",
+    ".hxx",
+    ".h++",
+    ".inl",
+})
 C_EXTS: frozenset[str] = frozenset({".c", ".h"})
 ALL_EXTS: frozenset[str] = C_EXTS | CPP_EXTS
 WORKERS: int = 8

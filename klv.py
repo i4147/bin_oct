@@ -303,15 +303,13 @@ def cmd_urls(args: argparse.Namespace) -> int:
             print(f"   Arch: {arch}")
             print(f"   Version: {ver_str}")
             print(f"   URL: {url}")
-            results.append(
-                {
-                    "package": pkg,
-                    "python_version": py,
-                    "arch": arch,
-                    "version": ver_str,
-                    "url": url,
-                }
-            )
+            results.append({
+                "package": pkg,
+                "python_version": py,
+                "arch": arch,
+                "version": ver_str,
+                "url": url,
+            })
     print("\n" + "=" * 40)
     print(f"SUMMARY: Found {len(results)} ARMv7 wheel(s)")
     print("-" * 40)

@@ -80,15 +80,13 @@ def analyze_files() -> list[dict[str, Any]]:
     for key, paths in definitions.items():
         unique_paths: list[str] = list(set(paths))
         if len(unique_paths) > DUPLICATE_THRESHOLD:
-            repeated.append(
-                {
-                    "type": key[0],
-                    "name": key[1],
-                    "source": source_map[key],
-                    "count": len(unique_paths),
-                    "files": unique_paths,
-                }
-            )
+            repeated.append({
+                "type": key[0],
+                "name": key[1],
+                "source": source_map[key],
+                "count": len(unique_paths),
+                "files": unique_paths,
+            })
     return repeated
 
 
@@ -167,7 +165,8 @@ def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
     if lines and lines[0].startswith("#!"):
         insert_idx = 1
     if len(lines) > insert_idx and (
-        lines[insert_idx].strip().startswith('"""') or lines[insert_idx].strip().startswith("'''")
+        lines[insert_idx].strip().startswith('"""')
+        or lines[insert_idx].strip().startswith("'''")  # this is for editor ''' , """
     ):
         insert_idx += 1
     lines.insert(insert_idx, import_statement)

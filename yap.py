@@ -692,15 +692,13 @@ def main() -> int:
         s = _summarize(results)
         print()
         print(
-            " | ".join(
-                [
-                    f"{s['total']} file{'s' if s['total'] != 1 else ''}",
-                    f"{s['changed']} changed",
-                    f"{s['unchanged']} unchanged",
-                    f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
-                    f"{s['delta_bytes']:+d} bytes",
-                ]
-            )
+            " | ".join([
+                f"{s['total']} file{'s' if s['total'] != 1 else ''}",
+                f"{s['changed']} changed",
+                f"{s['unchanged']} unchanged",
+                f"{s['errors']} error{'s' if s['errors'] != 1 else ''}",
+                f"{s['delta_bytes']:+d} bytes",
+            ])
         )
 
     if any(r["error"] for r in results):

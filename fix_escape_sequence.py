@@ -10,29 +10,27 @@ from pathlib import Path
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        "__pycache__",
-        ".git",
-        ".hg",
-        ".svn",
-        ".tox",
-        ".venv",
-        "venv",
-        "env",
-        "virtualenv",
-        "node_modules",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".cache",
-        "build",
-        "dist",
-        ".eggs",
-        ".idea",
-        ".vscode",
-    }
-)
+SKIP_DIRS: frozenset[str] = frozenset({
+    "__pycache__",
+    ".git",
+    ".hg",
+    ".svn",
+    ".tox",
+    ".venv",
+    "venv",
+    "env",
+    "virtualenv",
+    "node_modules",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".cache",
+    "build",
+    "dist",
+    ".eggs",
+    ".idea",
+    ".vscode",
+})
 SELF_PATH: Path = Path(__file__).resolve()
 Fix = tuple[tuple[int, int], tuple[int, int], str]
 Result = tuple[str, str, int, int]

@@ -108,7 +108,7 @@ def _ensure_tree_sitter() -> None:
 
         _PY_LANGUAGE = Language(tree_sitter_python.language())
     except Exception as exc:
-        msg = "Failed to load Python grammar from tree_sitter_python. " "Install with: pip install tree_sitter_python"
+        msg = "Failed to load Python grammar from tree_sitter_python. Install with: pip install tree_sitter_python"
         raise RuntimeError(msg) from exc
     _TS_PARSER_FACTORY = Parser
 
@@ -202,7 +202,7 @@ def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, l
             if line_end == -1:
                 line_end = len(src_bytes)
             snippet: str = src_bytes[line_start:line_end].decode(errors="replace").strip()
-            warnings.append(f"skipped standalone annotation at {path}:" f'{node.start_point[0] + 1}: "{snippet}"')
+            warnings.append(f'skipped standalone annotation at {path}:{node.start_point[0] + 1}: "{snippet}"')
             continue
         remove_ranges.append((removed_prefix_start, e))
     type_comment_ranges: list[tuple[int, int]] = []
@@ -430,9 +430,13 @@ def process_file(path_str: str, options: Options) -> Result:
         result.error = f"write error: {e}"
         return result
     if options.validate_mypy:
-        res: "subprocess.CompletedProcess[str]" = _run_cmd(
-            [sys.executable, "-m", "mypy", "--no-incremental", str(path)]
-        )
+        res: "subprocess.CompletedProcess[str]" = _run_cmd([
+            sys.executable,
+            "-m",
+            "mypy",
+            "--no-incremental",
+            str(path),
+        ])
         if res.returncode != 0:
             result.warnings.append(f"mypy reported issues:\n{res.stdout}{res.stderr}")
     return result

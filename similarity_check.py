@@ -21,7 +21,8 @@ from typing import Any, Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-STOPWORDS = frozenset("""a about above after again against all also am an and any are as at be
+STOPWORDS = frozenset(
+    """a about above after again against all also am an and any are as at be
     because been before being below between both but by can cannot could did do
     does doing down during each few for from further had has have having he her
     here hers herself him himself his how i if in into is it its itself just me
@@ -39,15 +40,19 @@ STOPWORDS = frozenset("""a about above after again against all also am an and an
     com termux usr local home data files env python3 python env bin sbin opt tmp
     etc dev var coding utf indent expandtab tabstop shiftwidth fileencoding
     http https www html wwwwww newline endcode operator todo note fixme
-    """.split())
+    """.split()
+)
 
-GENERIC_STEM_TOKENS = frozenset("""to from into and the a an of for with by on in at is are new old v1 v2 v3
+GENERIC_STEM_TOKENS = frozenset(
+    """to from into and the a an of for with by on in at is are new old v1 v2 v3
     py python simple fast auto mini test tests tools tool utils util utility
     cli x xx extra super better best small big my run runner file files dir dirs
     the2 s es er ing ed 2 3 4 5 10 one two three
-    """.split())
+    """.split()
+)
 
-STEM_SEED = frozenset("""to md js ts rs c cpp cc cc py ipynb txt csv json xml yaml yml toml ini cfg
+STEM_SEED = frozenset(
+    """to md js ts rs c cpp cc cc py ipynb txt csv json xml yaml yml toml ini cfg
     sql sqlite db pdf png jpg jpeg gif webp svg img image images html htm css
     lua rst srt vcf pkl whl tar zip xz gz bz2 rar 7z ttf otf woff woff2
     url uri http https www web api cli gui ai ml nlp ocr tts wav mp3 mp4 mkv
@@ -59,7 +64,8 @@ STEM_SEED = frozenset("""to md js ts rs c cpp cc cc py ipynb txt csv json xml ya
     clean cleaner cleanup fmt format formatter pretty min minify strip stripper
     rmc rmcts rmca rmcst eximports imports importz importtools
     csv2json pkl2json sqltojson sqlite2json xml_yaml2json vcf2json
-    """.split())
+    """.split()
+)
 
 FEATURE_WEIGHTS = {
     "lex": 1.0,
@@ -621,21 +627,19 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
                 key=lambda x: x[1],
                 default=(None, 0.0),
             )
-            members.append(
-                {
-                    "file": infos[i]["name"],
-                    "lines": infos[i]["lines"],
-                    "bytes": infos[i]["bytes"],
-                    "sha256": infos[i]["sha256"],
-                    "ast_ok": infos[i]["ast_ok"],
-                    "nearest_in_group": infos[nearest]["name"] if nearest is not None else None,
-                    "nearest_score": round(ns, 4),
-                    "imports": infos[i]["imports"][:18],
-                    "options": infos[i]["options"][:18],
-                    "top_functions": infos[i]["defs"][:18],
-                    "docstring": infos[i]["docstring"],
-                }
-            )
+            members.append({
+                "file": infos[i]["name"],
+                "lines": infos[i]["lines"],
+                "bytes": infos[i]["bytes"],
+                "sha256": infos[i]["sha256"],
+                "ast_ok": infos[i]["ast_ok"],
+                "nearest_in_group": infos[nearest]["name"] if nearest is not None else None,
+                "nearest_score": round(ns, 4),
+                "imports": infos[i]["imports"][:18],
+                "options": infos[i]["options"][:18],
+                "top_functions": infos[i]["defs"][:18],
+                "docstring": infos[i]["docstring"],
+            })
         members.sort(key=lambda m: (m["file"] != infos[medoid]["name"], m["file"]))
         pairs = sorted(
             (
@@ -670,44 +674,42 @@ def build_report(root: pathlib.Path, threshold: float) -> dict[str, Any]:
         else:
             basis = "loosely related (review before merging)"
         confidence = "high" if cohesion >= 0.72 else "medium" if cohesion >= 0.58 else "low"
-        groups_out.append(
-            {
-                "signal_averages": {
-                    "cos_code": round(comp_avg("cos_all"), 4),
-                    "containment": round(comp_avg("containment"), 4),
-                    "cos_api": round(comp_avg("cos_api"), 4),
-                    "cos_purpose": round(comp_avg("cos_purpose"), 4),
-                    "name_sim": round(comp_avg("name_sim"), 4),
-                },
-                "id": f"G{gi:03d}",
-                "label": label,
-                "keywords": purpose,
-                "stem_family": base,
-                "size": len(g),
-                "medoid": infos[medoid]["name"],
-                "basis": basis,
-                "confidence": confidence,
-                "cohesion": round(cohesion, 4),
-                "strong_link_density": round(len(strong_pairs) / max(1, len(intra)), 4),
-                "avg_similarity": round(avg, 4),
-                "min_similarity": round(min(intra), 4) if intra else 0.0,
-                "max_similarity": round(max(intra), 4) if intra else 0.0,
-                "shared_imports": shared_imports[:15],
-                "shared_cli_options": shared_opts[:15],
-                "shared_definitions": shared_defs[:15],
-                "recommendation": (
-                    "near-duplicate: consolidate into one script"
-                    if (intra and max(intra) >= 0.88)
-                    else (
-                        "strong overlap: pick one canonical script, retire the rest"
-                        if (intra and sum(intra) / len(intra) >= 0.7)
-                        else "review: scripts appear to do the same job"
-                    )
-                ),
-                "members": members,
-                "top_pairs": [{"a": a, "b": b, "score": round(s, 4)} for s, a, b in pairs],
-            }
-        )
+        groups_out.append({
+            "signal_averages": {
+                "cos_code": round(comp_avg("cos_all"), 4),
+                "containment": round(comp_avg("containment"), 4),
+                "cos_api": round(comp_avg("cos_api"), 4),
+                "cos_purpose": round(comp_avg("cos_purpose"), 4),
+                "name_sim": round(comp_avg("name_sim"), 4),
+            },
+            "id": f"G{gi:03d}",
+            "label": label,
+            "keywords": purpose,
+            "stem_family": base,
+            "size": len(g),
+            "medoid": infos[medoid]["name"],
+            "basis": basis,
+            "confidence": confidence,
+            "cohesion": round(cohesion, 4),
+            "strong_link_density": round(len(strong_pairs) / max(1, len(intra)), 4),
+            "avg_similarity": round(avg, 4),
+            "min_similarity": round(min(intra), 4) if intra else 0.0,
+            "max_similarity": round(max(intra), 4) if intra else 0.0,
+            "shared_imports": shared_imports[:15],
+            "shared_cli_options": shared_opts[:15],
+            "shared_definitions": shared_defs[:15],
+            "recommendation": (
+                "near-duplicate: consolidate into one script"
+                if (intra and max(intra) >= 0.88)
+                else (
+                    "strong overlap: pick one canonical script, retire the rest"
+                    if (intra and sum(intra) / len(intra) >= 0.7)
+                    else "review: scripts appear to do the same job"
+                )
+            ),
+            "members": members,
+            "top_pairs": [{"a": a, "b": b, "score": round(s, 4)} for s, a, b in pairs],
+        })
 
     top_pairs = sorted(
         (

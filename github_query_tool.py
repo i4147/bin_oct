@@ -17,7 +17,6 @@ API: str = "https://api.github.com"
 
 @dataclass(slots=True)
 class Repo:
-
     name: str
     full_name: str
     url: str
@@ -216,14 +215,12 @@ def cmd_trending_users(args: argparse.Namespace) -> int:
                 if isinstance(repos_raw, list)
                 else []
             )
-            users.append(
-                {
-                    "username": login,
-                    "name": detail.get("name", ""),
-                    "followers": detail.get("followers", 0),
-                    "repositories": repos,
-                }
-            )
+            users.append({
+                "username": login,
+                "name": detail.get("name", ""),
+                "followers": detail.get("followers", 0),
+                "repositories": repos,
+            })
             print(
                 f"{login} ({detail.get('name', '')}) followers={detail.get('followers', 0)} python-repos={len(repos)}"
             )

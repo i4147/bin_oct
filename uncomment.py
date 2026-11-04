@@ -33,27 +33,25 @@ POOL_METHODS: Final[tuple[PoolMethod, ...]] = (
     "apply_async",
     "apply",
 )
-DEFAULT_SKIP_DIRS: Final[frozenset[str]] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".idea",
-        ".vscode",
-        ".venv",
-        "venv",
-        "node_modules",
-        "__pycache__",
-        ".tox",
-        ".mypy_cache",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".cache",
-        "target",
-        "dist",
-        "build",
-    }
-)
+DEFAULT_SKIP_DIRS: Final[frozenset[str]] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".idea",
+    ".vscode",
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+    ".tox",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".cache",
+    "target",
+    "dist",
+    "build",
+})
 COMMENT_TYPES: Final[frozenset[str]] = frozenset({"comment", "line_comment", "block_comment", "Comment"})
 TEXT_TYPES: Final[frozenset[str]] = frozenset({"text", "CharData"})
 _COMMON: Final[str] = (

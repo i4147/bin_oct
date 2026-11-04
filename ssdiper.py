@@ -250,13 +250,11 @@ def compare_files(
             try:
                 score = compare_hashes(hash1, hash2, alg)
                 if score >= similarity_threshold:
-                    similarities.append(
-                        {
-                            "file1": str(Path(path1_str).relative_to(cwd)),
-                            "file2": str(Path(path2_str).relative_to(cwd)),
-                            "similarity_score": score,
-                        }
-                    )
+                    similarities.append({
+                        "file1": str(Path(path1_str).relative_to(cwd)),
+                        "file2": str(Path(path2_str).relative_to(cwd)),
+                        "similarity_score": score,
+                    })
             except Exception as e:
                 print(f"Error comparing hashes for {path1_str} and {path2_str}: {e}")
     similarities.sort(key=operator.itemgetter("similarity_score"), reverse=True)

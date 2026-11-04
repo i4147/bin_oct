@@ -18,26 +18,24 @@ from dh import DOC_TH1, DOC_TH2
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4
 PY_SUFFIXES = (".py", ".pyi")
-SKIP_DIR_NAMES = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".tox",
-        ".nox",
-        ".venv",
-        "venv",
-        "env",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        "node_modules",
-        "build",
-        "dist",
-        ".eggs",
-    }
-)
+SKIP_DIR_NAMES = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "node_modules",
+    "build",
+    "dist",
+    ".eggs",
+})
 PROTECTED_COMMENT_PREFIXES = (
     "#!",
     "#-*-",

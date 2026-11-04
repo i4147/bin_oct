@@ -63,7 +63,8 @@ def process_file(fn: Path) -> int:
         cprint("no change", "blue")
         return 0
     new_path = new_path.with_name(
-        new_path.name.replace("_1", "")
+        new_path.name
+        .replace("_1", "")
         .replace("_2", "")
         .replace("_3", "")
         .replace("_4", "")

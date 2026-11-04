@@ -114,63 +114,53 @@ def _collect_cwd_files(
                 try:
                     data = entry.read_bytes()
                 except Exception as exc:
-                    items.append(
-                        {
-                            "filename": entry.name,
-                            "contents": f"[Error reading file: {exc!s}]",
-                            "compressed": 0,
-                            "original_size": 0,
-                            "compressed_size": 0,
-                        }
-                    )
+                    items.append({
+                        "filename": entry.name,
+                        "contents": f"[Error reading file: {exc!s}]",
+                        "compressed": 0,
+                        "original_size": 0,
+                        "compressed_size": 0,
+                    })
                     continue
                 encoded = _compress_blob(data)
                 if encoded:
-                    items.append(
-                        {
-                            "filename": entry.name,
-                            "contents": encoded,
-                            "compressed": 1,
-                            "original_size": len(data),
-                            "compressed_size": len(encoded),
-                        }
-                    )
+                    items.append({
+                        "filename": entry.name,
+                        "contents": encoded,
+                        "compressed": 1,
+                        "original_size": len(data),
+                        "compressed_size": len(encoded),
+                    })
                     print(f"    ✓ Compressed {len(data) / 1024:.1f}KB to {len(encoded) / 1024:.1f}KB")
                 else:
-                    items.append(
-                        {
-                            "filename": entry.name,
-                            "contents": "[Binary file - compression failed]",
-                            "compressed": 0,
-                            "original_size": len(data),
-                            "compressed_size": 0,
-                        }
-                    )
+                    items.append({
+                        "filename": entry.name,
+                        "contents": "[Binary file - compression failed]",
+                        "compressed": 0,
+                        "original_size": len(data),
+                        "compressed_size": 0,
+                    })
             else:
                 size_bytes = len((text or "").encode("utf-8", errors="replace"))
-                items.append(
-                    {
-                        "filename": entry.name,
-                        "contents": text,
-                        "compressed": 0,
-                        "original_size": size_bytes,
-                        "compressed_size": 0,
-                    }
-                )
+                items.append({
+                    "filename": entry.name,
+                    "contents": text,
+                    "compressed": 0,
+                    "original_size": size_bytes,
+                    "compressed_size": 0,
+                })
                 print(f"    ✓ Stored as text ({size_bytes / 1024:.1f}KB)")
         else:
             text, is_binary = _read_file(entry, encodings, max_chars)
             if is_binary:
                 text = "[Binary file content not stored]"
-            items.append(
-                {
-                    "filename": entry.name,
-                    "contents": text,
-                    "compressed": 0,
-                    "original_size": len(text or ""),
-                    "compressed_size": 0,
-                }
-            )
+            items.append({
+                "filename": entry.name,
+                "contents": text,
+                "compressed": 0,
+                "original_size": len(text or ""),
+                "compressed_size": 0,
+            })
     return items
 
 

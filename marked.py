@@ -26,7 +26,6 @@ class Token:
 
 
 class Renderer:
-
     def code(self, code: str, lang: str, escaped: bool) -> str:
         if not escaped:
             code = self._escape(code)
@@ -95,7 +94,8 @@ class Renderer:
     @staticmethod
     def _escape(text: str) -> str:
         return (
-            text.replace("&", "&amp;")
+            text
+            .replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace('"', "&quot;")
@@ -104,7 +104,6 @@ class Renderer:
 
 
 class Tokenizer:
-
     def __init__(self, options: dict[str, Any]):
         self.options = options
         self.rules = self._build_rules()
@@ -269,7 +268,6 @@ class Tokenizer:
 
 
 class Lexer:
-
     def __init__(self, options: dict[str, Any]):
         self.options = options
         self.tokenizer = Tokenizer(options)
@@ -295,7 +293,6 @@ class Lexer:
 
 
 class Parser:
-
     def __init__(self, options: dict[str, Any]):
         self.options = options
         self.renderer = options.get("renderer") or Renderer()
@@ -418,7 +415,6 @@ class Parser:
 
 
 class Marked:
-
     def __init__(self, *args: dict[str, Any] | Callable[[Any], None]):
         self.defaults: dict[str, Any] = {
             "async": False,

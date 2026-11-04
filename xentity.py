@@ -478,7 +478,7 @@ def main() -> None:
 
     elapsed = time.perf_counter() - start
     console.print(
-        f"[bold]Done![/bold] Processed {n} file(s) " f"[backend={args.backend}, kinds={sorted(want)}] in {elapsed:.2f}s"
+        f"[bold]Done![/bold] Processed {n} file(s) [backend={args.backend}, kinds={sorted(want)}] in {elapsed:.2f}s"
     )
 
 

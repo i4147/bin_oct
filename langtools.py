@@ -376,15 +376,13 @@ def _scan_simple(root: Path, min_bytes: int, max_bytes: int, show_progress: bool
             continue
         stats["languages"][name] += 1
         if code != "en":
-            stats["non_english"].append(
-                {
-                    "file": f,
-                    "language": name,
-                    "code": code,
-                    "reliable": conf >= 70,
-                    "confidence": conf,
-                }
-            )
+            stats["non_english"].append({
+                "file": f,
+                "language": name,
+                "code": code,
+                "reliable": conf >= 70,
+                "confidence": conf,
+            })
     if show_progress:
         print()
     return stats

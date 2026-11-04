@@ -12,49 +12,46 @@ from pathlib import Path
 
 HTML_SUFFIXES: frozenset[str] = frozenset({".html", ".htm", ".xhtml", ".xhtm"})
 SKIP_TAGS: frozenset[str] = frozenset({"script", "style", "noscript", "template", "head"})
-BLOCK_TAGS: frozenset[str] = frozenset(
-    {
-        "address",
-        "article",
-        "aside",
-        "blockquote",
-        "br",
-        "dd",
-        "div",
-        "dl",
-        "dt",
-        "fieldset",
-        "figcaption",
-        "figure",
-        "footer",
-        "form",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "header",
-        "hr",
-        "li",
-        "main",
-        "nav",
-        "ol",
-        "p",
-        "pre",
-        "section",
-        "table",
-        "td",
-        "th",
-        "tr",
-        "ul",
-    }
-)
+BLOCK_TAGS: frozenset[str] = frozenset({
+    "address",
+    "article",
+    "aside",
+    "blockquote",
+    "br",
+    "dd",
+    "div",
+    "dl",
+    "dt",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hr",
+    "li",
+    "main",
+    "nav",
+    "ol",
+    "p",
+    "pre",
+    "section",
+    "table",
+    "td",
+    "th",
+    "tr",
+    "ul",
+})
 BLANK_RUN: re.Pattern[str] = re.compile(r"\n{3,}")
 
 
 class TextExtractor(html.parser.HTMLParser):
-
     def __init__(self, markdown: bool = False) -> None:
         super().__init__(convert_charrefs=True)
         self._markdown: bool = markdown

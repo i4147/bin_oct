@@ -115,19 +115,17 @@ def _move_to_error(path: Path, dest_dir: str) -> None:
 
 
 class HtmlTagFormatter:
-    INLINE_TAGS: frozenset[str] = frozenset(
-        {
-            "b",
-            "i",
-            "u",
-            "em",
-            "strong",
-            "code",
-            "small",
-            "sub",
-            "sup",
-        }
-    )
+    INLINE_TAGS: frozenset[str] = frozenset({
+        "b",
+        "i",
+        "u",
+        "em",
+        "strong",
+        "code",
+        "small",
+        "sub",
+        "sup",
+    })
 
     def __init__(self) -> None:
         try:

@@ -34,27 +34,23 @@ DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644
 EXEC_MODE: int = 0o755
 EXEC_BITS: int = st.S_IXUSR | st.S_IXGRP | st.S_IXOTH
-DEFAULT_SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".idea",
-        "node_modules",
-        ".venv",
-        "venv",
-        ".ruff_cache",
-    }
-)
-DEFAULT_EXEC_DIRS: frozenset[str] = frozenset(
-    {
-        "bin",
-        "sbin",
-        ".bin",
-        "libexec",
-        "scripts",
-        "tools",
-    }
-)
+DEFAULT_SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".idea",
+    "node_modules",
+    ".venv",
+    "venv",
+    ".ruff_cache",
+})
+DEFAULT_EXEC_DIRS: frozenset[str] = frozenset({
+    "bin",
+    "sbin",
+    ".bin",
+    "libexec",
+    "scripts",
+    "tools",
+})
 DEFAULT_SUFFIX_EXEC: tuple[str, ...] = (".sh", ".so")
 DEFAULT_DEEXEC_PATTERNS: tuple[str, ...] = ("*.py",)
 DEFAULT_KEEP_EXEC_PARENTS: frozenset[str] = frozenset({"bin", "sbin"})

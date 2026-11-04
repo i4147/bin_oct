@@ -28,7 +28,6 @@ Method = Literal["ast", "regex"]
 
 @dataclass(slots=True)
 class FileResult:
-
     path: Path
     status: Status
     message: str = ""

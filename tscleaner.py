@@ -10,25 +10,23 @@ from typing import Any
 
 WORKERS = 8
 ROOT = Path.cwd()
-SKIP_DIRECTORY_NAMES = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".idea",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".tox",
-        ".venv",
-        "__pycache__",
-        "node_modules",
-        "target",
-        "build",
-        "dist",
-        "vendor",
-    }
-)
+SKIP_DIRECTORY_NAMES = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".idea",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    "target",
+    "build",
+    "dist",
+    "vendor",
+})
 
 
 @dataclass(frozen=True, slots=True)

@@ -49,28 +49,26 @@ DEFAULT_BASE_ARGS: tuple[str, ...] = (
     "--minify-css",
     "--minify-js",
 )
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        "node_modules",
-        "venv",
-        ".venv",
-        "env",
-        ".env",
-        "dist",
-        "build",
-        ".next",
-        ".nuxt",
-        "target",
-        "__pycache__",
-        ".tox",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-    }
-)
+DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    "node_modules",
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "dist",
+    "build",
+    ".next",
+    ".nuxt",
+    "target",
+    "__pycache__",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+})
 GREEN: str = "\x1b[32m"
 RED: str = "\x1b[31m"
 YELLOW: str = "\x1b[33m"

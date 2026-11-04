@@ -21,17 +21,15 @@ from typing import Callable, Iterable, Iterator
 
 from loguru import logger
 
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".mypy_cache",
-        ".ruff_cache",
-        ".pytest_cache",
-        "lazy",
-        ".tox",
-    }
-)
+SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "lazy",
+    ".tox",
+})
 SKIP_DIR_GLOBS: tuple[str, ...] = ("*.egg-info",)
 POOL_WORKERS: int = 8
 ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")

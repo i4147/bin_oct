@@ -84,7 +84,10 @@ def main() -> int:
         "--version",
         help="Print version information and exit.",
         action="version",
-        version=MYNAME + " ver. " + VERSION + """
+        version=MYNAME
+        + " ver. "
+        + VERSION
+        + """
     (c) WhoisXML API Inc.""",
     )
     ARGS_PARSER.add_argument(

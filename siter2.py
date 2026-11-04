@@ -20,7 +20,6 @@ except ImportError:
 
 
 class WheelBuilder:
-
     def __init__(
         self,
         site_packages: str | Path,

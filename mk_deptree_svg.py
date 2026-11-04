@@ -196,23 +196,21 @@ def create_svg(
         is_root = package in roots
         fill = "#dbeafe" if is_root else "#ffffff"
         stroke = "#2563eb" if is_root else "#9aa0a6"
-        parts.extend(
-            [
-                (
-                    f'<rect x="{x}" y="{y}" width="{node_width}" '
-                    f'height="{node_height}" rx="8" fill="{fill}" '
-                    f'stroke="{stroke}" stroke-width="1.5" '
-                    f'filter="url(#shadow)"/>'
-                ),
-                svg_text(
-                    x + node_width // 2,
-                    y + 26,
-                    package,
-                    font_size=13,
-                    weight="bold" if is_root else "normal",
-                ),
-            ]
-        )
+        parts.extend([
+            (
+                f'<rect x="{x}" y="{y}" width="{node_width}" '
+                f'height="{node_height}" rx="8" fill="{fill}" '
+                f'stroke="{stroke}" stroke-width="1.5" '
+                f'filter="url(#shadow)"/>'
+            ),
+            svg_text(
+                x + node_width // 2,
+                y + 26,
+                package,
+                font_size=13,
+                weight="bold" if is_root else "normal",
+            ),
+        ])
     parts.append("</svg>")
     output.write_text("\n".join(parts), encoding="utf-8")
 

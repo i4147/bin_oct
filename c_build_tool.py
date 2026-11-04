@@ -17,7 +17,6 @@ SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__", "venv", ".venv"})
 
 @dataclass(slots=True)
 class JobResult:
-
     source: Path
     ok: bool
     message: str

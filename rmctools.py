@@ -48,22 +48,20 @@ except ImportError:
 
 
 DEFAULT_WORKERS: int = 8
-DEFAULT_EXCLUDES: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".venv",
-        "venv",
-        "env",
-        ".env",
-        "node_modules",
-        ".tox",
-        "build",
-        "dist",
-    }
-)
+DEFAULT_EXCLUDES: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
+    "node_modules",
+    ".tox",
+    "build",
+    "dist",
+})
 FILE_COMMENT_KEYWORDS: tuple[str, ...] = ("coding", "encoding", "type:", "fmt:")
 
 

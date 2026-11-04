@@ -15,19 +15,17 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-EXT_IMAGE: Final[frozenset[str]] = frozenset(
-    {
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".webp",
-        ".bmp",
-        ".tif",
-        ".tiff",
-        ".svg",
-    }
-)
+EXT_IMAGE: Final[frozenset[str]] = frozenset({
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".tif",
+    ".tiff",
+    ".svg",
+})
 HTTP_SCHEMES: Final[tuple[str, ...]] = ("http://", "https://")
 HTML_ATTR_RE: Final[re.Pattern[str]] = re.compile(
     r'(?P<attr>href|src)\s*=\s*(?P<q>["\'])(?P<url>.*?)(?P=q)', re.IGNORECASE

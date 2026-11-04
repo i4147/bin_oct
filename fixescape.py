@@ -75,15 +75,13 @@ def check_and_fix_file(args):
                             if original_ast != replacement_ast:
                                 manual_review_lines.append(tok.start[0])
                                 continue
-                            replacements.append(
-                                (
-                                    tok.start[0],
-                                    tok.start[1],
-                                    tok.end[0],
-                                    tok.end[1],
-                                    new_string,
-                                )
-                            )
+                            replacements.append((
+                                tok.start[0],
+                                tok.start[1],
+                                tok.end[0],
+                                tok.end[1],
+                                new_string,
+                            ))
     if not issues:
         return filepath_str, False, [], None
     lines = source_text.splitlines(keepends=True)

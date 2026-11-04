@@ -150,17 +150,15 @@ def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
                 obj_type = "constant"
         if obj_type:
             canonical_code = get_canonical_structure(node, fuzzy=enable_fuzzy)
-            extracted_objects.append(
-                {
-                    "type": obj_type,
-                    "name": getattr(node, "name", ast.unparse(node)),
-                    "file": file_str,
-                    "line": node.lineno,
-                    "raw_code": ast.unparse(node),
-                    "canonical_code": canonical_code,
-                    "has_annotations": has_type_annotations(node),
-                }
-            )
+            extracted_objects.append({
+                "type": obj_type,
+                "name": getattr(node, "name", ast.unparse(node)),
+                "file": file_str,
+                "line": node.lineno,
+                "raw_code": ast.unparse(node),
+                "canonical_code": canonical_code,
+                "has_annotations": has_type_annotations(node),
+            })
     return extracted_objects
 
 

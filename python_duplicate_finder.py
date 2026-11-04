@@ -52,17 +52,15 @@ except ImportError:
         _tomllib = None
 __version__ = "1.0.0"
 LOGGER = logging.getLogger("pydup")
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
-    {
-        ".venv",
-        ".git",
-        "__pycache__",
-        "node_modules",
-        ".tox",
-        ".mypy_cache",
-        ".pytest_cache",
-    }
-)
+DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
+    ".venv",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+})
 PYTHON_SUFFIXES: frozenset[str] = frozenset({".py", ".pyi"})
 NOTEBOOK_SUFFIX: str = ".ipynb"
 CACHE_FILENAME: str = ".pydup-cache.json"
@@ -70,16 +68,14 @@ SIMILAR_FILENAME: str = "simz.json"
 SSDEEP_THRESHOLD: int = 70
 CACHE_VERSION: int = 1
 NGRAM_SIZE: int = 3
-SKIP_TOKEN_TYPES: frozenset[int] = frozenset(
-    {
-        tokenize.ENCODING,
-        tokenize.NL,
-        tokenize.NEWLINE,
-        tokenize.COMMENT,
-        tokenize.INDENT,
-        tokenize.DEDENT,
-    }
-)
+SKIP_TOKEN_TYPES: frozenset[int] = frozenset({
+    tokenize.ENCODING,
+    tokenize.NL,
+    tokenize.NEWLINE,
+    tokenize.COMMENT,
+    tokenize.INDENT,
+    tokenize.DEDENT,
+})
 ScanIssue: TypeAlias = tuple[str, str]
 Failure: TypeAlias = tuple[str, str]
 
@@ -1884,21 +1880,19 @@ def _report_ndjson(outcome: ScanOutcome, args: argparse.Namespace) -> None:
             emit({"type": "near_duplicate", "paths": list(pair.paths), "similarity": pair.similarity})
     if args.functions:
         for group in outcome.definition_groups:
-            emit(
-                {
-                    "type": "definition_group",
-                    "digest": group.digest,
-                    "members": [
-                        {
-                            "path": member.path,
-                            "lineno": member.lineno,
-                            "name": member.name,
-                            "kind": member.kind,
-                        }
-                        for member in group.members
-                    ],
-                }
-            )
+            emit({
+                "type": "definition_group",
+                "digest": group.digest,
+                "members": [
+                    {
+                        "path": member.path,
+                        "lineno": member.lineno,
+                        "name": member.name,
+                        "kind": member.kind,
+                    }
+                    for member in group.members
+                ],
+            })
     if args.stats:
         emit({"type": "stats", **_stats_payload(outcome.stats)})
 
@@ -1909,16 +1903,14 @@ def _report_csv(outcome: ScanOutcome, args: argparse.Namespace) -> None:
     for index, group in enumerate(outcome.groups, start=1):
         wasted = _group_wasted(group)
         for path in group.paths:
-            writer.writerow(
-                [
-                    index,
-                    group.digest,
-                    str(path),
-                    1 if path == group.keeper else 0,
-                    group.sizes.get(str(path), 0),
-                    wasted,
-                ]
-            )
+            writer.writerow([
+                index,
+                group.digest,
+                str(path),
+                1 if path == group.keeper else 0,
+                group.sizes.get(str(path), 0),
+                wasted,
+            ])
 
 
 def _stats_payload(stats: RunStats) -> dict[str, Any]:

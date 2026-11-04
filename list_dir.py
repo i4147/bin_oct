@@ -299,16 +299,14 @@ def render_json(entries: list[Entry], opts: LsOptions) -> None:
             kind = "link"
         else:
             kind = "file"
-        out.append(
-            {
-                "name": e.name,
-                "size": e.st.st_size,
-                "mode": statlib.filemode(m),
-                "mtime": e.st.st_mtime,
-                "git": e.git,
-                "type": kind,
-            }
-        )
+        out.append({
+            "name": e.name,
+            "size": e.st.st_size,
+            "mode": statlib.filemode(m),
+            "mtime": e.st.st_mtime,
+            "git": e.git,
+            "type": kind,
+        })
     print(jsonlib.dumps(out, indent=2))
 
 

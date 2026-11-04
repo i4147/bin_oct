@@ -15,26 +15,24 @@ DETECTION_SIZE = 4000
 MIN_LETTERS = 20
 _BACKEND: str = ""
 _DETECTOR: Any = None
-SKIP_DIRS = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".bzr",
-        "__pycache__",
-        ".venv",
-        "venv",
-        "env",
-        ".env",
-        "node_modules",
-        ".tox",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".idea",
-        ".vscode",
-    }
-)
+SKIP_DIRS = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".bzr",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
+    "node_modules",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".idea",
+    ".vscode",
+})
 
 
 @dataclass(frozen=True)

@@ -298,9 +298,9 @@ def main():
     empty_dir = cwd / "empty"
     if args.apply:
         empty_dir.mkdir(exist_ok=True)
-    targets = sorted(
-        {p for pattern in TARGET_GLOBS for p in cwd.rglob(pattern) if p.is_file() and empty_dir not in p.parents}
-    )
+    targets = sorted({
+        p for pattern in TARGET_GLOBS for p in cwd.rglob(pattern) if p.is_file() and empty_dir not in p.parents
+    })
     mode = "APPLY" if args.apply else "DRY-RUN"
     print(f"[{mode}] scanning {len(targets)} archive(s) with {WORKERS} workers\n")
     matched = 0

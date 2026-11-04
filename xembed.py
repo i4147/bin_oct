@@ -62,18 +62,16 @@ SIGNATURES: Final[tuple[tuple[bytes, str], ...]] = (
     (b"\x00\x01\x00\x00", ".ttf"),
     (b"\x00\x00\x01\x00", ".ico"),
 )
-TEXT_ASSET_SUFFIXES: Final[frozenset[str]] = frozenset(
-    {
-        ".css",
-        ".svg",
-        ".js",
-        ".json",
-        ".html",
-        ".htm",
-        ".txt",
-        ".xml",
-    }
-)
+TEXT_ASSET_SUFFIXES: Final[frozenset[str]] = frozenset({
+    ".css",
+    ".svg",
+    ".js",
+    ".json",
+    ".html",
+    ".htm",
+    ".txt",
+    ".xml",
+})
 DEFAULT_EXCLUDES: Final[tuple[str, ...]] = (
     ".git",
     "node_modules",

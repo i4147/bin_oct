@@ -10,7 +10,6 @@ from pathlib import Path
 
 @dataclass(slots=True)
 class DecodedCode:
-
     data: str
     kind: str
     position: str = ""

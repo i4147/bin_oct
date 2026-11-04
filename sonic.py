@@ -922,14 +922,12 @@ class FileSorter(LineProcessor):
             if temp_files:
                 LineSorter.cleanup_temp_files(temp_files)
         elapsed = time.monotonic() - start_time
-        stats.update(
-            {
-                "final_lines": -1,
-                "after_bytes": written_bytes if written_bytes >= 0 else 0,
-                "after": fsz(written_bytes) if written_bytes >= 0 else "n/a",
-                "processing_time": elapsed,
-            }
-        )
+        stats.update({
+            "final_lines": -1,
+            "after_bytes": written_bytes if written_bytes >= 0 else 0,
+            "after": fsz(written_bytes) if written_bytes >= 0 else "n/a",
+            "processing_time": elapsed,
+        })
         if args.stats_file:
             self._write_stats_file(stats, args.stats_file)
         if backup_path is not None:

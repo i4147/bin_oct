@@ -34,24 +34,22 @@ except ImportError:
 if TYPE_CHECKING:
     import libcst as cst
     from tree_sitter import Node, Parser
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".mypy_cache",
-        ".ruff_cache",
-        ".pytest_cache",
-        "lazy",
-        "pip",
-        "setuptools",
-        "numpy",
-        "scipy",
-        "pandas",
-        "packaging",
-        "numba",
-        "build",
-    }
-)
+SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "lazy",
+    "pip",
+    "setuptools",
+    "numpy",
+    "scipy",
+    "pandas",
+    "packaging",
+    "numba",
+    "build",
+})
 SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.egg-info",)
 MAX_WORKERS: int = 8
 MAX_SNIFF_SIZE: int = 2_000_000

@@ -111,19 +111,17 @@ def build_unified(folder: Path, files: list[Path]) -> str:
             const = f"{const_base}_{seen_const[const_base]}"
         else:
             seen_const[const] = 1
-        items.append(
-            {
-                "filename": f.name,
-                "san": san,
-                "cls": cls,
-                "const": const,
-                "desc": desc,
-                "funcs": funcs,
-                "notes": notes,
-                "lines": lines,
-                "nlines": nlines,
-            }
-        )
+        items.append({
+            "filename": f.name,
+            "san": san,
+            "cls": cls,
+            "const": const,
+            "desc": desc,
+            "funcs": funcs,
+            "notes": notes,
+            "lines": lines,
+            "nlines": nlines,
+        })
     map_lines: list[str] = []
     for it in items:
         extra = f" [{it['notes']}]" if it["notes"] else ""
@@ -323,9 +321,9 @@ if __name__ == "__main__":
 
 
 def main() -> int:
-    folders = sorted(
-        [p for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"]
-    )
+    folders = sorted([
+        p for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"
+    ])
     print(f"Found {len(folders)} top-level folders")
     for folder in folders:
         py_files = sorted([p for p in folder.glob("*.py") if p.name != "main.py"])

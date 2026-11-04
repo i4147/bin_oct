@@ -8,19 +8,17 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
-SOURCE_CODE_EXTS: frozenset[str] = frozenset(
-    {
-        ".py",
-        ".h",
-        ".c",
-        ".cpp",
-        ".cc",
-        ".cxx",
-        ".hh",
-        ".hpp",
-        ".hxx",
-    }
-)
+SOURCE_CODE_EXTS: frozenset[str] = frozenset({
+    ".py",
+    ".h",
+    ".c",
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".hh",
+    ".hpp",
+    ".hxx",
+})
 LANG_TO_EXT: dict[str, str] = {
     "python": ".py",
     "py": ".py",
@@ -146,14 +144,12 @@ def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
         stripped = line.strip()
         if stripped.startswith("```"):
             if in_block:
-                blocks.append(
-                    {
-                        "language": lang,
-                        "start_line": start,
-                        "end_line": i,
-                        "content": "\n".join(buf),
-                    }
-                )
+                blocks.append({
+                    "language": lang,
+                    "start_line": start,
+                    "end_line": i,
+                    "content": "\n".join(buf),
+                })
                 in_block = False
                 buf = []
                 lang = ""
@@ -166,14 +162,12 @@ def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
         elif in_block:
             buf.append(line)
     if in_block and include_unclosed:
-        blocks.append(
-            {
-                "language": lang,
-                "start_line": start,
-                "end_line": len(lines),
-                "content": "\n".join(buf),
-            }
-        )
+        blocks.append({
+            "language": lang,
+            "start_line": start,
+            "end_line": len(lines),
+            "content": "\n".join(buf),
+        })
     return blocks
 
 
