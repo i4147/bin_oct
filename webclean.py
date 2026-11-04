@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import re
@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 from dh import atomic_write
+
 EXT_TO_LANG: dict[str, str] = {
     ".html": "html",
     ".htm": "html",

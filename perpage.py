@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
@@ -68,7 +68,7 @@ def _process_pdf_tuple(item: tuple[SplitTask]) -> SplitResult:
 
 
 def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         if method == "map":
             return pool.map(_process_pdf_tuple, [(task,) for task in tasks])
         if method == "starmap":

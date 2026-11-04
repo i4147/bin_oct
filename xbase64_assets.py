@@ -400,7 +400,6 @@ class FileProcessor:
 
 
 class FileDiscovery:
-
     @staticmethod
     def discover_files(paths: list[str]) -> list[Path]:
         discovered: list[Path] = []

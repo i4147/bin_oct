@@ -21,6 +21,7 @@ from typing import Iterator, NamedTuple
 
 import libcst as cst
 from loguru import logger
+
 CAMEL_RE = re.compile(r"^(?P<pre>_*)(?P<body>[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+)(?P<post>_*)$")
 PARTIAL_RE = re.compile(r"[a-z][A-Z]")
 SNAKE_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")

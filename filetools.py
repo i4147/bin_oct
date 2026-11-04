@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import ctypes
 import ctypes.util
@@ -61,7 +61,7 @@ def cmd_scan_ctime(args: argparse.Namespace) -> int:
         return 0
     now = time.time()
     recent: list[tuple[float, Path]] = []
-    with mp.Pool(processes=POOL_WORKERS) as pool:
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         async_results = [pool.apply_async(_ctime_if_recent, (p, now, SECONDS_24H)) for p in files]
         for ar in tqdm(async_results, total=len(async_results), desc="Scanning", unit="file"):
             result = ar.get()
@@ -146,7 +146,7 @@ def cmd_recent_modified(args: argparse.Namespace) -> int:
         return 0
     print(f"Checking {len(all_files)} files for modifications in last {n_minutes} minute(s)...")
     print()
-    with mp.Pool(POOL_WORKERS) as pool:
+    with mp.Pool(MAX_WORKERS) as pool:
         results = pool.map(partial(_check_file_age, n_minutes=float(n_minutes)), all_files)
     recent_files = [r for r in results if r is not None]
     recent_files.sort(key=lambda x: x[1], reverse=True)

@@ -9,6 +9,7 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import xxhash
+
 HASH_CHUNK_SIZE = 1 << 20
 MAX_DEPTH = 64
 

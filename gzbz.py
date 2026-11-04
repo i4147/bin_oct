@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS, workers
+from dh import MAX_WORKERS, MAX_WORKERS, workers
 import argparse
 import bz2
 import contextlib
@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Optional, Self, Sequence
 
 from loguru import logger
+
 DEFAULT_CHUNK_SIZE: int = 524_288
 DEFAULT_GZIPER_CHUNK: int = 262_144
 DEFAULT_MEM_THRESHOLD: int = 32_768

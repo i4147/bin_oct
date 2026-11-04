@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import os
 import re
@@ -57,7 +57,7 @@ def _translate_name_tuple(item: tuple[str]) -> NamePair:
 
 
 def _run_pool(names: Sequence[str], method: str) -> list[NamePair]:
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         if method == "map":
             return pool.map(_translate_name_tuple, [(name,) for name in names])
         if method == "starmap":

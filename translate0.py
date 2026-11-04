@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Final
 
 from deep_translator import GoogleTranslator
+
 RETRY_ATTEMPTS: Final[int] = 4
 RETRY_DELAY: Final[float] = 0.6
 MAX_CHUNK_SIZE: Final[int] = 2000

@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 import pycurl
+
 OUTPUT_DIR = Path("downloads")
 TIMEOUT = 30
 CONNECT_TIMEOUT = 5

@@ -13,6 +13,7 @@ import brotli
 import zstandard as zstd
 from dh import fsz
 from loguru import logger
+
 ZSTD_LEVEL: int = 19
 BROTLI_QUALITY: int = 11
 LZMA_LEVEL: int = 9

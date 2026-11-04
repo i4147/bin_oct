@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import bz2
 import contextlib
@@ -92,7 +92,7 @@ def unique_path(p: Path) -> Path:
         i += 1
 
 
-def parallel_map(func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS) -> list[Any]:
+def parallel_map(func: Callable, items: list[Any], workers: int = MAX_WORKERS) -> list[Any]:
     if not items:
         return []
     if workers <= 1:
@@ -101,7 +101,7 @@ def parallel_map(func: Callable, items: list[Any], workers: int = DEFAULT_WORKER
         return list(pool.map(func, items))
 
 
-def parallel_imap(func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS) -> list[Any]:
+def parallel_imap(func: Callable, items: list[Any], workers: int = MAX_WORKERS) -> list[Any]:
     if not items:
         return []
     if workers <= 1:

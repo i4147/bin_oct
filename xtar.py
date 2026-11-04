@@ -9,6 +9,7 @@ import zipfile
 from multiprocessing import Pool
 from pathlib import Path
 import py7zr
+
 SUPPORTED_EXTENSIONS: set[str] = {
     ".tar",
     ".tar.gz",

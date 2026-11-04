@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from loguru import logger
+
 ICONS = {"functions": "🔧", "classes": "🏛️ ", "constants": "📌"}
 
 

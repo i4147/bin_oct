@@ -6,6 +6,7 @@ import hashlib
 import re
 import sys
 from pathlib import Path
+
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.copyreg": "copyreg",

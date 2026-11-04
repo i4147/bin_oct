@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_XZ_POOL_WORKERS, DEFAULT_ZSTD_POOL_WORKERS, skipped_dirs
+from dh import DEFAULT_XZ_MAX_WORKERS, DEFAULT_ZSTD_MAX_WORKERS, skipped_dirs
 import argparse
 import contextlib
 import fnmatch
@@ -758,7 +758,7 @@ def build_parser() -> argparse.ArgumentParser:
     zstd_parser.add_argument(
         "--pool-workers",
         type=int,
-        default=DEFAULT_ZSTD_POOL_WORKERS,
+        default=DEFAULT_ZSTD_MAX_WORKERS,
         help="Multiprocessing pool size (default: 8)",
     )
     zstd_parser.add_argument(
@@ -867,7 +867,7 @@ def build_parser() -> argparse.ArgumentParser:
     xz_parser.add_argument(
         "--pool-workers",
         type=int,
-        default=DEFAULT_XZ_POOL_WORKERS,
+        default=DEFAULT_XZ_MAX_WORKERS,
         help="Multiprocessing pool size (default: 8)",
     )
     xz_parser.add_argument(

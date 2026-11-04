@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import DEFAULT_WORKERS, SKIP_DIRS
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import contextlib
 import os
@@ -11,6 +11,7 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
+
 JS_SUFFIXES: Final[frozenset[str]] = frozenset({".js", ".mjs", ".cjs"})
 WALK_CHUNK: Final[int] = 512
 IMAP_CHUNKSIZE: Final[int] = 4
@@ -567,7 +568,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     total_after = 0
     files = iter_js_files(roots)
     try:
-        with Pool(processes=DEFAULT_WORKERS) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             for result in pool.imap_unordered(worker, files, chunksize=IMAP_CHUNKSIZE):
                 if not args.quiet:
                     _emit_terser_output(result)

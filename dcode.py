@@ -16,6 +16,7 @@ import urllib.parse
 import urllib.request
 import zlib
 from typing import Callable
+
 ENGLISH_FREQS = {
     "E": 12.02,
     "T": 9.10,

@@ -786,6 +786,8 @@ def _cmd_defs(args: argparse.Namespace) -> int:
         if not args.dry_run:
             print(green(f"\nRemoved unused objects from {removed_count} file(s)."))
     return 0
+
+
 _UNUSED_VAR_RE = re.compile(
     r"^(?P<path>.*?):(?P<lineno>\d+):\s*unused variable '(?P<var>[^']+)'",
     re.IGNORECASE,

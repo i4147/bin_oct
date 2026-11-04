@@ -11,6 +11,7 @@ from multiprocessing import Pool
 from pathlib import Path
 
 from loguru import logger
+
 DEFAULT_TIMEOUT = 30.0
 MAX_ERROR_MSG_LEN = 200
 

@@ -13,6 +13,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
 MISSING_LIB_PATTERNS = (
     "error while loading shared libraries",
     "cannot open shared object file",

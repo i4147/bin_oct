@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 from collections import Counter
 from multiprocessing.pool import AsyncResult, Pool
@@ -49,7 +49,7 @@ def collect_files_by_extension() -> dict[str, list[Path]]:
 
 
 def process_paths(paths: Sequence[Path], method: str) -> list[LineCounter]:
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         if method == "map":
             return pool.map(process_file, paths)
         if method == "starmap":

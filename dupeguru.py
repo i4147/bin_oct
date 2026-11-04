@@ -38,7 +38,9 @@ def walk_files(roots: Iterable[Path]) -> Iterator[Path]:
         except OSError:
             continue
         for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not Path(Path(dirpath).joinpath(d)).is_symlink()]
+            dirnames[:] = [
+                d for d in dirnames if d not in SKIP_DIRS and not Path(Path(dirpath).joinpath(d)).is_symlink()
+            ]
             for name in filenames:
                 p = Path(dirpath) / name
                 try:

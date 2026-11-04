@@ -11,6 +11,7 @@ import tree_sitter_javascript
 import tree_sitter_typescript
 from loguru import logger
 from tree_sitter import Language, Parser
+
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")
 _JS_LANGUAGE: Final[Language] = Language(tree_sitter_javascript.language())
 _TS_LANGUAGE: Final[Language] = Language(tree_sitter_typescript.language_typescript())

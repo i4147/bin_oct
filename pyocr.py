@@ -658,7 +658,7 @@ def psm_parameter():
     except Exception as exc:
         logger.opt(exception=exc).warning(
             "psm_parameter(): failed to get Tesseract version. Assuming Tesseract >= 4 --> using option '--psm'",
-            )
+        )
         return "--psm"
 
 

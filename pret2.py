@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Final, NamedTuple
 
 from loguru import logger
+
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900
 ERROR_DIR_NAME: Final[str] = "error"
 EXTENSIONS: Final[tuple[str, ...]] = (

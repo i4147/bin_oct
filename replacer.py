@@ -6,9 +6,9 @@ import re
 import sys
 from pathlib import Path
 
-from dh import is_binary
+from isbinary import is_binary
 
-MAX_CONTEXT_DISPLAY = 3
+MAX_CONTEXT_DISPLAY = 5
 
 
 def process_file(

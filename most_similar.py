@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 import ssdeep
+
 BOLD_BLUE: str = "\033[1;34m"
 RESET: str = "\033[0m"
 

@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 from loguru import logger
 import argparse
 import ast

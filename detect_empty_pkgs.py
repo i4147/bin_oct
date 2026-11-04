@@ -8,6 +8,7 @@ import shutil
 import tarfile
 import zipfile
 from pathlib import Path
+
 MIN_ARCHIVE_BYTES = 300
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
 METADATA_NAMES = {

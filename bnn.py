@@ -192,9 +192,7 @@ Examples:
         return 0
     print(f"Found {len(files)} files to process")
     print(f"Starting parallel processing with {MAX_WORKERS} workers")
-    results = Parallel(n_jobs=MAX_WORKERS, verbose=0)(
-        delayed(process_file_chunked)(path, chunk_size) for path in files
-    )
+    results = Parallel(n_jobs=MAX_WORKERS, verbose=0)(delayed(process_file_chunked)(path, chunk_size) for path in files)
     print("\n" + "=" * 40)
     print("PROCESSING RESULTS")
     print("=" * 40)

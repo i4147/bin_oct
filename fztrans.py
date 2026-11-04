@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Final
 
 from faprint import faprint
+
 DICT_FILE: Final[str] = Path("~/dic.json").expanduser()
 
 

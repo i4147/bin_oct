@@ -5,6 +5,7 @@ import re
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
 REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (
         re.compile(r"pkg_resources\.get_distribution\(\s*([^)]+?)\s*\)\.version"),

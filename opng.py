@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, SKIP_DIRS
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import contextlib
 import os
@@ -566,7 +566,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     total_after = 0
     files = iter_png_files(roots)
     try:
-        with Pool(processes=DEFAULT_WORKERS) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             for result in pool.imap_unordered(worker, files, chunksize=IMAP_CHUNKSIZE):
                 if not args.quiet:
                     _emit_optipng_output(result)

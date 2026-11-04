@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
 import argparse
 import ast as ast_module
@@ -347,7 +347,7 @@ def main() -> None:
     if len(files) == 1:
         results.append(process_file(files[0], args))
     else:
-        with mp.Pool(processes=min(DEFAULT_WORKERS, len(files))) as pool:
+        with mp.Pool(processes=min(MAX_WORKERS, len(files))) as pool:
             async_results = [pool.apply_async(process_file, (file_path, args)) for file_path in files]
             for async_result in async_results:
                 try:

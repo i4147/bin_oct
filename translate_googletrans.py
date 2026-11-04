@@ -14,6 +14,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from googletrans import Translator
+
 RETRY_ATTEMPTS = 4
 RETRY_DELAY = 0.6
 MAX_CHUNK_SIZE = 2000

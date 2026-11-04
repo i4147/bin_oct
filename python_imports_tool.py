@@ -24,6 +24,7 @@ Examples
   python3 python_imports_tool.py lines ~/project -o imports_out/
   python3 python_imports_tool.py requirements ~/project
 """
+
 from dh import MAX_WORKERS, SKIP_DIRS
 
 import argparse

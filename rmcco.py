@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Final
 
 from loguru import logger
+
 POOL_SIZE: Final[int] = 8
 
 

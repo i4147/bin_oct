@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -386,7 +386,7 @@ class NonEnglishDetector:
             return results
         total: int = len(paths)
         completed: int = 0
-        with mp.Pool(processes=POOL_WORKERS) as pool:
+        with mp.Pool(processes=MAX_WORKERS) as pool:
             async_results: list[tuple[Any, Path]] = [
                 (pool.apply_async(self.process_file, (path,)), path) for path in paths
             ]

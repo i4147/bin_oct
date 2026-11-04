@@ -673,8 +673,7 @@ def run(args: argparse.Namespace) -> int:
     script_path = Path(__file__).absolute()
     name, fn = build_translator(preferred, args.source, args.target, script_path)
     print(
-        "Backend: %s  (%s -> %s, %d worker(s), delay %.2fs)"
-        % (name, args.source, args.target, MAX_WORKERS, args.delay)
+        "Backend: %s  (%s -> %s, %d worker(s), delay %.2fs)" % (name, args.source, args.target, MAX_WORKERS, args.delay)
     )
     results: dict[str, str] = {} if args.no_continue else load_results(args.output)
     if results:

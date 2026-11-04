@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import re
 import shutil
@@ -177,9 +177,9 @@ def batch_fix_with_parallel(directory: str = ".") -> None:
     if not whl_files:
         logger.warning("No .whl files found in {}", directory)
         return
-    print("Processing {} files with {} workers...", len(whl_files), POOL_WORKERS)
+    print("Processing {} files with {} workers...", len(whl_files), MAX_WORKERS)
     results: list[tuple[str, Metadata | None, str | None]] = []
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[Any] = [pool.apply_async(_extract_info_worker, (f,)) for f in whl_files]
         for ar in async_results:
             try:

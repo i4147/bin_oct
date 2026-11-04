@@ -48,7 +48,9 @@ TEXT_FILENAMES = {
 MAX_FILE_SIZE = 5 * 1024 * 1024
 LOG_FILE = "github_identity_migrate.log"
 _console = logger.add(sys.stdout)
-_file_handler = logger.add(LOG_FILE, )
+_file_handler = logger.add(
+    LOG_FILE,
+)
 
 
 class C:

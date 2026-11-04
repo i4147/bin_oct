@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import ast
 import io
@@ -46,6 +46,8 @@ except ImportError:
 
     def log_warning(msg: str) -> None:
         print(f"WARNING: {msg}", file=sys.stderr)
+
+
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({
     ".git",
     "__pycache__",

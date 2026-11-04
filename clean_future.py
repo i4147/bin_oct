@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable, Iterator
 import rignore
 from dh import atomic_write
+
 FUTURE_ANNOTATIONS_RE = re.compile(
     r"""^[ \t]*
         from[ \t]+__future__[ \t]+import[ \t]+

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 from loguru import logger
+
 CHUNK_SIZE = 64 * 1024
 DETECTION_SIZE = 4000
 MIN_LETTERS = 20

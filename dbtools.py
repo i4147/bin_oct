@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MDB_DEFAULT_WORKERS, SQL_DEFAULT_WORKERS
+from dh import MAX_WORKERS, MDB_MAX_WORKERS, SQL_MAX_WORKERS
 from loguru import logger
 import argparse
 import base64
@@ -606,6 +606,8 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
         return 130
     print(f"Done. Successes: {ok}, Failures: {fail}, Total: {total}")
     return 0 if fail == 0 else 1
+
+
 SQL_CHUNK = 1024 * 1024
 SQL_DEFAULT_ENCODING = "utf-8"
 _SQL_INSERT_RE = re.compile(
@@ -932,10 +934,10 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
         for f in files
     ]
     tasks = ((j, args.encoding, args.strict) for j in jobs)
-    chunksize = max(1, min(32, len(jobs) // (SQL_DEFAULT_WORKERS * 4) or 1))
+    chunksize = max(1, min(32, len(jobs) // (SQL_MAX_WORKERS * 4) or 1))
     fails = 0
     total_rows = 0
-    with Pool(processes=SQL_DEFAULT_WORKERS) as pool:
+    with Pool(processes=SQL_MAX_WORKERS) as pool:
         for res in pool.imap_unordered(_convert_sql_file_star, tasks, chunksize=chunksize):
             if res.error is not None:
                 fails += 1

@@ -4,6 +4,7 @@ from dh import SKIP_DIRS
 import os
 import sys
 from pathlib import Path
+
 SKIP_EXTS: frozenset[str] = frozenset({
     ".yaml",
     ".yml",

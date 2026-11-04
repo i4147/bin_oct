@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from typing import Any
+
 READ_CHUNK_BYTES = 1024 * 1024
 DEFAULT_ENCODING = "utf-8"
 INSERT_START_RE = re.compile(

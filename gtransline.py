@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Final
+
 try:
     from googletrans import Translator
 

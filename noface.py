@@ -8,6 +8,7 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 from tqdm import tqdm
+
 try:
     import cv2
 

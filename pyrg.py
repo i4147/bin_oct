@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import bisect
 import fnmatch
@@ -21,21 +21,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 logger.remove()
 logger.add("/data/data/com.termux/files/home/tmp/apps/pyrg.log")
-IGNORED_DIRS: set[str] = {
-    ".git",
-    ".hg",
-    ".svn",
-    "node_modules",
-    "__pycache__",
-    ".ruff_cache",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".tox",
-    ".venv",
-    "venv",
-    ".idea",
-    ".vscode",
-}
 TYPE_PRESETS: dict[str, set[str]] = {
     "py": {".py", ".pyi", ".pyx", ".pyw"},
     "md": {".md", ".markdown", ".mdx"},
@@ -304,7 +289,7 @@ def _walk_dir(
             except OSError:
                 continue
             if is_dir:
-                if name in exclude_dirs or name in IGNORED_DIRS:
+                if name in exclude_dirs or name in SKIP_DIRS:
                     continue
                 if max_depth is not None and depth + 1 > max_depth:
                     continue

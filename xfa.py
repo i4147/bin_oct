@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from typing import Any
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 from loguru import logger
 import argparse
 import re
@@ -181,7 +181,9 @@ def process_file(path_str: str, min_length: int) -> list[str]:
         tokenizer = PersianTokenizer()
         return list(tokenizer.clean_and_tokenize(content, min_length))
     except Exception as e:
-        logger.opt(exception=True).debug(f"Error processing {file_path}: {e}", )
+        logger.opt(exception=True).debug(
+            f"Error processing {file_path}: {e}",
+        )
         return []
 
 

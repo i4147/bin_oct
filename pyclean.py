@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 from loguru import logger
 import argparse
 import ast
@@ -718,7 +718,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         LOG.warning("Operation cancelled by user")
         return 130
     except Exception as e:
-        LOG.opt(exception=True).error("Unexpected error: {}", e, )
+        LOG.opt(exception=True).error(
+            "Unexpected error: {}",
+            e,
+        )
         return 1
 
 

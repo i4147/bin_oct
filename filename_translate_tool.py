@@ -22,6 +22,7 @@ Examples
   python3 filename_translate_tool.py translate ~/Downloads --apply
   python3 filename_translate_tool.py finglish ~/Music --apply
 """
+
 from dh import MAX_WORKERS
 
 import argparse

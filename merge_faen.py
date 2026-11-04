@@ -147,7 +147,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Process interrupted by user")
     except Exception as e:
-        logger.opt(exception=True).error(f"Unexpected error in main execution: {e}", )
+        logger.opt(exception=True).error(
+            f"Unexpected error in main execution: {e}",
+        )
     finally:
         elapsed_time = time.time() - start_time
         print(f"Execution completed in {elapsed_time:.2f} seconds")

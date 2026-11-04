@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import contextlib
 import shutil
@@ -62,7 +62,7 @@ def _process_file_tuple(item: tuple[str]) -> FormatResult:
 
 
 def _run_pool(paths: Sequence[str], method: str) -> list[FormatResult]:
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         if method == "starmap":
             return pool.starmap(process_file, [(p,) for p in paths])
         if method == "map":

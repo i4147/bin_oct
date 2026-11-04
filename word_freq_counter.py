@@ -10,6 +10,7 @@ from typing import Any
 
 from dh import get_nobinary
 from loguru import logger
+
 WORD_PATTERN: re.Pattern[str] = re.compile(r"\b[a-z]+\b")
 OUTPUT_FILE: Path = Path("counter.json")
 

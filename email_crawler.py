@@ -21,8 +21,6 @@ LOG_DIR = Path("logs")
 MAX_SEARCH_RESULTS = 150
 
 
-
-
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 logger.add(LOG_DIR / "pycrawler.log", rotation="midnight", retention=1, level="DEBUG" if DEBUG else "INFO")
 

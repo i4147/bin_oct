@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -11,6 +11,7 @@ from typing import Final, Iterable, Iterator, Optional
 import libcst as cst
 from libcst import BaseStatement, ClassDef, EmptyLine, FunctionDef, Module, SimpleStatementLine, TrailingWhitespace
 from loguru import logger
+
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")
 SHEBANG_PREFIX: Final[str] = "#!"
 PY_EXTENSIONS: Final[frozenset[str]] = frozenset({".py", ".pyi", ".pyw"})
@@ -281,8 +282,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     configure_logging(verbose=args.verbose)
     workers = max(1, MAX_WORKERS)
-    if workers != DEFAULT_WORKERS:
-        logger.debug(f"Using {workers} workers (overridden from default {DEFAULT_WORKERS}).")
+    if workers != MAX_WORKERS:
+        logger.debug(f"Using {workers} workers (overridden from default {MAX_WORKERS}).")
     try:
         return run(paths=args.paths, workers=workers, dry_run=args.dry_run)
     except KeyboardInterrupt:

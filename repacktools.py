@@ -117,7 +117,10 @@ def _read_metadata(dist_info: Path) -> dict[str, str]:
             msg = email.parser.Parser().parsestr(txt)
             return dict(msg.items())
         except Exception:
-            log.opt(exception=True).debug("Could not parse {}", p, )
+            log.opt(exception=True).debug(
+                "Could not parse {}",
+                p,
+            )
     return {}
 
 
@@ -348,7 +351,9 @@ def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tup
             )
         return True, f"created {wheel_path.name}", wheel_path
     except Exception as e:
-        log.opt(exception=True).debug("build_wheel_simple failed", )
+        log.opt(exception=True).debug(
+            "build_wheel_simple failed",
+        )
         return False, f"error: {e}", None
 
 
@@ -433,7 +438,9 @@ def build_wheel_from_record(
             )
         return True, f"created {wheel_path.name}", wheel_path
     except Exception as e:
-        log.opt(exception=True).debug("build_wheel_from_record failed", )
+        log.opt(exception=True).debug(
+            "build_wheel_from_record failed",
+        )
         return False, f"error: {e}", None
 
 

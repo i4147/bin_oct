@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import re
 from multiprocessing.pool import AsyncResult, Pool
@@ -57,7 +57,7 @@ def _update_file_tuple(task: UpdateTask) -> FileResult:
 
 
 def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         if method == "map":
             return pool.map(_update_file_tuple, tasks)
         if method == "starmap":

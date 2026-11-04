@@ -7,6 +7,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Iterable
+
 FILENAME_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP = {
     "six.moves.copyreg": "copyreg",

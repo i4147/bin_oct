@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from atomicio import atomic_write
-from dh import POOL_WORKERS, SKIP_DIRS, SKIP_DIR_GLOBS
+from dh import MAX_WORKERS, SKIP_DIRS, SKIP_DIR_GLOBS
 import argparse
 import ast
 import contextlib
@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Iterator
 
 from loguru import logger
+
 ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")
 GREEN = "\033[32m"
 GRAY = "\033[90m"
@@ -636,7 +637,7 @@ def _iter_joblib(args_iter: Iterable[tuple[Path, Options]]) -> Iterator[FileResu
     except ImportError as exc:
         msg = "joblib not installed: pip install joblib"
         raise SystemExit(msg) from exc
-    for r in Parallel(n_jobs=POOL_WORKERS)(delayed(_worker_dispatch)(a) for a in args_iter):
+    for r in Parallel(n_jobs=MAX_WORKERS)(delayed(_worker_dispatch)(a) for a in args_iter):
         yield r
 
 
@@ -652,27 +653,27 @@ def run_parallel(
         yield from _iter_joblib(args_iter)
         return
     if method == "starmap":
-        with Pool(POOL_WORKERS) as pool:
+        with Pool(MAX_WORKERS) as pool:
             for r in pool.starmap(_worker_dispatch, args_iter):
                 yield r
         return
     if method == "map":
-        with Pool(POOL_WORKERS) as pool:
+        with Pool(MAX_WORKERS) as pool:
             for r in pool.map(_worker_dispatch, args_iter):
                 yield r
         return
     if method == "imap_unordered":
-        with Pool(POOL_WORKERS) as pool:
+        with Pool(MAX_WORKERS) as pool:
             for r in pool.imap_unordered(_worker_dispatch, args_iter):
                 yield r
         return
     if method == "apply":
-        with Pool(POOL_WORKERS) as pool:
+        with Pool(MAX_WORKERS) as pool:
             for a in args_iter:
                 yield pool.apply(_worker_dispatch, a)
         return
     if method == "apply_async":
-        with Pool(POOL_WORKERS) as pool:
+        with Pool(MAX_WORKERS) as pool:
             asyncs = [pool.apply_async(_worker_dispatch, a) for a in args_iter]
             for a in asyncs:
                 yield a.get()

@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from loguru import logger
-from dh import DEFAULT_SKIP_DIRS, DEFAULT_WORKERS, MAX_WORKERS
+from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import io
@@ -692,9 +692,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if not files:
         print("No files found to compress")
         return 0
-    print(
-        f"Compressing {len(files)} file(s) with {'sequential mode' if args.sequential else f'{MAX_WORKERS} workers'}"
-    )
+    print(f"Compressing {len(files)} file(s) with {'sequential mode' if args.sequential else f'{MAX_WORKERS} workers'}")
     print(f"Preset: {args.preset}, threads/job: {args.threads}, backend: {args.backend}")
     if args.dry_run:
         for f in files:
