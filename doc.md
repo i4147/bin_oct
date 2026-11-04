@@ -6,7 +6,7 @@ Add useful comments and docstrings to the Python files in this repository.
    and existing documentation conventions in a few representative files.
 3. Note the established docstring style (Google / NumPy / reST / plain).
    If none is established, use Google style.
-Do not commit or push changes.
+ommit & push changes after every batch
 ## Scope rules
 - Documentation-only changes.
   Do NOT refactor, rename, reorder, reformat unrelated code, change imports, change signatures,

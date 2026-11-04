@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import POOL_WORKERS
+from dh import MAX_WORKERS
 import argparse
 import json
 from collections import defaultdict
@@ -349,7 +349,7 @@ def main() -> int:
         return 0
 
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         quick_futures: list[tuple[Path, AsyncResult[str]]] = []
         for files in candidates.values():
             for fpath in files:
@@ -369,7 +369,7 @@ def main() -> int:
         return 0
 
     full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = defaultdict(list)
-    with Pool(processes=POOL_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         full_futures: list[tuple[Path, tuple[int, int] | None, AsyncResult[tuple[str, Path]]]] = []
         for group in need_full:
             for fpath in group:
