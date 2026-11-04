@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Run Ruff checks and formatting on Python files below the current directory."""
 
 from dh import MAX_WORKERS
 import sys
@@ -15,12 +16,14 @@ print_lock = Lock()
 
 
 def walk_files(directory: Path) -> Iterator[Path]:
+    """Yield paths for files found recursively under directory."""
     for root, _dirs, files in directory.walk():
         for name in files:
             yield root / name
 
 
 def is_python_file(path: Path) -> bool:
+    """Recognize .py files or extensionless files with markers in their first 64 bytes."""
     if path.suffix == ".py":
         return True
     if path.suffix == "":
@@ -35,6 +38,7 @@ def is_python_file(path: Path) -> bool:
 
 
 def process_file(path: Path) -> None:
+    """Run Ruff fixes and formatting on path, reporting command failures."""
     path = Path(path)
     print(f"[OK] {path.name}")
     cmd = [
@@ -74,6 +78,7 @@ def process_file(path: Path) -> None:
 
 
 def get_all_files(cwd: Path) -> list[Path]:
+    """Collect Python file paths recursively under cwd."""
     py_files: list[Path] = []
     for path in walk_files(cwd):
         if path.is_file() and is_python_file(path):
@@ -82,6 +87,7 @@ def get_all_files(cwd: Path) -> list[Path]:
 
 
 def main() -> None:
+    """Process discovered Python files in a worker pool."""
     cwd = Path.cwd()
     files = get_all_files(cwd)
     if not files:
@@ -91,6 +97,7 @@ def main() -> None:
     pending: deque[Any] = deque()
     for f in files:
         pending.append(pool.apply_async(process_file, (f,)))
+        # Bound the number of queued results before waiting for a worker.
         if len(pending) > 32:
             pending.popleft().get()
     while pending:

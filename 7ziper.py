@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress or decompress entries in the current directory using 7-Zip modes.
+
+The basic, named, and full subcommands can remove inputs after processing.
+"""
 
 from dh import MAX_WORKERS
 from loguru import logger
@@ -139,6 +143,11 @@ def _basic_compress_file(payload: tuple[str, int]) -> tuple[str, bool, str]:
 
 
 def run_basic(args: argparse.Namespace) -> int:
+    """Compress current-directory entries in worker pools and log results.
+
+    Successfully compressed source files and directories are removed.
+    The namespace supplies the log file and compression preset.
+    """
     base = Path.cwd()
     log_file = base / args.log_file
     _basic_setup_logging(log_file)
@@ -166,6 +175,8 @@ def run_basic(args: argparse.Namespace) -> int:
 
 
 class NamedResult:
+    """Hold a named-mode source, destination, success flag, and error message."""
+
     def __init__(
         self,
         src: Optional[str] = None,
@@ -218,6 +229,7 @@ def _named_compress_dir(path_str: str) -> NamedResult:
         logger.info("Tar directory: {} -> {}", path, tar_path)
         with tarfile.open(tar_path, "w") as tar:
             tar.add(path, arcname=path.name)
+        # Keep the source until the tar archive has been closed successfully.
         _named_remove(path)
         return NamedResult(str(path), str(tar_path), True)
     except Exception as exc:
@@ -245,6 +257,11 @@ def _named_compress_file(path_str: str) -> NamedResult:
 
 
 def run_named(args: argparse.Namespace) -> int:
+    """Archive current-directory entries using named-mode workers and log results.
+
+    Directories become tar files, files become 7z archives, and successful
+    inputs are removed. The namespace supplies the log file.
+    """
     base = Path.cwd()
     log_file = base / args.log_file
     _basic_setup_logging(log_file)
@@ -549,6 +566,11 @@ def _full_decompress(base: Path, args: argparse.Namespace) -> None:
 
 
 def run_full(args: argparse.Namespace) -> int:
+    """Run full-mode compression or decompression in the current directory.
+
+    The namespace selects the mode and supplies compression settings.
+    Successfully processed inputs may be removed.
+    """
     base = Path.cwd()
     if args.mode == "compress":
         _full_compress(base, args)
@@ -558,6 +580,7 @@ def run_full(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the parser for the basic, named, and full subcommands."""
     parser = argparse.ArgumentParser(description="Merged 7-Zip compression tool")
     sub = parser.add_subparsers(dest="command", required=True)
     p_basic = sub.add_parser("basic", help="7zer.py: tar->7z dirs + 7z files")
@@ -582,6 +605,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list] = None) -> int:
+    """Parse arguments and dispatch to the selected archive mode.
+
+    Returns the mode result, or 1 if interrupted or an error is caught.
+    """
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

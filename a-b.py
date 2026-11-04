@@ -1,10 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove lines from the first file that also occur in the second file.
+
+Pass the two file paths as command-line arguments; the first file is replaced.
+"""
 
 import sys
 from pathlib import Path
 
 
 def main() -> None:
+    """Replace the first argument file with lines absent from the second."""
     file_a = Path(sys.argv[1])
     file_b = Path(sys.argv[2])
     b_lines = {line.rstrip("\n") for line in file_b.read_text(encoding="utf-8").splitlines()}
