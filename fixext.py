@@ -7,7 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
 
-from dh import SKIP_DIRECTORIES, WORKER_COUNT, is_binary, runcmd, unique_path
+from dh import SKIP_DIRS, MAX_WORKERS, is_binary, runcmd, unique_path
 from loguru import logger
 
 
@@ -488,7 +488,7 @@ def scan_directory(directory: str) -> list[MismatchResult]:
         return []
     files: list[Path] = []
     for root, dirs, filenames in base_dir.walk():
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRECTORIES]
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         root_path: Path = Path(root)
         for filename in filenames:
             path: Path = root_path / filename
@@ -497,10 +497,10 @@ def scan_directory(directory: str) -> list[MismatchResult]:
     if not files:
         logger.warning("No files found")
         return []
-    print(f"Found {len(files):,} files, analyzing with {WORKER_COUNT} workers...")
+    print(f"Found {len(files):,} files, analyzing with {MAX_WORKERS} workers...")
     results: list[MismatchResult] = []
     tasks: list[tuple[Path, Path]] = [(base_dir, f) for f in files]
-    with Pool(processes=WORKER_COUNT) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[Any] = [pool.apply_async(process_file_worker, (task,)) for task in tasks]
         completed: int = 0
         for ar in async_results:

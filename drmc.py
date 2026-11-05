@@ -23,6 +23,7 @@ from atomicio import atomic_write
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
+SKIP_DIR_GLOBS: tuple[str, ...] = ("*.dist-info",)
 ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")
 GREEN = "\033[32m"
 GRAY = "\033[90m"

@@ -428,11 +428,16 @@ def main(argv: list[str]) -> None:
         if bad:
             die(f"Error: line(s) {bad} out of range. File has {total} lines.")
         source, ranged = "".join(lines[n - 1] for n in nums), True
+
     elif not nums:
         source, ranged = text, False
-    elif len(nums) <= 2:
-        start = nums[0]
-        end = nums[1] if len(nums) == 2 else total
+    elif len(nums) == 1:
+        n = nums[0]
+        if not 1 <= n <= total:
+            die(f"Error: line ({n}) out of range. File has {total} lines.")
+        source, ranged = lines[n - 1], True
+    elif len(nums) == 2:
+        start, end = nums
         if not 1 <= start <= total:
             die(f"Error: start line ({start}) out of range. File has {total} lines.")
         if not start <= end <= total:
@@ -440,6 +445,7 @@ def main(argv: list[str]) -> None:
         source, ranged = "".join(lines[start - 1 : end]), True
     else:
         die(USAGE.format(prog=Path(argv[0]).name))
+
     if not source:
         die("No content selected to copy.")
     payload = build_payload(path, source, ranged, mangle, strip)

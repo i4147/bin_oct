@@ -5,7 +5,6 @@ import ast
 import codecs
 import importlib.util
 import io
-import os
 import re
 import subprocess
 import sys
@@ -36,6 +35,8 @@ except ImportError:
 if TYPE_CHECKING:
     import libcst as cst
     from tree_sitter import Node, Parser
+
+SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.egg-info",)
 MAX_SNIFF_SIZE: int = 2_000_000
 DEFAULT_BACKENDS: tuple[str, ...] = ("libcst", "tree-sitter")
 INSTALL_HINTS: dict[str, str] = {
@@ -750,9 +751,8 @@ def copy_to_clipboard(code: str) -> None:
 def run_sources(paths: Sequence[Path], opts: Options) -> Iterator[FileResult]:
     if not paths:
         return
-    workers = min(MAX_WORKERS, os.process_cpu_count() or 1, len(paths))
     worker = partial(process_file, opts=opts)
-    if workers <= 1:
+    if MAX_WORKERS <= 1:
         yield from map(worker, paths)
         return
     with Pool(workers, initializer=configure_logging) as pool:

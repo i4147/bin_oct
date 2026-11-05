@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
-from dh import SKIP_DIRS, MAX_WORKERS, skip_dirs
+from dh import SKIP_DIRS, MAX_WORKERS
 
 try:
     from tqdm import tqdm
@@ -21,16 +21,7 @@ except Exception:
         return it
 
 
-try:
-    from dh import is_binary as _is_binary
-
-    _HAVE_DH = True
-except Exception:
-    _HAVE_DH = False
-
-    def _is_binary(_p: Path) -> bool:
-        return False
-
+from isbinary import is_binary
 
 DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644

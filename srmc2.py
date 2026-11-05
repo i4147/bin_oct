@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import libcst as cst
-from dh import _SKIP_DIRS, MAX_WORKERS, workers
+from dh import SKIP_DIRS, MAX_WORKERS, workers
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -543,7 +543,7 @@ def _walk(directory: Path, recursive: bool) -> Iterator[Path]:
         if entry.is_symlink():
             continue
         if entry.is_dir():
-            skip = entry.name in _SKIP_DIRS or entry.name.endswith(".egg-info")
+            skip = entry.name in SKIP_DIRS or entry.name.endswith(".egg-info")
             if recursive and not skip:
                 yield from _walk(entry, recursive)
         elif entry.is_file():

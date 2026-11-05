@@ -60,7 +60,8 @@ def gsz(path: Path) -> int:
     for dirpath, dirnames, filenames in os.walk(path, followlinks=False):
         for name in filenames:
             try:
-                total += os.lstat(Path(dirpath).joinpath(name)).st_size
+                p = Path(dirpath) / name
+                total += p.stat().st_size
             except OSError:
                 pass
         for name in dirnames:
@@ -75,7 +76,9 @@ def walk(root: Path):
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for name in filenames:
-            yield Path(dirpath, name)
+            p = Path(dirpath) / name
+            if not p.is_symlink():
+                yield p
         for name in dirnames:
             yield Path(dirpath, name)
 
@@ -288,7 +291,7 @@ def main() -> int:
 
     root = Path("/data/data/com.termux/files/usr")
     rc = cmd_pycache(root)
-    rc |= cmd_junk(root)
+    #    rc |= cmd_junk(root)
     rc |= cmd_termux()
     return rc
 

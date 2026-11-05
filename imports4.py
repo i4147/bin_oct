@@ -6,6 +6,7 @@ import concurrent.futures
 import contextlib
 import hashlib
 import json
+import logging
 import os
 import re
 import subprocess
@@ -15,7 +16,6 @@ from pathlib import Path
 
 import requests
 from dh import PKG_MAPPING, STDLIB
-from loguru import logger
 from yarg import json2package
 from yarg.exceptions import HTTPError
 
@@ -42,7 +42,7 @@ DEFAULT_EXCLUDE_DIRS = {
     ".vscode",
 }
 OPTIONAL_EXC = ("ImportError", "ModuleNotFoundError")
-log = logger
+log = logging.getLogger("piplist")
 _MISSING = object()
 
 
@@ -85,7 +85,7 @@ def load_pypi_index(path=PYPI_INDEX_PATH):
     try:
         data = json.loads(Path(path).read_text())
     except Exception as e:
-        log.warning("could not load PyPI index {}: {}", path, e)
+        log.warning("could not load PyPI index %s: %s", path, e)
         return set()
     keys = data.keys() if isinstance(data, dict) else data
     return {normalize(k) for k in keys}
@@ -122,7 +122,7 @@ def get_imports_info(module, pypi_server="https://pypi.python.org/pypi/", proxy=
     except HTTPError:
         return None
     except requests.RequestException as e:
-        log.debug("network error for {}: {}", module, e)
+        log.debug("network error for %s: %s", module, e)
         return None
     return str(module) + "==" + str(data.latest_release_id)
 
@@ -193,7 +193,7 @@ def get_project_imports(directory, ignore_dirs, include_optional=False):
     for path, subdirs, files in os.walk(directory):
         subdirs[:] = [d for d in subdirs if d not in ignore and not d.startswith(".")]
         for name in files:
-            full = Path(path).joinpath(name)
+            full = os.path.join(path, name)
             if name.endswith(".py"):
                 try:
                     source = Path(full).read_text(encoding="utf-8", errors="ignore")
@@ -208,17 +208,17 @@ def get_project_imports(directory, ignore_dirs, include_optional=False):
 
 
 def is_local_module(name, source_file):
-    d = Path(Path(source_file).absolute()).parent
-    if Path(Path(d).joinpath(name + ".py")).exists():
+    d = os.path.dirname(os.path.abspath(source_file))
+    if os.path.exists(os.path.join(d, name + ".py")):
         return True
-    if Path(Path(d).joinpath(name, "__init__.py")).exists():
+    if os.path.exists(os.path.join(d, name, "__init__.py")):
         return True
     cur = d
     while True:
-        parent = Path(cur).parent
+        parent = os.path.dirname(cur)
         if parent == cur:
             break
-        if Path(Path(parent).joinpath(name, "__init__.py")).exists():
+        if os.path.exists(os.path.join(parent, name, "__init__.py")):
             return True
         cur = parent
     return False
@@ -250,15 +250,16 @@ def read_ignores(path):
             if line and not line.startswith("#"):
                 out.add(line)
     except Exception as e:
-        log.warning("could not read ignore file {}: {}", path, e)
+        log.warning("could not read ignore file %s: %s", path, e)
     return out
 
 
 def init(args):
-    level = "WARNING" if args["quiet"] else ("DEBUG" if args["verbose"] else "INFO")
+    level = logging.WARNING if args["quiet"] else (logging.DEBUG if args["verbose"] else logging.INFO)
+    logging.basicConfig(level=level, format="%(message)s")
     root = args["path"] or os.curdir
-    if not Path(root).is_dir():
-        log.error("path does not exist: {}", root)
+    if not os.path.isdir(root):
+        log.error("path does not exist: %s", root)
         return 2
     ignore_dirs = DEFAULT_EXCLUDE_DIRS | set(args["ignore_dir"] or [])
     exclude = {normalize(e) for e in (args["exclude"] or [])}
@@ -300,15 +301,15 @@ def init(args):
                 try:
                     info = fut.result()
                 except Exception as e:
-                    log.debug("lookup error {}: {}", pkg, e)
+                    log.debug("lookup error %s: %s", pkg, e)
                     info = None
                 if info and "==" in info:
                     n, v = info.split("==", 1)
                     results[pkg] = (n, v)
                 elif index and normalize(pkg) not in index:
-                    log.warning("{} not on PyPI, skipping", pkg)
+                    log.warning("%s not on PyPI, skipping", pkg)
                 else:
-                    log.warning("could not resolve version for {}", pkg)
+                    log.warning("could not resolve version for %s", pkg)
                     results[pkg] = (pkg, None)
     lines = []
     for pkg in results:
@@ -320,8 +321,8 @@ def init(args):
     if args["stdout"] or args["dry_run"]:
         sys.stdout.write("\n".join(lines) + ("\n" if lines else ""))
         return 0
-    target = Path(args["path"]).joinpath("requirements.txt") if args["path"] else "requirements.txt"
-    if Path(target).exists() and not args["overwrite"]:
+    target = os.path.join(args["path"], "requirements.txt") if args["path"] else "requirements.txt"
+    if os.path.exists(target) and not args["overwrite"]:
         try:
             existing = [l.strip() for l in Path(target).read_text().splitlines() if l.strip() and not l.startswith("#")]
         except Exception:
@@ -329,7 +330,7 @@ def init(args):
         merged = set(lines) | set(existing)
         lines = sorted(merged, key=str.lower)
     Path(target).write_text("\n".join(lines) + ("\n" if lines else ""))
-    log.info("wrote {} entries to {}", len(lines), target)
+    log.info("wrote %d entries to %s", len(lines), target)
     return 0
 
 

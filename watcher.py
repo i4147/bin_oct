@@ -13,6 +13,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from dh import fsz
 
+
 def tail_file(fname, n: int = 10) -> list[str]:
     try:
         with open(fname) as f:
@@ -37,7 +38,6 @@ def path_matches_ext(path: Path, exts: tuple[str, ...] | None) -> bool:
         return True
     name = path.name.lower()
     return any(name.endswith(ext) for ext in exts)
-
 
 
 class ChangeHandler(FileSystemEventHandler):

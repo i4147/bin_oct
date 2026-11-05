@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from fontTools import subset
 import sys
+
 # Unicode blocks that carry Chinese (and CJK-shared) glyphs.
 CJK_BLOCKS = [
     (0x2E80, 0x2EFF),  # CJK Radicals Supplement
@@ -14,25 +15,27 @@ CJK_BLOCKS = [
     (0xF900, 0xFAFF),  # Compatibility Ideographs
     (0xFE30, 0xFE4F),  # CJK Compatibility Forms
     (0xFF00, 0xFFEF),  # Halfwidth/Fullwidth Forms
-    (0x20000, 0x2A6DF),# Ext. B
-    (0x2A700, 0x2EBEF),# Ext. C–F
-    (0x2F800, 0x2FA1F),# Compatibility Ideographs Supplement
-    (0x30000, 0x323AF),# Ext. G–H
+    (0x20000, 0x2A6DF),  # Ext. B
+    (0x2A700, 0x2EBEF),  # Ext. C–F
+    (0x2F800, 0x2FA1F),  # Compatibility Ideographs Supplement
+    (0x30000, 0x323AF),  # Ext. G–H
 ]
 # Add these if you also want Japanese/Korean out:
 # (0x3040,0x30FF) kana, (0x3100,0x312F) bopomofo, (0xAC00,0xD7AF) hangul
 
+
 def is_cjk(cp):
     return any(lo <= cp <= hi for lo, hi in CJK_BLOCKS)
+
 
 SRC, DST = sys.argv[1], "out.ttf"
 
 opts = subset.Options()
-opts.layout_features = ["*"]      # keep GSUB/GPOS rules that survive
-opts.name_IDs = ["*"]             # keep full name table
+opts.layout_features = ["*"]  # keep GSUB/GPOS rules that survive
+opts.name_IDs = ["*"]  # keep full name table
 opts.name_languages = ["*"]
 opts.notdef_outline = True
-opts.recommended_glyphs = True    # space, nbsp, .notdef
+opts.recommended_glyphs = True  # space, nbsp, .notdef
 opts.glyph_names = True
 
 font = subset.load_font(SRC, opts)

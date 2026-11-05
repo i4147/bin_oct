@@ -4,6 +4,7 @@ from pathlib import Path
 
 BASHBIN: Path = Path.home() / "bashbin"
 BIN: Path = Path.home() / "bin"
+LOBIN: Path = Path.home() / ".local" / "bin"
 
 
 def process_dir(cwd: Path, ext: str) -> None:
@@ -25,3 +26,4 @@ def process_dir(cwd: Path, ext: str) -> None:
 if __name__ == "__main__":
     process_dir(BASHBIN, "sh")
     process_dir(BIN, "py")
+    process_dir(LOBIN, "py")

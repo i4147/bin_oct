@@ -23,7 +23,6 @@ Examples
   python3 file_watch_tool.py watch ~/Downloads --once   # single scan
 """
 
-
 import argparse
 import re
 import shutil
@@ -33,7 +32,14 @@ from collections.abc import Sequence
 from pathlib import Path
 
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
-    ".tar.gz", ".whl", ".tar.xz", ".zip", ".tar.bz2", ".tgz", ".txz", ".tbz2",
+    ".tar.gz",
+    ".whl",
+    ".tar.xz",
+    ".zip",
+    ".tar.bz2",
+    ".tgz",
+    ".txz",
+    ".tbz2",
 )
 DEFAULT_UNTIL: tuple[str, ...] = ("bootstrapped 100%", "boostraped 100%", "100% (done)")
 
@@ -186,6 +192,7 @@ def cmd_tail(args: argparse.Namespace) -> int:
 def run_command(template: str, changed: Path) -> None:
     """Run a shell command template where ``{}`` is the changed path."""
     import subprocess
+
     subprocess.run(template.replace("{}", str(changed)), shell=True, check=False)
 
 

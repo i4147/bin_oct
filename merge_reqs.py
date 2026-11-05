@@ -390,7 +390,7 @@ def iter_candidate_files(
     ignore_set = set(ignore)
     root_path = Path(root)
     for dirpath, dirnames, filenames in os.walk(root_path):
-        dirnames[:] = [d for d in dirnames if d not in ignore_set and not d.endswith(".egg-info")]
+        dirnames[:] = [d for d in dirnames if d not in ignore_set and not d.endswith(".dist-info")]
         for name in filenames:
             p = Path(dirpath) / name
             if p.is_symlink():
@@ -410,7 +410,7 @@ def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[
     local: set[str] = set()
     ignore_set = set(ignore)
     for dirpath, dirnames, filenames in os.walk(Path(root)):
-        dirnames[:] = [d for d in dirnames if d not in ignore_set and not d.endswith(".egg-info")]
+        dirnames[:] = [d for d in dirnames if d not in ignore_set and not d.endswith(".dist-info")]
         if "__init__.py" in filenames:
             local.add(Path(dirpath).name)
         for name in filenames:

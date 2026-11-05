@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterator
 
 import tree_sitter_lua as ts_lua
-from dh import _SKIP_DIRS, _WORKERS
+from dh import SKIP_DIRS, _WORKERS
 from tree_sitter import Language, Parser, Query, QueryCursor
 
 try:
@@ -131,7 +131,7 @@ def iter_lua_files(paths: list[str]) -> Iterator[str]:
                 yield str(path.resolve())
         elif path.is_dir():
             for root, dirs, files in os.walk(path, followlinks=False):
-                dirs[:] = [d for d in dirs if d not in _SKIP_DIRS and not d.startswith(".")]
+                dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.startswith(".")]
                 for file in files:
                     if file.startswith("."):
                         continue

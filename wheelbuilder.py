@@ -46,7 +46,7 @@ def cleanup_build_artifacts(pkg_dir: Path) -> None:
     dirs_to_remove = [
         pkg_dir / "build",
         pkg_dir / "dist",
-        pkg_dir / "*.egg-info",
+        pkg_dir / "*.dist-info",
         pkg_dir / "__pycache__",
         pkg_dir / ".eggs",
     ]

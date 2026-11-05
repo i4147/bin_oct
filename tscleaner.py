@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from atomicio import atomic_write
-from dh import SKIP_DIRECTORY_NAMES, WORKERS
+from dh import SKIP_DIRS, MAX_WORKERS
 
 ROOT = Path.cwd()
 
@@ -73,7 +73,7 @@ def iter_source_files(root: Path) -> list[Path]:
             top_down=True,
             follow_symlinks=False,
         ):
-            directory_names[:] = sorted(name for name in directory_names if name not in SKIP_DIRECTORY_NAMES)
+            directory_names[:] = sorted(name for name in directory_names if name not in SKIP_DIRS)
             for file_name in file_names:
                 path = directory / file_name
                 try:
@@ -161,7 +161,7 @@ def main() -> int:
     changed_files = 0
     comments_removed = 0
     failures = 0
-    with Pool(processes=WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         jobs = [pool.apply_async(process_file, (str(path),)) for path in files]
         for job in jobs:
             path, removed_count, error = job.get()

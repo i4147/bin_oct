@@ -15,12 +15,7 @@ import tempfile
 import threading
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Callable, Optional
-
-from atomicio import atomic_save
-from dh import MAX_WORKERS
-from loguru import logger
 
 try:
     from loguru import logger
@@ -227,7 +222,7 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
 def _make_translate(source: str, target: str, script_path: str) -> Translator:
     mod = _import("translate", "pip install translate")
     mod_file = getattr(mod, "__file__", None)
-    if mod_file and Path(mod_file).resolve() == Path(script_path).resolve():
+    if mod_file and os.path.realpath(mod_file) == os.path.realpath(script_path):
         msg = "'import translate' resolved to this script itself; rename the script (e.g. translate_words.py) and retry"
         raise BackendError(msg)
     if hasattr(mod, "Translator"):
@@ -519,7 +514,7 @@ def iter_words(path: str):
 
 
 def load_results(path: str) -> dict[str, str]:
-    if not Path(path).exists():
+    if not os.path.exists(path):
         return {}
     try:
         with open(path, "r", encoding="utf-8") as handle:
@@ -531,6 +526,26 @@ def load_results(path: str) -> dict[str, str]:
     if not isinstance(data, dict):
         raise UserError("Output '%s' is not a JSON object; use --no-continue." % path)
     return data
+
+
+def atomic_save(path: str, data: dict[str, str], lock: threading.Lock) -> bool:
+    directory = os.path.dirname(os.path.abspath(path))
+    with lock:
+        fd, tmp = tempfile.mkstemp(prefix=".tw_", suffix=".tmp", dir=directory)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(data, handle, ensure_ascii=False, indent=1)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp, path)
+            return True
+        except OSError as exc:
+            logger.error("could not save {!r}: {}", path, exc)
+            return False
+        finally:
+            if os.path.exists(tmp):
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp)
 
 
 class Shared:
@@ -625,6 +640,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="preferred backend (default: deep_translator, after deepl if "
         "DEEPL_API_KEY is set). Choices: %s" % ", ".join(sorted(_BACKEND_FACTORIES)),
     )
+    p.add_argument("-w", "--workers", type=int, default=2, help="worker threads (default: 2)")
     p.add_argument(
         "-d",
         "--delay",
@@ -654,9 +670,9 @@ def print_next_steps(failed_count: int, args: argparse.Namespace) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
-    if not Path(args.input).is_file():
+    if not os.path.isfile(args.input):
         raise UserError("Input file '%s' not found. Create it with one word per line or pass -i." % args.input)
-    if MAX_WORKERS < 1 or args.save_every < 1 or args.delay < 0:
+    if args.workers < 1 or args.save_every < 1 or args.delay < 0:
         msg = "--workers and --save-every must be >= 1 and --delay >= 0."
         raise UserError(msg)
     preferred = _validate_backend_name(args.backend) if args.backend else None
@@ -671,10 +687,11 @@ def run(args: argparse.Namespace) -> int:
         platform.machine(),
         platform.system(),
     )
-    script_path = Path(__file__).absolute()
+    script_path = os.path.abspath(__file__)
     name, fn = build_translator(preferred, args.source, args.target, script_path)
     print(
-        "Backend: %s  (%s -> %s, %d worker(s), delay %.2fs)" % (name, args.source, args.target, MAX_WORKERS, args.delay)
+        "Backend: %s  (%s -> %s, %d worker(s), delay %.2fs)"
+        % (name, args.source, args.target, args.workers, args.delay)
     )
     results: dict[str, str] = {} if args.no_continue else load_results(args.output)
     if results:
@@ -693,9 +710,9 @@ def run(args: argparse.Namespace) -> int:
     signal.signal(signal.SIGTERM, _raise_interrupt)
     if hasattr(signal, "SIGHUP"):
         signal.signal(signal.SIGHUP, _raise_interrupt)
-    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    executor = ThreadPoolExecutor(max_workers=args.workers)
     window: deque = deque()
-    max_inflight = MAX_WORKERS * 4
+    max_inflight = args.workers * 4
     next_i = since_save = failed_count = 0
     interrupted = False
     try:
