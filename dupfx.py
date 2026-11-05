@@ -1,35 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
-
 import argparse
-import json
 from collections import defaultdict
-from dataclasses import dataclass
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-from dh import MAX_WORKERS
 from loguru import logger
 from xxhash import xxh64
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
-QUICK_READ: int = 4096
-CHUNK_SIZE: int = 32768
-CACHE_FILENAME: str = ".cache.json"
-
-DeletionGroup = tuple[int, list[tuple[Path, Path]]]
+    pass
+QUICK_READ = 4096
+CHUNK_SIZE = 65536
+POOL_WORKERS = 8
 
 
-@dataclass(slots=True)
-class DuplicateGroup:
-    digest: str
-    paths: list[Path]
-
-
-def file_stat_key(p: Path) -> tuple[int, int] | None:
+def file_stat_key(p):
     try:
         st = p.stat()
         return (st.st_ino, st.st_dev)
@@ -37,7 +22,7 @@ def file_stat_key(p: Path) -> tuple[int, int] | None:
         return None
 
 
-def quick_hash(path: Path, n: int = QUICK_READ) -> str:
+def quick_hash(path, n=QUICK_READ):
     h = xxh64()
     try:
         size = path.stat().st_size
@@ -57,7 +42,7 @@ def quick_hash(path: Path, n: int = QUICK_READ) -> str:
     return h.hexdigest()
 
 
-def full_hash(path: Path) -> tuple[str, Path]:
+def full_hash(path):
     try:
         if not path.stat().st_size:
             return ("", path)
@@ -77,13 +62,13 @@ def full_hash(path: Path) -> tuple[str, Path]:
 
 
 def iter_files(
-    root: Path,
-    recursive: bool,
-    follow_symlinks: bool,
-    include_git: bool = False,
-) -> Iterator[Path]:
+    root,
+    recursive,
+    follow_symlinks,
+    include_git=False,
+):
     if recursive:
-        iterator: Iterable[Path] = root.rglob("*")
+        iterator = root.rglob("*")
     else:
         iterator = root.iterdir()
     for p in iterator:
@@ -96,178 +81,22 @@ def iter_files(
         yield p
 
 
-def _mtime_key(p: Path) -> float:
-    try:
-        return p.stat().st_mtime
-    except OSError:
-        return float("inf")
-
-
-def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
+def choose_keep(files, policy="oldest"):
     if not files:
         msg = "Empty file list"
         raise ValueError(msg)
     if policy == "first":
         return min(files, key=str)
-    if policy == "oldest":
-        return min(files, key=_mtime_key)
-    if policy == "newest":
-        return max(files, key=_mtime_key)
-    return min(files, key=str)
+    elif policy == "oldest":
+        return min(files, key=lambda p: p.stat().st_mtime)
+    elif policy == "newest":
+        return max(files, key=lambda p: p.stat().st_mtime)
+    else:
+        return min(files, key=str)
 
 
-def format_size(n: int) -> str:
-    if n < 1024:
-        return f"{n} B"
-    if n < 1024 * 1024:
-        return f"{n / 1024:.2f} KiB"
-    if n < 1024 * 1024 * 1024:
-        return f"{n / 1024 / 1024:.2f} MiB"
-    return f"{n / 1024 / 1024 / 1024:.2f} GiB"
-
-
-def _cache_path(root: Path) -> Path:
-    return root / CACHE_FILENAME
-
-
-def save_duplicates_cache(root: Path, groups: list[DuplicateGroup]) -> None:
-    if not groups:
-        return
-    payload = {
-        "root": str(root),
-        "groups": [[str(path) for path in group.paths] for group in groups],
-    }
-    _cache_path(root).write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
-def load_duplicates_cache(root: Path) -> list[DuplicateGroup] | None:
-    path = _cache_path(root)
-    if not path.is_file():
-        return None
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    if not isinstance(data, dict) or data.get("root") != str(root):
-        return None
-    raw_groups = data.get("groups")
-    if not isinstance(raw_groups, list):
-        return None
-    groups: list[DuplicateGroup] = []
-    for raw_group in raw_groups:
-        if not isinstance(raw_group, list):
-            return None
-        if not all(isinstance(entry, str) for entry in raw_group):
-            return None
-        paths = [Path(entry) for entry in raw_group]
-        if len(paths) < 2:
-            continue
-        groups.append(DuplicateGroup("", paths))
-    return groups
-
-
-def clear_duplicates_cache(root: Path) -> None:
-    try:
-        _cache_path(root).unlink()
-    except FileNotFoundError:
-        return
-    except OSError as error:
-        logger.error(f"Failed to remove cache file {_cache_path(root)}: {error}")
-
-
-def deletion_groups_to_duplicate_groups(
-    deletion_groups: list[DeletionGroup],
-) -> list[DuplicateGroup]:
-    groups: list[DuplicateGroup] = []
-    for _size, pairs in deletion_groups:
-        if not pairs:
-            continue
-        keeper = pairs[0][0]
-        paths = [keeper] + [dup for _, dup in pairs]
-        groups.append(DuplicateGroup("", paths))
-    return groups
-
-
-def verify_cached_groups(
-    groups: list[DuplicateGroup],
-    keep_policy: str,
-) -> list[DeletionGroup]:
-    verified: list[DeletionGroup] = []
-    for group in groups:
-        by_hash: defaultdict[str, list[Path]] = defaultdict(list)
-        for path in group.paths:
-            h, _ = full_hash(path)
-            if not h:
-                try:
-                    if path.stat().st_size > 0:
-                        continue
-                except OSError:
-                    continue
-            by_hash[h].append(path)
-        for paths in by_hash.values():
-            if len(paths) < 2:
-                continue
-            try:
-                keep_file = choose_keep(paths, policy=keep_policy)
-            except (OSError, ValueError):
-                continue
-            deletes = [p for p in paths if p != keep_file]
-            if not deletes:
-                continue
-            try:
-                group_size = keep_file.stat().st_size
-            except OSError:
-                group_size = 0
-            verified.append((group_size, [(keep_file, d) for d in deletes]))
-    return verified
-
-
-def report_deletion_groups(
-    deletion_groups: list[DeletionGroup],
-    cwd: Path,
-) -> int:
-    total_deletes = sum(len(pairs) for _, pairs in deletion_groups)
-    for idx, (group_size, pairs) in enumerate(deletion_groups, start=1):
-        print()
-        print(f"[Group {idx}]  {format_size(group_size)} each")
-        for keep_file, del_file in pairs:
-            try:
-                keep_rel = keep_file.relative_to(cwd)
-            except ValueError:
-                keep_rel = keep_file
-            try:
-                del_rel = del_file.relative_to(cwd)
-            except ValueError:
-                del_rel = del_file
-            print(f"  KEEP     {keep_rel}")
-            print(f"  REMOVE   {del_rel}")
-    print()
-    return total_deletes
-
-
-def perform_deletion(deletion_groups: list[DeletionGroup]) -> None:
-    removed = 0
-    failed = 0
-    freed_space = 0
-    for _, pairs in deletion_groups:
-        for _, del_file in pairs:
-            try:
-                size = del_file.stat().st_size
-                del_file.unlink()
-                freed_space += size
-                removed += 1
-            except OSError as e:
-                failed += 1
-                logger.error(f"Failed: {del_file} - {e}")
-    print()
-    print(f"Deleted {removed} file(s)")
-    if failed:
-        print(f"Failed: {failed}")
-    if freed_space:
-        print(f"Space freed: {format_size(freed_space)}")
-
-
-def main() -> int:
+def main():
+    cwd = Path.cwd()
     p = argparse.ArgumentParser(description="Find and delete duplicate files by content.")
     p.add_argument(
         "--recursive",
@@ -311,24 +140,8 @@ def main() -> int:
     )
     args = p.parse_args()
     root = Path.cwd()
-
-    if args.remove:
-        cached = load_duplicates_cache(root)
-        if cached is not None:
-            deletion_groups = verify_cached_groups(cached, args.keep)
-            if not deletion_groups:
-                print("No duplicate files found.")
-                clear_duplicates_cache(root)
-                return 0
-            report_deletion_groups(deletion_groups, root)
-            if args.dry_run:
-                print("Dry run complete. Cache preserved for a subsequent real run.")
-                return 0
-            perform_deletion(deletion_groups)
-            clear_duplicates_cache(root)
-            return 0
-
-    size_groups: defaultdict[int, list[Path]] = defaultdict(list)
+    print("Phase 1: Scanning files and grouping by size...")
+    size_groups = defaultdict(list)
     total_files = 0
     for f in iter_files(
         root,
@@ -342,92 +155,108 @@ def main() -> int:
             size_groups[size].append(f)
         except OSError:
             continue
-
-    candidates: dict[int, list[Path]] = {s: lst for s, lst in size_groups.items() if len(lst) > 1}
+    candidates = {s: lst for s, lst in size_groups.items() if len(lst) > 1}
     if not candidates:
         print(f"Scanned {total_files} files. No potential duplicates found.")
-        return 0
-
-    quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
-    with Pool(processes=MAX_WORKERS) as pool:
-        quick_futures: list[tuple[Path, AsyncResult[str]]] = []
+        return
+    candidate_count = sum(len(v) for v in candidates.values())
+    print(f"Phase 1 complete: {candidate_count} files in {len(candidates)} size-groups to examine.")
+    print("Phase 2: Quick hash comparison...")
+    quick_groups = defaultdict(list)
+    with Pool(processes=POOL_WORKERS) as pool:
+        futures = []
         for files in candidates.values():
             for fpath in files:
-                quick_futures.append((fpath, pool.apply_async(quick_hash, (fpath,))))
-        for fpath, fut in quick_futures:
+                futures.append((fpath, pool.apply_async(quick_hash, (fpath,))))
+        for fpath, fut in futures:
             try:
-                h: str = fut.get()
-                size = fpath.stat().st_size
-                key = (size, h)
+                h = fut.get()
+                key = (fpath.stat().st_size, h)
                 quick_groups[key].append(fpath)
             except Exception as e:
                 logger.warning(f"Skipping {fpath}: {e}")
-
-    need_full: list[list[Path]] = [group for group in quick_groups.values() if len(group) > 1]
+    need_full = [group for group in quick_groups.values() if len(group) > 1]
     if not need_full:
-        print(f"Scanned {total_files} files. No duplicates found.")
-        return 0
-
-    full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = defaultdict(list)
-    with Pool(processes=MAX_WORKERS) as pool:
-        full_futures: list[tuple[Path, tuple[int, int] | None, AsyncResult[tuple[str, Path]]]] = []
+        print("No duplicates found after quick hash comparison.")
+        return
+    full_candidates = sum(len(g) for g in need_full)
+    print(f"Phase 2 complete: {full_candidates} files in {len(need_full)} groups need full hash.")
+    print("Phase 3: Full hash comparison...")
+    full_groups = defaultdict(list)
+    with Pool(processes=POOL_WORKERS) as pool:
+        futures2 = []
         for group in need_full:
             for fpath in group:
                 st_key = file_stat_key(fpath)
-                full_futures.append((fpath, st_key, pool.apply_async(full_hash, (fpath,))))
-        for fpath, st_key, fut in full_futures:
+                futures2.append((fpath, st_key, pool.apply_async(full_hash, (fpath,))))
+        for fpath, st_key, fut in futures2:
             try:
                 h, _ = fut.get()
                 if h:
                     full_groups[h].append((fpath, st_key))
             except Exception as e:
                 logger.warning(f"Skipping {fpath}: {e}")
-
-    deletion_groups: list[DeletionGroup] = []
+    print("Phase 4: Processing results...")
+    to_delete = []
     for entries in full_groups.values():
         if len(entries) < 2:
             continue
-        inode_map: defaultdict[tuple[int, int] | None, list[Path]] = defaultdict(list)
+        inode_map = defaultdict(list)
         for p_path, stk in entries:
             inode_map[stk].append(p_path)
-        group_reps: list[Path] = [min(ps, key=str) for ps in inode_map.values()]
+        group_reps = [min(ps, key=str) for ps in inode_map.values()]
         if len(group_reps) < 2:
             continue
+        keep_file = choose_keep(group_reps, policy=args.keep)
+        for rep in group_reps:
+            if rep != keep_file:
+                to_delete.append(rep)
+    if not to_delete:
+        print("No duplicate files found.")
+        return
+    print(f"\nFound {len(to_delete)} duplicate files.")
+    for p_del in to_delete:
         try:
-            keep_file = choose_keep(group_reps, policy=args.keep)
-        except (OSError, ValueError) as e:
-            logger.warning(f"Cannot choose keeper in group: {e}")
-            continue
-        deletes = [rep for rep in group_reps if rep != keep_file]
-        if not deletes:
-            continue
-        try:
-            group_size = keep_file.stat().st_size
-        except OSError:
-            group_size = 0
-        pairs = [(keep_file, d) for d in deletes]
-        deletion_groups.append((group_size, pairs))
-
-    if not deletion_groups:
-        print(f"Scanned {total_files} files. No duplicates found.")
-        return 0
-
-    total_deletes = report_deletion_groups(deletion_groups, root)
-
+            rel_path = p_del.relative_to(cwd)
+        except ValueError:
+            rel_path = p_del
+        print(f"  {rel_path}")
     if not args.remove:
-        try:
-            save_duplicates_cache(root, deletion_groups_to_duplicate_groups(deletion_groups))
-        except OSError as e:
-            logger.error(f"Failed to write cache file: {e}")
-        print(f"Report-only mode. Re-run with -r/--remove to delete {total_deletes} file(s)")
-        return 0
-
+        print(
+            f"\nReport-only mode. {len(to_delete)} files would be deleted.\n"
+            "Run with -r/--remove to actually delete them."
+        )
+        return
     if args.dry_run:
-        print(f"Dry run complete. Re-run with -r/--remove to delete {total_deletes} file(s)")
-        return 0
-
-    perform_deletion(deletion_groups)
-    return 0
+        print(f"\nDry-run complete. {len(to_delete)} files would be deleted.")
+        return
+    removed = 0
+    failed = 0
+    freed_space = 0
+    for p_del in to_delete:
+        try:
+            size = p_del.stat().st_size
+            p_del.unlink()
+            freed_space += size
+            removed += 1
+            try:
+                print(f"Deleted: {p_del.relative_to(cwd)} ({size:,} bytes)")
+            except ValueError:
+                print(f"Deleted: {p_del} ({size:,} bytes)")
+        except OSError as e:
+            failed += 1
+            try:
+                logger.error(f"Failed: {p_del.relative_to(cwd)} - {e}")
+            except ValueError:
+                logger.error(f"Failed: {p_del} - {e}")
+    print("\nSummary:")
+    print(f"  Files scanned: {total_files}")
+    print(f"  Duplicates found: {len(to_delete)}")
+    print(f"  Successfully deleted: {removed}")
+    if failed:
+        print(f"  Failed to delete: {failed}")
+    if freed_space:
+        print(f"  Space freed: {freed_space:,} bytes ({freed_space / 1024 / 1024:.2f} MB)")
 
 
 if __name__ == "__main__":

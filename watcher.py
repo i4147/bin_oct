@@ -11,7 +11,7 @@ from pathlib import Path
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-
+from dh import fsz
 
 def tail_file(fname, n: int = 10) -> list[str]:
     try:
@@ -38,15 +38,6 @@ def path_matches_ext(path: Path, exts: tuple[str, ...] | None) -> bool:
     name = path.name.lower()
     return any(name.endswith(ext) for ext in exts)
 
-
-def human_size(n: int) -> str:
-    if n < 1024:
-        return f"{n}B"
-    for unit in ("K", "M", "G", "T"):
-        n /= 1024.0
-        if n < 1024:
-            return f"{n:.1f}{unit}"
-    return f"{n:.1f}P"
 
 
 class ChangeHandler(FileSystemEventHandler):
@@ -125,7 +116,7 @@ class ChangeHandler(FileSystemEventHandler):
                 rel = self._rel(src_path)
                 if src_path.exists() and src_path.is_file():
                     try:
-                        size_str = human_size(src_path.stat().st_size)
+                        size_str = fsz(src_path.stat().st_size)
                     except OSError:
                         size_str = "?"
                     print(f"-  /{rel} | {reason} | {size_str}")
