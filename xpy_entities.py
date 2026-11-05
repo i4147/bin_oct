@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS
 import argparse
 import ast
 import io
@@ -15,6 +14,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator
+
+from dh import SKIP_DIRS
 
 try:
     import libcst as cst

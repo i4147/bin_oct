@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS
 import argparse
 import ast
 import codecs
@@ -22,6 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, get_args
 
 import libcst as cst
+from dh import NUM_WORKERS
 from loguru import logger
 
 if TYPE_CHECKING:

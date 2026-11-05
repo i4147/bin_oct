@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import asyncio
 import base64
@@ -22,6 +20,9 @@ from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Optional, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from wheel.wheelfile import WheelFile

@@ -4,7 +4,7 @@ import io
 import sys
 from pathlib import Path
 
-from dh import atomic_write
+from atomicio import atomic_write
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 DIRECT_MODES = {"L", "RGB", "CMYK"}

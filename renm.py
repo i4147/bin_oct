@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import os
 import re
@@ -9,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
 
 from deep_translator import GoogleTranslator
-from dh import unique_path
+from dh import MAX_WORKERS, unique_path
 from loguru import logger
 from tqdm import tqdm
 

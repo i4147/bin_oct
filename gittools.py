@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import concurrent.futures
 import json
@@ -10,6 +9,8 @@ import subprocess
 import urllib.error
 import urllib.request
 from typing import Any, Optional
+
+from dh import MAX_WORKERS
 
 _SOURCE_CITATION: str = "[cite: 1]"
 

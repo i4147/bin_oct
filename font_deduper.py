@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import os
+from pathlib import Path
 
 from fontTools.ttLib import TTFont
 

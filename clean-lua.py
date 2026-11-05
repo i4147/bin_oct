@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import _SKIP_DIRS, _WORKERS
 import argparse
 import difflib
 import multiprocessing
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import Iterator
 
 import tree_sitter_lua as ts_lua
+from dh import _SKIP_DIRS, _WORKERS
 from tree_sitter import Language, Parser, Query, QueryCursor
 
 try:

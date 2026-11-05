@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import re
@@ -9,6 +7,9 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 log = logger
 

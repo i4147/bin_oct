@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import WORKERS
 import argparse
 import ast
 import re
 import sys
 from pathlib import Path
 from typing import Optional
+
+from dh import WORKERS
 
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)

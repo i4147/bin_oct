@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from typing import Any
-from dh import MAX_WORKERS, MAX_WORKERS
-from loguru import logger
 import argparse
 import re
 import sys
@@ -9,7 +6,10 @@ from collections import Counter
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     import nltk

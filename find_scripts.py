@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import re
 from concurrent.futures import InterpreterPoolExecutor
 from pathlib import Path
 
-from dh import SHEBANG_MAP, is_binary
+from dh import SHEBANG_MAP, SKIP_DIRS, is_binary
 
 
 def normalize(name: str) -> str:

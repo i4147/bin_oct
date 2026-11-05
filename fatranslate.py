@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import Final, Sequence
 
 from deep_translator import GoogleTranslator
+from dh import MAX_WORKERS
 from loguru import logger
 
 PERSIAN_RE: Final = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")

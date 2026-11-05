@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 import pycurl
+from dh import WORKERS
 
 OUTPUT_DIR = Path("downloads")
 TIMEOUT = 30

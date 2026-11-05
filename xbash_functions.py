@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
-from loguru import logger
 import argparse
 import contextlib
 import os
@@ -10,6 +8,9 @@ import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Protocol
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

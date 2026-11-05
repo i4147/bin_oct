@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import json
 import sys
@@ -10,6 +9,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
+
+from dh import MAX_WORKERS
 
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".txt",

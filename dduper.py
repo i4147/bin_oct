@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import bz2
@@ -18,6 +17,7 @@ from pathlib import Path
 import brotli
 import tree_sitter_python
 import zstandard as zstd
+from dh import MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Parser
 

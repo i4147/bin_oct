@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import ast
 from collections.abc import Iterator
 from pathlib import Path
 
+from dh import SKIP_DIRS
 from loguru import logger
 
 ICONS = {"functions": "🔧", "classes": "🏛️ ", "constants": "📌"}

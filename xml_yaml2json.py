@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import concurrent.futures
 import json
 import sys
 from pathlib import Path
 from typing import Any, Optional
+
+from dh import MAX_WORKERS
 
 try:
     import toml

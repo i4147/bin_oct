@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import hashlib
@@ -14,6 +13,8 @@ import tarfile
 import zipfile
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     from tqdm import tqdm as _tqdm

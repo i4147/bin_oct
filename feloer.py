@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import ast
 import asyncio
@@ -16,7 +15,7 @@ from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dh import DOC_TH1, DOC_TH2
+from dh import DOC_TH1, DOC_TH2, SKIP_DIRS
 from loguru import logger
 
 if TYPE_CHECKING:

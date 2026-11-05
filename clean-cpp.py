@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import sys
 from multiprocessing import Pool
@@ -9,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import tree_sitter_c
 import tree_sitter_cpp
+from dh import WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 

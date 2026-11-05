@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import re
 import sys
@@ -8,6 +7,8 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from re import Match
 from typing import Optional, Sequence
+
+from dh import MAX_WORKERS
 
 SHIFT_RE = re.compile(r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})")
 FALLBACK_ENCODINGS: tuple[str, ...] = ("utf-8", "cp1252", "latin1")

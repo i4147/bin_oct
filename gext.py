@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
-from pathlib import Path
 import ast
 import multiprocessing as mp
 import os
 import sys
+from pathlib import Path
+
+from dh import WORKERS
 
 OUTPUT_DIR = "output"
 CLASSES_DIR = Path(OUTPUT_DIR).joinpath("classes")

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import ast
 import json
@@ -13,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-from dh import cprint, get_pyfiles
+from dh import MAX_WORKERS, cprint, get_pyfiles
 from xxhash import xxh64_hexdigest
 
 DUPLICATES_CACHE_FILENAME = ".cache.json"

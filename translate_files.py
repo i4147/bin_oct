@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
-from loguru import logger
 import argparse
 import json
 import random
@@ -13,7 +11,10 @@ from datetime import datetime
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, Iterable, Sequence
+
 from deep_translator import GoogleTranslator
+from dh import SKIP_DIRS, MAX_WORKERS
+from loguru import logger
 
 try:
     from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
@@ -273,7 +274,7 @@ def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptF
 
 
 def run_vi(args: argparse.Namespace) -> int:
-    files = [p for p in Path.cwd().glob("*.txt") if p.is_file() and p.name not in DEFAULT_SKIP_DIRS]
+    files = [p for p in Path.cwd().glob("*.txt") if p.is_file() and p.name not in SKIP_DIRS]
     if not files:
         print("No .txt files found to translate.")
         return 0

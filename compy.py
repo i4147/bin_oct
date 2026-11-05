@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import ast
 import builtins
@@ -14,7 +13,7 @@ import tokenize
 from io import StringIO
 from pathlib import Path
 
-from dh import append_text, runcmd
+from dh import WORKERS, append_text, runcmd
 
 OUTPUT_FILE = Path("compressed.txt")
 PROTECTED_NAMES = {

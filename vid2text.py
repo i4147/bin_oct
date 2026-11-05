@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import os
 import sys
@@ -11,6 +10,7 @@ from typing import Optional
 
 import cv2
 import pytesseract
+from dh import MAX_WORKERS
 from PIL import Image
 
 _ANSI = {"cyan": "\033[36m", "blue": "\033[34m", "reset": "\033[0m"}

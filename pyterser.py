@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import contextlib
 import os
@@ -11,6 +10,8 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 JS_SUFFIXES: Final[frozenset[str]] = frozenset({".js", ".mjs", ".cjs"})
 WALK_CHUNK: Final[int] = 512

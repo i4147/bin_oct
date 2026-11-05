@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import WORKERS
-from loguru import logger
 import argparse
 import codecs
 import json
@@ -12,6 +10,9 @@ from dataclasses import dataclass
 from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from typing import Any
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 READ_CHUNK_BYTES = 1024 * 1024
 DEFAULT_ENCODING = "utf-8"
@@ -385,10 +386,10 @@ def main() -> int:
         for source in files
     ]
     payloads = ((job, args.encoding, args.strict) for job in jobs)
-    chunksize = max(1, min(32, len(jobs) // (WORKERS * 4) or 1))
+    chunksize = max(1, min(32, len(jobs) // (MAX_WORKERS * 4) or 1))
     failures = 0
     total_rows = 0
-    with Pool(processes=WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         for result in pool.imap_unordered(worker, payloads, chunksize=chunksize):
             if result.error is not None:
                 failures += 1

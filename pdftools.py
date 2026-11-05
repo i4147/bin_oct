@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import os
 import re
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pymupdf
+from dh import MAX_WORKERS
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

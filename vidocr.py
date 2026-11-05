@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import re
@@ -10,6 +9,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 import cv2
 import pytesseract
+from dh import MAX_WORKERS
 
 if TYPE_CHECKING:
     import numpy as np

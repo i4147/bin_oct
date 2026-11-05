@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import DEFAULT_PARALLEL_WORKERS
 import argparse
 import hashlib
 import json
@@ -14,7 +13,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Self
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
+
 import httpx
+from dh import DEFAULT_PARALLEL_WORKERS
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet

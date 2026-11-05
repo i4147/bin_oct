@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import json
 import sys
@@ -8,6 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 if TYPE_CHECKING:

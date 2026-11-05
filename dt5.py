@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write_json
-from dh import MAX_WORKERS
 import argparse
 import json
 import signal
@@ -13,6 +11,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
+from atomicio import atomic_write_json
+from dh import MAX_WORKERS
 from loguru import logger
 
 

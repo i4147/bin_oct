@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import io
 import os
@@ -14,6 +13,8 @@ import zipfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     from rapidfuzz import fuzz as _rapidfuzz

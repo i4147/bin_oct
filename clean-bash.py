@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import difflib
 import shutil
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import tree_sitter_bash
+from dh import WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import json
 import multiprocessing as mp
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import gcld3
 import pycld2 as cld2
-from dh import is_binary
+from dh import MAX_WORKERS, is_binary
 from langdetect import DetectorFactory, detect_langs
 
 if TYPE_CHECKING:

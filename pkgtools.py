@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import concurrent.futures
 import csv
@@ -12,6 +10,9 @@ import site
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 
 def configure_logging(verbose: bool = False) -> None:

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from atomicio import atomic_write
-from dh import SKIP_DIRS, WORKERS
 import argparse
 import ast
 import difflib
@@ -17,6 +15,9 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
+
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -421,13 +422,13 @@ def discover(inputs: Sequence[str], excludes: set[str]) -> list[Path]:
 def iter_results(files: list[Path], cfg: Config) -> Iterator[FileReport]:
     worker = partial(process_file, cfg=cfg)
     try:
-        pool = mp.Pool(WORKERS)
+        pool = mp.Pool(MAX_WORKERS)
     except OSError as exc:
         logger.warning(f"multiprocessing unavailable ({exc}); running sequentially")
         yield from map(worker, files)
         return
     with pool:
-        yield from pool.imap_unordered(worker, files, chunksize=max(1, len(files) // (WORKERS * 4)))
+        yield from pool.imap_unordered(worker, files, chunksize=max(1, len(files) // (MAX_WORKERS * 4)))
 
 
 def display(path: Path) -> str:

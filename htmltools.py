@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import base64
 import contextlib
@@ -19,6 +17,8 @@ from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger

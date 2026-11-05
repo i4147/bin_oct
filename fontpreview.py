@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import argparse
 import html
 from collections import namedtuple
@@ -8,6 +7,8 @@ from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Sequence
+
+from loguru import logger
 
 LOG = logger
 FONT_EXTS: frozenset[str] = frozenset({

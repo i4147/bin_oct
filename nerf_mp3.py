@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS
 import argparse
 import json
 import multiprocessing as mp
@@ -11,7 +10,7 @@ from pathlib import Path
 from typing import Final
 
 import ffmpeg
-from dh import fsz
+from dh import NUM_WORKERS, fsz
 from loguru import logger
 
 MIN_BITRATE_KBPS: Final[int] = 8

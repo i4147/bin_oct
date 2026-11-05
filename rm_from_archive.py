@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import os
 import shutil
 import sys
 import tarfile
 import tempfile
+from pathlib import Path
 
 import zstandard as zstd
 

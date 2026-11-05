@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import re
 import shutil
 from concurrent.futures import as_completed
 from pathlib import Path
 
+from dh import SKIP_DIRS
 from rich.console import Console
 from rich.progress import (
     BarColumn,

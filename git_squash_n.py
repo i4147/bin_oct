@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import argparse
 import json
 import os
 import subprocess
 import sys
 from datetime import datetime
+from pathlib import Path
 
 
 def run(cmd, cwd=None, capture=False, check=True):

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import bz2
 import contextlib
@@ -22,6 +21,7 @@ import cramjam
 import lz4.frame
 import py7zr
 import zstandard as zstd
+from dh import MAX_WORKERS
 from loguru import logger
 
 if TYPE_CHECKING:

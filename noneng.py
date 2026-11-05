@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS, WORKERS
 import argparse
 import codecs
 import multiprocessing
@@ -8,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
+from dh import SKIP_DIRS, WORKERS
 from loguru import logger
 
 CHUNK_SIZE = 64 * 1024

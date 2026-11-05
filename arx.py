@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import gzip
 import io
 import lzma
@@ -16,6 +15,7 @@ import lz4.block
 import lz4.frame
 import py7zr
 import zstandard
+from dh import MAX_WORKERS
 
 try:
     import brotli

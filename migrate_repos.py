@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
-from loguru import logger
 import argparse
 import os
 import shutil
@@ -9,6 +7,9 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+
+from dh import SKIP_DIRS
+from loguru import logger
 
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"

@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
-from loguru import logger
 import argparse
 import curses
 import json
@@ -14,6 +12,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
+
+from dh import WORKERS
+from loguru import logger
 
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"

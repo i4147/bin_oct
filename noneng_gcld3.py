@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import gcld3

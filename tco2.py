@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import importlib
 import json
@@ -14,6 +12,9 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger

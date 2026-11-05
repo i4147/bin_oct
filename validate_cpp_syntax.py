@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS
 import multiprocessing as mp
 import subprocess
 import sys
 from pathlib import Path
+
+from dh import NUM_WORKERS
 
 CPP_EXTS = {".cpp", ".cc", ".cxx"}
 C_EXTS = {".c"}

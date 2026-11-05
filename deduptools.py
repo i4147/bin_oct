@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import copy
@@ -12,6 +11,8 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
+
+from dh import MAX_WORKERS
 
 
 def iter_py_files(root: Path, *, exclude_names: set[str] | None = None) -> Iterator[Path]:

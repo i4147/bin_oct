@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import os
@@ -8,6 +7,8 @@ import time
 from collections import Counter
 from pathlib import Path
 from typing import Iterable, Optional
+
+from dh import MAX_WORKERS
 
 _ANSI = {
     "red": "\033[31m",

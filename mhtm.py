@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import minify_html as mh
+from dh import MAX_WORKERS
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable

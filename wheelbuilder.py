@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import argparse
 import shutil
 import subprocess
@@ -10,6 +9,8 @@ import tempfile
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Optional
+
+from loguru import logger
 
 LOCAL_WHEELS = Path("/sdcard/whl")
 

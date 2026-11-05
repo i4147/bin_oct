@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import mmap
 import shutil
@@ -11,6 +9,8 @@ from pathlib import Path
 from typing import Sequence
 
 import brotli
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger

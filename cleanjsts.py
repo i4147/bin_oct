@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import Final
 import tree_sitter
 import tree_sitter_javascript
 import tree_sitter_typescript
+from dh import MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Parser
 

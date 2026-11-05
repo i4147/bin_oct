@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import concurrent.futures
 import multiprocessing
@@ -12,6 +10,9 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger as _loguru_logger

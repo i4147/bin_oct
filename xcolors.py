@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, WORKERS_DEFAULT
 import argparse
 import csv
 import fnmatch
@@ -13,6 +12,8 @@ from dataclasses import dataclass, field
 from multiprocessing import get_context
 from pathlib import Path
 from typing import Final, TextIO
+
+from dh import MAX_WORKERS
 from loguru import logger
 
 __version__: Final[str] = "2.0.0"

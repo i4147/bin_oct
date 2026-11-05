@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_XZ_MAX_WORKERS, DEFAULT_ZSTD_MAX_WORKERS, skipped_dirs
 import argparse
 import contextlib
 import fnmatch
@@ -13,6 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import zstandard as zstd
+from dh import DEFAULT_XZ_MAX_WORKERS, DEFAULT_ZSTD_MAX_WORKERS, skipped_dirs
 from loguru import logger
 
 if TYPE_CHECKING:

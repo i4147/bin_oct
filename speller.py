@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import re
 from multiprocessing import Pool, cpu_count
 
+from dh import MAX_WORKERS
 from spellchecker import SpellChecker
 
 

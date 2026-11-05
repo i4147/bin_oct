@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import sys
 from pathlib import Path
 
-from dh import fsz, get_files, gsz, mpf, runcmd
+from dh import MAX_WORKERS, fsz, get_files, gsz, mpf, runcmd
 
 
 def process_file(path):

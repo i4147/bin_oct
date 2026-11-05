@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import contextlib
 import io
 import multiprocessing as mp
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import libcst as cst
+from dh import WORKERS
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

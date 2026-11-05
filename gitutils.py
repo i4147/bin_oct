@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from loguru import logger
 import argparse
 import csv
 import fnmatch
@@ -12,6 +11,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator
+
+from loguru import logger
 
 LOG = logger
 EXIT_OK = 0

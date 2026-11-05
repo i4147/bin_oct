@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, _SKIPDIRS_RE, _SKIP_DIRS
 import argparse
 import ast
 import difflib
@@ -19,6 +18,8 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dh import SKIP_DIRS, MAX_WORKERS
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 try:
@@ -28,6 +29,8 @@ try:
 except ImportError:
     _HAS_ZSTD = False
 _USE_COLOR: bool = True
+
+_SKIPDIRS_RE = re.compile(r"^(.+?):(\d+):\s+unused variable\s+['\"]SKIP_DIRS['\"]")
 
 
 def _c(code: str, text: str) -> str:

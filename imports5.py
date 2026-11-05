@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import ast
 import json
@@ -10,6 +9,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Iterable, Iterator, Optional
 
 try:

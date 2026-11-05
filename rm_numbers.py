@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import json
 import os
@@ -12,6 +11,8 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
+
+from dh import MAX_WORKERS
 
 DEFAULT_RULES: list[tuple[str, str]] = [
     (r"_\d+", ""),

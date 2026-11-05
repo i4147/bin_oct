@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import pkgutil
@@ -15,6 +13,9 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 from typing import Iterable, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 log = logger
 DEFAULT_EXT: tuple[str, ...] = (".py",)

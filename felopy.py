@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime
+from pathlib import Path
 
 SAVE_DIR = Path("~/tmp/apps").expanduser()
 

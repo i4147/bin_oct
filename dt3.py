@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import importlib.util
 import json
@@ -14,6 +13,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Callable, TypeAlias
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 Translator: TypeAlias = Callable[[str], str]

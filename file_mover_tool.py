@@ -4,8 +4,8 @@ import argparse
 import hashlib
 import json
 import shutil
-import sys
 import site
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 

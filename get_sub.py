@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import copy
 import json
@@ -13,6 +12,7 @@ import zipfile
 from collections import OrderedDict
 from contextlib import closing, suppress
 from io import BytesIO
+from pathlib import Path
 from shutil import get_terminal_size
 from traceback import format_exc
 from typing import Any, Optional

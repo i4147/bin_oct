@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import hashlib
 import importlib
@@ -18,6 +17,7 @@ from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
+from dh import SKIP_DIRS, MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 
@@ -442,7 +442,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not root.is_dir():
         logger.error("{} is not a directory", root)
         return 2
-    skip_dirs = DEFAULT_SKIP_DIRS | frozenset(args.skip_dir)
+    skip_dirs = SKIP_DIRS | frozenset(args.skip_dir)
     logger.info("languages: {}", ", ".join(sorted(AVAILABLE)) or "none")
     tasks = (Task(path, args.backup, args.max_size, args.dry_run) for path in iter_files(root, skip_dirs))
     summary = Summary()

@@ -25,8 +25,6 @@ Examples
   python3 python_imports_tool.py requirements ~/project
 """
 
-from dh import MAX_WORKERS, SKIP_DIRS
-
 import argparse
 import ast
 import importlib.metadata
@@ -35,6 +33,8 @@ import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 STDLIB: frozenset[str] = frozenset(sys.stdlib_module_names)
 PACKAGE_MAPPING: dict[str, str] = {

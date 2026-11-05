@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS
 import argparse
 import ast
 import hashlib
@@ -7,7 +6,9 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
+
 import ssdeep
+from dh import SKIP_DIRS
 
 BOLD_BLUE: str = "\033[1;34m"
 RESET: str = "\033[0m"

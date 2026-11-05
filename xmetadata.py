@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
-from pathlib import Path
 import re
+from pathlib import Path
 
 EXTENSION_MAP = {
     "python": ".py",

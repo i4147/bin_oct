@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import ast
 import builtins
@@ -14,7 +13,7 @@ import tokenize
 from io import StringIO
 from pathlib import Path
 
-from dh import runcmd
+from dh import WORKERS, runcmd
 
 OUTPUT_FILE = Path("compressed.txt")
 COMPRESSION_NOTE = (

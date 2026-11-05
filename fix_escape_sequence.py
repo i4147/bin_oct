@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import io
 import multiprocessing as mp
@@ -8,6 +7,8 @@ import sys
 import tokenize
 import warnings
 from pathlib import Path
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")

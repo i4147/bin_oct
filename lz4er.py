@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import io
@@ -11,6 +10,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import lz4.frame
+from dh import MAX_WORKERS
 
 DEFAULT_SKIP_EXT = {".gz", ".br", ".xz", ".zst", ".bz2", ".zip", ".whl", ".lz4", ".7z", ".rar"}
 DEFAULT_MIN_SIZE = 1024

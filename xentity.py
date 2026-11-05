@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
-from dh import SKIP_DIRS
 
 import argparse
 import ast
@@ -12,6 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterator
 
+from dh import SKIP_DIRS
 from rich.console import Console
 from rich.text import Text
 

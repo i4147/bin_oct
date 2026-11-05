@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import _SNAPR_WORKERS
-from loguru import logger
 import argparse
 import sys
 import tarfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Optional, Sequence
+
+from dh import _SNAPR_WORKERS
+from loguru import logger
 
 try:
     import cramjam

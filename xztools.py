@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import io
@@ -16,6 +14,9 @@ from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Optional, Sequence
+
+from dh import SKIP_DIRS, MAX_WORKERS
+from loguru import logger
 
 try:
     import lzma_mt
@@ -192,7 +193,7 @@ def discover_files(
     recursive: bool = True,
     skip_symlinks: bool = True,
 ) -> list[Path]:
-    skip_dirs = skip_dirs or DEFAULT_SKIP_DIRS
+    skip_dirs = skip_dirs or SKIP_DIRS
     exclude_patterns = list(exclude_patterns or [])
     ext_filter: set[str] = set()
     if extensions:
@@ -654,7 +655,7 @@ def _tar_top_level_dirs(root: Path, preset: int, workers: int) -> list[dict[str,
     subdirs = [
         p
         for p in root.iterdir()
-        if p.is_dir() and not p.is_symlink() and not p.name.startswith(".") and p.name not in DEFAULT_SKIP_DIRS
+        if p.is_dir() and not p.is_symlink() and not p.name.startswith(".") and p.name not in SKIP_DIRS
     ]
     if not subdirs:
         return []

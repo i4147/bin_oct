@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import MAX_WORKERS, SKIP_DIRS, SKIP_DIR_GLOBS
 import argparse
 import ast
 import contextlib
@@ -21,6 +19,8 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Callable, Iterable, Iterator
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")

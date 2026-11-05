@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import contextlib
 import os
@@ -8,6 +7,8 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Optional, Sequence
+
+from dh import MAX_WORKERS
 
 TERMUX_PREFIX = "/data/data/com.termux/files/usr"
 DEFAULT_SHEBANG_FIX = "#!/data/data/com.termux/usr"

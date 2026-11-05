@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import json
 import re
@@ -10,6 +9,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterator, Sequence
+
+from dh import SKIP_DIRS, MAX_WORKERS
 
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8
@@ -51,7 +52,7 @@ def iter_files(
     roots: Sequence[Path],
     *,
     recursive: bool = True,
-    skip_dirs: frozenset[str] = DEFAULT_SKIP_DIRS,
+    skip_dirs: frozenset[str] = SKIP_DIRS,
 ) -> Iterator[Path]:
     for root in roots:
         root = Path(root)
@@ -74,7 +75,7 @@ def iter_text_files(
     roots: Sequence[Path],
     *,
     recursive: bool = True,
-    skip_dirs: frozenset[str] = DEFAULT_SKIP_DIRS,
+    skip_dirs: frozenset[str] = SKIP_DIRS,
 ) -> Iterator[Path]:
     for f in iter_files(roots, recursive=recursive, skip_dirs=skip_dirs):
         if not is_binary(f):

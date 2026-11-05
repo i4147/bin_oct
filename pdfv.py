@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import contextlib
 import os
@@ -9,6 +8,7 @@ import shutil
 import sys
 import termios
 import tty
+from pathlib import Path
 
 try:
     import pymupdf

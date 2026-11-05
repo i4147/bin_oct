@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, NUM_WORKERS
 import argparse
 import hashlib
 import html.parser
@@ -10,6 +9,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from dh import MAX_WORKERS, NUM_WORKERS
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

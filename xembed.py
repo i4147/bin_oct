@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import MAX_WORKERS, workers
 import argparse
 import base64
 import binascii
@@ -18,6 +16,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Final
 from urllib.parse import quote
+
+from atomicio import atomic_write
+from dh import MAX_WORKERS, workers
 
 PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?<![A-Za-z0-9_+/-])"

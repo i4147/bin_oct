@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKER_COUNT
 import argparse
 import subprocess
 import sys
@@ -10,6 +9,7 @@ from enum import Enum
 from multiprocessing import Pool
 from pathlib import Path
 
+from dh import WORKER_COUNT
 from loguru import logger
 
 DEFAULT_TIMEOUT = 30.0

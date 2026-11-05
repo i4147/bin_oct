@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import multiprocessing as mp
 import os
@@ -10,9 +9,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import libcst as cst
+from dh import MAX_WORKERS, SKIP_DIRS
+from atomicio import atomic_write
 from rich.console import Console
 from rich.text import Text
-from dh import atomic_write
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import json
@@ -12,7 +10,9 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Iterator, Sequence
-from dh import atomic_write
+
+from dh import MAX_WORKERS, atomic_write
+from loguru import logger
 
 try:
     from deep_translator import GoogleTranslator

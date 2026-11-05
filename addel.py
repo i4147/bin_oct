@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
-from dh import SKIP_DIRS
 import argparse
 import csv
 import json
@@ -15,6 +13,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
+
+from dh import SKIP_DIRS
+from loguru import logger
 
 UNIT_SEP = "\x1f"
 DIFF_FILTER = "AD"

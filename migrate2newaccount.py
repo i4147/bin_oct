@@ -1,8 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import os
 import subprocess
+from pathlib import Path
 
 NEW_USER = "i4147"
 IGNORE = {"cpython", "neovim-source", ".git"}

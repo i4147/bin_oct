@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from loguru import logger
-from dh import MAX_WORKERS
 import argparse
 import csv
 import hashlib
@@ -15,6 +13,9 @@ from datetime import datetime
 from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 DEFAULT_CHUNK_SIZE = 8192
 DEFAULT_DEB_EXCLUDES = frozenset({

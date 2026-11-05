@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import csv
 import importlib
@@ -15,6 +14,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 Tables = dict[str, list[dict[str, Any]]]

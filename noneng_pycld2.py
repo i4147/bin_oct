@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import os
+from pathlib import Path
+
 import pycld2 as cld2
 
 

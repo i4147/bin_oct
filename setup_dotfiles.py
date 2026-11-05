@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import os
 import shutil
 import subprocess
 import sys
 import textwrap
+from pathlib import Path
 
 HOME = Path("~").expanduser()
 AGE_DIR = Path(HOME).joinpath(".config", "age")

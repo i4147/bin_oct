@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import ast
 import contextlib
@@ -16,6 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import libcst as cst
+from dh import MAX_WORKERS
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 

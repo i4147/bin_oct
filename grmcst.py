@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import sys
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 import libcst as cst
+from dh import MAX_WORKERS
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

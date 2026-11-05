@@ -1,8 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from typing import Any
-from dh import MAX_WORKERS, SKIP_DIR_NAMES
-from loguru import logger
 import argparse
 import concurrent.futures as _futures
 import ctypes
@@ -12,7 +9,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Iterator, Optional, Sequence
+from typing import Any, Iterator, Optional, Sequence
+
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 
 MISSING_LIB_PATTERNS = (
     "error while loading shared libraries",
@@ -39,7 +39,7 @@ def cprint(msg: str, color: Optional[str] = None) -> None:
 
 
 def should_skip(path: Path) -> bool:
-    return any(part in SKIP_DIR_NAMES for part in path.parts)
+    return any(part in SKIP_DIRS for part in path.parts)
 
 
 def unique_path(p: Path) -> Path:
@@ -61,7 +61,7 @@ def iter_files(root: Path, ext: Optional[Sequence[str]] = None, recursive: bool 
         return
     if recursive:
         for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
             base = Path(dirpath)
             for name in filenames:
                 p = base / name

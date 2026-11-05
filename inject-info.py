@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import difflib
 import json
@@ -8,6 +7,8 @@ import os
 import re
 import sys
 from pathlib import Path
+
+from dh import SKIP_DIRS
 
 DEFAULT_INFO = Path.home() / ".myinfo"
 TARGET_FILENAMES = {

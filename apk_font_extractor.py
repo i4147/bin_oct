@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import contextlib
 import multiprocessing
@@ -10,6 +9,7 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from dh import MAX_WORKERS
 from fontTools.ttLib import TTFont
 from loguru import logger
 
@@ -38,7 +38,7 @@ class APKFontExtractor:
         print(
             "Initialized APKFontExtractor output_dir={} workers={}",
             self.output_dir,
-            WORKERS,
+            MAX_WORKERS,
         )
 
     def _find_apk_files(self, paths: list[Path]) -> list[Path]:
@@ -230,7 +230,7 @@ class APKFontExtractor:
             return 0
         total_extracted = 0
         try:
-            with multiprocessing.Pool(processes=WORKERS) as pool:
+            with multiprocessing.Pool(processes=MAX_WORKERS) as pool:
                 async_results: list[tuple[Path, multiprocessing.pool.AsyncResult[int]]] = []
                 for apk_path in apk_files:
                     result = pool.apply_async(self._process_apk, (apk_path,))

@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from PIL import Image, UnidentifiedImageError

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import hashlib
 import os
@@ -12,6 +11,8 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import unquote, urlparse
+
+from dh import SKIP_DIRS, MAX_WORKERS
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -751,7 +752,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=10 * 1024 * 1024,
         help="Skip files larger than this many bytes (0 = no limit).",
     )
-    ps.add_argument("--skip-dirs", default=DEFAULT_SKIP_DIRS)
+    ps.add_argument("--skip-dirs", default=SKIP_DIRS)
     ps.add_argument("--git-hosts", default=DEFAULT_GIT_HOSTS)
     ps.add_argument(
         "--exclude-git-from-output",

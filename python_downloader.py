@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import queue
@@ -13,6 +12,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterator, Optional, Self
+
+from dh import MAX_WORKERS
 
 __version__ = "2.0.0"
 CHUNK = 64 * 1024

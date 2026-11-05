@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import hashlib
 import io
@@ -13,6 +12,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     import requests

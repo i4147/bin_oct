@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import shutil
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+from dh import SKIP_DIRS
 
 TOP_N_PIE = 30
 

@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
-from fastwalk import walk_dirs
 import os
 import shutil
 import sys
 from pathlib import Path
+
+from dh import SKIP_DIRS
+from fastwalk import walk_dirs
 
 PREFIX: Path = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
 HOME: Path = Path.home()

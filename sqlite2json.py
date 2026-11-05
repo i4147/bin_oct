@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import base64
 import json
@@ -14,6 +13,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import closing
 from pathlib import Path
 from typing import Any, Callable
+
+from dh import MAX_WORKERS
 
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"

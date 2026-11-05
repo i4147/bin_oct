@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import sys
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import Final, Iterable, Iterator, Optional
 
 import libcst as cst
+from dh import MAX_WORKERS
 from libcst import BaseStatement, ClassDef, EmptyLine, FunctionDef, Module, SimpleStatementLine, TrailingWhitespace
 from loguru import logger
 

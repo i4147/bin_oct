@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import sys
-from loguru import logger
+
 from archive_walker import AdvancedWalker, VirtualFile
+from loguru import logger
 
 logger.remove()
 logger.add(sys.stderr, level="INFO", format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {message}")

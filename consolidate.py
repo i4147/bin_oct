@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import WORKERS
 import argparse
 import ast
 import re
@@ -1041,7 +1040,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         "-l",
         "--log-file",
         type=Path,
-        default=None,
+        default="/data/data/com.termux/files/home/tmp/apps/consolidate.log",
         help="loguru log file (default: next to the output file with .log suffix)",
     )
     args = parser.parse_args(argv)

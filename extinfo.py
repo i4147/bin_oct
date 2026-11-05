@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import os
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-from dh import fsz
+from dh import SKIP_DIRS, fsz
 
 
 def iter_files(cwd: Path):

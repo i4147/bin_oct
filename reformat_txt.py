@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
-from dh import MAX_WORKERS, SKIP_DIRS
 
 import argparse
 import codecs
@@ -19,6 +18,7 @@ from typing import Final, Literal, NamedTuple
 
 import rignore
 from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 
 DEFAULT_WIDTH: Final[int] = 100
 MIN_PIECE: Final[int] = 20

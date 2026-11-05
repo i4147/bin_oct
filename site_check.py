@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import importlib
 import json
 import os
 import pkgutil
 import py_compile
 import site
+from pathlib import Path
 
 
 def run_sanity_check():

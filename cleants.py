@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import MAX_WORKERS
 import argparse
 import difflib
 import importlib
@@ -17,6 +15,8 @@ from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import Iterator
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS
 from tree_sitter import Language, Node, Parser, Tree
 
 

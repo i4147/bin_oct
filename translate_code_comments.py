@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import io
@@ -11,7 +9,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
+
 from deep_translator import GoogleTranslator
+from dh import MAX_WORKERS
+from loguru import logger
 
 LOGGER = logger
 DEFAULT_EXCLUDED_DIRS = frozenset({

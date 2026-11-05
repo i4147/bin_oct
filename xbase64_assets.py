@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS, WORKERS
 import base64
 import hashlib
 import mimetypes
@@ -13,6 +12,8 @@ from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
+from dh import SKIP_DIRS, WORKERS
 from loguru import logger
 
 SUPPORTED_EXTENSIONS = {".html", ".css", ".js", ".jsx", ".tsx", ".ts"}

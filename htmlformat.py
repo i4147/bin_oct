@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, WORKERS
-from loguru import logger
 import multiprocessing as mp
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from dh import MAX_WORKERS, WORKERS
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

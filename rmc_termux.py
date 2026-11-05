@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import difflib
@@ -22,9 +20,10 @@ from pathlib import Path
 from time import perf_counter
 from typing import Iterator
 
-from dh import SKIP_DIRS
-from codeutils import CSTStripper, TSStripper
 from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
+from codeutils import ASTStripper, CSTStripper, TSStripper
 
 LOGGER = logger
 _COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")

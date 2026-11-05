@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import bz2
@@ -17,6 +16,7 @@ from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
 from collections import defaultdict
 from pathlib import Path
 
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 try:

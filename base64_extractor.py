@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import base64 as _b64
 import concurrent.futures as _cf
@@ -12,6 +11,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
+
+from dh import SKIP_DIRS, MAX_WORKERS
 
 MIME2EXT: dict[str, str] = {
     "image/png": ".png",
@@ -106,7 +107,7 @@ def safe_write_bytes(path: Path, data: bytes) -> None:
 def iter_files(
     root: Path,
     extensions: Iterable[str],
-    skip_dirs: Iterable[str] = DEFAULT_SKIP_DIRS,
+    skip_dirs: Iterable[str] = SKIP_DIRS,
     follow_symlinks: bool = False,
 ) -> Iterator[Path]:
     exts = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in extensions}
@@ -511,7 +512,7 @@ def cmd_extract_assets(args: argparse.Namespace) -> int:
     for sub in ("images", "fonts", "videos", "data"):
         (assets_dir / sub).mkdir(exist_ok=True)
     exts = args.extensions or [".html", ".css", ".js", ".jsx", ".tsx", ".ts"]
-    files = list(iter_files(root, exts, skip_dirs=DEFAULT_SKIP_DIRS))
+    files = list(iter_files(root, exts, skip_dirs=SKIP_DIRS))
     total_extracted = 0
     total_replaced = 0
     processed = 0

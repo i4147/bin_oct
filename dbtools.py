@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MDB_MAX_WORKERS, SQL_MAX_WORKERS
-from loguru import logger
 import argparse
 import base64
 import codecs
@@ -21,6 +19,9 @@ from decimal import Decimal
 from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from dh import MAX_WORKERS, MDB_MAX_WORKERS, SQL_MAX_WORKERS
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

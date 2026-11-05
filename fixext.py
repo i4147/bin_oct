@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRECTORIES, WORKER_COUNT
 import argparse
 import sys
 from dataclasses import dataclass
@@ -8,7 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
 
-from dh import is_binary, runcmd, unique_path
+from dh import SKIP_DIRECTORIES, WORKER_COUNT, is_binary, runcmd, unique_path
 from loguru import logger
 
 

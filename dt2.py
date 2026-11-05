@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import json
 import multiprocessing as mp
@@ -14,6 +13,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from deep_translator import GoogleTranslator
+from dh import MAX_WORKERS
 from loguru import logger
 
 RETRY_ATTEMPTS: Final[int] = 4

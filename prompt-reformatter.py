@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS
 import re
 from pathlib import Path
+
+from dh import SKIP_DIRS
 
 _BEFORE_MARKER = re.compile(r"[ \t\r\n]+(?=(?:\d+[.)]|\(\d+\)|[-*\u2022]|\*\*[^*\n]+\*\*)\s)")
 _COMMA_SPLIT = re.compile(r",[ \t]+")

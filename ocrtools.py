@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_PREPARE_WORKERS, MAX_WORKERS
-from loguru import logger
 import argparse
 import csv
 import json
@@ -12,6 +10,9 @@ from itertools import product
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
+
+from dh import DEFAULT_PREPARE_WORKERS, MAX_WORKERS
+from loguru import logger
 
 try:
     import cv2

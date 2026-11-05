@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_save
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import importlib
@@ -15,6 +13,8 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
+from atomicio import atomic_save
+from dh import MAX_WORKERS
 from loguru import logger
 
 Translator = Callable[[str], str]

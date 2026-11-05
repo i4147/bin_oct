@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import io
 import os
@@ -8,6 +7,7 @@ import re
 import sys
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 try:
     import requests

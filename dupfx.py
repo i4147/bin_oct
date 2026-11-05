@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import json
 from collections import defaultdict
@@ -10,6 +9,7 @@ from multiprocessing.pool import AsyncResult
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dh import MAX_WORKERS
 from loguru import logger
 from xxhash import xxh64
 

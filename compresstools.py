@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import asyncio
 import bz2
@@ -12,7 +11,7 @@ import brotlicffi as brotli
 import lz4.frame
 import py7zr
 import zstandard as zstd
-from dh import fsz, get_dirs, get_files
+from dh import MAX_WORKERS, fsz, get_dirs, get_files
 
 CHUNK_SIZE = 1024 * 1024
 COMPRESSORS = {}

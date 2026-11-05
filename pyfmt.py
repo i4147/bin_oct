@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import json
 import shutil
@@ -11,7 +9,9 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from dh import atomic_write
+
+from dh import MAX_WORKERS, atomic_write
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence

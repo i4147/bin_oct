@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import WORKERS
 import argparse
 import ast
 import contextlib
@@ -12,6 +11,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
+
+from dh import MAX_WORKERS
 
 BACKUP_SUFFIX: str = ".bak"
 
@@ -232,7 +233,7 @@ def collect_from_files(
     paths: list[Path],
 ) -> tuple[list[str], list[str], list[str], list[str], dict[Path, dict]]:
     try:
-        with mp.Pool(WORKERS) as pool:
+        with mp.Pool(MAX_WORKERS) as pool:
             results = list(pool.imap(parse_top_level_items, paths))
     finally:
         pass
@@ -463,7 +464,7 @@ def run_small_package_mode(opts: Options) -> None:
     overwrite_file(init_path, f"from .{package_name} import *\n", dry_run)
     if opts.format and not dry_run:
         try:
-            with mp.Pool(WORKERS) as pool:
+            with mp.Pool(MAX_WORKERS) as pool:
                 list(pool.imap_unordered(try_format, [merged_path, init_path]))
         finally:
             pass
@@ -504,7 +505,7 @@ def run_merge_mode(opts: Options) -> None:
     write_init_with_reexport(init_imports, opts.root, dry_run, opts)
     if opts.format and not dry_run:
         try:
-            with mp.Pool(WORKERS) as pool:
+            with mp.Pool(MAX_WORKERS) as pool:
                 targets = [*category_paths.values(), init_path]
                 list(pool.imap_unordered(try_format, targets))
         finally:

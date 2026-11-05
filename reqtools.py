@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from loguru import logger
 import argparse
 import csv
 import importlib.metadata
@@ -12,6 +11,8 @@ import tempfile
 import zipfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+
+from loguru import logger
 
 try:
     STDLIB = set(sys.stdlib_module_names)

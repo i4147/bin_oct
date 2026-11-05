@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Sequence
+
+from dh import MAX_WORKERS
 
 
 def _extract_plumber(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:

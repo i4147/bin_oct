@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS, SKIP_DIRS
 import argparse
 import shlex
 import subprocess
@@ -9,6 +8,8 @@ from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 TIMEOUT_SECONDS: int = 60
 COMPILERS: dict[str, str] = {".c": "clang", ".cpp": "clang++", ".cc": "clang++", ".cxx": "clang++"}

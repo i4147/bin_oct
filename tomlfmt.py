@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS, WORKERS
 import argparse
 import functools
 import multiprocessing as mp
@@ -10,7 +9,8 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
-from dh import atomic_write
+
+from dh import SKIP_DIRS, WORKERS, atomic_write
 
 try:
     import tomllib

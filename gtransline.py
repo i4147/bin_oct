@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
-from loguru import logger
 import argparse
 import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
 from typing import Final
+
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 
 try:
     from googletrans import Translator

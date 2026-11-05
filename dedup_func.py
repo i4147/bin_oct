@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import concurrent.futures
@@ -13,6 +11,9 @@ import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Optional
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger

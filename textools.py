@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import json
 import mimetypes
@@ -10,6 +9,8 @@ from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Sequence
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 try:
     import nltk

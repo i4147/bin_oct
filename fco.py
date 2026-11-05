@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import contextlib
 import sys
@@ -10,7 +9,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Optional, Sequence
 
-from dh import fsz
+from dh import WORKERS, fsz
 from loguru import logger
 
 try:

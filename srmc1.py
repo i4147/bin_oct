@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import difflib
@@ -15,7 +14,7 @@ from pathlib import Path
 from typing import ClassVar, Iterable, Iterator, Literal, Sequence
 
 import libcst as cst
-from dh import atomic_write
+from dh import MAX_WORKERS, atomic_write
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
 

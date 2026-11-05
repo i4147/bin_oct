@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import difflib
 import fnmatch
@@ -9,11 +8,12 @@ import os
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeout
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
 from pathlib import Path
 from typing import Any, Callable
 
-from dh import atomic_write, SKIP_DIRS
+from dh import MAX_WORKERS, SKIP_DIRS, atomic_write
 from loguru import logger
 
 BACKENDS: tuple[str, ...] = ("black", "yapf", "autopep8", "ruff", "isort", "autoflake")

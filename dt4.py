@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import json
 import os
@@ -14,6 +13,7 @@ from typing import Callable, Optional
 
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
+from dh import MAX_WORKERS
 from loguru import logger
 
 DEFAULT_INPUT = "input.txt"

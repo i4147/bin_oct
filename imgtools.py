@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import base64
 import contextlib
@@ -12,6 +11,8 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     from tqdm import tqdm

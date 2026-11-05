@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import json
 import os
 import sys
+from pathlib import Path
+
 import javaobj
 
 

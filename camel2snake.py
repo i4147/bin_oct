@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import base64
 import contextlib
@@ -20,6 +18,8 @@ from pathlib import Path
 from typing import Iterator, NamedTuple
 
 import libcst as cst
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 CAMEL_RE = re.compile(r"^(?P<pre>_*)(?P<body>[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+)(?P<post>_*)$")

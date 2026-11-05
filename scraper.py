@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from loguru import logger
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import hashlib
@@ -21,8 +19,11 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
+
 import requests
 from bs4 import BeautifulSoup
+from dh import MAX_WORKERS
+from loguru import logger
 
 DEFAULT_UA = "Mozilla/5.0 (compatible; MergedTools/1.0)"
 _COLORS = {
@@ -211,6 +212,7 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
+
     from loguru import logger
 
     logger.remove()

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import sys
@@ -9,6 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Sequence
+
+from dh import MAX_WORKERS
 
 DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",

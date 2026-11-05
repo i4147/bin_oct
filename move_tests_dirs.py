@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import shutil
 import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 SRC: Final[Path] = Path("/data/data/com.termux/files/usr/lib/python3.14/site-packages")

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import argparse
 import json
 import readline
@@ -12,6 +11,7 @@ from pathlib import Path
 from typing import Final
 
 from faprint import faprint
+from loguru import logger
 
 DICT_FILE: Final[str] = Path("~/dic.json").expanduser()
 

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, _MAX_WORKERS
 import argparse
 import re
 import sys
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import Final
 
 import requests
+from dh import _MAX_WORKERS, MAX_WORKERS
 from packaging.version import InvalidVersion, Version
 
 _TIMEOUT: Final[float] = 10.0

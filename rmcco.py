@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import ast
 import re
@@ -12,6 +11,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
 
+from dh import SKIP_DIRS
 from loguru import logger
 
 POOL_SIZE: Final[int] = 8

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import hashlib
 import os
@@ -18,6 +17,8 @@ from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, Self
+
+from dh import MAX_WORKERS
 
 __version__ = "2.0.0"
 CHUNK_SMALL: int = 64 * 1024

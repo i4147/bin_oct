@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS, skip_dirs
 import argparse
 import fnmatch
 import multiprocessing as mp
@@ -11,6 +10,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
+from dh import SKIP_DIRS, MAX_WORKERS, skip_dirs
 
 try:
     from tqdm import tqdm
@@ -603,7 +604,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def build_config(args: argparse.Namespace) -> Config:
-    skip = frozenset(args.skip_dir) if args.skip_dir else DEFAULT_SKIP_DIRS
+    skip = frozenset(args.skip_dir) if args.skip_dir else SKIP_DIRS
     execd = frozenset(args.exec_dir) if args.exec_dir else DEFAULT_EXEC_DIRS
     suffix = tuple(args.suffix_exec) if args.suffix_exec else DEFAULT_SUFFIX_EXEC
     if args.mode == "deexec" and args.patterns:

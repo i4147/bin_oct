@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import multiprocessing as mp
 import os
 import re
 from pathlib import Path
+
+from dh import WORKERS
 
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}

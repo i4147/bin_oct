@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_replace
-from dh import SKIP_DIR_NAMES
 import argparse
 import ast
 import contextlib
@@ -15,7 +13,8 @@ import tokenize as _tokenize
 from pathlib import Path
 
 import libcst as cst
-from dh import DOC_TH1, DOC_TH2
+from atomicio import atomic_replace
+from dh import DOC_TH1, DOC_TH2, SKIP_DIRS
 
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4
@@ -463,7 +462,7 @@ def iter_python_files(paths):
                         yield given_path
             elif given_path.is_dir():
                 for dirpath, dirnames, filenames in given_path.walk(on_error=on_walk_error):
-                    dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
+                    dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
                     for filename in filenames:
                         if not filename.endswith(PY_SUFFIXES):
                             continue
@@ -502,7 +501,7 @@ def iter_backup_files(paths):
                         yield original
             elif given_path.is_dir():
                 for dirpath, dirnames, filenames in given_path.walk(on_error=on_walk_error):
-                    dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
+                    dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
                     for filename in filenames:
                         if not filename.endswith(BACKUP_SUFFIX):
                             continue

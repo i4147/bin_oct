@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
+
 from dh import fsz
 from loguru import logger
 

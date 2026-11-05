@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS, SKIP_DIRS
-from loguru import logger
 import argparse
 import io
 import os
@@ -17,6 +15,8 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 import zstandard as zstd
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 
 try:
     from loguru import logger

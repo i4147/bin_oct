@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import ast
 import collections
 import json
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, cast
 
 import astor
+from dh import MAX_WORKERS
 from loguru import logger
 
 if TYPE_CHECKING:

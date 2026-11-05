@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import ast
 import re
 import sys
 from pathlib import Path
 from typing import Iterable
+
+from dh import WORKERS
 
 FILENAME_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP = {

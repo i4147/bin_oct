@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import ast
 import re
 import sys
@@ -9,6 +8,8 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+
+from dh import MAX_WORKERS
 
 try:
     import zstandard as zstd

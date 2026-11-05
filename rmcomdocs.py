@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import multiprocessing as mp
@@ -10,6 +9,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     import tree_sitter_python as _tspython

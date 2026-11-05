@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import bisect
 import fnmatch
@@ -14,13 +13,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
 
-from dh import is_binary
+from dh import MAX_WORKERS, SKIP_DIRS, is_binary
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 logger.remove()
-logger.add("/data/data/com.termux/files/home/tmp/apps/pyrg.log")
+log_path = Path.home() / "tmp" / "apps" / "pyrg.log"
+if not log_path.parent.exists():
+    log_path.parent.mkdir()
+logger.add(log_path)
 TYPE_PRESETS: dict[str, set[str]] = {
     "py": {".py", ".pyi", ".pyx", ".pyw"},
     "md": {".md", ".markdown", ".mdx"},
@@ -64,7 +66,7 @@ _PATH_PALETTE = (
 
 def _stable_hash(s: str) -> int:
     h = 2166136261
-    for ch in s:
+    for ch in str(s):
         h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
     return h
 

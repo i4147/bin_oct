@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import contextlib
 import os
@@ -12,6 +11,7 @@ import sys
 import tempfile
 import termios
 import tty
+from pathlib import Path
 
 RESET = "\x1b[0m"
 HOME = "\x1b[H"

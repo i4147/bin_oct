@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Run Ruff checks and formatting on Python files below the current directory."""
 
-from dh import MAX_WORKERS
 import sys
 from collections import deque
 from multiprocessing import Lock, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from dh import runcmd
+from dh import MAX_WORKERS, runcmd
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

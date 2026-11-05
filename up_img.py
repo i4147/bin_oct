@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import os
 import pickle
@@ -10,6 +9,7 @@ import sys
 from collections import namedtuple
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 from traceback import print_exc
 from urllib.parse import urljoin
 

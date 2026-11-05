@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dh import get_files, mpf
 from docutils.core import publish_parts
-from markdownify import markdownify
+from html_to_markdown import markdownify
 
 
 def rst_to_html(content: str) -> str:

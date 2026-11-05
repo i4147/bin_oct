@@ -26,7 +26,7 @@ def process_file(path: str | Path) -> tuple[Path, bool]:
         )
         if not markdown:
             from bs4 import BeautifulSoup
-            from markdownify import markdownify
+            from html_to_markdown import markdownify
 
             soup = BeautifulSoup(html_content, "html.parser")
             markdown = markdownify(str(soup))

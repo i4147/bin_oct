@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import json
 import os
@@ -14,6 +12,9 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 from difflib import get_close_matches
 from pathlib import Path
 from typing import Any, Iterable, Optional, Self, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from deep_translator import GoogleTranslator

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import base64
 import csv
@@ -12,6 +11,8 @@ import zipfile
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any, Optional
+
+from dh import MAX_WORKERS
 
 try:
     from packaging.tags import Tag, sys_tags

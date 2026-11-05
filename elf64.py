@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from typing import Iterator
 
-from dh import is_binary
+from dh import WORKERS, is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 

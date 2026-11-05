@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS
 import argparse
 import bz2
 import gzip
@@ -12,6 +11,8 @@ import tarfile
 import zipfile
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
+
+from dh import SKIP_DIRS
 
 try:
     import py7zr

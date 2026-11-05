@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write_text
-from dh import SKIP_DIRS
 import argparse
 import contextlib
 import json
@@ -10,6 +8,9 @@ import os
 import re
 from collections import Counter
 from pathlib import Path
+
+from atomicio import atomic_write_text
+from dh import SKIP_DIRS
 
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"

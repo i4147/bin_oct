@@ -1,9 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_save
-from dh import MAX_WORKERS
-from pathlib import Path
-from loguru import logger
 import argparse
 import asyncio
 import contextlib
@@ -19,7 +15,12 @@ import tempfile
 import threading
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Callable, Optional
+
+from atomicio import atomic_save
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger

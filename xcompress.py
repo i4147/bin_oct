@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import bz2
 import contextlib
@@ -20,6 +18,9 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

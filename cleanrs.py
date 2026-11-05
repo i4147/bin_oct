@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS
 import multiprocessing as mp
 import sys
 import time
 from pathlib import Path
+
+from dh import NUM_WORKERS
 
 try:
     import tree_sitter_rust

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS, WORKERS
 import argparse
 import contextlib
 import functools
@@ -15,6 +14,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from dh import SKIP_DIRS, WORKERS
 from loguru import logger
 
 try:

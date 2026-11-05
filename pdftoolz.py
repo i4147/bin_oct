@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import re
@@ -14,6 +13,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 import pymupdf
+from dh import MAX_WORKERS
 
 
 def human_size(n: float) -> str:

@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS
 import re
-from pathlib import Path
 from multiprocessing import Pool
+from pathlib import Path
 
 import pytesseract
+from dh import NUM_WORKERS
 from PIL import Image
 
 TESSDATA = str(Path.home() / ".local" / "share" / "tessdata")

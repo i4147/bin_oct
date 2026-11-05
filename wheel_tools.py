@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import importlib.metadata
 import json
@@ -12,6 +11,8 @@ import zipfile
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Optional, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     from packaging.tags import parse_tag

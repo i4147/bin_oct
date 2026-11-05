@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIR_NAMES
 import argparse
 import contextlib
 import os
@@ -11,6 +10,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Iterator
 
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
@@ -48,7 +48,7 @@ def iter_html_files(root: Path, suffixes: frozenset[str]) -> Iterator[Path]:
                 continue
             try:
                 if entry.is_dir(follow_symlinks=False):
-                    if entry.name in SKIP_DIR_NAMES:
+                    if entry.name in SKIP_DIRS:
                         continue
                     stack.append(Path(entry.path))
                 elif entry.is_file(follow_symlinks=False):

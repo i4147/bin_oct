@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import shutil
 import tarfile
 from pathlib import Path
+
+from dh import MAX_WORKERS
 
 
 def compress_tar(folder: Path, output: Path | None = None, cleanup: bool = False) -> bool:

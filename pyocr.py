@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
-from loguru import logger
 import argparse
 import codecs
 import contextlib
@@ -15,7 +13,10 @@ import tempfile
 import xml.dom.minidom
 from html.parser import HTMLParser
 from io import BytesIO
+from pathlib import Path
 from types import SimpleNamespace
+
+from loguru import logger
 
 if sys.version_info < (3, 4):
     msg = "PyOCR requires Python 3.4+"

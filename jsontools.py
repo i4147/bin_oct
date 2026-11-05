@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import json
@@ -12,6 +11,8 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Iterator, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 _CUSTOM_RULE_RE = re.compile(r"^(?:(\d+?)>)?(\d+)=")
 

@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import base64
 import contextlib
@@ -14,6 +12,9 @@ import shutil
 import sys
 import tarfile
 from pathlib import Path
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 
 def cprint(text: str, color: str = "reset") -> None:

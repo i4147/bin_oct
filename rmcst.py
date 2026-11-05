@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import contextlib
@@ -14,6 +13,7 @@ from pathlib import Path
 from typing import Iterable, Iterator
 
 import libcst as cst
+from dh import NUM_WORKERS, SKIP_DIRS
 
 CHUNKSIZE = 4
 

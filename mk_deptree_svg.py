@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import html
 import re
@@ -8,6 +7,7 @@ from collections import defaultdict, deque
 from importlib import metadata
 from pathlib import Path
 
+from dh import WORKERS
 from joblib import Parallel, delayed
 
 

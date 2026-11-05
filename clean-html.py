@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import _SKIP_DIRS, _WORKERS
 import argparse
 import difflib
 import multiprocessing
@@ -13,6 +12,7 @@ from typing import Iterator
 import tree_sitter_css as ts_css
 import tree_sitter_html as ts_html
 import tree_sitter_javascript as ts_js
+from dh import _SKIP_DIRS, _WORKERS
 from tree_sitter import Language, Parser, Query, QueryCursor
 
 try:

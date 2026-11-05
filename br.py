@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -16,6 +15,7 @@ from pathlib import Path
 from typing import Callable, Iterator, Optional, Sequence
 
 import brotli
+from dh import MAX_WORKERS
 
 try:
     from rich import box

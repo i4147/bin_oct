@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import os
 import re
 import sys
 from datetime import date
+from pathlib import Path
 from typing import Final
 
 import click

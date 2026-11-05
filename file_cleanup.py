@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import heapq
 import json
@@ -13,6 +12,8 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000

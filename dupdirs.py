@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS, SKIP_DIR_NAMES
 import argparse
 import os
 import sys
@@ -9,6 +8,7 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import xxhash
+from dh import NUM_WORKERS, SKIP_DIRS
 
 HASH_CHUNK_SIZE = 1 << 20
 MAX_DEPTH = 64
@@ -39,7 +39,7 @@ def _collect_files(root: Path):
                 if entry.is_symlink():
                     continue
                 if entry.is_dir(follow_symlinks=False):
-                    if entry.name in SKIP_DIR_NAMES:
+                    if entry.name in SKIP_DIRS:
                         continue
                     stack.append((Path(entry.path), depth + 1))
                 elif entry.is_file(follow_symlinks=False):
@@ -67,7 +67,7 @@ def _collect_subdirs(root: Path):
                 if entry.is_symlink():
                     continue
                 if entry.is_dir(follow_symlinks=False):
-                    if entry.name in SKIP_DIR_NAMES:
+                    if entry.name in SKIP_DIRS:
                         continue
                     rel = Path(entry.path).relative_to(root).as_posix()
                     result.append(rel)
@@ -133,7 +133,7 @@ def find_all_folders(start: Path):
                 if entry.is_symlink():
                     continue
                 if entry.is_dir(follow_symlinks=False):
-                    if entry.name in SKIP_DIR_NAMES:
+                    if entry.name in SKIP_DIRS:
                         continue
                     stack.append((Path(entry.path), depth + 1))
             except OSError:

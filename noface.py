@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import shutil
 import sys
 import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
+from loguru import logger
 from tqdm import tqdm
 
 try:

@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import bz2
 import fnmatch
@@ -19,6 +18,8 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from decimal import Decimal
 from pathlib import Path
 from typing import BinaryIO, Callable, Final, Literal, TypeVar, cast
+
+from dh import MAX_WORKERS
 
 Compressor = Literal["xz", "gz", "bz2", "zstd", "lz4", "snappy"]
 Method = Literal["mp-map", "mp-imap", "process-pool", "thread-pool"]

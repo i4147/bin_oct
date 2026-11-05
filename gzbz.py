@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS, workers
 import argparse
 import bz2
 import contextlib
@@ -15,6 +14,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Self, Sequence
 
+from dh import MAX_WORKERS, workers
 from loguru import logger
 
 DEFAULT_CHUNK_SIZE: int = 524_288

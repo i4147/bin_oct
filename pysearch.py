@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import fnmatch
 import os
@@ -14,6 +13,8 @@ from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 try:
     import py7zr

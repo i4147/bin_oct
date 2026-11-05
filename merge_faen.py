@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import json
 import os
 from pathlib import Path
+
+from loguru import logger
 
 
 def load_existing_translations(json_path: str) -> dict[str, str]:

@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from loguru import logger
 import argparse
 import sys
-from subliminal import download_best_subtitles, save_subtitles, scan_video
+
 from babelfish import Language
+from loguru import logger
+from subliminal import download_best_subtitles, save_subtitles, scan_video
 
 
 def main():

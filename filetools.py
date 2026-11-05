@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ctypes
 import ctypes.util
@@ -15,6 +14,7 @@ from functools import partial
 from pathlib import Path
 from typing import Final, Sequence
 
+from dh import MAX_WORKERS
 from tqdm import tqdm
 
 SECONDS_PER_MINUTE: Final[float] = 60.0

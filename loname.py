@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
+import re
 import string
 import sys
 from pathlib import Path
-import re
+
 from dh import unique_path
 
 recursive = "-r" in sys.argv

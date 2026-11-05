@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import concurrent.futures
@@ -14,6 +13,8 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
+from dh import MAX_WORKERS
 
 try:
     import zstandard as zstd

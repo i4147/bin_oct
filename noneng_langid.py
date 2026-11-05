@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import math
 import sys
 from pathlib import Path
 
 import py3langid as langid
+from dh import SKIP_DIRS
 
 ROOT = Path.cwd()
 SKIP_EXTS = {

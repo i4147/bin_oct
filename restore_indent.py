@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
-import sys
 import argparse
+import sys
 from pathlib import Path
 
 

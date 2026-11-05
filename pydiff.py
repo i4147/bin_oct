@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import hashlib
 import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-from dh import cprint, read_lines
+from dh import MAX_WORKERS, cprint, read_lines
 
 
 def count_lines(path: Path) -> int:

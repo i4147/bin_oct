@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import csv
@@ -29,6 +27,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypeAlias
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from xxhash import xxh64_hexdigest as _xxh64_hexdigest

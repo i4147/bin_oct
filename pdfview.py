@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, WORKERS
 import argparse
 import shutil
 import subprocess
@@ -14,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 
+from dh import MAX_WORKERS, WORKERS
 from loguru import logger
 
 if TYPE_CHECKING:

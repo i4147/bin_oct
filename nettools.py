@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import io
 import json
@@ -16,6 +15,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
 from urllib import request as urlrequest
+
+from dh import MAX_WORKERS
 
 try:
     import requests

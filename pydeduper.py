@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, SKIP_DIRS
-from loguru import logger
 import argparse
 import ast
 import bz2
@@ -15,6 +13,9 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
+
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 
 try:
     from loguru import logger

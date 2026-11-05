@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import concurrent.futures as cf
@@ -28,7 +27,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
-from dh import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS, atomic_write
 
 if TYPE_CHECKING:
     from libcst import CSTTransformer

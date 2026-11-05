@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import hashlib
 import json
@@ -11,6 +10,8 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 
 def info(msg: str) -> None:

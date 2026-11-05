@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 from multiprocessing import Pool
@@ -8,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import tree_sitter_python as tsp
-from dh import gsz, rrs
+from dh import MAX_WORKERS, gsz, rrs
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 

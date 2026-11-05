@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import contextlib
 import os
@@ -13,6 +12,8 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, NamedTuple
+
+from dh import MAX_WORKERS, SKIP_DIRS
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

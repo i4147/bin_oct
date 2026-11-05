@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from loguru import logger
-from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -9,6 +7,9 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 SOURCE_CODE_EXTS: frozenset[str] = frozenset({
     ".py",

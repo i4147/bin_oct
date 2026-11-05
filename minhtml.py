@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import fnmatch
 import glob as _glob
@@ -20,6 +19,8 @@ from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
+
+from dh import MAX_WORKERS
 from loguru import logger
 
 try:

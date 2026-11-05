@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
 import argparse
 import hashlib
 import os
@@ -11,6 +10,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
+from dh import SKIP_DIRS, MAX_WORKERS
 
 try:
     import xxhash
@@ -93,7 +94,7 @@ class Finder:
                             if entry.is_symlink():
                                 continue
                             if entry.is_dir(follow_symlinks=False):
-                                if entry.name in DEFAULT_SKIP_DIRS:
+                                if entry.name in SKIP_DIRS:
                                     continue
                                 dirs.append(entry.path)
                             elif entry.is_file(follow_symlinks=False):

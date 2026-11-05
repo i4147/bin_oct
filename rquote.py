@@ -1,8 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import json
 import os
 import random
+from pathlib import Path
 from shutil import get_terminal_size
 
 FILE_NAME = "/sdcard/data/quotes/quotes.json"

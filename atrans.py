@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from pathlib import Path
 import argparse
 import json
 import os
@@ -9,7 +7,9 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 logger.remove()

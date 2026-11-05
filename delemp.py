@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import NUM_WORKERS
 import argparse
 import sys
 import time
@@ -8,7 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
-from dh import is_binary, should_skip
+from dh import NUM_WORKERS, is_binary, should_skip
 from loguru import logger
 
 if TYPE_CHECKING:

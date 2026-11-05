@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import os
 import sys
 from pathlib import Path
+
+from dh import SKIP_DIRS
 
 SKIP_EXTS: frozenset[str] = frozenset({
     ".yaml",

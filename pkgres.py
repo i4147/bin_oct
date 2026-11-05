@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS, SKIPPED_DIRS
 import argparse
 import re
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
+from dh import MAX_WORKERS, SKIPPED_DIRS
 
 REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (

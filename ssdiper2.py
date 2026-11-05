@@ -4,6 +4,7 @@ import json
 import operator
 from collections import defaultdict
 from pathlib import Path
+
 import ssdeep
 from dh import get_files
 

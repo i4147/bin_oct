@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from atomicio import atomic_write
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import functools
@@ -17,7 +15,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 import tree_sitter_rust as tsrs
-from dh import SKIP_DIRS
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 from rich.console import Console
 from rich.text import Text
 from tree_sitter import Language, Node, Parser

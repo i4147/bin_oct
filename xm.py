@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, WORKERS
 import argparse
 import ast
 import concurrent.futures as cf
@@ -8,6 +7,8 @@ import json
 import re
 import textwrap
 from pathlib import Path
+
+from dh import MAX_WORKERS, WORKERS
 
 OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
 MAX_LINE: int = 80

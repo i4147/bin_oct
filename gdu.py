@@ -1,9 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-import os
-import sys
 import argparse
 import fnmatch
+import os
+import sys
 from collections import defaultdict
 from pathlib import Path
 

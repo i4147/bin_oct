@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import argparse
 import difflib
 import shutil
@@ -19,6 +18,7 @@ import tree_sitter_lua
 import tree_sitter_rust
 import tree_sitter_toml
 import tree_sitter_typescript
+from dh import WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 

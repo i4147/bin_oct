@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import MAX_WORKERS
 import argparse
 import ast
 import bz2
@@ -25,6 +23,9 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import IO, Any, Callable, Iterator, Sequence, Union
+
+from atomicio import atomic_write
+from dh import MAX_WORKERS
 
 MAX_FILE_BYTES: int = 8 * 1024 * 1024
 LINE_LIMIT: int = 88

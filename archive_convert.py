@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIR_NAMES
 import argparse
 import bz2
 import contextlib
@@ -18,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import brotli
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -62,7 +62,7 @@ def relpath(p: Path, base: Path) -> str:
 
 def find_archives(root: Path) -> Iterator[Path]:
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         base = Path(dirpath)
         for name in filenames:
             if not name.lower().endswith(ARCHIVE_SUFFIXES):

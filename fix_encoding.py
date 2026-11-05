@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from atomicio import atomic_write
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import codecs
 import contextlib
@@ -19,8 +17,11 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
+
+from atomicio import atomic_write
 from binaryornot.check import is_binary
 from charset_normalizer import from_bytes
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 from rich.console import Console
 from rich.table import Table

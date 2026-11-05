@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import MAX_WORKERS
 import argparse
 import contextlib
 import json
@@ -14,6 +13,8 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     from rcssmin import cssmin as _rcssmin

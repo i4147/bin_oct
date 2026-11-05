@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
-from loguru import logger
 import argparse
 import base64
 import binascii
@@ -15,7 +13,10 @@ import sys
 import urllib.parse
 import urllib.request
 import zlib
+from pathlib import Path
 from typing import Callable
+
+from loguru import logger
 
 ENGLISH_FREQS = {
     "E": 12.02,

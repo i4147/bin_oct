@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 from char_det import detect
-from dh import get_nobinary, is_binary
+from dh import MAX_WORKERS, get_nobinary, is_binary
 from loguru import logger
 
 if TYPE_CHECKING:

@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, TypeAlias
 
 import requests
+from dh import MAX_WORKERS
 from loguru import logger
 
 if TYPE_CHECKING:

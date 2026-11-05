@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import argparse
 import ast
 import sys
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import libcst as cst
+from dh import SKIP_DIRS
 from libcst import RemovalSentinel
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger

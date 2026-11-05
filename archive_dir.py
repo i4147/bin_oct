@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import shutil
@@ -8,6 +7,8 @@ import sys
 import tarfile
 from pathlib import Path
 from typing import Sequence
+
+from dh import MAX_WORKERS
 
 
 def positive_int(value: str) -> int:

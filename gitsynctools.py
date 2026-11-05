@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
+
 from dotenv import load_dotenv
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 from github import Github, GithubException

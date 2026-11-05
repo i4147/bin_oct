@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import argparse
 import re
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
+
+from loguru import logger
 
 try:
     from bs4 import BeautifulSoup

@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import argparse
 import importlib.metadata
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
+
+from loguru import logger
 
 
 def parse_arguments():

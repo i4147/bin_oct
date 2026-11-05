@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import json
 import lzma
@@ -10,6 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import time
 
+from dh import MAX_WORKERS
+from loguru import logger
 from markdown import markdown
 from weasyprint import CSS, HTML
 

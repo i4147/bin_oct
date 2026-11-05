@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import ast as ast_module
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from typing import Sequence
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     import libcst as cst

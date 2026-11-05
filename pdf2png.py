@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import os
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 
 def pdf_to_png(pdf_path, output_dir=None, dpi=200):

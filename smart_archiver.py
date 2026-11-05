@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import bz2
 import gzip
@@ -19,6 +18,7 @@ from typing import Any
 import brotli
 import lz4.frame
 import zstandard as zstd
+from dh import MAX_WORKERS
 from loguru import logger
 
 EXTENSION_MAP: dict[str, dict[str, str | int]] = {

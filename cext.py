@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import FIXED_WORKERS, MAX_WORKERS, SKIP_DIRS
 import argparse
 import ast
 import io
@@ -12,6 +11,8 @@ from collections import defaultdict
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, NamedTuple
+
+from dh import FIXED_WORKERS, MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 try:

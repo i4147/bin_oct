@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import concurrent.futures
 import mimetypes
@@ -17,6 +15,9 @@ from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+
+from dh import MAX_WORKERS
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

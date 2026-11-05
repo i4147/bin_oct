@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import contextlib
 import hashlib
 import html
@@ -12,6 +11,7 @@ import time
 import urllib.request
 import urllib.robotparser
 import webbrowser
+from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
 from urllib.parse import urljoin
 

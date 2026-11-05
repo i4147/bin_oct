@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
-from dh import MAX_WORKERS, SKIP_DIRS
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -10,6 +8,9 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterable, Iterator
+
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16

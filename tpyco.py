@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import WORKER_COUNT
 import argparse
 import ast
 import json
@@ -18,6 +16,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from atomicio import atomic_write
+from dh import WORKER_COUNT
 from loguru import logger
 
 DEFAULT_CHUNK_SIZE: Final[int] = 2500

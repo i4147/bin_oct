@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import MAX_WORKERS, SKIP_DIRS, SKIP_DIR_PATTERNS
 import argparse
 import ast
 import codecs
@@ -25,6 +23,8 @@ from multiprocessing import Pool
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING
 
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 try:

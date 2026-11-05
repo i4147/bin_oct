@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from loguru import logger
 import argparse
 import re
 from pathlib import Path
 from typing import Any, Sequence
+
+from loguru import logger
 
 LOGGER = logger
 DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]

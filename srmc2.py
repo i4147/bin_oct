@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS, _SKIP_DIRS, workers
 import argparse
 import ast
 import codecs
@@ -22,6 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import libcst as cst
+from dh import _SKIP_DIRS, MAX_WORKERS, workers
 from loguru import logger
 
 if TYPE_CHECKING:

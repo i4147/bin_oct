@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import concurrent.futures
 import os
@@ -9,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Callable, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 cv2 = None
 np = None

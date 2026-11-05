@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from dh import MAX_WORKERS
-from pathlib import Path
 import argparse
 import json
 import os
@@ -11,8 +9,11 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
+
 import requests
+from dh import MAX_WORKERS
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 HEADERS = {

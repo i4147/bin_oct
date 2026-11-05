@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import ast
 import hashlib
@@ -9,6 +8,7 @@ import multiprocessing
 import os
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 try:
     import ssdeep

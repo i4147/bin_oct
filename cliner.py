@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import NUM_WORKERS
 import mmap
 import re
 from pathlib import Path
 
-from dh import mpf
+from dh import NUM_WORKERS, mpf
 
 LOG_EXT = ".log"
 MMAP_THRESHOLD = 1 * 1024 * 1024

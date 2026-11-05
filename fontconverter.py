@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing
 import subprocess
 import sys
 from pathlib import Path
 from typing import Callable, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen

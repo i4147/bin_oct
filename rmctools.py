@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import ast
 import io
@@ -13,6 +12,8 @@ import tokenize
 import traceback
 from pathlib import Path
 from typing import Callable, Iterable, NamedTuple, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     import libcst as cst

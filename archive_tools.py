@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import bz2
 import contextlib
@@ -17,6 +16,8 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
+
+from dh import MAX_WORKERS
 
 try:
     import py7zr

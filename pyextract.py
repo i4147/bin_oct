@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import DEFAULT_SKIP_DIRS, MAX_WORKERS
-from loguru import logger
 import argparse
 import ast
 import io
@@ -16,6 +14,9 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
+
+from dh import SKIP_DIRS, MAX_WORKERS
+from loguru import logger
 
 try:
     import tree_sitter
@@ -758,7 +759,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if args.clean and out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    skip = set(DEFAULT_SKIP_DIRS) | set(args.exclude or [])
+    skip = set(SKIP_DIRS) | set(args.exclude or [])
     py_files: list[Path] = []
     archives: list[Path] = []
     for r in roots:
@@ -855,7 +856,7 @@ def cmd_nodes(args: argparse.Namespace) -> int:
             for f in sorted(p.rglob("*.py")):
                 if any(part.startswith(".") for part in f.parts):
                     continue
-                if DEFAULT_SKIP_DIRS.intersection(f.parts):
+                if SKIP_DIRS.intersection(f.parts):
                     continue
                 try:
                     if out.resolve() in f.resolve().parents:

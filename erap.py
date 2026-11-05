@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, MAX_WORKERS
 import argparse
 import json
 import multiprocessing
@@ -8,6 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Iterable, Iterator
+
+from dh import MAX_WORKERS
 
 APPEND_TOOLS: dict[str, list[str]] = {
     "ty": ["ty", "check"],

@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import SKIP_DIRS
 import re
 import sys
 from pathlib import Path
 from typing import Iterable, Iterator
+
 import rignore
-from dh import atomic_write
+from dh import SKIP_DIRS, atomic_write
 
 FUTURE_ANNOTATIONS_RE = re.compile(
     r"""^[ \t]*

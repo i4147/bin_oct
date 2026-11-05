@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from pathlib import Path
 import os
 from collections import defaultdict
+from pathlib import Path
 
 import imagehash
 from PIL import Image

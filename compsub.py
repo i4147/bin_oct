@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import SKIP_DIRS, WORKER_COUNT
 import argparse
 import lzma
 import shutil
@@ -9,9 +8,10 @@ from collections.abc import Sequence
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Self
+
 import brotli
 import zstandard as zstd
-from dh import fsz
+from dh import SKIP_DIRS, WORKER_COUNT, fsz
 from loguru import logger
 
 ZSTD_LEVEL: int = 19

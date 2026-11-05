@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from atomicio import atomic_write
-from dh import SKIP_DIRECTORY_NAMES, WORKERS
 import os
 import stat
 import sys
@@ -9,6 +7,9 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
+from atomicio import atomic_write
+from dh import SKIP_DIRECTORY_NAMES, WORKERS
 
 ROOT = Path.cwd()
 

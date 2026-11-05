@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WORKERS
 import ast
 import multiprocessing as mp
 import sys
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 import libcst as cst
+from dh import WORKERS
 from loguru import logger
 
 

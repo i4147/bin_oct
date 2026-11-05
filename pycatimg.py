@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
 import argparse
 import io
 import os
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cairosvg import svg2png

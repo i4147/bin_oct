@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import bz2
 import hashlib
@@ -25,6 +24,7 @@ from multiprocessing.queues import Queue as MPQueue
 from pathlib import Path
 from typing import Final, TypeAlias
 
+from dh import MAX_WORKERS
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (

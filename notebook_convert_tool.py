@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import json
 import re
@@ -8,6 +7,8 @@ import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+
+from dh import MAX_WORKERS
 
 MAGIC_PREFIXES: tuple[str, ...] = ("%", "!", "%%")
 CELL_MARKER: re.Pattern[str] = re.compile(r"^#\s*%%.*$")

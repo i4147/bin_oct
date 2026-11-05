@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import multiprocessing as mp
 import os
@@ -13,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
-from dh import walker
+from dh import MAX_WORKERS, walker
 
 GREEN = "\033[32m"
 DIM = "\033[2m"

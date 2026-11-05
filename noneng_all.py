@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from pathlib import Path
+import argparse
+import math
 import os
 import sys
-import math
-import argparse
+from pathlib import Path
 from typing import Callable
 
 DetectionResult = tuple[str, float]
@@ -44,7 +44,7 @@ def _detect_cld3(text: str) -> DetectionResult:
 
 
 def _detect_langdetect(text: str) -> DetectionResult:
-    from langdetect import detect_langs, DetectorFactory
+    from langdetect import DetectorFactory, detect_langs
 
     DetectorFactory.seed = 0
     results = detect_langs(text)

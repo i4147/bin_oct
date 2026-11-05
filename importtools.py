@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS, SKIP_DIRS
-from loguru import logger
 import argparse
 import ast
 import os
@@ -15,6 +13,9 @@ from importlib.util import find_spec
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Iterable, Iterator
+
+from dh import MAX_WORKERS, SKIP_DIRS
+from loguru import logger
 
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8

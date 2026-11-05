@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from dh import WORKERS
 import argparse
 import ast
 import hashlib
 import re
 import sys
 from pathlib import Path
+
+from dh import MAX_WORKERS
 
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
 SIX_MOVES_MAP: dict[str, str] = {
@@ -145,7 +146,7 @@ def rewrite_parallelism(text: str) -> str:
     def _replace_pool_block(match: re.Match) -> str:
         _loop_var, _body, item_var, fn_name, iterable = match.groups()
         return (
-            f"with mp.Pool(WORKERS) as pool:\n"
+            f"with mp.Pool(MAX_WORKERS) as pool:\n"
             f"    for {item_var} in pool.imap_unordered({fn_name.strip()}, {iterable.strip()}):"
         )
 
@@ -352,7 +353,7 @@ def build_module_docstring(
     if used_pathlib:
         features.append("pathlib.Path for all filesystem operations")
     if used_pool:
-        features.append(f"multiprocessing.Pool with WORKERS = {WORKERS} for any parallel work")
+        features.append(f"multiprocessing.Pool with MAX_WORKERS = {MAX_WORKERS} for any parallel work")
     if used_loguru:
         features.append("loguru for logging, configured via logger.remove()/logger.add()")
     feature_text = "; ".join(features) if features else "no additional infrastructure beyond the merged API"
@@ -432,7 +433,7 @@ def build_output(sources: dict[str, str]) -> str:
     imports_block = optimize_imports(all_imports)
     body_sections = []
     if used_pool:
-        body_sections.append(f"WORKERS: int = {WORKERS}\n")
+        body_sections.append(f"MAX_WORKERS: int = {MAX_WORKERS}\n")
     if constants:
         body_sections.append("\n".join(i.source.strip() for i in constants))
     if classes:

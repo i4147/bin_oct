@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
-import sys
 import json
-from importlib.metadata import distributions, metadata, PackageNotFoundError
+import sys
+from importlib.metadata import PackageNotFoundError, distributions, metadata
 
 
 def get_requires_dist(pkgname):

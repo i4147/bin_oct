@@ -30,7 +30,7 @@ except ImportError:
     HAS_DULWICH = False
 
 BackendName = Literal["subprocess", "gitpython", "pygit2", "dulwich"]
-
+WHITE_LIST = {"py.typed", "__init__.py"}
 AVAILABLE_BACKENDS: list[BackendName] = ["subprocess"]
 if HAS_GITPYTHON:
     AVAILABLE_BACKENDS.append("gitpython")
@@ -70,6 +70,8 @@ def find_empty_files(repo: Path, paths: Sequence[str]) -> list[str]:
         full = repo / rel
         try:
             if full.is_file() and full.stat().st_size == 0:
+                if full.name in WHITE_LIST:
+                    continue
                 empty.append(rel)
         except OSError:
             continue

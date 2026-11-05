@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import WorkerResult
 import ast
 import json
 import multiprocessing as mp
@@ -11,6 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterator
 
+from dh import WorkerResult
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 

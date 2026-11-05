@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 import ast
 import bz2
@@ -15,6 +14,7 @@ import zipfile
 from collections import defaultdict
 from pathlib import Path
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 try:

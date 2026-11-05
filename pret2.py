@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import shutil
 import subprocess
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
 
+from dh import MAX_WORKERS
 from loguru import logger
 
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900

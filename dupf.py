@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
 import argparse
 from collections import defaultdict
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
-from dh import fsz, gsz
+from dh import MAX_WORKERS, fsz, gsz
 from loguru import logger
 from xxhash import xxh64
 

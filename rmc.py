@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-from atomicio import atomic_write
-from dh import MAX_WORKERS
 import argparse
 import ast
 import contextlib
@@ -19,8 +17,10 @@ from dataclasses import dataclass
 from difflib import unified_diff
 from pathlib import Path
 from typing import NamedTuple, TypeVar
+
 import libcst as cst
-from dh import SKIP_DIRS
+from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
 from libcst.metadata import MetadataWrapper, PositionProvider
 from rich.console import Console
 from rich.text import Text

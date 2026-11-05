@@ -4,8 +4,6 @@
 The basic, named, and full subcommands can remove inputs after processing.
 """
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import mmap
 import multiprocessing
@@ -18,6 +16,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 import py7zr
+from dh import MAX_WORKERS
+from loguru import logger
 
 try:
     from loguru import logger as _log

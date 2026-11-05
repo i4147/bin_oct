@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
-from dh import MAX_WORKERS
-from loguru import logger
 import argparse
 import shutil
 import tempfile
@@ -9,7 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dh import MAX_WORKERS
 from joblib import Parallel, delayed
+from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Generator
