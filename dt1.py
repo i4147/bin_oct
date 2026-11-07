@@ -1,4 +1,40 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Translate a text file in resumable chunks.
+
+Splits the text into ~2500-character chunks, translates them with DeepL,
+deep_translator, translate, Bing, googletrans or pygoogletranslation (automatic
+fallback), saves the ``chunks.json`` progress periodically, throttles the requests and lists the
+failed chunk indexes.
+
+Usage: dt1 [-i input.txt] [-o chunks.json] [-s en] [-t fr]
+
+Options:
+    -i, --input
+        Input text file. Default: input.txt
+    -o, --output
+        Output JSON file. Default: chunks.json
+    --failed
+        Failed chunk-index file. Default: failed.txt
+    -s, --source
+        Source language code. Default: en
+    -t, --target
+        Target language code. Default: fr
+    -b, --backend
+        Translation backend. Default: automatic fallback order.
+    -d, --delay
+        Seconds between requests globally. Default: 0.5
+    --chunk-size
+        Maximum chunk length in characters. Default: 2500
+    --save-every
+        Save after this many completed chunks. Default: 10
+    --no-continue
+        Ignore an existing output file and start from scratch.
+
+Examples:
+    $ dt1 -i notes.txt -t de
+
+Command-line script: run ``python dt1.py`` or the ``dt1`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compile Python files to ``__pycache__`` bytecode in parallel.
+
+Compiles every ``.py`` file given on the command line (or below the current directory) with
+``compileall`` using a small spawn-based worker pool and reports how the tree size changed.
+
+Usage: mkpyc [files ...]
+
+Examples:
+    $ mkpyc src/
+
+Runs as a script (``python mkpyc.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import compileall
 import sys
 from collections import deque

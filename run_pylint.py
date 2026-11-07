@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Run pylint over Python files with a compact message template.
+
+Calls pylint with ``--persistent=n --reports=n --output-format=parseable`` and a ``file:line:column:object:message:id`` template on the given files (directories are expanded)
+or on every Python file below the current directory.
+
+Usage: run_pylint [paths ...]
+
+Examples:
+    $ run_pylint src/
+
+Runs as a script (``python run_pylint.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

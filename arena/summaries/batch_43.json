@@ -1,0 +1,118 @@
+{
+  "merge_reqs.py": {
+    "summary": "Generate a ``requirements.txt`` from a project tree.",
+    "details": [
+      "The ``scan`` subcommand collects the imports (ast or regex, notebooks and archives included), resolves them against the stdlib, the local modules and a package mapping and writes the requirements; ``metadata`` extracts the ``Requires-Dist`` lines of the installed ``METADATA`` files. A file cache and a pip package list keep the runs fast."
+    ],
+    "usage": "merge_reqs {scan,metadata} [-d DIR] [-o requirements.txt] [--pip-file PATH]",
+    "example": ["$ merge_reqs scan -d . -o requirements.txt"]
+  },
+  "merger.py": {
+    "summary": "Merge the text files of a directory into one document.",
+    "details": [
+      "Concatenates the files of the given extensions (``-e``) into ``merged.txt`` or copies the result to the clipboard, ``-c`` writes one merged file per extension into ``merged/`` and ``-u`` splits a merged file back into its parts."
+    ],
+    "usage": "merger [-e py js] [-c] [-w] | merger -u MERGED.txt",
+    "example": ["$ merger -e py -w", "$ merger -u merged.txt"]
+  },
+  "mhtm.py": {
+    "summary": "Minify the HTML files of a tree in place.",
+    "details": ["Runs the ``minify-html`` backend on each ``.html`` file after validating the markup, writes the result back and processes the files with the chosen pool method (``--pool-method``)."],
+    "usage": "mhtm [paths ...] [-b BACKEND] [--pool-method MAP]",
+    "example": ["$ mhtm dist/"]
+  },
+  "micro2py.py": {
+    "summary": "Refactor the MicroPython exports of ``.py`` files into standard Python.",
+    "details": ["Renames the ``u<module>`` imports (``uos``, ``ujson`` ...) to their CPython counterparts when the name is not shadowed by a local one, and offers ``--dry-run`` for a preview."],
+    "usage": "micro2py [paths ...] [-n]",
+    "example": ["$ micro2py firmware/ -n"]
+  },
+  "migrate_git.py": {
+    "summary": "Migrate the GitHub identity on the local machine.",
+    "details": [
+      "Rewrites the git user name and e-mail (globally and in every local config), replaces the old identity in the text files of the home directory after backing them up, regenerates an SSH key and removes the old ones; it is a dry run unless ``--apply`` is passed."
+    ],
+    "usage": "migrate_git --old-username U --new-username U [--apply]",
+    "example": ["$ migrate_git --old-email old@example.com --new-email new@example.com --apply"]
+  },
+  "migrate_repos.py": {
+    "summary": "Migrate the local GitHub identity across the repositories and SSH keys.",
+    "details": [
+      "Same workflow as :doc:`migrate_git` with the extra ``--skip-ssh``/``--skip-files`` switches, home and SSH directory overrides and the new key path; the default is a dry run and ``--apply`` writes the changes."
+    ],
+    "usage": "migrate_repos [--old-username U] [--new-username U] [--apply]",
+    "example": ["$ migrate_repos --skip-ssh --apply"]
+  },
+  "mk_deptree_svg.py": {
+    "summary": "Draw an SVG dependency graph of the installed Python packages.",
+    "details": ["Reads the installed distributions and their requirements, builds the graph (restricted by ``--root`` to the reachable packages), lays it out in topological levels and writes the SVG to ``-o``."],
+    "usage": "mk_deptree_svg [-o graph.svg] [--root PKG ...]",
+    "example": ["$ mk_deptree_svg -o deps.svg --root mypkg"]
+  },
+  "mk_tree.py": {
+    "summary": "Recreate a directory tree from a ``tree`` listing or a screenshot of one.",
+    "details": [
+      "Parses the box-drawing markup of the text listing (or OCRs the screenshot with the available engine), infers the depth from the indentation, creates the directories and files under ``--base`` and offers ``--assume-dir``, ``--keep-suffix`` and ``--dry-run``."
+    ],
+    "usage": "mk_tree INPUT [--base DIR] [-d] [-n]",
+    "example": ["$ mk_tree listing.txt --base ./rebuilt --dry-run"]
+  },
+  "mkpik.py": {
+    "summary": "Compile Python sources to bytecode and measure the space it saves.",
+    "details": [
+      "The ``compile`` subcommand byte-compiles the targets with ``-o``/``-l``/``--delete-source`` options and ``measure`` reports the size change of the current directory before and after, working through a process pool."
+    ],
+    "usage": "mkpik {compile,measure} [targets ...] [-o 0|1|2] [-l]",
+    "example": ["$ mkpik measure src/"]
+  },
+  "mkstand.py": {
+    "summary": "Bundle HTML pages and their CSS into standalone documents.",
+    "details": [
+      "Inlines the local and remote stylesheets, rewrites the ``url(...)`` references as data URIs, embeds the images as base64 and writes the self-contained ``.html``/``.css`` files, fetching the remote resources with a 20-second timeout in a small pool."
+    ],
+    "usage": "mkstand [paths ...]",
+    "example": ["$ mkstand dist/"]
+  },
+  "mkt.py": {
+    "summary": "Generate a structural HTML skeleton template from a URL or a local page.",
+    "details": [
+      "Drops the scripts, styles, media and SVGs, keeps the ``class``/``id``/``role`` attributes up to ``--max-depth``, preserves the head CSS for the visual fidelity and writes the template to ``-o`` or prints it."
+    ],
+    "usage": "mkt SOURCE [-o OUTDIR] [-d DEPTH] [--print]",
+    "example": ["$ mkt https://example.com -o skeletons"]
+  },
+  "mktree.py": {
+    "summary": "Rebuild a directory tree from a text listing or a screenshot.",
+    "details": ["Same as :doc:`mk_tree` (identical implementation): the tree markup or the OCR result is turned into directories and files under ``--base``, with ``--assume-dir``, ``--keep-suffix`` and ``--dry-run``."],
+    "usage": "mktree INPUT [--base DIR] [-d] [-n]",
+    "example": ["$ mktree tree.txt --base ./rebuilt"]
+  },
+  "mo2po.py": {
+    "summary": "Convert the ``.mo`` translation catalogues back to ``.po``.",
+    "details": ["Runs ``msgunfmt`` on each ``.mo`` file (or uses a pure-Python fallback with ``--fallback``), writes the ``.po`` next to it and deletes the original unless ``-k`` is given; ``-r`` walks the directories."],
+    "usage": "mo2po PATH [-k] [-r] [--fallback]",
+    "example": ["$ mo2po locale/ -r -k"]
+  },
+  "module_usage.py": {
+    "summary": "Report how the local scripts use a Python package.",
+    "details": [
+      "Counts the imports and the attribute calls of the package (``dh`` by default) across a directory of scripts, writes ``~/dh_usage.txt`` and the ``charts`` subcommand adds the matplotlib bar charts of the most used names."
+    ],
+    "usage": "module_usage {report,charts} [--dir DIR] [--package dh] [--top-n N]",
+    "example": ["$ module_usage charts --package dh --top-n 15"]
+  },
+  "morseconverter.py": {
+    "summary": "Encode text as Morse code and decode it back.",
+    "details": ["Converts the input file to Morse (``--encrypt``) or the Morse to text (``--decrypt``) with the full letter and digit table and writes the result to the output file."],
+    "usage": "morseconverter INPUT OUTPUT --encrypt|--decrypt",
+    "example": ["$ morseconverter msg.txt msg.morse --encrypt"]
+  },
+  "most_similar.py": {
+    "summary": "Find the Python scripts of ``~/bin`` that are most similar to a given file.",
+    "details": [
+      "Compares the target with every script in the folder using a normalized AST hash, a line-level difflib score and an ssdeep fuzzy score, prints the best ``--top`` matches per method and can report each comparison live with ``-v``."
+    ],
+    "usage": "most_similar FILE [--bin-dir DIR] [--top N] [-v]",
+    "example": ["$ most_similar tool.py --top 5"]
+  }
+}

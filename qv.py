@@ -1,4 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Page through the files of the current directory.
+
+Reads every file (``-r`` includes the subdirectories), prints a header per file and shows
+the whole collection through ``pydoc.pager``.
+
+Usage: qv [-r]
+
+Options:
+    -r, --recursive
+        Include files in subdirectories
+
+Examples:
+    $ qv -r
+
+Command-line script: run ``python qv.py`` or the ``qv`` command. The module is importable as well.
+"""
 
 import argparse
 import pydoc

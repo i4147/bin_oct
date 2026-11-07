@@ -1,0 +1,106 @@
+{
+  "randomize_dircolors.py": {
+    "summary": "Write a ``~/.ls_colors`` file with a random true-colour for every file extension.",
+    "details": [
+      "Keeps a list of common extensions, picks a bright colour for each one, builds the ``LS_COLORS`` string with 24-bit codes and saves the shell snippet to ``/data/data/com.termux/files/home/.ls_colors`` for sourcing."
+    ],
+    "usage": "randomize_dircolors",
+    "example": ["$ randomize_dircolors"]
+  },
+  "raster.py": {
+    "summary": "Rename a compiled extension to the Android CPython 3.14 file name.",
+    "details": ["Takes the current file and a new stem and renames the file to ``<stem>.cpython-314-arm-linux-androideabi.so`` in the same directory."],
+    "usage": "raster FILE.so NEW_STEM",
+    "example": ["$ raster _speedups.so _speedups"]
+  },
+  "reformat_module_docstring.py": {
+    "summary": "Reflow the module docstrings of Python files to a fixed width.",
+    "details": [
+      "Locates the module docstring with :mod:`tokenize`, rewraps its prose while keeping paragraphs and lists intact and writes the file back only when the text changed."
+    ],
+    "usage": "reformat_module_docstring [paths ...]",
+    "example": ["$ reformat_module_docstring src/"]
+  },
+  "reinstall_system_pkgs.py": {
+    "summary": "Reinstall a list of apt packages one by one, logging the failures.",
+    "details": [
+      "Reads the package names from the given file and runs ``apt install --reinstall -y`` for each of them, appending the packages that fail to ``~/reinstall_failed.txt``."
+    ],
+    "usage": "reinstall_system_pkgs PACKAGE_LIST",
+    "example": ["$ reinstall_system_pkgs packages.txt"]
+  },
+  "remove_lines_containing_str_from_files.py": {
+    "summary": "Delete the lines containing a string from many text files.",
+    "details": [
+      "Removes every line that contains the given substring (the last argument; the preceding arguments are the files, defaulting to all non-binary files below the current directory) and reports the lines removed per file plus the space freed. Work is spread over a process pool."
+    ],
+    "usage": "remove_lines_containing_str_from_files [files ...] STRING",
+    "example": ["$ remove_lines_containing_str_from_files src/ 'DEBUG'"]
+  },
+  "rename-project.py": {
+    "summary": "Rename a project by replacing its old name in file names, text files and Hatch/pyproject metadata.",
+    "details": [
+      "Walks the tree, replaces the old project name in the text-like files (README, license, requirements, makefiles, dotfiles, Python sources ...) and renames the matching files and directories, skipping the files that do not look textual."
+    ],
+    "usage": "rename-project OLD_NAME NEW_NAME",
+    "example": ["$ rename-project oldpkg newpkg"]
+  },
+  "rename_by_parent.py": {
+    "summary": "Rename every ``README.pdf`` after the directory that contains it.",
+    "details": ["Walks the tree with a stack-based directory walker and renames each ``README.pdf`` to ``<parent-directory-name>.pdf``, unless that name already exists."],
+    "usage": "rename_by_parent",
+    "example": ["$ rename_by_parent"]
+  },
+  "rename_html_by_title.py": {
+    "summary": "Rename HTML files after the title of the page.",
+    "details": [
+      "Extracts the ``<title>`` (tree-sitter when available, otherwise a regex), transliterates non-Latin titles, normalises the result into a safe file name within the length limit and renames the files below the current directory in parallel, reporting the results."
+    ],
+    "usage": "rename_html_by_title",
+    "example": ["$ rename_html_by_title"]
+  },
+  "rename_svg_fonts.py": {
+    "summary": "Rename SVG font files after their ``<font id=\"...\">`` attribute.",
+    "details": ["Reads each ``.svg`` file, extracts the font id, sanitises the characters that cannot appear in a file name and renames the file to ``<font-id>.svg``, refusing to overwrite an existing target."],
+    "usage": "rename_svg_fonts [FILE.svg | DIRECTORY]",
+    "example": ["$ rename_svg_fonts fonts/"]
+  },
+  "render_diagram.py": {
+    "summary": "Wrap a Mermaid or SVG diagram in a self-contained HTML page.",
+    "details": ["Reads the ``.mmd``/``.svg`` file, embeds the diagram (Mermaid loaded from its CDN, or the SVG inlined as a data URI) into a minimal HTML document and writes it next to the source with an ``.html`` suffix."],
+    "usage": "render_diagram FILE.mmd",
+    "example": ["$ render_diagram flow.mmd"]
+  },
+  "renm.py": {
+    "summary": "Rename the non-English file names below a directory to their English translation.",
+    "details": [
+      "Detects names that contain non-ASCII characters, translates the stem with ``deep_translator`` in a worker pool, resolves collisions and renames the files and directories (deepest paths first). ``--directory`` selects the root, ``--pool-method`` the multiprocessing style."
+    ],
+    "usage": "renm [--directory DIR] [--pool-method map|starmap|imap_unordered|apply_async]",
+    "example": ["$ renm --directory ~/downloads"]
+  },
+  "renneng.py": {
+    "summary": "Translate the non-English file and directory names of the current directory to English.",
+    "details": [
+      "Walks the tree bottom-up, translates every name that contains non-ASCII characters with Google Translate and renames the entry, adding a numeric suffix when the translated name already exists."
+    ],
+    "usage": "renneng",
+    "example": ["$ renneng"]
+  },
+  "replace_symlink_with_orig.py": {
+    "summary": "Replace symlinks with copies of the files they point to.",
+    "details": [
+      "Walks the given paths, copies the target content over each symlink (preserving metadata), logs the replacements to ``replaced.txt`` and the failures to ``errors.txt``, and processes the tree in parallel."
+    ],
+    "usage": "replace_symlink_with_orig [paths ...]",
+    "example": ["$ replace_symlink_with_orig ./bin"]
+  },
+  "restore_all_historical_deletions.py": {
+    "summary": "Restore every file that was ever deleted in the repository history.",
+    "details": [
+      "Reads ``git log --diff-filter=D`` to find the deletions and the commit that removed each file, checks out the version from the parent commit, stages it and finally commits everything with the message ``removed files``."
+    ],
+    "usage": "restore_all_historical_deletions",
+    "example": ["$ restore_all_historical_deletions"]
+  }
+}

@@ -1,4 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress or decompress the files of a tree with bzip2 or gzip.
+
+Subcommands: ``bz2`` handles the bzip2 files, ``gz`` the gzip and tar files and ``gzip-files``
+recompresses the plain files recursively (skipping the already compressed extensions and
+the small files); ``-l`` sets the level and the chunks are streamed in 512 KB blocks.
+
+Usage: gzbz {bz2,gz,gzip-files} [-d] [-l LEVEL] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories to process (default: current working directory)
+    directories ...
+        Directories to walk recursively (default: '.')
+
+Subcommands:
+    bz2
+        Bzip2 compression / decompression (bzr.py)
+    gz
+        Gzip compression / decompression with tar support (gzr.py)
+    gzip-files
+        Recursive gzip on files only (gziper.py)
+
+Options:
+    -d, --decompress
+        Decompress instead of compress
+    -c, --compress
+        Explicitly select compression (default)
+    -l, --level
+    --chunk-size
+    --mem-threshold
+    --min-file-size
+    -e, --exclude
+        Additional file extensions to exclude (e.g. .pdf .jpg)
+
+Examples:
+    $ gzbz gz -d logs/
+    $ gzbz gzip-files -l 9 .
+
+Command-line script: run ``python gzbz.py`` or the ``gzbz`` command. The module is importable as well.
+"""
 
 import argparse
 import bz2

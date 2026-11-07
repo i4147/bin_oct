@@ -1,4 +1,58 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Extract the base64 data URIs of CSS, JS and HTML files into asset files.
+
+Subcommands: ``extract-cleanuri`` rewrites the ``data:`` URIs as relative paths, ``extract-images``/``extract-css``/``extract-assets``/``extract-elements``/``extract-html`` pull the
+embedded assets out with magic-byte MIME detection, and ``file-to-base64``/``ttf-to-base64`` do the opposite. ``--hash``,
+``--report``, ``--dry-run`` and ``--download-remote`` control the output.
+
+Usage: base64_extractor {extract-cleanuri,extract-images,extract-assets,...} [options]
+
+Positional arguments:
+    file
+    files ...
+
+Subcommands:
+    extract-cleanuri
+        Extract data: URIs from css/js/html and rewrite.
+    extract-images
+        Extract data:image/...;base64 URIs from files.
+    ttf-to-base64
+        Convert *.ttf files to base64 .txt files.
+    file-to-base64
+        Convert a single file to a base64 .txt.
+    extract-css
+        Extract url(data:...;base64,...) from CSS files.
+    extract-assets
+        Comprehensive extractor with magic-byte MIME detection.
+    extract-elements
+        Extract all data:...;base64 blobs into flat dir.
+    extract-html
+        HTML-only extractor (requires requests+bs4).
+    list-lines
+        Report every line containing 'base64,'.
+
+Options:
+    --out
+    --extensions
+        File extensions to scan (default: .css .js .html)
+    --hash
+    --hash-len
+    --pattern
+    --force
+        Overwrite existing .txt files
+    --output
+    --dry-run
+    --no-magic
+        Disable magic-byte MIME sniffing
+    --files
+        Explicit file list (overrides root scan)
+    ... plus 4 more; run ``base64_extractor --help`` for the full list.
+
+Examples:
+    $ base64_extractor extract-assets --root dist/
+
+Command-line script: run ``python base64_extractor.py`` or the ``base64_extractor`` command. The module is importable as well.
+"""
 
 import argparse
 import base64 as _b64

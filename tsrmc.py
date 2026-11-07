@@ -1,4 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove the comments from source files of many languages with tree-sitter.
+
+Supports Rust, shell, C/C++, JavaScript/TypeScript, CSS, HTML and Lua with the matching
+tree-sitter grammar, preserves the shebangs, the licence headers and the lint
+directives, can also drop the blank lines and offers ``--diff``, ``--dry-run`` and ``--backup``.
+
+Usage: tsrmc [--diff|--dry-run|--backup] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ tsrmc --diff src/
+
+Command-line script: run ``python tsrmc.py`` or the ``tsrmc`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

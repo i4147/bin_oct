@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Show the largest files below the current directory in a table.
+
+Sorts the files by size, truncates the long paths and prints the top ``N`` (11 by default)
+with their human-readable sizes in aligned columns.
+
+Usage: top11 [N]
+
+Examples:
+    $ top11 20
+
+Runs as a script (``python top11.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import operator
 import sys

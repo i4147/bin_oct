@@ -1,4 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert reStructuredText files to Markdown.
+
+Renders the RST with docutils to HTML and then converts that HTML with ``html_to_markdown``, writing the
+``.md`` file next to the source and deleting the original. Files are converted in parallel.
+
+Usage: rst2md [files ...]
+
+Examples:
+    $ rst2md docs/
+
+The original ``.rst`` file is removed after a successful conversion.
+"""
 
 import sys
 from pathlib import Path

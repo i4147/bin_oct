@@ -1,4 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress or decompress files and directories with Brotli.
+
+Files are turned into ``.br`` streams and directories into ``.tar.br`` archives, in worker pools.
+Chunked mode is used automatically for large inputs and the original is kept when
+compression does not shrink it (unless ``--force``).
+
+Usage: brer [options] <compress|decompress> [args ...]
+
+Subcommands:
+    compress
+        Compress files (.br) and dirs (.tar.br)
+    decompress
+        Decompress .br files and .tar.br archives
+
+Options:
+    -q, --quality
+        Brotli quality 0-11. Default 11.
+    --lgwin
+        Brotli window bits 10-24. Default 24.
+    --buffer-size
+        Stream buffer size (bytes). Default 65536.
+    --chunk-size
+        Chunk size for chunked mode (bytes). Default 32768.
+    --chunk-threshold
+        Files >= this size use chunked compression. 0 disables chunking. Default 524288.
+    --min-size
+        Skip files smaller than this many bytes. Default 1024.
+    --force
+        Always replace original even if compression grew the file. Default: keep
+        original when compression does not save space.
+    --executor
+        Top-level worker pool type. Default process.
+    --skip-ext
+        Comma-separated list of extensions to skip.
+
+Examples:
+    $ brer compress notes.txt
+    $ brer decompress notes.txt.br
+
+Command-line script: run ``python brer.py`` or the ``brer`` command. The module is importable as well.
+"""
 
 import argparse
 import mmap

@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress a single file into a ``.7z`` archive with maximum LZMA2 settings.
+
+Writes ``<name>.7z`` with the LZMA2 filter at preset 9 plus the extreme flag, replaces the file
+atomically and removes the original once the archive is complete. Existing archives are
+never overwritten.
+
+Usage: py7zmax FILE
+
+Examples:
+    $ py7zmax dump.sql
+
+Runs as a script (``python py7zmax.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import lzma
 import os
 import sys

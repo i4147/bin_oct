@@ -1,4 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Report the dependencies of the installed packages by reading their ``METADATA``.
+
+Parses the ``Requires-Dist`` lines of a package's dist-info (``-d`` sets the site-packages root) or of
+every installed package with ``-a``, and prints or writes the dependency report (``-w``).
+
+Usage: pkg_deps_reporter [package] [-a] [-w report.txt] [-d DIR]
+
+Positional arguments:
+    package
+        Name of the specific target package to analyze.
+
+Options:
+    -a, --all
+        Process and report dependencies for all installed packages in the tree.
+    -w, --write
+        Save report to a file. Defaults to 'dependency_report.txt' if no filename given.
+    -d, --directory
+        Root path of the site-packages directory to parse (Defaults to current folder
+        '.').
+
+Examples:
+    $ pkg_deps_reporter requests -w deps.txt
+
+Command-line script: run ``python pkg_deps_reporter.py`` or the ``pkg_deps_reporter`` command. The module is importable as well.
+"""
+
 import argparse
 import re
 import sys

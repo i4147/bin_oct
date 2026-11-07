@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Count the word frequencies of the files below the current directory.
+
+Matches the lowercase words of each text file, counts them in a process pool and writes
+the totals with a timestamp to ``counter.json``.
+
+Usage: word_freq_counter
+
+Examples:
+    $ word_freq_counter
+
+Runs as a script (``python word_freq_counter.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import json
 import re

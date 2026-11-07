@@ -1,4 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""A pip-style download manager for the current directory.
+
+Probes each URL for the size and the name, resumes from the ``.part`` files, splits the big
+files over four range requests, shows the ``pip`` progress bar and supports the stdlib,
+requests or pycurl backends with ``-F`` to re-download the existing files.
+
+Usage: python_downloader URL [...] [-f URLS.txt] [-b BACKEND] [-F]
+
+Positional arguments:
+    urls ...
+        URL(s) to download
+
+Options:
+    -f, --file
+        Read URLs from FILE (one per line, # comments)
+    -o, --output
+        Output file (single URL only)
+    -b, --backend
+        HTTP backend to use (default: pure / stdlib)
+    --no-resume
+        Ignore partial .part files and restart from scratch
+    -F, --force
+        Re-download even if the target already exists
+    --timeout
+        Socket timeout in seconds (default: 30)
+    -q, --quiet
+        Suppress output
+    -V, --version
+
+Examples:
+    $ python_downloader -f urls.txt -b requests
+
+Command-line script: run ``python python_downloader.py`` or the ``python_downloader`` command. The module is importable as well.
+"""
+
 import argparse
 import contextlib
 import queue

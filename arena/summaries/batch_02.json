@@ -1,0 +1,128 @@
+{
+  "afk2.py": {
+    "summary": "Report unused imports in Python files and archives, optionally rewriting them in place.",
+    "details": [
+      "Collects every import statement of the scanned sources (``.py`` files plus ``.whl``/``.zip``/``.tar`` members), compares the bound names against the names actually used and prints one line per unused import. ``--autofix`` removes the unused names, ``--dry-run`` previews the edits and ``--ignore-init`` treats imports in ``__init__.py`` as re-exports."
+    ],
+    "usage": "afk2 [options] [paths ...]",
+    "example": ["$ afk2 src/ --autofix", "$ afk2 pkg --dry-run -v"]
+  },
+  "alu.py": {
+    "summary": "Show the packages with pending upgrades on a Termux/apt system.",
+    "details": ["A one-liner wrapper around ``apt list --upgradable``, kept as a short command instead of remembering the apt invocation."],
+    "usage": "alu",
+    "example": ["$ alu"],
+    "notes": "Takes no arguments and runs ``apt`` with the inherited terminal."
+  },
+  "ans2proj.py": {
+    "summary": "Rebuild a project tree from a Markdown answer file.",
+    "details": [
+      "Each ``## `path/to/file``` heading starts a section whose fenced code block becomes the content of that file. Relative paths are recreated below the output directory, so a pasted answer from a chat model turns back into a set of files."
+    ],
+    "usage": "ans2proj SOURCE.md [OUTPUT_DIR]",
+    "example": ["$ ans2proj answer.md ./project"]
+  },
+  "archive_dir.py": {
+    "summary": "Archive a directory into ``.tar`` or ``.tar.gz`` and optionally delete what was archived.",
+    "details": [
+      "The ``tar`` and ``tgz`` subcommands both take a folder and write an archive next to it (or to ``--output``). ``--keep`` keeps the sources, while ``--cleanup-scope`` decides whether the folder itself or only its contents are removed afterwards."
+    ],
+    "usage": "archive_dir {tar,tgz} FOLDER [options]",
+    "example": ["$ archive_dir tgz photos --output photos.tar.gz"]
+  },
+  "arx.py": {
+    "summary": "Extract archives in many formats, including nested ones.",
+    "details": [
+      "Handles ``.tar``/``.tar.gz``/``.tar.xz``/``.tar.bz2``, ``.zip``, ``.7z``, ``.zst``, ``.br`` and ``.lz4`` (raw streams as well as tar containers). Integrity is checked first; archives that are found inside extracted output are picked up again so a single run can unwrap several layers."
+    ],
+    "usage": "arx [directory]",
+    "example": ["$ arx", "$ arx ~/Downloads"]
+  
+  },
+  "autobuild.py": {
+    "summary": "Build every Python package directory below the current directory into wheels.",
+    "details": [
+      "A directory counts as a package when it holds ``setup.py``, ``setup.cfg`` or ``pyproject.toml``. Wheels are written to ``./wheels`` by ``python -m build --wheel``, one worker per package, with a success/failure summary at the end."
+    ],
+    "usage": "autobuild",
+    "example": ["$ autobuild"]
+  },
+  "autoclone.py": {
+    "summary": "Clone the GitHub repositories named in a file, skipping large or unwanted ones.",
+    "details": [
+      "Reads one ``owner/repo`` per line from the file given on the command line, looks up each repository size through the GitHub API (cached for a week in ``repo_sizes.json``) and clones only the repositories no larger than 5 MB. Names containing django, flask, torch, tensor, llm or mcp are skipped. A ``GITHUB_TOKEN`` in ``~/.env`` raises the API rate limit."
+    ],
+    "usage": "autoclone REPOS_FILE",
+    "example": ["$ autoclone repos.txt"]
+  },
+  "autopull.py": {
+    "summary": "Run a fast-forward ``git pull`` in every repository under the current directory.",
+    "details": ["Walks the tree, detects directories containing ``.git`` and runs ``git -C <repo> pull --ff-only``, reporting repositories that need a manual merge."],
+    "usage": "autopull",
+    "example": ["$ autopull"]
+  },
+  "b642f.py": {
+    "summary": "Decode the base64 lines of a file into binary files and keep only the failures in the source.",
+    "details": [
+      "Every non-empty line is decoded, after stripping a leading ``base64,`` data-URI prefix when present, and written to ``<sha256>.bin``. Lines that fail are printed with their line number and left in the input file, so a repeated run continues where it stopped."
+    ],
+    "usage": "b642f FILE",
+    "example": ["$ b642f payloads.txt"]
+  },
+  "bash2py.py": {
+    "summary": "Extract ``python`` here-documents from shell scripts into standalone Python files.",
+    "details": [
+      "Finds ``python <<EOF`` style blocks, re-indents the captured code and writes it next to the caller as ``<script>.py`` (``<script>_1.py``, ``_2`` ... when a script contains several blocks), formatting the result along the way."
+    ],
+    "usage": "bash2py SCRIPT.sh",
+    "example": ["$ bash2py install.sh"]
+  },
+  "bat2bash.py": {
+    "summary": "Convert Windows ``.bat`` scripts into executable bash scripts.",
+    "details": [
+      "Translates the common batch commands (``echo``, ``cd``, ``dir``, ``del``, ``copy``, ``move``, ``ren``, ``type``, ``findstr``, ``if exist`` ...) and ``%VAR%`` variables into their shell equivalents. Every ``*.bat`` below the given directory becomes a ``*.sh`` with mode 755 and the original is removed."
+    ],
+    "usage": "bat2bash [DIRECTORY]",
+    "example": ["$ bat2bash ./scripts"]
+  },
+  "bbc.py": {
+    "summary": "Delete Python build leftovers below the current directory.",
+    "details": [
+      "Removes ``build``, ``dist`` and ``target`` directories, ``*.egg-info`` directories, stray ``PKG-INFO`` files and auto-generated ``setup.cfg`` files (the ones that only contain an empty ``[egg_info]`` section)."
+    ],
+    "usage": "bbc",
+    "example": ["$ bbc"]
+  },
+  "bcss.py": {
+    "summary": "Reformat CSS files in place with ``cleancss`` and report the space that was saved.",
+    "details": ["Runs ``cleancss --format beautify`` over the files named on the command line, or over every ``.css`` file below the current directory, and prints the size difference per file plus the total freed."],
+    "usage": "bcss [files ...]",
+    "example": ["$ bcss styles.min.css"]
+  },
+  "benchrmc.py": {
+    "summary": "Benchmark the comment/docstring stripper of ``rmc3`` on a tree of Python files.",
+    "details": [
+      "Copies the discovered sources into a temporary directory, runs the ``rmc3`` transform pipeline over the copies with ``MAX_WORKERS`` processes and prints files/s, MiB/s and the error count, so the throughput of the cleaner can be measured without touching the originals."
+    ],
+    "usage": "benchrmc [PATH]",
+    "example": ["$ benchrmc ~/code/bin"]
+  },
+  "bf_nlp.py": {
+    "summary": "Split a text file into sentences and words with blingfire and print the words.",
+    "details": ["A tiny driver for ``blingfire_compat.text_to_sentences``/``text_to_words``; the sentence list is computed as well but only the word list is printed."],
+    "usage": "bf_nlp FILE",
+    "example": ["$ bf_nlp article.txt"]
+  },
+  "bkk.py": {
+    "summary": "Delete every ``*.bak`` file under the current directory.",
+    "details": ["Walks the tree, prints each backup file relative to the current directory and unlinks it."],
+    "usage": "bkk",
+    "example": ["$ bkk"]
+  },
+  "blink.py": {
+    "summary": "Remove dangling symlinks under the current directory.",
+    "details": ["Skips anything inside ``.git`` and reports links that point to a missing target; ``-d`` only lists them (dry run) instead of unlinking."],
+    "usage": "blink [-d]",
+    "example": ["$ blink -d", "$ blink"]
+  }
+}

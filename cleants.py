@@ -1,4 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip the comments from source files of many languages with tree-sitter.
+
+Detects the language from the suffix or shebang (bash, C/C++, Python, JS/TS, CSS ...),
+keeps the vital comments (licences, ``@license``, lint pragmas) and the doc blocks (``--keep-doc``), and
+offers ``--inplace``, ``--dryrun``, ``--check``, ``--diff``, ``--backup``, ``--exclude`` and a size limit, validating every result before
+writing.
+
+Usage: cleants [options] [{--inplace,--check,--diff}] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    --inplace
+    --dryrun
+    --check
+    --diff
+    --color
+    --backup
+    --backup-suffix
+    --keep-doc
+    --exclude
+    --max-size
+    ... plus 2 more; run ``cleants --help`` for the full list.
+
+Examples:
+    $ cleants --check --diff src/
+
+Command-line script: run ``python cleants.py`` or the ``cleants`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

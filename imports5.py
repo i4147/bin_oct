@@ -1,4 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Generate a ``requirements.txt`` offline (local package list) or online (PyPI API).
+
+Scans the sources (ast or line-based, notebooks included), normalises the import names
+through the PyPI mapping, detects the local modules and resolves the versions either
+from a local package list (``offline``) or from the PyPI JSON API (``online``), with a diff and a
+dry-run option.
+
+Usage: imports5 {offline,online} -p PROJECT [--ast] [--print]
+
+Subcommands:
+    offline
+        Use a local PyPI package list (no network); mirrors imp1/imp2
+    online
+        Resolve via PyPI JSON API; mirrors pipreqs/pr2
+
+Options:
+    -p, --path
+        Project directory (default: current dir)
+    -l, --pypi-list
+        Path to the offline PyPI package list
+    --pip-cmd
+        Pip executable used for `pip freeze`
+    --detect-local
+        Enable imp2-style local-module detection
+    --ast
+        Parse imports via AST instead of line-by-line
+    --encoding
+    --ignore
+        Additional directory basenames to ignore
+    --no-follow-links
+    --scan-notebooks
+    --savepath
+        Path for the generated requirements file
+    ... plus 9 more; run ``imports5 --help`` for the full list.
+
+Examples:
+    $ imports5 online -p . --ast --print
+
+Command-line script: run ``python imports5.py`` or the ``imports5`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

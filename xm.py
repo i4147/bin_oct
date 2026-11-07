@@ -1,4 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Turn the module docstrings of a source tree into prompt files.
+
+Extracts the module docstring of every Python file with ast, reformats it into 80-column
+prose without its ``LiveDoc:`` line and writes one ``.txt`` per module into the prompt directory,
+optionally also a ``modules.json`` index; ``--remove`` strips the docstring from the source file instead.
+
+Usage: xm [--root DIR] [--out-dir DIR] [-j] [-r]
+
+Options:
+    -j, --json
+        Additionally write a single aggregated modules.json.
+    -r, --remove
+        Remove the module docstring from each source .py file in place.
+    --root
+        Directory to scan recursively (default: cwd).
+    --out-dir
+
+Examples:
+    $ xm --root src --out-dir prompts -j
+
+Command-line script: run ``python xm.py`` or the ``xm`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

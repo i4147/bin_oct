@@ -1,4 +1,55 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Persian to English (and back) translation toolkit.
+
+Subcommands: ``file`` translates a text file line by line or in chunks, ``words`` builds a JSON
+dictionary from a word list and ``lookup`` is an offline dictionary search with optional fzf
+selection. The backends are deep_translator, the ``translate`` package and the ``translate`` CLI.
+
+Usage: fa_translator {file,words,lookup} [options]
+
+Positional arguments:
+    input
+        Path to the input text file
+    word ...
+        Word(s) to translate
+
+Subcommands:
+    file
+        Translate a text file (line-by-line or chunked).
+    words
+        Translate a word list into a JSON dictionary.
+    lookup
+        Offline dictionary lookup (with optional fzf).
+
+Options:
+    -v, --verbose
+        Enable debug logging
+    --mode
+        Translate each line independently (default) or in chunks
+    --chunk-size
+        Max characters per chunk in --mode chunk (default: 4500)
+    --backend
+        Translation backend (default: deep-translator)
+    --source
+        Source language
+    --target
+        Target language
+    --executor
+        Pool kind (default: thread)
+    --persian-only
+        Only translate lines that contain Persian characters
+    --in-place
+        Rewrite the input file with translations
+    --output
+        JSON output path (default: <input>.json)
+    ... plus 11 more; run ``fa_translator --help`` for the full list.
+
+Examples:
+    $ fa_translator file notes.txt --target en
+    $ fa_translator lookup
+
+Command-line script: run ``python fa_translator.py`` or the ``fa_translator`` command. The module is importable as well.
+"""
 
 import argparse
 import json

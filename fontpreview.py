@@ -1,4 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Generate HTML pages that preview the fonts of a directory.
+
+The ``simple`` subcommand writes one block per font at the given sizes, ``rich`` a page with
+editable sample areas and a dark mode; the sample text and the sizes come from the ``--preset``
+(Persian by default) or from ``--text``/``--sizes``.
+
+Usage: fontpreview {simple,rich} [paths ...] [--text TEXT] [--sizes 14,22]
+
+Positional arguments:
+    paths ...
+        Files/directories to scan (default: cwd)
+
+Subcommands:
+    simple
+        Simple one-font-per-block preview (fafontpreview.py / fontpreview.py)
+    rich
+        Rich interactive preview with textareas + dark mode (fontpre.py)
+
+Options:
+    --preset
+        Preset text/sizes/output (default: fa)
+    --text
+        Override the sample text (defaults to preset's)
+    --sizes
+        Override font sizes in px (defaults to preset's)
+    -o, --output
+        Output HTML file (defaults to preset's)
+    -v, --verbose
+    --max-fonts
+
+Examples:
+    $ fontpreview rich ~/fonts -o preview.html
+
+Command-line script: run ``python fontpreview.py`` or the ``fontpreview`` command. The module is importable as well.
+"""
 
 import argparse
 import html

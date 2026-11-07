@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Verify that installed packages import and compare their versions with PyPI.
+
+Lists the installed distributions, tries to import each one, asks the PyPI JSON API for
+the latest release and prints the packages that fail to import or are outdated, with a
+summary count.
+
+Usage: pysanity-check
+
+Examples:
+    $ pysanity-check
+
+Runs as a script (``python pysanity-check.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import importlib
 import re

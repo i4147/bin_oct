@@ -1,0 +1,113 @@
+{
+  "dos2utf8.py": {
+    "summary": "Convert the text files below the current directory to UTF-8 with LF line endings.",
+    "details": [
+      "Decodes each file as UTF-8 (falling back to Latin-1), normalizes CRLF and lone CR to ``\\n`` and rewrites the file only when the bytes change. Files are processed in a worker pool."
+    ],
+    "usage": "dos2utf8 [paths ...]",
+    "example": ["$ dos2utf8"]
+  },
+  "dupf.py": {
+    "summary": "Find duplicate files by hashing their contents with xxhash.",
+    "details": [
+      "Hashes every file below the given paths (``.git``, ``__pycache__`` and the other cache directories are skipped) and prints the groups of files that share a hash, largest duplicates first. ``--pool-method`` selects how the hashing jobs are distributed."
+    ],
+    "usage": "dupf [paths ...] [--pool-method map|starmap|imap_unordered|apply_async]",
+    "example": ["$ dupf ~/downloads"]
+  },
+  "egg2whl.py": {
+    "summary": "Convert an unpacked ``.egg`` directory into a wheel.",
+    "details": [
+      "Reads ``PKG-INFO`` for the distribution name and version, writes a matching ``setup.py`` into a temporary copy of the egg and calls ``pip wheel`` on it, leaving the resulting ``.whl`` in the current directory."
+    ],
+    "usage": "egg2whl EGG_DIRECTORY",
+    "example": ["$ egg2whl ./SomePackage-1.0-py3.9.egg"]
+  },
+  "email_collector.py": {
+    "summary": "Crawl a website, store the HTML in SQLite and harvest the e-mail addresses.",
+    "details": [
+      "Follows links on the same hostname (two levels deep) for the given start URL, keeps the pages in ``data/crawler.sqlite`` with the HTML under ``data/html/``, extracts the e-mail addresses it finds and writes them to ``data/emails.csv`` (domains to ``data/domains.csv``). ``--emails``/``-e`` only exports what is already in the database."
+    ],
+    "usage": "email_collector URL | --emails",
+    "example": ["$ email_collector https://example.com", "$ email_collector --emails"]
+  },
+  "email_crawler.py": {
+    "summary": "Crawl a website two levels deep, cache the pages in SQLite and collect e-mail addresses.",
+    "details": [
+      "Starts at the URL given on the command line, follows same-host links, stores each page in ``data/crawler.sqlite`` and its HTML in ``data/html/``, then writes the harvested addresses to ``data/emails.csv`` and the domains to ``data/domains.csv``. Logs go to ``logs/``."
+    ],
+    "usage": "email_crawler URL",
+    "example": ["$ email_crawler https://example.com"]
+  },
+  "empt.py": {
+    "summary": "Empty a file by truncating it to zero bytes.",
+    "details": ["Writes an empty string to the given path, which clears the content while keeping the file (and its permissions) in place."],
+    "usage": "empt FILE",
+    "example": ["$ empt notes.log"]
+  },
+  "emptypkg.py": {
+    "summary": "Find Python packages and wheels that contain no importable code.",
+    "details": [
+      "Scans the given directories (or the current one) for ``.whl`` files whose ``RECORD`` lists nothing outside ``.dist-info`` and for installed ``*.dist-info`` directories without a module, then prints them, optionally writing the list to a CSV."
+    ],
+    "usage": "emptypkg [paths ...]",
+    "example": ["$ emptypkg ~/wheels"]
+  },
+  "emptywhl.py": {
+    "summary": "List the empty ``.whl`` files in the current directory.",
+    "details": [
+      "A wheel counts as empty when its ``RECORD`` only mentions files inside the ``.dist-info`` directory, i.e. the package ships metadata but no importable code. Corrupt archives are ignored."
+    ],
+    "usage": "emptywhl",
+    "example": ["$ emptywhl"]
+  },
+  "encryptor.py": {
+    "summary": "Encrypt or decrypt the text files below the current directory with AES.",
+    "details": [
+      "``--encrypt`` generates a random key, prints it and encrypts every file it walks in place (IV stored with the ciphertext); ``--decrypt --key KEY`` reverses the operation. Binary files are skipped."
+    ],
+    "usage": "encryptor --encrypt | --decrypt --key KEY [paths ...]",
+    "example": ["$ encryptor --encrypt notes/", "$ encryptor --decrypt --key <key> notes/"]
+  },
+  "ensurebracket.py": {
+    "summary": "Check that the brackets in Python files are balanced.",
+    "details": [
+      "Walks the characters of each file against a stack of ``(``/``[``/``{`` and prints the name of every file whose brackets are balanced. Files are checked in a worker pool; the files with an unbalanced result are simply not printed."
+    ],
+    "usage": "ensurebracket [files ...]",
+    "example": ["$ ensurebracket src/"]
+  },
+  "ex_comments.py": {
+    "summary": "Collect the import statements of every Python file into per-folder ``imports.py`` files.",
+    "details": [
+      "Parses the tree below the current directory with tree-sitter, takes the import (and comment) statements of each module and writes them grouped by folder to ``output/<folder>/imports.py``. Hidden folders and ``site-packages`` are skipped."
+    ],
+    "usage": "python ex_comments.py",
+    "example": ["$ python ex_comments.py"],
+    "notes": "Runs at import time; start it from the tree to scan."
+  },
+  "excss.py": {
+    "summary": "Extract the inline ``<style>`` blocks of HTML files into ``css/`` files.",
+    "details": [
+      "Parses each HTML file with BeautifulSoup, writes every ``<style>`` block to a randomly named ``css/xxxx.css`` (ten characters) and processes the files in parallel. Without arguments it handles every ``.html``/``.htm`` file below the current directory."
+    ],
+    "usage": "excss [files ...]",
+    "example": ["$ excss index.html"]
+  },
+  "exjs.py": {
+    "summary": "Extract the inline ``<script>`` blocks of HTML files into ``js/`` files.",
+    "details": [
+      "Parses each HTML file with BeautifulSoup and writes every ``<script>`` block to a randomly named ``js/xxxx.js`` file, skipping blocks whose target already exists. Without arguments it handles every HTML file below the current directory."
+    ],
+    "usage": "exjs [files ...]",
+    "example": ["$ exjs page.html"]
+  },
+  "extinfo.py": {
+    "summary": "Report file extensions and their total sizes in the current directory tree.",
+    "details": [
+      "Walks the tree, groups the files by extension and either prints the total size for one extension or, with ``--all``, a table of every extension found with its count and size."
+    ],
+    "usage": "extinfo EXTENSION | --all",
+    "example": ["$ extinfo py", "$ extinfo --all"]
+  }
+}

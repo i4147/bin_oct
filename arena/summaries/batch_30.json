@@ -1,0 +1,61 @@
+{
+  "xfenced.py": {
+    "summary": "Extract the Python fenced code blocks of Markdown files into ``ex01.py``-style files.",
+    "details": ["Reads the ``.md`` files given on the command line (or all of them in the current directory), matches the ```python / ```py fences and writes each block to a numbered script next to them."],
+    "usage": "xfenced [markdown files ...]",
+    "example": ["$ xfenced tutorial.md"]
+  },
+  "xip.py": {
+    "summary": "Print the public IP address and its country and city via ipinfo.",
+    "details": ["Loads the ``IPINFO_TOKEN`` from ``~/.env`` with python-dotenv, queries the ipinfo service and prints the address, the country and the city in colour."],
+    "usage": "xip",
+    "example": ["$ xip"],
+    "notes": "Runs at import time and needs ``IPINFO_TOKEN`` in ``~/.env``."
+  },
+  "xm.py": {
+    "summary": "Turn the module docstrings of a source tree into prompt files.",
+    "details": [
+      "Extracts the module docstring of every Python file with ast, reformats it into 80-column prose without its ``LiveDoc:`` line and writes one ``.txt`` per module into the prompt directory, optionally also a ``modules.json`` index; ``--remove`` strips the docstring from the source file instead."
+    ],
+    "usage": "xm [--root DIR] [--out-dir DIR] [-j] [-r]",
+    "example": ["$ xm --root src --out-dir prompts -j"]
+  },
+  "xordup.py": {
+    "summary": "Find the duplicate files of the current directory with an xor hash.",
+    "details": [
+      "Hashes every non-empty file in parallel with ``xorhash``, groups the identical hashes and prints each group; ``-r`` keeps the first file of a group and deletes the rest."
+    ],
+    "usage": "xordup [-r]",
+    "example": ["$ xordup", "$ xordup -r"]
+  },
+  "xpy_entities.py": {
+    "summary": "Extract the classes, functions, constants and comments of Python sources with an ast/tree-sitter/libcst backend.",
+    "details": [
+      "Subcommands: ``extract`` writes the entities per kind to ``output/`` as Python, JSON, text or SQLite files, ``nodes``/``sexpr``/``funcnames``/``constants`` print the tree-sitter views, and ``--scope``, ``--kinds``, ``--layout`` and ``--archives`` control what is included (zip, wheel, tar and zstd archives are scanned too)."
+    ],
+    "usage": "xpy_entities {extract,nodes,sexpr,funcnames,constants} [paths ...]",
+    "example": ["$ xpy_entities extract src/ --backend libcst"]
+  },
+  "xrar.py": {
+    "summary": "Extract the RAR archives below a directory, including their split parts.",
+    "details": [
+      "Finds the ``.rar`` files, resolves the ``.partN.rar``/``.rNN`` companions, extracts each of them in a process pool into a folder next to the archive and reports the resulting size."
+    ],
+    "usage": "xrar [DIRECTORY]",
+    "example": ["$ xrar ~/Downloads"]
+  },
+  "zip2xz.py": {
+    "summary": "Repack ZIP archives as ``.tar.xz``.",
+    "details": ["Unpacks each zip file into a temporary directory, creates a ``.tar.xz`` with tar and replaces the original archive with the compressed result."],
+    "usage": "zip2xz [ARCHIVE ...]",
+    "example": ["$ zip2xz bundle.zip"]
+  },
+  "zshdiag.py": {
+    "summary": "Diagnose a zsh setup: duplicate aliases, functions and shadowed binaries.",
+    "details": [
+      "Collects the aliases and functions defined in ``~/.zshrc``, ``~/.config/zsh.d`` and ``~/.oh-my-zsh``, lists the definitions that appear more than once with their source files and shows which commands are shadowed by other binaries on ``PATH``."
+    ],
+    "usage": "zshdiag",
+    "example": ["$ zshdiag"]
+  }
+}

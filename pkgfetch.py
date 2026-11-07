@@ -1,4 +1,48 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Download the distributions matching a requirement from the PEP 503/691 indexes.
+
+Queries PyPI (with the Tsinghua and Yandex mirrors as fallbacks), matches the Python
+version and the platform tags, picks the best wheel or sdist, verifies the hash and the
+archive integrity and downloads through httpx (with parallel ranges), aria2c, requests
+or pycurl.
+
+Usage: pkgfetch 'REQUIREMENT' [-i INDEX_URL] [-d DEST] [-b BACKEND]
+
+Positional arguments:
+    requirement
+        PEP 508 requirement, for example: requests>=2.28
+
+Options:
+    -i, --index-url
+        Simple index URL, repeatable. If omitted: PyPI, Tsinghua, and Yandex are tried
+        in order.
+    -f, --find-link
+        Additional find-links source, repeatable.
+    -d, --dest
+        Download destination directory, default: current directory.
+    -b, --backend
+        Download backend. httpx supports internal parallel range downloads; aria2c uses
+        external parallel downloading.
+    --py-version
+        Override target Python version.
+    --platform
+        Override target platform tag, repeatable.
+    --abi
+        Override ABI tag, repeatable.
+    --impl
+        Override Python implementation, for example cp or pp.
+    --no-binary
+        Exclude wheels and select source archives only.
+    --only-binary
+        Select wheels only.
+    ... plus 5 more; run ``pkgfetch --help`` for the full list.
+
+Examples:
+    $ pkgfetch 'requests>=2.28' -d wheels/
+
+Command-line script: run ``python pkgfetch.py`` or the ``pkgfetch`` command. The module is importable as well.
+"""
+
 import argparse
 import hashlib
 import json

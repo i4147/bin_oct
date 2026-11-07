@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Render a Markdown file (or stdin) in the terminal with rich.
+
+Prints the text through ``rich``, renders fenced code blocks with syntax highlighting and
+line numbers (Monokai theme) and can page long documents with a system pager.
+
+Usage: plow [FILE] [--pager]
+
+Examples:
+    $ plow README.md
+    $ cat notes.md | plow
+
+Runs as a script (``python plow.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import sys
 from pathlib import Path
 from typing import Annotated

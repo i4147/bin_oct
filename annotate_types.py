@@ -1,4 +1,35 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Annotate a Python file from its ``.pyi`` stub with LibCST.
+
+Generates or reuses the stub next to the source (``same.pyi`` unless ``--stub-file`` is given), sanitises it
+through typeshed, applies the signatures to the source and reports with ``--diff``, ``--dry-run`` and
+``--quiet``; ``--future-annotations`` adds the future import.
+
+Usage: annotate_types FILE.py [-s STUB.pyi] [-d] [-n]
+
+Positional arguments:
+    file
+        Path to the .py source file to annotate (input=sys.argv[1]).
+
+Options:
+    -s, --stub-file
+        Path to custom .pyi stub file (defaults to <file>.pyi beside the target file).
+    --no-overwrite
+        Do not overwrite existing type annotations in the source code.
+    --future-annotations
+        Enable '' support.
+    -d, --diff
+        Show unified diff of modifications.
+    -n, --dry-run
+        Simulate the transformation without modifying the file.
+    -q, --quiet
+        Suppress output messages except errors.
+
+Examples:
+    $ annotate_types module.py --diff
+
+Command-line script: run ``python annotate_types.py`` or the ``annotate_types`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

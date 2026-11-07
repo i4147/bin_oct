@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Collect the URLs found in the files and archives of a tree.
+
+Scans the text files and the members of the zip/tar/zst/br archives (nested archives
+included, size limit via ``-m``), extracts every ``http(s)`` link, separates the GitHub ones and
+saves ``urls.txt`` plus ``gitlinks.txt``/``repos.txt``.
+
+Usage: furls [-o urls.txt] [-m MAX_MB] [-e .py,.md] [--max-recursion N]
+
+Options:
+    -o, --output
+        Output file (one URL per line).
+    -m, --max-mb
+    -e, --extensions
+        Comma-separated list of file extensions to scan (e.g. .py,.md). If empty, all
+        files are scanned. Applies to archive members too.
+    --max-recursion
+        Max nested-archive recursion depth (default 999).
+
+Examples:
+    $ furls -o urls.txt --max-mb 5
+
+Command-line script: run ``python furls.py`` or the ``furls`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

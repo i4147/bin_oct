@@ -1,0 +1,128 @@
+{
+  "detect_code_similarity.py": {
+    "summary": "Detect the identical and similar Python files of a tree.",
+    "details": [
+      "Normalizes each file (comments and formatting dropped), hashes it, compares the pairs with difflib and optionally ssdeep/tlsh, and writes a JSON report of the exact duplicates and of the pairs above the similarity threshold (70 % by default)."
+    ],
+    "usage": "detect_code_similarity [--dir DIR] [--threshold N] [--output report.json]",
+    "example": ["$ detect_code_similarity --dir src --threshold 85"]
+  },
+  "detect_empty_pkgs.py": {
+    "summary": "Find the empty or useless Python archives (tar.gz, wheel, zip).",
+    "details": [
+      "Opens each archive of the current directory and flags the ones without code (no files, only metadata, only ``setup.py``, only ``__pycache__``, only docs/tests, import-only modules or trivially small content), moving them into ``./empty`` with ``-a``."
+    ],
+    "usage": "detect_empty_pkgs [-a]",
+    "example": ["$ detect_empty_pkgs -a"]
+  },
+  "detect_noneng.py": {
+    "summary": "Detect the Chinese, Persian, Japanese and Korean text in files.",
+    "details": [
+      "Matches the CJK, kana, hangul and Arabic script ranges in the files below a directory (10 MB limit), reports the hits and with ``-c`` copies each file into ``~/tmp/langs/<lang>``; it is a dry run by default."
+    ],
+    "usage": "detect_noneng [-c] [directory]",
+    "example": ["$ detect_noneng -c ~/downloads"]
+  },
+  "detect_nonenglish.py": {
+    "summary": "Find the non-English content of text files with a chosen language-detection backend.",
+    "details": [
+      "``--backend`` picks gcld3, pycld2, langdetect, lingua or fast-langdetect, the files are filtered by extension, excluded directories and size, and the result goes to a text or JSON report (``-l`` adds the per-line findings) with a confidence threshold."
+    ],
+    "usage": "detect_nonenglish [-b BACKEND] [-l] [-o REPORT] [paths ...]",
+    "example": ["$ detect_nonenglish -b langdetect -l -o report.json docs/"]
+  },
+  "dhtools.py": {
+    "summary": "Toolbox for the local ``dh`` package: reverse, inline and usage report.",
+    "details": [
+      "Subcommands: ``reverse`` replaces the locally copied ``dh`` functions with ``from dh import ...`` (``-a`` writes, the default is a dry run), ``inline`` pastes the imported sources back into the files and ``usage`` scans a script folder and reports which ``dh`` helpers it uses. ``--match`` and ``--import-style`` choose how the functions are recognised and imported."
+    ],
+    "usage": "dhtools {reverse,inline,usage} [-a] [paths ...]",
+    "example": ["$ dhtools reverse ~/bin -a"]
+  },
+  "dirinfo.py": {
+    "summary": "Report the file types and sizes of a directory.",
+    "details": [
+      "Scans the given path, groups the files by extension with their counts and sizes, prints the report (``-s`` saves it to ``/sdcard/.dirinfo``) and ``-i`` renders the same data as a Matplotlib bar chart in English or Persian."
+    ],
+    "usage": "dirinfo [-s] [-i chart.png] [-t english|persian] [PATH]",
+    "example": ["$ dirinfo -i chart.png ~/projects"]
+  },
+  "dirsizes.py": {
+    "summary": "Find the files and directories with the largest footprint.",
+    "details": [
+      "Walks a directory with a bounded depth, keeps the top K entries by recursive size (or by the individual file size with ``--mode file``), honours the ``--exclude`` patterns and prints a rich table, optionally reversed."
+    ],
+    "usage": "dirsizes [--dir DIR] [--topk K] [--mode folder|file] [--exclude NAME]",
+    "example": ["$ dirsizes -d ~ -k 20"]
+  },
+  "dirtools.py": {
+    "summary": "Unified directory analysis and folderization toolkit.",
+    "details": [
+      "Subcommands: ``info``/``subdirs`` print the size report and the charts, ``list``/``tree`` show the entries, and ``split-range``/``split-count``/``split-greedy``/``split-even`` move the files into folders by size range, by count or max size, by greedy bin packing or by an even split."
+    ],
+    "usage": "dirtools {info,subdirs,list,tree,split-range,split-count,split-greedy,split-even} [options]",
+    "example": ["$ dirtools split-count --max-mb 100 ~/photos"]
+  },
+  "dirz.py": {
+    "summary": "List the top-level directories of the current directory, optionally with their sizes.",
+    "details": ["Prints the subdirectories one per line and, with the size flag, the recursive total of each of them in a sorted, human-readable listing."],
+    "usage": "dirz [-s]",
+    "example": ["$ dirz -s"]
+  },
+  "dl.py": {
+    "summary": "Unified downloader with wget, check and size subcommands.",
+    "details": [
+      "Subcommands: ``wget`` downloads the URLs of a list (or the one given) with urllib, requests or pycurl, ``check`` tests whether the links are alive and ``size`` prints the remote sizes without downloading; ``--download-small`` fetches the files under the size limit, ``--filter-ext`` restricts the extension and ``--update-file`` rewrites the list with only the failed URLs."
+    ],
+    "usage": "dl {wget,check,size} [options] [URL|URLS_FILE]",
+    "example": ["$ dl size urls.txt", "$ dl wget --download-small urls.txt"]
+  },
+  "doctools.py": {
+    "summary": "Unified document conversion CLI.",
+    "details": [
+      "Subcommands: ``chat-export`` turns a JSON conversation list into per-chat Markdown, ``info-to-md`` shells out to the ``info`` reader, ``man-to-md`` renders a roff page, ``md-to-html`` writes styled HTML with Tailwind and KaTeX, ``rst-to-html`` goes through docutils, ``mobi-to-html`` extracts a ``.mobi``, ``pptx-to-txt`` pulls the slide text and ``rst-to-md`` uses pandoc."
+    ],
+    "usage": "doctools {chat-export,info-to-md,man-to-md,md-to-html,rst-to-html,mobi-to-html,pptx-to-txt,rst-to-md} [options]",
+    "example": ["$ doctools md-to-html README.md", "$ doctools man-to-md ls.1"]
+  },
+  "dostring_browser.py": {
+    "summary": "Browse the module docstrings of a directory in a paged Markdown view.",
+    "details": [
+      "Extracts the docstring of each ``.py`` file with ast, renders the documents with rich and pages through them with the space/arrow keys, ``n``/``p`` for the next or previous file and ``q`` to quit."
+    ],
+    "usage": "dostring_browser [directory]",
+    "example": ["$ dostring_browser ~/bin"]
+  },
+  "drmc.py": {
+    "summary": "Strip the comments, docstrings and annotations of Python files.",
+    "details": [
+      "``-c`` removes the comments, ``-d`` the docstrings, ``-a``/``-x`` everything, ``-t`` the annotations; the backend is ast, LibCST or tree-sitter (``-b``), the writes are atomic, and ``--dry-run``, ``--diff``, ``--backup`` and every pool method are available."
+    ],
+    "usage": "drmc [-c] [-d] [-t] [-b BACKEND] [--diff] [paths ...]",
+    "example": ["$ drmc -c -d --diff src/"]
+  },
+  "dt1.py": {
+    "summary": "Translate a text file in resumable chunks.",
+    "details": [
+      "Splits the text into ~2500-character chunks, translates them with DeepL, deep_translator, translate, Bing, googletrans or pygoogletranslation (automatic fallback), saves the ``chunks.json`` progress periodically, throttles the requests and lists the failed chunk indexes."
+    ],
+    "usage": "dt1 [-i input.txt] [-o chunks.json] [-s en] [-t fr]",
+    "example": ["$ dt1 -i notes.txt -t de"]
+  },
+  "dt2.py": {
+    "summary": "Translate the lines of a text file with progress saving.",
+    "details": [
+      "Groups the lines into chunks of 2000 characters, translates them with ``deep_translator`` in parallel, saves the progress every ten chunks and on interruption, and writes plain text, JSON or merged source/translation pairs (``-o``)."
+    ],
+    "usage": "dt2 -i input.txt [-s ru] [-t en] [-o json|text|merged]",
+    "example": ["$ dt2 -i messages.txt -o merged"]
+  },
+  "dt3.py": {
+    "summary": "Translate a text file in independently resumable chunks with many backends.",
+    "details": [
+      "Supports DeepL, deep_translator, translate, Bing, googletrans, pygoogletranslation, boto3, Azure, Baidu, Alibaba and Watson, maps the language codes per backend, atomically saves the chunk results, skips the identity translations and logs to a rotating file."
+    ],
+    "usage": "dt3 -i input.txt -o out.json [-s auto] [-t en] [-b BACKEND]",
+    "example": ["$ dt3 -i article.txt -o article.json -t en"]
+  }
+}

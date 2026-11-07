@@ -1,4 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove the comments from C and C++ sources with tree-sitter.
+
+Deletes the comment nodes of the ``.c``/``.h``/``.cc``/``.cpp``/``.hpp`` files in place, either in batch
+with a process pool or with ``--interactive`` asking about each comment.
+
+Usage: cccpp [-i] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories. Defaults to current directory recursively.
+
+Options:
+    -i, --interactive
+        Interactive mode: show each comment and ask for confirmation before removal.
+
+Examples:
+    $ cccpp lib/
+
+Command-line script: run ``python cccpp.py`` or the ``cccpp`` command. The module is importable as well.
+"""
 
 import argparse
 import sys

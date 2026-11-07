@@ -1,0 +1,103 @@
+{
+  "cramer.py": {
+    "summary": "Compress or decompress files with snappy, lz4 or gzip through cramjam.",
+    "details": [
+      "Takes a file or a folder, compresses every match (or decompresses the ``.sz``/``.lz4``/``.gz`` files again) with the chosen algorithm, guessing the algorithm from the extension when decompressing. ``--keep`` preserves the originals and ``--skip-existing`` avoids overwriting earlier output."
+    ],
+    "usage": "cramer PATH [--compress|--decompress] [--algo snappy|lz4|gzip]",
+    "example": ["$ cramer data/ --algo lz4", "$ cramer data/ --decompress"]
+  },
+  "create_monthly_branch.py": {
+    "summary": "Create and push a ``<month>_<year>`` branch in ``~/bin``.",
+    "details": [
+      "Builds the branch name from the current month, checks whether it exists locally or on the remote, and otherwise fetches, updates ``main``, branches off it and pushes the new branch with upstream tracking before switching back to ``main``."
+    ],
+    "usage": "create_monthly_branch",
+    "example": ["$ create_monthly_branch"],
+    "notes": "The repository path (``~/bin``) and base branch (``main``) are module constants; edit them for other layouts."
+  },
+  "create_stub.py": {
+    "summary": "Generate ``.pyi`` stub files for Python modules with ``stubgen``.",
+    "details": [
+      "Runs ``stubgen`` on the files named on the command line, or on every ``.py`` file below the current directory, skipping modules whose stub already exists and summarising the files that still have no stub."
+    ],
+    "usage": "create_stub [files ...]",
+    "example": ["$ create_stub pkg/"]
+  },
+  "csv2json.py": {
+    "summary": "Convert a two-column CSV into a JSON object keyed by the first column.",
+    "details": ["The first row is treated as the header; every following row becomes ``{first column: second column}`` and the mapping is written next to the input as ``<name>.json`` with indentation."],
+    "usage": "csv2json FILE.csv",
+    "example": ["$ csv2json words.csv"]
+  },
+  "csv2json2.py": {
+    "summary": "Convert a CSV file into a JSON list of row objects.",
+    "details": ["Uses :class:`csv.DictReader`, so the header row becomes the keys of each object, and writes the list to ``<name>.json`` with two-space indentation."],
+    "usage": "csv2json2 INPUT.csv",
+    "example": ["$ csv2json2 table.csv"]
+  },
+  "csvtojson.py": {
+    "summary": "Convert a CSV file into a JSON list of row objects.",
+    "details": ["Reads the CSV with :class:`csv.DictReader` and writes ``<name>.json`` next to the input, indented by four spaces."],
+    "usage": "csvtojson INPUT.csv",
+    "example": ["$ csvtojson table.csv"]
+  },
+  "csym.py": {
+    "summary": "Create extension-less symlinks for the scripts in the personal bin folders.",
+    "details": [
+      "For ``~/bashbin`` (``.sh``) and ``~/bin`` plus ``~/.local/bin`` (``.py``) it adds a symlink without the extension pointing at the script, so the tools can be called by name. Existing non-symlink entries with the same name are replaced."
+    ],
+    "usage": "csym",
+    "example": ["$ csym"]
+  },
+  "cwin.py": {
+    "summary": "Delete macOS and Windows clutter files from a directory tree.",
+    "details": [
+      "Matches the usual artefacts (``.DS_Store``, ``._*``, ``.Trashes``, ``Thumbs.db``, ``desktop.ini``, ``*.exe``, ``*.dll``, ``*.lnk`` ...) while walking the given paths, and removes them or lists them in dry-run mode."
+    ],
+    "usage": "cwin [paths ...]",
+    "example": ["$ cwin ~/downloads --dry-run"]
+  },
+  "cytonizer.py": {
+    "summary": "Run ``cythonize`` over Cython sources in parallel.",
+    "details": ["Collects the ``.pyx`` files given on the command line (directories are searched recursively) or below the current directory and runs ``cythonize`` in each file's parent directory with a worker pool."],
+    "usage": "cytonizer [paths ...]",
+    "example": ["$ cytonizer src/"]
+  },
+  "dcode.py": {
+    "summary": "Peel encoded strings recursively and rank the plausible plain-text results.",
+    "details": [
+      "Applies base64, base32, base16, base58, hex, URL, ROT13/ROT47, Atbash, binary, HTML-entity, unicode-escape, gzip/zlib/bz2/lzma, and single-byte XOR decoders in a bounded search tree, scores each candidate by English letter frequency and prints the most readable chains (optionally as JSON)."
+    ],
+    "usage": "dcode STRING | --input FILE [--json] [--max-depth N]",
+    "example": ["$ dcode 'SGVsbG8gd29ybGQ='", "$ dcode -i payload.txt --json"]
+  },
+  "decode_phonetic.py": {
+    "summary": "Unescape HTML entities in a file in place.",
+    "details": ["Reads the file, applies :func:`html.unescape` and writes the result back, replacing ``&amp;``, ``&#233;`` and similar entities with the characters they stand for."],
+    "usage": "decode_phonetic FILE",
+    "example": ["$ decode_phonetic page.html"]
+  },
+  "decode_unicode.py": {
+    "summary": "Convert a text file to plain ASCII by stripping the accents.",
+    "details": ["Normalizes the text to NFKD and encodes it as ASCII while ignoring the characters that cannot be represented, so ``café`` becomes ``cafe``. The file is rewritten in place."],
+    "usage": "decode_unicode FILE",
+    "example": ["$ decode_unicode names.txt"]
+  },
+  "decryptor.py": {
+    "summary": "Encrypt or decrypt every file in the current directory with AES-CBC.",
+    "details": [
+      "``--encrypt`` generates a random 32-character key, prints it and prepends a fresh IV to each encrypted file; ``--decrypt`` needs the same key via ``--key``. PKCS7 padding is applied and the files are overwritten in place, the running script itself being skipped."
+    ],
+    "usage": "decryptor --encrypt | --decrypt --key KEY",
+    "example": ["$ decryptor --encrypt", "$ decryptor --decrypt --key <printed-key>"]
+  },
+  "deduptools.py": {
+    "summary": "Find and remove duplicate definitions with regexes, ASTs or tree-sitter.",
+    "details": [
+      "The ``const`` subcommand drops repeated constant assignments in one file, ``ast`` hashes (normalised) top-level functions, classes and constants across the given paths and writes one representative per duplicate to ``utils.py``, ``ts`` does the same by tree-sitter source text, and ``refactor`` extracts the surviving definitions into a package. ``--exclude``/``--exclude-self`` filter the inputs."
+    ],
+    "usage": "deduptools {const,ast,ts,refactor} [options] [paths ...]",
+    "example": ["$ deduptools ast src/ --output utils.py", "$ deduptools const script.py"]
+  }
+}

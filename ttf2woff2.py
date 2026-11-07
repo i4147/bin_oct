@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert the TTF/OTF fonts below the current directory to WOFF2.
+
+Compresses each font with fontTools' ``woff2`` encoder, gives a unique name when the ``.woff2``
+already exists, deletes the source on success and converts the files in parallel.
+
+Usage: ttf2woff2 [fonts ...]
+
+Examples:
+    $ ttf2woff2 fonts/
+
+Runs as a script (``python ttf2woff2.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

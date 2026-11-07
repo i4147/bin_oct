@@ -1,4 +1,50 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Normalise the file and directory permissions of a tree.
+
+Sets the directories to 0775 and the files to 0644 (configurable), adds the execute bit
+to the scripts (shebang, ``.sh``/``.so`` suffix or the ``bin``-style parent folders) and removes it
+elsewhere, with ``--no-preserve-existing-exec``, ``--dir-mode``/``--file-mode`` and the parallel/serial runners.
+
+Usage: nch [PATH] [--dir-mode 0775] [--file-mode 0644] [--skip-dir NAME]
+
+Positional arguments:
+    path
+        Root path (default: current directory)
+    mode
+        Which pipeline to run (default: all)
+    patterns ...
+        Glob patterns for deexec mode (default: *.py).
+
+Options:
+    --skip-dir
+        Directory name to skip (repeatable)
+    --exec-dir
+        Parent dir name that marks files executable (repeatable)
+    --suffix-exec
+        File suffix that marks files executable (repeatable, e.g. .sh)
+    --no-preserve-existing-exec
+        Also normalize already-executable files
+    --no-binary-check
+        Disable dh.is_binary() (falls back to shebang only)
+    --dir-mode
+        Octal mode for directories (default: 0775)
+    --file-mode
+        Octal mode for regular files (default: 0644)
+    --exec-mode
+        Octal mode for executable files (default: 0755)
+    --keep-exec-parent
+        Parent dir name whose files keep exec state in deexec mode (repeatable; default:
+        bin, sbin)
+    --dry-run
+        Analyze but do not change anything
+    ... plus 3 more; run ``nch --help`` for the full list.
+
+Examples:
+    $ nch ~/bin --dry-run
+
+Changes the permissions of every file below the path; review the list before running it
+on a system tree.
+"""
 
 import argparse
 import fnmatch

@@ -1,4 +1,48 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Comment out (or un-comment) a line range of a file.
+
+Applies the comment prefix that matches the file type (``#``, ``//``, ``--``, ``"`` ...), accepts
+ranges and stdin (``-``), and offers ``-r`` to un-comment, ``--dry-run``, ``--output``, ``--backup``, ``--encoding`` and ``--preserve-shebang``; the
+work is chunked across a pool.
+
+Usage: cout FILE START [END] [-r] [--dry-run] [--backup]
+
+Positional arguments:
+    filename
+        Path to file, or '-' for stdin/stdout.
+    start_line
+        Start line (1-based).
+    end_line
+        End line (inclusive); defaults to EOF.
+
+Options:
+    -r, --remove
+        Remove the comment prefix from target lines.
+    -n, --dry-run
+        Report changes without writing.
+    -o, --output
+        Write to this file instead of replacing the input.
+    -b, --backup
+        Save <file>.bak before replacing.
+    --comment-char
+        Override the comment prefix.
+    --encoding
+        Text encoding (default: utf-8).
+    --preserve-shebang
+        Never comment line 1 if it starts with '#!'.
+    --ranges
+        Multiple ranges like '1-10,20,30-40' (overrides positionals).
+    --strict
+        Fail on decode errors instead of using surrogateescape.
+    --no-stats
+        Suppress the summary line.
+
+Examples:
+    $ cout script.py 10 25
+    $ cout script.py 10 25 -r
+
+Command-line script: run ``python cout.py`` or the ``cout`` command. The module is importable as well.
+"""
 
 import argparse
 import shutil

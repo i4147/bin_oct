@@ -1,4 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Print the public IP address and its country and city via ipinfo.
+
+Loads the ``IPINFO_TOKEN`` from ``~/.env`` with python-dotenv, queries the ipinfo service and prints the
+address, the country and the city in colour.
+
+Usage: xip
+
+Examples:
+    $ xip
+
+Runs at import time and needs ``IPINFO_TOKEN`` in ``~/.env``.
+"""
 
 import os
 from pathlib import Path

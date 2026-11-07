@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Run ``cythonize`` over Cython sources in parallel.
+
+Collects the ``.pyx`` files given on the command line (directories are searched recursively)
+or below the current directory and runs ``cythonize`` in each file's parent directory with a
+worker pool.
+
+Usage: cytonizer [paths ...]
+
+Examples:
+    $ cytonizer src/
+
+Runs as a script (``python cytonizer.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import sys

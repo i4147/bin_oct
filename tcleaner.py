@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Free space on a Termux install.
+
+The ``termux`` subcommand strips the man/info/doc pages and the locales, adds a dpkg config
+that keeps them from coming back and clears the caches; ``junk`` deletes the junk names
+listed in ``/sdcard/data/junk`` under ``$HOME`` and ``pycache`` removes the bytecode caches. ``--dry-run`` previews the deletions.
+
+Usage: tcleaner {termux,junk,pycache} [--dry-run]
+
+Examples:
+    $ tcleaner termux --dry-run
+
+Runs as a script (``python tcleaner.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import shutil

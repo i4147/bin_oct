@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Minify HTML files in place using tree-sitter or htmlmin.
+
+With the default tree-sitter backend comments and inter-tag whitespace are removed; ``--backend htmlmin``
+uses the htmlmin package (whitespace collapsing and attribute trimming) instead. ``--dry-run``/``--diff``
+preview, ``--backup`` keeps a ``.bak`` copy.
+
+Usage: clean-html [options] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    -b, --backend
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-html page.html --backend htmlmin
+    $ clean-html site/ --dry-run
+
+Command-line script: run ``python clean-html.py`` or the ``clean-html`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

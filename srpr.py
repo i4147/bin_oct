@@ -1,4 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Run ``srp`` once for every ASCII letter.
+
+Calls the external ``srp`` command with each lowercase and then each uppercase letter,
+printing the output of each run.
+
+Usage: python srpr.py
+
+Examples:
+    $ python srpr.py
+
+Wrapper around the external ``srp`` executable; it does nothing useful without it.
+"""
 
 from dh import runcmd
 

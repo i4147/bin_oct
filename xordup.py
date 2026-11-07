@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Find the duplicate files of the current directory with an xor hash.
+
+Hashes every non-empty file in parallel with ``xorhash``, groups the identical hashes and prints
+each group; ``-r`` keeps the first file of a group and deletes the rest.
+
+Usage: xordup [-r]
+
+Examples:
+    $ xordup
+    $ xordup -r
+
+Runs as a script (``python xordup.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

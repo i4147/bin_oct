@@ -1,0 +1,108 @@
+{
+  "gexcst.py": {
+    "summary": "Extract the functions, classes and constants of Python sources into separate files.",
+    "details": [
+      "Walks the given files, directories and archives (``.whl``, ``.zip``, ``.tar*``, ``.zst``) with a LibCST-based extractor and writes every entity to ``output/`` with a unique name, keeping the source text intact. Files are handled in a worker pool."
+    ],
+    "usage": "gexcst [paths ...]",
+    "example": ["$ gexcst pkg/ dist/pkg.whl"]
+  },
+  "gext.py": {
+    "summary": "Split Python sources into ``output/classes``, ``output/functions`` and ``output/const`` files.",
+    "details": [
+      "Parses each module with :mod:`ast`, writes every top-level class, function and constant into its own file under ``output/`` and skips ``test``/``examples`` directories plus the output tree itself. The files are processed in a worker pool."
+    ],
+    "usage": "gext [paths ...]",
+    "example": ["$ gext project/"]
+  },
+  "gext0.py": {
+    "summary": "Extract Python entities from files and archives into ``output/``.",
+    "details": [
+      "Like :mod:`gexcst` but AST-based: functions, classes and constants of every scanned source (plain files, directories and archives) are written to ``output/`` with collision-free names."
+    ],
+    "usage": "gext0 [paths ...]",
+    "example": ["$ gext0 src/"]
+  },
+  "git_repo_creator.py": {
+    "summary": "Create a GitHub repository and push the current project into it.",
+    "details": [
+      "Two backends: ``api`` talks to the REST API with a token from ``--token``/``--env-file``, ``gh`` shells out to the GitHub CLI. Both initialise git when needed, optionally add a README and ``.gitignore``, stage and commit, set the remote and push the chosen branch."
+    ],
+    "usage": "git_repo_creator {api,gh} NAME [options]",
+    "example": ["$ git_repo_creator gh myproject --private", "$ git_repo_creator api myproject --push"]
+  },
+  "gitclone.py": {
+    "summary": "Clone a git repository, fetching submodules when it has any.",
+    "details": [
+      "Clones into the directory named after the repository (``--recursive`` is added when the remote advertises submodules), reports the default branch and exits with the status of ``git clone``."
+    ],
+    "usage": "gitclone URL [DESTINATION]",
+    "example": ["$ gitclone https://github.com/user/repo.git"]
+  },
+  "gittools.py": {
+    "summary": "Bulk git chores: scan local changes, pull all clones, create repositories, edit ``.gitignore``.",
+    "details": [
+      "``scan-changes`` reports the status of every repository below a path, ``pull-all`` fast-forwards all of them in parallel, ``newrepo`` creates a GitHub repository through the API and pushes to it (with an optional ``--env-file`` token) and ``gitignore-add`` appends a line to the ``.gitignore`` files it finds."
+    ],
+    "usage": "gittools {scan-changes,pull-all,newrepo,gitignore-add} [options]",
+    "example": ["$ gittools pull-all ~/code", "$ gittools newrepo --name demo --push"]
+  },
+  "gsz.py": {
+    "summary": "Print the size of a GitHub repository.",
+    "details": ["Accepts ``owner/repo`` or a full ``https://github.com/...`` URL, asks the GitHub API for the repository metadata and prints the size in megabytes."],
+    "usage": "gsz owner/repo",
+    "example": ["$ gsz i4147/bin_oct"]
+  },
+  "hformat.py": {
+    "summary": "Re-indent HTML files with BeautifulSoup's pretty printer.",
+    "details": ["Parses each file (the arguments, or every ``.html`` file below the current directory) and rewrites it with ``soup.prettify()`` only when the formatting changed. Files are handled in parallel."],
+    "usage": "hformat [files ...]",
+    "example": ["$ hformat index.html"]
+  },
+  "hijri.py": {
+    "summary": "Print today's date in the Jalali calendar with Persian digits.",
+    "details": [
+      "Converts the current Gregorian date to Jalali with the classic day-number algorithm and prints the Persian weekday, day, month name and year (through ``faprint`` for right-to-left rendering)."
+    ],
+    "usage": "hijri",
+    "example": ["$ hijri"]
+  },
+  "histdup.py": {
+    "summary": "Remove duplicate lines from ``~/.bash_history``.",
+    "details": ["Reads the history file, keeps the first occurrence of every command in order and rewrites the file, printing how many lines were removed."],
+    "usage": "histdup",
+    "example": ["$ histdup"]
+  },
+  "html_entity.py": {
+    "summary": "Replace HTML entities with their characters in text files.",
+    "details": [
+      "Substitutes a built-in table of entities (``&lt;``, ``&gt;``, ``&amp;``, ``&nbsp;``, ``&copy;`` ...) and rewrites the matching files in place, in parallel."
+    ],
+    "usage": "html_entity [paths ...]",
+    "example": ["$ html_entity page.html"]
+  },
+  "html_minify_py.py": {
+    "summary": "Minify HTML files in place with lxml.",
+    "details": [
+      "Parses the document with lxml, drops comments, collapses whitespace between tags and optionally removes attribute quotes before rewriting the file. ``HTMLMinifier`` exposes the same transformation as a class."
+    ],
+    "usage": "html_minify_py [paths ...]",
+    "example": ["$ html_minify_py site/"]
+  },
+  "htmltomarkdown.py": {
+    "summary": "Convert an HTML file to Markdown.",
+    "details": [
+      "Builds a small document tree from the HTML and renders the supported tags (headings, lists, links, images, emphasis, tables, pre/code blocks with language detection) as Markdown."
+    ],
+    "usage": "htmltomarkdown INPUT.html [OUTPUT.md]",
+    "example": ["$ htmltomarkdown page.html page.md"]
+  },
+  "htmltools.py": {
+    "summary": "Inline, bundle and stand-alone HTML assets with one CLI.",
+    "details": [
+      "``bundle`` extracts the CSS/JS/images of a page and rebuilds a single ``single_page_local.html``, ``inline`` embeds local and remote assets directly into existing HTML/CSS, ``isolate`` writes ``<name>_standalone.html``, ``standalone`` does the same in parallel with a remote cache, ``mhtml`` unpacks ``.mhtml`` archives and ``css`` inlines ``@import`` rules and fonts. Options control the output directories, timeouts, user agent and the maximum download size."
+    ],
+    "usage": "htmltools {bundle,inline,isolate,standalone,mhtml,css} [options]",
+    "example": ["$ htmltools bundle page.html --output-dir out/", "$ htmltools inline index.html"]
+  }
+}

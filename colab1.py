@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Copy the Colab site-packages into Google Drive as files and zips.
+
+Mounts Drive, then copies the top-level files of ``site.getsitepackages()[0]`` to ``MyDrive/wheels`` and packs each top-level
+package directory into a deflate-compressed ``.zip`` (``.pyc`` files skipped, ``setuptools``/``pip`` excluded).
+Meant to be pasted into a Colab notebook cell.
+
+Usage: python colab1.py   # from a Colab notebook cell
+
+Examples:
+    %run colab1.py
+
+Runs at import time; it needs a Colab runtime because it mounts ``/content/drive``.
+"""
 
 import shutil
 import site

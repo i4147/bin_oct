@@ -1,4 +1,38 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert fonts between TTF, OTF, WOFF and WOFF2.
+
+Detects the input format (Type 1 ``pfa``/``pfb`` are converted to a CFF-outlined OTF), writes
+the requested ``--to`` format next to the source (or under ``-o``), and offers ``-r`` to drop the
+original, ``-f`` to overwrite and ``--dry-run``; the files are processed in parallel.
+
+Usage: fco [fonts ...] --to ttf|otf|woff|woff2 [-r] [-o OUTDIR]
+
+Positional arguments:
+    inputs ...
+        Input font files or directories (default: current directory, recursive)
+
+Options:
+    --to, -t
+    -r, --remove
+        Remove original file after successful conversion
+    -o, --output-dir
+        Output directory (default: alongside each input)
+    -f, --force
+        Overwrite existing output files
+    --dry-run
+        List files that would be converted without converting
+    -v, --verbose
+        Enable verbose (DEBUG) logging
+    --allow-outline-mismatch
+        Allow TTF↔OTF conversions even when outlines do not match the target convention.
+        This writes a non-standard font and only changes the sfnt version; outlines are
+        NOT converted.
+
+Examples:
+    $ fco fonts/*.ttf --to woff2
+
+Command-line script: run ``python fco.py`` or the ``fco`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

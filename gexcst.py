@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Extract the functions, classes and constants of Python sources into separate files.
+
+Walks the given files, directories and archives (``.whl``, ``.zip``, ``.tar*``, ``.zst``) with a LibCST-based
+extractor and writes every entity to ``output/`` with a unique name, keeping the source text
+intact. Files are handled in a worker pool.
+
+Usage: gexcst [paths ...]
+
+Examples:
+    $ gexcst pkg/ dist/pkg.whl
+
+Runs as a script (``python gexcst.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import re

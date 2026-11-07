@@ -1,4 +1,50 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Toolbox for the local ``dh`` package: reverse, inline and usage report.
+
+Subcommands: ``reverse`` replaces the locally copied ``dh`` functions with ``from dh import ...`` (``-a`` writes, the
+default is a dry run), ``inline`` pastes the imported sources back into the files and ``usage`` scans
+a script folder and reports which ``dh`` helpers it uses. ``--match`` and ``--import-style`` choose how the
+functions are recognised and imported.
+
+Usage: dhtools {reverse,inline,usage} [-a] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories to process (default: current directory).
+
+Subcommands:
+    reverse
+        Replace locally-copied dh functions with `from dh import ...`.
+    inline
+        Inline `from dh import X` imports into the file source.
+    usage
+        Scan a directory of Python scripts and report dh usage.
+
+Options:
+    -v, --verbose
+        Enable debug logging and per-file match details.
+    -a, --apply
+        Write changes in place (default: dry-run).
+    --match
+        'normalized' = ast.unparse after stripping docstrings (dh_reverse.py). 'raw' =
+        raw source-line hash (fixdh.py, reverse_inline.py). Default: normalized.
+    --import-style
+        'flat' -> `from dh import X` (dh_reverse / fixdh). 'module' -> `from dh.<mod>
+        import X` (reverse_inline). Default: flat.
+    --prune-imports
+        Remove top-level imports that become unused (fixdh behaviour).
+    --dh-path
+    --skip-file
+    --bin-dir
+    --report-path
+    --dh-name
+        Top-level package name to look for (default: dh).
+
+Examples:
+    $ dhtools reverse ~/bin -a
+
+Command-line script: run ``python dhtools.py`` or the ``dhtools`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

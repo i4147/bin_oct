@@ -1,4 +1,52 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""PDF toolkit with the same subcommands as :doc:`pdftools2`.
+
+``outline`` resolves the mdBook ``SUMMARY.md`` anchors against the HTML ids and builds the TOC,
+``merge``/``to-img``/``rename-pages``/``shrink``/``split-size``/``split-page`` cover the rest; the implementation uses PyMuPDF for the outline
+and the Ghostscript/qpdf engines for the compression.
+
+Usage: pdftoolz {outline,merge,to-img,rename-pages,shrink,split-size,split-page}
+[options]
+
+Positional arguments:
+    inputs ...
+
+Subcommands:
+    outline
+        Add outline to a PDF using a mdBook SUMMARY.md.
+    merge
+        Merge PDF files.
+    to-img
+        Convert PDFs to JPG images.
+    rename-pages
+        Rename PDFs appending their page count.
+    shrink
+        Shrink PDF files with Ghostscript or qpdf.
+    split-size
+        Split PDFs into chunks no larger than --max-mb.
+    split-page
+        Split PDFs into one file per page.
+
+Options:
+    --html_path
+    --pdf_path
+    --summary_path
+    --output_path
+    --check-titles
+        Base directory to check source titles against SUMMARY.md.
+    --sync-titles
+        Overwrite mismatched titles when --check-titles is used.
+    -o, --output
+    --directory
+    --output-subdir
+    --dpi
+    ... plus 4 more; run ``pdftoolz --help`` for the full list.
+
+Examples:
+    $ pdftoolz outline --summary_path SUMMARY.md --html_path docs --pdf_path book.pdf
+
+Command-line script: run ``python pdftoolz.py`` or the ``pdftoolz`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

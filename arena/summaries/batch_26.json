@@ -1,0 +1,109 @@
+{
+  "taplo.py": {
+    "summary": "A pure-Python TOML formatter.",
+    "details": [
+      "Tokenizes the document, builds a small AST (tables, arrays of tables, key/value pairs), normalises the spacing, the indentation and the quote style of the keys and values and prints the formatted TOML, with the formatting rules held in ``FormatConfig``."
+    ],
+    "usage": "taplo [FILE]",
+    "example": ["$ taplo pyproject.toml"]
+  },
+  "tcg3.py": {
+    "summary": "Create a Termux-shebanged symlink in ``~/bin`` from clipboard or file content.",
+    "details": [
+      "Reads the script path or the source text from the clipboard, detects the interpreter (python or bash), adds the Termux shebang to the first line and links or writes the script into ``~/bin``, ``~/bashbin`` or ``~/.local/bin``."
+    ],
+    "usage": "tcg3",
+    "example": ["$ tcg3"]
+  },
+  "tchat2json.py": {
+    "summary": "Convert a chat export into JSON, CSV or SQLite.",
+    "details": [
+      "Parses the ``[YYYY-MM-DD HH:MM:SS] user: message`` lines into per-user message groups, optionally merges consecutive messages of the same user or removes the timestamps, and writes the chosen output format."
+    ],
+    "usage": "tchat2json INPUT [--time] [--merge] [--remove] [-o OUTPUT]",
+    "example": ["$ tchat2json chat.txt -o chat.json"]
+  },
+  "tcleaner.py": {
+    "summary": "Free space on a Termux install.",
+    "details": [
+      "The ``termux`` subcommand strips the man/info/doc pages and the locales, adds a dpkg config that keeps them from coming back and clears the caches; ``junk`` deletes the junk names listed in ``/sdcard/data/junk`` under ``$HOME`` and ``pycache`` removes the bytecode caches. ``--dry-run`` previews the deletions."
+    ],
+    "usage": "tcleaner {termux,junk,pycache} [--dry-run]",
+    "example": ["$ tcleaner termux --dry-run"]
+  },
+  "tell_font_name.py": {
+    "summary": "Print the family names of the given font files and rename them accordingly.",
+    "details": [
+      "Reads the name table with fontTools, picks the best family/subfamily combination, sanitises it into a file-name-safe string and renames the font file to ``<family>-<style>.ttf``."
+    ],
+    "usage": "tell_font_name FONT [... ]",
+    "example": ["$ tell_font_name ~/fonts/*.ttf"]
+  },
+  "ter_ser.py": {
+    "summary": "Minify JavaScript files in place with terser.",
+    "details": [
+      "Runs ``terser --compress --mangle`` over the ``.js``/``.jsx``/``.jsm``/``.jsc`` files, skipping the ones that are already ``.min.js`` or the notebook bundles, and prints the size reduction for each of them in parallel."
+    ],
+    "usage": "ter_ser [paths ...]",
+    "example": ["$ ter_ser static/js"]
+  },
+  "termimg0.py": {
+    "summary": "Print an image in the terminal with half-block characters.",
+    "details": ["Resizes the image to the terminal width, samples the pixels in pairs and renders each one as a ``▀`` glyph whose foreground and background are 24-bit colours."],
+    "usage": "termimg0 IMAGE",
+    "example": ["$ termimg0 photo.jpg"]
+  },
+  "textclean.py": {
+    "summary": "Clean text files with a set of dedicated subcommands.",
+    "details": [
+      "Subcommands: ``empty-lines`` drops the blank lines, ``invisible`` strips the non-printable characters, ``pattern`` removes a multi-line pattern (read from ``/sdcard/lic`` or given inline), ``lines`` removes the lines matching substrings or regexes, ``header`` removes the ``# Author/# Email/# Time`` header and ``json-fields`` renames the JSON keys to ``field_1``, ``field_2``... ``--dry-run`` and ``--no-backup`` control the writes."
+    ],
+    "usage": "textclean {empty-lines,invisible,pattern,lines,header,json-fields} [options] [paths ...]",
+    "example": ["$ textclean empty-lines src/", "$ textclean lines -p TODO -p FIXME ."]
+  },
+  "texttools.py": {
+    "summary": "Normalise and reflow text files.",
+    "details": [
+      "Subcommands: ``clean`` removes the zero-width and exotic space characters, ``normalize-lines`` trims and normalises each line, ``norm-white`` collapses the whitespace and ``reformat-text``/``reformatext`` rewraps the paragraphs to the configured maximum line length, splitting the long sentences at punctuation."
+    ],
+    "usage": "texttools {clean,normalize-lines,norm-white,reformat-text,reformatext} FILE",
+    "example": ["$ texttools reformat-text notes.txt"]
+  },
+  "tnn.py": {
+    "summary": "Replace the tabs of text files with four spaces.",
+    "details": ["Walks the given paths (or all non-binary files below the current directory), rewrites the files that contain a tab and reports the ones that were updated."],
+    "usage": "tnn [paths ...]",
+    "example": ["$ tnn src/"]
+  },
+  "to.env.py": {
+    "summary": "Extract the API tokens from a project README into ``tokens.txt`` and ``.env`` files.",
+    "details": [
+      "Matches the ``model: token`` pairs of the README against the known model names, maps each model to its environment variable and writes the collected tokens to ``tokens.txt`` plus one ``.env`` per destination."
+    ],
+    "usage": "python to.env.py",
+    "example": ["$ python to.env.py"]
+  },
+  "to_jpg.py": {
+    "summary": "Convert the PNG/WebP/BMP/TIFF/GIF images below the current directory to JPEG.",
+    "details": [
+      "Flattens the transparency on white, saves each image as a quality-70 ``.jpg`` next to the original and deletes the source; existing ``.jpg`` targets are skipped and the run ends with the converted/error counts."
+    ],
+    "usage": "to_jpg",
+    "example": ["$ to_jpg"],
+    "notes": "Destructive: the original images are removed after conversion, so back them up first."
+  },
+  "to_unicode.py": {
+    "summary": "Turn the ``\\xNN`` escapes of a file into real characters.",
+    "details": ["Reads the file (UTF-8, falling back to latin-1), replaces every ``\\xNN`` sequence with the matching character and writes the result back."],
+    "usage": "to_unicode FILE",
+    "example": ["$ to_unicode escaped.txt"]
+  },
+  "tolo.py": {
+    "summary": "Move files (or glob matches) into ``~/.local/bin``.",
+    "details": [
+      "Accepts file paths, shell globs and a ``-f LISTFILE`` with one pattern per line, resolves the matches, gives a unique name to the collisions and moves each file into ``~/.local/bin``, printing the new names."
+    ],
+    "usage": "tolo [-f LISTFILE] [files ...]",
+    "example": ["$ tolo tool.py", "$ tolo -f scripts.txt"]
+  }
+}

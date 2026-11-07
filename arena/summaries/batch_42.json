@@ -1,0 +1,127 @@
+{
+  "imports.py": {
+    "summary": "Generate a ``requirements.txt`` by inspecting the Python files of a project.",
+    "details": [
+      "Collects the third-party imports with ast, resolves their installed versions, skips the local packages and the stdlib and writes the pinned requirements; ``-s`` writes a separate file per subdirectory."
+    ],
+    "usage": "imports [-s] [paths ...]",
+    "example": ["$ imports -s src/"]
+  },
+  "imports5.py": {
+    "summary": "Generate a ``requirements.txt`` offline (local package list) or online (PyPI API).",
+    "details": [
+      "Scans the sources (ast or line-based, notebooks included), normalises the import names through the PyPI mapping, detects the local modules and resolves the versions either from a local package list (``offline``) or from the PyPI JSON API (``online``), with a diff and a dry-run option."
+    ],
+    "usage": "imports5 {offline,online} -p PROJECT [--ast] [--print]",
+    "example": ["$ imports5 online -p . --ast --print"]
+  },
+  "importtools.py": {
+    "summary": "Python import hygiene toolkit.",
+    "details": [
+      "Subcommands: ``check-missing`` finds the used names without an import (spec, stdlib or mapped strategy) and can insert them, ``check-position`` flags the imports placed after code or inside a scope, ``add-import`` prepends an import, ``check-load`` imports the files to catch runtime errors, ``find-py2`` detects the Python-2 import styles and ``transform`` rewrites ``import m; m.x`` as ``from m import x``."
+    ],
+    "usage": "importtools {check-missing,check-position,add-import,check-load,find-py2,transform} [options]",
+    "example": ["$ importtools check-missing -d src -a"]
+  },
+  "inject-info.py": {
+    "summary": "Inject the personal details of ``~/.myinfo`` into a project's metadata files.",
+    "details": [
+      "Reads the name, e-mail and GitHub username (plus the extra fields), applies the substitutions to ``setup.py``, ``setup.cfg``, ``pyproject.toml``, ``MANIFEST.in``, ``tox.ini`` and ``Pipfile`` and offers ``--dry-run`` and ``--diff``."
+    ],
+    "usage": "inject-info PROJECT_DIR [--dry-run] [--diff]",
+    "example": ["$ inject-info . --diff"]
+  },
+  "inplace_translator.py": {
+    "summary": "Translate text files in place with ChatGPT (Gemini fallback).",
+    "details": ["Loads the API key from ``.env``, collects the files of ``-e`` extensions (``txt``/``md`` by default), translates each of them into ``-l`` language and overwrites the original."],
+    "usage": "inplace_translator [-e txt,md] [-l LANGUAGE]",
+    "example": ["$ inplace_translator -e md -l English"],
+    "notes": "Needs an OpenAI or Gemini API key and replaces the content of the source files."
+  },
+  "jsontools.py": {
+    "summary": "JSON and text conversion toolkit.",
+    "details": [
+      "Subcommands: ``custom2json``/``ss2json`` parse the custom delimited dumps, ``freeze2json`` parses pip freeze, ``jsonl2dict``/``jsonl2json`` convert the JSONL files (per object or per directory), ``lowerkeys`` lowercases the keys, ``merge-json``/``mergejson`` combine the documents, ``mime2json`` wraps a MIME file and ``sortdict``/``tojson`` normalise the output."
+    ],
+    "usage": "jsontools {custom2json,freeze2json,jsonl2dict,jsonl2json,lowerkeys,merge-json,mime2json,sortdict,tojson} [options]",
+    "example": ["$ jsontools jsonl2json data.jsonl -o out/", "$ jsontools lowerkeys data.json"]
+  },
+  "junktools.py": {
+    "summary": "Filesystem cleanup toolkit for OS junk, caches, empty files and twins.",
+    "details": [
+      "Subcommands: ``os-junk`` removes the Windows/macOS leftovers, ``darwin`` the ``.DS_Store``-style files, ``caches`` the ``__pycache__``/``.mypy_cache``/``.pyc`` items, ``empty-files``/``empty-dirs`` the empty entries (with the optional keypress window) and ``twins`` the files that share a stem with another extension."
+    ],
+    "usage": "junktools {os-junk,darwin,caches,empty-files,empty-dirs,twins} [options]",
+    "example": ["$ junktools caches -a ~/projects", "$ junktools empty-dirs --dry-run"]
+  },
+  "klv.py": {
+    "summary": "Keep the newest package files and filter the ARMv7 wheel URLs to the latest versions.",
+    "details": [
+      "The ``urls`` subcommand parses the wheel URLs and keeps the newest Android/linux-arm build of each package, ``clean`` deletes the older wheel/deb/tar.gz files of a directory (``--dry-run`` previews, ``--backup-dir`` moves them) and ``metadata`` prunes the older ``.metadata`` files."
+    ],
+    "usage": "klv {urls,clean,metadata} [options] [input]",
+    "example": ["$ klv urls urls.txt -o arm_latest.txt", "$ klv clean --type whl --dry-run"]
+  },
+  "langtools.py": {
+    "summary": "Language-detection and filtering toolkit.",
+    "details": [
+      "Subcommands: ``move-chinese`` moves the files containing Chinese characters, ``filter-lines`` strips the non-English lines out of one file, ``find-files`` reports the non-English files with pycld2 and ``find-lines`` collects the non-English lines of a tree into a TSV (the strict mode adds gcld3 plus an NLTK word ratio)."
+    ],
+    "usage": "langtools {move-chinese,filter-lines,find-files,find-lines} [options]",
+    "example": ["$ langtools find-files docs/", "$ langtools filter-lines -m page.txt"]
+  },
+  "lictools.py": {
+    "summary": "License manager CLI.",
+    "details": [
+      "Subcommands: ``collect`` concatenates the discovered license files into one file, ``clear`` empties them and ``strip`` removes the license text patterns (read from ``-p``) from every non-binary file, with ``-g`` separating the patterns by blank lines."
+    ],
+    "usage": "lictools {collect,clear,strip} [-d DIR] [options]",
+    "example": ["$ lictools collect -o LICENSES.txt", "$ lictools strip -p patterns.txt"]
+  },
+  "line_edit_tool.py": {
+    "summary": "Line-oriented file editing operations.",
+    "details": [
+      "Subcommands: ``prefix``, ``append``, ``unescape-nl``/``escape-nl``, ``wrap``, ``get-range``, ``join``, ``move-range``, ``sort-length``, ``strip-ws``, ``tabs`` and ``space-out`` transform the lines of one file or of a whole tree, in place, to ``-o`` or to stdout."
+    ],
+    "usage": "line_edit_tool {prefix,append,unescape-nl,escape-nl,wrap,get-range,join,move-range,sort-length,strip-ws,tabs,space-out} [options]",
+    "example": ["$ line_edit_tool strip-ws -o clean.txt notes.txt", "$ line_edit_tool wrap -w 80 notes.txt"]
+  },
+  "list_dir.py": {
+    "summary": "Directory and file listing toolkit.",
+    "details": [
+      "Subcommands: ``stems`` prints the file stems truncated at the first dash, ``dirs`` the directory names with a ``-`` prefix and ``ls`` a listing with colours, icons, sizes, git status, a tree mode and a JSON output, with sorting and filter options."
+    ],
+    "usage": "list_dir {stems,dirs,ls} [options] [directory]",
+    "example": ["$ list_dir ls -l", "$ list_dir ls --tree --icons ~/bin"]
+  },
+  "lz4er.py": {
+    "summary": "LZ4 compression tool for files and folders.",
+    "details": [
+      "``compress`` writes ``.lz4`` for the files and ``.tar.lz4`` for the folders (``--mode auto|files|folders``), ``decompress`` reverses it, and the level, minimum size, chunk settings, the skip list and ``--keep`` control the behaviour."
+    ],
+    "usage": "lz4er {compress,decompress} [options] [paths ...]",
+    "example": ["$ lz4er compress dist/ --mode folders", "$ lz4er decompress dist.tar.lz4"]
+  },
+  "main_guard_tool.py": {
+    "summary": "Detect and add the ``if __name__ == \"__main__\":`` guards.",
+    "details": [
+      "The ``check`` subcommand reports the files without a guard and ``fix`` adds one by moving the top-level code into ``main()`` (``--method ast``) or by appending the guard (``--method regex``); ``--dry-run`` and ``--exclude`` are available."
+    ],
+    "usage": "main_guard_tool {check,fix} [-m ast|regex] [--dry-run] [paths ...]",
+    "example": ["$ main_guard_tool check src/", "$ main_guard_tool fix --dry-run src/"]
+  },
+  "mdv.py": {
+    "summary": "View a Markdown file in the terminal, page by page.",
+    "details": ["Renders the Markdown with rich and pages through it with the space/arrow keys, quitting with ``q``."],
+    "usage": "mdv [FILE.md]",
+    "example": ["$ mdv README.md"]
+  },
+  "merge_css.py": {
+    "summary": "CSS merger and minifier.",
+    "details": [
+      "The ``join`` subcommand concatenates the CSS files of the given directories into one file and rewrites the Google-Fonts imports and the remote ``@font-face`` URLs to ``--font-dir``, ``minify`` runs the ``cleancss`` utility at the requested ``-l`` optimisation level."
+    ],
+    "usage": "merge_css {join,minify} [-i INPUT] [-o OUTPUT] [--font-dir DIR]",
+    "example": ["$ merge_css join -i static/css -o bundle.css --font-dir fonts/", "$ merge_css minify -i bundle.css -l 2"]
+  }
+}

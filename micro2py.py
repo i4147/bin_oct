@@ -1,4 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Refactor the MicroPython exports of ``.py`` files into standard Python.
+
+Renames the ``u<module>`` imports (``uos``, ``ujson`` ...) to their CPython counterparts when the name is
+not shadowed by a local one, and offers ``--dry-run`` for a preview.
+
+Usage: micro2py [paths ...] [-n]
+
+Positional arguments:
+    paths ...
+        Files or directories to refactor (recursively). Defaults to '.' if omitted.
+
+Options:
+    -n, --dry-run
+        Only report what would be changed; touch nothing.
+
+Examples:
+    $ micro2py firmware/ -n
+
+Command-line script: run ``python micro2py.py`` or the ``micro2py`` command. The module is importable as well.
+"""
 
 import argparse
 import re

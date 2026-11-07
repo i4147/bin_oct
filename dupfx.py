@@ -1,4 +1,32 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Find and delete the duplicate files by content.
+
+Pre-filters by size and a 4 KB head hash, confirms with a full xxhash and chooses which
+copy to keep (``-k``: first, last, oldest, newest, largest); ``-r`` deletes, ``-n`` previews, ``--all``
+includes ``.git``.
+
+Usage: dupfx [-r] [-k KEEP] [--all] [--dry-run] [paths ...]
+
+Options:
+    --recursive
+        Search directories recursively (default: True).
+    -r, --remove
+        Actually delete duplicate files. Without this flag, only report them.
+    -a, --all
+        Include .git directories in the search (symlinks are still skipped).
+    -n, --dry-run
+        Don't delete; just show what would be done.
+    --follow-symlinks
+        Follow symlinks to files.
+    -k, --keep
+        Which file to keep within duplicates.
+
+Examples:
+    $ dupfx ~/Music -r -k oldest
+
+Command-line script: run ``python dupfx.py`` or the ``dupfx`` command. The module is importable as well.
+"""
+
 import argparse
 from collections import defaultdict
 from multiprocessing import Pool

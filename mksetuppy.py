@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Generate a ``setup.py`` from the project's ``pyproject.toml``.
+
+Detects the build backend (setuptools, poetry, flit, hatchling ...), reads the PEP 621
+metadata (with TOML fallbacks), discovers packages and package data and writes a ``setup.py``
+that reproduces that metadata for tools that still need one.
+
+Usage: mksetuppy
+
+Examples:
+    $ mksetuppy
+
+Runs as a script (``python mksetuppy.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import email.utils
 import importlib
 import re

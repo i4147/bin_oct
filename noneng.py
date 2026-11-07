@@ -1,4 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Detect the non-English text files of a directory.
+
+Detects the language of each text file with pycld2 (or the ``-b`` backend) on a 4 KB
+sample, skipping the files with too few letters, prints the detected language and
+optionally saves the report; the files are scanned in a pool.
+
+Usage: noneng [paths ...] [-b pycld2|gcld3|langdetect]
+
+Positional arguments:
+    paths ...
+        Files or directories to scan. Defaults to the current directory.
+
+Options:
+    -b, --backend
+        Language-detection backend. Defaults to pycld2.
+
+Examples:
+    $ noneng docs/ -b gcld3
+
+Command-line script: run ``python noneng.py`` or the ``noneng`` command. The module is importable as well.
+"""
 
 import argparse
 import codecs

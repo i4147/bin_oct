@@ -1,4 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Duplicate-file finder with a Textual terminal interface.
+
+Hashes the files of a directory, groups the duplicates by hash with a filename-fuzzy
+score and shows them in a Textual results table with the scan progress, letting you
+inspect the candidates before acting.
+
+Usage: dupeguru_textual [PATH]
+
+Positional arguments:
+    path
+        Directory to scan (default: current directory)
+
+Examples:
+    $ dupeguru_textual ~/Pictures
+
+Command-line script: run ``python dupeguru_textual.py`` or the ``dupeguru_textual`` command. The module is importable as well.
+"""
 
 import hashlib
 import sys

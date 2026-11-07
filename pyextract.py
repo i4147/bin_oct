@@ -1,4 +1,56 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Extract the functions, classes and constants of Python sources and archives.
+
+Parses with ast, LibCST or tree-sitter (``--parser``), writes the entities with the per-entity,
+per-type, per-folder, JSON or SQLite layout (``--layout``), skips the tests with ``--skip-tests`` and also
+reads the ``.py`` members of zip, wheel, tar and zstd archives.
+
+Usage: pyextract {extract,nodes,sexpr,funcnames} [options] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files/dirs to scan (default: current directory).
+    file
+
+Subcommands:
+    extract
+        Extract code entities.
+    nodes
+        Dump top-level tree-sitter nodes per folder.
+    sexpr
+        Print tree-sitter S-expression for a file.
+    funcnames
+        List function names in a Python file.
+
+Options:
+    -d, --dir
+        Root directory (alternative to positional `paths`).
+    -o, --output
+        Output directory (default: ./output).
+    --parser
+        Parsing backend (default: ast).
+    --layout
+        Output layout (default: per-entity).
+    --sqlite-path
+        SQLite file (used by --layout sqlite).
+    --include-nested
+        Include methods and nested defs/classes.
+    --constants-only
+        Extract only UPPERCASE constants.
+    --skip-tests
+        Skip test/tests/examples directories.
+    --archives
+        Also walk .zip/.whl/.tar[.gz]/.zst archives.
+    --imports-file
+        Write a global_imports.py aggregating imports.
+    ... plus 8 more; run ``pyextract --help`` for the full list.
+
+Examples:
+    $ pyextract extract -o out/ src/ --layout by-type
+
+Command-line script: run ``python pyextract.py`` or the ``pyextract`` command. The module is importable as well.
+"""
+
 import argparse
 import ast
 import io

@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove ``.github`` folders and ``.gitignore`` files from a directory that is not a git repository.
+
+Aborts when the current directory is a repository, otherwise it walks the tree and
+deletes leftover git metadata files and folders, reporting every removal.
+
+Usage: dj2
+
+Examples:
+    $ cd archived_project && dj2
+
+Runs as a script (``python dj2.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import shutil
 from pathlib import Path
 

@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Normalize the shebang of every Python file below the current directory.
+
+Rewrites ``#!...python2/3`` lines to ``#!/data/data/com.termux/files/usr/bin/env python`` and processes the files in a worker pool, reporting how many
+shebangs were changed.
+
+Usage: fixshebang [paths ...]
+
+Examples:
+    $ fixshebang
+
+Runs as a script (``python fixshebang.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import re
 from multiprocessing import Pool

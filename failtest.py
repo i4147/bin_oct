@@ -1,4 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Run a program repeatedly until it fails.
+
+Executes the command in a loop (optionally ``-p`` in parallel), stops at the first exit
+status outside the accepted codes, sleeps between the iterations and reports the failing
+output.
+
+Usage: failtest [--code 0] [-s SECONDS] [-p N] COMMAND ...
+
+Positional arguments:
+    command
+        Command to run
+
+Options:
+    --code
+        Allowed exit codes [DEFAULT: 0]
+    -s, --sleep
+        Sleep between iterations [DEFAULT: %(default)s]
+    -p, --parallel
+        Number of parallel processes [DEFAULT: %(default)s]
+
+Examples:
+    $ failtest -s 0.1 -p 4 pytest -x tests
+
+Command-line script: run ``python failtest.py`` or the ``failtest`` command. The module is importable as well.
+"""
 
 import argparse
 import subprocess

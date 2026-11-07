@@ -1,4 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write module docstrings for Python files with the felo superagent.
+
+Sends a simplified view of each module to ``felo-sa.mjs``, cleans the answer into a Google-style
+docstring and inserts it (with ``--force`` even over an existing one). Options cover the glob to
+walk, concurrency, delay between calls, a log file and a dry run; files that already
+fail noisily are skipped.
+
+Usage: feloer [paths ...] [--dry-run] [--force] [--pattern '*.py'] [-j N]
+
+Positional arguments:
+    paths ...
+        One or more files or directories. If omitted, current directory is processed
+        recursively.
+
+Options:
+    --dry-run
+    -f, --force
+        Force overwrite existing module docstrings.
+    --pattern
+        Glob pattern used when expanding directories (default: *.py).
+    --delay
+    -j, --concurrency
+        Number of concurrent workers.
+    -v, --verbose
+        Show prompts and raw felo output on stderr.
+    --log-file
+
+Examples:
+    $ feloer src/ --dry-run
+    $ feloer notes/ --pattern '*.py' -j 2
+
+Command-line script: run ``python feloer.py`` or the ``feloer`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Rename the non-ASCII file and directory names below the current directory to English.
+
+Walks the tree bottom-up, translates the stems with Google Translate and renames the
+entries, adding a numeric suffix when the translation collides with an existing name.
+
+Usage: translate_noneng_filenames
+
+Examples:
+    $ translate_noneng_filenames
+
+Runs as a script (``python translate_noneng_filenames.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import re

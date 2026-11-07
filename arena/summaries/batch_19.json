@@ -1,0 +1,111 @@
+{
+  "plotter.py": {
+    "summary": "Plot a mathematical expression and save it as ``plot.png``.",
+    "details": [
+      "Accepts ``f(x)=<expression>`` on the command line, evaluates it over ``-10..10`` with numpy (sin, cos, tan, sqrt, exp, log, pi and e are available) and renders a labelled Matplotlib figure to ``plot.png`` at 300 dpi."
+    ],
+    "usage": "plotter 'f(x)=EXPRESSION'",
+    "example": ["$ plotter 'f(x)=sin(x)/x'"]
+  },
+  "plow.py": {
+    "summary": "Render a Markdown file (or stdin) in the terminal with rich.",
+    "details": [
+      "Prints the text through ``rich``, renders fenced code blocks with syntax highlighting and line numbers (Monokai theme) and can page long documents with a system pager."
+    ],
+    "usage": "plow [FILE] [--pager]",
+    "example": ["$ plow README.md", "$ cat notes.md | plow"]
+  },
+  "ppage.py": {
+    "summary": "Split PDFs into one file per page, or extract their text page by page.",
+    "details": [
+      "Uses PyMuPDF on the PDFs named on the command line (or below the current directory) and writes the pages concurrently; ``-t`` writes the per-page text instead of single-page PDFs."
+    ],
+    "usage": "ppage [pdfs ...] [-t]",
+    "example": ["$ ppage book.pdf", "$ ppage book.pdf -t"]
+  },
+  "pret.py": {
+    "summary": "Format web and Markdown files in place with prettier.",
+    "details": [
+      "Runs ``prettier -w`` over the given files, or over every ``.html``/``.js``/``.ts``/``.tsx``/``.md``/``.scss``/``.coffee`` file below the current directory, skipping empty and single-line files and rewriting the Android ``/storage/emulated/0`` prefix to ``/sdcard``. Files are processed in parallel."
+    ],
+    "usage": "pret [files ...]",
+    "example": ["$ pret src/"]
+  },
+  "pret2.py": {
+    "summary": "Format JavaScript, CSS, HTML, JSON and TypeScript files with prettier.",
+    "details": [
+      "Walks the current directory for the supported extensions (``.min.js``/``.min.css``/``.d.ts`` excluded), runs prettier on each file with a timeout in a worker pool, and moves the files that fail into an ``error`` folder with a unique name. A summary of changed/failed files is printed at the end."
+    ],
+    "usage": "pret2",
+    "example": ["$ pret2"]
+  },
+  "prompt-reformatter.py": {
+    "summary": "Reflow long prompt text files to 80 columns on list and sentence boundaries.",
+    "details": [
+      "Splits the content before numbered items, bullet points, bold headings and commas, re-wraps the lines that exceed ``MAX_LINE`` at semicolons and rewrites every ``.txt`` file below the current directory that changes."
+    ],
+    "usage": "prompt-reformatter",
+    "example": ["$ prompt-reformatter"]
+  },
+  "purepy.py": {
+    "summary": "Classify PyPI packages as pure Python or as shipping native extensions.",
+    "details": [
+      "Reads the package names from a file, queries the PyPI JSON API for the available wheel tags (in a worker pool) and writes ``pure_python.txt``, ``native_extensions.txt`` and ``not_found.txt`` with the classification."
+    ],
+    "usage": "purepy PACKAGES.txt [--pool-method map|starmap|imap_unordered|apply_async]",
+    "example": ["$ purepy packages.txt"]
+  },
+  "py7zmax.py": {
+    "summary": "Compress a single file into a ``.7z`` archive with maximum LZMA2 settings.",
+    "details": [
+      "Writes ``<name>.7z`` with the LZMA2 filter at preset 9 plus the extreme flag, replaces the file atomically and removes the original once the archive is complete. Existing archives are never overwritten."
+    ],
+    "usage": "py7zmax FILE",
+    "example": ["$ py7zmax dump.sql"]
+  },
+  "py_dev.py": {
+    "summary": "Scaffold a new Python project with linting, tests and CI.",
+    "details": [
+      "Creates the package layout, ``pyproject.toml``, ``.gitignore``, a pre-commit configuration (ruff, black, isort, mypy, the standard hooks), a pytest test and a GitHub Actions workflow, then installs the development requirements and initialises the virtual environment. The project directory can be passed as the first argument, otherwise the prompts ask for it."
+    ],
+    "usage": "py_dev [PROJECT_NAME]",
+    "example": ["$ py_dev mylib"]
+  },
+  "pyco.py": {
+    "summary": "Delete every ``__pycache__`` directory below the current directory.",
+    "details": ["Removes the bytecode caches with :func:`shutil.rmtree` and prints how many directories were deleted and how much space was freed."],
+    "usage": "pyco",
+    "example": ["$ pyco"]
+  },
+  "pycppcheck.py": {
+    "summary": "Syntax-check C and C++ sources with clang in parallel.",
+    "details": [
+      "Runs ``clang -fsyntax-only`` for ``.c``/``.h``/``.inc`` files and ``clang++ -fsyntax-only`` for the C++ extensions, over the files on the command line or below the current directory, and prints one OK/error line per file from a spawn-based pool."
+    ],
+    "usage": "pycppcheck [files ...]",
+    "example": ["$ pycppcheck src/"]
+  },
+  "pycurl_downloader.py": {
+    "summary": "Download the URLs of a list into ``downloads/`` with pycurl.",
+    "details": [
+      "Reads the URLs from a file, fetches them concurrently with pycurl (30 s timeout, browser user agent), derives the file name from the URL and writes the failures to a ``failed`` list for a retry."
+    ],
+    "usage": "pycurl_downloader URLS.txt",
+    "example": ["$ pycurl_downloader urls.txt"]
+  },
+  "pyfslint.py": {
+    "summary": "Scan a directory tree for filesystem problems.",
+    "details": [
+      "Individual checks (also selectable one by one, ``--all`` runs everything) report duplicate files, badly named entries, non-UTF-8 names, broken symlinks, empty directories, bad UID/GID ownership, non-stripped binaries, shadowed ``PATH`` executables, temporary/junk files, world-writable items and names with redundant whitespace. ``--summary`` adds a one-line result table; the docstring doubles as the ``--help`` text."
+    ],
+    "usage": "pyfslint [options] [PATH ...]",
+    "example": ["$ pyfslint --all --summary ~/bin", "$ pyfslint --findbl --findem ."]
+  },
+  "pygdu.py": {
+    "summary": "Interactive disk-usage browser in the terminal.",
+    "details": [
+      "Scans the given directory with a worker pool, shows the entries as a navigable list with size bars and lets you descend into folders or go back with the arrow keys and Enter/Escape."],
+    "usage": "pygdu [DIRECTORY]",
+    "example": ["$ pygdu ~"]
+  }
+}

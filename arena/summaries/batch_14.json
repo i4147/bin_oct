@@ -1,0 +1,103 @@
+{
+  "jb2.py": {
+    "summary": "Reformat every JSON file below the current directory with two-space indentation.",
+    "details": [
+      "Parses each file, writes it back through :func:`json.dump` (``ensure_ascii`` off) and reports the size change per file plus the total freed, using a worker pool."
+    ],
+    "usage": "jb2",
+    "example": ["$ jb2"]
+  },
+  "jg.py": {
+    "summary": "Empty every repository below the current directory, keeping only its ``.git`` folder.",
+    "details": [
+      "For each ``.git`` directory found it removes all sibling files and folders, leaving a clean checkout directory with the history in place. This is destructive: run it from the tree you want to strip and keep a backup."
+    ],
+    "usage": "jg",
+    "example": ["$ jg"],
+    "notes": "Irreversible — it deletes the working tree of every repository below the current directory."
+  },
+  "joinlines.py": {
+    "summary": "Join all non-empty lines of a file into a single line.",
+    "details": ["Strips the line endings, concatenates the remaining text and appends one final newline, rewriting the file in place."],
+    "usage": "joinlines FILE",
+    "example": ["$ joinlines words.txt"]
+  },
+  "justwhl.py": {
+    "summary": "Reduce each sub-directory of the current directory to its single ``.whl`` file.",
+    "details": [
+      "Looks for a wheel in the sub-directory or its ``dist/`` folder, moves it up when needed and deletes every other file and folder in that sub-directory, leaving one wheel per project. Sub-directories without a wheel are skipped."
+    ],
+    "usage": "justwhl",
+    "example": ["$ justwhl"],
+    "notes": "Deletes the build leftovers of each sub-directory, so review the tree before running it."
+  },
+  "l2c.py": {
+    "summary": "Copy one line of a file to the Termux clipboard.",
+    "details": ["Reads the requested (zero-based) line, strips the surrounding whitespace and feeds it to ``termux-clipboard-set``."],
+    "usage": "l2c FILE LINE_INDEX",
+    "example": ["$ l2c notes.txt 3"]
+  },
+  "last5minutes.py": {
+    "summary": "Cut the last five minutes out of an audio file.",
+    "details": ["Opens the audio with moviepy, takes the final 230 seconds and writes them to ``last_5_minutes.mp3`` at 320 kbit/s."],
+    "usage": "last5minutes AUDIO",
+    "example": ["$ last5minutes podcast.mp3"]
+  },
+  "lastncommits.py": {
+    "summary": "List the files that were added during the last N commits.",
+    "details": ["Runs ``git log -n N --name-status --diff-filter=A`` in the current repository, skips symlinks and prints the paths of the created files."],
+    "usage": "lastncommits N",
+    "example": ["$ lastncommits 10"]
+  },
+  "licr.py": {
+    "summary": "Empty the license files below the current directory.",
+    "details": [
+      "Finds files whose name starts with ``license`` and whose extension is ``.md``, ``.txt``, ``.rst`` or absent, prints them and truncates each one to zero bytes."
+    ],
+    "usage": "licr",
+    "example": ["$ licr"],
+    "notes": "Destructive by design: the license texts are emptied in place."
+  },
+  "list_files_starting_with.py": {
+    "summary": "List the entries of the current directory whose name starts with a prefix.",
+    "details": ["Prints the matching names, ignoring symbolic links; the prefix is read from the first argument."],
+    "usage": "list_files_starting_with PREFIX",
+    "example": ["$ list_files_starting_with clean-"]
+  },
+  "lkk.py": {
+    "summary": "List the files in the current directory whose name contains a substring.",
+    "details": ["Prints the matching names sorted alphabetically, marking symlinks with their target; ``-s`` also includes symlinks (they are skipped by default)."],
+    "usage": "lkk [-s] SUBSTRING",
+    "example": ["$ lkk dup"]
+  },
+  "ll.py": {
+    "summary": "Print an ``ls``-style listing of the current directory with sizes and colours.",
+    "details": [
+      "Shows the modification time, size (directories report their total) and name of every entry, colourising symlinks differently and sorting by size (``-r`` reverses the order)."
+    ],
+    "usage": "ll [-r]",
+    "example": ["$ ll", "$ ll -r"]
+  },
+  "loname.py": {
+    "summary": "Normalize the file names of the current directory to lowercase snake style.",
+    "details": [
+      "Lower-cases the stem, drops punctuation other than ``_``/``-``, replaces spaces with underscores, collapses repeats and lower-cases the extension, keeping the existing files under a unique name when a rename would collide."
+    ],
+    "usage": "loname",
+    "example": ["$ loname"]
+  },
+  "lowerer.py": {
+    "summary": "Lower-case the whole content of a text file.",
+    "details": ["Reads the file as UTF-8, applies :meth:`str.lower` to the entire text and writes it back in place."],
+    "usage": "lowerer FILE",
+    "example": ["$ lowerer notes.txt"]
+  },
+  "ltxt.py": {
+    "summary": "Count the unique non-blank lines of text files, per extension.",
+    "details": [
+      "Walks the given paths (or the current directory), skips binaries by extension and counts the stripped lines that appear more than once, grouping the counts per file extension. ``--pool-method`` selects how the counting jobs are spread over the worker pool."
+    ],
+    "usage": "ltxt [paths ...] [--pool-method map|starmap|imap_unordered|apply_async]",
+    "example": ["$ ltxt words/"]
+  }
+}

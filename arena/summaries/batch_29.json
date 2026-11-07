@@ -1,0 +1,103 @@
+{
+  "version_filter.py": {
+    "summary": "Delete the outdated and the unwanted wheel files of the current directory.",
+    "details": [
+      "Parses the ``name-version-python-tag.whl`` names, keeps only the newest dated build of each package and also removes the ``py3-none-any`` builds of the packages on the blocklist (pycryptodome, matplotlib), printing every deletion."
+    ],
+    "usage": "version_filter",
+    "example": ["$ cd ~/wheels && version_filter"]
+  },
+  "wfreq.py": {
+    "summary": "Collect the words missing from the dictionary into ``~/.personal_dict``.",
+    "details": [
+      "Extracts the words from the text files below the current directory in a process pool, keeps the ones the ``spellchecker`` does not know and appends them to the personal dictionary used by the spelling checks."
+    ],
+    "usage": "wfreq [paths ...]",
+    "example": ["$ wfreq ~/notes"]
+  },
+  "woff22woff.py": {
+    "summary": "Convert WOFF2 fonts to WOFF.",
+    "details": ["Re-saves each font with the ``woff`` flavour through fontTools, gives a unique name when the target exists, deletes the source and converts in parallel."],
+    "usage": "woff22woff [fonts ...]",
+    "example": ["$ woff22woff fonts/"]
+  },
+  "woff2woff2.py": {
+    "summary": "Encode WOFF fonts as WOFF2.",
+    "details": ["Loads each ``.woff`` font, saves it with the ``woff2`` flavour next to the source, removes the original and works through the files in a pool."],
+    "usage": "woff2woff2 [fonts ...]",
+    "example": ["$ woff2woff2 fonts/"]
+  },
+  "word_freq_counter.py": {
+    "summary": "Count the word frequencies of the files below the current directory.",
+    "details": ["Matches the lowercase words of each text file, counts them in a process pool and writes the totals with a timestamp to ``counter.json``."],
+    "usage": "word_freq_counter",
+    "example": ["$ word_freq_counter"]
+  },
+  "wrapper_gh.py": {
+    "summary": "Wrap the ``gh`` CLI so every invocation is logged.",
+    "details": [
+      "Finds the real ``gh`` binary, appends the command, the arguments, the exit status and the duration to a dated log file under ``~/tmp/log/apps`` and passes the output through unchanged."
+    ],
+    "usage": "wrapper_gh [gh arguments ...]",
+    "example": ["$ wrapper_gh pr list"],
+    "notes": "Meant to shadow ``gh`` on ``PATH``; keep the real binary reachable at the path it probes."
+  },
+  "wtmp.py": {
+    "summary": "Copy the new archives dropped into a directory to ``~/tmp/tgz``.",
+    "details": [
+      "Scans the watched directory (``$PREFIX/tmp`` by default) once, then uses watchdog to copy every newly created or modified ``.tar.gz``/``.tar.xz``/``.tar.bz2``/``.zip``/``.whl`` file into ``~/tmp/tgz``."
+    ],
+    "usage": "wtmp [DIRECTORY]",
+    "example": ["$ wtmp ~/tmp"]
+  },
+  "ww.py": {
+    "summary": "Build a wheel from the current directory into ``/sdcard/whl``.",
+    "details": ["Changes to the parent directory and runs ``wheel pack`` on the current one with ``-d /sdcard/whl`` as the destination."],
+    "usage": "ww",
+    "example": ["$ cd mypkg && ww"]
+  },
+  "www.py": {
+    "summary": "Move every ``.whl`` below the current directory to ``/sdcard/whl``.",
+    "details": ["Finds the wheels recursively, overwrites the targets of the same name in ``/sdcard/whl`` and deletes the source copies."],
+    "usage": "www",
+    "example": ["$ www"]
+  },
+  "xbase64_assets.py": {
+    "summary": "Extract the base64-encoded assets of HTML/CSS/JS sources into the ``assets`` folder.",
+    "details": [
+      "Detects the ``data:`` URIs with tree-sitter or regexes, guesses the MIME type from the decoded signature, writes the assets into per-kind subdirectories with content-hashed names and can replace the URIs with the new paths, processing the tree concurrently with a JSON report."
+    ],
+    "usage": "xbase64_assets [paths ...]",
+    "example": ["$ xbase64_assets dist/"]
+  },
+  "xem.py": {
+    "summary": "Extract the ``data:`` URIs of HTML files into ``extracted_base64``.",
+    "details": [
+      "Finds the base64 data URLs, decodes them, names the files after a content hash with the extension inferred from the MIME type and writes them to ``extracted_base64``, skipping the duplicates."
+    ],
+    "usage": "xem [html files ...]",
+    "example": ["$ xem page.html"]
+  },
+  "xemoji.py": {
+    "summary": "Collect the emoji used by the files of the current directory into ``emojis.json``.",
+    "details": [
+      "Scans the files (20 MB limit, UTF-8 only) with a regex that covers the pictographic blocks, the variation selectors, the skin tones, the ZWJ sequences and the regional indicators and writes the sorted ``U+XXXX`` keys with their glyph to ``emojis.json``."
+    ],
+    "usage": "xemoji",
+    "example": ["$ xemoji"]
+  },
+  "xentity.py": {
+    "summary": "Split the constants, classes, functions and imports of the given sources into separate files.",
+    "details": [
+      "Parses Python with ast, libcst or tree-sitter (``--backend``), classifies every top-level definition and writes the groups into ``output/`` as ``const.py``, ``classes.py``, ``funcs.py`` and ``imports.py``; the ``--const``/``--class``/``--function``/``--import`` flags restrict the kinds that are extracted."
+    ],
+    "usage": "xentity [paths ...] [-b auto|ast|libcst|tree-sitter]",
+    "example": ["$ xentity src/ --function --class"]
+  },
+  "xenv_vars.py": {
+    "summary": "List the environment variable names assigned in the files of the current directory.",
+    "details": ["Matches the ``NAME=`` lines (``.git`` excluded), collects the unique upper-case names and writes them sorted to ``env_vars.txt``."],
+    "usage": "xenv_vars",
+    "example": ["$ xenv_vars"]
+  }
+}

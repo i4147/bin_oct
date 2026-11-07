@@ -1,4 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip comments from configuration, shell and make-style files in place.
+
+Walks the tree, picks the files whose name or extension is in the allow-list (``Makefile``, ``Dockerfile``,
+``.env*``, ``.ini``, ``.conf``, ``requirements.txt``, shell dialects ...) and removes the full-line comments while leaving
+shebangs, ``#!`` lines and code-only ``#`` characters untouched. Python, YAML and other
+languages are skipped.
+
+Usage: frmc [paths ...]
+
+Examples:
+    $ frmc .
+    $ frmc ~/dotfiles
+
+Runs as a script (``python frmc.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import sys

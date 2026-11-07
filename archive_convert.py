@@ -1,4 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert tar/zip archives to ``.tar.br`` and back.
+
+Repacks the tar, zip, tgz, txz, zst and 7z archives as Brotli-compressed tars (quality
+11, or 3 above 10 MB, streamed in 1 MB chunks) with eight parallel jobs, and ``-d``
+decompresses the ``.tar.br`` files again.
+
+Usage: archive_convert [paths ...] [-d]
+
+Positional arguments:
+    paths ...
+        Files or directories to process (default: current directory).
+
+Options:
+    -d, --decompress
+        Decompress the given .tar.br file(s) back to .tar.
+
+Examples:
+    $ archive_convert dist/
+    $ archive_convert bundle.tar.br -d
+
+Command-line script: run ``python archive_convert.py`` or the ``archive_convert`` command. The module is importable as well.
+"""
 
 import argparse
 import bz2

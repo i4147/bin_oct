@@ -1,4 +1,61 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Detect and refactor the duplicate Python functions of a project.
+
+Subcommands: ``single`` finds (and with ``-r`` interactively removes) the duplicates of one file,
+``scan`` produces exact and fuzzy JSON reports of a tree, ``consolidate`` moves the duplicates into a
+shared module (``--refactor``, ``--threshold``) and ``prune`` removes the functions matching a reference file.
+
+Usage: dedup_func {single,scan,consolidate,prune} [options]
+
+Positional arguments:
+    file
+        Python file to analyze.
+    path
+        Root path (default: .).
+    reference
+        Reference file (functions to keep).
+    inputs ...
+        Target files/directories (default: current directory).
+
+Subcommands:
+    single
+        Find / remove duplicate functions in ONE file (dedupfunc.py).
+    scan
+        Recursive exact/fuzzy duplicate scanner (dup_detector.py).
+    consolidate
+        Consolidate exact duplicates into a shared module
+        (find_dup_func_class_const.py).
+    prune
+        Remove functions matching a reference file (remove_duplicate_functions.py).
+
+Options:
+    -r, --remove
+        Interactively remove duplicates (keep one per group).
+    --backup
+        Create a .backup copy before removing (implies removal flow).
+    -o, --output-dir
+        Directory for JSON reports (default: .).
+    --refactor
+        Move heavy duplicates into the shared module.
+    --shared-module
+        Shared module path for --refactor (default: utils.py).
+    --threshold
+        Refactor only duplicates appearing MORE than N times (default: 5).
+    --fuzzy
+        Also compute fuzzy duplicate pairs (requires ssdeep + rapidfuzz).
+    --similarity
+        Fuzzy similarity threshold in %% (default: 50).
+    -m, --move
+        Actually move duplicates and rewrite imports.
+    -a, --apply
+        Apply changes (default: dry-run).
+
+Examples:
+    $ dedup_func scan . --fuzzy
+    $ dedup_func consolidate src/ --refactor
+
+Command-line script: run ``python dedup_func.py`` or the ``dedup_func`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

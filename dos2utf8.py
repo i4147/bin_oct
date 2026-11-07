@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert the text files below the current directory to UTF-8 with LF line endings.
+
+Decodes each file as UTF-8 (falling back to Latin-1), normalizes CRLF and lone CR to ``\\n``
+and rewrites the file only when the bytes change. Files are processed in a worker pool.
+
+Usage: dos2utf8 [paths ...]
+
+Examples:
+    $ dos2utf8
+
+Runs as a script (``python dos2utf8.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import sys

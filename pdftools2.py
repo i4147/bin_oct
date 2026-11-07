@@ -1,4 +1,54 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""PDF toolkit for outlines, merging, images and shrinking.
+
+Subcommands: ``outline`` builds the bookmarks from a mdBook ``SUMMARY.md`` (optionally checking the
+titles), ``merge`` combines the files, ``to-img`` renders the JPGs, ``rename-pages`` appends the page count to the
+names, ``shrink`` uses Ghostscript or qpdf, ``split-size`` cuts the files at a maximum size and ``split-page`` writes
+one file per page.
+
+Usage: pdftools2 {outline,merge,to-img,rename-pages,shrink,split-size,split-page}
+[options]
+
+Positional arguments:
+    inputs ...
+
+Subcommands:
+    outline
+        Add outline to a PDF using a mdBook SUMMARY.md.
+    merge
+        Merge PDF files.
+    to-img
+        Convert PDFs to JPG images.
+    rename-pages
+        Rename PDFs appending their page count.
+    shrink
+        Shrink PDF files with Ghostscript or qpdf.
+    split-size
+        Split PDFs into chunks no larger than --max-mb.
+    split-page
+        Split PDFs into one file per page.
+
+Options:
+    --html_path
+    --pdf_path
+    --summary_path
+    --output_path
+    --check-titles
+        Base directory to check source titles against SUMMARY.md before running.
+    --sync-titles
+        Overwrite mismatched titles when --check-titles is used.
+    -o, --output
+    --directory
+    --output-subdir
+    --dpi
+    ... plus 6 more; run ``pdftools2 --help`` for the full list.
+
+Examples:
+    $ pdftools2 outline --summary_path SUMMARY.md --pdf_path book.pdf
+    $ pdftools2 shrink --engine gs-screen book.pdf
+
+Command-line script: run ``python pdftools2.py`` or the ``pdftools2`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

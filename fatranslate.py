@@ -1,4 +1,48 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Translate Persian lines and word lists to English.
+
+The ``lines`` subcommand translates the Persian lines of a file (updating the file in place
+unless ``--no-update``) and writes a JSON dictionary, ``words`` does the same for a word list; the chunks
+are retried, the parallelism is a process pool and the log level is configurable.
+
+Usage: fatranslate {lines,words} INPUT [--max-chars N] [--json-out PATH]
+
+Positional arguments:
+    input_file
+        Input text file.
+
+Subcommands:
+    lines
+        Translate Persian lines in a text file, update the file in place, and write a
+        JSON dictionary.
+    words
+        Translate a word list to English and write a JSON dictionary.
+
+Options:
+    --source
+        Source language (default: fa).
+    --target
+        Target language (default: en).
+    -r, --retries
+        Translation retries per chunk (default: 3).
+    --retry-delay
+        Seconds between retries (default: 0.5).
+    --max-chars
+        Max characters per chunk (default: 2000).
+    --json-out
+        JSON output path (default: <input>.json).
+    --no-update
+        Do not rewrite the input file; only write the JSON dictionary.
+    --log-level
+        Log level (default: INFO).
+    -o, --output
+        JSON output path (default: <input>.json).
+
+Examples:
+    $ fatranslate lines notes.txt --max-chars 3000
+
+Command-line script: run ``python fatranslate.py`` or the ``fatranslate`` command. The module is importable as well.
+"""
 
 import argparse
 import json

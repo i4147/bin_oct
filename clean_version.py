@@ -1,4 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Reduce a ``pip freeze`` file to the bare package names.
+
+Drops the version pins, the comments, the URLs and the VCS requirements, deduplicates
+what is left and overwrites the file with one name per line.
+
+Usage: clean_version requirements.txt
+
+Positional arguments:
+    file
+        Pip freeze output file
+
+Examples:
+    $ clean_version freeze.txt
+
+Command-line script: run ``python clean_version.py`` or the ``clean_version`` command. The module is importable as well.
+"""
 
 import argparse
 import re

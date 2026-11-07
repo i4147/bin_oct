@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Make scripts and binaries below the current directory executable.
+
+Adds the execute bits to the files that need them: scripts with a shebang, files in
+``bin``/``sbin``/``.bin`` folders and shared objects, using a worker pool for the chmod calls.
+
+Usage: mkx [paths ...]
+
+Examples:
+    $ mkx
+
+Runs as a script (``python mkx.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import multiprocessing as mp
 import os

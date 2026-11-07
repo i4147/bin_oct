@@ -1,4 +1,42 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Human-readable UUIDs and hashes.
+
+Turns a digest into a memorable word phrase and back (``--humanize``, ``--dehumanize``), generates the
+human-readable UUIDs (v3, v4, v5), verifies a phrase against a hex digest, reports the
+entropy bits for a word count and hashes text with the chosen algorithm.
+
+Usage: hhash [--uuid|--humanize HEX|--verify HEX PHRASE|--hash TEXT] [--algorithm
+sha256]
+
+Options:
+    --uuid
+        Generate a human-readable UUID
+    --uuid5
+        Generate a human-readable UUIDv5
+    --uuid3
+        Generate a human-readable UUIDv3
+    --humanize
+        Humanize a hex digest
+    --humanize-bytes
+        Humanize UTF-8 text
+    --verify
+        Verify a phrase against a hex digest
+    --dehumanize
+        Convert a phrase back to hex
+    --entropy
+        Show entropy bits for given word count
+    --hash
+        Hash text and humanize
+    --algorithm
+        Hash algorithm (default: sha256)
+    ... plus 8 more; run ``hhash --help`` for the full list.
+
+Examples:
+    $ hhash --uuid
+    $ hhash --hash 'hello' --algorithm sha512
+
+Command-line script: run ``python hhash.py`` or the ``hhash`` command. The module is importable as well.
+"""
 
 import argparse
 import hashlib

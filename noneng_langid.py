@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Report every line of text that is not English, using py3langid.
+
+Decodes each text file, classifies the lines above the minimum length with ``py3langid`` and
+prints the lines whose detected language is not English with their confidence,
+colourising the output and skipping binary extensions.
+
+Usage: noneng_langid
+
+Examples:
+    $ noneng_langid
+
+Runs as a script (``python noneng_langid.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import math
 import sys

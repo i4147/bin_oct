@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Turn ``$HOME`` into an age-encrypted bare dotfiles repository.
+
+Installs nothing but verifies the required tools (git, age, git-age-crypt), creates an
+age key pair, writes the ``git-age-filter`` clean/smudge filter, the ``.gitattributes`` and ``.gitignore`` rules and initialises
+a bare ``~/dotfiles.git`` with the ``$HOME`` work tree.
+
+Usage: setup_dotfiles
+
+Examples:
+    $ setup_dotfiles
+
+Runs as a script (``python setup_dotfiles.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import os
 import shutil

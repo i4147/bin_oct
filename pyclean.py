@@ -1,4 +1,53 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Python source cleaner: docstrings and comments.
+
+Subcommands: ``strip`` removes the docstrings and/or the comments with the ast, LibCST or text
+engine (``--engine``), ``check`` reports what a file still contains and ``clean-module-doc`` drops the generated ``Module for X.``
+docstring; ``--tidy`` also collapses the blank lines.
+
+Usage: pyclean {strip,check,clean-module-doc} [options] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files/directories (default: cwd)
+    directory
+
+Subcommands:
+    strip
+        Remove docstrings and/or comments.
+    check
+        Find comments and docstrings (check_rmc.py).
+    clean-module-doc
+        Remove the auto-generated 'Module for X.' docstring (rm_moduledoc.py).
+
+Options:
+    --engine
+        Ast-rewrite = AST span splice, preserves comments/format (brmc.py) ast-unparse =
+        AST unparse, loses comments/format (brmc2.py) text-fallback = line-based delete
+        + regex fallback (remc.py) libcst = libcst-based, also...
+    --preserve-module-docstring
+        Keep the module-level docstring (default: True)
+    --remove-comments
+        Also remove comments (libcst engine only)
+    --preserve-shebang
+        Keep '#!/usr/bin/env ...' shebang (libcst engine, default: True)
+    --preserve-fmt-type
+        Keep '#fmt:' / '#type:' comments (libcst engine, default: True)
+    --tidy
+        Collapse blank-line runs and trim trailing whitespace (text-fallback engine)
+    -a, --auto-remove
+        Automatically remove the found lines
+    --top
+    --pattern
+        Override the regex; must match the entire line after stripping (default:
+        '^\\s*\"\"\"\\s*Module for <name>...')
+
+Examples:
+    $ pyclean check src/
+    $ pyclean strip --remove-comments src/
+
+Command-line script: run ``python pyclean.py`` or the ``pyclean`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

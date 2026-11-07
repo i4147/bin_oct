@@ -1,4 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip the comments (and blank lines) from bash scripts in place.
+
+Finds comment tokens with tree-sitter's bash grammar, so ``#`` inside strings and
+here-documents is left alone, then rewrites the file without comment-only lines. ``--dry-run`` and
+``--diff`` preview, ``--backup`` keeps a ``.bak`` copy.
+
+Usage: clean-bash [options] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-bash script.sh --backup
+    $ clean-bash bin/ --diff
+
+Command-line script: run ``python clean-bash.py`` or the ``clean-bash`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

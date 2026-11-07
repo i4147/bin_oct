@@ -1,0 +1,106 @@
+{
+  "sort_pyfile.py": {
+    "summary": "Reorder the top-level statements of a Python script.",
+    "details": ["Parses the module with :mod:`ast`, sorts its top-level statements (imports and definitions included) and rewrites the file while keeping the original source segments."],
+    "usage": "sort_pyfile SCRIPT.py",
+    "example": ["$ sort_pyfile tool.py"],
+    "notes": "Reordering top-level statements can break a script whose body depends on its order."
+  },
+  "sort_quotes.py": {
+    "summary": "Deduplicate a quotes JSON file and sort it by author.",
+    "details": ["Loads the list of ``{\"quote\", \"author\"}`` objects, drops the duplicate quotes (compared case-insensitively) and writes the list back sorted by author."],
+    "usage": "sort_quotes QUOTES.json",
+    "example": ["$ sort_quotes quotes.json"]
+  },
+  "sortbylen.py": {
+    "summary": "Sort the lines of a file by their length.",
+    "details": ["Reads the file keeping the line endings, sorts the lines by length (``-r`` for the longest first) and writes them back in place."],
+    "usage": "sortbylen [-r] FILE",
+    "example": ["$ sortbylen words.txt -r"]
+  },
+  "sortbysize.py": {
+    "summary": "Write a JSON list of the current directory's entries sorted by total size.",
+    "details": [
+      "Measures each file and each directory (recursively, symlinks excluded) of the current directory and saves the descending ``[{\"name\", \"size\"}]`` list to ``<directory-name>.json``."
+    ],
+    "usage": "sortbysize",
+    "example": ["$ cd ~/projects && sortbysize"]
+  },
+  "sorted_pkgs.py": {
+    "summary": "List the installed packages by size in a table.",
+    "details": [
+      "Queries dpkg for the installed packages, caches the result in ``installed.json`` (``-r`` refreshes it) and prints a width-adaptive table with human-readable sizes, optionally filtered to the biggest ones."
+    ],
+    "usage": "sorted_pkgs [-r] [N]",
+    "example": ["$ sorted_pkgs 20"]
+  },
+  "soverify.py": {
+    "summary": "Verify that the shared objects below the current directory actually load.",
+    "details": [
+      "Loads each ``.so`` file with ctypes, reports the failures and writes a JSON report to ``/sdcard/soverify.log``; a Python-API wrapper around the process keeps the interpreter stable while the libraries are probed."
+    ],
+    "usage": "soverify [paths ...]",
+    "example": ["$ soverify $PREFIX/lib"]
+  },
+  "spdf.py": {
+    "summary": "Shrink PDF files with Ghostscript's screen profile.",
+    "details": [
+      "Runs ``gs`` with 85 dpi downsampling and font subsetting into a temporary file and replaces the original only when the result is smaller, printing the before/after sizes and the space saved. Files are processed in parallel."
+    ],
+    "usage": "spdf [pdfs ...]",
+    "example": ["$ spdf scans/"]
+  },
+  "spdf2.py": {
+    "summary": "Optimise PDF files with qpdf's object streams.",
+    "details": [
+      "Runs ``qpdf --linearize --object-streams=generate`` into a temporary file and keeps it only when it is smaller than the original, reporting the sizes and the total space freed. Files are processed in parallel."
+    ],
+    "usage": "spdf2 [pdfs ...]",
+    "example": ["$ spdf2 books/"]
+  },
+  "split_json.py": {
+    "summary": "Write every value of a JSON list of objects to its own text file.",
+    "details": [
+      "Reads the list, skips the entries that are not objects and writes each key/value pair to a ``.txt`` file named after the key, adding an index suffix when the name is already taken."
+    ],
+    "usage": "split_json INPUT.json",
+    "example": ["$ split_json records.json"]
+  },
+  "split_movies_list.py": {
+    "summary": "Group a list of movie URLs into one text file per movie.",
+    "details": [
+      "Reads the URLs from the given file, takes the name that follows ``/series/`` in each URL and writes the URLs of each movie to ``split_movies/<movie>.txt`` with a sanitised file name."
+    ],
+    "usage": "split_movies_list MOVIES.txt",
+    "example": ["$ split_movies_list links.txt"]
+  },
+  "splitby.py": {
+    "summary": "Put every occurrence of a delimiter on its own line.",
+    "details": ["Splits the file on the delimiter, strips each part and rewrites the file with one part per line followed by the delimiter."],
+    "usage": "splitby FILE DELIMITER",
+    "example": ["$ splitby tags.txt ,"]
+  },
+  "sqltojson.py": {
+    "summary": "Run SQL queries defined in YAML/JSON config files and export the results to JSON or CSV.",
+    "details": [
+      "Reads the connection and query definitions (a config file or the ``queries`` folder), binds the parameters and the date placeholders (``CURRENT_DATE`` and the month/year boundaries), executes the statements in a read-only transaction with SQLAlchemy and writes the rows as JSON, NDJSON or CSV. The CLI is driven by ``fire``."
+    ],
+    "usage": "sqltojson run_query CONFIG --params '{\"key\": \"value\"}'",
+    "example": ["$ sqltojson run_query reports.yml --params '{\"year\": 2024}'"]
+  },
+  "squizer.py": {
+    "summary": "Compress Python sources by renaming names, dropping docstrings and self-extracting the result.",
+    "details": [
+      "Strips the docstrings and annotations, removes the unused stdlib imports, renames the local names to short ones, joins the simple statements and optionally emits a single self-decoding ``b85``/``zlib`` payload, keeping the builtins and the protected names untouched."
+    ],
+    "usage": "squizer [paths ...] [--payload]",
+    "example": ["$ squizer script.py"]
+  },
+  "srpr.py": {
+    "summary": "Run ``srp`` once for every ASCII letter.",
+    "details": ["Calls the external ``srp`` command with each lowercase and then each uppercase letter, printing the output of each run."],
+    "usage": "python srpr.py",
+    "example": ["$ python srpr.py"],
+    "notes": "Wrapper around the external ``srp`` executable; it does nothing useful without it."
+  }
+}

@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert HTML files to Markdown with readability.
+
+Extracts the main article with ``readability``, converts it with ``markdownify`` and writes the ``.md`` next to the
+source, deleting the original HTML on success. Existing ``.md`` files are left alone and the
+tree is processed in parallel.
+
+Usage: tomd [html files ...]
+
+Examples:
+    $ tomd saved_pages/
+
+Runs as a script (``python tomd.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

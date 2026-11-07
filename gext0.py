@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Extract Python entities from files and archives into ``output/``.
+
+Like :mod:`gexcst` but AST-based: functions, classes and constants of every scanned
+source (plain files, directories and archives) are written to ``output/`` with collision-free
+names.
+
+Usage: gext0 [paths ...]
+
+Examples:
+    $ gext0 src/
+
+Runs as a script (``python gext0.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import ast
 import os

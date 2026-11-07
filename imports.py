@@ -1,4 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Generate a ``requirements.txt`` by inspecting the Python files of a project.
+
+Collects the third-party imports with ast, resolves their installed versions, skips the
+local packages and the stdlib and writes the pinned requirements; ``-s`` writes a separate
+file per subdirectory.
+
+Usage: imports [-s] [paths ...]
+
+Options:
+    -s, --save-separate
+        Save separate requirements.txt for each subdirectory
+
+Examples:
+    $ imports -s src/
+
+Command-line script: run ``python imports.py`` or the ``imports`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Browse the RGB/256-colour palette in an interactive terminal grid.
+
+Draws a paged grid of colour cells with their codes, let the arrow keys/page keys move
+around and prints the selected colour values; ``--demo`` cycles through the palette
+automatically.
+
+Usage: pyrgb [--demo]
+
+Examples:
+    $ pyrgb
+
+Runs as a script (``python pyrgb.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import os
 import select
 import sys

@@ -1,4 +1,54 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Filesystem cleanup toolkit for OS junk, caches, empty files and twins.
+
+Subcommands: ``os-junk`` removes the Windows/macOS leftovers, ``darwin`` the ``.DS_Store``-style files, ``caches`` the
+``__pycache__``/``.mypy_cache``/``.pyc`` items, ``empty-files``/``empty-dirs`` the empty entries (with the optional keypress window) and ``twins``
+the files that share a stem with another extension.
+
+Usage: junktools {os-junk,darwin,caches,empty-files,empty-dirs,twins} [options]
+
+Positional arguments:
+    directory
+    path
+
+Subcommands:
+    os-junk
+        Clean_os_files.py
+    darwin
+        Cleanup_darwin.py
+    caches
+        Cnn.py
+    empty-files
+        Find_empty.py / rmempty.py
+    empty-dirs
+        Pdmp.py / pydmp.py / pydmp2.py
+    twins
+        Twin_files.py / twinfiles.py
+
+Options:
+    -a, --auto-remove
+    -v, --verbose
+    --delete
+        Rmempty.py behavior
+    --timeout
+        Abort window in seconds
+    --dry-run
+    --exclude-mode
+        `pdmp` uses the original exclusion sets
+    --include-root
+        Pdmp.py appended the root itself to the candidate list
+    --ext1
+    --ext2
+    --remove
+        Which extension to delete when a twin exists (default 2)
+    ... plus 2 more; run ``junktools --help`` for the full list.
+
+Examples:
+    $ junktools caches -a ~/projects
+    $ junktools empty-dirs --dry-run
+
+Command-line script: run ``python junktools.py`` or the ``junktools`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

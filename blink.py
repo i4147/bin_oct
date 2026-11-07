@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove dangling symlinks under the current directory.
+
+Skips anything inside ``.git`` and reports links that point to a missing target; ``-d`` only
+lists them (dry run) instead of unlinking.
+
+Usage: blink [-d]
+
+Examples:
+    $ blink -d
+    $ blink
+
+Runs as a script (``python blink.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

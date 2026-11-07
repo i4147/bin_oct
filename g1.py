@@ -1,4 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Clone a GitHub repository through a pluggable backend.
+
+Accepts ``owner/repo``, HTTPS or SSH identifiers, resolves the default branch and the size through
+the GitHub API (``--token`` raises the rate limit), warns about the large repositories, can
+clone shallowly (``-d``) and initialises the submodules; ``--backend`` picks subprocess, Dulwich,
+GitPython, libgit2 or typer.
+
+Usage: g1 REPOSITORY [-d] [--backend NAME] [--token TOKEN]
+
+Positional arguments:
+    repository_url
+        Repository identifier or URL (owner/repo, HTTPS, or SSH).
+
+Options:
+    --token
+        GitHub personal access token (increases rate limit).
+    -d, --depth
+        Perform a shallow clone with depth 1. Without this flag the full history is
+        cloned.
+    -b, --backend
+
+Examples:
+    $ g1 psf/requests -d
+
+Command-line script: run ``python g1.py`` or the ``g1`` command. The module is importable as well.
+"""
 
 import argparse
 import shutil

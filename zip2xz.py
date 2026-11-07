@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Repack ZIP archives as ``.tar.xz``.
+
+Unpacks each zip file into a temporary directory, creates a ``.tar.xz`` with tar and replaces
+the original archive with the compressed result.
+
+Usage: zip2xz [ARCHIVE ...]
+
+Examples:
+    $ zip2xz bundle.zip
+
+Runs as a script (``python zip2xz.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import subprocess
 import sys
 import tempfile

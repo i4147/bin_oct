@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Extract archives into a subdirectory named after the archive.
+
+Detects zip, tar and 7z archives, creates a sibling directory with the archive's stem
+and unpacks the members into it, guarding against path traversal.
+
+Usage: subdir ARCHIVE [...]
+
+Examples:
+    $ subdir release.tar.gz
+
+Runs as a script (``python subdir.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import shutil
 import tarfile
