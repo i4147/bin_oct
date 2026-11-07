@@ -461,7 +461,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_simple)
     p = sub.add_parser(
         "rich",
-        default=True,
         help="Rich interactive preview with textareas + dark mode (fontpre.py)",
     )
     p.add_argument("paths", nargs="*", help="Files/directories to scan (default: cwd)")

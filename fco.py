@@ -43,7 +43,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Optional, Sequence
 
-from dh import WORKERS, fsz
+from dh import MAX_WORKERS, fsz
 from loguru import logger
 
 try:
@@ -493,7 +493,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         all_results.append(result)
         print_file_stats(result)
     else:
-        workers = min(WORKERS, len(worker_args))
+        workers = min(MAX_WORKERS, len(worker_args))
         pool = Pool(processes=workers)
         try:
             async_results = [pool.apply_async(convert_font, args=wa) for wa in worker_args]
