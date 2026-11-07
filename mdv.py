@@ -1,4 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""View a Markdown file in the terminal, page by page.
+
+Renders the Markdown with rich and pages through it with the space/arrow keys, quitting
+with ``q``.
+
+Usage: mdv [FILE.md]
+
+Positional arguments:
+    file
+        Path to a Markdown file (default: README.md)
+
+Examples:
+    $ mdv README.md
+
+Command-line script: run ``python mdv.py`` or the ``mdv`` command. The module is importable as well.
+"""
 
 import argparse
 import sys

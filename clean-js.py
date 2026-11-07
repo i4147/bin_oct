@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Minify JavaScript files in place using tree-sitter, rjsmin or jsmin.
+
+The tree-sitter backend removes comments and blank lines without third-party packages;
+``--backend rjsmin`` or ``jsmin`` uses those minifiers when installed. ``--dry-run``/``--diff`` preview the output and ``--backup`` keeps
+a ``.bak`` copy.
+
+Usage: clean-js [options] [files ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    -b, --backend
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-js app.js --backend rjsmin
+    $ clean-js static/ --diff
+
+Command-line script: run ``python clean-js.py`` or the ``clean-js`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

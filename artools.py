@@ -1,4 +1,52 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Archive and compression converter for tar, zip, wheel and brotli files.
+
+Subcommands: ``tar-codec`` re-encodes the ``*.tar.<codec>`` files (gz, xz, bz2, zst, br, lz4, 7z), ``archive-convert`` converts
+between the tar/zip/whl formats, ``br2zst`` turns ``*.json.br`` into ``*.json.zst`` and ``whl-txz`` converts wheels to ``.tar.xz``
+and back. ``--remove-original`` and ``--level`` control the output.
+
+Usage: artools {tar-codec,archive-convert,br2zst,whl-txz} [options]
+
+Positional arguments:
+    target
+        Target codec, e.g. xz, zst, br, 7z.
+    inputs ...
+        Files or directories (default: cwd entries).
+    paths ...
+        Files or directories (default: current directory).
+
+Subcommands:
+    tar-codec
+        Change the codec of *.tar.<codec> files (recursive).
+    archive-convert
+        Convert archives between tar/zip/whl formats.
+    br2zst
+        Recursively convert *.json.br -> *.json.zst.
+    whl-txz
+        Bidirectional .whl <-> .tar.xz converter.
+
+Options:
+    --root
+        Directory to scan recursively (default: cwd).
+    --level
+    -t, --to
+        Target format, e.g. .tar.xz or .zip.
+    -r, --recursive
+        Search directories recursively.
+    --remove-original
+        Delete source file after successful conversion.
+    --to
+        Restrict direction when scanning directories.
+    -v, --verbose
+    -q, --quiet
+    --legacy-percent
+        Reproduce the original buggy '*40' percent display.
+
+Examples:
+    $ artools tar-codec xz --root dist/
+
+Command-line script: run ``python artools.py`` or the ``artools`` command. The module is importable as well.
+"""
 
 import argparse
 import bz2

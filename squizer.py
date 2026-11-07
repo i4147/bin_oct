@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress Python sources by renaming names, dropping docstrings and self-extracting the result.
+
+Strips the docstrings and annotations, removes the unused stdlib imports, renames the
+local names to short ones, joins the simple statements and optionally emits a single
+self-decoding ``b85``/``zlib`` payload, keeping the builtins and the protected names untouched.
+
+Usage: squizer [paths ...] [--payload]
+
+Examples:
+    $ squizer script.py
+
+Runs as a script (``python squizer.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import ast
 import base64
 import builtins

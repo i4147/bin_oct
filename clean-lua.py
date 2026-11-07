@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip comments from Lua files in place, keeping ``---`` documentation comments.
+
+Comments are located with tree-sitter's Lua grammar so ``--`` inside strings survives. The
+``luaparse`` backend can be selected with ``--backend`` when that package is installed; ``--dry-run``/``--diff`` preview and
+``--backup`` keeps ``.bak`` copies.
+
+Usage: clean-lua [options] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    -b, --backend
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-lua script.lua --backup
+    $ clean-lua lua/ --dry-run
+
+Command-line script: run ``python clean-lua.py`` or the ``clean-lua`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

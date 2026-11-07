@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Render the PDFs below the current directory to JPEG pages.
+
+Converts each page at 300 dpi into ``output_jpgs/<name>/<name>_page_N.jpg`` with PyMuPDF and deletes the original PDF after a
+successful conversion; failed conversions keep their sources and are counted in the
+summary.
+
+Usage: pdf2img
+
+Examples:
+    $ pdf2img
+
+Deletes each PDF once all of its pages were written.
+"""
 
 import shutil
 from pathlib import Path

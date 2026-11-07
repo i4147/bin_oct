@@ -1,4 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Draw an SVG dependency graph of the installed Python packages.
+
+Reads the installed distributions and their requirements, builds the graph (restricted
+by ``--root`` to the reachable packages), lays it out in topological levels and writes the SVG
+to ``-o``.
+
+Usage: mk_deptree_svg [-o graph.svg] [--root PKG ...]
+
+Options:
+    -o, --output
+        Output SVG path.
+    --root
+        Only show dependencies reachable from these packages.
+
+Examples:
+    $ mk_deptree_svg -o deps.svg --root mypkg
+
+Command-line script: run ``python mk_deptree_svg.py`` or the ``mk_deptree_svg`` command. The module is importable as well.
+"""
 
 import argparse
 import html

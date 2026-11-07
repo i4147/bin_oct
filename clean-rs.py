@@ -1,4 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip the comments from Rust files while keeping the doc and ``SAFETY:`` comments.
+
+Parses each ``.rs`` file with tree-sitter, removes the line and block comments except the
+``///``/``//!`` documentation and the ``SAFETY:`` notes, collapses the resulting blank-line runs,
+validates the output and offers ``-diff`` for a coloured preview.
+
+Usage: clean-rs [paths ...] [-diff]
+
+Positional arguments:
+    paths ...
+        Files or directories
+
+Options:
+    -diff
+        Show colored diff and leave files untouched
+
+Examples:
+    $ clean-rs src/ -diff
+
+Command-line script: run ``python clean-rs.py`` or the ``clean-rs`` command. The module is importable as well.
+"""
+
 import argparse
 import contextlib
 import functools

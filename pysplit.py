@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Split a text file into a fixed number of parts.
+
+Divides the lines evenly (the last part takes the remainder), writes ``<name>_01.txt``-style parts
+with zero-padded indexes and refuses binary files.
+
+Usage: pysplit FILE PARTS
+
+Examples:
+    $ pysplit words.txt 5
+
+Runs as a script (``python pysplit.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

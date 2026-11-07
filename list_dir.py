@@ -1,4 +1,52 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Directory and file listing toolkit.
+
+Subcommands: ``stems`` prints the file stems truncated at the first dash, ``dirs`` the directory
+names with a ``-`` prefix and ``ls`` a listing with colours, icons, sizes, git status, a tree
+mode and a JSON output, with sorting and filter options.
+
+Usage: list_dir {stems,dirs,ls} [options] [directory]
+
+Positional arguments:
+    directory
+    paths ...
+
+Subcommands:
+    stems
+        Print file stems, truncated at the first '-'
+    dirs
+        Print directory names prefixed with '-'
+    ls
+        List directory contents
+
+Options:
+    --sep
+        Separator (default: 3 spaces)
+    -R, --recursive
+        Recurse into subdirectories (files only)
+    --tree
+        Print a tree
+    -l, --long
+        Long listing
+    --json
+        JSON output
+    --git
+        Annotate entries with git status flags
+    --icons
+        Prefix icons
+    -a, --all
+        Include dotfiles
+    --exclude-cache
+        Skip .git/__pycache__/.mypy_cache/.ruff_cache
+    --sort-by
+    ... plus 6 more; run ``list_dir --help`` for the full list.
+
+Examples:
+    $ list_dir ls -l
+    $ list_dir ls --tree --icons ~/bin
+
+Command-line script: run ``python list_dir.py`` or the ``list_dir`` command. The module is importable as well.
+"""
 
 import argparse
 import datetime as dt

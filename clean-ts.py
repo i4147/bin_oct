@@ -1,4 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Minify TypeScript files in place using tree-sitter, rjsmin or jsmin.
+
+The tree-sitter TypeScript grammar strips comments and blank lines without extra
+dependencies; ``--backend rjsmin`` or ``--backend jsmin`` minify more aggressively when installed. ``--dry-run``/``--diff`` preview and
+``--backup`` keeps ``.bak`` copies.
+
+Usage: clean-ts [options] [files ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    -b, --backend
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-ts src/app.ts --backend rjsmin
+
+Command-line script: run ``python clean-ts.py`` or the ``clean-ts`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

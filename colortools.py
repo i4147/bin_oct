@@ -1,4 +1,51 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Colour utilities: extract, convert, sort and display hex colours.
+
+Subcommands: ``html`` writes a swatch page, ``extract``/``extract-show`` gather the ``#rrggbb``/``rgb()`` colours of a tree
+(with ANSI previews), ``hex2rgb`` converts one value, ``showcolor`` prints random colour blocks and ``sorthue``
+sorts the hex lines by hue.
+
+Usage: colortools {html,extract,extract-show,hex2rgb,showcolor,sorthue} [options]
+
+Positional arguments:
+    input
+    output
+    path
+    hex
+    file
+
+Subcommands:
+    html
+        Write an HTML color display page.
+    extract
+        Scan for hex colors and write them out.
+    extract-show
+        Scan and print ANSI color swatches.
+    hex2rgb
+        Convert a hex color to RGB.
+    showcolor
+        Print random ANSI color blocks.
+    sorthue
+        Sort #rrggbb lines by HSV hue.
+
+Options:
+    --output
+    --max-colors
+    --max-size
+    --ext
+        File extension to include (repeatable).
+    --format
+    --allow-short
+        Allow 3-digit #abc form.
+    --count
+        Number of blocks (default: random 1-999).
+
+Examples:
+    $ colortools extract-show --path css/
+    $ colortools hex2rgb '#ff8800'
+
+Command-line script: run ``python colortools.py`` or the ``colortools`` command. The module is importable as well.
+"""
 
 import argparse
 import colorsys

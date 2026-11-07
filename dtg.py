@@ -1,4 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Translate the comments, docstrings and print statements of Python files in place.
+
+Collects the translatable strings with tokenize/ast, batches them through ``deep_translator`` (or
+another backend), applies the replacements, keeps a ``.translation_state.json`` for the resume and works through
+the files concurrently.
+
+Usage: dtg [paths ...] [-b BACKEND]
+
+Positional arguments:
+    inputs ...
+        Files or directories to process (default: current directory)
+
+Options:
+    -b, --backend
+        Translation backend (default: deep_translator)
+
+Examples:
+    $ dtg src/ -b deep_translator
+
+Command-line script: run ``python dtg.py`` or the ``dtg`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

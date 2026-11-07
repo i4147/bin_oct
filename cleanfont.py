@@ -1,4 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Subset a font to the non-CJK glyphs and write the result to ``out.ttf``.
+
+Uses fontTools' subsetter, keeps every layout feature, name record and the recommended
+glyphs, and drops the code points in the CJK blocks (CJK radicals, unified ideographs
+and their extensions) so Chinese glyphs no longer ship with the font.
+
+Usage: cleanfont FONT.ttf
+
+Examples:
+    $ cleanfont NotoSans.ttf
+
+Runs as a script (``python cleanfont.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 from fontTools import subset
 import sys
 

@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Point the ``abi`` of the ``setup.py`` files below the current directory at the running CPython.
+
+Derives ``cp3N`` from the interpreter version, rewrites the ``Cython/python abi=`` entries that use another
+version and reports the touched files.
+
+Usage: update_abi
+
+Examples:
+    $ update_abi
+
+Runs as a script (``python update_abi.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import re
 import sys

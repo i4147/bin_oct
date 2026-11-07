@@ -1,4 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Minify JavaScript files in place with terser.
+
+Runs terser with the compress/mangle/toplevel/module options on the ``.js``/``.mjs``/``.cjs`` files,
+keeps the result only when it is smaller and valid, supports ``--dry-run``, ``-q`` and a timeout, and
+processes the tree in a pool.
+
+Usage: pyterser [paths ...] [--dry-run] [--no-mangle]
+
+Positional arguments:
+    paths ...
+        Files or directories to process (default: current directory).
+
+Options:
+    -q, --quiet
+        Do not print terser's own stdout/stderr; only summary lines.
+    --dry-run
+        Run and validate, but do not modify any files.
+    --mangle
+        Pass --mangle to terser (default: on). Use --no-mangle to skip.
+    --compress
+        Pass --compress to terser (default: on). Use --no-compress to skip.
+    --toplevel
+        Pass --toplevel to terser (mangle/compress top-level names). Requires --mangle
+        or --compress to have any effect.
+    --module
+        Pass --module to terser (treat input as an ES module).
+    --ecma
+        Pass --ecma N to terser (target ECMAScript version, e.g. 5, 2015, 2020). Omitted
+        by default so terser picks its own.
+    --terser
+        Path to the terser executable (default: search PATH).
+    --terser-arg
+        Extra argument to pass to terser; may be repeated.
+    --timeout
+
+Examples:
+    $ pyterser static/js --toplevel
+
+Command-line script: run ``python pyterser.py`` or the ``pyterser`` command. The module is importable as well.
+"""
+
 import argparse
 import contextlib
 import os

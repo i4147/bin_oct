@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""List the files in the current directory whose name contains a substring.
+
+Prints the matching names sorted alphabetically, marking symlinks with their target; ``-s``
+also includes symlinks (they are skipped by default).
+
+Usage: lkk [-s] SUBSTRING
+
+Examples:
+    $ lkk dup
+
+Runs as a script (``python lkk.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

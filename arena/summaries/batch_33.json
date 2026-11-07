@@ -1,0 +1,102 @@
+{
+  "clean-rs.py": {
+    "summary": "Strip the comments from Rust files while keeping the doc and ``SAFETY:`` comments.",
+    "details": [
+      "Parses each ``.rs`` file with tree-sitter, removes the line and block comments except the ``///``/``//!`` documentation and the ``SAFETY:`` notes, collapses the resulting blank-line runs, validates the output and offers ``-diff`` for a coloured preview."
+    ],
+    "usage": "clean-rs [paths ...] [-diff]",
+    "example": ["$ clean-rs src/ -diff"]
+  },
+  "clean_version.py": {
+    "summary": "Reduce a ``pip freeze`` file to the bare package names.",
+    "details": ["Drops the version pins, the comments, the URLs and the VCS requirements, deduplicates what is left and overwrites the file with one name per line."],
+    "usage": "clean_version requirements.txt",
+    "example": ["$ clean_version freeze.txt"]
+  },
+  "cleanbash.py": {
+    "summary": "Remove the comments from bash scripts with tree-sitter.",
+    "details": [
+      "Detects the shell scripts by suffix and shebang, deletes the comment nodes, collapses the excess blank lines, re-validates the script with ``bash -n`` and processes the tree with a spawn-based pool."
+    ],
+    "usage": "cleanbash [paths ...]",
+    "example": ["$ cleanbash ~/bin"]
+  },
+  "cleanlua.py": {
+    "summary": "Remove the comments from Lua files, keeping the ``---`` annotations.",
+    "details": ["Collects the comment ranges with tree-sitter Lua, preserves the three-dash documentation comments, rewrites the files and works through the tree in a pool."],
+    "usage": "cleanlua [paths ...]",
+    "example": ["$ cleanlua lua/"]
+  },
+  "cleanmd.py": {
+    "summary": "Remove the image references from Markdown, RST and HTML files.",
+    "details": [
+      "Deletes the inline images, the reference-style images and the linked badges (``--badges``), optionally only the remote ones, the unused link definitions and the surrounding whitespace; ``--backup``, ``--html-parser`` and ``--report`` control the behaviour."
+    ],
+    "usage": "cleanmd [options] [paths ...]",
+    "example": ["$ cleanmd --remote-only docs/"]
+  },
+  "cleanpy.py": {
+    "summary": "Remove the comments and docstrings of Python files recursively.",
+    "details": [
+      "Uses LibCST to delete the comments and the class/function docstrings while preserving the shebangs, the ``# fmt``/``# type`` markers and the module docstrings (``-r`` removes those too), and processes the tree with eight workers."
+    ],
+    "usage": "cleanpy [-r] [paths ...]",
+    "example": ["$ cleanpy src/"]
+  },
+  "cleants.py": {
+    "summary": "Strip the comments from source files of many languages with tree-sitter.",
+    "details": [
+      "Detects the language from the suffix or shebang (bash, C/C++, Python, JS/TS, CSS ...), keeps the vital comments (licences, ``@license``, lint pragmas) and the doc blocks (``--keep-doc``), and offers ``--inplace``, ``--dryrun``, ``--check``, ``--diff``, ``--backup``, ``--exclude`` and a size limit, validating every result before writing."
+    ],
+    "usage": "cleants [options] [{--inplace,--check,--diff}] [paths ...]",
+    "example": ["$ cleants --check --diff src/"]
+  },
+  "colortools.py": {
+    "summary": "Colour utilities: extract, convert, sort and display hex colours.",
+    "details": [
+      "Subcommands: ``html`` writes a swatch page, ``extract``/``extract-show`` gather the ``#rrggbb``/``rgb()`` colours of a tree (with ANSI previews), ``hex2rgb`` converts one value, ``showcolor`` prints random colour blocks and ``sorthue`` sorts the hex lines by hue."
+    ],
+    "usage": "colortools {html,extract,extract-show,hex2rgb,showcolor,sorthue} [options]",
+    "example": ["$ colortools extract-show --path css/", "$ colortools hex2rgb '#ff8800'"]
+  },
+  "compare_files_dirs.py": {
+    "summary": "File and directory comparison utilities in one CLI.",
+    "details": [
+      "Subcommands: ``a-b`` prints the differing lines of two files, ``compare-dirs``/``compare-dirz`` report the hashes unique to each tree, ``fcmp``/``same-file`` compare two paths, ``pdif`` diffs the Python-aware content, ``pycommon`` finds the shared lines and ``compare-move`` moves or copies the common files."
+    ],
+    "usage": "compare_files_dirs {a-b,compare-move,compare-dirs,...} [options]",
+    "example": ["$ compare_files_dirs compare-dirs old/ new/"]
+  },
+  "compress_files_500k.py": {
+    "summary": "Compress the files above 500 KB below the current directory.",
+    "details": [
+      "Streams each large file through xz (or the ``-b`` algorithm: gz, bz2, br, zst, lz4, 7z) in 1 MB chunks and replaces it with the archive; ``-d`` decompresses the recognised archives and ``--list``/``--show-reduction`` only the report the candidates."
+    ],
+    "usage": "compress_files_500k [-b ALGO] [-d] [--list] [--show-reduction]",
+    "example": ["$ compress_files_500k -b zst --show-reduction"]
+  },
+  "compress_subdirs.py": {
+    "summary": "Compress or decompress the top-level directories of a folder in parallel.",
+    "details": [
+      "Packs each subdirectory into a tar with xz, gz, bz2, zstd, lz4 or snappy (``-c``), or extracts the archives back (``-d``), with ``--min``/``--max`` size filters, ``--include`` globs, ``--keep``/``--remove-source`` handling and a choice of the multiprocessing or threading pool."
+    ],
+    "usage": "compress_subdirs -c xz [-C DIR] [--min SIZE] [--max SIZE]",
+    "example": ["$ compress_subdirs -c zstd -C ~/projects --remove-source"]
+  },
+  "compresstools.py": {
+    "summary": "Compress or decompress files and folders with seven codecs.",
+    "details": [
+      "Picks the algorithm with the flags (``-z`` zstd, ``-x`` xz, ``-7`` 7z, ``-g`` gzip, ``-b`` bz2, ``-r`` brotli, ``-l`` lz4), compresses the single files in memory or in chunks and the folders asynchronously, and ``-d`` decompresses the archives again."
+    ],
+    "usage": "compresstools [-z|-x|-7|-g|-b|-r|-l] [-d] [paths ...]",
+    "example": ["$ compresstools -z big.log", "$ compresstools -x -d big.log.xz"]
+  },
+  "compsub.py": {
+    "summary": "Compress the subdirectories of the current folder into tar.zst, tar.br or tar.xz.",
+    "details": [
+      "Packs each directory with tar plus zstd (level 19), brotli (quality 11) or lzma, and ``-d`` safely extracts the archives again with a path-traversal guard; the algorithm, level and recursion depth are configurable."
+    ],
+    "usage": "compsub {-c|-d} {-z|-b|-x} [paths ...] [--level N]",
+    "example": ["$ compsub -c -z .", "$ compsub -d -z dist/"]
+  }
+}

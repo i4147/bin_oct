@@ -1,4 +1,60 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Network toolkit: proxies, IP, ping, DNS and signal.
+
+Subcommands: ``proxy-test`` checks the proxies of a file concurrently, ``net-info`` prints the public and
+local IP with a speed test, ``ping`` parses the ``ping`` output into statistics, ``set-dns`` switches the
+resolver to a public provider, ``show-ip`` prints the addresses and ``signal`` monitors the Android
+Wi-Fi/cellular signal.
+
+Usage: nettools {proxy-test,net-info,ping,set-dns,show-ip,signal} [options]
+
+Positional arguments:
+    host
+        Hostname or IP address to ping
+
+Subcommands:
+    proxy-test
+        Test HTTP proxies concurrently
+    net-info
+        Show public IP, local IP, DNS; run speed test
+    ping
+        Ping a host and parse the results
+    set-dns
+        Switch DNS to a public provider
+    show-ip
+        Show local and public IP
+    signal
+        Monitor Wi-Fi/cellular signal (Android)
+
+Options:
+    -f, --file
+        Path to proxies file (one per line). Default: proxies.txt
+    -t, --timeout
+        Per-request timeout in seconds. Default: 5
+    --delay
+        Delay between requests in each worker (s). Default: 0.5
+    -o, --output
+        Save valid proxies to this file (skips the interactive prompt)
+    --no-speedtest
+        Skip the download/upload speed test
+    --download-url
+        URL used for the download speed test
+    --upload-url
+        URL used for the upload speed test
+    --dns-path
+        Path to the resolv.conf-style file to read DNS servers from
+    -c, --count
+        Number of ping requests (default: 4)
+    -s, --size
+        ICMP payload size in bytes (default: 56)
+    ... plus 7 more; run ``nettools --help`` for the full list.
+
+Examples:
+    $ nettools ping example.com
+    $ nettools proxy-test -f proxies.txt
+
+Command-line script: run ``python nettools.py`` or the ``nettools`` command. The module is importable as well.
+"""
 
 import argparse
 import io

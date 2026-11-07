@@ -1,0 +1,121 @@
+{
+  "getkeys.py": {
+    "summary": "Extract the keys of a JSON document into a text file.",
+    "details": ["Recurses through the objects and the lists, writes the keys one per line to ``keys.txt`` (or ``-o``) and can sort them (``-s``) and keep only the unique ones (``-u``)."],
+    "usage": "getkeys INPUT.json [-o keys.txt] [-s] [-u]",
+    "example": ["$ getkeys data.json -s -u"]
+  },
+  "getsub.py": {
+    "summary": "Download English subtitles for a video, or search for them by title.",
+    "details": [
+      "The ``file`` subcommand scans a local video with subliminal and writes the subtitle next to it, ``search`` queries the services by title; the language, providers, extension and the output name are configurable."
+    ],
+    "usage": "getsub {file,search} [options]",
+    "example": ["$ getsub file movie.mkv", "$ getsub search 'Some Film'"]
+  },
+  "gfco.py": {
+    "summary": "Convert font files between the TTF/OTF/WOFF/WOFF2/EOT containers.",
+    "details": ["Converts each input to the ``--to`` format with fontTools through a four-worker executor (``--pool-method``), writes the results into ``--output-dir`` or next to the source and removes the originals with ``-r``."],
+    "usage": "gfco FONT [...] --to ttf|otf|woff|woff2|eot [--output-dir DIR] [-r]",
+    "example": ["$ gfco fonts/*.otf --to woff2"]
+  },
+  "gh_repo.py": {
+    "summary": "Create a GitHub repository from a local project and push it.",
+    "details": [
+      "Subcommands: ``api`` creates the repository through the REST API, ``api-push`` also initialises, commits and pushes, ``gh-create`` mixes PyGithub and the ``gh`` CLI, ``gh-cli`` is a pure ``gh``/git workflow and ``gh-managed`` an interactive manager. The token comes from ``~/.env`` and ``--backend`` picks the git implementation."
+    ],
+    "usage": "gh_repo {api,api-push,gh-create,gh-cli,gh-managed} [options]",
+    "example": ["$ gh_repo api-push myproject --private"]
+  },
+  "ghzip.py": {
+    "summary": "Download a GitHub repository as a ZIP archive.",
+    "details": [
+      "Normalises ``owner/repo`` or a full URL, resolves the default branch and the size through the API (asking before the large repositories) and downloads the codeload ZIP with subprocess, PyGithub, GitPython or Dulwich (``-b``)."
+    ],
+    "usage": "ghzip owner/repo [-b BACKEND]",
+    "example": ["$ ghzip psf/requests"]
+  },
+  "git_diff_tool.py": {
+    "summary": "Git diff and status reports.",
+    "details": [
+      "Subcommands: ``diff`` writes a JSON report (files, stats, optional patch) between two refs, ``status`` summarises every repository below a root (``--dirty-only`` filters) and ``added-files`` lists the files added per commit."
+    ],
+    "usage": "git_diff_tool {diff,status,added-files} [options] [repo]",
+    "example": ["$ git_diff_tool diff . HEAD~3 HEAD -o report.json"]
+  },
+  "git_squash_n.py": {
+    "summary": "Squash the last N commits with a saved patch, reset and re-apply.",
+    "details": [
+      "Combines the patches of the last N commits into one file plus a metadata JSON, resets the branch by N commits, applies the patch again and commits the message of the newest commit; ``--dry-run`` shows the plan and ``--force`` stashes the uncommitted changes first."
+    ],
+    "usage": "git_squash_n N [--dry-run] [--force]",
+    "example": ["$ git_squash_n 3 --dry-run"]
+  },
+  "github_query_tool.py": {
+    "summary": "Query GitHub users, repositories and trending pages.",
+    "details": [
+      "Subcommands: ``user-repos`` lists the repositories of a user (``--python-only``), ``search`` runs the search API with the presets, ``trending``/``trending-users`` scrape github.com/trending and ``repo-size`` prints the size of one repository; the output goes to the screen or a file."
+    ],
+    "usage": "github_query_tool {user-repos,search,trending,trending-users,repo-size} [options]",
+    "example": ["$ github_query_tool trending --language python --days 7"]
+  },
+  "gitools.py": {
+    "summary": "Git maintenance commands with pluggable backends.",
+    "details": [
+      "Subcommands: ``checkout-previous`` returns to HEAD^ in the repositories whose subject matches a prefix, ``rm-commits``/``cut``/``del-remote-commits`` drop the commits older than N days (with a backup branch, and a force-push for the remote variant), ``list-added`` lists the files of the last commits and ``restore-deleted`` brings back everything ever deleted."
+    ],
+    "usage": "gitools {checkout-previous,rm-commits,cut,del-remote-commits,list-added,restore-deleted} [options]",
+    "example": ["$ gitools cut --days 30 --branch main --no-push"],
+    "notes": "The commit-rewriting and force-push subcommands change the history; run them on a branch with a backup."
+  },
+  "gitreportx.py": {
+    "summary": "Report the files added or removed in every commit of a repository.",
+    "details": ["Walks the history through subprocess, GitPython, pygit2 or Dulwich (``-b``), prints each commit with the added and removed paths, can skip the commits without changes and limit the walk with ``--max-commits``."],
+    "usage": "gitreportx [repo] [-b BACKEND] [--only-with-changes] [--max-commits N]",
+    "example": ["$ gitreportx . --only-with-changes --max-commits 50"]
+  },
+  "gitsynctools.py": {
+    "summary": "Commit, push and sync a repository in one command.",
+    "details": [
+      "The ``commit``, ``push`` and ``sync`` subcommands stage the changes (optionally formatting them with black first), build the commit message, create or fork the GitHub repository when asked, configure the token remote from the environment and push the current branch."
+    ],
+    "usage": "gitsynctools {commit,push,sync} [options]",
+    "example": ["$ gitsynctools sync --message 'update' --set-upstream"]
+  },
+  "gitutils.py": {
+    "summary": "List the added, modified and deleted files of every commit across several git backends.",
+    "details": [
+      "Walks the history through Dulwich, pygit2, GitPython or the ``git`` CLI, applies the date/author/path/mode filters and writes the records as JSON, JSONL, CSV, YAML or Markdown (``-f``), with ``--first-parent`` and ``--max-count`` support."
+    ],
+    "usage": "gitutils [repo_path] [-b BACKEND] [-f FORMAT] [--since DATE] [--path GLOB]",
+    "example": ["$ gitutils . -f csv -o history.csv --since 2025-01-01"]
+  },
+  "gp.py": {
+    "summary": "Stage everything, commit with a timestamp message and push.",
+    "details": [
+      "Stages the changes (warning about the empty files), creates the ``YYYY-MM-DD HH:MM`` message or the ``-m`` one, commits and pushes to the remote/branch, with ``--force-with-lease``, ``--allow-empty``, ``--dry-run`` and ``-y`` for the confirmations."
+    ],
+    "usage": "gp [repo] [-m MESSAGE] [-r REMOTE] [--branch BRANCH] [--dry-run]",
+    "example": ["$ gp -m 'fix docs'"]
+  },
+  "grmc.py": {
+    "summary": "Strip the comments, docstrings and type annotations of Python files.",
+    "details": [
+      "``-c`` removes the comments (keeping the shebang, ``# type:`` and ``# fmt:``), ``-d`` the docstrings except the module one, ``-a`` everything and ``-t`` the annotations; the backend is LibCST, ast or tree-sitter (``-b``) and the output is validated before it is written."
+    ],
+    "usage": "grmc [-c] [-d] [-a] [-t] [-b BACKEND] [paths ...]",
+    "example": ["$ grmc -c -t src/"]
+  },
+  "grmcst.py": {
+    "summary": "Strip the comments and docstrings of Python files with LibCST.",
+    "details": ["Rewrites each file without its comments and docstrings while preserving the shebangs, the ``# type:`` hints and the ``# fmt:`` markers, validates the syntax and processes the targets in a pool."],
+    "usage": "grmcst [paths ...]",
+    "example": ["$ grmcst src/"]
+  },
+  "group_by_size.py": {
+    "summary": "Group the subdirectories of the current directory into N similarly sized parts.",
+    "details": ["Measures each subdirectory, sorts them by size, packs them greedily into ``-n`` balanced ``group_*`` folders and moves them there, printing the resulting distribution."],
+    "usage": "group_by_size [-n PARTS]",
+    "example": ["$ group_by_size -n 4"]
+  }
+}

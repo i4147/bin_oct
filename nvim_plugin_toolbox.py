@@ -1,4 +1,58 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Neovim plugin helper: folderize, lock and split.
+
+The ``folderize`` subcommand moves the ``.lua`` files into per-plugin folders by the references they
+contain, ``lock`` writes a ``lazy-lock.json`` from the installed lazy.nvim plugins (with the git commit of
+each) and ``split`` breaks a plugin-spec table into one file per plugin; ``--dry-run`` previews.
+
+Usage: nvim_plugin_toolbox {folderize,lock,split} [options]
+
+Positional arguments:
+    input
+        Input .lua file, or '-' for stdin (default: '-').
+
+Subcommands:
+    folderize
+        Move .lua files into per-plugin folders based on reference regexes.
+    lock
+        Generate lazy-lock.json from installed lazy.nvim plugins.
+    split
+        Split a Lua plugin-spec table into one file per plugin.
+
+Options:
+    --dry-run
+        Show the plan without moving files.
+    --lazy-dir
+        Directory containing installed plugin git repos (default:
+        ~/.local/share/nvim/lazy).
+    --output
+        Path of the lazy-lock.json file to write (default:
+        ~/.config/nvim/lazy-lock.json).
+    -o, --output
+        Output directory. Defaults: '.' for --engine strict, 'plugins' for --engine
+        simple.
+    --engine
+        Strict = split_lua_plugins.py behavior (validation + rename map); simple =
+        split_plugins.py behavior (no validation, sanitized names).
+    --validate
+        Validate Lua syntax of generated files (default: strict).
+    --no-validate
+        Skip Lua syntax validation.
+    --rename-map
+        Apply built-in short-name rename map (default: strict).
+    --no-rename-map
+        Do not apply the rename map.
+    --sanitize
+        Sanitize file names (default: simple).
+    ... plus 4 more; run ``nvim_plugin_toolbox --help`` for the full list.
+
+Examples:
+    $ nvim_plugin_toolbox lock --output lazy-lock.json
+    $ nvim_plugin_toolbox split plugins.lua --engine strict
+
+Command-line script: run ``python nvim_plugin_toolbox.py`` or the ``nvim_plugin_toolbox`` command. The module is importable as well.
+"""
+
 import argparse
 import json
 import re

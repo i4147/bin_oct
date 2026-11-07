@@ -1,4 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip comments from TOML files in place using tree-sitter.
+
+Removes ``#`` comments and trailing blank lines while leaving strings untouched, then
+rewrites the file. ``--dry-run``/``--diff`` show the result first and ``--backup`` writes ``.bak`` copies.
+
+Usage: clean-toml [options] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    -b, --backend
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-toml pyproject.toml --diff
+
+Command-line script: run ``python clean-toml.py`` or the ``clean-toml`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

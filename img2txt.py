@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""OCR images and collect the extracted text per image.
+
+Converts each image with pytesseract, filters the lines that contain plausible words and
+reports the text it found. Files are processed in a pool; the work is independent of the
+``tesseract`` CLI.
+
+Usage: img2txt [images ...]
+
+Examples:
+    $ img2txt scan.png
+
+Runs as a script (``python img2txt.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from collections import deque

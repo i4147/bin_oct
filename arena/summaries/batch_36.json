@@ -1,0 +1,124 @@
+{
+  "dt4.py": {
+    "summary": "Translate a text file in chunks while saving the progress.",
+    "details": [
+      "Splits the input into 2500-character chunks, translates them with the chosen backend (deep_translator, DeepL, translate, Bing, googletrans, pygoogletranslation), saves ``chunks.json`` every ten chunks, keeps a ``failed.txt`` list and ``--no-continue`` starts from scratch."
+    ],
+    "usage": "dt4 [-i input.txt] [-o chunks.json] [-s en] [-t fr]",
+    "example": ["$ dt4 -i book.txt -t en"]
+  },
+  "dt5.py": {
+    "summary": "Translate a text file in chunks with resume support and detailed logging.",
+    "details": [
+      "Smart-chunks the text, runs the workers against the first usable backend in the fallback order, retries with backoff, saves the state atomically, handles an interruption gracefully and logs to ``<output>.debug.log``; ``--list-backends`` prints what is available."
+    ],
+    "usage": "dt5 INPUT [-o OUT.json] [-s LANG] [-t LANG] [--backends LIST]",
+    "example": ["$ dt5 article.txt -t de --list-backends"]
+  },
+  "dtg.py": {
+    "summary": "Translate the comments, docstrings and print statements of Python files in place.",
+    "details": [
+      "Collects the translatable strings with tokenize/ast, batches them through ``deep_translator`` (or another backend), applies the replacements, keeps a ``.translation_state.json`` for the resume and works through the files concurrently."
+    ],
+    "usage": "dtg [paths ...] [-b BACKEND]",
+    "example": ["$ dtg src/ -b deep_translator"]
+  },
+  "dtluna.py": {
+    "summary": "Translate a text file in independently resumable chunks.",
+    "details": [
+      "Supports deep_translator, DeepL, translate, Bing, googletrans, pygoogletranslation, boto3, Azure, Baidu, Alibaba and Watson, maps the language codes per backend, throttles the requests, saves the results atomically and logs the run."
+    ],
+    "usage": "dtluna -i input.txt [-o out.json] [-s auto] [-t en]",
+    "example": ["$ dtluna -i article.txt -t en -b deep_translator"]
+  },
+  "dufpy.py": {
+    "summary": "Find the Python files with identical normalized ASTs.",
+    "details": [
+      "Normalizes each file (comments, formatting and names of the local definitions), hashes the result with xxhash, groups the matches and caches them in ``.cache.json``; ``-r`` keeps the first file of each group and deletes the others, ``--rich`` adds a progress bar."
+    ],
+    "usage": "dufpy [-r] [--root DIR] [--rich]",
+    "example": ["$ dufpy --root src --rich"]
+  },
+  "dup_detector.py": {
+    "summary": "Detect and refactor the duplicate Python objects of a tree.",
+    "details": [
+      "Hashes the top-level definitions, writes the exact duplicate JSON report, with ``-r`` moves the ones appearing more than five times into ``utils.py`` and updates the imports, and ``-f`` adds a fuzzy report (ssdeep + rapidfuzz) of the objects above 50 % similarity."
+    ],
+    "usage": "dup_detector [-r] [-f]",
+    "example": ["$ dup_detector -f"]
+  },
+  "dupdirs.py": {
+    "summary": "Find the duplicate folders of the current directory tree.",
+    "details": ["Hashes every folder by the content of its files and reports the groups that are identical; ``-s`` reports the folders that only share the same structure (same names, different contents)."],
+    "usage": "dupdirs [-s]",
+    "example": ["$ dupdirs -s"]
+  },
+  "dupeguru.py": {
+    "summary": "Find the duplicate files and optionally delete them.",
+    "details": ["Sizes the files, then hashes a 64 KB prefix and the full content in a pool, groups the identical ones and reports the space that could be freed; ``-a`` deletes the duplicates (dry run by default), ``-m`` sets the minimum size."],
+    "usage": "dupeguru [-a] [-m MIN_BYTES] [paths ...]",
+    "example": ["$ dupeguru ~/Downloads", "$ dupeguru -a ~/Downloads"]
+  },
+  "dupeguru_textual.py": {
+    "summary": "Duplicate-file finder with a Textual terminal interface.",
+    "details": [
+      "Hashes the files of a directory, groups the duplicates by hash with a filename-fuzzy score and shows them in a Textual results table with the scan progress, letting you inspect the candidates before acting."
+    ],
+    "usage": "dupeguru_textual [PATH]",
+    "example": ["$ dupeguru_textual ~/Pictures"]
+  },
+  "dupfuncanalyzer.py": {
+    "summary": "Detect the repeated functions of a project and refactor them into a shared module.",
+    "details": [
+      "Normalizes the definitions with ast, groups the ones that appear more than once, writes them to ``repeated_functions.py`` (imported as ``dh``) and with ``-a`` removes the duplicates and adds the imports."
+    ],
+    "usage": "dupfuncanalyzer [-a] [paths ...]",
+    "example": ["$ dupfuncanalyzer -a src/"]
+  },
+  "dupfx.py": {
+    "summary": "Find and delete the duplicate files by content.",
+    "details": [
+      "Pre-filters by size and a 4 KB head hash, confirms with a full xxhash and chooses which copy to keep (``-k``: first, last, oldest, newest, largest); ``-r`` deletes, ``-n`` previews, ``--all`` includes ``.git``."
+    ],
+    "usage": "dupfx [-r] [-k KEEP] [--all] [--dry-run] [paths ...]",
+    "example": ["$ dupfx ~/Music -r -k oldest"]
+  },
+  "duptools.py": {
+    "summary": "Report, delete or symlink the duplicate files of a directory.",
+    "details": [
+      "Subcommands: ``report`` lists the groups, ``delete`` keeps one copy and removes the rest, ``symlink`` moves the master copies to a stash and links the others, and ``restore`` reverses that from the manifest. Hashing is xxhash (with a quick pre-filter), the keeper is selectable and ``--json``/``--dry-run`` help before acting."
+    ],
+    "usage": "duptools {report,delete,symlink,restore} [options]",
+    "example": ["$ duptools report -d ~/photos --json dupes.json"]
+  },
+  "elf64.py": {
+    "summary": "Recursively find the 64-bit ELF binaries of a directory.",
+    "details": [
+      "Parses the ELF headers with pyelftools, prints each 64-bit binary with its type, machine, entry point and section summary and with ``-r`` deletes the matches; ``-L`` follows the symlinks."
+    ],
+    "usage": "elf64 DIRECTORY [-r] [-L]",
+    "example": ["$ elf64 ./lib"]
+  },
+  "erap.py": {
+    "summary": "Run the Python type checkers and either append their output to the sources or write JSON reports.",
+    "details": [
+      "The ``append`` subcommand runs ty, pyright, pylint, pyrefly and mypy on each file and appends the diagnostics as comments, ``report`` writes one JSON report per file under ``report/`` (``-a`` selects all the tools), and the ``dh`` unresolved-import noise is filtered out."
+    ],
+    "usage": "erap {append,report} [-a] [-g] [-p] [-t] [-m] [paths ...]",
+    "example": ["$ erap report -a src/"]
+  },
+  "ewhl.py": {
+    "summary": "Move the empty wheels (only ``dist-info``, no code) into a subdirectory.",
+    "details": ["Opens each ``.whl``, checks whether it holds any ``.py`` or ``.so`` member and moves the code-less ones into ``empty_wheels`` (``-d`` renames it), printing each move."],
+    "usage": "ewhl [directory] [-d DEST]",
+    "example": ["$ ewhl ~/wheels"]
+  },
+  "ewhl2.py": {
+    "summary": "Move the empty wheels aside, flagging the ones already installed.",
+    "details": [
+      "Detects the ``.whl`` files without code members, extracts their name and version, checks whether the package is installed (``pip show`` and the import location), prompts before moving and offers ``--auto-move-all`` and ``--no-install-check``."
+    ],
+    "usage": "ewhl2 [directory] [-d DEST] [--auto-move-all]",
+    "example": ["$ ewhl2 ~/wheels --auto-move-all"]
+  }
+}

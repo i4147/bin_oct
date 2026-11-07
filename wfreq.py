@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Collect the words missing from the dictionary into ``~/.personal_dict``.
+
+Extracts the words from the text files below the current directory in a process pool,
+keeps the ones the ``spellchecker`` does not know and appends them to the personal dictionary used by
+the spelling checks.
+
+Usage: wfreq [paths ...]
+
+Examples:
+    $ wfreq ~/notes
+
+Runs as a script (``python wfreq.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import multiprocessing as mp
 import re

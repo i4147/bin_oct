@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Detect the language of the text files below the current directory with gcld3.
+
+Identifies each file with ``gcld3`` (falling back to ``py3langid`` for short samples) and prints the
+detected language with its confidence for every file whose language is not English.
+
+Usage: noneng_gcld3
+
+Examples:
+    $ noneng_gcld3
+
+Runs as a script (``python noneng_gcld3.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import os
 from dataclasses import dataclass
 from pathlib import Path

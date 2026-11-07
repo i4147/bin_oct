@@ -1,4 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Find the files and directories with the largest footprint.
+
+Walks a directory with a bounded depth, keeps the top K entries by recursive size (or by
+the individual file size with ``--mode file``), honours the ``--exclude`` patterns and prints a rich table,
+optionally reversed.
+
+Usage: dirsizes [--dir DIR] [--topk K] [--mode folder|file] [--exclude NAME]
+
+Options:
+    --dir, -d
+        The directory to traverse recursively.
+    --topk, -k
+        Display top K largest items (default: 10).
+    --exclude, -e
+        Directories or files to ignore.
+    --wordy, -w
+        Output permission warnings and skip notices.
+    --recur_depth, -r
+        Maximum recursion depth (-1 for unlimited).
+    --mode, -m
+        Mode: 'folder' footprint (non-recursive sum) or individual 'file' size.
+    --reverse
+        Sort results from smallest to largest instead of largest to smallest.
+
+Examples:
+    $ dirsizes -d ~ -k 20
+
+Command-line script: run ``python dirsizes.py`` or the ``dirsizes`` command. The module is importable as well.
+"""
 
 import argparse
 import heapq

@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Clone a git repository, fetching submodules when it has any.
+
+Clones into the directory named after the repository (``--recursive`` is added when the remote
+advertises submodules), reports the default branch and exits with the status of ``git clone``.
+
+Usage: gitclone URL [DESTINATION]
+
+Examples:
+    $ gitclone https://github.com/user/repo.git
+
+Runs as a script (``python gitclone.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import re
 import subprocess

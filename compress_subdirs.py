@@ -1,4 +1,41 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress or decompress the top-level directories of a folder in parallel.
+
+Packs each subdirectory into a tar with xz, gz, bz2, zstd, lz4 or snappy (``-c``), or
+extracts the archives back (``-d``), with ``--min``/``--max`` size filters, ``--include`` globs, ``--keep``/``--remove-source`` handling
+and a choice of the multiprocessing or threading pool.
+
+Usage: compress_subdirs -c xz [-C DIR] [--min SIZE] [--max SIZE]
+
+Options:
+    -C, --directory
+        Target root directory
+    -c, --compressor
+        Compression algorithm
+    -d, --decompress
+        Decompress recognized archives
+    -f, --force
+        Replace existing archives when compressing; never overwrite extracted
+        directories
+    -k, --keep
+        Keep source directories or archives
+    --remove-source
+        Remove sources after successful completion
+    --min
+        Skip directories smaller than this recursive regular-file size
+    --max, -max
+        Skip directories larger than this recursive regular-file size
+    --include
+        Include matching top-level names; repeatable
+    --exclude
+        Exclude matching top-level names; repeatable
+    ... plus 4 more; run ``compress_subdirs --help`` for the full list.
+
+Examples:
+    $ compress_subdirs -c zstd -C ~/projects --remove-source
+
+Command-line script: run ``python compress_subdirs.py`` or the ``compress_subdirs`` command. The module is importable as well.
+"""
 
 import argparse
 import bz2

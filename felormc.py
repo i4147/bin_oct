@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip the comments and docstrings of Python files with LibCST.
+
+Keeps the shebangs, the module docstrings and the pragma comments (``# type:``, ``# fmt:``, ``# noqa``),
+validates every result before writing and offers ``--dry-run``, ``--verbose`` and a spawn-based pool over
+the given paths or the current tree.
+
+Usage: felormc [--dry-run] [--verbose] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories to process. Defaults to current directory (recursive).
+
+Options:
+    --dry-run
+        Report what would change without writing any files.
+    --verbose
+        Enable verbose (DEBUG-level) logging.
+
+Examples:
+    $ felormc --dry-run src/
+
+Command-line script: run ``python felormc.py`` or the ``felormc`` command. The module is importable as well.
+"""
 
 import argparse
 import multiprocessing as mp

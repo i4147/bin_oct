@@ -1,4 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""A small ``gdu``-style disk-usage tree view.
+
+Scans the root directory, prints the sizes as a tree with human-readable units, and
+supports ``--max-depth``, ``--exclude`` globs and ``--follow-symlinks``.
+
+Usage: gdu [PATH] [-d DEPTH] [-e GLOB] [-L]
+
+Positional arguments:
+    path
+        Root directory to scan (default: current folder).
+
+Options:
+    -d, --max-depth
+        Limit how deep the tree is printed (e.g., -d 2).
+    -e, --exclude
+        Glob pattern to ignore (can be used multiple times).
+    -L, --follow-symlinks
+        Follow symbolic links (default: ignore).
+
+Examples:
+    $ gdu ~ -d 2
+
+Command-line script: run ``python gdu.py`` or the ``gdu`` command. The module is importable as well.
+"""
 
 import argparse
 import fnmatch

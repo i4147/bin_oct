@@ -1,4 +1,55 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Translate the comments and docstrings of source files to another language.
+
+Subcommands: ``scan`` and ``detect`` translate the comments by language detection, ``ast`` the AST-level
+strings and docstrings, ``japanese`` the Japanese text only and ``batch`` every file. ``--target``/``--source`` set the
+languages, ``--exclude``/``--marker`` skip the paths and the marked strings, ``--backup``/``--dry-run`` control the writes
+and long strings are left alone.
+
+Usage: translate_code_comments {scan,detect,ast,japanese,batch} [path] [--target LANG]
+
+Positional arguments:
+    path
+        File or directory to process; default: current directory.
+    paths ...
+        Files or directories; default: current directory.
+
+Subcommands:
+    scan
+        Pytrans.py-compatible pycld2 mode.
+    detect
+        Pytranslator.py-compatible langdetect mode.
+    ast
+        Trans_py.py-compatible AST/docstring mode.
+    japanese
+        Transjap.py-compatible Japanese-only mode.
+    batch
+        Ultralinetrans.py-compatible all-file batch mode.
+
+Options:
+    --target
+        Target language code; default: en.
+    --source
+        Source language code; default: auto.
+    --delay
+        Delay between individual translations; default: 0.5.
+    --exclude
+        Directory name to exclude; may be repeated.
+    --marker
+        Text marker that prevents translation; may be repeated.
+    --backup
+        Write a .bak file before modifying each file.
+    --dry-run
+        Report changes without writing files.
+    --max-chars
+        Do not translate individual strings longer than this.
+
+Examples:
+    $ translate_code_comments ast src/ --target en --dry-run
+
+Command-line script: run ``python translate_code_comments.py`` or the ``translate_code_comments`` command. The module is importable as well.
+"""
+
 import argparse
 import ast
 import io

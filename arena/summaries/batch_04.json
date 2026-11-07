@@ -1,0 +1,112 @@
+{
+  "clean-lua.py": {
+    "summary": "Strip comments from Lua files in place, keeping ``---`` documentation comments.",
+    "details": [
+      "Comments are located with tree-sitter's Lua grammar so ``--`` inside strings survives. The ``luaparse`` backend can be selected with ``--backend`` when that package is installed; ``--dry-run``/``--diff`` preview and ``--backup`` keeps ``.bak`` copies."
+    ],
+    "usage": "clean-lua [options] [paths ...]",
+    "example": ["$ clean-lua script.lua --backup", "$ clean-lua lua/ --dry-run"]
+  },
+  "clean-toml.py": {
+    "summary": "Strip comments from TOML files in place using tree-sitter.",
+    "details": [
+      "Removes ``#`` comments and trailing blank lines while leaving strings untouched, then rewrites the file. ``--dry-run``/``--diff`` show the result first and ``--backup`` writes ``.bak`` copies."
+    ],
+    "usage": "clean-toml [options] [paths ...]",
+    "example": ["$ clean-toml pyproject.toml --diff"]
+  },
+  "clean-ts.py": {
+    "summary": "Minify TypeScript files in place using tree-sitter, rjsmin or jsmin.",
+    "details": [
+      "The tree-sitter TypeScript grammar strips comments and blank lines without extra dependencies; ``--backend rjsmin`` or ``--backend jsmin`` minify more aggressively when installed. ``--dry-run``/``--diff`` preview and ``--backup`` keeps ``.bak`` copies."
+    ],
+    "usage": "clean-ts [options] [files ...]",
+    "example": ["$ clean-ts src/app.ts --backend rjsmin"]
+  },
+  "clean_future.py": {
+    "summary": "Remove ``from __future__ import annotations`` from Python files.",
+    "details": [
+      "Walks the tree (honouring ``.gitignore`` through rignore) and deletes just that import statement, dropping the now-empty import line as well. Useful when a code base has moved to a Python version where the import is no longer needed."
+    ],
+    "usage": "clean_future [paths ...]",
+    "example": ["$ clean_future", "$ clean_future src/"]
+  },
+  "clean_type_annotations.py": {
+    "summary": "Strip type annotations from Python files in place with LibCST.",
+    "details": [
+      "Parameter, return and variable annotations are removed while the code itself stays byte-identical elsewhere; files are processed in a worker pool and written atomically. Non-Python files are skipped."
+    ],
+    "usage": "clean_type_annotations [paths ...]",
+    "example": ["$ clean_type_annotations src/"]
+  },
+  "cleandic.py": {
+    "summary": "Drop the untranslated entries from a translation dictionary and log them to ``failed.txt``.",
+    "details": [
+      "Reads a JSON mapping (or a list of ``{\"orig\", \"translated\"}`` objects), keeps only the records whose translation differs from the source, rewrites the file with the kept records and appends the untranslated keys to ``failed.txt`` for a retry."
+    ],
+    "usage": "cleandic DICTIONARY.json",
+    "example": ["$ cleandic words.json"]
+  },
+  "cleaner.py": {
+    "summary": "Clean control characters and prompts out of captured terminal transcripts.",
+    "details": [
+      "Removes ANSI escape sequences, NUL bytes, backspace artefacts and carriage-return overwrites, collapses runs of blank lines and then rewrites the file. When the two cleanup strategies disagree the intermediate ``res1`` and ``res2`` files are written for inspection."
+    ],
+    "usage": "cleaner TRANSCRIPT",
+    "example": ["$ cleaner session.txt"]
+  },
+  "cleanfont.py": {
+    "summary": "Subset a font to the non-CJK glyphs and write the result to ``out.ttf``.",
+    "details": [
+      "Uses fontTools' subsetter, keeps every layout feature, name record and the recommended glyphs, and drops the code points in the CJK blocks (CJK radicals, unified ideographs and their extensions) so Chinese glyphs no longer ship with the font."
+    ],
+    "usage": "cleanfont FONT.ttf",
+    "example": ["$ cleanfont NotoSans.ttf"]
+  },
+  "cleanhistory.py": {
+    "summary": "Deduplicate ``~/.bash_history`` and drop the generated ``cd \"`printf ...`` entries.",
+    "details": ["Reads the history file, filters the noise lines and rewrites the file with only unique entries."],
+    "usage": "cleanhistory",
+    "example": ["$ cleanhistory"]
+  },
+  "cleanjsts.py": {
+    "summary": "Remove comments from JavaScript and TypeScript files in place.",
+    "details": [
+      "Picks the JavaScript, TypeScript or TSX grammar from tree-sitter by extension (``.js``, ``.jsx``, ``.ts``, ``.tsx``), deletes comment nodes and leaves string and template literals untouched. Files are handled in parallel."
+    ],
+    "usage": "cleanjsts [paths ...]",
+    "example": ["$ cleanjsts src/"]
+  },
+  "cleanlog.py": {
+    "summary": "Turn raw terminal log captures into plain text.",
+    "details": [
+      "Applies carriage-return overwrites and backspaces the way a terminal would, strips ANSI escape sequences and remaining control characters and collapses long runs of blank lines. Without arguments every ``.txt``/``.log`` file below the current directory is processed."
+    ],
+    "usage": "cleanlog [files ...]",
+    "example": ["$ cleanlog build.log"]
+  },
+  "cleanrs.py": {
+    "summary": "Strip comments from Rust sources in place with tree-sitter.",
+    "details": [
+      "Walks ``.rs`` files (in parallel when a worker pool is available), removes comment nodes while keeping the code intact, and reports the space saved. tree-sitter is required for the comment-aware pass."
+    ],
+    "usage": "cleanrs [paths ...]",
+    "example": ["$ cleanrs src/"]
+  },
+  "cleants2.py": {
+    "summary": "Remove comments from sources of many languages using the matching tree-sitter grammar.",
+    "details": [
+      "Maps each file extension to its tree-sitter language (JavaScript/TypeScript, Python, Rust, Lua, TOML, CSS, HTML, Vim script and others), deletes comments with the grammar and processes the files in parallel, printing a per-file and total summary."
+    ],
+    "usage": "cleants2 [paths ...]",
+    "example": ["$ cleants2 project/"]
+  },
+  "cleanvim.py": {
+    "summary": "Remove comments from Vim script files in place.",
+    "details": [
+      "Uses the tree-sitter Vim grammar to find comment nodes, so quoted strings are preserved, and processes the files in a worker pool with a summary of the bytes removed."
+    ],
+    "usage": "cleanvim [paths ...]",
+    "example": ["$ cleanvim ~/.vim"]
+  }
+}

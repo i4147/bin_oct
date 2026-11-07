@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Split Python sources into ``output/classes``, ``output/functions`` and ``output/const`` files.
+
+Parses each module with :mod:`ast`, writes every top-level class, function and constant
+into its own file under ``output/`` and skips ``test``/``examples`` directories plus the output tree itself.
+The files are processed in a worker pool.
+
+Usage: gext [paths ...]
+
+Examples:
+    $ gext project/
+
+Runs as a script (``python gext.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import ast
 import multiprocessing as mp

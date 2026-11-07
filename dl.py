@@ -1,4 +1,62 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Unified downloader with wget, check and size subcommands.
+
+Subcommands: ``wget`` downloads the URLs of a list (or the one given) with urllib, requests
+or pycurl, ``check`` tests whether the links are alive and ``size`` prints the remote sizes without
+downloading; ``--download-small`` fetches the files under the size limit, ``--filter-ext`` restricts the extension and
+``--update-file`` rewrites the list with only the failed URLs.
+
+Usage: dl {wget,check,size} [options] [URL|URLS_FILE]
+
+Positional arguments:
+    url
+    input
+        URL or file of URLs
+    output
+    sha256
+
+Subcommands:
+    wget
+        Single-URL download with progress (pywget.py).
+    check
+        Check remote size, optionally download (download_checker.py).
+    size
+        Show remote size (dsize.py / dsized.py).
+    batch
+        Batch download URLs from a file (cget / pycurl_downloader / url_downloader /
+        rget).
+    threaded
+        Multi-chunk threaded downloader (ghost_downloader.py).
+    chunked
+        Resumable chunked downloader with SHA-256 (gget.py).
+
+Options:
+    -o, --output
+        Output file or directory
+    --timeout
+    --resume
+        Resume partial file if present
+    -q, --quiet
+    -d, --download
+        Download after checking
+    --download-small
+        Prompt+download files ≤ --max-size
+    --download
+        Directory for downloaded small files
+    --max-size
+        Threshold for --download-small (e.g. 1M, 512K)
+    --urls
+        URL list file
+    --dir
+        Destination directory
+    ... plus 7 more; run ``dl --help`` for the full list.
+
+Examples:
+    $ dl size urls.txt
+    $ dl wget --download-small urls.txt
+
+Command-line script: run ``python dl.py`` or the ``dl`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

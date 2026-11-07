@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert Windows ``.bat`` scripts into executable bash scripts.
+
+Translates the common batch commands (``echo``, ``cd``, ``dir``, ``del``, ``copy``, ``move``, ``ren``, ``type``, ``findstr``, ``if exist``
+...) and ``%VAR%`` variables into their shell equivalents. Every ``*.bat`` below the given
+directory becomes a ``*.sh`` with mode 755 and the original is removed.
+
+Usage: bat2bash [DIRECTORY]
+
+Examples:
+    $ bat2bash ./scripts
+
+Runs as a script (``python bat2bash.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import re
 import sys

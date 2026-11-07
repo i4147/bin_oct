@@ -1,4 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Check the links of Markdown and HTML files and inline local images.
+
+Collects the ``href``/``src`` references and Markdown links, resolves the local ones against the
+file system, verifies the remote ones with a short HTTP request (8 s timeout) and can
+rewrite local images as data URIs. Files are scanned in parallel from the given root.
+
+Usage: pylychee [ROOT] [--timeout SECONDS]
+
+Positional arguments:
+    root
+        Folder to scan
+
+Options:
+    --timeout
+
+Examples:
+    $ pylychee docs/
+
+Command-line script: run ``python pylychee.py`` or the ``pylychee`` command. The module is importable as well.
+"""
 
 import argparse
 import base64

@@ -1,0 +1,112 @@
+{
+  "fix_escape_sequence.py": {
+    "summary": "Rewrite string literals that raise ``SyntaxWarning: invalid escape sequence``.",
+    "details": [
+      "Tokenizes each module, detects backslash sequences that are not valid escapes and either prefixes the literal with ``r`` (when it contains no valid escapes) or doubles the offending backslashes. ``--dry-run`` reports the files without writing, ``--quiet`` hides the per-file lines."
+    ],
+    "usage": "fix_escape_sequence [options] [paths ...]",
+    "example": ["$ fix_escape_sequence src/ --dry-run"]
+  },
+  "fix_html_md_broken_links.py": {
+    "summary": "Repair relative links in Markdown and HTML files against a static directory.",
+    "details": [
+      "Walks the current directory, and for every ``href`` whose target does not exist locally but does exist under ``/sdcard/_static`` rewrites the link to the absolute path. The original file is kept as ``.bak``."
+    ],
+    "usage": "fix_html_md_broken_links",
+    "example": ["$ fix_html_md_broken_links"]
+  },
+  "fix_shebang_opt.py": {
+    "summary": "Point the shebangs of Python scripts at the current interpreter path.",
+    "details": [
+      "Rewrites ``#!...python`` lines (``env``, ``/usr/bin``, Homebrew or Termux prefixes) to ``#!$PREFIX/bin/python3.14`` and restores the executable bit, skipping files whose shebang already matches."
+    ],
+    "usage": "fix_shebang_opt",
+    "example": ["$ fix_shebang_opt"]
+  },
+  "fixcape.py": {
+    "summary": "Make Python string literals escape-safe so they stop warning.",
+    "details": [
+      "Scans string tokens for invalid escapes and rewrites the literal either as a raw string or with the backslashes doubled, then writes the module back when something changed. Files are collected recursively from the current directory."
+    ],
+    "usage": "fixcape",
+    "example": ["$ fixcape"]
+  },
+  "fixparanthes.py": {
+    "summary": "Fix unbalanced or JSON-bracket parentheses inside the strings of a JSON file.",
+    "details": [
+      "Walks every string value, converts ``[``/``{`` into ``(`` (and the closing counterparts) and pads missing parentheses, then validates the result with :func:`json.loads` and rewrites the file with two-space indentation."
+    ],
+    "usage": "fixparanthes FILE.json",
+    "example": ["$ fixparanthes data.json"]
+  },
+  "fixshebang.py": {
+    "summary": "Normalize the shebang of every Python file below the current directory.",
+    "details": [
+      "Rewrites ``#!...python2/3`` lines to ``#!/data/data/com.termux/files/usr/bin/env python`` and processes the files in a worker pool, reporting how many shebangs were changed."
+    ],
+    "usage": "fixshebang [paths ...]",
+    "example": ["$ fixshebang"]
+  },
+  "fixwhl.py": {
+    "summary": "Rename wheels that were mangled by a bulk rename back to their canonical name.",
+    "details": [
+      "Opens each ``.whl`` in the current directory, reads ``Name``/``Version`` from the bundled ``METADATA`` and renames the file to ``name-version-pyX-none-any.whl``, refusing to overwrite an existing file."
+    ],
+    "usage": "fixwhl",
+    "example": ["$ fixwhl"]
+  },
+  "flaten.py": {
+    "summary": "Flatten a directory tree, moving every file into one folder.",
+    "details": [
+      "Moves all files from the sub-directories into the target directory, renaming on collision so nothing is overwritten, and removes the directories that became empty."
+    ],
+    "usage": "flaten [SOURCE_DIR] [TARGET_DIR]",
+    "example": ["$ flaten ~/downloads ~/flat"]
+  },
+  "fmt_bash.py": {
+    "summary": "Format shell scripts with ``shfmt`` in parallel.",
+    "details": [
+      "Formats the files given on the command line or, without arguments, every file below the current directory that either ends in ``.sh`` or starts with a shell shebang. Files that fail to format are listed and, with ``--move``, copied into an ``error`` directory."
+    ],
+    "usage": "fmt_bash [options] [paths ...]",
+    "example": ["$ fmt_bash scripts/", "$ fmt_bash setup.sh --move"]
+  },
+  "foext.py": {
+    "summary": "Sort the files of the current directory into folders named after their extension.",
+    "details": ["Every top-level file is moved into ``<extension>/`` (``no_extension`` for files without a suffix), leaving the sub-directories untouched."],
+    "usage": "foext",
+    "example": ["$ foext"]
+  },
+  "foldesiz.py": {
+    "summary": "Distribute the files below a directory into folders grouped by file size.",
+    "details": [
+      "Collects the files (skipping the usual noise directories), sorts them by size and moves them into numbered folders that each hold a similar number of files and a similar size range, so batches of comparable size can be processed together."
+    ],
+    "usage": "foldesiz",
+    "example": ["$ foldesiz"]
+  },
+  "foldext.py": {
+    "summary": "Folderize a whole tree by file extension and report the per-extension totals.",
+    "details": [
+      "Walks the current directory recursively, moves every file into a top-level folder named after its lower-case extension (``no_extension`` when absent), removes the emptied directories and prints a table of file counts and sizes per extension."
+    ],
+    "usage": "foldext",
+    "example": ["$ foldext"]
+  },
+  "foldimension.py": {
+    "summary": "Sort images into folders named after their pixel dimensions.",
+    "details": [
+      "Reads each image (JPEG, PNG, GIF, BMP, TIFF, WebP, ICO) with Pillow, derives a ``WIDTHxHEIGHT`` name and moves the file into that folder, keeping both names when the target already exists."
+    ],
+    "usage": "foldimension [directory]",
+    "example": ["$ foldimension ~/pictures"]
+  },
+  "foldpy.py": {
+    "summary": "Group the Python files of the current directory by whether they parse cleanly.",
+    "details": [
+      "Compiles each ``.py`` file in a process pool and sorts the results into ``ok``, ``warn`` (raised a ``SyntaxWarning``) and ``error`` (unreadable or invalid syntax). It only lists the groups unless ``--apply`` is given, in which case the files are moved into matching folders."
+    ],
+    "usage": "foldpy [-a]",
+    "example": ["$ foldpy", "$ foldpy --apply"]
+  }
+}

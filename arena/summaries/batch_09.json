@@ -1,0 +1,103 @@
+{
+  "f2l.py": {
+    "summary": "Turn a one-item-per-line file into a Python set literal and copy it to the clipboard.",
+    "details": [
+      "Quotes each line (choosing the quote character that does not clash with the content) and writes ``{\"a\", \"b\", ...}`` back to the file, then sends the text to ``termux-clipboard-set`` when that command is available."
+    ],
+    "usage": "f2l FILE",
+    "example": ["$ f2l words.txt"]
+  },
+  "facal.py": {
+    "summary": "Print a Persian (Jalali) calendar with the current day highlighted.",
+    "details": [
+      "Converts the Gregorian date with its own Jalali arithmetic, prints the month grid with Persian month names, Persian digits and right-to-left alignment (through ``faprint``) and marks today."
+    ],
+    "usage": "facal",
+    "example": ["$ facal"]
+  },
+  "faen.py": {
+    "summary": "Browse a Persian↔English dictionary interactively in the terminal.",
+    "details": [
+      "Loads the JSON mapping from ``/sdcard/dic/dic.json`` into both directions, then offers a prompt with lookup, ``:list``, ``:stats``, ``:export`` (CSV), ``:random`` and fuzzy suggestions for near misses. New or edited entries are written back to the same JSON file."
+    ],
+    "usage": "faen [DICTIONARY.json]",
+    "example": ["$ faen"]
+  },
+  "faprinter.py": {
+    "summary": "Print a file line by line with correct right-to-left rendering.",
+    "details": ["Each line is passed through ``faprint`` (the Persian text shaper) and printed, so mixed Persian/English text keeps its visual order in a terminal."],
+    "usage": "faprinter FILE",
+    "example": ["$ faprinter poem.txt"]
+  },
+  "fasort.py": {
+    "summary": "Sort a Persian word-list file in Persian alphabetical order.",
+    "details": ["Reads the lines of the file, sorts them with a Persian collation key (letter order and diacritic handling) and writes the sorted list back to the same file."],
+    "usage": "fasort FILE",
+    "example": ["$ fasort words.txt"]
+  },
+  "feloai.py": {
+    "summary": "Ask the felo superagent for a script and save the reply as a dated log file.",
+    "details": [
+      "Runs ``felo-sa.mjs`` with the arguments given on the command line, writes a header with the prompt and a footer with the elapsed time around the returned text and stores everything under ``~/tmp/apps`` as a timestamped Markdown file."
+    ],
+    "usage": "feloai PROMPT",
+    "example": ["$ feloai 'write a python script that renames files'"]
+  },
+  "feloer.py": {
+    "summary": "Write module docstrings for Python files with the felo superagent.",
+    "details": [
+      "Sends a simplified view of each module to ``felo-sa.mjs``, cleans the answer into a Google-style docstring and inserts it (with ``--force`` even over an existing one). Options cover the glob to walk, concurrency, delay between calls, a log file and a dry run; files that already fail noisily are skipped."
+    ],
+    "usage": "feloer [paths ...] [--dry-run] [--force] [--pattern '*.py'] [-j N]",
+    "example": ["$ feloer src/ --dry-run", "$ feloer notes/ --pattern '*.py' -j 2"]
+  },
+  "filetools.py": {
+    "summary": "Query and move files by age, size and extension with one subcommand CLI.",
+    "details": [
+      "``scan-ctime`` reports files created in the last N minutes, ``filter``/``filter-recursive`` list files by extension, size and age, ``recent-modified`` and ``same-day`` select by mtime, ``move`` relocates matches into a destination directory, and ``newest``/``oldest``/``btime`` show the extremes (birth time is read through ``statx`` where available)."
+    ],
+    "usage": "filetools {scan-ctime,filter,filter-recursive,recent-modified,same-day,move,newest,oldest,btime} [options]",
+    "example": ["$ filetools recent-modified --minutes 30", "$ filetools move --ext .py --dest ../src"]
+  },
+  "find_big_files.py": {
+    "summary": "List the files below the current directory that exceed a size threshold.",
+    "details": ["Prints every regular (non-symlink) file larger than the threshold, one megabyte by default, as a path relative to the current directory with a human-readable size."],
+    "usage": "find_big_files [THRESHOLD_MB]",
+    "example": ["$ find_big_files 100"]
+  },
+  "find_dup_folders.py": {
+    "summary": "Find folders with identical contents by hashing their files.",
+    "details": ["Hashes the relative name and content of every file in each folder below the current directory (skipping nested duplicates) and prints the groups of folders whose hash matches."],
+    "usage": "find_dup_folders",
+    "example": ["$ find_dup_folders"]
+  },
+  "find_empty_wheels.py": {
+    "summary": "Move wheels that contain no code into an ``empty_wheels`` folder.",
+    "details": ["A ``.whl`` is empty when it has no ``.py``/``.pyi``/``.so`` member; those files are reported and moved into ``./empty_wheels``, invalid archives are skipped with a warning."],
+    "usage": "find_empty_wheels",
+    "example": ["$ find_empty_wheels"]
+  },
+  "find_req.py": {
+    "summary": "Find the installed distributions that depend on a given package.",
+    "details": [
+      "Scans the ``METADATA`` files of the user ``site-packages`` for a ``Requires-Dist:`` line mentioning the package name and prints the distribution directory names that match."
+    ],
+    "usage": "find_req PACKAGE",
+    "example": ["$ find_req requests"],
+    "notes": "The scan root is the module constant ``cwd``; adjust it for other Python versions."
+  },
+  "find_scripts.py": {
+    "summary": "Count the executable scripts below the current directory by interpreter.",
+    "details": [
+      "Reads the shebang of every extension-less file (skipping binaries and virtual-env/cache directories), resolves ``env`` lookups and tallies how many scripts use each known interpreter; ``--verbose`` also prints the paths."
+    ],
+    "usage": "find_scripts [-v]",
+    "example": ["$ find_scripts -v"]
+  },
+  "finglish.py": {
+    "summary": "Rename Persian file names below the current directory to Finglish (Latin script).",
+    "details": ["Maps the Persian letters to their usual Latin transliterations, normalises the result with Unicode NFKD and renames the files that contain non-ASCII characters."],
+    "usage": "finglish",
+    "example": ["$ finglish"]
+  }
+}

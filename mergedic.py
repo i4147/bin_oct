@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Merge several dictionaries into one JSON file, detecting the translation direction.
+
+Discovers the dictionary inputs, decides for each pair which side is English (a plain
+ASCII heuristic), normalises the values and writes a single merged mapping with unique
+file names when the target already exists.
+
+Usage: mergedic [inputs ...]
+
+Examples:
+    $ mergedic dic/*.json
+
+Runs as a script (``python mergedic.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import json
 import re

@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Reformat HTML files so every tag starts on its own line.
+
+Parses the document with tree-sitter HTML, re-emits the nodes one per line while keeping
+the text content, writes the files atomically (with a dry-run and a 50 MB size cap) and
+works through the tree in parallel.
+
+Usage: htmlformat [--dry-run] [-v] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories to process (default: current directory)
+
+Options:
+    -v, --verbose
+        Enable verbose logging
+    --dry-run
+        Show what would be done without modifying files
+
+Examples:
+    $ htmlformat --dry-run pages/
+
+Command-line script: run ``python htmlformat.py`` or the ``htmlformat`` command. The module is importable as well.
+"""
 
 import multiprocessing as mp
 import sys

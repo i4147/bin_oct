@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Translate a word list to Persian in parallel and save it as JSON.
+
+Splits ``words.txt`` into ~4500-character chunks, translates each chunk with ``deep_translator`` in a process pool
+and merges the results into ``fa_en.json``, logging the failures.
+
+Usage: transwords
+
+Examples:
+    $ transwords
+
+Runs as a script (``python transwords.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import json
 import time

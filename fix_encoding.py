@@ -1,4 +1,35 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Detect the text file encodings and convert everything to UTF-8 with LF endings.
+
+Reads each text file through charset_normalizer/binaryornot, converts the non-UTF-8
+content, normalises the CRLF line endings (``--no-dos2unix`` keeps them), can strip the BOM and offers
+``--dry-run``, ``--backup``, ``--preserve-mtime``, include/exclude globs and a size limit.
+
+Usage: fix_encoding [root] [-n] [-b] [--strip-bom] [-i GLOB] [-e GLOB]
+
+Positional arguments:
+    root
+
+Options:
+    -n, --dry-run
+    -b, --backup
+    --no-dos2unix
+    --strip-bom
+    -a, --assume-encoding
+    -c, --candidates
+    -x, --exclude-dir
+    -i, --include
+    -e, --exclude
+    -m, --max-size
+    ... plus 3 more; run ``fix_encoding --help`` for the full list.
+
+Examples:
+    $ fix_encoding docs/ -n
+    $ fix_encoding src/ -b
+
+Command-line script: run ``python fix_encoding.py`` or the ``fix_encoding`` command. The module is importable as well.
+"""
+
 import argparse
 import codecs
 import contextlib

@@ -1,0 +1,115 @@
+{
+  "mynano.py": {
+    "summary": "A small Textual-based text editor with readline tab completion.",
+    "details": [
+      "Opens the file given on the command line (or an empty buffer), provides quit, save and save-as actions plus a key binding list, and hooks ``readline`` with ``rlcompleter`` for the completion popup."
+    ],
+    "usage": "mynano [FILE]",
+    "example": ["$ mynano notes.txt"]
+  },
+  "neg.py": {
+    "summary": "Invert the colours of image files in place.",
+    "details": [
+      "Negates the RGB channels while keeping the alpha channel and the EXIF/ICC/DPI metadata, and replaces each file atomically (JPEG saved at quality 95). Files it cannot decode are reported and the exit status becomes 1."
+    ],
+    "usage": "neg IMAGE [IMAGE ...]",
+    "example": ["$ neg photo.jpg scan.png"]
+  },
+  "new2old.py": {
+    "summary": "Render a ``setup.py`` from ``pyproject.toml`` for the detected build backend.",
+    "details": [
+      "Reads the PEP 621 metadata plus the backend-specific tables (flit, hatchling, maturin, meson, pdm, poetry, scikit-build, setuptools), normalises the dependencies, authors, README and license and writes a ``setup.py`` that reproduces the project without ``pyproject.toml``."
+    ],
+    "usage": "new2old",
+    "example": ["$ new2old"]
+  },
+  "noface.py": {
+    "summary": "Move the images that contain no face into a ``noface`` folder.",
+    "details": [
+      "Runs the OpenCV Haar cascade (several frontal-face models) over the JPEG/PNG/BMP/TIFF/WebP files of the current directory, downscales large images, keeps the photos with a face in place and moves the rest to ``./noface``. The optional argument sets the worker count."
+    ],
+    "usage": "noface [WORKERS]",
+    "example": ["$ noface 4"]
+  },
+  "nolua.py": {
+    "summary": "List the sub-directories of the current directory that contain no Lua files.",
+    "details": [
+      "Recursively checks each top-level folder for ``.lua`` sources and prints the names of the ones that have none. ``move_to_start`` copies such a folder into the vim plugin ``start`` directory and removes the original."
+    ],
+    "usage": "nolua",
+    "example": ["$ nolua"]
+  },
+  "noneng_gcld3.py": {
+    "summary": "Detect the language of the text files below the current directory with gcld3.",
+    "details": [
+      "Identifies each file with ``gcld3`` (falling back to ``py3langid`` for short samples) and prints the detected language with its confidence for every file whose language is not English."
+    ],
+    "usage": "noneng_gcld3",
+    "example": ["$ noneng_gcld3"]
+  },
+  "noneng_langid.py": {
+    "summary": "Report every line of text that is not English, using py3langid.",
+    "details": [
+      "Decodes each text file, classifies the lines above the minimum length with ``py3langid`` and prints the lines whose detected language is not English with their confidence, colourising the output and skipping binary extensions."
+    ],
+    "usage": "noneng_langid",
+    "example": ["$ noneng_langid"]
+  },
+  "noneng_pycld2.py": {
+    "summary": "Detect the language of every text file with pycld2.",
+    "details": [
+      "Walks the current directory (hidden entries ignored), guesses the language of each readable file with pycld2 and prints a table of file, language, probability and a short snippet."
+    ],
+    "usage": "python noneng_pycld2.py",
+    "example": ["$ python noneng_pycld2.py"],
+    "notes": "Runs its scan at import time, so start it in the tree to inspect."
+  },
+  "noneng_unicode_range.py": {
+    "summary": "Flag files that contain Arabic/Persian, CJK, kana or Hangul characters.",
+    "details": [
+      "Checks every text file (binaries are skipped with ``binaryornot``) against the Unicode ranges of the major non-Latin scripts and reports the files with the detected scripts plus a short sample, optionally as JSON."
+    ],
+    "usage": "noneng_unicode_range",
+    "example": ["$ noneng_unicode_range"]
+  },
+  "noreq.py": {
+    "summary": "Delete the ``Requires-Dist`` lines from package metadata and archives.",
+    "details": [
+      "Processes ``METADATA``/``PKG-INFO``/``PKGINFO`` files and the same files inside wheels, zips and tarballs (including brotli/zstd/lz4/lzma compressed archives), removing the dependency declarations and logging every removed line to ``/sdcard/reqz.txt``."
+    ],
+    "usage": "noreq",
+    "example": ["$ noreq"],
+    "notes": "Destructive: it strips dependency metadata from the packages in the current tree."
+  },
+  "noroot.py": {
+    "summary": "Remove the ``if [ $(...) -ne 0 ]; then exit 1; fi`` root checks from shell scripts.",
+    "details": [
+      "Scans the executable or ``#!``-shell files below the current directory and deletes the matching guard blocks (typically the ``must run as root`` checks) with a regular expression, rewriting only the files that changed."
+    ],
+    "usage": "noroot",
+    "example": ["$ noroot"]
+  },
+  "obf.py": {
+    "summary": "Obfuscate a shell script into three-character variables evaluated at the end.",
+    "details": [
+      "Splits the script into three-character chunks, assigns each chunk to a generated variable name and finishes with a single ``eval`` that concatenates them, so the original text is no longer readable in the file."
+    ],
+    "usage": "obf SCRIPT.sh",
+    "example": ["$ obf install.sh > obfuscated.sh"]
+  },
+  "ocr_ready.py": {
+    "summary": "Preprocess images so that Tesseract reads them reliably.",
+    "details": [
+      "Deskews each scan, binarises it (OpenCV, scikit-image or Pillow depending on what is installed), removes noise and writes the cleaned image next to the original, in parallel. A quick Tesseract pass decides which variant is kept."
+    ],
+    "usage": "ocr_ready",
+    "example": ["$ ocr_ready"]
+  },
+  "ocrpdf.py": {
+    "summary": "OCR every page of a PDF and print the extracted text.",
+    "details": [
+      "Opens the document with PyMuPDF, renders each page through its OCR text page (English, 300 dpi) in a pool of four workers and joins the page texts with newlines."],
+    "usage": "ocrpdf FILE.pdf",
+    "example": ["$ ocrpdf scan.pdf > scan.txt"]
+  }
+}

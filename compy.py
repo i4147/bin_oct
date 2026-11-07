@@ -1,4 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress Python sources so they fit into an LLM prompt.
+
+Strips the comments, the shebang, the docstrings, the annotations and the stdlib
+imports, renames the local variables to short names, joins the simple statements and
+writes the compacted sources to ``compressed.txt``.
+
+Usage: compy [paths ...]
+
+Positional arguments:
+    inputs ...
+        Python files and/or directories. Defaults to the current directory.
+
+Examples:
+    $ compy src/
+
+Command-line script: run ``python compy.py`` or the ``compy`` command. The module is importable as well.
+"""
 
 import argparse
 import ast

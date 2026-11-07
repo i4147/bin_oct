@@ -1,0 +1,102 @@
+{
+  "tomd.py": {
+    "summary": "Convert HTML files to Markdown with readability.",
+    "details": [
+      "Extracts the main article with ``readability``, converts it with ``markdownify`` and writes the ``.md`` next to the source, deleting the original HTML on success. Existing ``.md`` files are left alone and the tree is processed in parallel."
+    ],
+    "usage": "tomd [html files ...]",
+    "example": ["$ tomd saved_pages/"]
+  },
+  "top11.py": {
+    "summary": "Show the largest files below the current directory in a table.",
+    "details": ["Sorts the files by size, truncates the long paths and prints the top ``N`` (11 by default) with their human-readable sizes in aligned columns."],
+    "usage": "top11 [N]",
+    "example": ["$ top11 20"]
+  },
+  "top12.py": {
+    "summary": "Print the ten largest files below the current directory.",
+    "details": ["Walks the tree keeping a heap of the ten biggest files and prints them as ``<bytes> bytes - <path>``, largest first."],
+    "usage": "top12",
+    "example": ["$ top12"]
+  },
+  "tore.py": {
+    "summary": "Move a directory into ``~/repos``.",
+    "details": ["Resolves the given path, moves it into ``~/repos`` under the same name and appends a numeric suffix when that name is taken."],
+    "usage": "tore PATH",
+    "example": ["$ tore ~/Downloads/project"]
+  },
+  "tosc.py": {
+    "summary": "Move files (or glob matches) into ``~/isaac/may/scripts``.",
+    "details": ["Same argument style as :doc:`tolo`: file paths, shell globs and ``-f LISTFILE`` lists, with unique names for the collisions, moved into the personal scripts directory."],
+    "usage": "tosc [-f LISTFILE] [files ...]",
+    "example": ["$ tosc tool.py"]
+  },
+  "trafila.py": {
+    "summary": "Extract the main article of HTML pages as Markdown with trafilatura.",
+    "details": [
+      "Runs ``trafilatura.extract`` in Markdown mode with links, images and tables, falls back to ``html_to_markdown`` on the cleaned soup when nothing is extracted and writes the ``.md`` file next to the source; ``-r`` also removes the original HTML."
+    ],
+    "usage": "trafila [-r] [html files ...]",
+    "example": ["$ trafila -r pages/"]
+  },
+  "translate_code_comments.py": {
+    "summary": "Translate the comments and docstrings of source files to another language.",
+    "details": [
+      "Subcommands: ``scan`` and ``detect`` translate the comments by language detection, ``ast`` the AST-level strings and docstrings, ``japanese`` the Japanese text only and ``batch`` every file. ``--target``/``--source`` set the languages, ``--exclude``/``--marker`` skip the paths and the marked strings, ``--backup``/``--dry-run`` control the writes and long strings are left alone."
+    ],
+    "usage": "translate_code_comments {scan,detect,ast,japanese,batch} [path] [--target LANG]",
+    "example": ["$ translate_code_comments ast src/ --target en --dry-run"]
+  },
+  "translate_noneng_filenames.py": {
+    "summary": "Rename the non-ASCII file and directory names below the current directory to English.",
+    "details": ["Walks the tree bottom-up, translates the stems with Google Translate and renames the entries, adding a numeric suffix when the translation collides with an existing name."],
+    "usage": "translate_noneng_filenames",
+    "example": ["$ translate_noneng_filenames"]
+  },
+  "transwords.py": {
+    "summary": "Translate a word list to Persian in parallel and save it as JSON.",
+    "details": [
+      "Splits ``words.txt`` into ~4500-character chunks, translates each chunk with ``deep_translator`` in a process pool and merges the results into ``fa_en.json``, logging the failures."
+    ],
+    "usage": "transwords",
+    "example": ["$ transwords"]
+  },
+  "try_decode.py": {
+    "summary": "Decode a file by trying a long list of encodings.",
+    "details": [
+      "Attempts utf-8/utf-8-sig first, then the common single-byte code pages and the extra exotic ones, and prints the file content once an encoding decodes the first chunk without errors."
+    ],
+    "usage": "try_decode FILE",
+    "example": ["$ try_decode legacy.txt"]
+  },
+  "trydecomp.py": {
+    "summary": "Detect and extract an archive or compressed file whatever its format.",
+    "details": [
+      "Sniffs the magic bytes, ranks the candidate decoders and tries them in order: libarchive, the stream decompressors (gzip, bz2, lzma, brotli, zstd, lzma, cramjam), tarfile, zipfile, py7zr, rarfile, acefile, cabarchive and pycdlib, with a pickle fallback. Members are written under a safe path."
+    ],
+    "usage": "trydecomp FILE [OUTDIR]",
+    "example": ["$ trydecomp mystery.bin out/"]
+  },
+  "tscleaner.py": {
+    "summary": "Strip the comments from TypeScript and JavaScript sources with tree-sitter.",
+    "details": [
+      "Picks the grammar per suffix (``.ts``, ``.tsx``, ``.d.ts``, ``.js`` ...), collects the comment nodes, deletes them through atomic writes and processes the source files of the current directory in a pool."
+    ],
+    "usage": "tscleaner",
+    "example": ["$ tscleaner"]
+  },
+  "tsrmc.py": {
+    "summary": "Remove the comments from source files of many languages with tree-sitter.",
+    "details": [
+      "Supports Rust, shell, C/C++, JavaScript/TypeScript, CSS, HTML and Lua with the matching tree-sitter grammar, preserves the shebangs, the licence headers and the lint directives, can also drop the blank lines and offers ``--diff``, ``--dry-run`` and ``--backup``."
+    ],
+    "usage": "tsrmc [--diff|--dry-run|--backup] [paths ...]",
+    "example": ["$ tsrmc --diff src/"]
+  },
+  "ttf2woff2.py": {
+    "summary": "Convert the TTF/OTF fonts below the current directory to WOFF2.",
+    "details": ["Compresses each font with fontTools' ``woff2`` encoder, gives a unique name when the ``.woff2`` already exists, deletes the source on success and converts the files in parallel."],
+    "usage": "ttf2woff2 [fonts ...]",
+    "example": ["$ ttf2woff2 fonts/"]
+  }
+}

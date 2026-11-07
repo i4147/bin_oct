@@ -1,4 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Translate the non-English (mostly Chinese) lines of files in place.
+
+Detects the lines containing CJK or other non-ASCII text, translates them with
+googletrans or deep_translator (whichever is installed), rewrites the files and
+processes them in a worker pool with a progress report.
+
+Usage: gtransline [paths ...] [--extensions .txt,.md] [--exclude PATH]
+
+Positional arguments:
+    files ...
+        Files or directories to process
+
+Options:
+    --extensions
+        File extensions to process
+    --batch-size
+        Batch size for progress logging
+    --exclude
+        Paths to exclude
+
+Examples:
+    $ gtransline docs/ --extensions .md
+
+Command-line script: run ``python gtransline.py`` or the ``gtransline`` command. The module is importable as well.
+"""
 
 import argparse
 import multiprocessing as mp

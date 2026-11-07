@@ -1,4 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""List the top-level directories of the current directory, optionally with their sizes.
+
+Prints the subdirectories one per line and, with the size flag, the recursive total of
+each of them in a sorted, human-readable listing.
+
+Usage: dirz [-s]
+
+Options:
+    -s, --size
+        Show total size per directory
+
+Examples:
+    $ dirz -s
+
+Command-line script: run ``python dirz.py`` or the ``dirz`` command. The module is importable as well.
+"""
 
 import argparse
 import os

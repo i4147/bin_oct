@@ -1,4 +1,67 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Debian/Termux package and system-binary toolkit.
+
+Subcommands: ``check-system-bin`` compares the files with ``/system/bin``, ``missing-files`` audits the installed dpkg packages for
+missing files, ``copy-pkg-files`` copies the files of one package, ``orphan-libs-debian``/``orphan-pkgs-termux`` find the unused packages,
+``list-installed-sizes`` ranks the packages by installed size and ``make-deb`` builds a ``.deb``.
+
+Usage: pkgtools2
+{check-system-bin,missing-files,copy-pkg-files,orphan-libs-debian,orphan-pkgs-termux,list-installed-sizes,make-deb}
+[options]
+
+Positional arguments:
+    package
+    packages ...
+    csvfile
+
+Subcommands:
+    check-system-bin
+        Scan /system/bin and move same-name matching files from CWD.
+    missing-files
+        Audit installed dpkg packages for missing files.
+    copy-pkg-files
+        Copy files belonging to one dpkg/rpm package.
+    orphan-libs-debian
+        Find Debian orphan-ish library packages.
+    orphan-pkgs-termux
+        Find Termux orphan packages.
+    list-installed-sizes
+        List installed apt packages by installed size.
+    make-deb
+        Create .deb files from apt cache for installed packages.
+    suggest-removals
+        Suggest unused packages from bash history.
+    save-deb-names
+        Save installed dpkg package names.
+    show-big-packages
+        Scan apt packages by download size.
+    sort-csv
+        Sort a package CSV by Installed-Size.
+
+Options:
+    --system-bin
+    --work-dir
+    --output-dir
+    --chunk-size
+    --report-style
+        Simple = original check_system_missing_files.py output; audit = original
+        chk_sys_missing.py output.
+    --filter-mode
+        Parts = check_system_missing_files.py filter; substring = chk_sys_missing.py
+        filter.
+    --timeout
+    --output
+    --missing-txt
+    --dest-root
+    ... plus 16 more; run ``pkgtools2 --help`` for the full list.
+
+Examples:
+    $ pkgtools2 list-installed-sizes --exclude-substrings llvm
+    $ pkgtools2 missing-files
+
+Command-line script: run ``python pkgtools2.py`` or the ``pkgtools2`` command. The module is importable as well.
+"""
+
 import argparse
 import csv
 import hashlib

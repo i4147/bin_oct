@@ -1,4 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove the image references from Markdown, RST and HTML files.
+
+Deletes the inline images, the reference-style images and the linked badges (``--badges``),
+optionally only the remote ones, the unused link definitions and the surrounding
+whitespace; ``--backup``, ``--html-parser`` and ``--report`` control the behaviour.
+
+Usage: cleanmd [options] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories to scan (default: current directory)
+
+Options:
+    --ext
+        File extensions to process (default: .md .markdown .rst .html .htm)
+    --remote-only
+        Only remove remote image references (http://, https://, //)
+    --badges
+        Also strip badge / shield link blocks
+    --aggressive-defs
+        Remove every link definition line, even non-image ones
+    --backup
+        Write a .bak copy before modifying each file
+    --html-parser
+        HTML parsing backend (default: regex)
+    --report
+        Output verbosity (default: simple)
+    -v, --verbose
+
+Examples:
+    $ cleanmd --remote-only docs/
+
+Command-line script: run ``python cleanmd.py`` or the ``cleanmd`` command. The module is importable as well.
+"""
+
 import argparse
 import re
 import sys

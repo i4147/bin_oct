@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Minify CSS files in place using tree-sitter, tinycss2 or csscompressor.
+
+``--backend`` selects the implementation: tree-sitter drops comments and whitespace without extra
+dependencies, tinycss2 and csscompressor are used when those packages are installed.
+``--dry-run``/``--diff`` preview the result and ``--backup`` writes ``.bak`` copies.
+
+Usage: clean-css [options] [paths ...]
+
+Positional arguments:
+    paths ...
+
+Options:
+    -b, --backend
+    --diff
+    --dry-run
+    --backup
+
+Examples:
+    $ clean-css site/ --backend tree-sitter
+    $ clean-css style.css --diff
+
+Command-line script: run ``python clean-css.py`` or the ``clean-css`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

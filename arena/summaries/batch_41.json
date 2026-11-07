@@ -1,0 +1,124 @@
+{
+  "gtransline.py": {
+    "summary": "Translate the non-English (mostly Chinese) lines of files in place.",
+    "details": [
+      "Detects the lines containing CJK or other non-ASCII text, translates them with googletrans or deep_translator (whichever is installed), rewrites the files and processes them in a worker pool with a progress report."
+    ],
+    "usage": "gtransline [paths ...] [--extensions .txt,.md] [--exclude PATH]",
+    "example": ["$ gtransline docs/ --extensions .md"]
+  },
+  "gzbz.py": {
+    "summary": "Compress or decompress the files of a tree with bzip2 or gzip.",
+    "details": [
+      "Subcommands: ``bz2`` handles the bzip2 files, ``gz`` the gzip and tar files and ``gzip-files`` recompresses the plain files recursively (skipping the already compressed extensions and the small files); ``-l`` sets the level and the chunks are streamed in 512 KB blocks."
+    ],
+    "usage": "gzbz {bz2,gz,gzip-files} [-d] [-l LEVEL] [paths ...]",
+    "example": ["$ gzbz gz -d logs/", "$ gzbz gzip-files -l 9 ."]
+  },
+  "hasdoc.py": {
+    "summary": "Check the Python files for comments and docstrings that were not stripped.",
+    "details": ["Parses each file, counts the remaining comment lines and docstrings and reports the files that still have them, working through a directory in a pool."],
+    "usage": "hasdoc [paths ...]",
+    "example": ["$ hasdoc src/"]
+  },
+  "hhash.py": {
+    "summary": "Human-readable UUIDs and hashes.",
+    "details": [
+      "Turns a digest into a memorable word phrase and back (``--humanize``, ``--dehumanize``), generates the human-readable UUIDs (v3, v4, v5), verifies a phrase against a hex digest, reports the entropy bits for a word count and hashes text with the chosen algorithm."
+    ],
+    "usage": "hhash [--uuid|--humanize HEX|--verify HEX PHRASE|--hash TEXT] [--algorithm sha256]",
+    "example": ["$ hhash --uuid", "$ hhash --hash 'hello' --algorithm sha512"]
+  },
+  "html2markdown.py": {
+    "summary": "Convert HTML files to Markdown or plain text.",
+    "details": [
+      "Subcommands: ``to-md`` converts with an external ``htm2md``, ``html_to_markdown``, pandoc or ``readability`` and can remove the originals, ``to-text`` strips the tags with the stdlib parser and ``fetch`` downloads a URL as text (optionally rendering the JS with pyppeteer and taking a screenshot)."
+    ],
+    "usage": "html2markdown {to-md,to-text,fetch} [options] [paths ...]",
+    "example": ["$ html2markdown to-md --main-content pages/", "$ html2markdown fetch https://example.com -o page.txt"]
+  },
+  "html_tag_balancer.py": {
+    "summary": "Check and fix the tag balance of HTML files.",
+    "details": ["Walks the markup with the stdlib parser, reports the missing, unclosed and unexpected closing tags and with ``-a`` appends the missing ones and removes the stray ones in place."],
+    "usage": "html_tag_balancer [-a] [paths ...]",
+    "example": ["$ html_tag_balancer -a pages/"]
+  },
+  "htmlcleaner.py": {
+    "summary": "Extract the inline CSS and JavaScript of HTML files into ``assets``.",
+    "details": [
+      "Finds the ``<style>`` and ``<script>`` blocks, writes them into ``assets/css``/``assets/js`` under content-hashed names, links them back from the page and processes the tree in parallel (``--min-size`` sets the extraction threshold)."
+    ],
+    "usage": "htmlcleaner [paths ...] [--min-size BYTES] [-q]",
+    "example": ["$ htmlcleaner dist/"]
+  },
+  "htmlformat.py": {
+    "summary": "Reformat HTML files so every tag starts on its own line.",
+    "details": ["Parses the document with tree-sitter HTML, re-emits the nodes one per line while keeping the text content, writes the files atomically (with a dry-run and a 50 MB size cap) and works through the tree in parallel."],
+    "usage": "htmlformat [--dry-run] [-v] [paths ...]",
+    "example": ["$ htmlformat --dry-run pages/"]
+  },
+  "htmlstrip.py": {
+    "summary": "Remove the tags or the meta tags of HTML files.",
+    "details": [
+      "Subcommands: ``tag`` deletes a named element with BeautifulSoup, ``meta`` removes the ``<meta ...>`` tags with a regex (``--pattern`` overrides it) and ``all`` strips every tag of one file; ``-w`` writes in place, the default is a dry run and the marker lines (``<:``/``>:``) are preserved."
+    ],
+    "usage": "htmlstrip {tag,meta,all} [options] [paths ...]",
+    "example": ["$ htmlstrip tag script pages/ -w", "$ htmlstrip all page.html"]
+  },
+  "hunspeller.py": {
+    "summary": "Detect and optionally fix the misspelled words of a text file with Hunspell.",
+    "details": [
+      "Checks each line against the Hunspell dictionary (``-d``/``--affix``, or the ones it discovers with ``--list-dicts``) in a process pool, prints the unknown words and with ``-a`` replaces them with the first suggestion."
+    ],
+    "usage": "hunspeller FILE [-a] [-d DIC] [--affix AFF] [--list-dicts]",
+    "example": ["$ hunspeller notes.txt -a"]
+  },
+  "image_remover.py": {
+    "summary": "Remove the images from documentation files.",
+    "details": [
+      "Subcommands: ``fast`` deletes the Markdown/HTML images, ``smart`` the badges and remote images, ``markdown`` only the Markdown ones, ``remote`` the ``http(s)`` references and ``html`` uses BeautifulSoup; the RST ``image::`` directives and the badge domains are recognised."
+    ],
+    "usage": "image_remover {fast,smart,markdown,remote,html} [options] [paths ...]",
+    "example": ["$ image_remover smart README.md"]
+  },
+  "imagetools.py": {
+    "summary": "Image and HTML conversion toolkit.",
+    "details": [
+      "Subcommands: ``to-jpg``/``to-png`` convert (Pillow, OpenCV, pillow-heif or ImageMagick), ``gif-to-jpg`` extracts the frames, ``invert`` negates the colours in place and ``html-to-png`` renders a file, a directory or an inline HTML string through WeasyPrint/pdf2image; ``--quality``, ``--overwrite`` and ``--delete-source`` control the output."
+    ],
+    "usage": "imagetools {to-jpg,to-png,gif-to-jpg,invert,html-to-png} [options] [paths ...]",
+    "example": ["$ imagetools to-jpg --quality 90 photos/", "$ imagetools html-to-png page.html"]
+  },
+  "img_similarity.py": {
+    "summary": "Find, group and deduplicate similar images.",
+    "details": [
+      "Hashes the images (perceptual phash/dhash/ahash/whash, colour hash, DCT, HSV histograms or a multi-hash mix), groups the ones under the distance threshold and the ``scan``/``organize``/``dedup``/``keep-one``/``cluster`` subcommands report, move, delete or cluster them."
+    ],
+    "usage": "img_similarity {scan,organize,dedup,keep-one,cluster} --method phash [options]",
+    "example": ["$ img_similarity scan -d ~/photos --method phash", "$ img_similarity dedup --threshold 4"]
+  },
+  "imgco.py": {
+    "summary": "Convert images to a target format.",
+    "details": [
+      "Chooses the backend (OpenCV, scikit-image, Pillow or ImageMagick), converts each image to ``--to`` (jpg by default) at the given quality, keeps or replaces the sources (``-k``/``-f``) and runs the conversion in parallel with ``--dry-run``/``--list-targets`` support."
+    ],
+    "usage": "imgco [paths ...] [--to jpg|png|webp] [-q QUALITY] [-r]",
+    "example": ["$ imgco shots/ --to webp -q 80 -r"]
+  },
+  "imgdownloader.py": {
+    "summary": "Search Google Images and download the results.",
+    "details": [
+      "Builds the image-search URL from the query and the extra filters (exact/optional/excluded words, size, colour, type), scrapes the result links with Selenium and downloads them in parallel with requests, httpx or pycurl."
+    ],
+    "usage": "imgdownloader -q QUERY [-l LIMIT] [-o DIR] [--size large] [--type photo]",
+    "example": ["$ imgdownloader -q 'red fox' -l 20 -o foxes"]
+  },
+  "imgtools.py": {
+    "summary": "Image and media optimisation toolkit.",
+    "details": [
+      "Subcommands: ``auto-enhance``/``pil-enhance`` improve the photos in place, ``downscale``/``resize`` shrink them by a factor, ``upscale`` enlarges the small ones, ``strip-exif`` removes the metadata, ``optimize-png`` calls optipng/oxipng and ``embed-optimize`` compresses the base64 assets inside CSS/HTML/JS."
+    ],
+    "usage": "imgtools {auto-enhance,downscale,embed-optimize,optimize-png,pil-enhance,resize,strip-exif,upscale} [options]",
+    "example": ["$ imgtools resize 0.5 photos/", "$ imgtools strip-exif shots/"]
+  }
+}

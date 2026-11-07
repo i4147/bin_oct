@@ -1,0 +1,97 @@
+{
+  "extz.py": {
+    "summary": "Report the file extensions used below the current directory.",
+    "details": [
+      "Counts the files per extension with their sizes, prints a coloured table of the most common ones, and ``-s`` switches to the total size per extension while ``-p`` writes a Matplotlib pie chart (the top 30 are charted)."
+    ],
+    "usage": "extz [-s] [-p] [--no-color]",
+    "example": ["$ extz -s -p"]
+  },
+  "exurls.py": {
+    "summary": "Extract the links of a web page and save them to files.",
+    "details": [
+      "Fetches the URL with a browser-like session, parses the ``href``/``src`` attributes with BeautifulSoup, splits the internal and the external links and writes both lists to the current directory."
+    ],
+    "usage": "exurls URL",
+    "example": ["$ exurls https://example.com"]
+  },
+  "fa_translator.py": {
+    "summary": "Persian to English (and back) translation toolkit.",
+    "details": [
+      "Subcommands: ``file`` translates a text file line by line or in chunks, ``words`` builds a JSON dictionary from a word list and ``lookup`` is an offline dictionary search with optional fzf selection. The backends are deep_translator, the ``translate`` package and the ``translate`` CLI."
+    ],
+    "usage": "fa_translator {file,words,lookup} [options]",
+    "example": ["$ fa_translator file notes.txt --target en", "$ fa_translator lookup"]
+  },
+  "faedit.py": {
+    "summary": "Edit Persian text with a live ``faprint`` preview.",
+    "details": [
+      "Opens the file in urwid, curses, prompt_toolkit or textual (``-b``), shows the reshaped Persian rendering of the lines around the cursor and saves and quits with Ctrl+Q."
+    ],
+    "usage": "faedit FILE [-b urwid|curses|prompt_toolkit|textual]",
+    "example": ["$ faedit notes.txt -b textual"]
+  },
+  "failtest.py": {
+    "summary": "Run a program repeatedly until it fails.",
+    "details": [
+      "Executes the command in a loop (optionally ``-p`` in parallel), stops at the first exit status outside the accepted codes, sleeps between the iterations and reports the failing output."
+    ],
+    "usage": "failtest [--code 0] [-s SECONDS] [-p N] COMMAND ...",
+    "example": ["$ failtest -s 0.1 -p 4 pytest -x tests"]
+  },
+  "fast_compress.py": {
+    "summary": "Compress or decompress the files of a directory with zstd or xz.",
+    "details": [
+      "The ``zstd`` subcommand compresses with 4 threads at level 3 (``--level`` 1-22) and the ``xz`` one through ``lzma_mt``; both work in a process pool, skip the excluded and package directories, keep the originals with ``--keep`` and ``--simple`` switches to a plain recursive glob."
+    ],
+    "usage": "fast_compress {zstd,xz} [--dir DIR] [-d] [--level N]",
+    "example": ["$ fast_compress zstd --dir logs --level 19"]
+  },
+  "fatrans.py": {
+    "summary": "Translate files to and from Farsi.",
+    "details": [
+      "Subcommands: ``to-fa`` translates a file into Persian, ``lines-to-en`` translates the Farsi lines of one file, ``inplace-to-en`` walks a tree and rewrites the Farsi files in English and ``batch-json`` writes one JSON map per ``.txt`` file. The chunks are retried and slept between the requests."
+    ],
+    "usage": "fatrans {to-fa,lines-to-en,inplace-to-en,batch-json} [options]",
+    "example": ["$ fatrans to-fa README.md", "$ fatrans inplace-to-en notes/"]
+  },
+  "fatranslate.py": {
+    "summary": "Translate Persian lines and word lists to English.",
+    "details": [
+      "The ``lines`` subcommand translates the Persian lines of a file (updating the file in place unless ``--no-update``) and writes a JSON dictionary, ``words`` does the same for a word list; the chunks are retried, the parallelism is a process pool and the log level is configurable."
+    ],
+    "usage": "fatranslate {lines,words} INPUT [--max-chars N] [--json-out PATH]",
+    "example": ["$ fatranslate lines notes.txt --max-chars 3000"]
+  },
+  "fco.py": {
+    "summary": "Convert fonts between TTF, OTF, WOFF and WOFF2.",
+    "details": [
+      "Detects the input format (Type 1 ``pfa``/``pfb`` are converted to a CFF-outlined OTF), writes the requested ``--to`` format next to the source (or under ``-o``), and offers ``-r`` to drop the original, ``-f`` to overwrite and ``--dry-run``; the files are processed in parallel."
+    ],
+    "usage": "fco [fonts ...] --to ttf|otf|woff|woff2 [-r] [-o OUTDIR]",
+    "example": ["$ fco fonts/*.ttf --to woff2"]
+  },
+  "felopy.py": {
+    "summary": "Run the ``felo superagent`` query and save the returned code as a Python file.",
+    "details": ["Calls the external ``felo`` command with the query and the timeout, extracts the fenced Python blocks of the output and writes them to ``~/tmp/apps/felo_<timestamp>.py``, printing the path."],
+    "usage": "felopy [--timeout SECONDS] QUERY ...",
+    "example": ["$ felopy write a csv deduplicator"],
+    "notes": "Requires the ``felo`` CLI on ``PATH``."
+  },
+  "felormc.py": {
+    "summary": "Strip the comments and docstrings of Python files with LibCST.",
+    "details": [
+      "Keeps the shebangs, the module docstrings and the pragma comments (``# type:``, ``# fmt:``, ``# noqa``), validates every result before writing and offers ``--dry-run``, ``--verbose`` and a spawn-based pool over the given paths or the current tree."
+    ],
+    "usage": "felormc [--dry-run] [--verbose] [paths ...]",
+    "example": ["$ felormc --dry-run src/"]
+  },
+  "fetchimages.py": {
+    "summary": "Crawl a website and download its images.",
+    "details": [
+      "Breadth-first crawls the pages of the same host (``--all-hosts`` opens it up), bounded by ``--max-pages`` and ``--max-depth``, and saves every image into ``downloads`` (``-o``) under a sanitised name with dedup by content hash."
+    ],
+    "usage": "fetchimages URL [-o DIR] [--max-pages N] [--max-depth N]",
+    "example": ["$ fetchimages https://example.com --max-pages 50"]
+  }
+}

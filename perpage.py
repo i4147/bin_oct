@@ -1,4 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Split PDFs into one file per page or extract the text page by page.
+
+Processes the PDFs given on the command line (or found below the current directory) with
+pypdf in a worker pool. ``--text`` writes ``.txt`` files per page instead of single-page PDFs, and
+``--output-dir`` selects where the results go (``./output`` by default).
+
+Usage: perpage [options] [pdfs ...]
+
+Positional arguments:
+    paths ...
+        PDF files or directories to scan; defaults to CWD.
+
+Options:
+    -o, --output-dir
+        Directory to write outputs into (default: ./output).
+    -t, --text
+        Extract per-page text to .txt files instead of splitting PDF pages.
+    --pool-method
+        Multiprocessing pool method to use for processing.
+
+Examples:
+    $ perpage book.pdf -o pages/
+    $ perpage book.pdf --text
+
+Command-line script: run ``python perpage.py`` or the ``perpage`` command. The module is importable as well.
+"""
 
 import argparse
 from multiprocessing.pool import AsyncResult, Pool

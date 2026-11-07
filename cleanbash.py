@@ -1,4 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove the comments from bash scripts with tree-sitter.
+
+Detects the shell scripts by suffix and shebang, deletes the comment nodes, collapses
+the excess blank lines, re-validates the script with ``bash -n`` and processes the tree with a
+spawn-based pool.
+
+Usage: cleanbash [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories to process. Defaults to the current directory.
+
+Examples:
+    $ cleanbash ~/bin
+
+Command-line script: run ``python cleanbash.py`` or the ``cleanbash`` command. The module is importable as well.
+"""
 
 import argparse
 import multiprocessing as mp

@@ -1,0 +1,100 @@
+{
+  "sanity-check.py": {
+    "summary": "Check that the installed packages import and report the ones with newer releases.",
+    "details": [
+      "Imports every installed distribution, lists the failures with their error and queries PyPI for the latest versions, printing the packages that are out of date."
+    ],
+    "usage": "sanity-check",
+    "example": ["$ sanity-check"]
+  },
+  "save_en.py": {
+    "summary": "Write the English side of a bilingual JSON list to a text file.",
+    "details": ["Loads the JSON records, writes the ``en`` field of each entry, one per line, to a ``.txt`` file next to the input and prints the path."],
+    "usage": "save_en FILE.json",
+    "example": ["$ save_en pairs.json"]
+  },
+  "savepkgstocsv.py": {
+    "summary": "Export the installed apt packages to TSV and CSV.",
+    "details": [
+      "Queries dpkg for the package name, version, architecture, status, priority, section, size, maintainer, homepage and description and writes ``/sdcard/backups/installed.tsv`` plus a CSV version with the same columns."
+    ],
+    "usage": "savepkgstocsv",
+    "example": ["$ savepkgstocsv"]
+  },
+  "scolor.py": {
+    "summary": "Show random 24-bit terminal colours, fifty at a time.",
+    "details": ["Prints fifty random background colours with their RGB values in three rounds, asking between the rounds whether to continue."],
+    "usage": "python scolor.py",
+    "example": ["$ python scolor.py"],
+    "notes": "Runs its loop at import time; there is no command-line interface."
+  },
+  "secretleak.py": {
+    "summary": "Scan a directory tree for hard-coded credentials and private keys.",
+    "details": [
+      "Looks for AWS keys, private-key blocks, API tokens, passwords and similar patterns (plus project-specific skip signatures) in the text files below the current directory, skipping binaries, virtual environments and caches, and prints every hit with its file and line. Files are scanned in a worker pool."
+    ],
+    "usage": "secretleak [paths ...]",
+    "example": ["$ secretleak ."]
+  },
+  "setup_dotfiles.py": {
+    "summary": "Turn ``$HOME`` into an age-encrypted bare dotfiles repository.",
+    "details": [
+      "Installs nothing but verifies the required tools (git, age, git-age-crypt), creates an age key pair, writes the ``git-age-filter`` clean/smudge filter, the ``.gitattributes`` and ``.gitignore`` rules and initialises a bare ``~/dotfiles.git`` with the ``$HOME`` work tree."
+    ],
+    "usage": "setup_dotfiles",
+    "example": ["$ setup_dotfiles"]
+  },
+  "show_encodings.py": {
+    "summary": "Print the detected encoding of a file.",
+    "details": ["Reads the raw bytes, asks chardet for a guess and falls back to charset_normalizer when the confidence is low; empty files report ``utf-8``."],
+    "usage": "show_encodings FILE",
+    "example": ["$ show_encodings legacy.txt"]
+  },
+  "showenc.py": {
+    "summary": "Compare the encoding guesses of several detectors for the local files.",
+    "details": [
+      "Runs the BOM/tokenize heuristics plus chardet, charset_normalizer, cchardet, UnicodeDammit, libmagic and ``ced`` (each when installed) over the files below the current directory and prints the results as a table."
+    ],
+    "usage": "showenc",
+    "example": ["$ showenc"]
+  },
+  "similar_size_files.py": {
+    "summary": "Group the files below the current directory that have exactly the same size.",
+    "details": ["Walks the tree (``.git`` excluded, symlinks skipped), buckets the regular files by byte size and prints the buckets that hold more than one file, which is a cheap first pass for finding duplicates."],
+    "usage": "similar_size_files",
+    "example": ["$ similar_size_files"]
+  },
+  "since.py": {
+    "summary": "Convert a Persian date to Gregorian and say how long ago it was.",
+    "details": [
+      "Takes day, month and year in the Persian calendar, converts them with the bundled ``PersianDateConverter`` (including leap-year handling) and prints the Persian and Gregorian dates, the weekday and the number of days since that date."
+    ],
+    "usage": "since DAY MONTH YEAR",
+    "example": ["$ since 10 12 1404"]
+  },
+  "site_check.py": {
+    "summary": "Compile and import every module in ``site-packages`` and write a JSON report.",
+    "details": [
+      "Byte-compiles each ``.py`` file of the system and user ``site-packages``, imports every top-level module with pkgutil and saves the compilation and import failures to ``site_packages_sanity_report.json``, printing the two counts."
+    ],
+    "usage": "python site_check.py",
+    "example": ["$ python site_check.py"],
+    "notes": "Runs the full check at import time; it can take a while on a large environment."
+  },
+  "sjby.py": {
+    "summary": "Rewrite a JSON object with its keys sorted by length.",
+    "details": [
+      "Loads the file, sorts the items by key length (or by the length of the value list with ``-v``), re-serialises with two-space indentation and writes it back after a round-trip validation."
+    ],
+    "usage": "sjby [-v] FILE.json",
+    "example": ["$ sjby words.json"]
+  },
+  "soniq.py": {
+    "summary": "Sort a text file and remove the duplicate lines.",
+    "details": [
+      "Reads the file (optionally only the ``START_LINE``..``END_LINE`` range), sorts and deduplicates the lines, using an mmap and chunked processing for large files, and writes the result back in place. ``--quiet`` suppresses the progress output."
+    ],
+    "usage": "soniq FILE [START_LINE END_LINE] [--quiet]",
+    "example": ["$ soniq words.txt", "$ soniq dump.txt 100 2000 -q"]
+  }
+}

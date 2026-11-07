@@ -1,4 +1,43 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Download or mirror the content of a Google Drive folder.
+
+The ``download`` and ``sync`` subcommands authenticate read-only with the OAuth client (``credentials.json``/``.env``, or
+the out-of-band ``--auth-mode manual``), walk the folder tree, sanitize the names and fetch the files into
+the destination, skipping the up-to-date ones unless ``--force``.
+
+Usage: gdrive_sync {download,sync} [--folder NAME] [--dest DIR]
+
+Subcommands:
+    download
+        Download a single named folder from Drive root (gdrive_downloader.py).
+    sync
+        Sync the entire Drive or one named folder (gdrive_syncer*.py).
+
+Options:
+    --auth-mode
+        Installed = local browser server flow (credentials.json or env vars). manual =
+        out-of-band code entry (needs env vars). Default: installed.
+    --credentials-file
+    --token-file
+    --env-file
+    --client-id
+        Override GOOGLE_CLIENT_ID.
+    --client-secret
+        Override GOOGLE_CLIENT_SECRET.
+    --folder
+        Folder name directly under Drive root.
+    --dest
+        Destination directory (default: ./<folder>).
+    --sanitize
+        Replace filesystem-unsafe characters in names.
+    --force
+        Re-download files even if they look up to date.
+
+Examples:
+    $ gdrive_sync sync --folder Documents --dest ./backup
+
+Command-line script: run ``python gdrive_sync.py`` or the ``gdrive_sync`` command. The module is importable as well.
+"""
 
 import argparse
 import os

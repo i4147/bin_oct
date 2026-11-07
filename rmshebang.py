@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Remove the shebang line from Python files.
+
+Deletes the first line when it starts with ``#!/`` and rewrites the files in a spawn-based
+pool, printing the space that was freed.
+
+Usage: rmshebang [files ...]
+
+Examples:
+    $ rmshebang pkg/
+
+Runs as a script (``python rmshebang.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from collections import deque

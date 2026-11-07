@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Count the code, comment and blank lines by language.
+
+Detects the language from the extension or the shebang, counts the code/comment/blank
+lines per file, skips the binaries and the excluded paths and prints the per-language
+totals (``--no-report`` silences the summary).
+
+Usage: pytokei [ROOT] [--exclude SUBSTR] [--no-report]
+
+Positional arguments:
+    root
+        Root directory to analyze. Default: current directory.
+
+Options:
+    --no-report
+        Suppress final statistics report (pytokei2.py behavior).
+    --exclude
+        Substrings to exclude from paths. Can be repeated. Default: .git
+
+Examples:
+    $ pytokei . --exclude node_modules
+
+Command-line script: run ``python pytokei.py`` or the ``pytokei`` command. The module is importable as well.
+"""
 
 import argparse
 import re

@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Delete the ``Requires-Dist`` lines from package metadata and archives.
+
+Processes ``METADATA``/``PKG-INFO``/``PKGINFO`` files and the same files inside wheels, zips and tarballs
+(including brotli/zstd/lz4/lzma compressed archives), removing the dependency
+declarations and logging every removed line to ``/sdcard/reqz.txt``.
+
+Usage: noreq
+
+Examples:
+    $ noreq
+
+Destructive: it strips dependency metadata from the packages in the current tree.
+"""
 
 import shutil
 import tarfile

@@ -1,4 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write the missing pip dependencies to ``requirements.txt``.
+
+Runs ``pip check``, parses the ``requires X, which is not installed`` lines, resolves the names against the installed package list
+(cached for the day, ``--no-cache``/``--refresh-cache``) and appends them to the requirements file, skipping the
+blacklisted packages.
+
+Usage: reqmaker [--refresh-cache] [--no-cache]
+
+Options:
+    --refresh-cache
+        Force refresh the installed-packages cache.
+    --no-cache
+        Do not read or write the installed-packages cache.
+
+Examples:
+    $ reqmaker
+
+Command-line script: run ``python reqmaker.py`` or the ``reqmaker`` command. The module is importable as well.
+"""
 
 import argparse
 import re

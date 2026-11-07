@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Compress a text file with the LLM-oriented ``Compressor`` prompt helper.
+
+Reads the given file, runs ``compression_prompt.Compressor.compress`` over it and writes the result next to the input with a
+``.compressed`` suffix.
+
+Usage: comprust FILE
+
+Examples:
+    $ comprust notes.md
+
+Runs as a script (``python comprust.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import sys
 from pathlib import Path

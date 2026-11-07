@@ -1,0 +1,99 @@
+{
+  "nato.py": {
+    "summary": "Spell text with the NATO phonetic alphabet.",
+    "details": ["Takes the text as an argument or from ``-f`` and prints the letters as the NATO words (Alpha, Bravo ... Zulu), ignoring everything that is not a letter."],
+    "usage": "nato TEXT | nato -f FILE",
+    "example": ["$ nato hello"]
+  },
+  "ncdu.py": {
+    "summary": "An ``ncdu``-style disk usage browser in Python.",
+    "details": [
+      "Scans the directory in parallel (eight workers, hardlink dedup, optional one-file-system and apparent size), shows the tree in a curses browser sorted by size, name, item count or mtime, and can export or import the ncdu JSON format (``-o``/``-f``) without the UI."
+    ],
+    "usage": "ncdu [PATH] [-o export.json] [-f export.json] [-x] [--si]",
+    "example": ["$ ncdu ~ -o usage.json"]
+  },
+  "nch.py": {
+    "summary": "Normalise the file and directory permissions of a tree.",
+    "details": [
+      "Sets the directories to 0775 and the files to 0644 (configurable), adds the execute bit to the scripts (shebang, ``.sh``/``.so`` suffix or the ``bin``-style parent folders) and removes it elsewhere, with ``--no-preserve-existing-exec``, ``--dir-mode``/``--file-mode`` and the parallel/serial runners."
+    ],
+    "usage": "nch [PATH] [--dir-mode 0775] [--file-mode 0644] [--skip-dir NAME]",
+    "example": ["$ nch ~/bin --dry-run"],
+    "notes": "Changes the permissions of every file below the path; review the list before running it on a system tree."
+  },
+  "nerf_mp3.py": {
+    "summary": "Re-encode MP3 files at half their original bitrate.",
+    "details": [
+      "Reads the bitrate with ffprobe, re-encodes each file with ffmpeg at 50 % (floor 8 kbps) in a process pool, reports the size change per file and the totals and skips the files that cannot be read."
+    ],
+    "usage": "nerf_mp3 [directories ...] [--no-color]",
+    "example": ["$ nerf_mp3 ~/Music"]
+  },
+  "nettools.py": {
+    "summary": "Network toolkit: proxies, IP, ping, DNS and signal.",
+    "details": [
+      "Subcommands: ``proxy-test`` checks the proxies of a file concurrently, ``net-info`` prints the public and local IP with a speed test, ``ping`` parses the ``ping`` output into statistics, ``set-dns`` switches the resolver to a public provider, ``show-ip`` prints the addresses and ``signal`` monitors the Android Wi-Fi/cellular signal."
+    ],
+    "usage": "nettools {proxy-test,net-info,ping,set-dns,show-ip,signal} [options]",
+    "example": ["$ nettools ping example.com", "$ nettools proxy-test -f proxies.txt"]
+  },
+  "noneng.py": {
+    "summary": "Detect the non-English text files of a directory.",
+    "details": [
+      "Detects the language of each text file with pycld2 (or the ``-b`` backend) on a 4 KB sample, skipping the files with too few letters, prints the detected language and optionally saves the report; the files are scanned in a pool."
+    ],
+    "usage": "noneng [paths ...] [-b pycld2|gcld3|langdetect]",
+    "example": ["$ noneng docs/ -b gcld3"]
+  },
+  "noneng_all.py": {
+    "summary": "Detect the language of every file below a directory.",
+    "details": ["Runs pycld2, gcld3, cld3, langdetect, py3langid, fast-langdetect or lingua (``-b``) on each file and prints the language and the confidence, with ``--only-non-english`` for the filtered list."],
+    "usage": "noneng_all [ROOT] [-b BACKEND] [--only-non-english]",
+    "example": ["$ noneng_all ~/docs -b lingua --only-non-english"]
+  },
+  "noneng_langdet.py": {
+    "summary": "Detect the non-English content of text files recursively.",
+    "details": [
+      "Checks the lines with the ``langdetect`` backend (confidence 0.85 by default), filters by length and extension, writes the findings to ``noneng.txt`` or ``-o`` and processes the tree with a pool and a per-file progress report."
+    ],
+    "usage": "noneng_langdet [directory] [-c CONFIDENCE] [-o noneng.txt]",
+    "example": ["$ noneng_langdet docs/ -c 0.9 -o report.txt"]
+  },
+  "nonutf8.py": {
+    "summary": "Report the files whose encoding is not UTF-8.",
+    "details": ["Detects the encoding from the BOM or by decoding attempts, prints the non-UTF-8 files and with ``-a`` converts them to UTF-8 in place."],
+    "usage": "nonutf8 [-a] [paths ...]",
+    "example": ["$ nonutf8 -a docs/"]
+  },
+  "normalize_print_sep.py": {
+    "summary": "Normalise the ``sep`` argument of the ``print`` calls in Python files.",
+    "details": ["Rewrites the ``print(..., sep=...)`` calls to the canonical spacing, reports the affected files and with ``-a`` applies the change in place (the default is a dry run)."],
+    "usage": "normalize_print_sep [-a] [paths ...]",
+    "example": ["$ normalize_print_sep -a src/"]
+  },
+  "notebook_convert_tool.py": {
+    "summary": "Convert between Jupyter notebooks, scripts and Markdown.",
+    "details": [
+      "Subcommands: ``to-py`` exports a notebook as a script (``--hoist-imports``, ``--wrap-main``, magic stripping), ``to-md`` exports it as Markdown, ``to-ipynb`` rebuilds a notebook from a script (split by defs/imports, blanks or one cell), ``strip`` clears the outputs and ``meta-to-ipynb`` turns a Markdown document into cells."
+    ],
+    "usage": "notebook_convert_tool {to-py,to-md,to-ipynb,strip,meta-to-ipynb} [options] [paths ...]",
+    "example": ["$ notebook_convert_tool to-py analysis.ipynb", "$ notebook_convert_tool strip notebooks/"]
+  },
+  "nr.py": {
+    "summary": "Create a GitHub repository from the current folder and push it.",
+    "details": [
+      "Reads the token from ``~/.env``, copies ``~/.gitignore``, initialises the repository if needed, creates it through the REST API (``-p`` for private) and commits and pushes the current branch; ``-y``/``-f`` skip the confirmations."
+    ],
+    "usage": "nr [-n NAME] [-p] [-d DESCRIPTION] [-m MESSAGE] [-y]",
+    "example": ["$ nr -n myproject -p -y"]
+  },
+  "nvim_plugin_toolbox.py": {
+    "summary": "Neovim plugin helper: folderize, lock and split.",
+    "details": [
+      "The ``folderize`` subcommand moves the ``.lua`` files into per-plugin folders by the references they contain, ``lock`` writes a ``lazy-lock.json`` from the installed lazy.nvim plugins (with the git commit of each) and ``split`` breaks a plugin-spec table into one file per plugin; ``--dry-run`` previews."
+    ],
+    "usage": "nvim_plugin_toolbox {folderize,lock,split} [options]",
+    "example": ["$ nvim_plugin_toolbox lock --output lazy-lock.json", "$ nvim_plugin_toolbox split plugins.lua --engine strict"]
+  }
+}

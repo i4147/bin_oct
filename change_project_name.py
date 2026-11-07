@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Rename a project by replacing one string with another in file names and contents.
+
+Walks the current directory, replaces the old text in every readable file and then
+renames the matching files and directories (deepest paths first, so parents can be
+renamed too). Existing destinations are reported instead of overwritten.
+
+Usage: change_project_name OLD_TEXT NEW_TEXT
+
+Examples:
+    $ change_project_name myproj newproj
+
+Runs as a script (``python change_project_name.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import shutil
 import sys

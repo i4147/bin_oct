@@ -1,4 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Run the ``felo superagent`` query and save the returned code as a Python file.
+
+Calls the external ``felo`` command with the query and the timeout, extracts the fenced
+Python blocks of the output and writes them to ``~/tmp/apps/felo_<timestamp>.py``, printing the path.
+
+Usage: felopy [--timeout SECONDS] QUERY ...
+
+Positional arguments:
+    query ...
+        Query string to pass to felo superagent
+
+Options:
+    --timeout
+        Timeout in seconds for the felo command (default: 300)
+
+Examples:
+    $ felopy write a csv deduplicator
+
+Requires the ``felo`` CLI on ``PATH``.
+"""
 
 import argparse
 import os

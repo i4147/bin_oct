@@ -1,4 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Classify PyPI packages as pure Python or as shipping native extensions.
+
+Reads the package names from a file, queries the PyPI JSON API for the available wheel
+tags (in a worker pool) and writes ``pure_python.txt``, ``native_extensions.txt`` and ``not_found.txt`` with the classification.
+
+Usage: purepy PACKAGES.txt [--pool-method map|starmap|imap_unordered|apply_async]
+
+Positional arguments:
+    package_list
+        Path to a file with one package per line.
+
+Options:
+    --pool-method
+        Multiprocessing pool method to use for PyPI queries.
+
+Examples:
+    $ purepy packages.txt
+
+Command-line script: run ``python purepy.py`` or the ``purepy`` command. The module is importable as well.
+"""
 
 import argparse
 from multiprocessing.pool import AsyncResult, Pool

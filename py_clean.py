@@ -1,4 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Strip the comments, docstrings and type hints of Python files with LibCST.
+
+``-c`` removes the comment blocks, ``-d`` the docstrings, ``-t`` the annotations plus the unused
+typing imports and ``-a`` everything; an ``.ignore`` file filters the tree, the writes can be
+previewed with ``--dry-run``/``--diff`` and backed up, and every pool method is supported.
+
+Usage: py_clean [-c] [-d] [-t] [-a] [--diff] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories (default: cwd)
+
+Options:
+    -c, --strip-comments
+        Also remove full-line comment blocks
+    -d, --strip-docstrings
+        Remove docstrings
+    -t, --strip-type-hints
+        Remove annotations and now-unused typing imports
+    -a, --all
+        Strip everything, including shebangs and protected comments
+    --pool-method
+        Multiprocessing dispatch method (default: apply_async)
+    --backup
+        Write a .bak copy before modifying
+    --dry-run
+        Show proposed changes (as a diff) without writing
+    --diff
+        Print a colorized diff of each change
+    -n, --stats
+        Print a per-file/total report
+    --ignore
+        Extra ignore pattern (repeatable)
+    ... plus 2 more; run ``py_clean --help`` for the full list.
+
+Examples:
+    $ py_clean -c -t --diff src/
+
+Command-line script: run ``python py_clean.py`` or the ``py_clean`` command. The module is importable as well.
+"""
 
 import argparse
 import difflib

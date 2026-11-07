@@ -1,4 +1,57 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Image and HTML conversion toolkit.
+
+Subcommands: ``to-jpg``/``to-png`` convert (Pillow, OpenCV, pillow-heif or ImageMagick), ``gif-to-jpg`` extracts
+the frames, ``invert`` negates the colours in place and ``html-to-png`` renders a file, a directory or an
+inline HTML string through WeasyPrint/pdf2image; ``--quality``, ``--overwrite`` and ``--delete-source`` control the output.
+
+Usage: imagetools {to-jpg,to-png,gif-to-jpg,invert,html-to-png} [options] [paths ...]
+
+Positional arguments:
+    paths ...
+        Files or directories (default: current directory).
+
+Subcommands:
+    to-jpg
+        Convert images to JPEG.
+    to-png
+        Convert images to PNG.
+    gif-to-jpg
+        Extract GIF frames as JPEGs.
+    invert
+        Invert image colours (negative) in place.
+    html-to-png
+        Render HTML (file, dir, or inline string) to PNG.
+
+Options:
+    -r, --recursive
+        Recurse into subdirectories (default).
+    --no-recursive
+        Do not recurse into subdirectories.
+    -o, --output
+        Output directory (default: alongside the source).
+    --overwrite
+        Overwrite existing output files.
+    -v, --verbose
+        Enable debug logging.
+    --ext
+        Input extensions (default: common raster + avif/heif).
+    --quality
+        JPEG quality 1-100 (default: 95).
+    --backend
+        Image backend (default: auto).
+    --delete-source
+        Delete the source file after a successful conversion.
+    --preserve-alpha
+        Keep alpha channel instead of flattening onto white.
+    ... plus 8 more; run ``imagetools --help`` for the full list.
+
+Examples:
+    $ imagetools to-jpg --quality 90 photos/
+    $ imagetools html-to-png page.html
+
+Command-line script: run ``python imagetools.py`` or the ``imagetools`` command. The module is importable as well.
+"""
 
 import argparse
 import sys

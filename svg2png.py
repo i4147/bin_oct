@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Convert an SVG file to PNG with CairoSVG.
+
+Writes the ``.png`` next to the source and, with ``-r``, deletes the original SVG.
+
+Usage: svg2png FILE.svg [-r]
+
+Examples:
+    $ svg2png logo.svg
+
+Runs as a script (``python svg2png.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import sys
 from pathlib import Path
 

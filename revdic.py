@@ -1,4 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Reverse the keys and values of a JSON dictionary in place.
+
+Loads the mapping, swaps keys with values, and writes the result back to the same file
+with two-space indentation and sorted keys.
+
+Usage: revdic FILE.json
+
+Examples:
+    $ revdic words.json
+
+Runs as a script (``python revdic.py``) in the directory it should act on; the module can also be
+imported.
+"""
 
 import json
 import sys

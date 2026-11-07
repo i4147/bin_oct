@@ -1,4 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Format shell scripts with ``shfmt`` in parallel.
+
+Formats the files given on the command line or, without arguments, every file below the
+current directory that either ends in ``.sh`` or starts with a shell shebang. Files that
+fail to format are listed and, with ``--move``, copied into an ``error`` directory.
+
+Usage: fmt_bash [options] [paths ...]
+
+Positional arguments:
+    paths ...
+        Optional file(s) to format. A single file is formatted directly (no Pool); the
+        file does not need a .sh extension. If omitted, shell files under CWD are used.
+
+Options:
+    --pool-method
+        Multiprocessing pool method to use for formatting (default: starmap).
+    -m, --move
+
+Examples:
+    $ fmt_bash scripts/
+    $ fmt_bash setup.sh --move
+
+Command-line script: run ``python fmt_bash.py`` or the ``fmt_bash`` command. The module is importable as well.
+"""
 
 import argparse
 import contextlib

@@ -1,4 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""A ripgrep-like recursive regex search in Python.
+
+Searches by regex or fixed string with the ignore-case, invert, multiline, only-matching
+and replace options, filters by the ``-e`` extensions or the ``-t`` type presets, honours an
+ignore file and skips the excluded globs, colouring the matches and streaming the files
+through a worker pool.
+
+Usage: pyrg PATTERN [-e EXT] [-t TYPE] [-i] [-F] [-o] [paths ...]
+
+Positional arguments:
+    pattern
+        Regex pattern (or use -r/--regexp)
+    paths ...
+        Files or directories to search (default: .)
+
+Options:
+    -r, --regexp
+        Pattern (alternative to the positional argument)
+    -e, --extension
+        Only search files with the given extension(s). Accepts dotless, dotted and
+        comma-separated values.
+    -t, --type
+    -i, --ignore-case
+    -F, --fixed-strings
+    -v, --invert-match
+    --multiline
+        Allow the pattern to span multiple lines (DOTALL)
+    -o, --only-matching
+        Print only the matched (or replaced) parts of lines
+    --replace
+        Replace matches with REPL in output (\\1 backrefs). Does NOT modify files.
+    -n, --line-number
+    ... plus 28 more; run ``pyrg --help`` for the full list.
+
+Examples:
+    $ pyrg 'def main' -t py -i
+    $ pyrg TODO -e md --replace 'DONE'
+
+Command-line script: run ``python pyrg.py`` or the ``pyrg`` command. The module is importable as well.
+"""
 
 import argparse
 import bisect

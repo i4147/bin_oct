@@ -1,4 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Spell text with the NATO phonetic alphabet.
+
+Takes the text as an argument or from ``-f`` and prints the letters as the NATO words
+(Alpha, Bravo ... Zulu), ignoring everything that is not a letter.
+
+Usage: nato TEXT | nato -f FILE
+
+Positional arguments:
+    text
+        Text to convert
+
+Options:
+    -f, --file
+        File to read text from
+
+Examples:
+    $ nato hello
+
+Command-line script: run ``python nato.py`` or the ``nato`` command. The module is importable as well.
+"""
 
 import argparse
 import sys

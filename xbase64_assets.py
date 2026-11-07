@@ -1,4 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Extract the base64-encoded assets of HTML/CSS/JS sources into the ``assets`` folder.
+
+Detects the ``data:`` URIs with tree-sitter or regexes, guesses the MIME type from the decoded
+signature, writes the assets into per-kind subdirectories with content-hashed names and
+can replace the URIs with the new paths, processing the tree concurrently with a JSON
+report.
+
+Usage: xbase64_assets [paths ...]
+
+Examples:
+    $ xbase64_assets dist/
+
+Runs as a script (``python xbase64_assets.py``) in the directory it should act on; the module can also be
+imported.
+"""
+
 import base64
 import hashlib
 import mimetypes

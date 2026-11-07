@@ -1,4 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Wrap the ``gh`` CLI so every invocation is logged.
+
+Finds the real ``gh`` binary, appends the command, the arguments, the exit status and the
+duration to a dated log file under ``~/tmp/log/apps`` and passes the output through unchanged.
+
+Usage: wrapper_gh [gh arguments ...]
+
+Examples:
+    $ wrapper_gh pr list
+
+Meant to shadow ``gh`` on ``PATH``; keep the real binary reachable at the path it probes.
+"""
 
 import datetime as dt
 import os
