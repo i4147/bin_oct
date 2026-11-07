@@ -33,7 +33,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
-from dh import NUM_WORKERS, is_binary, should_skip
+from dh import MAX_WORKERS, is_binary, should_skip
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -274,10 +274,10 @@ def main() -> int:
     if not files:
         logger.warning(f"{ANSI.YELLOW}No files found to process.{ANSI.RESET}")
         return 0
-    print(f"Processing files...\n(Using {ANSI.BOLD}{NUM_WORKERS}{ANSI.RESET} worker processes)")
+    print(f"Processing files...\n(Using {ANSI.BOLD}{MAX_WORKERS}{ANSI.RESET} worker processes)")
     stats: ProcessingStats = ProcessingStats(total_files=len(files))
     start_time: float = time.time()
-    with Pool(processes=NUM_WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[FileResult]] = [
             pool.apply_async(process_file_worker, (path, args.space)) for path in files
         ]

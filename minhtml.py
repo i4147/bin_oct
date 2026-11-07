@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
+import contextlib
 import argparse
 import fnmatch
 import glob as _glob
@@ -20,7 +21,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 
-from dh import MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 try:
@@ -42,7 +43,6 @@ except ImportError:
     except ImportError:
         _HAS_TRANSLIT = False
         _translit = None
-__version__: str = "0.5.1"
 type JobTuple = tuple[str, bool, str, tuple[str, ...], float, bool, str | None, bool, bool]
 type ResultTuple = tuple[str, int, int, str | None, str | None, float]
 DEFAULT_BASE_ARGS: tuple[str, ...] = (
@@ -51,26 +51,6 @@ DEFAULT_BASE_ARGS: tuple[str, ...] = (
     "--minify-css",
     "--minify-js",
 )
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "node_modules",
-    "venv",
-    ".venv",
-    "env",
-    ".env",
-    "dist",
-    "build",
-    ".next",
-    ".nuxt",
-    "target",
-    "__pycache__",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-})
 GREEN: str = "\x1b[32m"
 RED: str = "\x1b[31m"
 YELLOW: str = "\x1b[33m"
@@ -323,7 +303,7 @@ def _expand_arg(raw: str) -> list[Path]:
 def _collect(args: argparse.Namespace, cutoff: float | None) -> list[Path]:
     exclude_dirs: set[str] = set()
     if not args.no_default_excludes:
-        exclude_dirs.update(DEFAULT_EXCLUDE_DIRS)
+        exclude_dirs.update(SKIP_DIRS)
     exclude_dirs.update(args.exclude_dir)
     seen: set[Path] = set()
     out: list[Path] = []

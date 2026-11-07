@@ -18,7 +18,7 @@ import datetime as dt
 import sys
 from os import scandir as _scandir
 from pathlib import Path
-from dh import gsz2
+# from dh import gsz2
 
 REVERSE = "-r" in sys.argv
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         print(f"\x1b[05;93m{ctime}\x1b[0m")
     for dr in sorted(dirz):
         ctime = dt.datetime.fromtimestamp(dr.stat().st_ctime).strftime("%H:%M")
-        sz = str(fsz(gsz(dr))) + "/" + str(fsz(gsz2(dr)))
+        sz = str(fsz(gsz(dr))) # + "/" + str(fsz(gsz2(dr)))
         if len(sz) == 7:
             sz = "  " + sz
         if len(sz) == 8:

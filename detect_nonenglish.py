@@ -46,7 +46,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
 
-from dh import MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
 
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".txt",
@@ -98,25 +98,6 @@ DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".bib",
     ".gitignore",
     ".dockerfile",
-})
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".tox",
-    ".nox",
-    "build",
-    "dist",
-    "target",
-    ".idea",
-    ".vscode",
 })
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024
 DEFAULT_MIN_CONFIDENCE = 0.5
@@ -559,7 +540,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 2
     extensions = set(DEFAULT_EXTENSIONS)
     extensions.update(ext.lower() for ext in args.extensions)
-    exclude_dirs = set(DEFAULT_EXCLUDE_DIRS) | set(args.exclude_dirs)
+    exclude_dirs = set(SKIP_DIRS) | set(args.exclude_dirs)
     print(f"Scanning with backend: {args.backend}", file=sys.stderr)
     files = _discover_files(args.paths, extensions, exclude_dirs)
     print(f"Found {len(files)} candidate files.", file=sys.stderr)

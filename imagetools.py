@@ -59,7 +59,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-from dh import MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
 try:
@@ -119,20 +119,6 @@ def setup_logging(verbose: bool = False) -> None:
     pass
 
 
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
-    ".git",
-    ".hg",
-    ".svn",
-    "dist",
-    "build",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    "node_modules",
-    ".idea",
-    ".vscode",
-})
 JPG_INPUT_EXTS: frozenset[str] = frozenset({
     ".png",
     ".bmp",
@@ -178,7 +164,7 @@ def find_files(
     roots: Sequence[Path],
     extensions: Optional[Iterable[str]] = None,
     recursive: bool = True,
-    exclude_dirs: frozenset[str] = DEFAULT_EXCLUDE_DIRS,
+    exclude_dirs: frozenset[str] = SKIP_DIRS,
 ) -> list[Path]:
     exts = {e.lower() for e in extensions} if extensions else None
     results: list[Path] = []

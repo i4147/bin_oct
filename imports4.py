@@ -46,32 +46,13 @@ import time
 from pathlib import Path
 
 import requests
-from dh import PKG_MAPPING, STDLIB
+from dh import PKG_MAPPING, STDLIB, SKIP_DIRS
 from yarg import json2package
 from yarg.exceptions import HTTPError
 
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
 CACHE_DIR = Path.home() / ".cache" / "piplist"
 CACHE_TTL = 86400
-DEFAULT_EXCLUDE_DIRS = {
-    ".git",
-    ".hg",
-    ".svn",
-    ".tox",
-    ".venv",
-    "venv",
-    "env",
-    "build",
-    "dist",
-    "__pycache__",
-    "node_modules",
-    ".mypy_cache",
-    ".pytest_cache",
-    "site-packages",
-    ".eggs",
-    ".idea",
-    ".vscode",
-}
 OPTIONAL_EXC = ("ImportError", "ModuleNotFoundError")
 log = logging.getLogger("piplist")
 _MISSING = object()
@@ -292,7 +273,7 @@ def init(args):
     if not os.path.isdir(root):
         log.error("path does not exist: %s", root)
         return 2
-    ignore_dirs = DEFAULT_EXCLUDE_DIRS | set(args["ignore_dir"] or [])
+    ignore_dirs = SKIP_DIRS | set(args["ignore_dir"] or [])
     exclude = {normalize(e) for e in (args["exclude"] or [])}
     if args["ignore_file"]:
         exclude |= {normalize(x) for x in read_ignores(args["ignore_file"])}

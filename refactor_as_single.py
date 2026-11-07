@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from dh import WORKERS
+from dh import MAX_WORKERS
 
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
@@ -406,7 +406,7 @@ class ExecutorTransformer(ast.NodeTransformer):
             targets=[ast.Name(id="_pool", ctx=ast.Store())],
             value=ast.Call(
                 func=ast.Attribute(value=ast.Name(id="mp", ctx=ast.Load()), attr="Pool", ctx=ast.Load()),
-                args=[ast.Name(id="WORKERS", ctx=ast.Load())],
+                args=[ast.Name(id="MAX_WORKERS", ctx=ast.Load())],
                 keywords=[],
             ),
         )
@@ -590,8 +590,8 @@ def refactor(
         module = T().visit(module)
     module = OsPathTransformer(bare_path=bare_path).visit(module)
     module = ExecutorTransformer().visit(module)
-    module.body = [n for n in module.body if not _is_named_assign(n, "WORKERS")]
-    module.body.insert(0, _make_assign("WORKERS", ast.Constant(value=WORKERS)))
+    module.body = [n for n in module.body if not _is_named_assign(n, "MAX_WORKERS")]
+    module.body.insert(0, _make_assign("MAX_WORKERS", ast.Constant(value=MAX_WORKERS)))
     module = inject_standard_imports(module)
     strip_docstrings(module)
     ast.fix_missing_locations(module)
