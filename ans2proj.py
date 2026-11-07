@@ -14,11 +14,12 @@ Runs as a script (``python ans2proj.py``) in the directory it should act on; the
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 from loguru import logger
+
 
 HEADER_RE: re.Pattern[str] = re.compile(r"^##\s+`([^`]+)`\s*$", re.MULTILINE)
 OPEN_FENCE_RE: re.Pattern[str] = re.compile(r"```[^\n]*\n")

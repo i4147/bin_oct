@@ -57,17 +57,18 @@ Command-line script: run ``python ocrtools.py`` or the ``ocrtools`` command. The
 
 import argparse
 import csv
-import json
-import sys
-import time
 from datetime import datetime
 from itertools import product
+import json
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import sys
+import time
 from typing import Any, Callable, Iterable, Sequence
 
-from dh import DEFAULT_PREPARE_WORKERS, MAX_WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     import cv2
@@ -91,9 +92,11 @@ except ImportError:
     Image = None
     HAS_PIL = False
 try:
-    from skimage import color as skcolor
-    from skimage import filters as skfilters
-    from skimage import io as skiio
+    from skimage import (
+        color as skcolor,
+        filters as skfilters,
+        io as skiio,
+    )
     from skimage.filters import threshold_local
     from skimage.util import img_as_ubyte
 

@@ -21,12 +21,12 @@ Examples
   python3 package_exports_tool.py check mypackage/ --fix
 """
 
-
 import argparse
 import ast
-import sys
 from collections.abc import Sequence
 from pathlib import Path
+import sys
+
 
 Categories = dict[str, list[str]]  # {"functions": [...], "classes": [...], "constants": [...]}
 MissingMap = dict[str, Categories]  # filename -> categories
@@ -87,9 +87,7 @@ def extract_exports(init_path: Path) -> tuple[set[str], ast.Assign | None]:
     if tree is None:
         return exported, None
     for node in tree.body:
-        if isinstance(node, ast.Assign) and any(
-            isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets
-        ):
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets):
             all_node = node
             exported.update(literal_str_list(node.value))
         elif isinstance(node, ast.ImportFrom):
@@ -109,15 +107,11 @@ def find_missing(directory: Path) -> MissingMap:
         raise SystemExit(f"Error: no __init__.py found in {directory}")
     exported, _ = extract_exports(init_path)
     missing: MissingMap = {}
-    modules = sorted(
-        p for p in directory.glob("*.py") if p.name != "__init__.py" and not p.name.startswith("_")
-    )
+    modules = sorted(p for p in directory.glob("*.py") if p.name != "__init__.py" and not p.name.startswith("_"))
     for py_file in modules:
         file_missing: Categories = empty_categories()
         for category, names in extract_definitions(py_file).items():
-            file_missing[category] = [
-                name for name in names if name not in exported and py_file.stem not in exported
-            ]
+            file_missing[category] = [name for name in names if name not in exported and py_file.stem not in exported]
         if any(file_missing.values()):
             missing[py_file.name] = file_missing
     return missing
@@ -196,8 +190,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Check __init__.py exports against package modules.")
     sub = parser.add_subparsers(dest="command", required=True)
     check = sub.add_parser("check", help="Report (and optionally fix) missing exports")
-    check.add_argument("directory", nargs="?", type=Path, default=Path.cwd(),
-                       help="Package directory (default: current dir)")
+    check.add_argument(
+        "directory", nargs="?", type=Path, default=Path.cwd(), help="Package directory (default: current dir)"
+    )
     check.add_argument("-a", "--fix", action="store_true", help="Add missing imports to __init__.py")
     check.add_argument("--dry-run", action="store_true", help="With --fix, preview without writing")
     check.set_defaults(handler=cmd_check)

@@ -3,22 +3,23 @@
 import argparse
 import base64
 import binascii
+from collections import deque
+from collections.abc import Iterator, Sequence
 import concurrent.futures
+from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import mimetypes
 import os
+from pathlib import Path
 import re
 import sys
-from collections import deque
-from collections.abc import Iterator, Sequence
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Final
 from urllib.parse import quote
 
 from atomicio import atomic_write
-from dh import MAX_WORKERS, workers
+from dh import MAX_WORKERS
+
 
 PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?<![A-Za-z0-9_+/-])"

@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
-import json
-import re
-import sys
 from dataclasses import dataclass
+import json
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Iterable, Iterator, Sequence
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 SOURCE_CODE_EXTS: frozenset[str] = frozenset({
     ".py",

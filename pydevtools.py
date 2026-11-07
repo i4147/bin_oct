@@ -48,18 +48,19 @@ Command-line script: run ``python pydevtools.py`` or the ``pydevtools`` command.
 
 import argparse
 import configparser
+from dataclasses import dataclass, field
+from email.parser import Parser
 import json
+from pathlib import Path
 import pprint
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import zipfile
-from dataclasses import dataclass, field
-from email.parser import Parser
-from pathlib import Path
 from typing import Any, Iterable, Sequence
+import zipfile
+
 
 try:
     import tomllib

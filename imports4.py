@@ -39,16 +39,17 @@ import hashlib
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import time
-from pathlib import Path
 
+from dh import PKG_MAPPING, SKIP_DIRS, STDLIB
 import requests
-from dh import PKG_MAPPING, STDLIB, SKIP_DIRS
 from yarg import json2package
 from yarg.exceptions import HTTPError
+
 
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
 CACHE_DIR = Path.home() / ".cache" / "piplist"

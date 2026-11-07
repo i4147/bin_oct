@@ -17,11 +17,12 @@ imported.
 import csv
 import json
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 import ssdeep
+
 
 try:
     from tabulate import tabulate

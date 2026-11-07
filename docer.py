@@ -13,8 +13,8 @@ Runs as a script (``python docer.py``) in the directory it should act on; the mo
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def process_file(path) -> None:

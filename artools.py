@@ -51,26 +51,27 @@ Command-line script: run ``python artools.py`` or the ``artools`` command. The m
 import argparse
 import bz2
 import contextlib
+from datetime import datetime
 import gzip
 import io
 import lzma
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import sys
 import tarfile
 import tempfile
-import zipfile
-from datetime import datetime
-from multiprocessing import Pool
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Optional
+import zipfile
 
 import brotli
 import cramjam
+from dh import MAX_WORKERS
+from loguru import logger
 import lz4.frame
 import py7zr
 import zstandard as zstd
-from dh import MAX_WORKERS
-from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

@@ -13,9 +13,9 @@ Runs as a script (``python f2l.py``) in the directory it should act on; the modu
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def main() -> None:

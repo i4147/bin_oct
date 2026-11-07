@@ -19,8 +19,8 @@ Command-line script: run ``python pip_reinstaller.py`` or the ``pip_reinstaller`
 import argparse
 import importlib.metadata
 import multiprocessing
-import sys
 from pathlib import Path
+import sys
 
 from pip._internal.commands import main as pip_main
 

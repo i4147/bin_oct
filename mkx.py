@@ -15,10 +15,11 @@ imported.
 
 import multiprocessing as mp
 import os
-import re
 from pathlib import Path
+import re
 
-from dh import WORKERS
+from dh import MAX_WORKERS
+
 
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}
@@ -104,7 +105,7 @@ def main():
         print("No files found.")
         return 0
     changed = errors = 0
-    with mp.Pool(processes=WORKERS) as pool:
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         results = [pool.apply_async(process, (f,)) for f in files]
         for r in results:
             path_str, did_change, err = r.get()

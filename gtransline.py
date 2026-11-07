@@ -27,13 +27,14 @@ Command-line script: run ``python gtransline.py`` or the ``gtransline`` command.
 
 import argparse
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Final
 
-from dh import MAX_WORKERS, SKIP_DIRS
+from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     from googletrans import Translator

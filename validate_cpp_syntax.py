@@ -14,11 +14,12 @@ imported.
 """
 
 import multiprocessing as mp
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 from dh import NUM_WORKERS
+
 
 CPP_EXTS = {".cpp", ".cc", ".cxx"}
 C_EXTS = {".c"}

@@ -14,9 +14,10 @@ Runs as a script (``python cleanlog.py``) in the directory it should act on; the
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 ANSI_ESCAPE_RE = re.compile(
     r"""

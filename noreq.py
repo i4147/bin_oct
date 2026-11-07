@@ -13,11 +13,11 @@ Examples:
 Destructive: it strips dependency metadata from the packages in the current tree.
 """
 
+from pathlib import Path
 import shutil
 import tarfile
 import tempfile
 import zipfile
-from pathlib import Path
 
 
 def is_wheel_ok(path: Path) -> bool:

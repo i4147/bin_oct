@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from deep_translator import GoogleTranslator, single_detection
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 CHINESE_RE = re.compile(
     "[\u4e00-\u9fff"

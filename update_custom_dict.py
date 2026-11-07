@@ -17,16 +17,17 @@ Command-line script: run ``python update_custom_dict.py`` or the ``update_custom
 """
 
 import argparse
+from collections import Counter
 import contextlib
 import json
 import multiprocessing as mp
 import os
-import re
-from collections import Counter
 from pathlib import Path
+import re
 
 from atomicio import atomic_write_text
 from dh import SKIP_DIRS
+
 
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"

@@ -49,15 +49,16 @@ Command-line script: run ``python fuzzy_dedup.py`` or the ``fuzzy_dedup`` comman
 """
 
 import argparse
+from collections import defaultdict
 import csv
+from dataclasses import dataclass
 import json
 import os
+from pathlib import Path
 import shutil
 import sys
-from collections import defaultdict
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Iterator, Mapping, Sequence
+
 
 try:
     import ssdeep
@@ -70,8 +71,11 @@ except ImportError as exc:
     msg = "Missing dependency: xxhash. Install it with: pip install xxhash"
     raise SystemExit(msg) from exc
 try:
-    from colorama import Fore, Style
-    from colorama import init as colorama_init
+    from colorama import (
+        Fore,
+        Style,
+        init as colorama_init,
+    )
 except ImportError:
     Fore = None
     Style = None

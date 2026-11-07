@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 import hunspell
+
 
 DICT_PATHS = [
     (

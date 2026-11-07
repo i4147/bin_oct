@@ -25,16 +25,17 @@ Command-line script: run ``python pyrun.py`` or the ``pyrun`` command. The modul
 """
 
 import argparse
-import subprocess
-import sys
-import time
 from dataclasses import dataclass, field
 from enum import Enum
 from multiprocessing import Pool
 from pathlib import Path
+import subprocess
+import sys
+import time
 
-from dh import WORKER_COUNT
+from dh import MAX_WORKERS
 from loguru import logger
+
 
 DEFAULT_TIMEOUT = 30.0
 MAX_ERROR_MSG_LEN = 200
@@ -232,12 +233,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     mode = "recursively" if recursive else "non-recursively"
     print(f"Scanning {mode} in: {directory}")
-    print(f"Found {len(files)} Python file(s) | Using {WORKER_COUNT} workers with {timeout}s timeout")
+    print(f"Found {len(files)} Python file(s) | Using {MAX_WORKERS} workers with {timeout}s timeout")
     print("-" * 60)
     summary = Summary()
     start_time = time.monotonic()
     try:
-        with Pool(processes=WORKER_COUNT) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             pending = [(path, pool.apply_async(run_file, (path, timeout))) for path in files]
             for path, async_result in pending:
                 try:

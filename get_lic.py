@@ -14,11 +14,11 @@ Runs as a script (``python get_lic.py``) in the directory it should act on; the 
 imported.
 """
 
+from datetime import date
 import os
+from pathlib import Path
 import re
 import sys
-from datetime import date
-from pathlib import Path
 from typing import Final
 
 import click

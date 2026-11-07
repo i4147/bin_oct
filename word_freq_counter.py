@@ -13,15 +13,16 @@ Runs as a script (``python word_freq_counter.py``) in the directory it should ac
 imported.
 """
 
-import json
-import re
 from collections import Counter
+import json
 from multiprocessing import Pool
 from pathlib import Path
+import re
 from typing import Any
 
 from dh import MAX_WORKERS, get_nobinary
 from loguru import logger
+
 
 WORD_PATTERN: re.Pattern[str] = re.compile(r"\b[a-z]+\b")
 OUTPUT_FILE: Path = Path("counter.json")

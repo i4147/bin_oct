@@ -22,10 +22,10 @@ Command-line script: run ``python detect_noneng.py`` or the ``detect_noneng`` co
 """
 
 import argparse
-import re
-import shutil
 from concurrent.futures import as_completed
 from pathlib import Path
+import re
+import shutil
 
 from dh import SKIP_DIRS
 from rich.console import Console
@@ -38,6 +38,7 @@ from rich.progress import (
     TimeElapsedColumn,
     TimeRemainingColumn,
 )
+
 
 try:
     from concurrent.futures import InterpreterPoolExecutor

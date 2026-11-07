@@ -22,15 +22,15 @@ Examples
   python3 env_secret_tool.py extract-tokens README.md
 """
 
-
 import argparse
-import json
-import re
-import sys
 from collections import defaultdict
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
+import json
 from pathlib import Path
+import re
+import sys
+
 
 ENV_ASSIGN: re.Pattern[str] = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=")
 ENV_CODE: re.Pattern[str] = re.compile(
@@ -39,8 +39,24 @@ ENV_CODE: re.Pattern[str] = re.compile(
 )
 SKIP_DIRS: frozenset[str] = frozenset({".git", ".venv", "venv", "__pycache__", "node_modules"})
 SKIP_SUFFIXES: frozenset[str] = frozenset({
-    ".pyc", ".so", ".o", ".a", ".exe", ".dll", ".dylib", ".jpg", ".png",
-    ".gif", ".pdf", ".zip", ".tar", ".gz", ".svg", ".lock", ".bin", ".class",
+    ".pyc",
+    ".so",
+    ".o",
+    ".a",
+    ".exe",
+    ".dll",
+    ".dylib",
+    ".jpg",
+    ".png",
+    ".gif",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".svg",
+    ".lock",
+    ".bin",
+    ".class",
 })
 SECRET_PATTERNS: dict[str, str] = {
     "AWS Key": r"AKIA[0-9A-Z]{16}",
@@ -56,12 +72,18 @@ SECRET_PATTERNS: dict[str, str] = {
     "JWT Token": r"eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
 }
 MODEL_TO_VAR: dict[str, str] = {
-    "baidu/cobuddy:free": "COBUDDY_TOKEN", "claude-opus-4-7": "CLAUDE_TOKEN",
-    "deepseek-chat": "DEEPSEEK_CHAT_TOKEN", "deepseek-v4-flash": "DEEPSEEK_V4F_TOKEN",
-    "deepseek-v4-pro": "DEEPSEEK_V4P_TOKEN", "gemini-2.5-flash": "GEMINI_F_TOKEN",
-    "kimi-k2.5": "KIMI_TOKEN", "openrouter/owl-alpha": "OPENROUTER_TOKEN",
-    "openai/gpt-5.5": "OPENAI_GPT55_TOKEN", "openai/gpt-5.5-pro": "OPENAI_GPT55P_TOKEN",
-    "text-embedding-3-small": "TEXT_EMBEDDING_TOKEN", "x-ai/grok-4.3": "GROK_TOKEN",
+    "baidu/cobuddy:free": "COBUDDY_TOKEN",
+    "claude-opus-4-7": "CLAUDE_TOKEN",
+    "deepseek-chat": "DEEPSEEK_CHAT_TOKEN",
+    "deepseek-v4-flash": "DEEPSEEK_V4F_TOKEN",
+    "deepseek-v4-pro": "DEEPSEEK_V4P_TOKEN",
+    "gemini-2.5-flash": "GEMINI_F_TOKEN",
+    "kimi-k2.5": "KIMI_TOKEN",
+    "openrouter/owl-alpha": "OPENROUTER_TOKEN",
+    "openai/gpt-5.5": "OPENAI_GPT55_TOKEN",
+    "openai/gpt-5.5-pro": "OPENAI_GPT55P_TOKEN",
+    "text-embedding-3-small": "TEXT_EMBEDDING_TOKEN",
+    "x-ai/grok-4.3": "GROK_TOKEN",
 }
 
 
@@ -242,8 +264,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     ss = sub.add_parser("scan-secrets", help="Scan a tree for leaked secrets")
     ss.add_argument("root", nargs="?", type=Path, default=Path.cwd())
-    ss.add_argument("--allow", nargs="*", default=[], metavar="TEXT",
-                    help="Ignore lines containing any of these strings")
+    ss.add_argument(
+        "--allow", nargs="*", default=[], metavar="TEXT", help="Ignore lines containing any of these strings"
+    )
     ss.add_argument("--json-out", type=Path, default=None, help="Write findings as JSON")
     ss.add_argument("-j", "--workers", type=int, default=8)
     ss.set_defaults(handler=cmd_scan_secrets)

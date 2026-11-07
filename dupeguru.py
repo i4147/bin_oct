@@ -27,16 +27,16 @@ Command-line script: run ``python dupeguru.py`` or the ``dupeguru`` command. The
 """
 
 import argparse
+from collections import defaultdict
 import hashlib
 import multiprocessing as mp
 import os
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 from typing import Iterable, Iterator
 
 from dh import MAX_WORKERS, SKIP_DIRS
-from loguru import logger
+
 
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16

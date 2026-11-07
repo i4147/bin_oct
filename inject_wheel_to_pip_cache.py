@@ -14,14 +14,14 @@ Runs as a script (``python inject_wheel_to_pip_cache.py``) in the directory it s
 imported.
 """
 
+from email import policy
+from email.parser import Parser
 import hashlib
 import json
+from pathlib import Path
 import shutil
 import subprocess
 import zipfile
-from email import policy
-from email.parser import Parser
-from pathlib import Path
 
 from pip._internal.utils.compatibility_tags import interpreter_name, interpreter_version
 from pip._internal.utils.urls import path_to_url

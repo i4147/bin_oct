@@ -1,20 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import importlib
 import json
 import os
+from pathlib import Path
 import platform
 import sys
 import tempfile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Callable
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     from loguru import logger

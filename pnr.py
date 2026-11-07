@@ -25,8 +25,8 @@ Command-line script: run ``python pnr.py`` or the ``pnr`` command. The module is
 """
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 from dh import SKIP_DIRS, unique_path
 

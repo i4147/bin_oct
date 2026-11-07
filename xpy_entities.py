@@ -55,21 +55,22 @@ Command-line script: run ``python xpy_entities.py`` or the ``xpy_entities`` comm
 
 import argparse
 import ast
+from collections import defaultdict
+from dataclasses import dataclass, field
 import io
 import json
 import os
+from pathlib import Path
 import re
 import sqlite3
 import sys
 import tarfile
 import textwrap
-import zipfile
-from collections import defaultdict
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterable, Iterator
+import zipfile
 
 from dh import SKIP_DIRS
+
 
 try:
     import libcst as cst

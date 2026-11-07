@@ -20,8 +20,9 @@ Command-line script: run ``python faedit.py`` or the ``faedit`` command. The mod
 
 import argparse
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 try:
     from faprint import format_persian

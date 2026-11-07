@@ -14,10 +14,11 @@ Runs as a script (``python rmi.py``) in the directory it should act on; the modu
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_nobinary
+
 
 INVISIBLE_CHARS = {
     "\u200b",

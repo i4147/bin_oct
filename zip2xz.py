@@ -13,11 +13,11 @@ Runs as a script (``python zip2xz.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import zipfile
-from pathlib import Path
 
 
 def convert(zip_path: Path) -> Path:

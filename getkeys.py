@@ -26,8 +26,8 @@ Command-line script: run ``python getkeys.py`` or the ``getkeys`` command. The m
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any
 
 

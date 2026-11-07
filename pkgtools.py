@@ -58,10 +58,10 @@ import csv
 import fnmatch
 import importlib.metadata
 import os
+from pathlib import Path
 import shutil
 import site
 import sys
-from pathlib import Path
 from typing import Any, Sequence
 
 from dh import MAX_WORKERS

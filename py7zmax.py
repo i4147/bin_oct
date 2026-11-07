@@ -16,8 +16,8 @@ imported.
 
 import lzma
 import os
-import sys
 from pathlib import Path
+import sys
 
 import py7zr
 

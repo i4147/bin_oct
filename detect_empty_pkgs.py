@@ -20,12 +20,13 @@ Command-line script: run ``python detect_empty_pkgs.py`` or the ``detect_empty_p
 import argparse
 import ast
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import tarfile
 import zipfile
-from pathlib import Path
 
-from dh import WORKERS
+from dh import MAX_WORKERS
+
 
 MIN_ARCHIVE_BYTES = 300
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
@@ -320,10 +321,10 @@ def main():
         p for pattern in TARGET_GLOBS for p in cwd.rglob(pattern) if p.is_file() and empty_dir not in p.parents
     })
     mode = "APPLY" if args.apply else "DRY-RUN"
-    print(f"[{mode}] scanning {len(targets)} archive(s) with {WORKERS} workers\n")
+    print(f"[{mode}] scanning {len(targets)} archive(s) with {MAX_WORKERS} workers\n")
     matched = 0
     moved = 0
-    with mp.Pool(WORKERS) as pool:
+    with mp.Pool(MAX_WORKERS) as pool:
         for path, reason in pool.imap_unordered(analyze, targets, chunksize=1):
             if reason is None:
                 continue

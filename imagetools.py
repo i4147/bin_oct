@@ -54,13 +54,13 @@ Command-line script: run ``python imagetools.py`` or the ``imagetools`` command.
 """
 
 import argparse
-import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 try:
     from PIL import Image, UnidentifiedImageError

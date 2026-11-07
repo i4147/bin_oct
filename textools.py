@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
-import json
-import mimetypes
-import re
-import sys
 from collections import Counter
 from datetime import datetime
+import json
+import mimetypes
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any, Sequence
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 try:
     import nltk

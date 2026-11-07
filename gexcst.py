@@ -14,17 +14,18 @@ Runs as a script (``python gexcst.py``) in the directory it should act on; the m
 imported.
 """
 
+from multiprocessing import Pool, cpu_count
 import os
+from pathlib import Path
 import re
 import shutil
 import tarfile
-import zipfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any
+import zipfile
 
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
+
 
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (

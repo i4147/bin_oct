@@ -42,19 +42,20 @@ Command-line script: run ``python pyrg.py`` or the ``pyrg`` command. The module 
 
 import argparse
 import bisect
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, field
 import fnmatch
 import json
 import os
+from pathlib import Path
 import re
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
 
 from dh import MAX_WORKERS, SKIP_DIRS, is_binary
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

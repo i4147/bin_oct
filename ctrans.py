@@ -37,6 +37,8 @@ Command-line script: run ``python ctrans.py`` or the ``ctrans`` command. The mod
 
 import argparse
 import asyncio
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 import contextlib
 import importlib
 import inspect
@@ -48,9 +50,8 @@ import signal
 import sys
 import tempfile
 import threading
-from collections import deque
-from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
+
 
 try:
     from loguru import logger

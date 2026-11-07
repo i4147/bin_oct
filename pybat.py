@@ -36,14 +36,14 @@ Command-line script: run ``python pybat.py`` or the ``pybat`` command. The modul
 """
 
 import argparse
+from dataclasses import dataclass, field
 import io
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Optional
 
 from pygments import highlight as pyg_highlight
@@ -51,6 +51,7 @@ from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
 from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer
 from pygments.styles import get_all_styles, get_style_by_name
 from pygments.util import ClassNotFound
+
 
 RESET = "\x1b[0m"
 GRID_COLOR = "\x1b[38;5;238m"

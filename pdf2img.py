@@ -13,8 +13,8 @@ Examples:
 Deletes each PDF once all of its pages were written.
 """
 
-import shutil
 from pathlib import Path
+import shutil
 
 import pymupdf
 

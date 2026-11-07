@@ -28,8 +28,8 @@ Command-line script: run ``python get_keys.py`` or the ``get_keys`` command. The
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Iterator
 
 

@@ -41,12 +41,13 @@ Command-line script: run ``python erap.py`` or the ``erap`` command. The module 
 import argparse
 import json
 import multiprocessing
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 from typing import Iterable, Iterator
 
 from dh import MAX_WORKERS
+
 
 APPEND_TOOLS: dict[str, list[str]] = {
     "ty": ["ty", "check"],

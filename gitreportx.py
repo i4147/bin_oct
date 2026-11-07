@@ -25,11 +25,12 @@ Command-line script: run ``python gitreportx.py`` or the ``gitreportx`` command.
 """
 
 import argparse
-import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
+import subprocess
+import sys
 from typing import Iterator, Literal, Protocol, Sequence
+
 
 try:
     import git as gitpython

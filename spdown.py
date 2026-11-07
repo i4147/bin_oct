@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-import hashlib
-import sys
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
+import sys
 from urllib.parse import unquote, urljoin, urlparse
 
 import httpx
@@ -21,6 +21,7 @@ from packaging.utils import (
 )
 from packaging.version import InvalidVersion, Version
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+
 
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"

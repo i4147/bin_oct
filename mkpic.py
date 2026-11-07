@@ -16,10 +16,11 @@ imported.
 
 import compileall
 import os
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_pyfiles, mpf
+
 
 REMOVE_ORIG = False
 LEGACY_MODE = False

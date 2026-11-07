@@ -7,11 +7,11 @@ import hashlib
 import json
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
 import tarfile
-from pathlib import Path
 
 from dh import MAX_WORKERS
 from loguru import logger

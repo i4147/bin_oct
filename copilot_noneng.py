@@ -28,15 +28,16 @@ Command-line script: run ``python copilot_noneng.py`` or the ``copilot_noneng`` 
 import argparse
 import json
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import threading
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import gcld3
-import pycld2 as cld2
 from dh import MAX_WORKERS, is_binary
+import gcld3
 from langdetect import DetectorFactory, detect_langs
+import pycld2 as cld2
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

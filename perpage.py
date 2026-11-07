@@ -35,6 +35,7 @@ from dh import MAX_WORKERS
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
 
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 POOL_METHODS: Final[tuple[str, ...]] = (

@@ -26,19 +26,16 @@ Examples
   python3 python_normalize_tool.py print-sep . -a --replacement "print('='*60)"
 """
 
-
 import argparse
-import io
-import re
-import sys
-import tokenize
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+import re
+import sys
+import tokenize
 
-SEPARATOR_RE: re.Pattern[str] = re.compile(
-    r"""(cprint|print)\s*\(\s*['"](.)['"](\s*\*\s*)(\d+)([^)]*)\)"""
-)
+
+SEPARATOR_RE: re.Pattern[str] = re.compile(r"""(cprint|print)\s*\(\s*['"](.)['"](\s*\*\s*)(\d+)([^)]*)\)""")
 DEFAULT_REPLACEMENT: str = "print('-'*42)"
 OPENERS: dict[str, str] = {"(": ")", "[": "]", "{": "}"}
 CLOSERS: dict[str, str] = {v: k for k, v in OPENERS.items()}
@@ -109,7 +106,8 @@ def cmd_brackets(args: argparse.Namespace) -> int:
         try:
             balanced: bool = (
                 brackets_balanced_naive(path.read_text(encoding="utf-8", errors="ignore"))
-                if args.naive else brackets_balanced_tokens(path)
+                if args.naive
+                else brackets_balanced_tokens(path)
             )
         except (tokenize.TokenError, SyntaxError, OSError) as exc:
             print(f"error: {path}: {exc}")
@@ -140,8 +138,13 @@ def fix_is_not(path: Path, fix: bool) -> ScanResult:
     while index < len(tokens):
         tok: tokenize.TokenInfo = tokens[index]
         nxt: tokenize.TokenInfo | None = tokens[index + 1] if index + 1 < len(tokens) else None
-        if (tok.type == tokenize.NAME and tok.string == "is" and nxt is not None
-                and nxt.type == tokenize.NAME and nxt.string == "not"):
+        if (
+            tok.type == tokenize.NAME
+            and tok.string == "is"
+            and nxt is not None
+            and nxt.type == tokenize.NAME
+            and nxt.string == "not"
+        ):
             result.count += 1
             lines.append(tok.start[0])
             if fix:
@@ -171,8 +174,10 @@ def cmd_is_not(args: argparse.Namespace) -> int:
             hits_total += result.count
             state: str = "FIXED" if args.fix else "FOUND"
             print(f"[{state}] {path} -> {result.count}x ({result.detail})")
-    print(f"Summary: {files_total} file(s), {hits_total} instance(s) of 'is not'"
-          + ("" if args.fix else " (dry run; add --fix)"))
+    print(
+        f"Summary: {files_total} file(s), {hits_total} instance(s) of 'is not'"
+        + ("" if args.fix else " (dry run; add --fix)")
+    )
     return 0
 
 

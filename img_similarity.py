@@ -50,15 +50,16 @@ Command-line script: run ``python img_similarity.py`` or the ``img_similarity`` 
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import re
 import shutil
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
 from dh import MAX_WORKERS
+
 
 SUPPORTED_EXTS = {
     ".jpg",

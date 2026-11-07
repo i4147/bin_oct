@@ -14,8 +14,8 @@ imported.
 """
 
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import Iterable
 
 import rarfile

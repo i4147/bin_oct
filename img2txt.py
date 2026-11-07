@@ -14,13 +14,14 @@ Runs as a script (``python img2txt.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from collections import deque
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
 from PIL import Image
 from pytesseract import image_to_string
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

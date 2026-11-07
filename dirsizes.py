@@ -32,13 +32,14 @@ Command-line script: run ``python dirsizes.py`` or the ``dirsizes`` command. The
 import argparse
 import heapq
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Generator
 
 from rich.console import Console
 from rich.status import Status
+
 
 console = Console()
 

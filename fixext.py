@@ -23,13 +23,13 @@ Command-line script: run ``python fixext.py`` or the ``fixext`` command. The mod
 """
 
 import argparse
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import Any, Final
 
-from dh import SKIP_DIRS, MAX_WORKERS, is_binary, runcmd, unique_path
+from dh import MAX_WORKERS, SKIP_DIRS, is_binary, runcmd, unique_path
 from loguru import logger
 
 

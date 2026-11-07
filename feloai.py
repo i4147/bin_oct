@@ -16,9 +16,10 @@ imported.
 
 import datetime as dt
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+
 
 LOG_DIR = Path.home() / "tmp" / "apps"
 FSA = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"

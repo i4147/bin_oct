@@ -14,8 +14,8 @@ Runs as a script (``python strip_installed_pkgs.py``) in the directory it should
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import STDLIB, get_installed_pkgs
 

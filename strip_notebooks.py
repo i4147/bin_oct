@@ -2,13 +2,14 @@
 
 import argparse
 import json
-import sys
 from multiprocessing import Pool
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+import sys
+from typing import TYPE_CHECKING
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

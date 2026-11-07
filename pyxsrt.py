@@ -47,11 +47,12 @@ Command-line script: run ``python pyxsrt.py`` or the ``pyxsrt`` command. The mod
 """
 
 import argparse
+from dataclasses import dataclass
 import json
+from pathlib import Path
 import subprocess
 import sys
-from dataclasses import dataclass
-from pathlib import Path
+
 
 SRT_CODEC_NAMES: frozenset[str] = frozenset({"subrip", "srt"})
 PROBE_ENTRIES: str = "stream=index,codec_name:stream_tags=language,title:stream_disposition=forced"

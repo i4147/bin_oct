@@ -15,11 +15,12 @@ imported.
 """
 
 import io
-import sys
 from pathlib import Path
+import sys
 
 from atomicio import atomic_write
 from PIL import Image, ImageOps, UnidentifiedImageError
+
 
 DIRECT_MODES = {"L", "RGB", "CMYK"}
 

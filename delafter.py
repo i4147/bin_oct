@@ -13,8 +13,8 @@ Runs as a script (``python delafter.py``) in the directory it should act on; the
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def read_lines(path):

@@ -16,6 +16,7 @@ imported.
 import curses
 from pathlib import Path
 
+
 LINES_PER_FILE = 20
 
 

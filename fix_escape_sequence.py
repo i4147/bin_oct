@@ -24,12 +24,13 @@ Command-line script: run ``python fix_escape_sequence.py`` or the ``fix_escape_s
 import argparse
 import io
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tokenize
 import warnings
-from pathlib import Path
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")

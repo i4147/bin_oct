@@ -40,11 +40,12 @@ import os
 import pathlib
 import shutil
 import subprocess
+from typing import Any, Optional
 import urllib.error
 import urllib.request
-from typing import Any, Optional
 
 from dh import MAX_WORKERS
+
 
 _SOURCE_CITATION: str = "[cite: 1]"
 

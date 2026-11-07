@@ -5,8 +5,9 @@ Pass a file path as the first argument. The selected string is 480 if it
 appears anywhere in the file, otherwise 720. Rewrite only if lines match.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     fn = Path(sys.argv[1])

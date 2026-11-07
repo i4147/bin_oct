@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from dataclasses import dataclass
 import multiprocessing as mp
 import os
-import re
-from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING
 
-import libcst as cst
-from dh import MAX_WORKERS, SKIP_DIRS
 from atomicio import atomic_write
+from dh import MAX_WORKERS, SKIP_DIRS
+import libcst as cst
 from rich.console import Console
 from rich.text import Text
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

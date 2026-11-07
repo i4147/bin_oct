@@ -42,19 +42,20 @@ Command-line script: run ``python ncdu.py`` or the ``ncdu`` command. The module 
 
 import argparse
 import curses
+from dataclasses import dataclass, field
 import json
 import multiprocessing as mp
 import os
+from pathlib import Path
 import shutil
 import stat
 import sys
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Iterator
 
-from dh import WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
+
 
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"
@@ -296,7 +297,7 @@ def parallel_scan(
 ) -> Node:
     root = root.resolve()
     LOG.info("scan root      : {}", root)
-    LOG.info("worker processes: {} (fixed)", WORKERS)
+    LOG.info("worker processes: {} (fixed)", MAX_WORKERS)
     LOG.info(
         "options        : one_filesystem={} follow_symlinks={} exclude={}",
         one_filesystem,
@@ -325,8 +326,8 @@ def parallel_scan(
     ctx = mp.get_context("fork" if sys.platform != "win32" else "spawn")
     LOG.debug("multiprocessing start method: {}", ctx.get_start_method())
     results: list[tuple[Path, "mp.pool.AsyncResult[dict[str, Any]]"]] = []
-    with ctx.Pool(processes=WORKERS) as pool:
-        LOG.info("pool created with {} workers", WORKERS)
+    with ctx.Pool(processes=MAX_WORKERS) as pool:
+        LOG.info("pool created with {} workers", MAX_WORKERS)
         for entry in top_entries:
             LOG.debug("apply_async -> {}", entry)
             ar = pool.apply_async(
@@ -752,7 +753,7 @@ class Browser:
         scr.addnstr(
             h - 1,
             0,
-            f" rescanning {target} with {WORKERS} workers ... ".ljust(w)[:w],
+            f" rescanning {target} with {MAX_WORKERS} workers ... ".ljust(w)[:w],
             w,
             curses.color_pair(1),
         )

@@ -18,9 +18,10 @@ Command-line script: run ``python html_tag_balancer.py`` or the ``html_tag_balan
 
 import argparse
 import contextlib
-import sys
 from html.parser import HTMLParser
 from pathlib import Path
+import sys
+
 
 VOID_ELEMENTS = frozenset({
     "area",

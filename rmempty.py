@@ -13,10 +13,11 @@ Runs as a script (``python rmempty.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint, get_files
+
 
 TIMEOUT = 0
 

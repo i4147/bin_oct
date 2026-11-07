@@ -13,14 +13,15 @@ Runs as a script (``python dos2utf8.py``) in the directory it should act on; the
 imported.
 """
 
-import os
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from pathlib import Path
+import sys
 from typing import Iterator
 
 from dh import SKIP_DIRS, is_binary
 from loguru import logger
+
 
 logger.remove()
 logger.add(

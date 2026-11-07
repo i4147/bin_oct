@@ -28,31 +28,61 @@ Examples
   python3 crypto_text_tool.py zip-crack secret.zip -w wordlist.txt
 """
 
-
 import argparse
+from collections.abc import Iterator, Sequence
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from itertools import islice
 import os
+from pathlib import Path
 import secrets
 import string
 import sys
 import time
 import zipfile
-from collections.abc import Iterator, Sequence
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from itertools import islice
-from pathlib import Path
+
 
 AES_BLOCK_SIZE: int = 16
 KEY_ALPHABET: str = string.ascii_letters + string.digits
 DEFAULT_BATCH: int = 2000
 
 MORSE: dict[str, str] = {
-    "A": ".-", "B": "-...", "C": "-.-.", "D": "-..", "E": ".", "F": "..-.",
-    "G": "--.", "H": "....", "I": "..", "J": ".---", "K": "-.-", "L": ".-..",
-    "M": "--", "N": "-.", "O": "---", "P": ".--.", "Q": "--.-", "R": ".-.",
-    "S": "...", "T": "-", "U": "..-", "V": "...-", "W": ".--", "X": "-..-",
-    "Y": "-.--", "Z": "--..", "1": ".----", "2": "..---", "3": "...--",
-    "4": "....-", "5": ".....", "6": "-....", "7": "--...", "8": "---..",
-    "9": "----.", "0": "-----", " ": "/",
+    "A": ".-",
+    "B": "-...",
+    "C": "-.-.",
+    "D": "-..",
+    "E": ".",
+    "F": "..-.",
+    "G": "--.",
+    "H": "....",
+    "I": "..",
+    "J": ".---",
+    "K": "-.-",
+    "L": ".-..",
+    "M": "--",
+    "N": "-.",
+    "O": "---",
+    "P": ".--.",
+    "Q": "--.-",
+    "R": ".-.",
+    "S": "...",
+    "T": "-",
+    "U": "..-",
+    "V": "...-",
+    "W": ".--",
+    "X": "-..-",
+    "Y": "-.--",
+    "Z": "--..",
+    "1": ".----",
+    "2": "..---",
+    "3": "...--",
+    "4": "....-",
+    "5": ".....",
+    "6": "-....",
+    "7": "--...",
+    "8": "---..",
+    "9": "----.",
+    "0": "-----",
+    " ": "/",
 }
 MORSE_REVERSE: dict[str, str] = {code: char for char, code in MORSE.items()}
 

@@ -14,12 +14,13 @@ Runs as a script (``python pycppcheck.py``) in the directory it should act on; t
 imported.
 """
 
-import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+import sys
 
 from dh import cprint, get_files
+
 
 c_files = {".c", ".h", ".inc"}
 cpp_files = {".cpp", ".cc", ".cxx", ".hpp", ".hpp11", ".hh", ".hxx"}

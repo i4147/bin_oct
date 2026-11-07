@@ -14,8 +14,8 @@ Runs as a script (``python restore_all_historical_deletions.py``) in the directo
 imported.
 """
 
-import subprocess
 from pathlib import Path
+import subprocess
 
 
 def run_git_command(args: list[str]) -> str:

@@ -17,12 +17,12 @@ Examples:
 Command-line script: run ``python dupeguru_textual.py`` or the ``dupeguru_textual`` command. The module is importable as well.
 """
 
-import hashlib
-import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
+import hashlib
 from pathlib import Path
+import sys
 from typing import ClassVar
 
 from textual import on

@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from collections import Counter
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import time
-from collections import Counter
-from pathlib import Path
 from typing import Iterable, Optional
 
 from dh import MAX_WORKERS
+
 
 _ANSI = {
     "red": "\033[31m",
@@ -296,8 +297,8 @@ def cmd_vtt2srt(args: argparse.Namespace) -> int:
 
 
 def _translate_srt(input_path: Path, source: str, target: str, max_batch_chars: int, delay: float) -> None:
-    import pysrt
     from deep_translator import GoogleTranslator
+    import pysrt
 
     subs = pysrt.open(str(input_path), encoding="utf-8")
     translator = GoogleTranslator(source=source, target=target)

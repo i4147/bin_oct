@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-import re
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+import re
+import sys
 from typing import Final
 
-import requests
 from dh import _MAX_WORKERS, MAX_WORKERS
 from packaging.version import InvalidVersion, Version
+import requests
+
 
 _TIMEOUT: Final[float] = 10.0
 _DEFAULT_INPUT: Final[str] = "requirements.txt"

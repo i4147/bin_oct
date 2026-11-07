@@ -48,18 +48,19 @@ Command-line script: run ``python fast_compress.py`` or the ``fast_compress`` co
 
 import argparse
 import contextlib
+from dataclasses import dataclass
 import fnmatch
 import json
-import os
-import sys
-from dataclasses import dataclass
 from multiprocessing import Pool
+import os
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
-import zstandard as zstd
-from dh import DEFAULT_XZ_MAX_WORKERS, DEFAULT_ZSTD_MAX_WORKERS, skipped_dirs
+from dh import DEFAULT_XZ_MAX_WORKERS, DEFAULT_ZSTD_MAX_WORKERS
 from loguru import logger
+import zstandard as zstd
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

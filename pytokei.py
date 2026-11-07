@@ -24,9 +24,10 @@ Command-line script: run ``python pytokei.py`` or the ``pytokei`` command. The m
 """
 
 import argparse
-import re
 from pathlib import Path
+import re
 from typing import Any, Sequence
+
 
 LANGUAGE_EXTENSIONS: dict[str, list[str]] = {
     "python": [".py", ".pyi"],

@@ -37,16 +37,17 @@ Command-line script: run ``python detect_nonenglish.py`` or the ``detect_nonengl
 """
 
 import argparse
-import json
-import sys
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+import json
 from pathlib import Path
+import sys
 from typing import Optional, Sequence
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".txt",

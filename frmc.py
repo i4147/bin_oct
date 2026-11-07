@@ -17,10 +17,11 @@ imported.
 """
 
 import os
-import sys
 from pathlib import Path
+import sys
 
 from dh import SKIP_DIRS
+
 
 SKIP_EXTS: frozenset[str] = frozenset({
     ".yaml",

@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from dataclasses import dataclass, field
 import json
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import sys
 import time
-import unicodedata
-from dataclasses import dataclass, field
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Optional
+import unicodedata
 from uuid import uuid4
 
 from dh import MAX_WORKERS
+
 
 DEFAULT_RULES: list[tuple[str, str]] = [
     (r"_\d+", ""),

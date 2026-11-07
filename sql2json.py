@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import codecs
-import json
-import os
-import re
-import tempfile
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
+import json
 from multiprocessing import Pool, freeze_support
+import os
 from pathlib import Path
+import re
+import tempfile
 from typing import Any
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 READ_CHUNK_BYTES = 1024 * 1024
 DEFAULT_ENCODING = "utf-8"

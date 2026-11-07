@@ -33,8 +33,9 @@ Command-line script: run ``python cramer.py`` or the ``cramer`` command. The mod
 
 import argparse
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 try:
     import cramjam as cj

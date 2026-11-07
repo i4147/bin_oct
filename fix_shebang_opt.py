@@ -14,8 +14,9 @@ imported.
 """
 
 import os
-import stat
 from pathlib import Path
+import stat
+
 
 HOME = Path.home()
 cwd = Path.cwd()

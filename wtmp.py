@@ -15,13 +15,14 @@ imported.
 
 import os
 import pathlib
+from pathlib import Path
 import shutil
 import sys
 import time
-from pathlib import Path
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+
 
 DEST_DIR = pathlib.Path("~/tmp/tgz").expanduser()
 ALLOWED_EXTENSIONS = (

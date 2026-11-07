@@ -37,9 +37,9 @@ Command-line script: run ``python lictools.py`` or the ``lictools`` command. The
 """
 
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Generator
 
 

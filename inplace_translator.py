@@ -21,8 +21,9 @@ Needs an OpenAI or Gemini API key and replaces the content of the source files.
 import argparse
 import glob
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 try:
     from openai import OpenAI

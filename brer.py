@@ -42,16 +42,17 @@ Command-line script: run ``python brer.py`` or the ``brer`` command. The module 
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import mmap
+from pathlib import Path
 import shutil
 import tarfile
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Sequence
 
 import brotli
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     from loguru import logger

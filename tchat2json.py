@@ -25,10 +25,11 @@ Command-line script: run ``python tchat2json.py`` or the ``tchat2json`` command.
 import argparse
 import csv
 import json
+from pathlib import Path
 import re
 import sqlite3
 import sys
-from pathlib import Path
+
 
 LINE_RE = re.compile(r"^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(.*?):\s?(.*)$")
 

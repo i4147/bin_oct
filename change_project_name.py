@@ -14,9 +14,9 @@ Runs as a script (``python change_project_name.py``) in the directory it should 
 imported.
 """
 
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def replace_in_file(path: Path, old: str, new: str) -> None:

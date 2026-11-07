@@ -1,10 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
-import contextlib
 import argparse
+from collections import defaultdict
+from collections.abc import Sequence
+from concurrent.futures import Executor, ProcessPoolExecutor
+import contextlib
+from dataclasses import dataclass
+from datetime import timedelta
 import fnmatch
 import glob as _glob
 import json
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
@@ -14,15 +20,10 @@ import sys
 import tempfile
 import time
 import unicodedata
-from collections import defaultdict
-from collections.abc import Sequence
-from concurrent.futures import Executor, ProcessPoolExecutor
-from dataclasses import dataclass
-from datetime import timedelta
-from pathlib import Path
 
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 try:
     from concurrent.futures import InterpreterPoolExecutor as _IPE

@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from collections.abc import Sequence
+from pathlib import Path
 import shlex
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
-from pathlib import Path
 from urllib.request import pathname2url
+
 
 DEFAULT_OUTPUT: str = "out.txt"
 DEFAULT_CHUNK_SECONDS: int = 30
@@ -44,8 +45,8 @@ def chunk_text(text: str, max_chars: int = DEFAULT_MAX_CHARS) -> list[str]:
 
 def transcribe_google(audio_path: Path, output: Path, chunk_seconds: int) -> int:
     try:
-        import speech_recognition as sr
         from pydub import AudioSegment
+        import speech_recognition as sr
     except ImportError:
         raise _missing("speech_recognition/pydub", "SpeechRecognition pydub") from None
     audio = AudioSegment.from_file(str(audio_path))

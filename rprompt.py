@@ -14,10 +14,10 @@ Rewrites the sources in place, so keep a copy before shrinking a file for a prom
 """
 
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
 
 from dh import get_pyfiles, mpf
 

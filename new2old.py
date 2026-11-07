@@ -14,10 +14,11 @@ Runs as a script (``python new2old.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Any, Callable
+
 
 if sys.version_info < (3, 11):
     import tomli as tomllib

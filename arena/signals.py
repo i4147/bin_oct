@@ -6,14 +6,12 @@ Used to draft module docstrings during the documentation pass.
 Usage:
     python arena/signals.py [--limit N] [--offset N] [--names a.py b.py]
 """
-from __future__ import annotations
 
+from __future__ import annotations
 import argparse
 import ast
 import json
 import pathlib
-import re
-import sys
 
 
 def _first_line(text):
@@ -105,23 +103,19 @@ def analyse(path: pathlib.Path) -> dict:
                 info["imports"].append((node.module or "").split(".")[0] or ".")
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             sig = node.name + "(" + ", ".join(a.arg for a in node.args.args) + ")"
-            info["defs"].append(
-                {
-                    "name": node.name,
-                    "sig": sig,
-                    "doc": _first_line(ast.get_docstring(node)),
-                    "decorators": [ast.unparse(d) for d in node.decorator_list],
-                    "priv": node.name.startswith("_"),
-                }
-            )
+            info["defs"].append({
+                "name": node.name,
+                "sig": sig,
+                "doc": _first_line(ast.get_docstring(node)),
+                "decorators": [ast.unparse(d) for d in node.decorator_list],
+                "priv": node.name.startswith("_"),
+            })
         elif isinstance(node, ast.ClassDef):
-            info["classes"].append(
-                {
-                    "name": node.name,
-                    "doc": _first_line(ast.get_docstring(node)),
-                    "bases": [ast.unparse(b) for b in node.bases],
-                }
-            )
+            info["classes"].append({
+                "name": node.name,
+                "doc": _first_line(ast.get_docstring(node)),
+                "bases": [ast.unparse(b) for b in node.bases],
+            })
         elif isinstance(node, ast.Assign):
             for t in node.targets:
                 if isinstance(t, ast.Name) and t.id.isupper():
@@ -139,7 +133,9 @@ def analyse(path: pathlib.Path) -> dict:
                     elif isinstance(stmt, ast.Assign):
                         info["main_calls"].append("assign " + ast.unparse(stmt)[:100])
                     elif isinstance(stmt, ast.For):
-                        info["main_calls"].append("for " + ast.unparse(stmt.target) + " in " + ast.unparse(stmt.iter)[:80])
+                        info["main_calls"].append(
+                            "for " + ast.unparse(stmt.target) + " in " + ast.unparse(stmt.iter)[:80]
+                        )
     # argparse details anywhere in tree
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
@@ -153,13 +149,11 @@ def analyse(path: pathlib.Path) -> dict:
                     info["parser_desc"] = _first_line(_const(node.args[0])) or ""
             elif name == "add_parser":
                 nm = _const(node.args[0]) if node.args else (_const(kw.get("name")) if "name" in kw else "")
-                info["subcommands"].append(
-                    {
-                        "name": nm,
-                        "help": _first_line(_const(kw["help"])) if "help" in kw else "",
-                        "desc": _first_line(_const(kw["description"])) if "description" in kw else "",
-                    }
-                )
+                info["subcommands"].append({
+                    "name": nm,
+                    "help": _first_line(_const(kw["help"])) if "help" in kw else "",
+                    "desc": _first_line(_const(kw["description"])) if "description" in kw else "",
+                })
             elif name in ("add_argument", "add_option"):
                 a = _arg_from_call(node)
                 if a:
@@ -200,10 +194,14 @@ def fmt(info: dict) -> str:
     if pub:
         parts.append(
             "  funcs: "
-            + "; ".join(f"{d['name']}({')'.join([])}" [:0] or d["name"] + (f": {d['doc']}" if d['doc'] else "") for d in pub[:14])
+            + "; ".join(
+                f"{d['name']}({')'.join([])}"[:0] or d["name"] + (f": {d['doc']}" if d["doc"] else "") for d in pub[:14]
+            )
         )
     if info["classes"]:
-        parts.append("  classes: " + "; ".join(c["name"] + (f": {c['doc']}" if c["doc"] else "") for c in info["classes"][:8]))
+        parts.append(
+            "  classes: " + "; ".join(c["name"] + (f": {c['doc']}" if c["doc"] else "") for c in info["classes"][:8])
+        )
     if info["constants"]:
         parts.append("  consts: " + ", ".join(info["constants"][:10]))
     if info["imports"]:
@@ -225,7 +223,7 @@ def main(argv=None):
         paths = [p for p in paths if p.name in args.names]
     infos = [analyse(p) for p in paths]
     if args.offset:
-        infos = infos[args.offset:]
+        infos = infos[args.offset :]
     if args.limit:
         infos = infos[: args.limit]
     if args.json:

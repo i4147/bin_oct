@@ -15,6 +15,7 @@ imported.
 
 import os
 
+
 if __name__ == "__main__":
     p_env = os.environ.get("PATH")
     pdirs = p_env.split(":")

@@ -12,12 +12,13 @@ Usage:
     python arena/gist.py --names afk2.py alu.py
     python arena/gist.py --offset 400 --limit 40 --full   # include string literals
 """
-from __future__ import annotations
 
+from __future__ import annotations
 import argparse
 import ast
 import pathlib
 import sys
+
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import signals  # noqa: E402
@@ -62,15 +63,16 @@ def digest(path: pathlib.Path, full: bool = False) -> str:
         return "\n".join(head)
     tree = ast.parse(src)
     try:
-        main_if = next(
-            n for n in tree.body
-            if isinstance(n, ast.If) and "__main__" in ast.unparse(n.test)
-        )
+        main_if = next(n for n in tree.body if isinstance(n, ast.If) and "__main__" in ast.unparse(n.test))
         head.append("  main-block: " + " | ".join(key_stmts(main_if.body, limit=8)))
     except StopIteration:
         pass
     toplevel = key_stmts(
-        [n for n in tree.body if not isinstance(n, (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef))],
+        [
+            n
+            for n in tree.body
+            if not isinstance(n, (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef))
+        ],
         limit=8,
     )
     if toplevel:
@@ -90,11 +92,13 @@ def digest(path: pathlib.Path, full: bool = False) -> str:
         )
     if info["defs"]:
         head.append(
-            "  funcs: "
-            + "; ".join(d["name"] + (f"[{d['doc'][:60]}]" if d["doc"] else "") for d in info["defs"][:18])
+            "  funcs: " + "; ".join(d["name"] + (f"[{d['doc'][:60]}]" if d["doc"] else "") for d in info["defs"][:18])
         )
     if info["classes"]:
-        head.append("  classes: " + "; ".join(c["name"] + (f"[{c['doc'][:50]}]" if c["doc"] else "") for c in info["classes"][:8]))
+        head.append(
+            "  classes: "
+            + "; ".join(c["name"] + (f"[{c['doc'][:50]}]" if c["doc"] else "") for c in info["classes"][:8])
+        )
     if info["imports"]:
         head.append("  imports: " + ",".join(info["imports"][:16]))
     if full:

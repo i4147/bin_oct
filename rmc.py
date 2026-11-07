@@ -1,29 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import ast
-import contextlib
-import functools
-import itertools
-import keyword
-import os
-import re
-import shutil
-import tempfile
-import textwrap
 from collections import deque
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from difflib import unified_diff
+import functools
+import itertools
+import keyword
+import os
 from pathlib import Path
+import re
+import textwrap
 from typing import NamedTuple, TypeVar
 
-import libcst as cst
 from atomicio import atomic_write
 from dh import MAX_WORKERS, SKIP_DIRS
+import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 from rich.console import Console
 from rich.text import Text
+
 
 DIRECTIVE = re.compile(
     r"(?:^|#)\s*(?:noqa\b|type\s*:|pylint:|pyright:|pyre-|pytype:|mypy:|ruff:|flake8:|"

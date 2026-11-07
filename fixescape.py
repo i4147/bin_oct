@@ -32,6 +32,7 @@ import sys
 import tokenize
 import warnings
 
+
 RED = "\033[91m"
 CYAN = "\033[96m"
 RESET = "\033[0m"

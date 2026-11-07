@@ -14,11 +14,11 @@ Runs as a script (``python gagc.py``) in the directory it should act on; the mod
 imported.
 """
 
+from datetime import datetime
 import os
+from pathlib import Path
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
 
 from git import Repo
 

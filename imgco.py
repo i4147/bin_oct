@@ -42,13 +42,14 @@ Command-line script: run ``python imgco.py`` or the ``imgco`` command. The modul
 import argparse
 import concurrent.futures
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from dh import MAX_WORKERS
+
 
 cv2 = None
 np = None
@@ -72,8 +73,10 @@ except ImportError:
     pass
 try:
     import numpy as _np
-    from skimage import color as _ski_color
-    from skimage import io as _ski_io
+    from skimage import (
+        color as _ski_color,
+        io as _ski_io,
+    )
 
     ski_io = _ski_io
     ski_color = _ski_color

@@ -1,20 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from collections.abc import Iterator
 import csv
+from dataclasses import dataclass, field
 import fnmatch
 import html
 import json
-import re
-import sys
-from collections.abc import Iterator
-from dataclasses import dataclass, field
 from multiprocessing import get_context
 from pathlib import Path
+import re
+import sys
 from typing import Final, TextIO
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 __version__: Final[str] = "2.0.0"
 READ_SIZE: Final[int] = 1 << 20

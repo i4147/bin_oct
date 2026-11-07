@@ -10,6 +10,7 @@ import fnmatch
 import json
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
@@ -17,12 +18,12 @@ import stat
 import sys
 import tempfile
 import textwrap
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
+from dh import MAX_WORKERS, SKIP_DIRS, workers
 import libcst as cst
-from dh import SKIP_DIRS, MAX_WORKERS, workers
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

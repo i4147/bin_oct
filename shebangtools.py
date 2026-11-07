@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
 import os
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Optional, Sequence
 
 from dh import MAX_WORKERS
+
 
 TERMUX_PREFIX = "/data/data/com.termux/files/usr"
 DEFAULT_SHEBANG_FIX = "#!/data/data/com.termux/usr"

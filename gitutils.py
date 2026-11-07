@@ -44,18 +44,19 @@ Command-line script: run ``python gitutils.py`` or the ``gitutils`` command. The
 
 import argparse
 import csv
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta, timezone
 import fnmatch
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tomllib
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any, Callable, Iterator
 
 from loguru import logger
+
 
 LOG = logger
 EXIT_OK = 0

@@ -15,10 +15,11 @@ imported.
 """
 
 import os
-import re
 from pathlib import Path
+import re
 
 from deep_translator import GoogleTranslator
+
 
 DIRECTORY = "."
 non_english_pattern = re.compile(r"[^\x00-\x7F]")

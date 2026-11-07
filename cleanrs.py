@@ -15,15 +15,16 @@ imported.
 """
 
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 
 from dh import NUM_WORKERS
 
+
 try:
-    import tree_sitter_rust
     from tree_sitter import Language, Parser
+    import tree_sitter_rust
 
     TREE_SITTER_AVAILABLE = True
 except ImportError:

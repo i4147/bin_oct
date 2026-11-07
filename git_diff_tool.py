@@ -39,12 +39,12 @@ Command-line script: run ``python git_diff_tool.py`` or the ``git_diff_tool`` co
 """
 
 import argparse
-import json
-import subprocess
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
+import json
 from pathlib import Path
+import subprocess
+import sys
 
 from dh import MAX_WORKERS
 

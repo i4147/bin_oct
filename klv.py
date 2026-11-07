@@ -51,16 +51,17 @@ Command-line script: run ``python klv.py`` or the ``klv`` command. The module is
 """
 
 import argparse
+from collections import defaultdict
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 ANDROID_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+)-py3-none-android_24_([^/]+)\.whl")
 LINUX_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+(?:\.\d+)?)-cp\d+-cp\d+-linux_([^/]+)\.whl")

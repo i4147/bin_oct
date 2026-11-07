@@ -14,12 +14,13 @@ Runs as a script (``python image_deduper.py``) in the directory it should act on
 imported.
 """
 
-import os
 from collections import defaultdict
+import os
 from pathlib import Path
 
 import imagehash
 from PIL import Image
+
 
 DRY_RUN = True
 IMAGE_EXTENSIONS = (".webp", ".jpg", ".jpeg", ".png", ".tiff", ".tif")

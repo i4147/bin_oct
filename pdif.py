@@ -13,8 +13,8 @@ Runs as a script (``python pdif.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def compare_files(file1: str, file2: str) -> None:

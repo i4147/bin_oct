@@ -36,20 +36,21 @@ Command-line script: run ``python feloer.py`` or the ``feloer`` command. The mod
 import argparse
 import ast
 import asyncio
+from collections import Counter
+from dataclasses import dataclass
 import fnmatch
+from os import environ
+from pathlib import Path
 import re
 import shutil
 import sys
 import time
-import warnings
-from collections import Counter
-from dataclasses import dataclass
-from os import environ
-from pathlib import Path
 from typing import TYPE_CHECKING
+import warnings
 
 from dh import DOC_TH1, DOC_TH2, SKIP_DIRS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

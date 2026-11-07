@@ -24,10 +24,10 @@ Command-line script: run ``python pydiff.py`` or the ``pydiff`` command. The mod
 """
 
 import argparse
-import hashlib
-import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import hashlib
 from pathlib import Path
+import shutil
 
 from dh import MAX_WORKERS, cprint, read_lines
 

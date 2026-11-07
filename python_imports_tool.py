@@ -27,14 +27,15 @@ Examples
 
 import argparse
 import ast
-import importlib.metadata
-import importlib.util
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
+import importlib.metadata
+import importlib.util
 from pathlib import Path
+import sys
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 STDLIB: frozenset[str] = frozenset(sys.stdlib_module_names)
 PACKAGE_MAPPING: dict[str, str] = {

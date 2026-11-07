@@ -36,14 +36,15 @@ Command-line script: run ``python fontpreview.py`` or the ``fontpreview`` comman
 """
 
 import argparse
-import html
 from collections import namedtuple
 from datetime import datetime
 from functools import lru_cache
+import html
 from pathlib import Path
 from typing import Optional, Sequence
 
 from loguru import logger
+
 
 LOG = logger
 FONT_EXTS: frozenset[str] = frozenset({

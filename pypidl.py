@@ -54,20 +54,21 @@ Command-line script: run ``python pypidl.py`` or the ``pypidl`` command. The mod
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import io
 import json
+from pathlib import Path
 import re
 import subprocess
 import sys
 import time
+from typing import Any, Iterable, Optional, Sequence
 import urllib.error
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
 
 from dh import MAX_WORKERS
+
 
 try:
     import requests

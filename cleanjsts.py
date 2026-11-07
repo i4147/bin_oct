@@ -14,17 +14,18 @@ Runs as a script (``python cleanjsts.py``) in the directory it should act on; th
 imported.
 """
 
-import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
+import sys
 from typing import Final
 
-import tree_sitter
-import tree_sitter_javascript
-import tree_sitter_typescript
 from dh import MAX_WORKERS
 from loguru import logger
+import tree_sitter
 from tree_sitter import Language, Parser
+import tree_sitter_javascript
+import tree_sitter_typescript
+
 
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")
 _JS_LANGUAGE: Final[Language] = Language(tree_sitter_javascript.language())

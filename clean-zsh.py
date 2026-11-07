@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 
 from rich.console import Console
 from rich.live import Live
@@ -9,6 +9,7 @@ from rich.table import Table
 from rich.text import Text
 from tree_sitter import Language, Node, Parser
 import tree_sitter_zsh
+
 
 _PARSER: Parser | None = None
 

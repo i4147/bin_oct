@@ -13,9 +13,9 @@ Runs as a script (``python flaten.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def unique_target(target: Path) -> Path:

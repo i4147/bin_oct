@@ -23,26 +23,27 @@ Command-line script: run ``python deduper.py`` or the ``deduper`` command. The m
 
 import argparse
 import ast
+from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
 import tarfile
 import tempfile
 import zipfile
-from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
-from collections import defaultdict
-from pathlib import Path
 
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 
+
 try:
-    import tree_sitter_python
     from tree_sitter import Language, Parser
+    import tree_sitter_python
 
     TREE_SITTER_AVAILABLE = True
 except Exception:

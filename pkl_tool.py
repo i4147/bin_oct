@@ -36,13 +36,14 @@ Unpickling executes code; only open files you trust.
 
 import argparse
 import base64
+from collections.abc import Sequence
 import datetime
+from decimal import Decimal
 import json
+from pathlib import Path
 import pickle
 import sys
-from collections.abc import Sequence
-from decimal import Decimal
-from pathlib import Path
+
 
 JSON_NATIVE: tuple[type, ...] = (str, int, float, bool, type(None))
 

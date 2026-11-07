@@ -6,6 +6,7 @@ from pathlib import Path
 from dh import FONT_EXTENSIONS, unique_path
 from fontTools.ttLib import TTFont
 
+
 STYLE_MAPPING = {
     "normal": "Regular",
     "regular": "Regular",

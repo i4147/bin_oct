@@ -6,11 +6,12 @@ A wheel is considered "installed" if a package with the same (canonical)
 name is present in the current Python environment, regardless of version.
 """
 
+from importlib import metadata
+from pathlib import Path
 import re
 import shutil
 import sys
-from importlib import metadata
-from pathlib import Path
+
 
 try:
     from packaging.utils import canonicalize_name, parse_wheel_filename

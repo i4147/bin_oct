@@ -1,8 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-import re
 from multiprocessing import Pool, cpu_count
+import re
 
 from dh import MAX_WORKERS
 from spellchecker import SpellChecker

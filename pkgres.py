@@ -21,12 +21,13 @@ Command-line script: run ``python pkgres.py`` or the ``pkgres`` command. The mod
 """
 
 import argparse
-import re
 from multiprocessing import Pool
 from pathlib import Path
+import re
 from typing import Any
 
 from dh import MAX_WORKERS, SKIPPED_DIRS
+
 
 REPLACEMENTS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (

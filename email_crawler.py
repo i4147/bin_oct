@@ -14,17 +14,17 @@ Runs as a script (``python email_crawler.py``) in the directory it should act on
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
 import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
-from typing import Any
 
 from loguru import logger
 from sqlalchemy import Boolean, Column, Integer, MetaData, Table, Unicode, create_engine, select
+
 
 DEBUG = True
 DATABASE_NAME = "data/crawler.sqlite"

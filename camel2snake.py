@@ -33,25 +33,24 @@ Command-line script: run ``python camel2snake.py`` or the ``camel2snake`` comman
 
 import argparse
 import base64
-import contextlib
 import difflib
 import hashlib
 import io
 import json
 import mmap
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import sys
-import tempfile
 import tokenize
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Iterator, NamedTuple
 
-import libcst as cst
 from atomicio import atomic_write
 from dh import MAX_WORKERS, SKIP_DIRS
+import libcst as cst
 from loguru import logger
+
 
 CAMEL_RE = re.compile(r"^(?P<pre>_*)(?P<body>[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+)(?P<post>_*)$")
 PARTIAL_RE = re.compile(r"[a-z][A-Z]")

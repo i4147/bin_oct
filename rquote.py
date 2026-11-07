@@ -14,10 +14,10 @@ imported.
 """
 
 import json
-import os
-import random
 from pathlib import Path
+import random
 from shutil import get_terminal_size
+
 
 FILE_NAME = "/sdcard/data/quotes/quotes.json"
 

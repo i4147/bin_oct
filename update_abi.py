@@ -13,9 +13,9 @@ Runs as a script (``python update_abi.py``) in the directory it should act on; t
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def update_setup_files() -> None:

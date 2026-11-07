@@ -48,16 +48,17 @@ Command-line script: run ``python github_query_tool.py`` or the ``github_query_t
 """
 
 import argparse
+from collections.abc import Sequence
 import csv
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
 import json
 import os
+from pathlib import Path
 import sys
 import urllib.parse
 import urllib.request
-from collections.abc import Sequence
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+
 
 API: str = "https://api.github.com"
 

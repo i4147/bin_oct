@@ -42,13 +42,14 @@ Command-line script: run ``python imgdownloader.py`` or the ``imgdownloader`` co
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
 import os
+from pathlib import Path
 import re
 import sys
 import urllib.parse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
+
 
 try:
     import requests

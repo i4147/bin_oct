@@ -17,15 +17,18 @@ Command-line script: run ``python mdv.py`` or the ``mdv`` command. The module is
 """
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 from rich.console import Console
 from rich.markdown import Markdown
 
+
 try:
-    from readchar import key as RKEY
-    from readchar import readkey
+    from readchar import (
+        key as RKEY,
+        readkey,
+    )
 
     HAVE_READCHAR = True
 except Exception:

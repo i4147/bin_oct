@@ -42,21 +42,21 @@ Command-line script: run ``python addel.py`` or the ``addel`` command. The modul
 """
 
 import argparse
+from collections import Counter
 import csv
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-from collections import Counter
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
 
 from dh import SKIP_DIRS
-from loguru import logger
+
 
 UNIT_SEP = "\x1f"
 DIFF_FILTER = "AD"

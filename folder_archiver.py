@@ -31,10 +31,11 @@ Command-line script: run ``python folder_archiver.py`` or the ``folder_archiver`
 """
 
 import argparse
-import shutil
-import sys
 from collections.abc import Sequence
 from pathlib import Path
+import shutil
+import sys
+
 
 FORMAT_SUFFIX: dict[str, str] = {
     "tar": ".tar",

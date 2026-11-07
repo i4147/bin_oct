@@ -6,8 +6,8 @@ the file. Mode -a selects text before the first marker; other modes select
 from one character after its start.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def read_lines(path: Path) -> list[str]:

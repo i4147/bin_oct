@@ -1,38 +1,43 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Compress Python sources so they fit into an LLM prompt.
+"""Compress Python sources for an LLM prompt, with a header note.
 
-Strips the comments, the shebang, the docstrings, the annotations and the stdlib
-imports, renames the local variables to short names, joins the simple statements and
-writes the compacted sources to ``compressed.txt``.
+Same pipeline as :doc:`compy` (comments, docstrings, annotations and stdlib imports
+removed, short names, joined statements) and a ``COMPRESSION_NOTE`` header that explains the
+transformation to the model, written to ``compressed.txt``.
 
-Usage: compy [paths ...]
+Usage: compy2 [paths ...]
 
 Positional arguments:
     inputs ...
         Python files and/or directories. Defaults to the current directory.
 
 Examples:
-    $ compy src/
+    $ compy2 src/
 
-Command-line script: run ``python compy.py`` or the ``compy`` command. The module is importable as well.
+Command-line script: run ``python compy2.py`` or the ``compy2`` command. The module is importable as well.
 """
 
 import argparse
 import ast
 import builtins
+from io import StringIO
 import keyword
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
 import sysconfig
 import token
 import tokenize
-from io import StringIO
-from pathlib import Path
 
-from dh import WORKERS, append_text, runcmd
+from dh import MAX_WORKERS, runcmd
+
 
 OUTPUT_FILE = Path("compressed.txt")
+COMPRESSION_NOTE = (
+    "# NOTE: This code is compressed. Standard library imports have been removed. "
+    "You may rename variables and functions freely."
+)
 PROTECTED_NAMES = {
     "__name__",
     "__main__",
@@ -724,7 +729,7 @@ def format_output(results: list[tuple[str, str, str | None]]) -> str:
     for name, content in successful:
         lines: list[str] = []
         if multiple_files:
-            lines.append(f"# filename: {Path(name).name}")
+            lines.append(f"# File: {Path(name).name}")
         lines.extend(line for line in content.splitlines() if line.strip())
         sections.append("\n".join(lines))
     return "\n".join(sections)
@@ -751,7 +756,7 @@ def main() -> int:
     if len(paths) == 1:
         results = [process_file(paths[0])]
     else:
-        with mp.Pool(processes=WORKERS) as pool:
+        with mp.Pool(processes=MAX_WORKERS) as pool:
             results = list(pool.imap_unordered(process_file, paths))
     results.sort(key=lambda item: item[0])
     for _, _, error in results:
@@ -761,14 +766,12 @@ def main() -> int:
     output = "\n".join(line for line in output.splitlines() if line.strip())
     if output:
         output += "\n"
-    OUTPUT_FILE.write_text(output, encoding="utf-8")
-    prompt_path = Path.home() / "prompt.txt"
-    prompt_content = prompt_path.read_text(encoding="utf-8")
-    append_text(OUTPUT_FILE, prompt_content)
-    content = OUTPUT_FILE.read_text(encoding="utf-8")
-    cmd = ["termux-clipboard-set", content]
+        output += COMPRESSION_NOTE + "\n"
+    single_py_file = len(args.inputs) == 1 and Path(args.inputs[0]).is_file() and Path(args.inputs[0]).suffix == ".py"
+    if not single_py_file:
+        OUTPUT_FILE.write_text(output, encoding="utf-8")
+    cmd = ["termux-clipboard-set", output]
     runcmd(cmd, show_output=True)
-    print(f"Wrote to {OUTPUT_FILE}")
     return 0
 
 

@@ -5,6 +5,7 @@ import pathlib
 import re
 import unicodedata
 
+
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",
     "آ": "a",

@@ -16,9 +16,9 @@ Modifies the installed package in place; keep a backup of ``site-packages``.
 import compileall
 import csv
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def get_user_site_packages():

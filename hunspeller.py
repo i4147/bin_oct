@@ -28,13 +28,13 @@ Command-line script: run ``python hunspeller.py`` or the ``hunspeller`` command.
 """
 
 import argparse
-import re
-import sys
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import re
+import sys
 
-import hunspell
 from dh import MAX_WORKERS
+import hunspell
 
 
 def process_line(line: str, autofix: bool = False) -> tuple:
@@ -94,7 +94,6 @@ def process_file(
     except Exception as e:
         print(f"Error reading file: {e}")
         return
-    import os
 
     if not Path(dic_path).exists() or not Path(aff_path).exists():
         print(f"Error: Hunspell dictionary files not found at:")
@@ -167,7 +166,6 @@ def process_file(
 
 def find_hunspell_dicts():
     import glob
-    import os
 
     common_paths = [
         "/usr/share/hunspell/",

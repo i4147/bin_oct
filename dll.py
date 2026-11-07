@@ -14,8 +14,8 @@ Runs as a script (``python dll.py``) in the directory it should act on; the modu
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def delete_lines_from_file() -> None:

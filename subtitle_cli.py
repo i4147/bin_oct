@@ -3,7 +3,6 @@ import argparse
 import sys
 
 from babelfish import Language
-from loguru import logger
 from subliminal import download_best_subtitles, save_subtitles, scan_video
 
 

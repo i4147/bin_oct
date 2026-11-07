@@ -24,12 +24,12 @@ Examples
 """
 
 import argparse
-import re
+from collections.abc import Sequence
+from pathlib import Path
 import shutil
 import sys
 import time
-from collections.abc import Sequence
-from pathlib import Path
+
 
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".tar.gz",

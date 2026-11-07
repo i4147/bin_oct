@@ -15,14 +15,15 @@ imported.
 """
 
 import multiprocessing
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Union
 
-import numpy as np
-import pytesseract
 from loguru import logger
+import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+import pytesseract
+
 
 try:
     import cv2

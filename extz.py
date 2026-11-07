@@ -21,12 +21,13 @@ Command-line script: run ``python extz.py`` or the ``extz`` command. The module 
 """
 
 import argparse
-import shutil
-import sys
 from collections import defaultdict
 from pathlib import Path
+import shutil
+import sys
 
 from dh import SKIP_DIRS
+
 
 TOP_N_PIE = 30
 

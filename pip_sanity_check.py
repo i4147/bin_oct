@@ -19,6 +19,7 @@ import sys
 
 from dh import PKG_MAPPING as pkg_mapping
 
+
 GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RESET = "\033[0m"

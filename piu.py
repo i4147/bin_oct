@@ -14,8 +14,8 @@ Runs as a script (``python piu.py``) in the directory it should act on; the modu
 imported.
 """
 
-import sys
 from importlib.metadata import distributions
+import sys
 
 from pip._internal.cli.main import main as pip_main
 

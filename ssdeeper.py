@@ -3,12 +3,12 @@
 import argparse
 import json
 import operator
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
-import ssdeep
 from dh import get_files
+import ssdeep
 
 
 def relative(path, base):

@@ -14,11 +14,12 @@ Runs as a script (``python dj.py``) in the directory it should act on; the modul
 imported.
 """
 
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 from rignore import walk as _walk
+
 
 JUNK_FILE = Path("/sdcard/data/junk")
 

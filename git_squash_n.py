@@ -30,12 +30,11 @@ Command-line script: run ``python git_squash_n.py`` or the ``git_squash_n`` comm
 """
 
 import argparse
+from datetime import datetime
 import json
-import os
+from pathlib import Path
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
 
 
 def run(cmd, cwd=None, capture=False, check=True):

@@ -15,11 +15,12 @@ Runs as a script (``python detect_encoding.py``) in the directory it should act 
 imported.
 """
 
+from collections import Counter
 import json
+from pathlib import Path
 import sys
 import tokenize
-from collections import Counter
-from pathlib import Path
+
 
 try:
     import chardet

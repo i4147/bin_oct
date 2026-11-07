@@ -31,15 +31,15 @@ Command-line script: run ``python pdftools.py`` or the ``pdftools`` command. The
 """
 
 import argparse
-import os
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+import re
+import sys
 from typing import TYPE_CHECKING
 
-import pymupdf
 from dh import MAX_WORKERS
+import pymupdf
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

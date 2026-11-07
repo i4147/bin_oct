@@ -27,18 +27,19 @@ Command-line script: run ``python pyfslint.py`` or the ``pyfslint`` command. The
 """
 
 import argparse
+from collections import defaultdict
 import contextlib
 import grp
 import hashlib
 import os
+from pathlib import Path
 import pwd
 import re
 import stat
 import subprocess
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

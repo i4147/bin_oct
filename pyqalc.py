@@ -29,9 +29,10 @@ Command-line script: run ``python pyqalc.py`` or the ``pyqalc`` command. The mod
 """
 
 import argparse
+from decimal import getcontext
 import math
 import re
-from decimal import getcontext
+
 
 getcontext().prec = 28
 

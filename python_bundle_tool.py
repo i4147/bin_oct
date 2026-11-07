@@ -25,15 +25,15 @@ Examples
   python3 python_bundle_tool.py split all.py -o restored/
 """
 
-
 import argparse
 import ast
-import re
-import sys
 from collections import deque
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
+import sys
+
 
 FILE_HEADER: re.Pattern[str] = re.compile(r"^# File: (.+?)$", re.MULTILINE)
 DEFAULT_MAX_FILES: int = 10
@@ -87,8 +87,7 @@ def resolve_relative(current: str, module: str | None, level: int) -> str | None
     return ".".join(target) if target else None
 
 
-def analyze(path: Path, root: Path, package_mode: bool, package_name: str | None,
-            known: set[str]) -> ModuleInfo:
+def analyze(path: Path, root: Path, package_mode: bool, package_name: str | None, known: set[str]) -> ModuleInfo:
     """Parse one module and collect its local import dependencies."""
     source: str = path.read_text(encoding="utf-8")
     fullname: str = fullname_for(root, path, package_mode, package_name)
@@ -124,9 +123,7 @@ def analyze(path: Path, root: Path, package_mode: bool, package_name: str | None
 
 def topological_order(modules: dict[str, ModuleInfo]) -> tuple[list[str], bool]:
     """Dependency-first order (cycles appended alphabetically)."""
-    edges: dict[str, set[str]] = {
-        name: {d for d in info.deps if d in modules} for name, info in modules.items()
-    }
+    edges: dict[str, set[str]] = {name: {d for d in info.deps if d in modules} for name, info in modules.items()}
     indegree: dict[str, int] = {name: len(deps) for name, deps in edges.items()}
     queue: deque[str] = deque(sorted(n for n, deg in indegree.items() if deg == 0))
     ordered: list[str] = []
@@ -190,8 +187,7 @@ def bundle_source(modules: dict[str, ModuleInfo], ordered: list[str], top_name: 
     return "\n".join(lines) + "\n"
 
 
-def rewrite_relative_imports(source: str, root: Path, path: Path,
-                             package_name: str) -> str:
+def rewrite_relative_imports(source: str, root: Path, path: Path, package_name: str) -> str:
     """``from .x import y`` -> ``from <pkg>.x import y`` (concat mode)."""
     fullname: str = fullname_for(root, path, True, package_name)
     try:
@@ -208,8 +204,7 @@ def rewrite_relative_imports(source: str, root: Path, path: Path,
             absolute: str | None = resolve_relative(fullname, node.module, node.level)
             if absolute is None:
                 continue
-            names: str = ", ".join(
-                f"{a.name} as {a.asname}" if a.asname else a.name for a in node.names)
+            names: str = ", ".join(f"{a.name} as {a.asname}" if a.asname else a.name for a in node.names)
             replacement: str = f"from {absolute} import {names}\n"
             start: int = offsets[node.lineno - 1]
             end: int = offsets[node.end_lineno]
@@ -307,8 +302,12 @@ def build_parser() -> argparse.ArgumentParser:
     me = sub.add_parser("merge", help="Merge a directory of .py files into one")
     me.add_argument("input", nargs="?", type=Path, default=Path.cwd())
     me.add_argument("-o", "--output", type=Path, default=None, help="Default: <dirname>_single.py")
-    me.add_argument("--mode", choices=("bundle", "concat"), default="bundle",
-                    help="bundle: runnable embedded modules; concat: # File: text merge")
+    me.add_argument(
+        "--mode",
+        choices=("bundle", "concat"),
+        default="bundle",
+        help="bundle: runnable embedded modules; concat: # File: text merge",
+    )
     me.add_argument("--package-name", default=None)
     me.add_argument("--max-files", type=int, default=DEFAULT_MAX_FILES)
     me.add_argument("--force", action="store_true", help="Allow > --max-files")

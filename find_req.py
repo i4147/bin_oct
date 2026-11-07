@@ -12,8 +12,8 @@ Examples:
 The scan root is the module constant ``cwd``; adjust it for other Python versions.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def process_file(path: Path, text: str) -> None:

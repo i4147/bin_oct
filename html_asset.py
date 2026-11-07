@@ -22,16 +22,16 @@ Examples
   python3 html_asset_tool.py extract . --assets-dir static --dry-run
 """
 
-
 import argparse
-import hashlib
-import html.parser
-import secrets
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+import hashlib
+import html.parser
 from pathlib import Path
+import secrets
+import sys
+
 
 HTML_SUFFIXES: frozenset[str] = frozenset({".html", ".htm", ".xhtml"})
 MAX_FILE_BYTES: int = 50 * 1024 * 1024
@@ -45,7 +45,7 @@ class InlineBlock:
     content: str
     attrs: dict[str, str | None]
     start: int  # offset of "<style"/"<script"
-    end: int    # offset just past "</style>"/"</script>"
+    end: int  # offset just past "</style>"/"</script>"
 
 
 @dataclass(slots=True)
@@ -108,8 +108,7 @@ class InlineParser(html.parser.HTMLParser):
         close_end: int = self._source.find(">", close_start) + 1
         content: str = "".join(self._chunks).strip()
         if content:
-            self.blocks.append(InlineBlock(expected, content, self._open_attrs,
-                                           self._open_start, close_end))
+            self.blocks.append(InlineBlock(expected, content, self._open_attrs, self._open_start, close_end))
         self._open_kind = None
         self._chunks = []
 
@@ -257,8 +256,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     ex = sub.add_parser("extract", help="Extract inline <style>/<script> blocks")
     ex.add_argument("paths", nargs="*", type=Path, help="Files or dirs (default: .)")
-    ex.add_argument("--mode", choices=("rewrite", "dump"), default="rewrite",
-                    help="rewrite: assets/ + link tags; dump: css//js/ only")
+    ex.add_argument(
+        "--mode",
+        choices=("rewrite", "dump"),
+        default="rewrite",
+        help="rewrite: assets/ + link tags; dump: css//js/ only",
+    )
     ex.add_argument("--assets-dir", default="assets", help="Assets dir name (rewrite mode)")
     ex.add_argument("--min-size", type=int, default=0, help="Skip blocks shorter than N chars")
     ex.add_argument("-w", "--workers", type=int, default=8)

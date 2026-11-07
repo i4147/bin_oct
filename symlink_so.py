@@ -16,8 +16,8 @@ imported.
 
 import glob
 import os
-import re
 from pathlib import Path
+import re
 
 
 def should_skip(so_path):

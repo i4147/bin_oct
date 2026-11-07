@@ -14,9 +14,9 @@ Runs as a script (``python create_stub.py``) in the directory it should act on; 
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 from dh import get_files, mpf
 

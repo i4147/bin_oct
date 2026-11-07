@@ -23,19 +23,20 @@ Command-line script: run ``python dufpy.py`` or the ``dufpy`` command. The modul
 
 import argparse
 import ast
-import json
-import os
-import sys
-import tokenize
 from collections import defaultdict
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
+import json
+import os
 from pathlib import Path
+import sys
+import tokenize
 from typing import TypeAlias
 
 from dh import MAX_WORKERS, cprint, get_pyfiles
 from xxhash import xxh64_hexdigest
+
 
 DUPLICATES_CACHE_FILENAME = ".cache.json"
 

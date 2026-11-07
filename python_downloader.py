@@ -35,20 +35,21 @@ Command-line script: run ``python python_downloader.py`` or the ``python_downloa
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import contextlib
+from pathlib import Path
 import queue
 import re
 import shutil
 import sys
 import threading
 import time
+from typing import Iterator, Optional, Self
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-from typing import Iterator, Optional, Self
 
 from dh import MAX_WORKERS
+
 
 __version__ = "2.0.0"
 CHUNK = 64 * 1024

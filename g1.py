@@ -27,14 +27,15 @@ Command-line script: run ``python g1.py`` or the ``g1`` command. The module is i
 """
 
 import argparse
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 from typing import TYPE_CHECKING, Final, Optional, Protocol
 
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from github.Repository import Repository

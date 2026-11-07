@@ -25,25 +25,34 @@ Examples
   python3 image_triage_tool.py box-faces in.mp4 out.mp4
 """
 
-
 import argparse
-import shutil
-import sys
 from collections.abc import Sequence
 from pathlib import Path
+import shutil
+import sys
+
 
 IMAGE_SUFFIXES: frozenset[str] = frozenset({".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"})
 CASCADE_NAMES: tuple[str, ...] = (
-    "haarcascade_frontalface_default.xml", "haarcascade_frontalface_alt.xml",
-    "haarcascade_frontalface_alt2.xml", "haarcascade_frontalface_alt_tree.xml",
-    "frontalface_default.xml", "frontalface_alt.xml",
+    "haarcascade_frontalface_default.xml",
+    "haarcascade_frontalface_alt.xml",
+    "haarcascade_frontalface_alt2.xml",
+    "haarcascade_frontalface_alt_tree.xml",
+    "frontalface_default.xml",
+    "frontalface_alt.xml",
 )
 SEXY_LABELS: frozenset[str] = frozenset({
-    "FEMALE_BREAST_COVERED", "BUTTOCKS_COVERED", "BELLY", "ARMPITS",
+    "FEMALE_BREAST_COVERED",
+    "BUTTOCKS_COVERED",
+    "BELLY",
+    "ARMPITS",
 })
 PORN_LABELS: frozenset[str] = frozenset({
-    "FEMALE_GENITALIA_EXPOSED", "FEMALE_BREAST_EXPOSED", "MALE_GENITALIA_EXPOSED",
-    "ANUS_EXPOSED", "BUTTOCKS_EXPOSED",
+    "FEMALE_GENITALIA_EXPOSED",
+    "FEMALE_BREAST_EXPOSED",
+    "MALE_GENITALIA_EXPOSED",
+    "ANUS_EXPOSED",
+    "BUTTOCKS_EXPOSED",
 })
 
 
@@ -120,6 +129,7 @@ def load_cascade(extra_dir: Path | None) -> object:
 def count_faces(path: Path, cascade: object, max_dimension: int) -> int | None:
     """Number of faces in an image (None = unreadable)."""
     import cv2
+
     image = cv2.imread(str(path))  # type: ignore[attr-defined]
     if image is None:
         return None
@@ -173,8 +183,12 @@ def cmd_box_faces(args: argparse.Namespace) -> int:
     height: int = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))  # type: ignore[attr-defined]
     fps: float = float(capture.get(cv2.CAP_PROP_FPS)) or 25.0  # type: ignore[attr-defined]
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    writer = cv2.VideoWriter(str(args.output), cv2.VideoWriter_fourcc(*args.fourcc),  # type: ignore[attr-defined]
-                             fps, (width, height))
+    writer = cv2.VideoWriter(
+        str(args.output),
+        cv2.VideoWriter_fourcc(*args.fourcc),  # type: ignore[attr-defined]
+        fps,
+        (width, height),
+    )
     frames: int = 0
     total_faces: int = 0
     while True:
@@ -205,6 +219,7 @@ def check_with_nude(path: Path, resize: bool) -> bool:
     if resize:
         try:
             import cv2
+
             image = cv2.imread(str(path))  # type: ignore[attr-defined]
             if image is not None and max(image.shape[:2]) > 800:
                 detector.resize(maxheight=800, maxwidth=800)
@@ -233,7 +248,8 @@ def classify_nudenet(path: Path, threshold: float) -> str:
     detector: object = nudenet_detector()
     detections: object = detector.detect(str(path))  # type: ignore[attr-defined]
     labels: set[str] = {
-        str(item.get("class", "")) for item in detections  # type: ignore[union-attr]
+        str(item.get("class", ""))
+        for item in detections  # type: ignore[union-attr]
         if float(item.get("score", 0)) >= threshold
     }
     if labels & PORN_LABELS:

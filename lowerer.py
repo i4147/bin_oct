@@ -13,8 +13,8 @@ Runs as a script (``python lowerer.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def main():

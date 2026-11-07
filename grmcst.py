@@ -19,13 +19,14 @@ Command-line script: run ``python grmcst.py`` or the ``grmcst`` command. The mod
 
 import argparse
 import ast
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
 
-import libcst as cst
 from dh import MAX_WORKERS
+import libcst as cst
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

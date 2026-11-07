@@ -32,19 +32,20 @@ Command-line script: run ``python compsub.py`` or the ``compsub`` command. The m
 """
 
 import argparse
+from collections.abc import Sequence
 import lzma
+from multiprocessing import Pool
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-from collections.abc import Sequence
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Any, Self
 
 import brotli
-import zstandard as zstd
-from dh import SKIP_DIRS, WORKER_COUNT, fsz
+from dh import MAX_WORKERS, SKIP_DIRS, fsz
 from loguru import logger
+import zstandard as zstd
+
 
 ZSTD_LEVEL: int = 19
 BROTLI_QUALITY: int = 11
@@ -391,7 +392,7 @@ def _run_compression(args: argparse.Namespace) -> int:
     total_compressed = 0
     successful = 0
     failed = 0
-    with Pool(processes=WORKER_COUNT) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         async_results = [(d, pool.apply_async(compress_directory, (d, algo, level))) for d in subdirs]
         for subdir, ar in async_results:
             try:
@@ -436,7 +437,7 @@ def _run_decompression(args: argparse.Namespace) -> int:
     total_extracted = 0
     successful = 0
     failed = 0
-    with Pool(processes=WORKER_COUNT) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         async_results = [(a, pool.apply_async(decompress_archive, (a,))) for a in archives]
         for archive, ar in async_results:
             try:

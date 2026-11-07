@@ -18,8 +18,9 @@ imported.
 import re
 from typing import Iterable, Optional
 
-import click
 from bs4 import BeautifulSoup, Comment, NavigableString
+import click
+
 
 NEWLINE_ELEMENTS = (
     "address",

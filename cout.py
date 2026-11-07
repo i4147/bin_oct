@@ -45,17 +45,18 @@ Command-line script: run ``python cout.py`` or the ``cout`` command. The module 
 """
 
 import argparse
-import shutil
-import sys
 from contextlib import ExitStack, suppress
 from dataclasses import dataclass
 from itertools import islice
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
 
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

@@ -25,11 +25,12 @@ Command-line script: run ``python gdupfunc.py`` or the ``gdupfunc`` command. The
 
 import argparse
 import ast
-import json
-import sys
 from concurrent.futures import InterpreterPoolExecutor
+import json
 from pathlib import Path
+import sys
 from typing import Any
+
 
 DEFAULT_EXCLUDES: set[str] = {
     ".git",

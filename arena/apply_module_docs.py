@@ -3,10 +3,14 @@
 
 Prose lives in ``arena/summaries/*.json``, keyed by file name::
 
-    {"afk.py": {"summary": "Find unused imports ...",
-                "details": ["Longer explanation ..."],
-                "usage": "afk [options] [paths ...]",
-                "example": ["$ afk src/ --check"]}}
+    {
+        "afk.py": {
+            "summary": "Find unused imports ...",
+            "details": ["Longer explanation ..."],
+            "usage": "afk [options] [paths ...]",
+            "example": ["$ afk src/ --check"],
+        }
+    }
 
 Everything that can be derived from the module itself is generated: the usage
 line, positional arguments, option flags with their help strings, subcommands,
@@ -17,14 +21,15 @@ Usage:
     python arena/apply_module_docs.py --write
     python arena/apply_module_docs.py --check
 """
-from __future__ import annotations
 
+from __future__ import annotations
 import argparse
 import ast
 import json
 import pathlib
 import re
 import textwrap
+
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SUMMARY_DIR = ROOT / "arena" / "summaries"
@@ -131,9 +136,7 @@ def collect(tree: ast.AST) -> dict:
             if not isinstance(sub, str):
                 continue
             help_text = const("help") or const("description")
-            info["subs"].append(
-                {"name": sub, "help": _tidy_help(help_text) if isinstance(help_text, str) else ""}
-            )
+            info["subs"].append({"name": sub, "help": _tidy_help(help_text) if isinstance(help_text, str) else ""})
 
     def dedup(entries):
         seen, out = set(), []
@@ -249,8 +252,7 @@ def build_docstring(prog: str, meta: dict, cli: dict) -> str:
         examples = [examples]
     if not examples:
         placeholders = [
-            (p["flags"][0].upper() if p["nargs"] in ("*", "+") else p["flags"][0])
-            for p in cli["positionals"]
+            (p["flags"][0].upper() if p["nargs"] in ("*", "+") else p["flags"][0]) for p in cli["positionals"]
         ]
         if placeholders:
             examples.append("$ " + prog + " " + " ".join(placeholders))

@@ -22,13 +22,13 @@ Command-line script: run ``python pdfv.py`` or the ``pdfv`` command. The module 
 
 import argparse
 import contextlib
-import os
+from pathlib import Path
 import select
 import shutil
 import sys
 import termios
 import tty
-from pathlib import Path
+
 
 try:
     import pymupdf

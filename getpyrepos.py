@@ -14,9 +14,9 @@ Runs as a script (``python getpyrepos.py``) in the directory it should act on; t
 imported.
 """
 
+from datetime import datetime, timedelta
 import json
 import sys
-from datetime import datetime, timedelta
 
 import requests
 

@@ -13,8 +13,8 @@ Runs as a script (``python bcss.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
 

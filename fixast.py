@@ -44,18 +44,19 @@ Command-line script: run ``python fixast.py`` or the ``fixast`` command. The mod
 import argparse
 import ast
 import bisect
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass, field
 import difflib
 import fnmatch
 import io
 import json
 import os
+from pathlib import Path
 import re
 import sys
 import tokenize
-from collections.abc import Iterator, Sequence
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Final
+
 
 __version__ = "1.1.0"
 DEPRECATED_FAMILY: Final[dict[str, str]] = {

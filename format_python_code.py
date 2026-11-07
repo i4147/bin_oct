@@ -47,19 +47,20 @@ Command-line script: run ``python format_python_code.py`` or the ``format_python
 
 import argparse
 import ast
+from functools import partial
 import io
+from pathlib import Path
 import re
 import subprocess
 import sys
+from textwrap import fill as _fill
 import time
 import tokenize
-import unicodedata
-from functools import partial
-from pathlib import Path
-from textwrap import fill as _fill
 from typing import Optional
+import unicodedata
 
 from dh import cprint, format_time, fsz, get_files, get_pyfiles, is_binary, mpf
+
 
 _DOC_TOKENS = ('"""', "'''")
 _FORMAT_STYLES = ("black", "isort", "autoflake", "autopep", "yapf")

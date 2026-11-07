@@ -32,14 +32,15 @@ Command-line script: run ``python add_hints.py`` or the ``add_hints`` command. T
 import argparse
 import ast
 import difflib
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 from typing import Optional
 
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
+
 
 NAME_HINTS: dict[str, str] = {
     "name": "str",

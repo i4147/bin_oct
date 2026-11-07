@@ -58,22 +58,23 @@ Command-line script: run ``python filefixer.py`` or the ``filefixer`` command. T
 
 import argparse
 import concurrent.futures
+from dataclasses import dataclass
+from io import StringIO
 import mimetypes
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tokenize
-import zipfile
-from dataclasses import dataclass
-from io import StringIO
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+import zipfile
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -90,12 +91,14 @@ try:
 except Exception:
     filetype = None
 try:
-    from dh import BINARY_EXTENSIONS as DH_BINARY_EXTENSIONS
-    from dh import MIME2EXT as DH_MIME2EXT
-    from dh import SHEBANG_MAP as DH_SHEBANG_MAP
-    from dh import TEXT_EXTENSIONS as DH_TEXT_EXTENSIONS
-    from dh import get_files as dh_get_files
-    from dh import is_binary as dh_is_binary
+    from dh import (
+        BINARY_EXTENSIONS as DH_BINARY_EXTENSIONS,
+        MIME2EXT as DH_MIME2EXT,
+        SHEBANG_MAP as DH_SHEBANG_MAP,
+        TEXT_EXTENSIONS as DH_TEXT_EXTENSIONS,
+        get_files as dh_get_files,
+        is_binary as dh_is_binary,
+    )
 except Exception:
     DH_BINARY_EXTENSIONS = None
     DH_MIME2EXT = None

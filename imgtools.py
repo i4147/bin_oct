@@ -67,17 +67,18 @@ Command-line script: run ``python imgtools.py`` or the ``imgtools`` command. The
 
 import argparse
 import base64
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import contextlib
 import io
 import os
+from pathlib import Path
 import re
 import subprocess
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 from dh import MAX_WORKERS
+
 
 try:
     from tqdm import tqdm

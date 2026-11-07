@@ -21,12 +21,13 @@ Requires the ``felo`` CLI on ``PATH``.
 """
 
 import argparse
+from datetime import datetime
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
+
 
 SAVE_DIR = Path("~/tmp/apps").expanduser()
 

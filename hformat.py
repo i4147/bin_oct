@@ -13,8 +13,8 @@ Runs as a script (``python hformat.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from bs4 import BeautifulSoup
 from dh import get_files, mpf

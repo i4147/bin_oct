@@ -12,8 +12,8 @@ Runs as a script (``python svg2png.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 import cairosvg
 

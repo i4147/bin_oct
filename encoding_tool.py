@@ -24,22 +24,42 @@ Examples
   python3 encoding_tool.py unescape dumped.txt --kind unicode
 """
 
-
 import argparse
-import html
-import re
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
+import html
 from pathlib import Path
+import re
+import sys
+
 
 SAMPLE_SIZE: int = 100_000
 DEFAULT_WORKERS: int = 8
 COMMON_ENCODINGS: tuple[str, ...] = (
-    "utf-8", "utf-8-sig", "cp1252", "cp1251", "cp1256", "cp437", "cp850",
-    "cp866", "iso-8859-1", "iso-8859-2", "iso-8859-5", "iso-8859-6",
-    "iso-8859-7", "iso-8859-8", "iso-8859-9", "mac_roman", "utf-16",
-    "utf-32", "gbk", "big5", "shift_jis", "euc_jp", "euc_kr", "latin-1",
+    "utf-8",
+    "utf-8-sig",
+    "cp1252",
+    "cp1251",
+    "cp1256",
+    "cp437",
+    "cp850",
+    "cp866",
+    "iso-8859-1",
+    "iso-8859-2",
+    "iso-8859-5",
+    "iso-8859-6",
+    "iso-8859-7",
+    "iso-8859-8",
+    "iso-8859-9",
+    "mac_roman",
+    "utf-16",
+    "utf-32",
+    "gbk",
+    "big5",
+    "shift_jis",
+    "euc_jp",
+    "euc_kr",
+    "latin-1",
 )
 HEX_ESCAPE: re.Pattern[str] = re.compile(r"\\x([0-9a-fA-F]{2})")
 
@@ -70,6 +90,7 @@ def detect_encoding(data: bytes) -> str | None:
         pass
     try:
         import chardet
+
         guess: object = chardet.detect(data[:SAMPLE_SIZE]).get("encoding")
         if isinstance(guess, str) and guess:
             return guess
@@ -151,8 +172,10 @@ def cmd_probe(args: argparse.Namespace) -> int:
 
 def decode_hex_escapes(text: str) -> str:
     """Turn literal ``\\x41`` sequences into ``A``."""
+
     def repl(match: re.Match[str]) -> str:
         return chr(int(match.group(1), 16))
+
     return HEX_ESCAPE.sub(repl, text)
 
 
@@ -201,8 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     tu = sub.add_parser("to-utf8", help="Convert text files to UTF-8 in place")
     tu.add_argument("paths", nargs="*", type=Path, help="Files or dirs (default: .)")
-    tu.add_argument("--from", dest="from_encoding", default=None,
-                    help="Source encoding (default: auto-detect)")
+    tu.add_argument("--from", dest="from_encoding", default=None, help="Source encoding (default: auto-detect)")
     tu.add_argument("-n", "--dry-run", action="store_true")
     tu.add_argument("-v", "--verbose", action="store_true")
     tu.add_argument("-j", "--workers", type=int, default=DEFAULT_WORKERS)
@@ -217,8 +239,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     un = sub.add_parser("unescape", help="Decode escapes/entities in files")
     un.add_argument("files", nargs="+", type=Path)
-    un.add_argument("--kind", choices=sorted(UNESCAPE_KINDS), default="unicode",
-                    help="unicode: \\uXXXX/\\n escapes; hex: \\xXX; html: entities; codes: bare hex per line")
+    un.add_argument(
+        "--kind",
+        choices=sorted(UNESCAPE_KINDS),
+        default="unicode",
+        help="unicode: \\uXXXX/\\n escapes; hex: \\xXX; html: entities; codes: bare hex per line",
+    )
     un.add_argument("--stdout", action="store_true", help="Print instead of rewriting")
     un.set_defaults(handler=cmd_unescape)
     return parser

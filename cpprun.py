@@ -15,11 +15,12 @@ imported.
 """
 
 import os
+from pathlib import Path
 import stat
 import sys
-from pathlib import Path
 
 import sh
+
 
 COMPILERS = {
     ".c": ("clang", ("clang", "gcc")),

@@ -22,23 +22,24 @@ Command-line script: run ``python deduplicate_python.py`` or the ``deduplicate_p
 import argparse
 import ast
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import zipfile
-from collections import defaultdict
-from pathlib import Path
 
 from dh import MAX_WORKERS
 from loguru import logger
 
+
 try:
-    import tree_sitter_python
     from tree_sitter import Parser
+    import tree_sitter_python
 
     TREE_SITTER_AVAILABLE = True
 except Exception:

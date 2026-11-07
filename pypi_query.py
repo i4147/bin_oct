@@ -27,18 +27,18 @@ Examples
   python3 pypi_query_tool.py stats requests --period month
 """
 
-
 import argparse
+from collections import defaultdict
+from collections.abc import Sequence
 import csv
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 import json
+from pathlib import Path
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
-from collections import defaultdict
-from collections.abc import Sequence
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
-from pathlib import Path
+
 
 FEEDS: dict[str, str] = {
     "updates": "https://pypi.org/rss/updates.xml",
@@ -77,6 +77,7 @@ def fetch(url: str, timeout: float, as_json: bool = False) -> object:
         headers["Accept"] = "application/vnd.pypi.simple.v1+json, application/json"
     try:
         import requests
+
         response = requests.get(url, timeout=timeout, headers=headers)
         response.raise_for_status()
         return response.json() if as_json else response.text
@@ -94,14 +95,16 @@ def parse_feed(xml_text: str) -> list[FeedPackage]:
     for item in root.findall(".//item"):
         title: str = item.findtext("title", "") or ""
         parts: list[str] = title.split()
-        packages.append(FeedPackage(
-            package_name=parts[0] if parts else "Unknown",
-            version=parts[1] if len(parts) > 1 else "",
-            title=title,
-            link=item.findtext("link", "") or "",
-            description=item.findtext("description", "") or "",
-            pub_date=item.findtext("pubDate", "") or "",
-        ))
+        packages.append(
+            FeedPackage(
+                package_name=parts[0] if parts else "Unknown",
+                version=parts[1] if len(parts) > 1 else "",
+                title=title,
+                link=item.findtext("link", "") or "",
+                description=item.findtext("description", "") or "",
+                pub_date=item.findtext("pubDate", "") or "",
+            )
+        )
     return packages
 
 
@@ -237,8 +240,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-t", "--timeout", type=float, default=30.0, help="HTTP timeout s (default: 30)")
     sub = parser.add_subparsers(dest="command", required=True)
     la = sub.add_parser("latest", help="Newest packages/releases (RSS)")
-    la.add_argument("--feed", choices=sorted(FEEDS), default="updates",
-                    help="updates: new releases; packages: new projects")
+    la.add_argument(
+        "--feed", choices=sorted(FEEDS), default="updates", help="updates: new releases; packages: new projects"
+    )
     la.add_argument("-n", "--limit", "--num-packages", type=int, default=None, dest="limit")
     la.add_argument("-f", "--format", choices=("json", "csv", "txt"), default=None)
     la.add_argument("-o", "--output", type=Path, default=None, help="Default: print to screen")

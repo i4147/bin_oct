@@ -16,8 +16,9 @@ Runs at import time; start it from the tree to scan.
 from collections import defaultdict
 from pathlib import Path
 
-import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
+import tree_sitter_python as tsp
+
 
 parser = Parser()
 parser.language = Language(tsp.language())

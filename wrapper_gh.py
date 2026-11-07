@@ -14,10 +14,11 @@ Meant to shadow ``gh`` on ``PATH``; keep the real binary reachable at the path i
 
 import datetime as dt
 import os
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
+
 
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 REAL_GH = "/data/data/com.termux/files/usr/bin/gh"

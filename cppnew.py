@@ -13,9 +13,10 @@ Runs as a script (``python cppnew.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+
 
 TEMPLATE = """\
 #include <bits/stdc++.h>

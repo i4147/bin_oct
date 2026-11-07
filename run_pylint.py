@@ -13,10 +13,11 @@ Runs as a script (``python run_pylint.py``) in the directory it should act on; t
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_pyfiles, runcmd
+
 
 CHUNK_SIZE = 1024 * 1024
 

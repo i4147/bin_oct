@@ -26,10 +26,10 @@ Command-line script: run ``python failtest.py`` or the ``failtest`` command. The
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import subprocess
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Optional, Sequence
 
 

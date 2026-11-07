@@ -15,8 +15,9 @@ imported.
 """
 
 import os
-import subprocess
 from pathlib import Path
+import subprocess
+
 
 NEW_USER = "i4147"
 IGNORE = {"cpython", "neovim-source", ".git"}

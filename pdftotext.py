@@ -24,9 +24,9 @@ Command-line script: run ``python pdftotext.py`` or the ``pdftotext`` command. T
 """
 
 import argparse
-import re
 from io import StringIO
 from pathlib import Path
+import re
 
 
 class Extractor(object):

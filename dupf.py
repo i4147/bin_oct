@@ -27,6 +27,7 @@ from dh import MAX_WORKERS, fsz, gsz
 from loguru import logger
 from xxhash import xxh64
 
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 CHUNKSIZE: int = 32768

@@ -27,9 +27,9 @@ Command-line script: run ``python mo2po.py`` or the ``mo2po`` command. The modul
 """
 
 import argparse
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def check_msgunfmt() -> bool:

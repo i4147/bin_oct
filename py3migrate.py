@@ -52,6 +52,9 @@ Command-line script: run ``python py3migrate.py`` or the ``py3migrate`` command.
 
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+from pathlib import Path
 import pkgutil
 import re
 import shutil
@@ -59,14 +62,12 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
-from pathlib import Path
 from typing import Iterable, Sequence
+import zipfile
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 log = logger
 DEFAULT_EXT: tuple[str, ...] = (".py",)

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
-import os
+from pathlib import Path
 import random
 import re
 import signal
@@ -9,12 +10,11 @@ import sqlite3
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 
 from dh import MAX_WORKERS
 from googletrans import Translator
 from loguru import logger
+
 
 RETRY_ATTEMPTS = 4
 RETRY_DELAY = 0.6

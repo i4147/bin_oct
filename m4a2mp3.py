@@ -13,10 +13,9 @@ Runs as a script (``python m4a2mp3.py``) in the directory it should act on; the 
 imported.
 """
 
-import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 from dh import runcmd
 

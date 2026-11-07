@@ -13,12 +13,13 @@ Runs as a script (``python autobuild.py``) in the directory it should act on; th
 imported.
 """
 
-import subprocess
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import subprocess
+import sys
 
 from dh import NUM_WORKERS
+
 
 CURRENT_DIR = Path.cwd()
 OUTPUT_DIR = CURRENT_DIR / "wheels"

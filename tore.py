@@ -13,11 +13,12 @@ Runs as a script (``python tore.py``) in the directory it should act on; the mod
 imported.
 """
 
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 from dh import unique_path
+
 
 if __name__ == "__main__":
     src = Path(sys.argv[1]).resolve()

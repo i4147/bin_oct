@@ -34,11 +34,11 @@ Command-line script: run ``python annotate_types.py`` or the ``annotate_types`` 
 import argparse
 import ast
 import difflib
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 
 import libcst as cst
 from libcst.codemod import CodemodContext

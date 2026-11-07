@@ -58,16 +58,17 @@ Command-line script: run ``python textclean.py`` or the ``textclean`` command. T
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
+from pathlib import Path
 import re
 import shutil
 import string
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Iterator, Sequence
 
-from dh import SKIP_DIRS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
+
 
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8

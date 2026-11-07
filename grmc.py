@@ -33,16 +33,16 @@ Command-line script: run ``python grmc.py`` or the ``grmc`` command. The module 
 import argparse
 import ast
 import dataclasses
+from dataclasses import dataclass
 import multiprocessing
 import os
-import sys
-import tempfile
-from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Any
 
 from atomicio import atomic_write_file
 from loguru import logger
+
 
 try:
     import libcst as cst
@@ -53,8 +53,8 @@ except ImportError:
     HAS_LIBCST = False
 
 try:
-    import tree_sitter_python as tspython
     from tree_sitter import Language, Parser
+    import tree_sitter_python as tspython
 
     HAS_TREESITTER = True
 except ImportError:

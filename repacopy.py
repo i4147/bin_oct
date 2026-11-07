@@ -21,9 +21,9 @@ Command-line script: run ``python repacopy.py`` or the ``repacopy`` command. The
 """
 
 import argparse
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 from loguru import logger
 

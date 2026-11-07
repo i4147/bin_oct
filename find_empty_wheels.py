@@ -13,8 +13,8 @@ Runs as a script (``python find_empty_wheels.py``) in the directory it should ac
 imported.
 """
 
-import zipfile
 from pathlib import Path
+import zipfile
 
 
 def is_empty_wheel(whl_path: Path) -> bool | None:

@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from dataclasses import dataclass
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
-import urllib.request
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
+import urllib.request
 
 from dh import MAX_WORKERS, atomic_write
+
 
 EXT_TO_LANG: dict[str, str] = {
     ".html": "html",

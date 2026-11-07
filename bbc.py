@@ -13,8 +13,9 @@ Runs as a script (``python bbc.py``) in the directory it should act on; the modu
 imported.
 """
 
-import shutil
 from pathlib import Path
+import shutil
+
 
 L1 = "[egg_info]"
 L2 = "tag_build = "

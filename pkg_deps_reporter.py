@@ -26,9 +26,9 @@ Command-line script: run ``python pkg_deps_reporter.py`` or the ``pkg_deps_repor
 """
 
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def parse_metadata_dependencies(metadata_path: Path) -> dict:

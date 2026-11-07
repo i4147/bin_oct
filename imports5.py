@@ -44,13 +44,14 @@ import argparse
 import ast
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
+from typing import Iterable, Iterator, Optional
 import urllib.error
 import urllib.request
-from pathlib import Path
-from typing import Iterable, Iterator, Optional
+
 
 try:
     STDLIB: set[str] = set(sys.stdlib_module_names)

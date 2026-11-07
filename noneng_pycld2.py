@@ -29,20 +29,19 @@ def detect_language(text):
     return lang, prob
 
 
-def scan_and_detect(root_dir="."):
-    print(f"Scanning directory: {Path(root_dir).absolute()}\n", flush=True)
+def scan_and_detect(root_dir: Path):
     print(f"{'File Path':<40} | {'pycld2':<15} | Snippet", flush=True)
-    print("-" * 100, flush=True)
 
     for root, dirs, files in os.walk(root_dir):
         dirs[:] = [d for d in dirs if not d.startswith(".")]
         for file in files:
             if file.startswith("."):
                 continue
-
             file_path = Path(root).joinpath(file)
+            if ".git" in file_path.parts or file_path.is_symlink():
+                continue
             try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                with file_path.open(encoding="utf-8", errors="ignore") as f:
                     content = f.read().strip()
                 if not content:
                     continue
@@ -56,4 +55,6 @@ def scan_and_detect(root_dir="."):
                 pass
 
 
-scan_and_detect(".")
+if __name__ == "__main__":
+    cwd = Path.cwd()
+    scan_and_detect(cwd)

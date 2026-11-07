@@ -47,16 +47,17 @@ Command-line script: run ``python html2markdown.py`` or the ``html2markdown`` co
 """
 
 import argparse
+from collections.abc import Sequence
+from concurrent.futures import ProcessPoolExecutor
 import html.parser
+from pathlib import Path
 import re
 import subprocess
 import sys
 import urllib.request
-from collections.abc import Sequence
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
 from dh import MAX_WORKERS
+
 
 HTML_SUFFIXES: frozenset[str] = frozenset({".html", ".htm", ".xhtml", ".xhtm"})
 SKIP_TAGS: frozenset[str] = frozenset({"script", "style", "noscript", "template", "head"})

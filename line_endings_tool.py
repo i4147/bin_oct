@@ -17,17 +17,22 @@ Examples
   python3 line_endings_tool.py convert . --to dos -q
 """
 
-
 import argparse
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+import sys
+
 
 DEFAULT_WORKERS: int = 8
 SNIFF_BYTES: int = 8192
 SKIP_DIRS: frozenset[str] = frozenset({
-    ".git", "__pycache__", ".pytest_cache", ".mypy_cache", "venv", ".venv",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "venv",
+    ".venv",
 })
 
 

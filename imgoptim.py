@@ -30,18 +30,19 @@ Command-line script: run ``python imgoptim.py`` or the ``imgoptim`` command. The
 """
 
 import argparse
+from dataclasses import dataclass
 import multiprocessing as mp
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Final
+import xml.etree.ElementTree as ET
 
 from dh import MAX_WORKERS, walker
+
 
 GREEN = "\033[32m"
 DIM = "\033[2m"

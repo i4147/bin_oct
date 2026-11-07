@@ -48,16 +48,17 @@ Command-line script: run ``python dhtools.py`` or the ``dhtools`` command. The m
 
 import argparse
 import ast
-import hashlib
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+import hashlib
 from pathlib import Path
+import re
+import sys
 from typing import Iterable
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 log = logger
 DEFAULT_DH_PATH: Path = Path.home() / "projects" / "py" / "dh" / "src" / "dh"

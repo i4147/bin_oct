@@ -28,13 +28,13 @@ Command-line script: run ``python dirinfo.py`` or the ``dirinfo`` command. The m
 """
 
 import argparse
-import operator
-import sys
 from collections import defaultdict
+import operator
 from pathlib import Path
+import sys
 
-import matplotlib.pyplot as plt
 from dh import fsz
+import matplotlib.pyplot as plt
 
 
 def scan_directory(path: str = "."):

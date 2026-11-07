@@ -23,9 +23,9 @@ Command-line script: run ``python ewhl.py`` or the ``ewhl`` command. The module 
 """
 
 import argparse
+from pathlib import Path
 import shutil
 import zipfile
-from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

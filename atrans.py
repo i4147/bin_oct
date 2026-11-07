@@ -35,16 +35,17 @@ Command-line script: run ``python atrans.py`` or the ``atrans`` command. The mod
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
+from pathlib import Path
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 logger.remove()
 logger.add(

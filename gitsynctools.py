@@ -33,13 +33,13 @@ Command-line script: run ``python gitsynctools.py`` or the ``gitsynctools`` comm
 
 import argparse
 import contextlib
+from datetime import datetime
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
 from typing import Optional, Sequence
 
 from dotenv import load_dotenv

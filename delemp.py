@@ -26,15 +26,16 @@ Command-line script: run ``python delemp.py`` or the ``delemp`` command. The mod
 """
 
 import argparse
-import sys
-import time
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import time
 from typing import TYPE_CHECKING, Final
 
 from dh import MAX_WORKERS, is_binary, should_skip
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

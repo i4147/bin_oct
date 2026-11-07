@@ -44,12 +44,13 @@ Command-line script: run ``python fontconverter.py`` or the ``fontconverter`` co
 
 import argparse
 import multiprocessing
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 from typing import Callable, Sequence
 
 from dh import MAX_WORKERS
+
 
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen

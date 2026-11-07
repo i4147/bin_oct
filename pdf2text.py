@@ -41,8 +41,8 @@ Command-line script: run ``python pdf2text.py`` or the ``pdf2text`` command. The
 """
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 from typing import Iterator, Optional
 
 

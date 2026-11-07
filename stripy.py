@@ -15,14 +15,14 @@ imported.
 """
 
 import ast
-import multiprocessing as mp
-import sys
 from dataclasses import dataclass
+import multiprocessing as mp
 from pathlib import Path
+import sys
 from typing import Sequence
 
+from dh import MAX_WORKERS
 import libcst as cst
-from dh import WORKERS
 from loguru import logger
 
 
@@ -240,9 +240,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             ", ".join(str(p) for p in inputs),
         )
         return 0
-    chunksize = max(1, len(files) // (WORKERS * 4))
+    chunksize = max(1, len(files) // (MAX_WORKERS * 4))
     try:
-        with mp.Pool(processes=WORKERS) as pool:
+        with mp.Pool(processes=MAX_WORKERS) as pool:
             results: list[FileReport] = pool.starmap(
                 process_file,
                 ((f,) for f in files),

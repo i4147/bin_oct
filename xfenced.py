@@ -13,9 +13,10 @@ Runs as a script (``python xfenced.py``) in the directory it should act on; the 
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 CODE_BLOCK_RE = re.compile(
     r"^```(?:python|py)\b\s*\n(.*?)^```[ \t]*$",

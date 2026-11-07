@@ -13,9 +13,9 @@ Runs as a script (``python fv.py``) in the directory it should act on; the modul
 imported.
 """
 
+from pathlib import Path
 import pydoc
 import sys
-from pathlib import Path
 
 
 def main() -> None:

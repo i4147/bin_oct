@@ -14,9 +14,10 @@ Runs as a script (``python build_setup.py``) in the directory it should act on; 
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 DEFAULT_VERSION: str = "1.4.7"
 

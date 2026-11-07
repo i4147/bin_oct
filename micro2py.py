@@ -21,9 +21,10 @@ Command-line script: run ``python micro2py.py`` or the ``micro2py`` command. The
 """
 
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 if sys.version_info >= (3, 10):
     _STDLIB: set[str] | None = set(sys.stdlib_module_names)

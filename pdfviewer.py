@@ -25,12 +25,13 @@ Command-line script: run ``python pdfviewer.py`` or the ``pdfviewer`` command. T
 import argparse
 import math
 import os
+from pathlib import Path
 import select
 import shutil
 import sys
 import termios
 import tty
-from pathlib import Path
+
 
 try:
     import fitz

@@ -15,15 +15,16 @@ Runs as a script (``python autoclone.py``) in the directory it should act on; th
 imported.
 """
 
+from datetime import datetime, timedelta
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
-from datetime import datetime, timedelta
-from pathlib import Path
 
-import requests
 from dotenv import load_dotenv
+import requests
+
 
 env_path = Path.home() / ".env"
 if env_path.exists():

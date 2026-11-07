@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import base64
-import re
-import sys
 from html.parser import HTMLParser
 from pathlib import Path
+import re
+import sys
 from typing import Any, Iterable, Optional, Sequence
 
 

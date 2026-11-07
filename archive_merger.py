@@ -32,9 +32,9 @@ Command-line script: run ``python archive_merger.py`` or the ``archive_merger`` 
 
 import argparse
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import tarfile
-from pathlib import Path
 
 from dh import MAX_WORKERS
 

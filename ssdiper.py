@@ -21,13 +21,14 @@ Command-line script: run ``python ssdiper.py`` or the ``ssdiper`` command. The m
 """
 
 import argparse
+from collections import defaultdict
 import json
 import operator
-from collections import defaultdict
 from pathlib import Path
 from typing import Callable, Optional
 
 from dh import get_files
+
 
 try:
     import tlsh
@@ -38,8 +39,10 @@ try:
 except ImportError:
     ssdeep = None
 try:
-    from sdhash import compare as _sdhash_compare
-    from sdhash import sdhash as _sdhash_hash
+    from sdhash import (
+        compare as _sdhash_compare,
+        sdhash as _sdhash_hash,
+    )
 except ImportError:
     _sdhash_hash = None
     _sdhash_compare = None

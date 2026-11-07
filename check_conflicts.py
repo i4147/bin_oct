@@ -25,12 +25,13 @@ Command-line script: run ``python check_conflicts.py`` or the ``check_conflicts`
 
 import argparse
 import json
+from pathlib import Path
 import re
 import sys
 import time
-from pathlib import Path
 
 from dh import STDLIB
+
 
 PIP_JSON = Path("/sdcard/data/pip.json")
 DEFAULT_REPORT = Path("conflict_report.json")

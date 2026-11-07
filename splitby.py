@@ -13,8 +13,8 @@ Runs as a script (``python splitby.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def split_file_by_delimiter(fname: str, delimiter: str) -> None:

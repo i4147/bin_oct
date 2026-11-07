@@ -2,14 +2,15 @@
 
 import argparse
 import ast
-import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
+import sys
 from typing import Optional, Sequence
 
 from dh import MAX_WORKERS
+
 
 DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",

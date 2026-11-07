@@ -13,11 +13,12 @@ Runs as a script (``python woff22woff.py``) in the directory it should act on; t
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
+
 
 cwd = Path.cwd()
 

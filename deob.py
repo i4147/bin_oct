@@ -22,9 +22,10 @@ Command-line script: run ``python deob.py`` or the ``deob`` command. The module 
 """
 
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 _ASSIGN_RE = re.compile(
     r"""

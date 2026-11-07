@@ -13,8 +13,8 @@ Runs as a script (``python finglish.py``) in the directory it should act on; the
 imported.
 """
 
-import unicodedata
 from pathlib import Path
+import unicodedata
 
 
 def custom_persian_to_finglish(text: str) -> str:

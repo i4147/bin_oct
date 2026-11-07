@@ -13,13 +13,14 @@ Runs as a script (``python noneng_gcld3.py``) in the directory it should act on;
 imported.
 """
 
-import os
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Optional
 
 import gcld3
 import py3langid as langid
+
 
 MIN_PROBABILITY: float = 0.5
 _detector: gcld3.NNetLanguageIdentifier = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)

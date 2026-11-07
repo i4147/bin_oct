@@ -17,8 +17,9 @@ Command-line script: run ``python clean_version.py`` or the ``clean_version`` co
 """
 
 import argparse
-import re
 from pathlib import Path
+import re
+
 
 PKG_NAME_RE = re.compile(
     r"""

@@ -15,9 +15,10 @@ Runs at import time and needs ``IPINFO_TOKEN`` in ``~/.env``.
 import os
 from pathlib import Path
 
-import ipinfo
 from dh import cyan, reset
 from dotenv import load_dotenv
+import ipinfo
+
 
 if __name__ == "__main__":
     env_path = Path.home() / ".env"

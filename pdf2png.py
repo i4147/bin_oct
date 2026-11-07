@@ -15,10 +15,10 @@ imported.
 """
 
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 
 def pdf_to_png(pdf_path, output_dir=None, dpi=200):

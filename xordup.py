@@ -14,11 +14,12 @@ Runs as a script (``python xordup.py``) in the directory it should act on; the m
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint, mpf
 from xorhash import get_xorhash
+
 
 REMOVE = "-r" in sys.argv
 

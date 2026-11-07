@@ -14,11 +14,12 @@ Runs as a script (``python trafila.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
-import trafilatura
 from dh import get_files, mpf
+import trafilatura
+
 
 remove_orig = "-r" in sys.argv
 

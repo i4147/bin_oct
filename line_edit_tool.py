@@ -73,11 +73,12 @@ Command-line script: run ``python line_edit_tool.py`` or the ``line_edit_tool`` 
 """
 
 import argparse
+from collections.abc import Sequence
+from pathlib import Path
 import shutil
 import sys
 import textwrap
-from collections.abc import Sequence
-from pathlib import Path
+
 
 DEFAULT_APPEND_TEXT: str = "\n#migrate from logging with print and standard logging module to loguru\n"
 DEFAULT_TAB_WIDTH: int = 4

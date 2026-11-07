@@ -15,9 +15,9 @@ imported.
 
 import json
 import os
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def get_installed_packages_dependencies():

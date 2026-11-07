@@ -13,10 +13,10 @@ Runs as a script (``python reinstall_system_pkgs.py``) in the directory it shoul
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 
 def main():

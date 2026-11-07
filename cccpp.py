@@ -21,16 +21,17 @@ Command-line script: run ``python cccpp.py`` or the ``cccpp`` command. The modul
 """
 
 import argparse
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
-import tree_sitter_c
-import tree_sitter_cpp
-from dh import WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_c
+import tree_sitter_cpp
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -225,7 +226,7 @@ def _run_batch(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
     total_comments: int = 0
     files_changed: int = 0
     errors: int = 0
-    with Pool(processes=WORKERS) as pool:
+    with Pool(processes=MAX_WORKERS) as pool:
         results = [pool.apply_async(process_file, (p, base)) for p in files]
         for res in results:
             rel, count, err = res.get()

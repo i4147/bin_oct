@@ -18,17 +18,17 @@ Examples:
 Command-line script: run ``python armc.py`` or the ``armc`` command. The module is importable as well.
 """
 
-
 import argparse
 import ast
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import NamedTuple
 
-import tree_sitter_python as tspython
 from loguru import logger
 from tree_sitter import Language, Parser
+import tree_sitter_python as tspython
+
 
 logger.remove()
 logger.add(

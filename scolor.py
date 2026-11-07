@@ -14,6 +14,7 @@ Runs its loop at import time; there is no command-line interface.
 
 from secrets import randbelow
 
+
 RESET = "\033[0m;"
 
 
@@ -30,8 +31,9 @@ def showcolor(n=998) -> int:
     return 0
 
 
-for i in range(3):
-    showcolor(50)
-    ans = input("continue ?")
-    if ans != "y":
-        break
+if __name__ == "__main__":
+    for i in range(3):
+        showcolor(50)
+        ans = input("continue ?")
+        if ans != "y":
+            break

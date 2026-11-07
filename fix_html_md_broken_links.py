@@ -15,8 +15,9 @@ imported.
 """
 
 import os
-import re
 from pathlib import Path
+import re
+
 
 static_dir = "/sdcard/_static"
 

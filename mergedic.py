@@ -14,14 +14,15 @@ Runs as a script (``python mergedic.py``) in the directory it should act on; the
 imported.
 """
 
+from collections import defaultdict
 import json
+from pathlib import Path
 import re
 import sys
-from collections import defaultdict
-from pathlib import Path
 
 from dh import get_random_filename
 from loguru import logger
+
 
 ENGLISH_RE = re.compile(r"^[A-Za-z][A-Za-z\s\-'.]*$")
 

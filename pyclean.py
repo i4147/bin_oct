@@ -51,15 +51,16 @@ Command-line script: run ``python pyclean.py`` or the ``pyclean`` command. The m
 
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
 import io
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Optional, Sequence
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     import libcst as cst

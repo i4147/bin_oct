@@ -14,13 +14,14 @@ Runs as a script (``python plotter.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from multiprocessing import Pool
+import sys
 from typing import Any
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 mpl.use("Agg")
 _FUNCTION_EXPR: str = ""

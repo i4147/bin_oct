@@ -14,19 +14,20 @@ Runs as a script (``python rename_html_by_title.py``) in the directory it should
 imported.
 """
 
-import re
-import sys
-import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any
+import unicodedata
 
-from dh import SKIP_DIRS, WORKERS
+from dh import WORKERS
 from loguru import logger
+
 
 try:
     TREE_SITTER_AVAILABLE = True

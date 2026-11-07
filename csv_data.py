@@ -23,26 +23,60 @@ Examples
   python3 csv_data_tool.py dpkg-export -o ./backups
 """
 
-
 import argparse
-import csv
-import json
-import subprocess
-import sys
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
+import csv
+import json
 from pathlib import Path
+import subprocess
+import sys
+
 
 BINARY_EXTENSIONS: frozenset[str] = frozenset({
-    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".zip", ".tar",
-    ".gz", ".xz", ".bz2", ".7z", ".mp3", ".mp4", ".mkv", ".pyc", ".so",
-    ".o", ".a", ".exe", ".dll", ".bin", ".db", ".sqlite3",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".ico",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".xz",
+    ".bz2",
+    ".7z",
+    ".mp3",
+    ".mp4",
+    ".mkv",
+    ".pyc",
+    ".so",
+    ".o",
+    ".a",
+    ".exe",
+    ".dll",
+    ".bin",
+    ".db",
+    ".sqlite3",
 })
 PKG_FIELDS: list[str] = [
-    "Package", "Version", "Architecture", "Status", "Priority", "Section",
-    "Installed-Size", "Maintainer", "Homepage", "Description", "Source",
-    "Essential", "Multi-Arch", "Origin", "Bugs",
+    "Package",
+    "Version",
+    "Architecture",
+    "Status",
+    "Priority",
+    "Section",
+    "Installed-Size",
+    "Maintainer",
+    "Homepage",
+    "Description",
+    "Source",
+    "Essential",
+    "Multi-Arch",
+    "Origin",
+    "Bugs",
 ]
 PKG_FORMAT: str = (
     "${binary:Package}\t${Version}\t${Architecture}\t${Status}\t${Priority}\t"
@@ -112,9 +146,7 @@ def group_by_extension(root: Path, excluded: frozenset[str]) -> dict[str, list[P
 
 def cmd_dup_lines(args: argparse.Namespace) -> int:
     """Report lines that occur at least --min-count times, per extension."""
-    excluded: frozenset[str] = BINARY_EXTENSIONS | {
-        (e if e.startswith(".") else "." + e).lower() for e in args.exclude
-    }
+    excluded: frozenset[str] = BINARY_EXTENSIONS | {(e if e.startswith(".") else "." + e).lower() for e in args.exclude}
     groups: dict[str, list[Path]] = group_by_extension(args.root, excluded)
     if not groups:
         print("No eligible files found.")
@@ -143,8 +175,7 @@ def cmd_dup_lines(args: argparse.Namespace) -> int:
 def query_packages() -> list[list[str]]:
     """Return installed dpkg packages sorted by installed size (largest first)."""
     try:
-        proc = subprocess.run(["dpkg-query", "-W", f"-f={PKG_FORMAT}"],
-                              check=True, capture_output=True, text=True)
+        proc = subprocess.run(["dpkg-query", "-W", f"-f={PKG_FORMAT}"], check=True, capture_output=True, text=True)
     except FileNotFoundError:
         raise SystemExit("dpkg-query not found (not a Debian-based system)") from None
     except subprocess.CalledProcessError as exc:
@@ -181,8 +212,9 @@ def build_parser() -> argparse.ArgumentParser:
     tj = sub.add_parser("to-json", help="Convert CSV to JSON")
     tj.add_argument("input", type=Path, help="Input .csv file")
     tj.add_argument("-o", "--output", type=Path, default=None, help="Output (default: input with .json)")
-    tj.add_argument("--mode", choices=("rows", "map"), default="rows",
-                    help="rows: list of dicts; map: first two columns as object")
+    tj.add_argument(
+        "--mode", choices=("rows", "map"), default="rows", help="rows: list of dicts; map: first two columns as object"
+    )
     tj.set_defaults(handler=cmd_to_json)
 
     dl = sub.add_parser("dup-lines", help="Per-extension repeated-line report")
@@ -195,8 +227,13 @@ def build_parser() -> argparse.ArgumentParser:
     dl.set_defaults(handler=cmd_dup_lines)
 
     dp = sub.add_parser("dpkg-export", help="Export dpkg package list to TSV+CSV")
-    dp.add_argument("-o", "--out-dir", type=Path, default=Path("/sdcard/backups"),
-                    help="Output dir (original default: /sdcard/backups)")
+    dp.add_argument(
+        "-o",
+        "--out-dir",
+        type=Path,
+        default=Path("/sdcard/backups"),
+        help="Output dir (original default: /sdcard/backups)",
+    )
     dp.set_defaults(handler=cmd_dpkg_export)
     return parser
 

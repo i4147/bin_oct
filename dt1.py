@@ -37,20 +37,19 @@ Command-line script: run ``python dt1.py`` or the ``dt1`` command. The module is
 """
 
 import argparse
-import contextlib
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import json
 import os
+from pathlib import Path
 import sys
-import tempfile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Callable
 
 from atomicio import atomic_save
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 Translator = Callable[[str], str]
 FALLBACK_BACKENDS = (

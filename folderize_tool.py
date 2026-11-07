@@ -29,17 +29,25 @@ Examples
   python3 folderize_tool.py leaf-dirs . --max-kb 100
 """
 
-
 import argparse
-import re
-import shutil
-import sys
 from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
+import re
+import shutil
+import sys
+
 
 IMAGE_EXTENSIONS: frozenset[str] = frozenset({
-    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".ico",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".webp",
+    ".ico",
 })
 UNITS: tuple[str, ...] = ("B", "KB", "MB", "GB", "TB")
 
@@ -159,7 +167,8 @@ def cmd_by_name(args: argparse.Namespace) -> int:
         return 0
     plan: list[tuple[Path, Path]] = [
         (src, root / group / src.name)
-        for group, paths in sorted(groups.items()) for src in sorted(paths)
+        for group, paths in sorted(groups.items())
+        for src in sorted(paths)
         if (root / group / src.name).resolve() != src.resolve()
     ]
     execute_plan(plan, args.apply, False, root)
@@ -248,8 +257,13 @@ def add_common(child: argparse.ArgumentParser, recursive_default: bool) -> None:
     """Shared --apply/--recursive/--cleanup options for movers."""
     child.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     child.add_argument("--apply", action="store_true", help="Actually move (default: dry-run plan)")
-    child.add_argument("-r", "--recursive", action="store_true", default=recursive_default,
-                       help=f"Collect recursively (default: {recursive_default})")
+    child.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        default=recursive_default,
+        help=f"Collect recursively (default: {recursive_default})",
+    )
     child.add_argument("--cleanup", action="store_true", help="Remove emptied dirs after moving")
 
 

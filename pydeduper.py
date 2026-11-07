@@ -48,20 +48,21 @@ Command-line script: run ``python pydeduper.py`` or the ``pydeduper`` command. T
 import argparse
 import ast
 import bz2
+from collections import defaultdict
+from dataclasses import dataclass, field
 import gzip
 import hashlib
 import lzma
+from multiprocessing import Pool
+from pathlib import Path
 import sys
 import tarfile
-import zipfile
-from collections import defaultdict
-from dataclasses import dataclass, field
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Iterable, Iterator, Optional
+import zipfile
 
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 try:
     from loguru import logger

@@ -42,14 +42,15 @@ Command-line script: run ``python addmainguard.py`` or the ``addmainguard`` comm
 
 import argparse
 import ast
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+import re
+import sys
 from typing import Sequence
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",

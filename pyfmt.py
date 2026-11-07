@@ -48,18 +48,19 @@ Command-line script: run ``python pyfmt.py`` or the ``pyfmt`` command. The modul
 """
 
 import argparse
-import json
-import shutil
-import subprocess
-import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import partial
+import json
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 from typing import TYPE_CHECKING, Optional
 
 from dh import MAX_WORKERS, atomic_write
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -178,8 +179,8 @@ class HtmlTagFormatter:
 
     def __init__(self) -> None:
         try:
-            import tree_sitter_html as ts_html
             from tree_sitter import Language, Parser
+            import tree_sitter_html as ts_html
         except ImportError as exc:
             msg = "Required packages not installed. Install with: pip install tree-sitter tree-sitter-html"
             raise RuntimeError(msg) from exc

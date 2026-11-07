@@ -18,13 +18,13 @@ Command-line script: run ``python ssdiper2.py`` or the ``ssdiper2`` command. The
 """
 
 import argparse
+from collections import defaultdict
 import json
 import operator
-from collections import defaultdict
 from pathlib import Path
 
-import ssdeep
 from dh import get_files
+import ssdeep
 
 
 def X(h, M=1):

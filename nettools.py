@@ -57,27 +57,31 @@ Command-line script: run ``python nettools.py`` or the ``nettools`` command. The
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 import io
 import json
 import os
+from pathlib import Path
 import random
 import re
 import socket
 import string
 import subprocess
 import time
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-from pathlib import Path
 from typing import Optional, Sequence
 from urllib import request as urlrequest
 
 from dh import MAX_WORKERS
 
+
 try:
+    from colorama import (
+        Fore,
+        Style,
+        init as colorama_init,
+    )
     import requests
-    from colorama import Fore, Style
-    from colorama import init as colorama_init
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True

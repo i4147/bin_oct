@@ -23,6 +23,7 @@ from pathlib import Path
 
 from loguru import logger
 
+
 VOID_ELEMENTS = {
     "area",
     "base",
@@ -167,8 +168,10 @@ def backend_html_parser(raw):
 
 
 def backend_lxml(raw):
-    from lxml import etree
-    from lxml import html as lxml_html
+    from lxml import (
+        etree,
+        html as lxml_html,
+    )
 
     errors = []
     try:

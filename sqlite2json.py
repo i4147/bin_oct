@@ -2,19 +2,20 @@
 
 import argparse
 import base64
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import closing
 import json
 import math
 import os
+from pathlib import Path
 import shutil
 import sqlite3
 import sys
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from contextlib import closing
-from pathlib import Path
 from typing import Any, Callable
 
 from dh import MAX_WORKERS
+
 
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"

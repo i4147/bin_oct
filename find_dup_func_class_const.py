@@ -19,11 +19,11 @@ Command-line script: run ``python find_dup_func_class_const.py`` or the ``find_d
 
 import argparse
 import ast
+from collections import defaultdict
 import concurrent.futures
 import os
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 
 
 def parse_file_definitions(path: Path) -> dict:

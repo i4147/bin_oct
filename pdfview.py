@@ -27,6 +27,9 @@ Command-line script: run ``python pdfview.py`` or the ``pdfview`` command. The m
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from pathlib import Path
 import shutil
 import subprocess
 import sys
@@ -34,13 +37,11 @@ import tempfile
 import termios
 import textwrap
 import tty
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 
-from dh import MAX_WORKERS, WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     import os

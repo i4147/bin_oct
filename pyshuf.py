@@ -24,12 +24,12 @@ Command-line script: run ``python pyshuf.py`` or the ``pyshuf`` command. The mod
 
 import argparse
 import mmap
-import os
+from pathlib import Path
 import random
 import secrets
 import sys
-from pathlib import Path
 from typing import Any
+
 
 MMAP_THRESHOLD_BYTES: int = 5 * 1024 * 1024
 

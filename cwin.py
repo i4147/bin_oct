@@ -13,10 +13,11 @@ Runs as a script (``python cwin.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import fsz
+
 
 DARWIN_PATTERNS = {
     ".DS_Store",

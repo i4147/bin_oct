@@ -19,16 +19,19 @@ Command-line script: run ``python dostring_browser.py`` or the ``dostring_browse
 
 import argparse
 import ast
-import sys
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 
 from rich.console import Console
 from rich.markdown import Markdown
 
+
 try:
-    from readchar import key as RKEY
-    from readchar import readkey
+    from readchar import (
+        key as RKEY,
+        readkey,
+    )
 
     HAVE_READCHAR = True
 except Exception:

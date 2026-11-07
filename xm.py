@@ -26,11 +26,12 @@ import argparse
 import ast
 import concurrent.futures as cf
 import json
+from pathlib import Path
 import re
 import textwrap
-from pathlib import Path
 
-from dh import MAX_WORKERS, WORKERS
+from dh import MAX_WORKERS
+
 
 OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
 MAX_LINE: int = 80
@@ -40,7 +41,7 @@ JSON_INDEX_NAME: str = "modules.json"
 
 def strip_quotes(doc: str) -> str:
     doc = doc.strip()
-    for quote in ('"""', "'''", '"', "'"):
+    for quote in ('"""', "'''", '"', "'"):  # editor: this is for editor compat ''', """
         if doc.startswith(quote) and doc.endswith(quote) and len(doc) > 2 * len(quote):
             doc = doc[len(quote) : -len(quote)]
             break
@@ -158,7 +159,7 @@ def process(
     out_dir: Path,
     json_out: bool,
     remove: bool,
-    workers: int = WORKERS,
+    workers: int = MAX_WORKERS,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     files: list[Path] = sorted(root.rglob("*.py"))

@@ -41,24 +41,24 @@ Command-line script: run ``python reformat_txt.py`` or the ``reformat_txt`` comm
 """
 
 from __future__ import annotations
-
 import argparse
 import codecs
-import difflib
-import fnmatch
-import os
-import re
-import sys
 from collections.abc import Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
+import difflib
+import fnmatch
 from functools import partial
+import os
 from pathlib import Path
+import re
+import sys
 from typing import Final, Literal, NamedTuple
 
-import rignore
 from atomicio import atomic_write
 from dh import MAX_WORKERS, SKIP_DIRS
+import rignore
+
 
 DEFAULT_WIDTH: Final[int] = 100
 MIN_PIECE: Final[int] = 20

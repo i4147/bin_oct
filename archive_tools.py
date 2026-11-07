@@ -59,21 +59,22 @@ Command-line script: run ``python archive_tools.py`` or the ``archive_tools`` co
 import argparse
 import bz2
 import contextlib
+from dataclasses import dataclass
 import gzip
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
 import time
-import zipfile
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
+import zipfile
 
 from dh import MAX_WORKERS
+
 
 try:
     import py7zr

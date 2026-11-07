@@ -53,14 +53,15 @@ Command-line script: run ``python langtools.py`` or the ``langtools`` command. T
 """
 
 import argparse
+from collections import Counter, defaultdict
 import csv
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import Counter, defaultdict
-from pathlib import Path
 from typing import Iterator, Optional
+
 
 try:
     import pycld2

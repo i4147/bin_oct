@@ -16,6 +16,7 @@ imported.
 
 from pathlib import Path
 
+
 BASHBIN: Path = Path.home() / "bashbin"
 BIN: Path = Path.home() / "bin"
 LOBIN: Path = Path.home() / ".local" / "bin"

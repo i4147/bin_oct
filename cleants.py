@@ -31,18 +31,18 @@ Command-line script: run ``python cleants.py`` or the ``cleants`` command. The m
 """
 
 import argparse
+from collections import Counter
+from dataclasses import dataclass
 import difflib
+from functools import partial
 import importlib
 import multiprocessing as mp
 import os
+from pathlib import Path, PurePosixPath
 import re
 import shlex
 import shutil
 import sys
-from collections import Counter
-from dataclasses import dataclass
-from functools import partial
-from pathlib import Path, PurePosixPath
 from typing import Iterator
 
 from atomicio import atomic_write

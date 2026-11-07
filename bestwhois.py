@@ -47,17 +47,18 @@ Examples:
 Command-line script: run ``python bestwhois.py`` or the ``bestwhois`` command. The module is importable as well.
 """
 
+from argparse import ArgumentParser, ArgumentTypeError
 import contextlib
 import datetime as dt
 import json
-import sys
-from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
+import sys
 
-import requests
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
+import requests
+
 
 IDN = True
 try:

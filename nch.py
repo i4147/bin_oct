@@ -47,17 +47,18 @@ on a system tree.
 """
 
 import argparse
+from dataclasses import dataclass, field
 import fnmatch
 import multiprocessing as mp
 import os
+from pathlib import Path
 import stat as st
 import sys
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
-from dh import SKIP_DIRS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
+
 
 try:
     from tqdm import tqdm
@@ -66,8 +67,6 @@ except Exception:
     def tqdm(it, **_kwargs):
         return it
 
-
-from isbinary import is_binary
 
 DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644

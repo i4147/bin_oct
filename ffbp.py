@@ -39,8 +39,8 @@ Command-line script: run ``python ffbp.py`` or the ``ffbp`` command. The module 
 """
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 
 def format_size(size_bytes: int) -> str:

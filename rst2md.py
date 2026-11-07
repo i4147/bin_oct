@@ -12,8 +12,8 @@ Examples:
 The original ``.rst`` file is removed after a successful conversion.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_files, mpf
 from docutils.core import publish_parts

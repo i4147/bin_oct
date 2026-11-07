@@ -23,13 +23,13 @@ Examples
   python3 file_finder_tool.py scripts ~/bin
 """
 
-
 import argparse
-import fnmatch
-import sys
 from collections import Counter
 from collections.abc import Iterator, Sequence
+import fnmatch
 from pathlib import Path
+import sys
+
 
 UNITS: tuple[str, ...] = ("B", "KB", "MB", "GB", "TB", "PB")
 
@@ -159,14 +159,15 @@ def looks_like_python_script(path: Path) -> bool:
     first: str = head.splitlines()[0] if head else ""
     if first.startswith("#!"):
         return "python" in first.lower()
-    return any(token in head for token in ('if __name__ ==', "def ", "import ", "from "))
+    return any(token in head for token in ("if __name__ ==", "def ", "import ", "from "))
 
 
 def cmd_scripts(args: argparse.Namespace) -> int:
     """Find Python scripts that lack the ``.py`` extension."""
     root: Path = args.root
     found: list[Path] = [
-        path for path in walk(root, args.recursive, False)
+        path
+        for path in walk(root, args.recursive, False)
         if path.is_file() and not path.suffix and looks_like_python_script(path)
     ]
     if found:

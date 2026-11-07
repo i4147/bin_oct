@@ -16,10 +16,10 @@ Runs the full check at import time; it can take a while on a large environment.
 import importlib
 import json
 import os
+from pathlib import Path
 import pkgutil
 import py_compile
 import site
-from pathlib import Path
 
 
 def run_sanity_check():

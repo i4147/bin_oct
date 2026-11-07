@@ -41,16 +41,17 @@ Command-line script: run ``python lz4er.py`` or the ``lz4er`` command. The modul
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
 import io
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
-import lz4.frame
 from dh import MAX_WORKERS
+import lz4.frame
+
 
 DEFAULT_SKIP_EXT = {".gz", ".br", ".xz", ".zst", ".bz2", ".zip", ".whl", ".lz4", ".7z", ".rar"}
 DEFAULT_MIN_SIZE = 1024

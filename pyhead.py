@@ -13,8 +13,9 @@ Runs as a script (``python pyhead.py``) in the directory it should act on; the m
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     fn = Path(sys.argv[1])

@@ -25,12 +25,13 @@ Command-line script: run ``python dbconverter.py`` or the ``dbconverter`` comman
 
 import argparse
 import json
+from pathlib import Path
 import pickle
 import sqlite3
 import sys
-from pathlib import Path
 
 import pandas as pd
+
 
 SQLITE_MAGIC = b"SQLite format 3\x00"
 

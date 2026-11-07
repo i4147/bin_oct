@@ -51,20 +51,20 @@ Command-line script: run ``python pdftools2.py`` or the ``pdftools2`` command. T
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
 import io
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-import urllib.parse
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Iterable, Optional
+import urllib.parse
 
+from dh import MAX_WORKERS
 import pypdf
 import pypdf.generic
-from dh import MAX_WORKERS
 
 
 def human_size(n: float) -> str:

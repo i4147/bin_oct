@@ -25,9 +25,10 @@ Command-line script: run ``python noneng_all.py`` or the ``noneng_all`` command.
 import argparse
 import math
 import os
-import sys
 from pathlib import Path
+import sys
 from typing import Callable
+
 
 DetectionResult = tuple[str, float]
 

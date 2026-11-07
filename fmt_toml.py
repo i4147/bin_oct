@@ -23,11 +23,11 @@ Command-line script: run ``python fmt_toml.py`` or the ``fmt_toml`` command. The
 """
 
 import argparse
-import sys
 from dataclasses import dataclass
 from io import StringIO
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import sys
 from typing import Any, Optional
 
 from dh import MAX_WORKERS

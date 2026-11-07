@@ -35,18 +35,19 @@ Command-line script: run ``python afkx.py`` or the ``afkx`` command. The module 
 import argparse
 import ast
 import concurrent.futures
+from dataclasses import dataclass, field
 import difflib
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
-import zipfile
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Optional
+import zipfile
 
 from dh import MAX_WORKERS
+
 
 try:
     import zstandard as zstd

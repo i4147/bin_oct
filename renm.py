@@ -20,16 +20,17 @@ Command-line script: run ``python renm.py`` or the ``renm`` command. The module 
 """
 
 import argparse
-import os
-import re
 from multiprocessing.pool import AsyncResult, Pool
+import os
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Final, TypeAlias
 
 from deep_translator import GoogleTranslator
 from dh import MAX_WORKERS, unique_path
 from loguru import logger
 from tqdm import tqdm
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

@@ -14,8 +14,8 @@ imported.
 """
 
 import csv
-import zipfile
 from pathlib import Path
+import zipfile
 
 
 def is_empty_wheel(wheel_path: str) -> bool:

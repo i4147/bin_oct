@@ -15,11 +15,11 @@ Runs as a script (``python forfin.py``) in the directory it should act on; the m
 imported.
 """
 
-import subprocess
-import sys
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import subprocess
+import sys
 
 
 def process_file(cli_app, cli_args, path):

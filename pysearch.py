@@ -63,21 +63,22 @@ Command-line script: run ``python pysearch.py`` or the ``pysearch`` command. The
 """
 
 import argparse
+from collections import Counter
+from concurrent.futures import ProcessPoolExecutor
 import fnmatch
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import threading
-import zipfile
-from collections import Counter
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Iterator, Optional, Sequence
+import zipfile
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 try:
     import py7zr

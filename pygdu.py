@@ -14,16 +14,17 @@ Runs as a script (``python pygdu.py``) in the directory it should act on; the mo
 imported.
 """
 
-import sys
-import termios
-import tty
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import termios
+import tty
 from typing import Final
 
 from dh import fsz
 from loguru import logger
+
 
 POOL_SIZE: Final[int] = 8
 BAR_WIDTH: Final[int] = 10

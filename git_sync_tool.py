@@ -30,15 +30,15 @@ Examples
   python3 git_sync_tool.py publish ~/projects --dry-run
 """
 
-
 import argparse
+from collections.abc import Sequence
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import urllib.request
-from collections.abc import Sequence
-from pathlib import Path
+
 
 GITHUB_API: str = "https://api.github.com"
 
@@ -121,15 +121,17 @@ def cmd_sync_branch(args: argparse.Namespace) -> int:
         return 1
     steps: list[list[str]] = [
         ["fetch", args.remote],
-        ["rebase", "--onto", "@{upstream-target}", "@{head}", "HEAD",
-         "--allow-unrelated-histories"],
+        ["rebase", "--onto", "@{upstream-target}", "@{head}", "HEAD", "--allow-unrelated-histories"],
         ["push", "--force-with-lease", args.remote, f"{branch}:{branch}"],
     ]
     if args.dry_run:
         print(f"Would sync branch {branch!r} in {repo}:")
         for step in steps:
-            print(f"  git {' '.join(step)}".replace("@{upstream-target}", f"{args.remote}/main|master")
-                  .replace("@{head}", "HEAD"))
+            print(
+                f"  git {' '.join(step)}".replace("@{upstream-target}", f"{args.remote}/main|master").replace(
+                    "@{head}", "HEAD"
+                )
+            )
         return 0
     if not args.yes:
         print("Error: sync-branch rewrites history; add --yes.", file=sys.stderr)
@@ -137,8 +139,13 @@ def cmd_sync_branch(args: argparse.Namespace) -> int:
     try:
         run_git(repo, "fetch", args.remote)
         upstream: str | None = next(
-            (ref for ref in (f"{args.remote}/master", f"{args.remote}/main")
-             if git_out(repo, "rev-parse", "--verify", ref)), None)
+            (
+                ref
+                for ref in (f"{args.remote}/master", f"{args.remote}/main")
+                if git_out(repo, "rev-parse", "--verify", ref)
+            ),
+            None,
+        )
         if upstream is None:
             print(f"Error: neither {args.remote}/master nor {args.remote}/main exists.", file=sys.stderr)
             return 1
@@ -198,8 +205,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
             print(f"  would create github repo {name!r} for {repo} and push to {remote_url}")
             continue
         try:
-            github_request(token or "", "POST", f"{GITHUB_API}/user/repos",
-                           {"name": name, "private": args.private})
+            github_request(token or "", "POST", f"{GITHUB_API}/user/repos", {"name": name, "private": args.private})
             run_git(repo, "remote", "add", "origin", remote_url)
             branch: str = git_out(repo, "rev-parse", "--abbrev-ref", "HEAD") or "main"
             run_git(repo, "push", "-u", "origin", branch)

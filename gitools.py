@@ -66,12 +66,12 @@ with a backup.
 """
 
 import argparse
-import os
-import subprocess
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import os
 from pathlib import Path
+import subprocess
+import sys
 from typing import Optional, Sequence
 
 

@@ -13,12 +13,13 @@ Runs as a script (``python rmshebang.py``) in the directory it should act on; th
 imported.
 """
 
-import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+import sys
 
 from dh import fsz, get_files, gsz
+
 
 MAX_QUEUE = 16
 

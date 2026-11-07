@@ -14,10 +14,11 @@ Runs as a script (``python s16.py``) in the directory it should act on; the modu
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import mpf_map
+
 
 CHUNKSIZE = 15_850
 

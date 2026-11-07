@@ -15,14 +15,15 @@ Runs as a script (``python pret2.py``) in the directory it should act on; the mo
 imported.
 """
 
-import shutil
-import subprocess
 from multiprocessing.pool import Pool
 from pathlib import Path
+import shutil
+import subprocess
 from typing import Final, NamedTuple
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900
 ERROR_DIR_NAME: Final[str] = "error"

@@ -20,13 +20,13 @@ Command-line script: run ``python mk_deptree_svg.py`` or the ``mk_deptree_svg`` 
 """
 
 import argparse
-import html
-import re
 from collections import defaultdict, deque
+import html
 from importlib import metadata
 from pathlib import Path
+import re
 
-from dh import WORKERS
+from dh import MAX_WORKERS
 from joblib import Parallel, delayed
 
 
@@ -60,7 +60,7 @@ def package_dependencies(
 def build_dependency_graph(
     packages: dict[str, metadata.Distribution],
 ) -> dict[str, list[str]]:
-    results = Parallel(n_jobs=WORKERS, prefer="threads")(
+    results = Parallel(n_jobs=MAX_WORKERS, prefer="threads")(
         delayed(package_dependencies)(item) for item in packages.items()
     )
     installed_names = set(packages)

@@ -48,18 +48,19 @@ Examples:
 Command-line script: run ``python gh_repo.py`` or the ``gh_repo`` command. The module is importable as well.
 """
 
+from abc import ABC, abstractmethod
 import argparse
 import contextlib
+from dataclasses import dataclass
+from datetime import datetime
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import traceback
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
 from typing import Optional, Sequence
+
 
 DEFAULT_GITHUB_USERNAME = "i4147"
 DEFAULT_GIT_EMAIL = "adnanonagh@gmail.com"

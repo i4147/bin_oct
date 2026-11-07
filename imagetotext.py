@@ -15,13 +15,13 @@ Runs as a script (``python imagetotext.py``) in the directory it should act on; 
 imported.
 """
 
-import re
 from multiprocessing import Pool
 from pathlib import Path
+import re
 
-import pytesseract
-from dh import NUM_WORKERS
 from PIL import Image
+import pytesseract
+
 
 TESSDATA = str(Path.home() / ".local" / "share" / "tessdata")
 LANGS = "eng+fas+rus"

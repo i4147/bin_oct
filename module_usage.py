@@ -29,13 +29,14 @@ Command-line script: run ``python module_usage.py`` or the ``module_usage`` comm
 
 import argparse
 import ast
-import contextlib
-import importlib
-import sys
 from collections import Counter, defaultdict
+import contextlib
 from datetime import datetime
+import importlib
 from pathlib import Path
+import sys
 from typing import Any, Sequence
+
 
 DEFAULT_PACKAGE = "dh"
 DEFAULT_DIR = Path.home() / "bin"

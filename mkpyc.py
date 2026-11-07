@@ -13,13 +13,14 @@ Runs as a script (``python mkpyc.py``) in the directory it should act on; the mo
 imported.
 """
 
-import compileall
-import sys
 from collections import deque
+import compileall
 from multiprocessing import get_context
 from pathlib import Path
+import sys
 
 from dh import fsz, get_files, gsz
+
 
 MAX_QUEUE = 4
 

@@ -20,13 +20,14 @@ Command-line script: run ``python reqmaker.py`` or the ``reqmaker`` command. The
 """
 
 import argparse
+from collections import defaultdict
+from datetime import date
+from pathlib import Path
 import re
 import subprocess
 import sys
 import time
-from collections import defaultdict
-from datetime import date
-from pathlib import Path
+
 
 REQ = Path("requirements.txt")
 CACHE_FILE = Path(".installed_packages_cache.txt")

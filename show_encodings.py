@@ -13,8 +13,8 @@ Runs as a script (``python show_encodings.py``) in the directory it should act o
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 import chardet
 import charset_normalizer

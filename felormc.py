@@ -24,16 +24,17 @@ Command-line script: run ``python felormc.py`` or the ``felormc`` command. The m
 """
 
 import argparse
-import multiprocessing as mp
-import sys
 from dataclasses import dataclass
+import multiprocessing as mp
 from pathlib import Path
+import sys
 from typing import Final, Iterable, Iterator, Optional
 
-import libcst as cst
 from dh import MAX_WORKERS
+import libcst as cst
 from libcst import BaseStatement, ClassDef, EmptyLine, FunctionDef, Module, SimpleStatementLine, TrailingWhitespace
 from loguru import logger
+
 
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")
 SHEBANG_PREFIX: Final[str] = "#!"

@@ -13,9 +13,9 @@ Runs as a script (``python rename_svg_fonts.py``) in the directory it should act
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def extract_font_id(svg_text):

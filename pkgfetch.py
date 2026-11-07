@@ -44,28 +44,28 @@ Command-line script: run ``python pkgfetch.py`` or the ``pkgfetch`` command. The
 """
 
 import argparse
+from dataclasses import dataclass, field
 import hashlib
+from html.parser import HTMLParser
 import json
-import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
-import zipfile
-from dataclasses import dataclass, field
-from html.parser import HTMLParser
-from pathlib import Path
 from typing import Any, Iterable, Iterator, Self
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
+import zipfile
 
-import httpx
 from dh import DEFAULT_PARALLEL_WORKERS
+import httpx
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.tags import Tag, compatible_tags, cpython_tags, generic_tags, interpreter_name, interpreter_version
 from packaging.utils import InvalidWheelFilename, canonicalize_name, parse_wheel_filename
 from packaging.version import InvalidVersion, Version
+
 
 __all__ = [
     "Link",

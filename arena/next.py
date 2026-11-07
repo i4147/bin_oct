@@ -4,11 +4,12 @@
 Usage:
     python arena/next.py --limit 15 [--source] [--offset 0]
 """
-from __future__ import annotations
 
+from __future__ import annotations
 import argparse
 import pathlib
 import sys
+
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import apply_module_docs as docs  # noqa: E402

@@ -26,21 +26,31 @@ Examples
   python3 log_clean_tool.py trim-audio lecture.mp3 --minutes 5
 """
 
-
 import argparse
+from collections.abc import Sequence
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from collections.abc import Sequence
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
+
 
 ANSI_RE: re.Pattern[str] = re.compile(r"\x1b(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07|[()][AB012])")
 CONTROL_RE: re.Pattern[str] = re.compile(r"[\x01-\x08\x0b\x0c\x0e-\x1f\x7f]")
 LITERAL_PATTERNS: tuple[str, ...] = (
-    r"\^\[", r"\[[\dA-Z;]+m", r"\[\d+[A-Z]", r"\[[\dA-Z;]+", r"\^M",
-    r"\(B", r"\(0", r"\x1b\[[0-9;]*[A-Za-z]", r"\x1b\([0-9AB]", r"\r", r"\x0f", r"\x0e",
+    r"\^\[",
+    r"\[[\dA-Z;]+m",
+    r"\[\d+[A-Z]",
+    r"\[[\dA-Z;]+",
+    r"\^M",
+    r"\(B",
+    r"\(0",
+    r"\x1b\[[0-9;]*[A-Za-z]",
+    r"\x1b\([0-9AB]",
+    r"\r",
+    r"\x0f",
+    r"\x0e",
 )
 DEFAULT_DROP: str = 'cd "`printf'
 MC_HISTORY: Path = Path.home() / ".local" / "share" / "mc" / "history"
@@ -184,13 +194,28 @@ def cmd_trim_audio(args: argparse.Namespace) -> int:
     ffmpeg: str | None = shutil.which("ffmpeg")
     ffprobe: str | None = shutil.which("ffprobe")
     if ffmpeg and ffprobe:
-        probe = subprocess.run([ffprobe, "-v", "error", "-show_entries", "format=duration",
-                                "-of", "default=noprint_wrappers=1:nokey=1", str(args.input)],
-                               capture_output=True, text=True, check=True)
+        probe = subprocess.run(
+            [
+                ffprobe,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                str(args.input),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         duration: float = float(probe.stdout.strip())
         start: float = max(0.0, duration - seconds)
-        subprocess.run([ffmpeg, "-y", "-ss", str(start), "-i", str(args.input),
-                        "-b:a", args.bitrate, str(output)], check=True, capture_output=True)
+        subprocess.run(
+            [ffmpeg, "-y", "-ss", str(start), "-i", str(args.input), "-b:a", args.bitrate, str(output)],
+            check=True,
+            capture_output=True,
+        )
         print(f"Wrote {output} (last {args.minutes:g} min of {duration / 60:.1f} min)")
         return 0
     try:
@@ -223,8 +248,7 @@ def build_parser() -> argparse.ArgumentParser:
     hi = sub.add_parser("history", help="Deduplicate + de-junk a shell history file")
     hi.add_argument("--file", type=Path, default=BASH_HISTORY)
     hi.add_argument("--drop", nargs="*", default=[], metavar="TEXT", help="Drop lines containing TEXT")
-    hi.add_argument("--keep-cd-printf", action="store_true",
-                    help=f"Keep the original junk pattern {DEFAULT_DROP!r}")
+    hi.add_argument("--keep-cd-printf", action="store_true", help=f"Keep the original junk pattern {DEFAULT_DROP!r}")
     hi.add_argument("--backup", action="store_true")
     hi.add_argument("-n", "--dry-run", action="store_true")
     hi.set_defaults(handler=cmd_history)

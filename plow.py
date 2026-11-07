@@ -14,8 +14,8 @@ Runs as a script (``python plow.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 from typing import Annotated
 
 from loguru import logger

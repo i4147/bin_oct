@@ -13,8 +13,8 @@ Runs as a script (``python pyco.py``) in the directory it should act on; the mod
 imported.
 """
 
-import shutil
 from pathlib import Path
+import shutil
 
 from dh import fsz, gsz
 

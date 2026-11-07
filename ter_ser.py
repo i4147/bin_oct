@@ -13,10 +13,11 @@ Runs as a script (``python ter_ser.py``) in the directory it should act on; the 
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_files, gsz, mpf, rrs, runcmd
+
 
 EXT = [".js", ".jsx", ".jsm", ".jsc"]
 

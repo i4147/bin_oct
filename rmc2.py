@@ -6,15 +6,14 @@ import contextlib
 import functools
 import io
 import multiprocessing as mp
-import os
-import sys
-import tempfile
-import tokenize as _tokenize
 from pathlib import Path
+import sys
+import tokenize as _tokenize
 
-import libcst as cst
 from atomicio import atomic_replace
 from dh import DOC_TH1, DOC_TH2, SKIP_DIRS
+import libcst as cst
+
 
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4

@@ -25,13 +25,14 @@ Command-line script: run ``python elf64.py`` or the ``elf64`` command. The modul
 
 import argparse
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import Iterator
 
-from dh import WORKERS, is_binary
+from dh import MAX_WORKERS, is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
+
 
 ELF_TYPES = {
     "ET_NONE": "no file type",
@@ -89,7 +90,7 @@ def iter_files(root: Path, follow_symlinks: bool = False) -> Iterator[Path]:
 
 def scan(root: Path, follow_symlinks: bool = False) -> Iterator[dict]:
     paths = iter_files(root, follow_symlinks=follow_symlinks)
-    with mp.Pool(processes=WORKERS) as pool:
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         for result in pool.imap_unordered(analyze_file, paths, chunksize=1):
             if result is not None:
                 yield result

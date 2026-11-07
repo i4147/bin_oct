@@ -24,15 +24,15 @@ Examples
   python3 duplicate_folders_tool.py find . --prune-nested -o report.json
 """
 
-
 import argparse
-import hashlib
-import json
-import sys
 from collections import defaultdict
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
+import hashlib
+import json
 from pathlib import Path
+import sys
+
 
 CHUNK_SIZE: int = 1 << 20
 DEFAULT_WORKERS: int = 8
@@ -43,6 +43,7 @@ def file_digest(path: Path) -> str:
     """Return a content hash of one file (xxhash if available)."""
     try:
         import xxhash
+
         hasher = xxhash.xxh64()
     except ImportError:
         hasher = hashlib.blake2b(digest_size=8)
@@ -94,10 +95,7 @@ def prune_nested_groups(groups: dict[str, list[Path]]) -> dict[str, list[Path]]:
     kept: dict[str, list[Path]] = {}
     all_dupes: list[Path] = [p for paths in groups.values() for p in paths]
     for digest, paths in groups.items():
-        outer: list[Path] = [
-            p for p in paths
-            if not any(other != p and other in p.parents for other in all_dupes)
-        ]
+        outer: list[Path] = [p for p in paths if not any(other != p and other in p.parents for other in all_dupes)]
         if len(outer) > 1:
             kept[digest] = outer
     return kept
@@ -140,12 +138,18 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     find = sub.add_parser("find", help="Scan a tree for duplicate folders")
     find.add_argument("root", nargs="?", type=Path, default=Path.cwd(), help="Root dir (default: .)")
-    find.add_argument("--mode", choices=("content", "structure"), default="content",
-                      help="content: names+hashes; structure: names only (default: content)")
-    find.add_argument("-s", "--structure", action="store_const", const="structure", dest="mode",
-                      help="Shortcut for --mode structure")
-    find.add_argument("--prune-nested", action="store_true",
-                      help="Hide duplicate groups nested inside other duplicates")
+    find.add_argument(
+        "--mode",
+        choices=("content", "structure"),
+        default="content",
+        help="content: names+hashes; structure: names only (default: content)",
+    )
+    find.add_argument(
+        "-s", "--structure", action="store_const", const="structure", dest="mode", help="Shortcut for --mode structure"
+    )
+    find.add_argument(
+        "--prune-nested", action="store_true", help="Hide duplicate groups nested inside other duplicates"
+    )
     find.add_argument("-j", "--workers", type=int, default=DEFAULT_WORKERS, help="Workers (default: 8)")
     find.add_argument("-o", "--output", type=Path, default=None, help="Also write groups as JSON")
     find.set_defaults(handler=cmd_find)

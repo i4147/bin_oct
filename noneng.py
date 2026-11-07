@@ -23,13 +23,14 @@ Command-line script: run ``python noneng.py`` or the ``noneng`` command. The mod
 
 import argparse
 import codecs
-import multiprocessing
 from dataclasses import dataclass
+import multiprocessing
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 from dh import SKIP_DIRS, WORKERS
 from loguru import logger
+
 
 CHUNK_SIZE = 64 * 1024
 DETECTION_SIZE = 4000

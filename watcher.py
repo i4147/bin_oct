@@ -2,16 +2,16 @@
 
 import argparse
 import contextlib
+from pathlib import Path
 import shutil
 import sys
 import threading
 import time
 import traceback
-from pathlib import Path
 
+from dh import fsz
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-from dh import fsz
 
 
 def tail_file(fname, n: int = 10) -> list[str]:

@@ -36,20 +36,21 @@ Command-line script: run ``python dt4.py`` or the ``dt4`` command. The module is
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
+from pathlib import Path
 import signal
 import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from threading import Lock
+import time
 from typing import Callable, Optional
 
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 DEFAULT_INPUT = "input.txt"
 DEFAULT_OUTPUT = "chunks.json"

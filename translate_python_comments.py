@@ -1,24 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""
+Translate detectable non-English
+ Python comments and strings.
+"""
 
 import argparse
 import ast
+from dataclasses import dataclass
 import json
 import multiprocessing
+from multiprocessing import Lock, Pool, Value
+from pathlib import Path
 import re
 import time
 import tokenize
-from dataclasses import dataclass
-from multiprocessing import Lock, Pool, Value
-from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from atomicio import atomic_write
-from dh import WORKER_COUNT
+from dh import MAX_WORKERS
 from loguru import logger
+
 
 DEFAULT_CHUNK_SIZE: Final[int] = 2500
 DEFAULT_DELAY: Final[float] = 1.5
@@ -465,7 +469,7 @@ def main() -> int:
     failed = 0
     try:
         with Pool(
-            processes=WORKER_COUNT,
+            processes=MAX_WORKERS,
             initializer=worker_initializer,
             initargs=(
                 args.backend,

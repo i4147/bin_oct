@@ -25,11 +25,11 @@ Command-line script: run ``python gdu.py`` or the ``gdu`` command. The module is
 """
 
 import argparse
+from collections import defaultdict
 import fnmatch
 import os
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 
 
 def human_size(num_bytes: int) -> str:

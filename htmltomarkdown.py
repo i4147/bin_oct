@@ -14,13 +14,14 @@ Runs as a script (``python htmltomarkdown.py``) in the directory it should act o
 imported.
 """
 
-import re
-import sys
 from abc import ABCMeta
 from dataclasses import dataclass, field
 from html import unescape
 from html.parser import HTMLParser
+import re
+import sys
 from typing import Final, Optional, Union, cast
+
 
 SELF_CLOSING_TAGS: Final[list[str]] = [
     "area",

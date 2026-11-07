@@ -22,26 +22,24 @@ Command-line script: run ``python clean-rs.py`` or the ``clean-rs`` command. The
 """
 
 import argparse
-import contextlib
-import functools
-import os
-import re
-import shutil
-import tempfile
 from collections import deque
 from collections.abc import Iterable, Iterator
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from difflib import unified_diff
+import functools
+import os
 from pathlib import Path
+import re
 from typing import NamedTuple
 
-import tree_sitter_rust as tsrs
 from atomicio import atomic_write
 from dh import MAX_WORKERS, SKIP_DIRS
 from rich.console import Console
 from rich.text import Text
 from tree_sitter import Language, Node, Parser
+import tree_sitter_rust as tsrs
+
 
 Edit = tuple[int, int, bytes]
 SAFETY = re.compile(r"^(?://|/\*)\s*SAFETY\s*:")

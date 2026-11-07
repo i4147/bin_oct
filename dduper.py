@@ -22,23 +22,24 @@ Command-line script: run ``python dduper.py`` or the ``dduper`` command. The mod
 import argparse
 import ast
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import zipfile
-from collections import defaultdict
-from pathlib import Path
 
 import brotli
-import tree_sitter_python
-import zstandard as zstd
 from dh import MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Parser
+import tree_sitter_python
+import zstandard as zstd
+
 
 TREE_SITTER_AVAILABLE = True
 SUPPORTED_ARCHIVES = (

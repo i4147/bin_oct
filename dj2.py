@@ -13,8 +13,8 @@ Runs as a script (``python dj2.py``) in the directory it should act on; the modu
 imported.
 """
 
-import shutil
 from pathlib import Path
+import shutil
 
 
 def is_git_repo_simple(folder_path: str | Path) -> bool:

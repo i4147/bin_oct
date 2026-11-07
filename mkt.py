@@ -26,15 +26,16 @@ Command-line script: run ``python mkt.py`` or the ``mkt`` command. The module is
 """
 
 import argparse
-import re
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
+import re
+import sys
 from typing import Optional
 from urllib.parse import urlparse
 
-import requests
 from bs4 import BeautifulSoup, Comment, NavigableString, Tag
+import requests
+
 
 TEMPLATES_DIR: str = "templates"
 DEFAULT_MAX_DEPTH: int = 6

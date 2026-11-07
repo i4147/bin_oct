@@ -27,11 +27,12 @@ Command-line script: run ``python unflatten.py`` or the ``unflatten`` command. T
 
 import argparse
 import ast
+from dataclasses import dataclass, field
 import keyword
+from pathlib import Path
 import re
 import sys
-from dataclasses import dataclass, field
-from pathlib import Path
+
 
 _S = r'(?:"""(?:\\.|[^\\])*?"""' r"|'''(?:\\.|[^\\])*?'''" r'|"(?:\\.|[^"\\\n])*"' r"|'(?:\\.|[^'\\\n])*')"
 TOKEN_RE = re.compile(

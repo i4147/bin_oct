@@ -32,12 +32,13 @@ Command-line script: run ``python magickcv.py`` or the ``magickcv`` command. The
 """
 
 import argparse
-import re
 from pathlib import Path
+import re
 
 import cv2
 import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFont, ImageOps
+
 
 RESAMPLING = {
     "nearest": Image.Resampling.NEAREST,

@@ -17,8 +17,8 @@ Command-line script: run ``python qv.py`` or the ``qv`` command. The module is i
 """
 
 import argparse
-import pydoc
 from pathlib import Path
+import pydoc
 
 
 def collect_files(root: Path, recursive: bool) -> list[Path]:

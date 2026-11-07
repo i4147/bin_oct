@@ -39,13 +39,14 @@ Command-line script: run ``python hhash.py`` or the ``hhash`` command. The modul
 """
 
 import argparse
+from functools import reduce
 import hashlib
 import json
 import operator
 import sys
-import uuid as uuidlib
-from functools import reduce
 from typing import Any, Optional, Sequence
+import uuid as uuidlib
+
 
 DEFAULT_WORDLIST: tuple[str, ...] = (
     "ack",

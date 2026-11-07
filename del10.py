@@ -13,8 +13,9 @@ Runs as a script (``python del10.py``) in the directory it should act on; the mo
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

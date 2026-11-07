@@ -29,17 +29,18 @@ Examples:
 Command-line script: run ``python afkco.py`` or the ``afkco`` command. The module is importable as well.
 """
 
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import ast
+from dataclasses import dataclass, field
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import tarfile
 import zipfile
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from dataclasses import dataclass, field
-from multiprocessing import Pool
-from pathlib import Path
 
 from dh import MAX_WORKERS
+
 
 try:
     import zstandard as zstd

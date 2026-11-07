@@ -23,12 +23,12 @@ Examples
   python3 html_template_tool.py merge site/ -o template.html
 """
 
-
 import argparse
-import html.parser
-import sys
 from collections.abc import Sequence
+import html.parser
 from pathlib import Path
+import sys
+
 
 PAGE_CSS: str = (
     "body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; "
@@ -58,11 +58,10 @@ def blank_page(title: str, style: str, lang: str) -> str:
     )
 
 
-def wrap_fragment(fragment: str, title: str, charset: str,
-                  css_href: str, js_src: str) -> str:
+def wrap_fragment(fragment: str, title: str, charset: str, css_href: str, js_src: str) -> str:
     """Wrap a CodePen-style body fragment in a complete document."""
     return (
-        "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         f'    <meta charset="{charset}">\n'
         '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
         f"    <title>{title}</title>\n"
@@ -154,7 +153,8 @@ def cmd_merge(args: argparse.Namespace) -> int:
     """Merge all HTML files under a root into one template page."""
     output: Path = args.output.resolve()
     files: list[Path] = sorted(
-        p for p in args.root.rglob("*")
+        p
+        for p in args.root.rglob("*")
         if p.is_file() and p.suffix.lower() in (".html", ".htm") and p.resolve() != output
     )
     if not files:
@@ -180,13 +180,13 @@ def cmd_merge(args: argparse.Namespace) -> int:
         rel: object = path.relative_to(args.root) if args.root in path.parents else path
         toc.append(f'      <li><a href="#{anchor}">{rel}</a></li>')
         sections.append(
-            f'    <!-- Content from: {rel} -->\n'
+            f"    <!-- Content from: {rel} -->\n"
             f'    <section class="merged-content" id="{anchor}" data-source="{path.name}">\n'
             f"{extractor.body_html}\n    </section>"
         )
     indent_head: str = "\n".join("    " + tag for tag in head_tags)
     document: str = (
-        "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         '    <meta charset="UTF-8">\n'
         '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
         f"    <title>{args.title}</title>\n{indent_head}\n"
@@ -209,8 +209,12 @@ def build_parser() -> argparse.ArgumentParser:
     nw = sub.add_parser("new", help="Create a blank HTML page")
     nw.add_argument("output", nargs="?", type=Path, default=Path("index.html"))
     nw.add_argument("--title", default="Document")
-    nw.add_argument("--style", choices=("minimal", "linked"), default="minimal",
-                    help="minimal: Hello World; linked: style.css + script.js")
+    nw.add_argument(
+        "--style",
+        choices=("minimal", "linked"),
+        default="minimal",
+        help="minimal: Hello World; linked: style.css + script.js",
+    )
     nw.add_argument("--lang", default="en")
     nw.add_argument("--force", action="store_true", help="Overwrite if it exists")
     nw.set_defaults(handler=cmd_new)

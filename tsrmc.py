@@ -23,12 +23,15 @@ Command-line script: run ``python tsrmc.py`` or the ``tsrmc`` command. The modul
 
 import argparse
 import difflib
-import shutil
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import TYPE_CHECKING
 
+from dh import MAX_WORKERS
+from loguru import logger
+from tree_sitter import Language, Node, Parser
 import tree_sitter_bash
 import tree_sitter_c
 import tree_sitter_cpp
@@ -39,9 +42,7 @@ import tree_sitter_lua
 import tree_sitter_rust
 import tree_sitter_toml
 import tree_sitter_typescript
-from dh import WORKERS
-from loguru import logger
-from tree_sitter import Language, Node, Parser
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -296,7 +297,7 @@ def main() -> int:
             if args.diff and reduced > 0:
                 print_colorful_diff(old_text, new_text, rel)
     else:
-        with Pool(processes=WORKERS) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             results = [pool.apply_async(process_file, t) for t in tasks]
             for res in results:
                 rel, reduced, _count, err, old_text, new_text = res.get()

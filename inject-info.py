@@ -27,11 +27,12 @@ import argparse
 import difflib
 import json
 import os
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 from dh import SKIP_DIRS
+
 
 DEFAULT_INFO = Path.home() / ".myinfo"
 TARGET_FILENAMES = {

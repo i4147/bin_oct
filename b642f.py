@@ -15,8 +15,8 @@ imported.
 """
 
 import base64
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint
 

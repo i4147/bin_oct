@@ -13,8 +13,8 @@ Examples:
 Deletes the build leftovers of each sub-directory, so review the tree before running it.
 """
 
-import shutil
 from pathlib import Path
+import shutil
 
 
 def find_whl(subdir: Path):

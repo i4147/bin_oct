@@ -21,12 +21,12 @@ Command-line script: run ``python report_git_files.py`` or the ``report_git_file
 """
 
 import argparse
+from dataclasses import asdict, dataclass
 import json
 import os
+from pathlib import Path, PurePosixPath
 import subprocess
 import sys
-from dataclasses import asdict, dataclass
-from pathlib import Path, PurePosixPath
 from typing import Sequence
 
 

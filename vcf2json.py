@@ -14,9 +14,9 @@ imported.
 """
 
 import json
+from pathlib import Path
 import quopri
 import sys
-from pathlib import Path
 
 
 def decode_value(value, params):

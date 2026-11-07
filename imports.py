@@ -19,13 +19,13 @@ Command-line script: run ``python imports.py`` or the ``imports`` command. The m
 
 import argparse
 import ast
+from collections import defaultdict
 import importlib.metadata
 import importlib.util
-import numbers
-import time
-from collections import defaultdict
 from multiprocessing import Pool
+import numbers
 from pathlib import Path
+import time
 
 from dh import NUM_WORKERS, SKIP_DIRS, STDLIB, get_installed_pkgs
 

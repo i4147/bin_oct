@@ -14,9 +14,9 @@ Runs as a script (``python bat2bash.py``) in the directory it should act on; the
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 class BatToShConverter:

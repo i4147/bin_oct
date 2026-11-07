@@ -14,10 +14,11 @@ The repository path (``~/bin``) and base branch (``main``) are module constants;
 other layouts.
 """
 
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
+import subprocess
+import sys
+
 
 REPO_PATH = Path.home() / "bin"
 MAIN_BRANCH = "main"

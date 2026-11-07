@@ -32,22 +32,18 @@ Command-line script: run ``python fix_encoding.py`` or the ``fix_encoding`` comm
 
 import argparse
 import codecs
-import contextlib
-import fnmatch
-import math
-import os
-import shutil
-import stat
-import sys
-import tempfile
-import time
 from collections import Counter
 from collections.abc import Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
+import fnmatch
 from functools import partial
+import math
+import os
 from pathlib import Path
+import sys
+import time
 
 from atomicio import atomic_write
 from binaryornot.check import is_binary
@@ -57,6 +53,7 @@ from loguru import logger
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+
 
 UTF8_NAMES: frozenset[str] = frozenset({"utf-8", "utf-8-sig"})
 

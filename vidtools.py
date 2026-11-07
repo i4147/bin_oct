@@ -1,9 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 from typing import Optional, Sequence
 
 

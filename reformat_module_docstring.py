@@ -14,9 +14,9 @@ imported.
 """
 
 import ast
+from pathlib import Path
 import re
 import tokenize
-from pathlib import Path
 
 
 def reformat_docstring(content):

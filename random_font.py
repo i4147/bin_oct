@@ -14,8 +14,8 @@ Runs as a script (``python random_font.py``) in the directory it should act on; 
 imported.
 """
 
-import secrets
 from pathlib import Path
+import secrets
 
 
 def convert_with_fonttools(src, dst):

@@ -14,12 +14,13 @@ Runs as a script (``python zshdiag.py``) in the directory it should act on; the 
 imported.
 """
 
+from collections import defaultdict
 import contextlib
 import os
+from pathlib import Path
 import re
 import shutil
-from collections import defaultdict
-from pathlib import Path
+
 
 HOME = Path.home()
 ZSHRC = HOME / ".zshrc"

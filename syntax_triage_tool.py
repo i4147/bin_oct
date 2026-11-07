@@ -21,15 +21,15 @@ Examples
   python3 syntax_triage_tool.py triage --language lua
 """
 
-
 import argparse
 import ast
-import shutil
-import subprocess
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+import shutil
+import subprocess
+import sys
+
 
 DEFAULT_WORKERS: int = 8
 SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__", "venv", ".venv"})
@@ -66,8 +66,8 @@ def check_python_black(path: Path) -> tuple[Path, bool, str]:
 def check_lua(path: Path) -> tuple[Path, bool, str]:
     """Return (path, ok, detail) using tree-sitter-lua."""
     try:
-        import tree_sitter_lua
         from tree_sitter import Language, Parser
+        import tree_sitter_lua
     except ImportError:
         return path, False, "missing deps: pip install tree-sitter tree-sitter-lua"
     parser = Parser(Language(tree_sitter_lua.language()))
@@ -147,10 +147,18 @@ def build_parser() -> argparse.ArgumentParser:
     tri = sub.add_parser("triage", help="Check files and move/copy failures (or all files) aside")
     tri.add_argument("paths", nargs="*", type=Path, help="Files or dirs (default: current dir)")
     tri.add_argument("--language", choices=("python", "lua"), default="python")
-    tri.add_argument("--checker", choices=("ast", "black"), default="ast",
-                     help="Python only: syntax (ast) or formatting (black) check")
-    tri.add_argument("--layout", choices=("per-dir", "split"), default="per-dir",
-                     help="per-dir: <dir>/error/ for bad files; split: ./ok and ./error for all")
+    tri.add_argument(
+        "--checker",
+        choices=("ast", "black"),
+        default="ast",
+        help="Python only: syntax (ast) or formatting (black) check",
+    )
+    tri.add_argument(
+        "--layout",
+        choices=("per-dir", "split"),
+        default="per-dir",
+        help="per-dir: <dir>/error/ for bad files; split: ./ok and ./error for all",
+    )
     tri.add_argument("--action", choices=("copy", "move"), default="copy")
     tri.add_argument("--error-name", default="error", help="Error dir name (default: error)")
     tri.add_argument("--ok-name", default="ok", help="OK dir name for split layout (default: ok)")

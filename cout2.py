@@ -36,10 +36,11 @@ Command-line script: run ``python cout2.py`` or the ``cout2`` command. The modul
 """
 
 import argparse
-import shutil
-import sys
 from collections.abc import Sequence
 from pathlib import Path
+import shutil
+import sys
+
 
 DEFAULT_COMMENT: str = "#"
 COMMENT_TOKENS: dict[str, tuple[str, str]] = {

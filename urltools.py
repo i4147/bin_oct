@@ -1,18 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
+from collections import defaultdict
 import hashlib
-import os
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import tarfile
-import zipfile
-from collections import defaultdict
-from multiprocessing import Pool
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import unquote, urlparse
+import zipfile
 
-from dh import SKIP_DIRS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

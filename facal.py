@@ -14,10 +14,11 @@ Runs as a script (``python facal.py``) in the directory it should act on; the mo
 imported.
 """
 
-import sys
 from datetime import date
+import sys
 
 from faprint import faprint
+
 
 _PERSIAN_DIGITS: dict[int, str] = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 _JALALI_MONTHS_FA: list[str] = [

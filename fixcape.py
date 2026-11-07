@@ -16,10 +16,10 @@ imported.
 
 import ast
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
 
 
 def get_python_files(root_dir: Path):

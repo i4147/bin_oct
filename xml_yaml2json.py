@@ -3,11 +3,12 @@
 import argparse
 import concurrent.futures
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Optional
 
 from dh import MAX_WORKERS
+
 
 try:
     import toml

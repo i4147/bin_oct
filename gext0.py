@@ -15,14 +15,15 @@ imported.
 """
 
 import ast
+from multiprocessing import Pool, cpu_count
 import os
+from pathlib import Path
 import re
 import shutil
 import tarfile
-import zipfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any
+import zipfile
+
 
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (

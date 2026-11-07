@@ -1,9 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-import importlib.metadata
-import sys
 from fnmatch import fnmatch
+import importlib.metadata
 from pathlib import Path
 
 from loguru import logger

@@ -42,17 +42,18 @@ Command-line script: run ``python pyterser.py`` or the ``pyterser`` command. The
 
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import stat
 import subprocess
 import sys
 import tempfile
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 JS_SUFFIXES: Final[frozenset[str]] = frozenset({".js", ".mjs", ".cjs"})
 WALK_CHUNK: Final[int] = 512

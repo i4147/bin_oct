@@ -4,8 +4,8 @@
 Pass the two file paths as command-line arguments; the first file is replaced.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def main() -> None:

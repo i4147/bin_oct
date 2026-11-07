@@ -2,10 +2,11 @@
 
 import argparse
 import ast
-import re
-import sys
 from functools import lru_cache
 from pathlib import Path
+import re
+import sys
+
 
 try:
     from translate import Translator

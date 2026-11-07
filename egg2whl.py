@@ -13,10 +13,10 @@ Runs as a script (``python egg2whl.py``) in the directory it should act on; the 
 imported.
 """
 
+from pathlib import Path
 import shutil
 import subprocess
 import tempfile
-from pathlib import Path
 
 
 def parse_pkg_info(egg_info_dir):

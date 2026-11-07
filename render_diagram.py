@@ -15,8 +15,8 @@ imported.
 """
 
 import base64
-import sys
 from pathlib import Path
+import sys
 
 
 def render_to_html(input_path_str: str) -> None:

@@ -5,19 +5,20 @@ The basic, named, and full subcommands can remove inputs after processing.
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import mmap
 import multiprocessing
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Any, Optional
 
-import py7zr
 from dh import MAX_WORKERS
 from loguru import logger
+import py7zr
+
 
 try:
     from loguru import logger as _log

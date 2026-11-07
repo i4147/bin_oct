@@ -1,14 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import csv
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import sysconfig
 import textwrap
-import zipfile
-from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
+import zipfile
+
 
 __all__ = ["main"]
 DEFAULT_DEST = "empty_wheels"

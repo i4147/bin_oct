@@ -36,11 +36,11 @@ Command-line script: run ``python mkpik.py`` or the ``mkpik`` command. The modul
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import os
+from pathlib import Path
 import py_compile
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
 
 def get_py_files(target: Path) -> list[Path]:

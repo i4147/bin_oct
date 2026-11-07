@@ -17,6 +17,7 @@ from pathlib import Path
 
 from dh import get_files, is_binary
 
+
 SIZE_THRESHOLD = 100
 LINE_THRESHOLD = 3
 

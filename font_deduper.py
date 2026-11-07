@@ -18,6 +18,7 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont
 
+
 DRY_RUN = False
 FONT_EXTENSIONS = (".ttf", ".woff2", ".woff")
 

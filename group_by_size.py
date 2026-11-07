@@ -17,8 +17,8 @@ Command-line script: run ``python group_by_size.py`` or the ``group_by_size`` co
 """
 
 import argparse
-import shutil
 from pathlib import Path
+import shutil
 
 
 def get_directory_size(path: Path) -> int:

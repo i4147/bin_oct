@@ -26,6 +26,7 @@ Command-line script: run ``python pdfv2.py`` or the ``pdfv2`` command. The modul
 import argparse
 import contextlib
 import os
+from pathlib import Path
 import re
 import select
 import shutil
@@ -34,7 +35,7 @@ import sys
 import tempfile
 import termios
 import tty
-from pathlib import Path
+
 
 RESET = "\x1b[0m"
 HOME = "\x1b[H"

@@ -13,8 +13,8 @@ Reordering top-level statements can break a script whose body depends on its ord
 """
 
 import ast
-import sys
 from pathlib import Path
+import sys
 
 
 def sort_python_script(path: Path) -> None:

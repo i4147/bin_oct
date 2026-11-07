@@ -14,9 +14,9 @@ Runs as a script (``python ppage.py``) in the directory it should act on; the mo
 imported.
 """
 
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import sys
 
 import pymupdf
 

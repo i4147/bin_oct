@@ -14,8 +14,9 @@ Runs as a script (``python check_fname_conflict.py``) in the directory it should
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 PIP_LIST = Path("/sdcard/data/pip.txt")
 TARGET_DIR = Path.cwd()

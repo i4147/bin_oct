@@ -13,11 +13,12 @@ Runs as a script (``python distinfo2.py``) in the directory it should act on; th
 imported.
 """
 
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 from dh import cprint
+
 
 major, minor, _, _, _ = sys.version_info
 py_version = f"{major}.{minor}"

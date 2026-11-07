@@ -35,15 +35,16 @@ Command-line script: run ``python cleanmd.py`` or the ``cleanmd`` command. The m
 """
 
 import argparse
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
+import re
+import sys
 from typing import Optional, Sequence
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     from bs4 import BeautifulSoup

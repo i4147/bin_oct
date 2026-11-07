@@ -3,6 +3,7 @@ from base64 import b64encode
 from html import escape
 from pathlib import Path
 
+
 OUTPUT = Path("font_preview.html")
 FONT_FORMATS = {
     ".ttf": ("font/ttf", "truetype"),
@@ -16,10 +17,9 @@ def main():
     root = Path.cwd()
     fonts = sorted(
         (
-            path for path in root.rglob("*")
-            if path.is_file()
-            and path.suffix.lower() in FONT_FORMATS
-            and path.resolve() != OUTPUT.resolve()
+            path
+            for path in root.rglob("*")
+            if path.is_file() and path.suffix.lower() in FONT_FORMATS and path.resolve() != OUTPUT.resolve()
         ),
         key=lambda path: str(path).lower(),
     )
@@ -67,7 +67,7 @@ def main():
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Font Preview</title>
 <style>
-{''.join(font_faces)}
+{"".join(font_faces)}
 * {{ box-sizing: border-box; }}
 body {{
     margin: 0;
@@ -101,7 +101,7 @@ input {{ width: min(100%, 360px); padding: 8px; }}
     <label for="filter">Filter fonts: </label>
     <input id="filter" type="search" placeholder="Type a filename or folder">
 </div>
-{''.join(cards)}
+{"".join(cards)}
 <script>
 const filter = document.getElementById('filter');
 filter.addEventListener('input', () => {{

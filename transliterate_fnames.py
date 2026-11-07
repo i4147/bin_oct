@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
+from pathlib import Path
 import re
 import sys
 import unicodedata
-from pathlib import Path
 
 from dh import SKIP_DIRS
+
 
 try:
     from pypinyin import lazy_pinyin

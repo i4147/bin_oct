@@ -14,12 +14,13 @@ Runs as a script (``python strip_html_tags.py``) in the directory it should act 
 imported.
 """
 
+from html.parser import HTMLParser
 import multiprocessing as mp
 import os
-import sys
-from html.parser import HTMLParser
 from pathlib import Path
+import sys
 from tempfile import NamedTemporaryFile
+
 
 SKIP_CONTENT_TAGS = {"script", "style", "noscript", "template", "head"}
 BLOCK_TAGS = {

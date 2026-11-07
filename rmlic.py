@@ -14,10 +14,11 @@ Runs as a script (``python rmlic.py``) in the directory it should act on; the mo
 imported.
 """
 
-import re
 from pathlib import Path
+import re
 
-from dh import NUM_WORKERS, cprint, fsz, get_nobinary, gsz
+from dh import cprint, fsz, get_nobinary, gsz, mpf
+
 
 LIC_FILE = Path("/sdcard/lic")
 MIN_BLANK_LINES = 3
@@ -74,12 +75,11 @@ def main() -> None:
         return
     print()
     cwd = Path.cwd()
-    all_files = get_nobinary(cwd)
-    if not all_files:
+    files = get_nobinary(cwd)
+    if not files:
         print("No files to process.")
         return
-    for f in all_files:
-        process_file(f, patterns)
+    mpf(process_file, files)
 
 
 if __name__ == "__main__":

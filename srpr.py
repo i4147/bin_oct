@@ -14,6 +14,7 @@ Wrapper around the external ``srp`` executable; it does nothing useful without i
 
 from dh import runcmd
 
+
 if __name__ == "__main__":
     from string import ascii_lowercase, ascii_uppercase
 

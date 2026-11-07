@@ -13,10 +13,10 @@ Runs as a script (``python subdir.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import shutil
 import tarfile
 import zipfile
-from pathlib import Path
 
 import py7zr
 

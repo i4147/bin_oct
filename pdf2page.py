@@ -43,9 +43,9 @@ Command-line script: run ``python pdf2page.py`` or the ``pdf2page`` command. The
 """
 
 import argparse
-import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
+import sys
 from typing import Sequence
 
 from dh import MAX_WORKERS

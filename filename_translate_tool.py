@@ -24,14 +24,15 @@ Examples
 """
 
 import argparse
-import re
-import sys
-import unicodedata
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import re
+import sys
+import unicodedata
 
 from dh import MAX_WORKERS
+
 
 NON_ASCII: re.Pattern[str] = re.compile(r"[^\x00-\x7F]")
 

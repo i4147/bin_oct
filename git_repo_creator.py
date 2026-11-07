@@ -35,16 +35,16 @@ Command-line script: run ``python git_repo_creator.py`` or the ``git_repo_creato
 """
 
 import argparse
+from datetime import datetime
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
+from typing import Any, Optional, Sequence
 import urllib.error
 import urllib.request
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Optional, Sequence
 
 
 def run(

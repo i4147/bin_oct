@@ -17,10 +17,11 @@ imported.
 import ast
 import multiprocessing as mp
 import os
-import sys
 from pathlib import Path
+import sys
 
-from dh import WORKERS
+from dh import MAX_WORKERS
+
 
 OUTPUT_DIR = "output"
 CLASSES_DIR = Path(OUTPUT_DIR).joinpath("classes")
@@ -127,7 +128,7 @@ def main():
     all_classes: dict[str, str] = {}
     all_funcs: dict[str, str] = {}
     all_consts: dict[str, str] = {}
-    with mp.Pool(WORKERS) as pool:
+    with mp.Pool(MAX_WORKERS) as pool:
         for _path, classes, funcs, consts in pool.imap_unordered(extract_from_file, files):
             all_classes.update(classes)
             all_funcs.update(funcs)

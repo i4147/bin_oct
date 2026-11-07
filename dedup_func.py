@@ -59,18 +59,19 @@ Command-line script: run ``python dedup_func.py`` or the ``dedup_func`` command.
 
 import argparse
 import ast
+from collections import defaultdict
 import concurrent.futures
 import hashlib
 import json
 import multiprocessing
 import os
-import re
-from collections import defaultdict
 from pathlib import Path
+import re
 from typing import Any, Iterable, Optional
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 try:
     from loguru import logger
@@ -410,8 +411,8 @@ def find_fuzzy_duplicates(
     similarity_threshold: float,
 ) -> None:
     try:
-        import ssdeep
         from rapidfuzz import fuzz
+        import ssdeep
     except ImportError:
         logger.error("Please install dependencies for --fuzzy: pip install ssdeep rapidfuzz")
         return

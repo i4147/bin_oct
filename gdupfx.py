@@ -26,17 +26,18 @@ Command-line script: run ``python gdupfx.py`` or the ``gdupfx`` command. The mod
 """
 
 import argparse
-import hashlib
-import os
-import sys
-import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+import hashlib
+import os
 from pathlib import Path
+import sys
+import time
 from typing import Optional
 
-from dh import SKIP_DIRS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
+
 
 try:
     import xxhash

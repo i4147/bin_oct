@@ -28,17 +28,18 @@ Command-line script: run ``python markdowntopdf.py`` or the ``markdowntopdf`` co
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import lzma
-import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import sys
 from time import time
 
 from dh import MAX_WORKERS
 from loguru import logger
 from markdown import markdown
 from weasyprint import CSS, HTML
+
 
 MARKDOWN_BASE_EXTENSIONS = [
     "markdown.extensions.tables",

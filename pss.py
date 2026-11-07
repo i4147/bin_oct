@@ -21,9 +21,10 @@ Command-line script: run ``python pss.py`` or the ``pss`` command. The module is
 
 import argparse
 import heapq
+from pathlib import Path
 import sqlite3
 import sys
-from pathlib import Path
+
 
 DB_PATH = Path("/sdcard/data/pip.db")
 DEFAULT_LIMIT = 20

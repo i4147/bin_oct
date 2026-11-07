@@ -17,16 +17,17 @@ Command-line script: run ``python clean-cpp.py`` or the ``clean-cpp`` command. T
 """
 
 import argparse
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
-import tree_sitter_c
-import tree_sitter_cpp
-from dh import WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_c
+import tree_sitter_cpp
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -174,7 +175,7 @@ def main() -> int:
             green_reduced = f"\033[32m{reduced}\033[0m"
             print(f"{rel}  {green_reduced}")
     else:
-        with Pool(processes=WORKERS) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             results = [pool.apply_async(process_file, (p, base)) for p in files]
             for res in results:
                 rel, reduced, _count, err = res.get()

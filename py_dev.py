@@ -15,9 +15,9 @@ Runs as a script (``python py_dev.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 class PythonDevSetup:

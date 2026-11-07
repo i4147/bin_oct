@@ -39,11 +39,12 @@ Command-line script: run ``python gp.py`` or the ``gp`` command. The module is i
 """
 
 import argparse
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
+import subprocess
+import sys
 from typing import Literal, Protocol, Sequence
+
 
 try:
     import git as gitpython

@@ -32,10 +32,10 @@ Command-line script: run ``python image_remover.py`` or the ``image_remover`` co
 """
 
 import argparse
-import multiprocessing as mp
-import re
 from dataclasses import dataclass
+import multiprocessing as mp
 from pathlib import Path
+import re
 from typing import Optional
 
 from dh import MAX_WORKERS

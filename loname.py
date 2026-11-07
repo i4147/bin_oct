@@ -14,12 +14,13 @@ Runs as a script (``python loname.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import re
 import string
 import sys
-from pathlib import Path
 
 from dh import unique_path
+
 
 recursive = "-r" in sys.argv
 

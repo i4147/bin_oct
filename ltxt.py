@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, TypeAlias
 from dh import BINARY_EXTENSIONS, MAX_WORKERS
 from loguru import logger
 
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 

@@ -24,10 +24,10 @@ Command-line script: run ``python dedupfunc.py`` or the ``dedupfunc`` command. T
 
 import argparse
 import ast
-import re
-import sys
 from collections import defaultdict
 from pathlib import Path
+import re
+import sys
 
 
 class FunctionInfo:

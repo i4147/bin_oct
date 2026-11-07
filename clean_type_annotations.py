@@ -18,13 +18,14 @@ import contextlib
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import tokenize
-from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dh import MAX_WORKERS
 import libcst as cst
-from dh import WORKERS
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -171,12 +172,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("No Python files to process.", file=sys.stderr)
         return 0
     print(
-        f"Processing {len(files)} file(s) with {WORKERS} worker(s)...",
+        f"Processing {len(files)} file(s) with {MAX_WORKERS} worker(s)...",
         file=sys.stderr,
     )
     tasks = [(str(p),) for p in files]
-    chunksize = max(1, len(tasks) // (WORKERS * 4))
-    with mp.Pool(processes=WORKERS) as pool:
+    chunksize = max(1, len(tasks) // (MAX_WORKERS * 4))
+    with mp.Pool(processes=MAX_WORKERS) as pool:
         results = pool.starmap(process_file, tasks, chunksize=chunksize)
     changed = 0
     unchanged = 0

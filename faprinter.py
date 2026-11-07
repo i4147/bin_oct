@@ -13,8 +13,8 @@ Runs as a script (``python faprinter.py``) in the directory it should act on; th
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from faprint import faprint as pp
 

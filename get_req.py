@@ -14,9 +14,9 @@ Runs as a script (``python get_req.py``) in the directory it should act on; the 
 imported.
 """
 
+from importlib.metadata import PackageNotFoundError, distributions, metadata
 import json
 import sys
-from importlib.metadata import PackageNotFoundError, distributions, metadata
 
 
 def get_requires_dist(pkgname):

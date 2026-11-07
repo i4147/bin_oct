@@ -13,11 +13,11 @@ Runs as a script (``python distinfo.py``) in the directory it should act on; the
 imported.
 """
 
+from collections import defaultdict
 import contextlib
+from pathlib import Path
 import re
 import site
-from collections import defaultdict
-from pathlib import Path
 
 
 def get_site_packages_dirs():

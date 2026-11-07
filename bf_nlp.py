@@ -13,10 +13,11 @@ Runs as a script (``python bf_nlp.py``) in the directory it should act on; the m
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from blingfire_compat import text_to_sentences, text_to_words
+
 
 if __name__ == "__main__":
     fn = Path(sys.argv[1])

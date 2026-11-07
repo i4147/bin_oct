@@ -14,9 +14,9 @@ Runs as a script (``python pyruf.py``) in the directory it should act on; the mo
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def is_extensionless_python(file_path: Path) -> bool:

@@ -52,18 +52,19 @@ Command-line script: run ``python translate_code_comments.py`` or the ``translat
 
 import argparse
 import ast
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 import io
+from pathlib import Path
 import re
 import shutil
 import tokenize
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterator, Sequence
 
 from deep_translator import GoogleTranslator
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 LOGGER = logger
 DEFAULT_EXCLUDED_DIRS = frozenset({

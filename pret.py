@@ -14,8 +14,8 @@ Runs as a script (``python pret.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_files, mpf, runcmd
 

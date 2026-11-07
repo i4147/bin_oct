@@ -35,24 +35,23 @@ Command-line script: run ``python pyenhance.py`` or the ``pyenhance`` command. T
 
 import argparse
 import ast
-import difflib
-import io
-import multiprocessing as mp
-import os
-import re
-import shutil
-import sys
-import tokenize
-import warnings
 from collections import Counter
 from dataclasses import dataclass, field
+import difflib
 from functools import partial
+import io
+import multiprocessing as mp
 from pathlib import Path
+import re
+import sys
+import tokenize
 from typing import TYPE_CHECKING, NamedTuple
+import warnings
 
 from atomicio import atomic_write
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

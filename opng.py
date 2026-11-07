@@ -33,18 +33,19 @@ Command-line script: run ``python opng.py`` or the ``opng`` command. The module 
 
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
 from typing import TYPE_CHECKING, Final, NamedTuple
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

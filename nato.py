@@ -21,8 +21,9 @@ Command-line script: run ``python nato.py`` or the ``nato`` command. The module 
 """
 
 import argparse
-import sys
 from pathlib import Path
+import sys
+
 
 NATO = {
     "A": "Alpha",

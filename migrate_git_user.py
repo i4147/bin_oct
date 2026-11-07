@@ -16,9 +16,10 @@ constants first.
 
 import contextlib
 import os
+from pathlib import Path
 import re
 import subprocess
-from pathlib import Path
+
 
 OLD_USERNAME = "iho147"
 OLD_EMAIL = "isaacaunegh@gmail.com"

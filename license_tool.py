@@ -22,19 +22,34 @@ Examples
   python3 license_tool.py strip-text . --patterns ~/lic
 """
 
-
 import argparse
-import re
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+import re
+import sys
+
 
 LICENSE_EXTS: frozenset[str] = frozenset({".md", ".txt", ".rst", ""})
 MIN_BLANK_LINES: int = 3
 BINARY_SUFFIXES: frozenset[str] = frozenset({
-    ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".tar", ".gz", ".pyc",
-    ".so", ".o", ".exe", ".dll", ".bin", ".mp3", ".mp4", ".db",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".pyc",
+    ".so",
+    ".o",
+    ".exe",
+    ".dll",
+    ".bin",
+    ".mp3",
+    ".mp4",
+    ".db",
 })
 UNITS: tuple[str, ...] = ("B", "KB", "MB", "GB")
 
@@ -85,8 +100,7 @@ def cmd_find(args: argparse.Namespace) -> int:
 def cmd_collect(args: argparse.Namespace) -> int:
     """Concatenate all license files into one bundle."""
     files: list[Path] = [
-        p for p in find_license_files(args.root, "contains", LICENSE_EXTS)
-        if p.resolve() != args.output.resolve()
+        p for p in find_license_files(args.root, "contains", LICENSE_EXTS) if p.resolve() != args.output.resolve()
     ]
     print(f"Found {len(files)} file(s)")
     with args.output.open("w", encoding="utf-8") as sink:
@@ -172,8 +186,10 @@ def cmd_strip_text(args: argparse.Namespace) -> int:
                 saved_total += before - after
                 verb: str = "updated" if args.apply else "would update"
                 print(f"{path.name} {verb} (saved {human_size(before - after)})")
-    print(f"{changed}/{len(files)} file(s), saved {human_size(saved_total)}"
-          + ("" if args.apply else " (dry run; add --apply)"))
+    print(
+        f"{changed}/{len(files)} file(s), saved {human_size(saved_total)}"
+        + ("" if args.apply else " (dry run; add --apply)")
+    )
     return 0
 
 
@@ -183,22 +199,29 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     fi = sub.add_parser("find", help="Find license files (optionally truncate)")
     fi.add_argument("root", nargs="?", type=Path, default=Path.cwd())
-    fi.add_argument("--match", choices=("prefix", "contains"), default="prefix",
-                    help="prefix: name starts with license (licr); contains: anywhere")
+    fi.add_argument(
+        "--match",
+        choices=("prefix", "contains"),
+        default="prefix",
+        help="prefix: name starts with license (licr); contains: anywhere",
+    )
     fi.add_argument("--truncate", action="store_true", help="Empty each file (licr behaviour)")
     fi.add_argument("--yes", action="store_true", help="Confirm --truncate")
     fi.set_defaults(handler=cmd_find)
     co = sub.add_parser("collect", help="Concatenate licenses into one file")
     co.add_argument("root", nargs="?", type=Path, default=Path.cwd())
-    co.add_argument("-o", "--output", type=Path, default=Path("all2.txt"),
-                    help="Bundle path (original: /sdcard/all2.txt)")
+    co.add_argument(
+        "-o", "--output", type=Path, default=Path("all2.txt"), help="Bundle path (original: /sdcard/all2.txt)"
+    )
     co.set_defaults(handler=cmd_collect)
     st = sub.add_parser("strip-text", help="Remove license blocks from text files")
     st.add_argument("root", nargs="?", type=Path, default=Path.cwd())
-    st.add_argument("--patterns", type=Path, default=Path("/sdcard/lic"),
-                    help="Pattern file (original default: /sdcard/lic)")
-    st.add_argument("--blank-lines", type=int, default=MIN_BLANK_LINES,
-                    help="Blank lines separating pattern blocks (default: 3)")
+    st.add_argument(
+        "--patterns", type=Path, default=Path("/sdcard/lic"), help="Pattern file (original default: /sdcard/lic)"
+    )
+    st.add_argument(
+        "--blank-lines", type=int, default=MIN_BLANK_LINES, help="Blank lines separating pattern blocks (default: 3)"
+    )
     st.add_argument("--apply", action="store_true", help="Rewrite files (default: report)")
     st.add_argument("-j", "--workers", type=int, default=8)
     st.set_defaults(handler=cmd_strip_text)

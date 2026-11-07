@@ -15,6 +15,7 @@ imported.
 
 from pathlib import Path
 
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     for r, _d, files in cwd.walk():

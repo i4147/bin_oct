@@ -14,8 +14,8 @@ Irreversible — it deletes the working tree of every repository below the curre
 directory.
 """
 
-import shutil
 from pathlib import Path
+import shutil
 
 
 def process_dir(pardir: Path) -> bool:

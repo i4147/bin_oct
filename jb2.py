@@ -14,8 +14,8 @@ imported.
 """
 
 import json
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint, fsz, get_files, gsz, mpf
 

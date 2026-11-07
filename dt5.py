@@ -37,14 +37,14 @@ Command-line script: run ``python dt5.py`` or the ``dt5`` command. The module is
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
 import json
+from pathlib import Path
 import signal
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Callable, Optional
 
 from atomicio import atomic_write_json

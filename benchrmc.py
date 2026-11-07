@@ -16,12 +16,11 @@ Examples:
 Command-line script: run ``python benchrmc.py`` or the ``benchrmc`` command. The module is importable as well.
 """
 
-
 import argparse
+from pathlib import Path
 import shutil
 import tempfile
 import time
-from pathlib import Path
 
 from dh import MAX_WORKERS
 

@@ -14,12 +14,13 @@ Runs as a script (``python tomd.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import get_files, mpf
 from markdownify import markdownify as md
 from readability import Document
+
 
 remove_orig = True
 

@@ -14,10 +14,10 @@ Runs as a script (``python man_doc.py``) in the directory it should act on; the 
 imported.
 """
 
-import gzip
-import sys
 from collections import deque
+import gzip
 from pathlib import Path
+import sys
 from tempfile import NamedTemporaryFile
 
 from dh import cprint, mpf, runcmd

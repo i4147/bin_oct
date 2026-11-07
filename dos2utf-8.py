@@ -19,6 +19,7 @@ import sys
 from archive_walker import AdvancedWalker, VirtualFile
 from loguru import logger
 
+
 logger.remove()
 logger.add(sys.stderr, level="INFO", format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {message}")
 

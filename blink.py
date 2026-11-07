@@ -14,8 +14,8 @@ Runs as a script (``python blink.py``) in the directory it should act on; the mo
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def blink(directory: Path) -> None:

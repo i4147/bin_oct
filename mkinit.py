@@ -28,11 +28,12 @@ Command-line script: run ``python mkinit.py`` or the ``mkinit`` command. The mod
 
 import argparse
 import ast
-import fnmatch
-import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
+import fnmatch
 from pathlib import Path
+import sys
+
 
 LINE_LIMIT: int = 88
 

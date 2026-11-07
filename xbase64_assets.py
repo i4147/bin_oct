@@ -16,21 +16,22 @@ imported.
 """
 
 import base64
-import hashlib
-import mimetypes
-import re
-import shutil
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
+import hashlib
+import mimetypes
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import shutil
+import sys
 from typing import Any
 
-from dh import SKIP_DIRS, WORKERS
+from dh import WORKERS
 from loguru import logger
+
 
 SUPPORTED_EXTENSIONS = {".html", ".css", ".js", ".jsx", ".tsx", ".ts"}
 ASSETS_DIR = Path("assets")

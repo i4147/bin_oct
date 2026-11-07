@@ -55,19 +55,20 @@ Command-line script: run ``python file_cleanup.py`` or the ``file_cleanup`` comm
 """
 
 import argparse
+from collections import Counter
+from datetime import datetime, timezone
 import heapq
 import json
 import mmap
 import os
+from pathlib import Path
 import shutil
 import sys
 import tempfile
-from collections import Counter
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Sequence
 
 from dh import MAX_WORKERS
+
 
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000

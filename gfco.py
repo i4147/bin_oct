@@ -30,9 +30,10 @@ Command-line script: run ``python gfco.py`` or the ``gfco`` command. The module 
 import argparse
 import concurrent.futures
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import Optional
+
 
 try:
     from fontTools.ttLib import TTFont

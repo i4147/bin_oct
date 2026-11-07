@@ -24,13 +24,13 @@ Command-line script: run ``python pathdiag.py`` or the ``pathdiag`` command. The
 """
 
 import argparse
+from collections import defaultdict
+from hashlib import sha256
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import defaultdict
-from hashlib import sha256
-from pathlib import Path
 
 
 def get_path_entries() -> list[str]:

@@ -26,14 +26,15 @@ import argparse
 import difflib
 import multiprocessing
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 from typing import Iterator
 
-import tree_sitter_typescript as ts_ts
-from dh import SKIP_DIRS, _WORKERS
+from dh import _WORKERS, SKIP_DIRS
 from tree_sitter import Language, Parser, Query, QueryCursor
+import tree_sitter_typescript as ts_ts
+
 
 try:
     import rjsmin

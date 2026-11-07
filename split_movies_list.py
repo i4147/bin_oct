@@ -13,9 +13,9 @@ Runs as a script (``python split_movies_list.py``) in the directory it should ac
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from urllib.parse import unquote
 
 

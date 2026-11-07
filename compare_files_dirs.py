@@ -51,11 +51,12 @@ import difflib
 import filecmp
 import hashlib
 import os
-import shutil
-import sys
 from pathlib import Path
+import shutil
 from string import Template
+import sys
 from typing import Optional
+
 
 try:
     from dh import cprint

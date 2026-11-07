@@ -50,13 +50,14 @@ Command-line script: run ``python colortools.py`` or the ``colortools`` command.
 import argparse
 import colorsys
 import contextlib
+from dataclasses import dataclass
 import os
+from pathlib import Path
 import random
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
 
 try:
     from dh import cprint, is_binary, should_skip

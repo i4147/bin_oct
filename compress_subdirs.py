@@ -39,11 +39,14 @@ Command-line script: run ``python compress_subdirs.py`` or the ``compress_subdir
 
 import argparse
 import bz2
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from decimal import Decimal
 import fnmatch
 import gzip
 import lzma
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import stat
@@ -51,12 +54,10 @@ import struct
 import sys
 import tarfile
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from decimal import Decimal
-from pathlib import Path
 from typing import BinaryIO, Callable, Final, Literal, TypeVar, cast
 
 from dh import MAX_WORKERS
+
 
 Compressor = Literal["xz", "gz", "bz2", "zstd", "lz4", "snappy"]
 Method = Literal["mp-map", "mp-imap", "process-pool", "thread-pool"]

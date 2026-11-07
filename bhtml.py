@@ -23,17 +23,18 @@ Command-line script: run ``python bhtml.py`` or the ``bhtml`` command. The modul
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import contextlib
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 from typing import Iterable, Iterator
 
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")
 DEFAULT_SUFFIXES: tuple[str, ...] = (".html", ".htm", ".xhtml")

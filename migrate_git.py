@@ -32,15 +32,16 @@ Command-line script: run ``python migrate_git.py`` or the ``migrate_git`` comman
 """
 
 import argparse
+from datetime import datetime
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
 
 from dh import SKIP_DIRS
 from loguru import logger
+
 
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"

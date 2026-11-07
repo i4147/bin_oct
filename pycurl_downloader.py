@@ -15,12 +15,13 @@ imported.
 """
 
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from urllib.parse import unquote, urlparse
 
+from dh import MAX_WORKERS
 import pycurl
-from dh import WORKERS
+
 
 OUTPUT_DIR = Path("downloads")
 TIMEOUT = 30
@@ -126,7 +127,7 @@ def main():
     if not urls:
         print("No URLs found in input file.")
         sys.exit(0)
-    print(f"Downloading {len(urls)} URLs with {WORKERS} workers (timeout {TIMEOUT}s each)...")
+    print(f"Downloading {len(urls)} URLs with {MAX_WORKERS} workers (timeout {TIMEOUT}s each)...")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     original_order = {}
     for i, u in enumerate(urls):
@@ -134,7 +135,7 @@ def main():
     failed_urls: set[str] = set()
     processed_ok: set[str] = set()
     try:
-        with mp.Pool(processes=WORKERS, initializer=worker_init) as pool:
+        with mp.Pool(processes=MAX_WORKERS, initializer=worker_init) as pool:
             async_results = [(url, pool.apply_async(download_one, (url,))) for url in urls]
             total = len(async_results)
             done = 0

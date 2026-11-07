@@ -65,15 +65,16 @@ import argparse
 import concurrent.futures as _futures
 import ctypes
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
-from pathlib import Path
 from typing import Any, Iterator, Optional, Sequence
 
 from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 MISSING_LIB_PATTERNS = (
     "error while loading shared libraries",

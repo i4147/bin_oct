@@ -49,16 +49,17 @@ Command-line script: run ``python list_dir.py`` or the ``list_dir`` command. The
 """
 
 import argparse
+from dataclasses import dataclass
 import datetime as dt
 import json as jsonlib
 import os
+from pathlib import Path
 import re
 import stat as statlib
 import subprocess
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Sequence
+
 
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({".mypy_cache", ".ruff_cache", ".git", "__pycache__"})
 ICON_IMAGE_EXTS: frozenset[str] = frozenset({"png", "jpg", "jpeg", "gif", "webp"})

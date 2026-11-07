@@ -13,9 +13,9 @@ Runs as a script (``python tell_font_name.py``) in the directory it should act o
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont

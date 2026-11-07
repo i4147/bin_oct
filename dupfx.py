@@ -32,8 +32,10 @@ from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from xxhash import xxh64
+
 
 if TYPE_CHECKING:
     pass

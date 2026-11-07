@@ -14,14 +14,15 @@ imported.
 """
 
 import json
-import time
 from multiprocessing import Pool
 from pathlib import Path
+import time
 from typing import TYPE_CHECKING, Final, TypedDict
 
 from deep_translator import GoogleTranslator
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

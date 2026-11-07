@@ -1,21 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Subset a font to the non-CJK glyphs and write the result to ``out.ttf``.
+"""Subset fonts in place, dropping CJK glyphs.
 
-Uses fontTools' subsetter, keeps every layout feature, name record and the recommended
-glyphs, and drops the code points in the CJK blocks (CJK radicals, unified ideographs
-and their extensions) so Chinese glyphs no longer ship with the font.
+Usage: cleanfont [FILE_OR_DIR ...]
 
-Usage: cleanfont FONT.ttf
+Each font is rewritten in place (atomically, via a temp file in the same
+directory). Directories are walked recursively; only .ttf/.otf/.woff/.woff2
+files are picked up from directories (explicitly named files are attempted
+regardless of extension). With no arguments, processes the current directory
+('.').
 
 Examples:
-    $ cleanfont NotoSans.ttf
-
-Runs as a script (``python cleanfont.py``) in the directory it should act on; the module can also be
-imported.
+    $ cleanfont                       # walk '.' recursively
+    $ cleanfont NotoSans.ttf          # single file
+    $ cleanfont fonts/ ~/Downloads    # several dirs/files
 """
 
-from fontTools import subset
+import os
+import shutil
 import sys
+import tempfile
+
+from fontTools import subset
+
 
 # Unicode blocks that carry Chinese (and CJK-shared) glyphs.
 CJK_BLOCKS = [
@@ -38,26 +44,100 @@ CJK_BLOCKS = [
 # Add these if you also want Japanese/Korean out:
 # (0x3040,0x30FF) kana, (0x3100,0x312F) bopomofo, (0xAC00,0xD7AF) hangul
 
+FONT_EXTS = {".ttf", ".otf", ".woff", ".woff2"}
+
 
 def is_cjk(cp):
     return any(lo <= cp <= hi for lo, hi in CJK_BLOCKS)
 
 
-SRC, DST = sys.argv[1], "out.ttf"
+def make_options():
+    opts = subset.Options()
+    opts.layout_features = ["*"]  # keep GSUB/GPOS rules that survive
+    opts.name_IDs = ["*"]  # keep full name table
+    opts.name_languages = ["*"]
+    opts.notdef_outline = True
+    opts.recommended_glyphs = True  # space, nbsp, .notdef
+    opts.glyph_names = True
+    return opts
 
-opts = subset.Options()
-opts.layout_features = ["*"]  # keep GSUB/GPOS rules that survive
-opts.name_IDs = ["*"]  # keep full name table
-opts.name_languages = ["*"]
-opts.notdef_outline = True
-opts.recommended_glyphs = True  # space, nbsp, .notdef
-opts.glyph_names = True
 
-font = subset.load_font(SRC, opts)
-keep = sorted(cp for cp in font.getBestCmap() if not is_cjk(cp))
-print(f"keeping {len(keep):,} code points")
+def subset_inplace(path):
+    opts = make_options()
+    font = subset.load_font(path, opts)
+    tmp = None
+    try:
+        cmap = font.getBestCmap()
+        keep = sorted(cp for cp in cmap if not is_cjk(cp))
+        dropped = len(cmap) - len(keep)
+        if dropped == 0:
+            print(f"{path}: no CJK glyphs, skipping")
+            return
 
-sub = subset.Subsetter(options=opts)
-sub.populate(unicodes=keep)
-sub.subset(font)
-subset.save_font(font, DST, opts)
+        print(f"{path}: keeping {len(keep):,} code points (dropping {dropped:,})")
+        sub = subset.Subsetter(options=opts)
+        sub.populate(unicodes=keep)
+        sub.subset(font)
+
+        ext = os.path.splitext(path)[1]
+        d = os.path.dirname(os.path.abspath(path)) or "."
+        fd, tmp = tempfile.mkstemp(prefix=".cleanfont-", suffix=ext, dir=d)
+        os.close(fd)
+
+        subset.save_font(font, tmp, opts)
+        font.close()
+        font = None
+
+        shutil.copymode(path, tmp)  # preserve original permissions
+        os.replace(tmp, path)  # atomic in-place update
+        tmp = None
+    finally:
+        if font is not None:
+            font.close()
+        if tmp is not None and os.path.exists(tmp):
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
+
+def collect_targets(args):
+    if not args:
+        args = ["."]
+    seen, out = set(), []
+    for a in args:
+        if os.path.isdir(a):
+            for root, _dirs, names in os.walk(a):
+                for n in names:
+                    if os.path.splitext(n)[1].lower() in FONT_EXTS:
+                        p = os.path.join(root, n)
+                        rp = os.path.realpath(p)
+                        if rp not in seen:
+                            seen.add(rp)
+                            out.append(p)
+        else:
+            rp = os.path.realpath(a)
+            if rp not in seen:
+                seen.add(rp)
+                out.append(a)
+    return out
+
+
+def main(argv):
+    files = collect_targets(argv)
+    if not files:
+        print("no font files found", file=sys.stderr)
+        return 1
+
+    failures = 0
+    for p in files:
+        try:
+            subset_inplace(p)
+        except Exception as e:
+            print(f"{p}: ERROR: {e}", file=sys.stderr)
+            failures += 1
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

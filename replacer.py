@@ -29,13 +29,14 @@ Command-line script: run ``python replacer.py`` or the ``replacer`` command. The
 
 import argparse
 import os
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 from isbinary import is_binary
+from dh import SKIP_DIRS
 
-MAX_CONTEXT_DISPLAY = 5
+MAX_CONTEXT_DISPLAY = 3
 
 
 def process_file(
@@ -98,7 +99,7 @@ def replace_in_files(
             files_changed += 1
         return 1, files_changed
     for root, dirs, files in os.walk("."):
-        dirs[:] = [d for d in dirs if d not in {".git", "__pycache__"}]
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for filename in files:
             path = Path(root) / filename
             if path.is_symlink() or is_binary(path):

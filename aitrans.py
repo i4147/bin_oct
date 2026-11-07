@@ -23,8 +23,9 @@ translation.
 import argparse
 import glob
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 try:
     from openai import OpenAI

@@ -46,16 +46,17 @@ Command-line script: run ``python fatranslate.py`` or the ``fatranslate`` comman
 
 import argparse
 import json
+from multiprocessing.pool import Pool
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing.pool import Pool
-from pathlib import Path
 from typing import Final, Sequence
 
 from deep_translator import GoogleTranslator
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 PERSIAN_RE: Final = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 

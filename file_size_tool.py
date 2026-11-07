@@ -24,17 +24,17 @@ Examples
   python3 file_size_tool.py entries . --json sizes.json
 """
 
-
 import argparse
+from collections import defaultdict
+from collections.abc import Sequence
 import heapq
 import json
+from pathlib import Path
 import secrets
 import shutil
 import string
 import sys
-from collections import defaultdict
-from collections.abc import Sequence
-from pathlib import Path
+
 
 DEFAULT_THRESHOLD: int = 1024 * 1024
 TELEGRAM_CACHE: Path = Path("/sdcard/Android/data/org.telegram.messenger/cache")
@@ -99,7 +99,7 @@ def cmd_largest(args: argparse.Namespace) -> int:
     print(f"{'No.':<4} {'File Path':<{width}} {'Size':>12}")
     print("-" * (width + 20))
     for index, (size, path) in enumerate(rows, start=1):
-        shown: str = path if len(path) <= width else "..." + path[-(width - 3):]
+        shown: str = path if len(path) <= width else "..." + path[-(width - 3) :]
         print(f"{index:<4} {shown:<{width}} {human_size(size):>12}")
     return 0
 
@@ -193,14 +193,23 @@ def build_parser() -> argparse.ArgumentParser:
     en = sub.add_parser("entries", help="Top-level entries sorted by recursive size")
     en.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     en.add_argument("--ascending", action="store_true", help="Smallest first (ssize order)")
-    en.add_argument("--json", nargs="?", const=Path("-"), type=Path, default=None,
-                    metavar="FILE", help="Also write JSON (no FILE = <dirname>.json)")
+    en.add_argument(
+        "--json",
+        nargs="?",
+        const=Path("-"),
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Also write JSON (no FILE = <dirname>.json)",
+    )
     en.set_defaults(handler=cmd_entries)
     cl = sub.add_parser("copy-largest", help="Copy out the single largest file")
-    cl.add_argument("source", nargs="?", type=Path, default=TELEGRAM_CACHE,
-                    help="Source dir (original default: Telegram cache)")
-    cl.add_argument("-o", "--dest", type=Path, default=None,
-                    help="Destination (original default: /sdcard/Download/<random>.mkv)")
+    cl.add_argument(
+        "source", nargs="?", type=Path, default=TELEGRAM_CACHE, help="Source dir (original default: Telegram cache)"
+    )
+    cl.add_argument(
+        "-o", "--dest", type=Path, default=None, help="Destination (original default: /sdcard/Download/<random>.mkv)"
+    )
     cl.set_defaults(handler=cmd_copy_largest)
     return parser
 

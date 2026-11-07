@@ -50,11 +50,12 @@ Command-line script: run ``python getsub.py`` or the ``getsub`` command. The mod
 """
 
 import argparse
-import re
 from pathlib import Path
+import re
 from typing import Any, Sequence
 
 from loguru import logger
+
 
 LOGGER = logger
 DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]

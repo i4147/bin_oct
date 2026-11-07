@@ -28,12 +28,13 @@ Command-line script: run ``python main_guard_tool.py`` or the ``main_guard_tool`
 
 import argparse
 import ast
-import re
-import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+import re
+import sys
 from typing import Literal
+
 
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",

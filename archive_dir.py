@@ -28,10 +28,10 @@ Command-line script: run ``python archive_dir.py`` or the ``archive_dir`` comman
 
 import argparse
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-from pathlib import Path
 from typing import Sequence
 
 from dh import MAX_WORKERS

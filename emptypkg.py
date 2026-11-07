@@ -15,9 +15,9 @@ imported.
 """
 
 import csv
+from pathlib import Path
 import sysconfig
 import zipfile
-from pathlib import Path
 
 
 def is_empty_package(dist_info_path) -> bool:

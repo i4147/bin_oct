@@ -13,14 +13,15 @@ Runs as a script (``python cleanvim.py``) in the directory it should act on; the
 imported.
 """
 
+from dataclasses import dataclass
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass
-from pathlib import Path
 
-import tree_sitter_vim
 from tree_sitter import Language, Node, Parser
+import tree_sitter_vim
+
 
 PathLike = str | Path
 

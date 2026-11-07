@@ -20,13 +20,14 @@ Command-line script: run ``python re2regex.py`` or the ``re2regex`` command. The
 """
 
 import argparse
-import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Final, TypeAlias
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

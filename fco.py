@@ -36,15 +36,16 @@ Command-line script: run ``python fco.py`` or the ``fco`` command. The module is
 
 import argparse
 import contextlib
-import sys
-import time
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import time
 from typing import Optional, Sequence
 
 from dh import MAX_WORKERS, fsz
 from loguru import logger
+
 
 try:
     from fontTools.fontBuilder import FontBuilder

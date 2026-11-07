@@ -13,8 +13,8 @@ Runs as a script (``python tnn.py``) in the directory it should act on; the modu
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from dh import cprint, get_nobinary, mpf
 

@@ -24,16 +24,17 @@ Command-line script: run ``python clean-bash.py`` or the ``clean-bash`` command.
 
 import argparse
 import difflib
-import shutil
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import TYPE_CHECKING
 
-import tree_sitter_bash
-from dh import WORKERS
+from dh import MAX_WORKERS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+import tree_sitter_bash
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -199,7 +200,7 @@ def main() -> int:
             if args.diff and reduced > 0:
                 print_colorful_diff(old_text, new_text, rel)
     else:
-        with Pool(processes=WORKERS) as pool:
+        with Pool(processes=MAX_WORKERS) as pool:
             results = [pool.apply_async(process_file, t) for t in tasks]
             for res in results:
                 rel, reduced, _count, err, old_text, new_text = res.get()

@@ -26,15 +26,16 @@ Command-line script: run ``python bnn.py`` or the ``bnn`` command. The module is
 """
 
 import argparse
-import shutil
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
+import tempfile
 from typing import TYPE_CHECKING
 
 from dh import MAX_WORKERS
 from joblib import Parallel, delayed
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

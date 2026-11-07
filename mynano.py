@@ -14,10 +14,10 @@ Runs as a script (``python mynano.py``) in the directory it should act on; the m
 imported.
 """
 
+from pathlib import Path
 import readline
 import rlcompleter
 import sys
-from pathlib import Path
 
 from textual.app import App, ComposeResult
 from textual.containers import Container

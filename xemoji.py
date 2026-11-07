@@ -15,9 +15,10 @@ imported.
 """
 
 import json
-import re
 from multiprocessing import Pool
 from pathlib import Path
+import re
+
 
 _BASE = (
     "\U0001f300-\U0001f5ff"

@@ -25,15 +25,16 @@ Command-line script: run ``python c_build_tool.py`` or the ``c_build_tool`` comm
 """
 
 import argparse
-import shlex
-import subprocess
-import sys
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
+import shlex
+import subprocess
+import sys
 
 from dh import MAX_WORKERS, SKIP_DIRS
+
 
 TIMEOUT_SECONDS: int = 60
 COMPILERS: dict[str, str] = {".c": "clang", ".cpp": "clang++", ".cc": "clang++", ".cxx": "clang++"}

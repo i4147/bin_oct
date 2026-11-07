@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import csv
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import sysconfig
-import zipfile
-from pathlib import Path
 from typing import Optional
+import zipfile
+
 
 WheelInfo = dict[str, object]
 PackageInfo = dict[str, str]

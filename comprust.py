@@ -13,10 +13,11 @@ Runs as a script (``python comprust.py``) in the directory it should act on; the
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 from compression_prompt import Compressor
+
 
 if __name__ == "__main__":
     fn = Path(sys.argv[1])

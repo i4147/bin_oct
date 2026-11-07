@@ -60,15 +60,16 @@ Command-line script: run ``python renametools.py`` or the ``renametools`` comman
 
 import argparse
 import ast
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+import re
+import sys
 from typing import Iterator, Optional, Sequence
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 log = logger
 

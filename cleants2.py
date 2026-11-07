@@ -14,15 +14,16 @@ Runs as a script (``python cleants2.py``) in the directory it should act on; the
 imported.
 """
 
+from dataclasses import dataclass
 import importlib
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass
-from pathlib import Path
 
 from tree_sitter import Language, Node, Parser
+
 
 PathLike = str | Path
 

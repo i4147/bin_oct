@@ -20,6 +20,7 @@ import sys
 import termios
 import tty
 
+
 RESET = "\033[0m"
 SEQ_MAP = {
     b"\x1b[5~": "pgup",

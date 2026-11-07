@@ -26,11 +26,11 @@ Command-line script: run ``python ewhl2.py`` or the ``ewhl2`` command. The modul
 """
 
 import argparse
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import zipfile
-from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

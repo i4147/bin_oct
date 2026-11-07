@@ -47,19 +47,20 @@ Command-line script: run ``python filetools.py`` or the ``filetools`` command. T
 import argparse
 import ctypes
 import ctypes.util
+from datetime import UTC, datetime
+from functools import partial
 import multiprocessing as mp
 import operator
 import os
+from pathlib import Path
 import shutil
 import sys
 import time
-from datetime import UTC, datetime
-from functools import partial
-from pathlib import Path
 from typing import Final, Sequence
 
 from dh import MAX_WORKERS
 from tqdm import tqdm
+
 
 SECONDS_PER_MINUTE: Final[float] = 60.0
 SECONDS_24H: Final[float] = 24 * 60 * 60

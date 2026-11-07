@@ -15,9 +15,9 @@ Runs as a script (``python remove_lines_containing_str_from_files.py``) in the d
 imported.
 """
 
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 
 from dh import fsz, get_nobinary, gsz
 

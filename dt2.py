@@ -30,18 +30,19 @@ Command-line script: run ``python dt2.py`` or the ``dt2`` command. The module is
 import argparse
 import json
 import multiprocessing as mp
+from pathlib import Path
 import random
 import re
 import signal
 import sys
 import threading
 import time
-from pathlib import Path
 from typing import Any, Final
 
 from deep_translator import GoogleTranslator
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 RETRY_ATTEMPTS: Final[int] = 4
 RETRY_DELAY: Final[float] = 0.6

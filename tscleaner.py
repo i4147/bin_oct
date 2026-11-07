@@ -14,16 +14,15 @@ Runs as a script (``python tscleaner.py``) in the directory it should act on; th
 imported.
 """
 
-import os
-import stat
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import Any
 
 from atomicio import atomic_write
-from dh import SKIP_DIRS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
+
 
 ROOT = Path.cwd()
 

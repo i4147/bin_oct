@@ -49,19 +49,19 @@ Command-line script: run ``python pdftoolz.py`` or the ``pdftoolz`` command. The
 """
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import contextlib
+from html.parser import HTMLParser
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-import urllib.parse
-from concurrent.futures import ProcessPoolExecutor
-from html.parser import HTMLParser
-from pathlib import Path
 from typing import Iterable, Optional
+import urllib.parse
 
-import pymupdf
 from dh import MAX_WORKERS
+import pymupdf
 
 
 def human_size(n: float) -> str:

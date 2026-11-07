@@ -22,15 +22,23 @@ Examples
   python3 terminal_image_tool.py show photo.png --mode ascii -W 80
 """
 
-
 import argparse
-import shutil
-import sys
 from collections.abc import Sequence
 from pathlib import Path
+import shutil
+import sys
+
 
 IMAGE_SUFFIXES: frozenset[str] = frozenset({
-    ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tiff", ".svg", ".ppm",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".bmp",
+    ".gif",
+    ".tiff",
+    ".svg",
+    ".ppm",
 })
 ASCII_RAMP: str = " .:-=+*#%@"
 RESET: str = "\x1b[0m"
@@ -40,6 +48,7 @@ def load_pillow() -> object:
     """Import PIL.Image or exit with an install hint."""
     try:
         from PIL import Image
+
         return Image
     except ImportError:
         raise SystemExit("Missing optional dependency: pip install Pillow") from None
@@ -51,7 +60,9 @@ def load_image(path: Path, dpi: int, bg_color: str | None) -> object:
     if path.suffix.lower() == ".svg":
         try:
             import io
+
             from cairosvg import svg2png
+
             png_bytes: bytes = svg2png(bytestring=path.read_bytes(), dpi=dpi) or b""
             image = Image.open(io.BytesIO(png_bytes))  # type: ignore[attr-defined]
         except ImportError:
@@ -60,14 +71,17 @@ def load_image(path: Path, dpi: int, bg_color: str | None) -> object:
         image = Image.open(path)  # type: ignore[attr-defined]
     image = image.convert("RGBA")
     if bg_color:
-        from PIL import Image as pil_image, ImageColor
+        from PIL import (
+            Image as pil_image,
+            ImageColor,
+        )
+
         background = pil_image.new("RGBA", image.size, ImageColor.getcolor(bg_color, "RGBA"))
         image = pil_image.alpha_composite(background, image)
     return image.convert("RGB")
 
 
-def fit_size(src_w: int, src_h: int, max_w: int, max_h: int | None,
-             cell_aspect: float) -> tuple[int, int]:
+def fit_size(src_w: int, src_h: int, max_w: int, max_h: int | None, cell_aspect: float) -> tuple[int, int]:
     """Target pixel-grid size fitting the terminal (cells are tall)."""
     width: int = max(1, max_w)
     height: int = max(1, round(src_h / src_w * width / cell_aspect))
@@ -80,6 +94,7 @@ def fit_size(src_w: int, src_h: int, max_w: int, max_h: int | None,
 def render_blocks(image: object, max_w: int, max_h: int | None) -> str:
     """Truecolor half-block rendering (upper=fg, lower=bg per cell)."""
     from PIL import Image as pil_image
+
     rgb = image.convert("RGB")  # type: ignore[attr-defined]
     width, rows = fit_size(rgb.width, rgb.height, max_w, max_h, cell_aspect=1.0)
     small = rgb.resize((width, rows * 2), pil_image.Resampling.LANCZOS)
@@ -98,6 +113,7 @@ def render_blocks(image: object, max_w: int, max_h: int | None) -> str:
 def render_full_blocks(image: object, max_w: int, max_h: int | None) -> str:
     """Two-spaces-per-pixel background-colour rendering."""
     from PIL import Image as pil_image
+
     rgb = image.convert("RGB")  # type: ignore[attr-defined]
     width, height = fit_size(rgb.width, rgb.height, max(1, max_w // 2), max_h, cell_aspect=2.0)
     small = rgb.resize((width, height), pil_image.Resampling.LANCZOS)
@@ -115,6 +131,7 @@ def render_full_blocks(image: object, max_w: int, max_h: int | None) -> str:
 def render_ascii(image: object, max_w: int, max_h: int | None, invert: bool) -> str:
     """Grayscale-ramp ASCII rendering."""
     from PIL import Image as pil_image
+
     gray = image.convert("L")  # type: ignore[attr-defined]
     width, height = fit_size(gray.width, gray.height, max_w, max_h, cell_aspect=2.1)
     small = gray.resize((width, height), pil_image.Resampling.LANCZOS)

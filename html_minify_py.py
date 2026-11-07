@@ -14,13 +14,14 @@ Runs as a script (``python html_minify_py.py``) in the directory it should act o
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from dh import get_files, mpf
 from lxml import html as lxml_html
+
 
 if TYPE_CHECKING:
     from lxml.html import HtmlElement

@@ -12,8 +12,8 @@ Examples:
 Run from the directory to inspect; files are moved, not copied, despite the name.
 """
 
-import shutil
 from pathlib import Path
+import shutil
 
 
 def has_module_docstring(path: Path) -> bool:

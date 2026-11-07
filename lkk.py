@@ -13,8 +13,8 @@ Runs as a script (``python lkk.py``) in the directory it should act on; the modu
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def main() -> None:

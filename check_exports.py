@@ -33,6 +33,7 @@ from pathlib import Path
 from dh import SKIP_DIRS
 from loguru import logger
 
+
 ICONS = {"functions": "🔧", "classes": "🏛️ ", "constants": "📌"}
 
 

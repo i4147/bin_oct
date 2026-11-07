@@ -43,7 +43,8 @@ Command-line script: run ``python afk.py`` or the ``afk`` command. The module is
 import argparse
 import ast
 import bz2
-import contextlib
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass, field, replace
 import difflib
 import fnmatch
 import gzip
@@ -51,45 +52,27 @@ import io
 import itertools
 import lzma
 import os
+from pathlib import Path, PurePosixPath
 import re
-import stat
 import sys
 import tarfile
-import tempfile
 import tokenize
+from typing import IO, Any, Callable, Iterator, Sequence, Union
 import warnings
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass, field, replace
-from pathlib import Path, PurePosixPath
-from typing import IO, Any, Callable, Iterator, Sequence, Union
 
 from atomicio import atomic_write
-from dh import MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
+
 
 MAX_FILE_BYTES: int = 8 * 1024 * 1024
 LINE_LIMIT: int = 88
 ZSTD_HINT: str = "zstandard support is unavailable (pip install zstandard)"
-DEFAULT_EXCLUDES: tuple[str, ...] = (
-    ".git",
-    ".hg",
-    ".svn",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".tox",
-    ".nox",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    "node_modules",
-    ".eggs",
-)
 TRY_NODES: tuple[type, ...] = tuple(
     node_type for node_type in (ast.Try, getattr(ast, "TryStar", None)) if node_type is not None
 )
-ImportNode = Union[ast.Import, ast.ImportFrom]
-EPILOG: str = """\
+ImportNode = ast.Import | ast.ImportFrom
+EPILOG: str = """
 examples:
   %(prog)s src/                           report unused imports in a tree
   %(prog)s app.py --diff                  show a diff preview for one file
@@ -107,7 +90,7 @@ exit status:
 """
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class SourceItem:
     display: str
     path: Path | None = None
@@ -116,14 +99,14 @@ class SourceItem:
     is_init: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class UnusedImport:
     lineno: int
     name: str
     fixable: bool
 
 
-@dataclass
+@dataclass(slots=True)
 class FileResult:
     display: str
     path: Path | None
@@ -134,7 +117,7 @@ class FileResult:
     error: str | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class Totals:
     scanned: int = 0
     with_unused: int = 0
@@ -859,7 +842,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     patterns: list[str] = list(args.exclude)
     if not args.no_default_excludes:
-        patterns = list(DEFAULT_EXCLUDES) + patterns
+        patterns = list(SKIP_DIRS) + patterns
     will_write: bool = bool(args.fix and not args.dry_run)
     show_diff: bool = bool(args.diff or args.dry_run)
     targets = [Path(raw) for raw in args.paths]

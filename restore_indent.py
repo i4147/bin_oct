@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 
 def restore_indentation(source_code: str, indent_size: int = 4) -> str:

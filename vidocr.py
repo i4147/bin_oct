@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-import multiprocessing as mp
-import re
 from functools import partial
+import multiprocessing as mp
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import cv2
-import pytesseract
 from dh import MAX_WORKERS
+import pytesseract
+
 
 if TYPE_CHECKING:
     import numpy as np

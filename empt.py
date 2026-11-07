@@ -13,8 +13,9 @@ Runs as a script (``python empt.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     Path(sys.argv[1].strip()).write_text("")

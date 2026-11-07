@@ -37,11 +37,11 @@ Command-line script: run ``python qrcode_tool.py`` or the ``qrcode_tool`` comman
 """
 
 import argparse
-import json
-import sys
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
+import json
 from pathlib import Path
+import sys
 
 
 @dataclass(slots=True)

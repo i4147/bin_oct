@@ -26,13 +26,14 @@ Command-line script: run ``python fmt_bash.py`` or the ``fmt_bash`` command. The
 
 import argparse
 import contextlib
-import shutil
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import shutil
 from typing import TYPE_CHECKING, Final, TypeAlias
 
 from dh import MAX_WORKERS, get_files, is_binary, runcmd
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

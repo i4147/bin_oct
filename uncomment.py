@@ -27,25 +27,26 @@ Command-line script: run ``python uncomment.py`` or the ``uncomment`` command. T
 """
 
 import argparse
+from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from dataclasses import dataclass, field
+from functools import cache
 import hashlib
 import importlib
 import importlib.util
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
 import tempfile
-from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from dataclasses import dataclass, field
-from functools import cache
-from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
-from dh import SKIP_DIRS, MAX_WORKERS
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import Pool

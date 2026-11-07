@@ -22,19 +22,20 @@ Command-line script: run ``python cext.py`` or the ``cext`` command. The module 
 
 import argparse
 import ast
+from collections import defaultdict
+from collections.abc import Callable
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import tarfile
-import zipfile
-from collections import defaultdict
-from collections.abc import Callable
-from pathlib import Path
 from typing import Any, NamedTuple
+import zipfile
 
-from dh import FIXED_WORKERS, MAX_WORKERS, SKIP_DIRS
+from dh import MAX_WORKERS, SKIP_DIRS
 from loguru import logger
+
 
 try:
     import tree_sitter

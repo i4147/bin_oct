@@ -57,13 +57,14 @@ Command-line script: run ``python file_mover_tool.py`` or the ``file_mover_tool`
 """
 
 import argparse
+from collections.abc import Sequence
 import hashlib
 import json
+from pathlib import Path
 import shutil
 import site
 import sys
-from collections.abc import Sequence
-from pathlib import Path
+
 
 DEFAULT_TESTS_OUT: Path = Path.home() / "tmp" / "tests"
 DEFAULT_MOVE_LOG: Path = Path.home() / "tmp" / "moved_files.json"

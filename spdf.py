@@ -14,10 +14,10 @@ Runs as a script (``python spdf.py``) in the directory it should act on; the mod
 imported.
 """
 
-import sys
 from pathlib import Path
+import sys
 
-from dh import MAX_WORKERS, fsz, get_files, gsz, mpf, runcmd
+from dh import fsz, get_files, gsz, mpf, runcmd
 
 
 def process_file(path):

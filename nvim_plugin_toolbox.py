@@ -54,14 +54,15 @@ Command-line script: run ``python nvim_plugin_toolbox.py`` or the ``nvim_plugin_
 """
 
 import argparse
+from collections import defaultdict
 import json
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import Optional, Sequence
+
 
 PLUGIN_PATTERNS: dict[str, list[str]] = {
     "lazy.nvim": [

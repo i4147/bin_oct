@@ -14,13 +14,14 @@ Runs as a script (``python replace_symlink_with_orig.py``) in the directory it s
 imported.
 """
 
-import shutil
 from multiprocessing.pool import Pool
 from pathlib import Path
+import shutil
 from typing import Final, NamedTuple
 
 from dh import MAX_WORKERS
 from loguru import logger
+
 
 REPLACED_LOG_NAME: Final[str] = "replaced.txt"
 ERRORS_LOG_NAME: Final[str] = "errors.txt"

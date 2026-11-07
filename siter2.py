@@ -3,16 +3,17 @@ import argparse
 import base64
 import csv
 import hashlib
+from multiprocessing import cpu_count
+from pathlib import Path
 import platform
 import shutil
 import sys
 import tempfile
-import zipfile
-from multiprocessing import cpu_count
-from pathlib import Path
 from typing import Any, Optional
+import zipfile
 
 from dh import MAX_WORKERS
+
 
 try:
     from packaging.tags import Tag, sys_tags

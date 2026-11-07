@@ -28,14 +28,14 @@ Examples
   python3 clipboard_tool.py to-list names.txt
 """
 
-
 import argparse
+from collections.abc import Sequence
+from pathlib import Path
 import shlex
 import shutil
 import subprocess
 import sys
-from collections.abc import Sequence
-from pathlib import Path
+
 
 DEFAULT_GET_CMD: str = "termux-clipboard-get"
 DEFAULT_SET_CMD: str = "termux-clipboard-set"
@@ -48,8 +48,10 @@ SHEBANGS: dict[str, str] = {
 }
 EXT_TO_LANG: dict[str, str] = {".py": "python", ".pyw": "python", ".sh": "bash", ".bash": "bash", ".rs": "rust"}
 DEFAULT_SCRIPT_DIRS: tuple[Path, ...] = (
-    Path.home() / "bin", Path.home() / "bashbin",
-    Path.home() / ".local" / "bin", Path.home() / ".cargo" / "bin",
+    Path.home() / "bin",
+    Path.home() / "bashbin",
+    Path.home() / ".local" / "bin",
+    Path.home() / ".cargo" / "bin",
 )
 DEFAULT_ARCHIVE_DIR: Path = Path.home() / "isaac" / "may" / "scripts"
 
@@ -71,14 +73,14 @@ def run_clipboard(cmd: str, stdin_text: str | None) -> subprocess.CompletedProce
     try:
         return subprocess.run(argv, input=stdin_text, capture_output=True, text=True, check=True)
     except FileNotFoundError:
-        raise SystemExit(f"Clipboard command not found: {argv[0]} "
-                         "(Termux: install termux-api; desktop: use --get-cmd/--set-cmd)") from None
+        raise SystemExit(
+            f"Clipboard command not found: {argv[0]} (Termux: install termux-api; desktop: use --get-cmd/--set-cmd)"
+        ) from None
     except subprocess.CalledProcessError as exc:
         raise SystemExit(f"Clipboard command failed: {exc.stderr.strip()}") from None
 
 
-def select_lines(lines: list[str], start: int | None, end: int | None,
-                 wanted: list[int] | None) -> str:
+def select_lines(lines: list[str], start: int | None, end: int | None, wanted: list[int] | None) -> str:
     """Pick 1-based lines by explicit list or by inclusive range."""
     total: int = len(lines)
     if wanted:
@@ -219,8 +221,9 @@ def build_parser() -> argparse.ArgumentParser:
     pa.add_argument("--archive-dir", type=Path, default=DEFAULT_ARCHIVE_DIR)
     pa.add_argument("--script", action="store_true", help="Force script mode (shebang+chmod+symlink)")
     pa.add_argument("--no-symlink", action="store_true", help="Skip the extension-less symlink")
-    pa.add_argument("--shebang-prefix", default=SHEBANG_PREFIX,
-                    help="Interpreter prefix for shebangs (desktop: /usr/bin)")
+    pa.add_argument(
+        "--shebang-prefix", default=SHEBANG_PREFIX, help="Interpreter prefix for shebangs (desktop: /usr/bin)"
+    )
     pa.set_defaults(handler=cmd_paste)
 
     tl = sub.add_parser("to-list", help='Turn file lines into {"a", "b"} and copy')

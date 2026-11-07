@@ -42,16 +42,14 @@ import bz2
 import gzip
 import json
 import lzma
-import os
+from pathlib import Path
 import re
 import sys
+from typing import Callable
 import urllib.parse
 import urllib.request
 import zlib
-from pathlib import Path
-from typing import Callable
 
-from loguru import logger
 
 ENGLISH_FREQS = {
     "E": 12.02,

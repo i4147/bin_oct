@@ -1,24 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
 import argparse
 import ast
-import functools
-import itertools
-import keyword
-import os
-import re
-import textwrap
 from collections import deque
 from collections.abc import Iterator
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
+import functools
+import itertools
+import keyword
+import os
 from pathlib import Path
+import re
+import textwrap
 from typing import NamedTuple
 
-import tree_sitter_python as tspy
 from dh import MAX_WORKERS, SKIP_DIRS, atomic_write
 from rich.console import Console
 from rich.text import Text
 from tree_sitter import Language, Node, Parser
+import tree_sitter_python as tspy
+
 
 Edit = tuple[int, int, bytes]
 DIRECTIVE = re.compile(

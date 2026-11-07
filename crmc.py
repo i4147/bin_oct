@@ -41,26 +41,27 @@ Command-line script: run ``python crmc.py`` or the ``crmc`` command. The module 
 import argparse
 import ast
 import codecs
+from collections import deque
+from dataclasses import dataclass
 import difflib
 import enum
 import functools
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import tokenize
-from collections import deque
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, get_args
 
-import libcst as cst
 from dh import NUM_WORKERS
+import libcst as cst
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

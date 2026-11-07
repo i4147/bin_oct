@@ -13,9 +13,9 @@ Runs as a script (``python lastncommits.py``) in the directory it should act on;
 imported.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def get_created_files(n_commits: int) -> list:

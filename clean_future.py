@@ -15,13 +15,14 @@ Runs as a script (``python clean_future.py``) in the directory it should act on;
 imported.
 """
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Iterable, Iterator
 
-import rignore
 from dh import SKIP_DIRS, atomic_write
+import rignore
+
 
 FUTURE_ANNOTATIONS_RE = re.compile(
     r"""^[ \t]*

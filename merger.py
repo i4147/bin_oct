@@ -29,11 +29,12 @@ Command-line script: run ``python merger.py`` or the ``merger`` command. The mod
 """
 
 import argparse
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 from dh import get_nobinary, get_random_filename, should_skip
+
 
 MAX_CLIPBOARD_BYTES = 1024 * 1024
 

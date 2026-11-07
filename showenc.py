@@ -15,9 +15,10 @@ imported.
 """
 
 import json
+from pathlib import Path
 import sys
 import tokenize
-from pathlib import Path
+
 
 try:
     import chardet

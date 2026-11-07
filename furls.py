@@ -27,18 +27,19 @@ import argparse
 import contextlib
 import io
 import os
+from pathlib import Path
 import re
 import sys
 import tarfile
-import tempfile
-import zipfile
-from pathlib import Path
 from tarfile import TarFile
+import tempfile
 from urllib.parse import urlparse
+import zipfile
 from zipfile import ZipFile
 
-import zstd
 from dh import append_text, is_valid_url
+import zstd
+
 
 DEFAULT_MAX_MB = 15
 EXCLUDE_DIRS = {".git", "__pycache__"}
