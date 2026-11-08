@@ -1,16 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Move the Python files that lack a module docstring out of the current directory.
-
-Checks whether each top-level ``.py`` file starts with a docstring (scripts with a shebang
-count as undocumented) and moves the undocumented ones to ``~/tmp/notannotated``.
-
-Usage: copy_pyfiles_without_moduledoc
-
-Examples:
-    $ copy_pyfiles_without_moduledoc
-
-Run from the directory to inspect; files are moved, not copied, despite the name.
-"""
+Checks whether each top-level ``.py`` file starts with a docstring (scripts with a shebang count as undocumented) and moves the undocumented ones to ``~/tmp/notannotated``.
+Usage: copy_pyfiles_without_moduledoc Examples: $ copy_pyfiles_without_moduledoc Run from the directory to inspect; files are moved, not copied, despite the name."""
 
 from pathlib import Path
 import shutil

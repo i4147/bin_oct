@@ -1,27 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find/list files by name pattern, prefix, extension, or script-ness.
-
-Analysis / deduplication
-------------------------
-- ``lkk.py`` (name substring, top level, skip symlinks unless ``-s``)
-  and ``list_files_starting_with.py`` (prefix) -> ``find --name`` /
-  ``find --prefix`` (add ``-r`` to recurse, off by default as before).
-- ``bkk.py`` listed *and unconditionally deleted* every ``*.bak``:
-  now ``find --name .bak --files-only [-r]`` lists them; deletion
-  needs the explicit ``--delete`` flag (use ``--dry-run`` first).
-- ``extinfo.py`` (count+size of one extension) and ``extz.py`` (count
-  of every extension) -> ``ext-stats [EXT]`` (always shows sizes too).
-- ``find_scripts.py`` (extension-less Python scripts via private
-  ``dh`` helpers) -> ``scripts`` using a shebang/content sniff.
-
-Examples
---------
-  python3 file_finder_tool.py find --name test -r
-  python3 file_finder_tool.py find --prefix IMG_ ~/Pictures
-  python3 file_finder_tool.py find --name .bak -r --delete --dry-run
-  python3 file_finder_tool.py ext-stats
-  python3 file_finder_tool.py scripts ~/bin
-"""
+Analysis / deduplication ------------------------ - ``lkk.py`` (name substring, top level, skip symlinks unless ``-s``) and ``list_files_starting_with.py`` (prefix) -> ``find --name`` / ``find --prefix`` (add ``-r`` to recurse, off by default as before).
+- ``bkk.py`` listed *and unconditionally deleted* every ``*.bak``: now ``find --name .bak --files-only [-r]`` lists them; deletion needs the explicit ``--delete`` flag (use ``--dry-run`` first).
+- ``extinfo.py`` (count+size of one extension) and ``extz.py`` (count of every extension) -> ``ext-stats [EXT]`` (always shows sizes too).
+- ``find_scripts.py`` (extension-less Python scripts via private ``dh`` helpers) -> ``scripts`` using a shebang/content sniff.
+Examples -------- python3 file_finder_tool.py find --name test -r python3 file_finder_tool.py find --prefix IMG_ ~/Pictures python3 file_finder_tool.py find --name .bak -r --delete --dry-run python3 file_finder_tool.py ext-stats python3 file_finder_tool.py scripts ~/bin"""
 
 import argparse
 from collections import Counter

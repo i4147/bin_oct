@@ -1,46 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Font conversion toolkit.
-
-Subcommands: ``convert`` rewrites the TTF/OTF/WOFF/WOFF2 fonts in another container, ``otf2ttf`` and ``otf2ttf-fontforge``
-outline the OTF fonts as TTF (fontTools or FontForge), ``tottf`` uses the FontForge CLI for
-SVG/WOFF/EOT/OTF/TTC and ``woff22ttf`` decompresses WOFF2; ``-r`` removes the sources and the work
-runs in parallel.
-
-Usage: fontconverter {convert,otf2ttf,otf2ttf-fontforge,tottf,woff22ttf} [options]
-[paths ...]
-
-Positional arguments:
-    paths ...
-        Font files or directories (default: scan cwd)
-
-Subcommands:
-    convert
-        Convert TTF/OTF/WOFF/WOFF2 fonts to another container flavour.
-    otf2ttf
-        Convert OTF to TTF using fontTools (pure Python).
-    otf2ttf-fontforge
-        Convert OTF to TTF using FontForge Python bindings.
-    tottf
-        Convert SVG/WOFF/EOT/OTF/TTC to TTF using FontForge CLI.
-    woff22ttf
-        Decompress WOFF2 to TTF using fontTools.
-
-Options:
-    --to
-        Target format
-    -r, --rm
-        Delete source file after successful conversion
-    -k, --keep-source
-        Keep original OTF files (default: remove)
-    -r, --remove-source
-        Delete source file after successful conversion
-
-Examples:
-    $ fontconverter otf2ttf fonts/
-    $ fontconverter convert --to woff2 fonts/
-
-Command-line script: run ``python fontconverter.py`` or the ``fontconverter`` command. The module is importable as well.
-"""
+Subcommands: ``convert`` rewrites the TTF/OTF/WOFF/WOFF2 fonts in another container, ``otf2ttf`` and ``otf2ttf-fontforge`` outline the OTF fonts as TTF (fontTools or FontForge), ``tottf`` uses the FontForge CLI for SVG/WOFF/EOT/OTF/TTC and ``woff22ttf`` decompresses WOFF2; ``-r`` removes the sources and the work runs in parallel.
+Usage: fontconverter {convert,otf2ttf,otf2ttf-fontforge,tottf,woff22ttf} [options] [paths ...] Positional arguments: paths ...
+Font files or directories (default: scan cwd) Subcommands: convert Convert TTF/OTF/WOFF/WOFF2 fonts to another container flavour.
+otf2ttf Convert OTF to TTF using fontTools (pure Python).
+otf2ttf-fontforge Convert OTF to TTF using FontForge Python bindings.
+tottf Convert SVG/WOFF/EOT/OTF/TTC to TTF using FontForge CLI.
+woff22ttf Decompress WOFF2 to TTF using fontTools.
+Options: --to Target format -r, --rm Delete source file after successful conversion -k, --keep-source Keep original OTF files (default: remove) -r, --remove-source Delete source file after successful conversion Examples: $ fontconverter otf2ttf fonts/ $ fontconverter convert --to woff2 fonts/ Command-line script: run ``python fontconverter.py`` or the ``fontconverter`` command.
+The module is importable as well."""
 
 import argparse
 import multiprocessing

@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write every value of a JSON list of objects to its own text file.
-
-Reads the list, skips the entries that are not objects and writes each key/value pair to
-a ``.txt`` file named after the key, adding an index suffix when the name is already taken.
-
-Usage: split_json INPUT.json
-
-Examples:
-    $ split_json records.json
-
-Runs as a script (``python split_json.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Reads the list, skips the entries that are not objects and writes each key/value pair to a ``.txt`` file named after the key, adding an index suffix when the name is already taken.
+Usage: split_json INPUT.json Examples: $ split_json records.json Runs as a script (``python split_json.py``) in the directory it should act on; the module can also be imported."""
 
 import json
 from pathlib import Path

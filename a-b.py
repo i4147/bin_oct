@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Remove lines from the first file that also occur in the second file.
-
-Pass the two file paths as command-line arguments; the first file is replaced.
-"""
+Pass the two file paths as command-line arguments; the first file is replaced."""
 
 from pathlib import Path
 import sys

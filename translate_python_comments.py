@@ -1,8 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Translate detectable non-English
- Python comments and strings.
-"""
+"""Translate detectable non-English Python comments and strings."""
 
 import argparse
 import ast

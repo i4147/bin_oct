@@ -1,18 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Convert an unpacked ``.egg`` directory into a wheel.
+Reads ``PKG-INFO`` for the distribution name and version, writes a matching ``setup.py`` into a temporary copy of the egg and calls ``pip wheel`` on it, leaving the resulting ``.whl`` in the current directory.
+Usage: egg2whl EGG_DIRECTORY Examples: $ egg2whl ./SomePackage-1.0-py3.9.egg Runs as a script (``python egg2whl.py``) in the directory it should act on; the module can also be imported."""
 
-Reads ``PKG-INFO`` for the distribution name and version, writes a matching ``setup.py`` into a temporary
-copy of the egg and calls ``pip wheel`` on it, leaving the resulting ``.whl`` in the current directory.
-
-Usage: egg2whl EGG_DIRECTORY
-
-Examples:
-    $ egg2whl ./SomePackage-1.0-py3.9.egg
-
-Runs as a script (``python egg2whl.py``) in the directory it should act on; the module can also be
-imported.
-"""
-
+import sys
 from pathlib import Path
 import shutil
 import subprocess
@@ -91,8 +82,6 @@ def convert_egg_to_wheel(egg_root_path: str) -> str | None:
 
 
 if __name__ == "__main__":
-    import sys
-
     if len(sys.argv) != 2:
         print("Usage: python convert_egg.py <egg_directory>")
         sys.exit(1)

@@ -1,33 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Organize files into folders by rule, plus related directory checks.
-
-Analysis / deduplication
-------------------------
-- ``foext.py`` (top-level files -> ``<ext>/``) and ``foldext.py``
-  (recursive, with stats) are one ``by-ext`` command; the originals
-  moved immediately - the merged tool plans first and needs
-  ``--apply`` (``--recursive`` selects the foldext behaviour).
-- ``folderize.py`` (first letter / ``0-9`` folders, already had a
-  ``--dry-run``) -> ``by-initial``.
-- ``folderize_by_sim_names.py`` (Lua files grouped by normalized name)
-  -> ``by-name --glob '*.lua'`` (glob is now configurable).
-- ``foldimension.py`` (images grouped by pixel size, needs Pillow)
-  -> ``by-image-size``.
-- ``nosubdir.py`` does not folderize at all: it lists top-level dirs
-  that have no subdirs but contain ``.py`` files -> ``leaf-dirs``.
-- ``rename_by_parent.py`` (``README.pdf`` -> ``<parent>.pdf`` with a
-  hand-rolled walker) -> ``rename-by-parent``.
-
+Analysis / deduplication ------------------------ - ``foext.py`` (top-level files -> ``<ext>/``) and ``foldext.py`` (recursive, with stats) are one ``by-ext`` command; the originals moved immediately - the merged tool plans first and needs ``--apply`` (``--recursive`` selects the foldext behaviour).
+- ``folderize.py`` (first letter / ``0-9`` folders, already had a ``--dry-run``) -> ``by-initial``.
+- ``folderize_by_sim_names.py`` (Lua files grouped by normalized name) -> ``by-name --glob '*.lua'`` (glob is now configurable).
+- ``foldimension.py`` (images grouped by pixel size, needs Pillow) -> ``by-image-size``.
+- ``nosubdir.py`` does not folderize at all: it lists top-level dirs that have no subdirs but contain ``.py`` files -> ``leaf-dirs``.
+- ``rename_by_parent.py`` (``README.pdf`` -> ``<parent>.pdf`` with a hand-rolled walker) -> ``rename-by-parent``.
 Every mutating command defaults to a dry-run plan; pass ``--apply``.
-
-Examples
---------
-  python3 folderize_tool.py by-ext ~/Downloads --apply
-  python3 folderize_tool.py by-initial . --recursive
-  python3 folderize_tool.py by-name . --glob '*.png' --apply
-  python3 folderize_tool.py by-image-size photos/ --apply
-  python3 folderize_tool.py leaf-dirs . --max-kb 100
-"""
+Examples -------- python3 folderize_tool.py by-ext ~/Downloads --apply python3 folderize_tool.py by-initial .
+--recursive python3 folderize_tool.py by-name .
+--glob '*.png' --apply python3 folderize_tool.py by-image-size photos/ --apply python3 folderize_tool.py leaf-dirs .
+--max-kb 100"""
 
 import argparse
 from collections import defaultdict

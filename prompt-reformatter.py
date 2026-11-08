@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Reflow long prompt text files to 80 columns on list and sentence boundaries.
-
-Splits the content before numbered items, bullet points, bold headings and commas,
-re-wraps the lines that exceed ``MAX_LINE`` at semicolons and rewrites every ``.txt`` file below the
-current directory that changes.
-
-Usage: prompt-reformatter
-
-Examples:
-    $ prompt-reformatter
-
-Runs as a script (``python prompt-reformatter.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Splits the content before numbered items, bullet points, bold headings and commas, re-wraps the lines that exceed ``MAX_LINE`` at semicolons and rewrites every ``.txt`` file below the current directory that changes.
+Usage: prompt-reformatter Examples: $ prompt-reformatter Runs as a script (``python prompt-reformatter.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import re

@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Reformat C/C++/Java/JS/JSON files in place with ``clang-format``.
-
-Runs ``clang-format -i --style=LLVM`` over the files named on the command line, or over the matching extensions below
-the current directory, in parallel, and reports the size change.
-
-Usage: cppu [files ...]
-
-Examples:
-    $ cppu src/
-
-Runs as a script (``python cppu.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Runs ``clang-format -i --style=LLVM`` over the files named on the command line, or over the matching extensions below the current directory, in parallel, and reports the size change.
+Usage: cppu [files ...] Examples: $ cppu src/ Runs as a script (``python cppu.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import sys

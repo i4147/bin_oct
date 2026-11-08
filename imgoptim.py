@@ -1,33 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Optimize JPEG, PNG and SVG files in place with the external tools that are installed.
-
-Runs jpegoptim (or mogrify), pngquant/optipng and svgo over every matching file below
-the root, validating that each result still decodes before replacing the original. ``--dry-run``
-reports the savings without writing, ``--only`` restricts the file kinds and the remaining
-options are passed through to the tools; work happens in a process pool.
-
-Usage: imgoptim [options] [paths ...]
-
-Options:
-    -n, --dry-run
-    -v, --verbose
-        Forward tool stdout/stderr (drops the tools' -q flag).
-    --root
-    --no-recursive
-    --only
-    --timeout
-    --jpg-quality
-    --progressive
-    --normal
-    --jpegoptim
-    ... plus 12 more; run ``imgoptim --help`` for the full list.
-
-Examples:
-    $ imgoptim images/ --dry-run
-    $ imgoptim images/ --only jpg --jpg-quality 82
-
-Command-line script: run ``python imgoptim.py`` or the ``imgoptim`` command. The module is importable as well.
-"""
+Runs jpegoptim (or mogrify), pngquant/optipng and svgo over every matching file below the root, validating that each result still decodes before replacing the original.
+``--dry-run`` reports the savings without writing, ``--only`` restricts the file kinds and the remaining options are passed through to the tools; work happens in a process pool.
+Usage: imgoptim [options] [paths ...] Options: -n, --dry-run -v, --verbose Forward tool stdout/stderr (drops the tools' -q flag).
+--root --no-recursive --only --timeout --jpg-quality --progressive --normal --jpegoptim ...
+plus 12 more; run ``imgoptim --help`` for the full list.
+Examples: $ imgoptim images/ --dry-run $ imgoptim images/ --only jpg --jpg-quality 82 Command-line script: run ``python imgoptim.py`` or the ``imgoptim`` command.
+The module is importable as well."""
 
 import argparse
 from dataclasses import dataclass

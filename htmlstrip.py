@@ -1,43 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Remove the tags or the meta tags of HTML files.
-
-Subcommands: ``tag`` deletes a named element with BeautifulSoup, ``meta`` removes the ``<meta ...>`` tags
-with a regex (``--pattern`` overrides it) and ``all`` strips every tag of one file; ``-w`` writes in
-place, the default is a dry run and the marker lines (``<:``/``>:``) are preserved.
-
-Usage: htmlstrip {tag,meta,all} [options] [paths ...]
-
-Positional arguments:
-    tagname
-        Tag to remove (e.g. script, style, iframe)
-    directory
-        Root directory (default: .)
-    file
-        File to process
-
-Subcommands:
-    tag
-        Remove a named tag using BeautifulSoup (remove_tag.py).
-    meta
-        Remove <meta ...> tags via regex (rmeta.py).
-    all
-        Strip every <...> tag from one file (strip_tags.py).
-
-Options:
-    --extensions
-    --pattern
-    -w, --write
-        Write changes in place (default: dry-run)
-    --preserve-marker
-        Substring; any line containing it is kept verbatim (repeatable; default: '<:'
-        and '>:')
-
-Examples:
-    $ htmlstrip tag script pages/ -w
-    $ htmlstrip all page.html
-
-Command-line script: run ``python htmlstrip.py`` or the ``htmlstrip`` command. The module is importable as well.
-"""
+Subcommands: ``tag`` deletes a named element with BeautifulSoup, ``meta`` removes the ``<meta ...>`` tags with a regex (``--pattern`` overrides it) and ``all`` strips every tag of one file; ``-w`` writes in place, the default is a dry run and the marker lines (``<:``/``>:``) are preserved.
+Usage: htmlstrip {tag,meta,all} [options] [paths ...] Positional arguments: tagname Tag to remove (e.g.
+script, style, iframe) directory Root directory (default: .) file File to process Subcommands: tag Remove a named tag using BeautifulSoup (remove_tag.py).
+meta Remove <meta ...> tags via regex (rmeta.py).
+all Strip every <...> tag from one file (strip_tags.py).
+Options: --extensions --pattern -w, --write Write changes in place (default: dry-run) --preserve-marker Substring; any line containing it is kept verbatim (repeatable; default: '<:' and '>:') Examples: $ htmlstrip tag script pages/ -w $ htmlstrip all page.html Command-line script: run ``python htmlstrip.py`` or the ``htmlstrip`` command.
+The module is importable as well."""
 
 import argparse
 from pathlib import Path

@@ -1,21 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Group similar files by ssdeep hash with minified function names.
-
-Computes the ssdeep digests, keeps the pairs above the similarity threshold in ``simz.json`` and
-optionally moves each related cluster into a ``groupNNN`` subdirectory (``-g``). The internal
-helpers carry single-letter names from an earlier size-optimisation pass.
-
-Usage: ssdiper2 [-g]
-
-Options:
-    -g, --group-similar
-        Move similar files into group001, group002, ... subdirs based on simz.json
-
-Examples:
-    $ ssdiper2 -g
-
-Command-line script: run ``python ssdiper2.py`` or the ``ssdiper2`` command. The module is importable as well.
-"""
+Computes the ssdeep digests, keeps the pairs above the similarity threshold in ``simz.json`` and optionally moves each related cluster into a ``groupNNN`` subdirectory (``-g``).
+The internal helpers carry single-letter names from an earlier size-optimisation pass.
+Usage: ssdiper2 [-g] Options: -g, --group-similar Move similar files into group001, group002, ...
+subdirs based on simz.json Examples: $ ssdiper2 -g Command-line script: run ``python ssdiper2.py`` or the ``ssdiper2`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

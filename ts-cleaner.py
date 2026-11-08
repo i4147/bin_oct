@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Strip the comments from TypeScript and JavaScript sources with tree-sitter.
-
-Picks the grammar per suffix (``.ts``, ``.tsx``, ``.d.ts``, ``.js`` ...), collects the comment nodes,
-deletes them through atomic writes and processes the source files of the current
-directory in a pool.
-
-Usage: tscleaner
-
-Examples:
-    $ tscleaner
-
-Runs as a script (``python tscleaner.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Picks the grammar per suffix (``.ts``, ``.tsx``, ``.d.ts``, ``.js`` ...), collects the comment nodes, deletes them through atomic writes and processes the source files of the current directory in a pool.
+Usage: tscleaner Examples: $ tscleaner Runs as a script (``python tscleaner.py``) in the directory it should act on; the module can also be imported."""
 
 from dataclasses import dataclass
 from multiprocessing import Pool

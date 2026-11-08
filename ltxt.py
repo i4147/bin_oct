@@ -1,21 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Count the unique non-blank lines of text files, per extension.
-
-Walks the given paths (or the current directory), skips binaries by extension and counts
-the stripped lines that appear more than once, grouping the counts per file extension.
+Walks the given paths (or the current directory), skips binaries by extension and counts the stripped lines that appear more than once, grouping the counts per file extension.
 ``--pool-method`` selects how the counting jobs are spread over the worker pool.
-
-Usage: ltxt [paths ...] [--pool-method map|starmap|imap_unordered|apply_async]
-
-Options:
-    --pool-method
-        Multiprocessing pool method to use for line counting.
-
-Examples:
-    $ ltxt words/
-
-Command-line script: run ``python ltxt.py`` or the ``ltxt`` command. The module is importable as well.
-"""
+Usage: ltxt [paths ...] [--pool-method map|starmap|imap_unordered|apply_async] Options: --pool-method Multiprocessing pool method to use for line counting.
+Examples: $ ltxt words/ Command-line script: run ``python ltxt.py`` or the ``ltxt`` command.
+The module is importable as well."""
 
 import argparse
 from collections import Counter

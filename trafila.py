@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract the main article of HTML pages as Markdown with trafilatura.
-
-Runs ``trafilatura.extract`` in Markdown mode with links, images and tables, falls back to ``html_to_markdown`` on the
-cleaned soup when nothing is extracted and writes the ``.md`` file next to the source; ``-r``
-also removes the original HTML.
-
-Usage: trafila [-r] [html files ...]
-
-Examples:
-    $ trafila -r pages/
-
-Runs as a script (``python trafila.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Runs ``trafilatura.extract`` in Markdown mode with links, images and tables, falls back to ``html_to_markdown`` on the cleaned soup when nothing is extracted and writes the ``.md`` file next to the source; ``-r`` also removes the original HTML.
+Usage: trafila [-r] [html files ...] Examples: $ trafila -r pages/ Runs as a script (``python trafila.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import sys

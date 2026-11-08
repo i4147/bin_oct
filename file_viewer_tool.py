@@ -1,30 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Terminal file viewer: cat files with optional syntax highlighting.
-
-Analysis / deduplication
-------------------------
-- ``pbat.py`` is a 394-line ``bat`` clone (Pygments highlighting, line
-  numbers, headers, ranges, paging, git change gutter). It is the
-  ``view`` command below, simplified to its useful core: numbers,
-  header, ``-r START:END``, ``-H`` highlight lines, theme/language,
-  paging and colour control. Pygments is optional: without it you get
-  plain ``cat`` with the same decorations.
+Analysis / deduplication ------------------------ - ``pbat.py`` is a 394-line ``bat`` clone (Pygments highlighting, line numbers, headers, ranges, paging, git change gutter).
+It is the ``view`` command below, simplified to its useful core: numbers, header, ``-r START:END``, ``-H`` highlight lines, theme/language, paging and colour control.
+Pygments is optional: without it you get plain ``cat`` with the same decorations.
 - ``fv.py`` (page one file via ``pydoc``) is ``view file`` (auto-paging).
 - ``qv.py`` (page every file in a dir) is ``browse``.
 - ``pyhead.py`` (first KiB of a file) is ``head --bytes 1024``.
-- ``quickview.py`` (curses browser, 20-line previews) is ``browse
-  --interactive``.
-- ``faprinter.py`` just passed lines through an external ``faprint``
-  package; that display nicety is dropped (``view`` covers printing).
-
-Examples
---------
-  python3 file_viewer_tool.py view script.py
-  python3 file_viewer_tool.py view -r 10:40 -H 17 --paging never script.py
-  python3 file_viewer_tool.py view --list-themes
-  python3 file_viewer_tool.py head big.log -n 50
-  python3 file_viewer_tool.py browse src/ -r
-"""
+- ``quickview.py`` (curses browser, 20-line previews) is ``browse --interactive``.
+- ``faprinter.py`` just passed lines through an external ``faprint`` package; that display nicety is dropped (``view`` covers printing).
+Examples -------- python3 file_viewer_tool.py view script.py python3 file_viewer_tool.py view -r 10:40 -H 17 --paging never script.py python3 file_viewer_tool.py view --list-themes python3 file_viewer_tool.py head big.log -n 50 python3 file_viewer_tool.py browse src/ -r"""
 
 import argparse
 from collections.abc import Sequence

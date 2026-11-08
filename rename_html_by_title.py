@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Rename HTML files after the title of the page.
-
-Extracts the ``<title>`` (tree-sitter when available, otherwise a regex), transliterates
-non-Latin titles, normalises the result into a safe file name within the length limit
-and renames the files below the current directory in parallel, reporting the results.
-
-Usage: rename_html_by_title
-
-Examples:
-    $ rename_html_by_title
-
-Runs as a script (``python rename_html_by_title.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Extracts the ``<title>`` (tree-sitter when available, otherwise a regex), transliterates non-Latin titles, normalises the result into a safe file name within the length limit and renames the files below the current directory in parallel, reporting the results.
+Usage: rename_html_by_title Examples: $ rename_html_by_title Runs as a script (``python rename_html_by_title.py``) in the directory it should act on; the module can also be imported."""
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass

@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Make Python string literals escape-safe so they stop warning.
-
-Scans string tokens for invalid escapes and rewrites the literal either as a raw string
-or with the backslashes doubled, then writes the module back when something changed.
+Scans string tokens for invalid escapes and rewrites the literal either as a raw string or with the backslashes doubled, then writes the module back when something changed.
 Files are collected recursively from the current directory.
-
-Usage: fixcape
-
-Examples:
-    $ fixcape
-
-Runs as a script (``python fixcape.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Usage: fixcape Examples: $ fixcape Runs as a script (``python fixcape.py``) in the directory it should act on; the module can also be imported."""
 
 import ast
 import io

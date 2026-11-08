@@ -1,29 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Merge a small Python package into one file (and split it back).
-
-Analysis / deduplication
-------------------------
-Three different mergers existed:
-- ``mergepy.py``: naive concatenation + relative-import rewrite.
-- ``merge_pkg.py``: AST surgery (hoist imports, reorder classes and
-  functions, embed base64 assets, monkeypatch ``open``) - clever but
-  the reordering changes semantics for any nontrivial package.
-- ``prefactor.py``: embed each module's source, execute modules in
-  dependency (topological) order inside real ``sys.modules`` entries.
-  This is the sound approach, so ``merge --mode bundle`` (default)
-  keeps it (simplified, typed, ``# File:`` section per module).
-``merge --mode concat`` reproduces ``mergepy`` for flat script piles
-and is exactly what ``split`` (ex-``unmerger.py``) can undo: files are
-separated by ``# File: <relpath>`` headers. Relative-import rewriting
-in concat mode uses AST source segments instead of regexes, so
-multi-line imports survive.
-
-Examples
---------
-  python3 python_bundle_tool.py merge mypkg/ -o mypkg_single.py
-  python3 python_bundle_tool.py merge scripts/ --mode concat -o all.py
-  python3 python_bundle_tool.py split all.py -o restored/
-"""
+Analysis / deduplication ------------------------ Three different mergers existed: - ``mergepy.py``: naive concatenation + relative-import rewrite.
+- ``merge_pkg.py``: AST surgery (hoist imports, reorder classes and functions, embed base64 assets, monkeypatch ``open``) - clever but the reordering changes semantics for any nontrivial package.
+- ``prefactor.py``: embed each module's source, execute modules in dependency (topological) order inside real ``sys.modules`` entries.
+This is the sound approach, so ``merge --mode bundle`` (default) keeps it (simplified, typed, ``# File:`` section per module).
+``merge --mode concat`` reproduces ``mergepy`` for flat script piles and is exactly what ``split`` (ex-``unmerger.py``) can undo: files are separated by ``# File: <relpath>`` headers.
+Relative-import rewriting in concat mode uses AST source segments instead of regexes, so multi-line imports survive.
+Examples -------- python3 python_bundle_tool.py merge mypkg/ -o mypkg_single.py python3 python_bundle_tool.py merge scripts/ --mode concat -o all.py python3 python_bundle_tool.py split all.py -o restored/"""
 
 import argparse
 import ast

@@ -1,29 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Image triage: brightness, face presence, NSFW sorting, face boxing.
-
-Analysis / deduplication
-------------------------
-- ``bw.py`` (mostly-dark/bright classification) -> ``brightness``
-  (its "ratio" printout multiplied nothing by 100; fixed).
-- ``noface.py`` (Haar cascades, copies faceless images to
-  ``/sdcard/DCIM/noface``, Termux cascade dir) -> ``faces`` with the
-  cascade resolution fixed to prefer OpenCV's bundled cascades.
-- ``isnude.py`` (``nude`` lib -> ``nude/``) and ``isporn.py``
-  (``NudeNet`` -> ``safe/``/``sexy/``/``porn/``) -> ``nsfw
-  --detector nude|nudenet``; both now default to report-only and need
-  ``--move`` to relocate files.
+Analysis / deduplication ------------------------ - ``bw.py`` (mostly-dark/bright classification) -> ``brightness`` (its "ratio" printout multiplied nothing by 100; fixed).
+- ``noface.py`` (Haar cascades, copies faceless images to ``/sdcard/DCIM/noface``, Termux cascade dir) -> ``faces`` with the cascade resolution fixed to prefer OpenCV's bundled cascades.
+- ``isnude.py`` (``nude`` lib -> ``nude/``) and ``isporn.py`` (``NudeNet`` -> ``safe/``/``sexy/``/``porn/``) -> ``nsfw --detector nude|nudenet``; both now default to report-only and need ``--move`` to relocate files.
 - ``boxfaces.py`` (draw face boxes on a video) -> ``box-faces``.
-
-Dependencies per subcommand: Pillow (brightness), opencv-python
-(faces/box-faces/isnude sizing), ``nude`` or ``nudenet`` (nsfw).
-
-Examples
---------
-  python3 image_triage_tool.py brightness photo.jpg
-  python3 image_triage_tool.py faces ~/Pictures --move-to ~/noface
-  python3 image_triage_tool.py nsfw ~/Pictures --detector nudenet
-  python3 image_triage_tool.py box-faces in.mp4 out.mp4
-"""
+Dependencies per subcommand: Pillow (brightness), opencv-python (faces/box-faces/isnude sizing), ``nude`` or ``nudenet`` (nsfw).
+Examples -------- python3 image_triage_tool.py brightness photo.jpg python3 image_triage_tool.py faces ~/Pictures --move-to ~/noface python3 image_triage_tool.py nsfw ~/Pictures --detector nudenet python3 image_triage_tool.py box-faces in.mp4 out.mp4"""
 
 import argparse
 from collections.abc import Sequence

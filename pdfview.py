@@ -1,30 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Page through the extracted text of the PDFs found in a tree.
-
-Finds the ``.pdf`` files, extracts the pages with pdfminer, pypdf, PyMuPDF or a system OCR
-tool (``-b auto`` tries the Python ones first) and shows a scrollable pager with the page
-navigation across the files.
-
-Usage: pdfview [paths ...] [-b BACKEND] [--no-recursive]
-
-Positional arguments:
-    paths ...
-        PDF files or directories. Defaults to the current directory.
-
-Options:
-    -b, --backend
-        Text extraction backend. The default is pdfminer. 'auto' tries Python libraries
-        and then system OCR tools.
-    --no-recursive
-        Do not recursively search directories for PDF files.
-    --log-level
-        Loguru log level; default: WARNING.
-
-Examples:
-    $ pdfview docs/ -b auto
-
-Command-line script: run ``python pdfview.py`` or the ``pdfview`` command. The module is importable as well.
-"""
+Finds the ``.pdf`` files, extracts the pages with pdfminer, pypdf, PyMuPDF or a system OCR tool (``-b auto`` tries the Python ones first) and shows a scrollable pager with the page navigation across the files.
+Usage: pdfview [paths ...] [-b BACKEND] [--no-recursive] Positional arguments: paths ...
+PDF files or directories.
+Defaults to the current directory.
+Options: -b, --backend Text extraction backend.
+The default is pdfminer.
+'auto' tries Python libraries and then system OCR tools.
+--no-recursive Do not recursively search directories for PDF files.
+--log-level Loguru log level; default: WARNING.
+Examples: $ pdfview docs/ -b auto Command-line script: run ``python pdfview.py`` or the ``pdfview`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor

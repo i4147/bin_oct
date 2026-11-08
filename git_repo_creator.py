@@ -1,38 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Create a GitHub repository and push the current project into it.
-
-Two backends: ``api`` talks to the REST API with a token from ``--token``/``--env-file``, ``gh`` shells out to the
-GitHub CLI. Both initialise git when needed, optionally add a README and ``.gitignore``, stage and
-commit, set the remote and push the chosen branch.
-
-Usage: git_repo_creator {api,gh} NAME [options]
-
-Positional arguments:
-    name
-
-Subcommands:
-    api
-    gh
-
-Options:
-    -d, --description
-    --private
-    --auto-init
-    --push
-    --token
-    --env-file
-    --api-url
-    --remote
-    --protocol
-    --branch
-    ... plus 7 more; run ``git_repo_creator --help`` for the full list.
-
-Examples:
-    $ git_repo_creator gh myproject --private
-    $ git_repo_creator api myproject --push
-
-Command-line script: run ``python git_repo_creator.py`` or the ``git_repo_creator`` command. The module is importable as well.
-"""
+Two backends: ``api`` talks to the REST API with a token from ``--token``/``--env-file``, ``gh`` shells out to the GitHub CLI.
+Both initialise git when needed, optionally add a README and ``.gitignore``, stage and commit, set the remote and push the chosen branch.
+Usage: git_repo_creator {api,gh} NAME [options] Positional arguments: name Subcommands: api gh Options: -d, --description --private --auto-init --push --token --env-file --api-url --remote --protocol --branch ...
+plus 7 more; run ``git_repo_creator --help`` for the full list.
+Examples: $ git_repo_creator gh myproject --private $ git_repo_creator api myproject --push Command-line script: run ``python git_repo_creator.py`` or the ``git_repo_creator`` command.
+The module is importable as well."""
 
 import argparse
 from datetime import datetime

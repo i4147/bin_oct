@@ -1,36 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Migrate the local GitHub identity across the repositories and SSH keys.
-
-Same workflow as :doc:`migrate_git` with the extra ``--skip-ssh``/``--skip-files`` switches, home and SSH
-directory overrides and the new key path; the default is a dry run and ``--apply`` writes the
-changes.
-
-Usage: migrate_repos [--old-username U] [--new-username U] [--apply]
-
-Options:
-    --old-username
-    --old-email
-    --new-username
-    --new-email
-    --home
-        Home directory to scan (default: current user's home)
-    --ssh-dir
-        SSH directory (default: ~/.ssh)
-    --new-key-path
-        Path for the new private key (default: ~/.ssh/id_ed25519_github_new)
-    --apply
-        Actually write changes / delete files. Without this flag the script is dry-run
-        only.
-    --skip-ssh
-        Skip SSH key generation and old-key removal steps.
-    --skip-files
-        Skip the home-directory file scan/replace step.
-
-Examples:
-    $ migrate_repos --skip-ssh --apply
-
-Command-line script: run ``python migrate_repos.py`` or the ``migrate_repos`` command. The module is importable as well.
-"""
+Same workflow as :doc:`migrate_git` with the extra ``--skip-ssh``/``--skip-files`` switches, home and SSH directory overrides and the new key path; the default is a dry run and ``--apply`` writes the changes.
+Usage: migrate_repos [--old-username U] [--new-username U] [--apply] Options: --old-username --old-email --new-username --new-email --home Home directory to scan (default: current user's home) --ssh-dir SSH directory (default: ~/.ssh) --new-key-path Path for the new private key (default: ~/.ssh/id_ed25519_github_new) --apply Actually write changes / delete files.
+Without this flag the script is dry-run only.
+--skip-ssh Skip SSH key generation and old-key removal steps.
+--skip-files Skip the home-directory file scan/replace step.
+Examples: $ migrate_repos --skip-ssh --apply Command-line script: run ``python migrate_repos.py`` or the ``migrate_repos`` command.
+The module is importable as well."""
 
 import argparse
 from datetime import datetime

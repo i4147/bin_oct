@@ -1,29 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Compare the public definitions of a package with its ``__init__.py`` exports.
-
-Scans the Python files of the given paths for the top-level functions, classes and
-constants, reads the ``__all__`` of the package initialisers, reports the definitions that are
-not exported and can add them with ``-a`` (``--dry-run`` previews).
-
-Usage: check_exports [-a] [--dry-run] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to scan (default: '.' — recursive)
-
-Options:
-    -a, --autofix
-        Automatically add missing definitions to __init__.py
-    --dry-run
-        With -a, show what would change without writing
-    -v, --verbose
-        Enable debug logging
-
-Examples:
-    $ check_exports -a pkg/
-
-Command-line script: run ``python check_exports.py`` or the ``check_exports`` command. The module is importable as well.
-"""
+Scans the Python files of the given paths for the top-level functions, classes and constants, reads the ``__all__`` of the package initialisers, reports the definitions that are not exported and can add them with ``-a`` (``--dry-run`` previews).
+Usage: check_exports [-a] [--dry-run] [paths ...] Positional arguments: paths ...
+Files or directories to scan (default: '.' — recursive) Options: -a, --autofix Automatically add missing definitions to __init__.py --dry-run With -a, show what would change without writing -v, --verbose Enable debug logging Examples: $ check_exports -a pkg/ Command-line script: run ``python check_exports.py`` or the ``check_exports`` command.
+The module is importable as well."""
 
 import argparse
 import ast

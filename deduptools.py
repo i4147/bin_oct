@@ -1,52 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find and remove duplicate definitions with regexes, ASTs or tree-sitter.
-
-The ``const`` subcommand drops repeated constant assignments in one file, ``ast`` hashes
-(normalised) top-level functions, classes and constants across the given paths and
-writes one representative per duplicate to ``utils.py``, ``ts`` does the same by tree-sitter source
-text, and ``refactor`` extracts the surviving definitions into a package. ``--exclude``/``--exclude-self`` filter the
-inputs.
-
-Usage: deduptools {const,ast,ts,refactor} [options] [paths ...]
-
-Positional arguments:
-    file
-        Python file to dedup in place.
-    paths ...
-        Files or directories. Empty = walk cwd.
-
-Subcommands:
-    const
-        Regex-based duplicate-constant removal in a single file.
-    ast
-        AST-based dedup across one or more paths (default: cwd).
-    ts
-        Tree-sitter content dedup (diduper/tsdeduper).
-    refactor
-        Extract top-level defs/classes/consts into a package.
-
-Options:
-    --dup-file
-        Name of the archive file written next to FILE (default: dup_const.py).
-    --suffix
-        Suffix for per-file archive (default: _dups.py).
-    --output
-        File to write representative duplicates to (default: utils.py).
-    --exclude
-        Basename to skip (repeatable).
-    --exclude-self
-        Skip the running script's own file (diduper default).
-    --input-dir
-        Directory to scan (default: .).
-    --output-dir
-        Output package directory (default: output).
-
-Examples:
-    $ deduptools ast src/ --output utils.py
-    $ deduptools const script.py
-
-Command-line script: run ``python deduptools.py`` or the ``deduptools`` command. The module is importable as well.
-"""
+The ``const`` subcommand drops repeated constant assignments in one file, ``ast`` hashes (normalised) top-level functions, classes and constants across the given paths and writes one representative per duplicate to ``utils.py``, ``ts`` does the same by tree-sitter source text, and ``refactor`` extracts the surviving definitions into a package.
+``--exclude``/``--exclude-self`` filter the inputs.
+Usage: deduptools {const,ast,ts,refactor} [options] [paths ...] Positional arguments: file Python file to dedup in place.
+paths ...
+Files or directories.
+Empty = walk cwd.
+Subcommands: const Regex-based duplicate-constant removal in a single file.
+ast AST-based dedup across one or more paths (default: cwd).
+ts Tree-sitter content dedup (diduper/tsdeduper).
+refactor Extract top-level defs/classes/consts into a package.
+Options: --dup-file Name of the archive file written next to FILE (default: dup_const.py).
+--suffix Suffix for per-file archive (default: _dups.py).
+--output File to write representative duplicates to (default: utils.py).
+--exclude Basename to skip (repeatable).
+--exclude-self Skip the running script's own file (diduper default).
+--input-dir Directory to scan (default: .).
+--output-dir Output package directory (default: output).
+Examples: $ deduptools ast src/ --output utils.py $ deduptools const script.py Command-line script: run ``python deduptools.py`` or the ``deduptools`` command.
+The module is importable as well."""
 
 import argparse
 import ast

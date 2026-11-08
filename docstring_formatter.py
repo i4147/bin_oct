@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Reflow the module docstring bodies of Python files to 80 columns.
-
-Splits the docstring body into sentences and list items, re-wraps the prose to ``MAX_LINE`` and
-writes the file back only when the text actually changes. String prefixes are preserved
-and only module docstrings are rewritten, not the function docstrings.
-
-Usage: docstring_formatter [paths ...]
-
-Examples:
-    $ docstring_formatter pkg/
-
-Runs as a script (``python docstring_formatter.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Splits the docstring body into sentences and list items, re-wraps the prose to ``MAX_LINE`` and writes the file back only when the text actually changes.
+String prefixes are preserved and only module docstrings are rewritten, not the function docstrings.
+Usage: docstring_formatter [paths ...] Examples: $ docstring_formatter pkg/ Runs as a script (``python docstring_formatter.py``) in the directory it should act on; the module can also be imported."""
 
 import ast
 from pathlib import Path

@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Group similar files by fuzzy hashing (ssdeep / ppdeep).
-
-Hashes every file, compares the digests by similarity score and prints the groups
-(optionally as a table), writing a report, a similarity matrix and a CSRF-free copy of
-the groups when asked. Useful for spotting near-duplicate documents or binaries.
-
-Usage: fssim [paths ...]
-
-Examples:
-    $ fssim ~/documents
-
-Runs as a script (``python fssim.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Hashes every file, compares the digests by similarity score and prints the groups (optionally as a table), writing a report, a similarity matrix and a CSRF-free copy of the groups when asked.
+Useful for spotting near-duplicate documents or binaries.
+Usage: fssim [paths ...] Examples: $ fssim ~/documents Runs as a script (``python fssim.py``) in the directory it should act on; the module can also be imported."""
 
 import csv
 import json

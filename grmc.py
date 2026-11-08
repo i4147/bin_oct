@@ -1,34 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Strip the comments, docstrings and type annotations of Python files.
-
-``-c`` removes the comments (keeping the shebang, ``# type:`` and ``# fmt:``), ``-d`` the docstrings except
-the module one, ``-a`` everything and ``-t`` the annotations; the backend is LibCST, ast or
-tree-sitter (``-b``) and the output is validated before it is written.
-
-Usage: grmc [-c] [-d] [-a] [-t] [-b BACKEND] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to process (default: current directory).
-
-Options:
-    -c, --comments
-        Remove all comments except shebang, # type:, and # fmt:.
-    -d, --docstring
-        Remove all docstrings except the module-level docstring.
-    -a, --all
-        Remove all comments and docstrings, including shebang, module docstring, #
-        type:, and # fmt:.
-    -t, --type
-        Remove type annotations.
-    -b, --backend
-        Select parsing backend (default: libcst).
-
-Examples:
-    $ grmc -c -t src/
-
-Command-line script: run ``python grmc.py`` or the ``grmc`` command. The module is importable as well.
-"""
+``-c`` removes the comments (keeping the shebang, ``# type:`` and ``# fmt:``), ``-d`` the docstrings except the module one, ``-a`` everything and ``-t`` the annotations; the backend is LibCST, ast or tree-sitter (``-b``) and the output is validated before it is written.
+Usage: grmc [-c] [-d] [-a] [-t] [-b BACKEND] [paths ...] Positional arguments: paths ...
+Files or directories to process (default: current directory).
+Options: -c, --comments Remove all comments except shebang, # type:, and # fmt:.
+-d, --docstring Remove all docstrings except the module-level docstring.
+-a, --all Remove all comments and docstrings, including shebang, module docstring, # type:, and # fmt:.
+-t, --type Remove type annotations.
+-b, --backend Select parsing backend (default: libcst).
+Examples: $ grmc -c -t src/ Command-line script: run ``python grmc.py`` or the ``grmc`` command.
+The module is importable as well."""
 
 import argparse
 import ast

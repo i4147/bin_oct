@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Move files (or glob matches) into ``~/isaac/may/scripts``.
-
-Same argument style as :doc:`tolo`: file paths, shell globs and ``-f LISTFILE`` lists, with unique
-names for the collisions, moved into the personal scripts directory.
-
-Usage: tosc [-f LISTFILE] [files ...]
-
-Examples:
-    $ tosc tool.py
-
-Runs as a script (``python tosc.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Same argument style as :doc:`tolo`: file paths, shell globs and ``-f LISTFILE`` lists, with unique names for the collisions, moved into the personal scripts directory.
+Usage: tosc [-f LISTFILE] [files ...] Examples: $ tosc tool.py Runs as a script (``python tosc.py``) in the directory it should act on; the module can also be imported."""
 
 import glob
 from pathlib import Path

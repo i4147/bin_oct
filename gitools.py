@@ -1,69 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Git maintenance commands with pluggable backends.
-
-Subcommands: ``checkout-previous`` returns to HEAD^ in the repositories whose subject matches a prefix,
-``rm-commits``/``cut``/``del-remote-commits`` drop the commits older than N days (with a backup branch, and a force-push
-for the remote variant), ``list-added`` lists the files of the last commits and ``restore-deleted`` brings back
-everything ever deleted.
-
-Usage: gitools
-{checkout-previous,rm-commits,cut,del-remote-commits,list-added,restore-deleted}
-[options]
-
-Positional arguments:
-    mode
-        "clean" encrypts; "smudge" decrypts
-
-Subcommands:
-    checkout-previous
-        Checkout HEAD^ in repos whose HEAD subject matches a prefix
-    rm-commits
-        Reset branch to drop commits older than N days (creates a backup branch)
-    cut
-        Rewrite branch dropping commits older than N days
-    del-remote-commits
-        Reset branch and force-push (deletes commits on remote)
-    list-added
-        List files added in the last N commits
-    restore-deleted
-        Restore every file ever deleted in history
-    stage-deleted
-        Stage pending deletions that match history, then commit
-    squash-deletions
-        Amend last commit with pending historical deletions
-    age-filter
-        Age-based git clean/smudge filter (reads/writes stdin/stdout)
-
-Options:
-    -b, --backend
-        Git backend (default: subprocess; other backends fall back to subprocess for
-        unsupported operations)
-    -C, --repo
-        Directory containing repositories (default: .)
-    --prefix
-        Latest commit subject must start with this prefix (default: 2026-08-29)
-    -y, --yes
-        Skip the interactive confirmation
-    --days
-        Delete commits older than N days (default: 30)
-    --method
-        Rewrite method (default: squash)
-    --branch
-        Branch to clean (default: master; falls back to main)
-    --no-push
-        Do not force-push; only reset locally
-    -n
-        Number of commits to look back (default: 10)
-    -m, --message
-        Commit message for the restore commit (default: "removed files")
-    ... plus 3 more; run ``gitools --help`` for the full list.
-
-Examples:
-    $ gitools cut --days 30 --branch main --no-push
-
-The commit-rewriting and force-push subcommands change the history; run them on a branch
-with a backup.
-"""
+Subcommands: ``checkout-previous`` returns to HEAD^ in the repositories whose subject matches a prefix, ``rm-commits``/``cut``/``del-remote-commits`` drop the commits older than N days (with a backup branch, and a force-push for the remote variant), ``list-added`` lists the files of the last commits and ``restore-deleted`` brings back everything ever deleted.
+Usage: gitools {checkout-previous,rm-commits,cut,del-remote-commits,list-added,restore-deleted} [options] Positional arguments: mode "clean" encrypts; "smudge" decrypts Subcommands: checkout-previous Checkout HEAD^ in repos whose HEAD subject matches a prefix rm-commits Reset branch to drop commits older than N days (creates a backup branch) cut Rewrite branch dropping commits older than N days del-remote-commits Reset branch and force-push (deletes commits on remote) list-added List files added in the last N commits restore-deleted Restore every file ever deleted in history stage-deleted Stage pending deletions that match history, then commit squash-deletions Amend last commit with pending historical deletions age-filter Age-based git clean/smudge filter (reads/writes stdin/stdout) Options: -b, --backend Git backend (default: subprocess; other backends fall back to subprocess for unsupported operations) -C, --repo Directory containing repositories (default: .) --prefix Latest commit subject must start with this prefix (default: 2026-08-29) -y, --yes Skip the interactive confirmation --days Delete commits older than N days (default: 30) --method Rewrite method (default: squash) --branch Branch to clean (default: master; falls back to main) --no-push Do not force-push; only reset locally -n Number of commits to look back (default: 10) -m, --message Commit message for the restore commit (default: "removed files") ...
+plus 3 more; run ``gitools --help`` for the full list.
+Examples: $ gitools cut --days 30 --branch main --no-push The commit-rewriting and force-push subcommands change the history; run them on a branch with a backup."""
 
 import argparse
 from dataclasses import dataclass, field

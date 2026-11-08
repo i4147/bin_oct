@@ -1,32 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Clipboard helpers: file -> clipboard, clipboard -> script file.
-
-Analysis / deduplication
-------------------------
-- ``l2c.py`` (copy one 0-based line; it never actually sent the text -
-  the ``communicate()`` call was missing) and ``tcs.py`` (copy a range /
-  selected lines) are one ``copy`` command using 1-based lines.
-  Original ``tcs -s`` selection is ``copy --lines 3,7,9``.
-- ``tcg.py`` vs ``tcg3.py`` both write the clipboard to a new script,
-  fix the shebang and add an extension-less symlink. ``tcg3`` detects
-  the language from content when the extension is unknown and has the
-  correct python shebang, so its behaviour (plus ``tcg``'s rust support
-  and ``-a`` archiving) is the merged ``paste`` command.
-- ``f2l.py`` rewrites a file's lines as ``{"a", "b"}`` and copies it:
-  the ``to-list`` command.
-
-Clipboard commands default to Termux (``termux-clipboard-get/set``) as
-in the originals; on desktop Linux pass ``--get-cmd wl-paste`` /
-``--set-cmd wl-copy`` or ``xclip -o`` / ``xclip -selection clipboard``.
-
-Examples
---------
-  python3 clipboard_tool.py copy notes.txt            # whole file
-  python3 clipboard_tool.py copy notes.txt 10 20      # lines 10-20
-  python3 clipboard_tool.py copy notes.txt --lines 1,5
-  python3 clipboard_tool.py paste myscript.py
-  python3 clipboard_tool.py to-list names.txt
-"""
+Analysis / deduplication ------------------------ - ``l2c.py`` (copy one 0-based line; it never actually sent the text - the ``communicate()`` call was missing) and ``tcs.py`` (copy a range / selected lines) are one ``copy`` command using 1-based lines.
+Original ``tcs -s`` selection is ``copy --lines 3,7,9``.
+- ``tcg.py`` vs ``tcg3.py`` both write the clipboard to a new script, fix the shebang and add an extension-less symlink.
+``tcg3`` detects the language from content when the extension is unknown and has the correct python shebang, so its behaviour (plus ``tcg``'s rust support and ``-a`` archiving) is the merged ``paste`` command.
+- ``f2l.py`` rewrites a file's lines as ``{"a", "b"}`` and copies it: the ``to-list`` command.
+Clipboard commands default to Termux (``termux-clipboard-get/set``) as in the originals; on desktop Linux pass ``--get-cmd wl-paste`` / ``--set-cmd wl-copy`` or ``xclip -o`` / ``xclip -selection clipboard``.
+Examples -------- python3 clipboard_tool.py copy notes.txt # whole file python3 clipboard_tool.py copy notes.txt 10 20 # lines 10-20 python3 clipboard_tool.py copy notes.txt --lines 1,5 python3 clipboard_tool.py paste myscript.py python3 clipboard_tool.py to-list names.txt"""
 
 import argparse
 from collections.abc import Sequence

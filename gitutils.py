@@ -1,46 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """List the added, modified and deleted files of every commit across several git backends.
-
-Walks the history through Dulwich, pygit2, GitPython or the ``git`` CLI, applies the
-date/author/path/mode filters and writes the records as JSON, JSONL, CSV, YAML or
-Markdown (``-f``), with ``--first-parent`` and ``--max-count`` support.
-
-Usage: gitutils [repo_path] [-b BACKEND] [-f FORMAT] [--since DATE] [--path GLOB]
-
-Positional arguments:
-    repo_path
-        Path to the git repository (default: .)
-    output_path
-        Output file (- for stdout)
-
-Options:
-    -b, --backend
-        Git backend to use
-    -f, --format
-        Output format
-    --branch
-        Ref/branch to walk (default: HEAD)
-    --since
-        Only commits after this date (ISO 8601 or git-style)
-    --until
-        Only commits before this date
-    --author
-        Filter by author name or email (substring)
-    --max-count
-        Limit number of commits emitted
-    --first-parent
-        Follow only first parents
-    --path
-        Only include paths matching this glob (fnmatch)
-    --exclude
-        Exclude paths matching this glob (fnmatch)
-    ... plus 6 more; run ``gitutils --help`` for the full list.
-
-Examples:
-    $ gitutils . -f csv -o history.csv --since 2025-01-01
-
-Command-line script: run ``python gitutils.py`` or the ``gitutils`` command. The module is importable as well.
-"""
+Walks the history through Dulwich, pygit2, GitPython or the ``git`` CLI, applies the date/author/path/mode filters and writes the records as JSON, JSONL, CSV, YAML or Markdown (``-f``), with ``--first-parent`` and ``--max-count`` support.
+Usage: gitutils [repo_path] [-b BACKEND] [-f FORMAT] [--since DATE] [--path GLOB] Positional arguments: repo_path Path to the git repository (default: .) output_path Output file (- for stdout) Options: -b, --backend Git backend to use -f, --format Output format --branch Ref/branch to walk (default: HEAD) --since Only commits after this date (ISO 8601 or git-style) --until Only commits before this date --author Filter by author name or email (substring) --max-count Limit number of commits emitted --first-parent Follow only first parents --path Only include paths matching this glob (fnmatch) --exclude Exclude paths matching this glob (fnmatch) ...
+plus 6 more; run ``gitutils --help`` for the full list.
+Examples: $ gitutils .
+-f csv -o history.csv --since 2025-01-01 Command-line script: run ``python gitutils.py`` or the ``gitutils`` command.
+The module is importable as well."""
 
 import argparse
 import csv

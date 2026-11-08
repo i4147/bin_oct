@@ -1,20 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Check HTML files for unbalanced tags with several parsers.
-
-``--backend`` selects ``html.parser`` (default), lxml, html5lib, BeautifulSoup or tidy; each backend reports
-the mismatched closing tags, the unclosed elements and the stray end tags of the files
-below the current directory.
-
-Usage: valhtml [-b html.parser|lxml|html5lib|bs4|tidy] [files ...]
-
-Options:
-    -b, --backend
-
-Examples:
-    $ valhtml -b html5lib page.html
-
-Command-line script: run ``python valhtml.py`` or the ``valhtml`` command. The module is importable as well.
-"""
+``--backend`` selects ``html.parser`` (default), lxml, html5lib, BeautifulSoup or tidy; each backend reports the mismatched closing tags, the unclosed elements and the stray end tags of the files below the current directory.
+Usage: valhtml [-b html.parser|lxml|html5lib|bs4|tidy] [files ...] Options: -b, --backend Examples: $ valhtml -b html5lib page.html Command-line script: run ``python valhtml.py`` or the ``valhtml`` command.
+The module is importable as well."""
 
 import argparse
 from html import escape

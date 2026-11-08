@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Syntax-check C and C++ sources and headers with the compiler.
-
-Chooses gcc or g++ by suffix, runs ``-fsyntax-only`` on each file of the tree (or of the given paths)
-in a process pool and prints the files that fail.
-
-Usage: validate_cpp_syntax [paths ...]
-
-Examples:
-    $ validate_cpp_syntax src/
-
-Runs as a script (``python validate_cpp_syntax.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Chooses gcc or g++ by suffix, runs ``-fsyntax-only`` on each file of the tree (or of the given paths) in a process pool and prints the files that fail.
+Usage: validate_cpp_syntax [paths ...] Examples: $ validate_cpp_syntax src/ Runs as a script (``python validate_cpp_syntax.py``) in the directory it should act on; the module can also be imported."""
 
 import multiprocessing as mp
 from pathlib import Path

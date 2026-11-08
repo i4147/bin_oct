@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     import libcst as cst
     from tree_sitter import Node, Parser
 
-SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.egg-info",)
+SKIP_DIR_PATTERNS: tuple[str, ...] = ("*.dist-info",)
 MAX_SNIFF_SIZE: int = 2_000_000
 DEFAULT_BACKENDS: tuple[str, ...] = ("libcst", "tree-sitter")
 INSTALL_HINTS: dict[str, str] = {

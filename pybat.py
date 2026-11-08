@@ -1,39 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """A Python port of ``bat``: cat with syntax highlighting.
-
-Same feature set as :doc:`pbat` (Pygments highlighting, line numbers, git markers,
-themes, line ranges and paging) with the streaming reader used here.
-
-Usage: pybat [files ...] [-l LANG] [--theme THEME] [-r START:END]
-
-Positional arguments:
-    files ...
-        Files to display (use '-' for stdin)
-
-Options:
-    -l, --language
-        Set the language for syntax highlighting
-    --theme
-        Color theme (see --list-themes)
-    -p, --plain
-        Plain output: no line numbers, header, grid or git markers
-    --style
-        Output style
-    -r, --line-range
-        Only show given line range, e.g. '30:40', '30:', ':40'
-    -H, --highlight-line
-        Highlight a specific line (repeatable)
-    --paging
-    --color
-    --tabs
-    --list-languages
-    ... plus 1 more; run ``pybat --help`` for the full list.
-
-Examples:
-    $ pybat README.md -r 1:30
-
-Command-line script: run ``python pybat.py`` or the ``pybat`` command. The module is importable as well.
-"""
+Same feature set as :doc:`pbat` (Pygments highlighting, line numbers, git markers, themes, line ranges and paging) with the streaming reader used here.
+Usage: pybat [files ...] [-l LANG] [--theme THEME] [-r START:END] Positional arguments: files ...
+Files to display (use '-' for stdin) Options: -l, --language Set the language for syntax highlighting --theme Color theme (see --list-themes) -p, --plain Plain output: no line numbers, header, grid or git markers --style Output style -r, --line-range Only show given line range, e.g.
+'30:40', '30:', ':40' -H, --highlight-line Highlight a specific line (repeatable) --paging --color --tabs --list-languages ...
+plus 1 more; run ``pybat --help`` for the full list.
+Examples: $ pybat README.md -r 1:30 Command-line script: run ``python pybat.py`` or the ``pybat`` command.
+The module is importable as well."""
 
 import argparse
 from dataclasses import dataclass, field

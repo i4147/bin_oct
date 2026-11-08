@@ -1,24 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Minify the HTML files of a tree in place.
-
-Runs the ``minify-html`` backend on each ``.html`` file after validating the markup, writes the result
-back and processes the files with the chosen pool method (``--pool-method``).
-
-Usage: mhtm [paths ...] [-b BACKEND] [--pool-method MAP]
-
-Positional arguments:
-    paths ...
-        Files or directories to process. Defaults to the current directory, recursively.
-
-Options:
-    -b, --backend
-    --pool-method
-
-Examples:
-    $ mhtm dist/
-
-Command-line script: run ``python mhtm.py`` or the ``mhtm`` command. The module is importable as well.
-"""
+Runs the ``minify-html`` backend on each ``.html`` file after validating the markup, writes the result back and processes the files with the chosen pool method (``--pool-method``).
+Usage: mhtm [paths ...] [-b BACKEND] [--pool-method MAP] Positional arguments: paths ...
+Files or directories to process.
+Defaults to the current directory, recursively.
+Options: -b, --backend --pool-method Examples: $ mhtm dist/ Command-line script: run ``python mhtm.py`` or the ``mhtm`` command.
+The module is importable as well."""
 
 import argparse
 from functools import partial

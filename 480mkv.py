@@ -1,9 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Keep lines containing mkv or mp4 and a selected resolution in a file.
-
-Pass a file path as the first argument. The selected string is 480 if it
-appears anywhere in the file, otherwise 720. Rewrite only if lines match.
-"""
+Pass a file path as the first argument.
+The selected string is 480 if it appears anywhere in the file, otherwise 720.
+Rewrite only if lines match."""
 
 from pathlib import Path
 import sys

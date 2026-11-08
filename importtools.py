@@ -1,55 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Python import hygiene toolkit.
-
-Subcommands: ``check-missing`` finds the used names without an import (spec, stdlib or mapped
-strategy) and can insert them, ``check-position`` flags the imports placed after code or inside a
-scope, ``add-import`` prepends an import, ``check-load`` imports the files to catch runtime errors, ``find-py2``
-detects the Python-2 import styles and ``transform`` rewrites ``import m; m.x`` as ``from m import x``.
-
-Usage: importtools
-{check-missing,check-position,add-import,check-load,find-py2,transform} [options]
-
-Positional arguments:
-    name
-        Module name to import
-    files ...
-    file
-
-Subcommands:
-    check-missing
-        Find missing imports (spec/stdlib/mapped).
-    check-position
-        Find imports that appear after code / inside scopes.
-    add-import
-        Prepend 'import NAME' to every .py file.
-    check-load
-        Import each given file to detect runtime errors.
-    find-py2
-        Detect Python-2-style imports via tree-sitter.
-    transform
-        Rewrite 'import m; m.x' -> 'from m import x'.
-
-Options:
-    -d, --directory
-    --strategy
-        Spec=find_spec (default), stdlib=fixed set, mapped=stdlib + from-import
-        suggestions
-    -a, --autofix
-    -e, --exclude
-        Extra directory name(s) to exclude
-    --deep
-        Use chk_imports.py semantics (nested imports counted, autofix possible).
-    -o, --output
-    --shebang
-        Shebang to insert when the file has none.
-    --threshold
-    --no-color
-
-Examples:
-    $ importtools check-missing -d src -a
-
-Command-line script: run ``python importtools.py`` or the ``importtools`` command. The module is importable as well.
-"""
+Subcommands: ``check-missing`` finds the used names without an import (spec, stdlib or mapped strategy) and can insert them, ``check-position`` flags the imports placed after code or inside a scope, ``add-import`` prepends an import, ``check-load`` imports the files to catch runtime errors, ``find-py2`` detects the Python-2 import styles and ``transform`` rewrites ``import m; m.x`` as ``from m import x``.
+Usage: importtools {check-missing,check-position,add-import,check-load,find-py2,transform} [options] Positional arguments: name Module name to import files ...
+file Subcommands: check-missing Find missing imports (spec/stdlib/mapped).
+check-position Find imports that appear after code / inside scopes.
+add-import Prepend 'import NAME' to every .py file.
+check-load Import each given file to detect runtime errors.
+find-py2 Detect Python-2-style imports via tree-sitter.
+transform Rewrite 'import m; m.x' -> 'from m import x'.
+Options: -d, --directory --strategy Spec=find_spec (default), stdlib=fixed set, mapped=stdlib + from-import suggestions -a, --autofix -e, --exclude Extra directory name(s) to exclude --deep Use chk_imports.py semantics (nested imports counted, autofix possible).
+-o, --output --shebang Shebang to insert when the file has none.
+--threshold --no-color Examples: $ importtools check-missing -d src -a Command-line script: run ``python importtools.py`` or the ``importtools`` command.
+The module is importable as well."""
 
 import argparse
 import ast

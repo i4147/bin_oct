@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Remove version pins/specifiers from a requirements.txt file, in place.
-
-Usage:  python strip_versions.py requirements.txt
-"""
+Usage: python strip_versions.py requirements.txt"""
 
 from pathlib import Path
 import re

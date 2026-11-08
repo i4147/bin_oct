@@ -1,44 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Reflow ``.txt``/``.md`` files in place with sentence-aware wrapping.
-
-Splits the text into sentences (the abbreviations and the inline code protected),
-rewraps them to ``-w`` columns (100 by default), keeps the headings and lists, converts the
-``.txt`` files to Markdown with ``-m`` and offers ``--diff``, ``--backup``, ``--check`` and the ignore-file support.
-
-Usage: reformat_txt [inputs ...] [-w WIDTH] [--diff] [--check]
-
-Positional arguments:
-    inputs ...
-        Files or directories to process (default: '.')
-
-Options:
-    -w, --width
-        Maximum line width (default: 100)
-    -n, --dry-run
-        Show what would change without writing
-    --diff
-        Print a colored unified diff for changed files
-    --backup
-        Save each original as <name>.bak before writing
-    --check
-        Exit 1 if any file needs formatting (implies --dry-run)
-    -m, --markdown
-        Write file.md beside each .txt
-    -r, --remove
-        With -m, delete the original .txt
-    -e, --exclude
-        Skip matching files (repeatable)
-    -q, --quiet
-        Only print the summary
-    --color
-        Colorize output (default: auto)
-
-Examples:
-    $ reformat_txt docs/ -w 88 --diff
-    $ reformat_txt --check notes.txt
-
-Command-line script: run ``python reformat_txt.py`` or the ``reformat_txt`` command. The module is importable as well.
-"""
+Splits the text into sentences (the abbreviations and the inline code protected), rewraps them to ``-w`` columns (100 by default), keeps the headings and lists, converts the ``.txt`` files to Markdown with ``-m`` and offers ``--diff``, ``--backup``, ``--check`` and the ignore-file support.
+Usage: reformat_txt [inputs ...] [-w WIDTH] [--diff] [--check] Positional arguments: inputs ...
+Files or directories to process (default: '.') Options: -w, --width Maximum line width (default: 100) -n, --dry-run Show what would change without writing --diff Print a colored unified diff for changed files --backup Save each original as <name>.bak before writing --check Exit 1 if any file needs formatting (implies --dry-run) -m, --markdown Write file.md beside each .txt -r, --remove With -m, delete the original .txt -e, --exclude Skip matching files (repeatable) -q, --quiet Only print the summary --color Colorize output (default: auto) Examples: $ reformat_txt docs/ -w 88 --diff $ reformat_txt --check notes.txt Command-line script: run ``python reformat_txt.py`` or the ``reformat_txt`` command.
+The module is importable as well."""
 
 from __future__ import annotations
 import argparse

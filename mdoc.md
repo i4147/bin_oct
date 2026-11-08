@@ -156,3 +156,4 @@ If after reading the file you genuinely cannot determine what it does, mark
 Begin now: produce the inventory (all root `.py` files, classified by
 has-docstring / missing-docstring / unparseable / generated / empty), define the
 batches, write the ledger skeleton, then start batch 1. Do not wait for approval.
+Note: reformat existing module docstrings to a well formatted docstring.

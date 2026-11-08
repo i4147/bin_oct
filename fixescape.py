@@ -1,25 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find and fix the invalid escape sequences of Python string literals.
-
-Compiles each file with the warnings promoted to errors, locates the offending literals
-with tokenize, asks to make them raw or to double the backslash and with ``-a`` applies the
-fixes in a pool.
-
-Usage: fixescape [-a] [path]
-
-Positional arguments:
-    path
-        Directory to scan (default: current directory)
-
-Options:
-    -a, --apply
-        Update inplace in -a mode to fix issues (convert to raw regex)
-
-Examples:
-    $ fixescape -a src/
-
-Command-line script: run ``python fixescape.py`` or the ``fixescape`` command. The module is importable as well.
-"""
+Compiles each file with the warnings promoted to errors, locates the offending literals with tokenize, asks to make them raw or to double the backslash and with ``-a`` applies the fixes in a pool.
+Usage: fixescape [-a] [path] Positional arguments: path Directory to scan (default: current directory) Options: -a, --apply Update inplace in -a mode to fix issues (convert to raw regex) Examples: $ fixescape -a src/ Command-line script: run ``python fixescape.py`` or the ``fixescape`` command.
+The module is importable as well."""
 
 import argparse
 import ast

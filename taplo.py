@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """A pure-Python TOML formatter.
-
-Tokenizes the document, builds a small AST (tables, arrays of tables, key/value pairs),
-normalises the spacing, the indentation and the quote style of the keys and values and
-prints the formatted TOML, with the formatting rules held in ``FormatConfig``.
-
-Usage: taplo [FILE]
-
-Examples:
-    $ taplo pyproject.toml
-
-Runs as a script (``python taplo.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Tokenizes the document, builds a small AST (tables, arrays of tables, key/value pairs), normalises the spacing, the indentation and the quote style of the keys and values and prints the formatted TOML, with the formatting rules held in ``FormatConfig``.
+Usage: taplo [FILE] Examples: $ taplo pyproject.toml Runs as a script (``python taplo.py``) in the directory it should act on; the module can also be imported."""
 
 from dataclasses import dataclass, field
 from enum import Enum, auto

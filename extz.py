@@ -1,24 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Report the file extensions used below the current directory.
-
-Counts the files per extension with their sizes, prints a coloured table of the most
-common ones, and ``-s`` switches to the total size per extension while ``-p`` writes a
-Matplotlib pie chart (the top 30 are charted).
-
-Usage: extz [-s] [-p] [--no-color]
-
-Options:
-    -s, --size
-        Show total size per extension instead of example files
-    -p, --pie-chart
-    --no-color
-        Disable color output
-
-Examples:
-    $ extz -s -p
-
-Command-line script: run ``python extz.py`` or the ``extz`` command. The module is importable as well.
-"""
+Counts the files per extension with their sizes, prints a coloured table of the most common ones, and ``-s`` switches to the total size per extension while ``-p`` writes a Matplotlib pie chart (the top 30 are charted).
+Usage: extz [-s] [-p] [--no-color] Options: -s, --size Show total size per extension instead of example files -p, --pie-chart --no-color Disable color output Examples: $ extz -s -p Command-line script: run ``python extz.py`` or the ``extz`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

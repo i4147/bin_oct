@@ -1,53 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Download English subtitles for a video, or search for them by title.
-
-The ``file`` subcommand scans a local video with subliminal and writes the subtitle next to
-it, ``search`` queries the services by title; the language, providers, extension and the output
-name are configurable.
-
-Usage: getsub {file,search} [options]
-
-Positional arguments:
-    video
-        Path to the video file
-    output_dir
-        Output directory (defaults to the video directory)
-    query ...
-        Movie or series title
-
-Subcommands:
-    file
-        Scan a local video with subliminal
-    search
-        Search subtitle services by title
-
-Options:
-    --language
-        Babelfish language code (default: eng)
-    --providers
-        Subliminal providers (default: %(default)s)
-    --filename-suffix
-        Suffix inserted before the extension (default: empty)
-    --extension
-    --scan-output
-        Scan messages: full details, one processing line, or none
-    --warn-non-mkv
-        Warn when the input does not have an .mkv extension (default: enabled)
-    --output
-        Output filename (defaults to a sanitized title)
-    --sources
-        Search order (default: OpenSubtitles, then YTS)
-    --user-agent
-    --timeout
-        HTTP timeout in seconds (default: none)
-    ... plus 10 more; run ``getsub --help`` for the full list.
-
-Examples:
-    $ getsub file movie.mkv
-    $ getsub search 'Some Film'
-
-Command-line script: run ``python getsub.py`` or the ``getsub`` command. The module is importable as well.
-"""
+The ``file`` subcommand scans a local video with subliminal and writes the subtitle next to it, ``search`` queries the services by title; the language, providers, extension and the output name are configurable.
+Usage: getsub {file,search} [options] Positional arguments: video Path to the video file output_dir Output directory (defaults to the video directory) query ...
+Movie or series title Subcommands: file Scan a local video with subliminal search Search subtitle services by title Options: --language Babelfish language code (default: eng) --providers Subliminal providers (default: %(default)s) --filename-suffix Suffix inserted before the extension (default: empty) --extension --scan-output Scan messages: full details, one processing line, or none --warn-non-mkv Warn when the input does not have an .mkv extension (default: enabled) --output Output filename (defaults to a sanitized title) --sources Search order (default: OpenSubtitles, then YTS) --user-agent --timeout HTTP timeout in seconds (default: none) ...
+plus 10 more; run ``getsub --help`` for the full list.
+Examples: $ getsub file movie.mkv $ getsub search 'Some Film' Command-line script: run ``python getsub.py`` or the ``getsub`` command.
+The module is importable as well."""
 
 import argparse
 from pathlib import Path

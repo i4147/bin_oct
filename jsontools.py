@@ -1,54 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """JSON and text conversion toolkit.
-
-Subcommands: ``custom2json``/``ss2json`` parse the custom delimited dumps, ``freeze2json`` parses pip freeze, ``jsonl2dict``/``jsonl2json``
-convert the JSONL files (per object or per directory), ``lowerkeys`` lowercases the keys, ``merge-json``/``mergejson``
-combine the documents, ``mime2json`` wraps a MIME file and ``sortdict``/``tojson`` normalise the output.
-
-Usage: jsontools
-{custom2json,freeze2json,jsonl2dict,jsonl2json,lowerkeys,merge-json,mime2json,sortdict,tojson}
-[options]
-
-Positional arguments:
-    file
-    output
-    inputs ...
-    directory
-    csv
-    delimiter
-
-Subcommands:
-    custom2json
-    freeze2json
-    jsonl2dict
-    jsonl2json
-    lowerkeys
-    merge-json
-    mergejson
-    mime2json
-    sortdict
-    ss2json
-    tojson
-
-Options:
-    --input
-    --output
-    --key
-    -o, --output-dir
-    --indent
-    --ensure-ascii
-    --skip-invalid
-    --overwrite
-    -o, --output
-    --score-column
-    ... plus 1 more; run ``jsontools --help`` for the full list.
-
-Examples:
-    $ jsontools jsonl2json data.jsonl -o out/
-    $ jsontools lowerkeys data.json
-
-Command-line script: run ``python jsontools.py`` or the ``jsontools`` command. The module is importable as well.
-"""
+Subcommands: ``custom2json``/``ss2json`` parse the custom delimited dumps, ``freeze2json`` parses pip freeze, ``jsonl2dict``/``jsonl2json`` convert the JSONL files (per object or per directory), ``lowerkeys`` lowercases the keys, ``merge-json``/``mergejson`` combine the documents, ``mime2json`` wraps a MIME file and ``sortdict``/``tojson`` normalise the output.
+Usage: jsontools {custom2json,freeze2json,jsonl2dict,jsonl2json,lowerkeys,merge-json,mime2json,sortdict,tojson} [options] Positional arguments: file output inputs ...
+directory csv delimiter Subcommands: custom2json freeze2json jsonl2dict jsonl2json lowerkeys merge-json mergejson mime2json sortdict ss2json tojson Options: --input --output --key -o, --output-dir --indent --ensure-ascii --skip-invalid --overwrite -o, --output --score-column ...
+plus 1 more; run ``jsontools --help`` for the full list.
+Examples: $ jsontools jsonl2json data.jsonl -o out/ $ jsontools lowerkeys data.json Command-line script: run ``python jsontools.py`` or the ``jsontools`` command.
+The module is importable as well."""
 
 import argparse
 import contextlib

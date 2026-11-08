@@ -1,60 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Collect, flatten and move files and directories.
-
-Subcommands: ``collect`` gathers every ``*.EXT`` into one folder, ``move-subdirs`` moves the top-level directories,
-``flatten`` lifts the files out of the subdirectories, ``move-tests`` pulls the test folders out of ``site-packages``,
-``move-binary`` collects the binaries (with SHA-256 dedup) and ``send`` copies files to a destination.
+Subcommands: ``collect`` gathers every ``*.EXT`` into one folder, ``move-subdirs`` moves the top-level directories, ``flatten`` lifts the files out of the subdirectories, ``move-tests`` pulls the test folders out of ``site-packages``, ``move-binary`` collects the binaries (with SHA-256 dedup) and ``send`` copies files to a destination.
 Every move is logged and ``--reverse`` undoes them.
-
-Usage: file_mover_tool {collect,move-subdirs,flatten,move-tests,move-binary,send}
-[options]
-
-Positional arguments:
-    extension
-        E.g. pdf, whl
-    root
-    source
-    dest
-    files ...
-
-Subcommands:
-    collect
-        Gather *.EXT into one folder
-    move-subdirs
-        Move top-level subdirs SRC -> DST
-    flatten
-        Lift files out of subdirectories
-    move-tests
-        Move tests/ dirs and test files out
-    move-binary
-        Binary files -> binary/
-    send
-        Send file(s) to a destination dir
-
-Options:
-    --to
-        Default: <root>/<ext>/
-    --move
-        Move instead of copy (www.py)
-    -n, --dry-run
-    --rename-on-clash
-    -r, --recursive
-        All depths (original: 1 level)
-    --remove-empty
-    --source
-        Default: site-packages
-    --dir
-        Base for --kind files
-    --kind
-    --out
-    ... plus 6 more; run ``file_mover_tool --help`` for the full list.
-
-Examples:
-    $ file_mover_tool collect pdf --root ~/docs
-    $ file_mover_tool flatten ~/projects
-
-Command-line script: run ``python file_mover_tool.py`` or the ``file_mover_tool`` command. The module is importable as well.
-"""
+Usage: file_mover_tool {collect,move-subdirs,flatten,move-tests,move-binary,send} [options] Positional arguments: extension E.g.
+pdf, whl root source dest files ...
+Subcommands: collect Gather *.EXT into one folder move-subdirs Move top-level subdirs SRC -> DST flatten Lift files out of subdirectories move-tests Move tests/ dirs and test files out move-binary Binary files -> binary/ send Send file(s) to a destination dir Options: --to Default: <root>/<ext>/ --move Move instead of copy (www.py) -n, --dry-run --rename-on-clash -r, --recursive All depths (original: 1 level) --remove-empty --source Default: site-packages --dir Base for --kind files --kind --out ...
+plus 6 more; run ``file_mover_tool --help`` for the full list.
+Examples: $ file_mover_tool collect pdf --root ~/docs $ file_mover_tool flatten ~/projects Command-line script: run ``python file_mover_tool.py`` or the ``file_mover_tool`` command.
+The module is importable as well."""
 
 import argparse
 from collections.abc import Sequence

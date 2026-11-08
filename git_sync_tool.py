@@ -1,34 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Bulk git sync: pull/restore every repo, rebase-sync, publish to GitHub.
-
-Analysis / deduplication
-------------------------
-- ``autopull.py`` (subprocess ``git pull --ff-only``), ``gitpuller.py``
-  (same via GitPython) and ``gitrestorer.py`` (same walker but it runs
-  ``git restore .`` despite its name) are one ``pull-all`` command;
-  the restore variant is ``pull-all --restore`` (discards local
-  changes, hence ``--yes`` is required). GitPython was dropped: plain
-  ``git -C`` subprocess calls do the same with no dependency.
-- ``gitfix.py`` rebase-onto-upstream + force-with-lease is
-  ``sync-branch`` (the buggy plumbing alternative was removed; the
-  rebase itself is unchanged, guarded by ``--yes`` and a clean tree).
-- ``git_pull_newrepo.py`` (create a GitHub repo for local repos
-  without a remote and push) is ``publish``; it uses the GitHub REST
-  API via stdlib ``urllib`` and reads the token from ``$GITHUB_TOKEN``
-  (the original also loaded ``.env`` via python-dotenv - a tiny
-  built-in ``.env`` reader covers that file).
-
-Nothing network- or history-changing runs without an explicit
-subcommand; destructive subcommands additionally need ``--yes`` or
-will only report with ``--dry-run``.
-
-Examples
---------
-  python3 git_sync_tool.py pull-all ~/projects
-  python3 git_sync_tool.py pull-all . --restore --dry-run
-  python3 git_sync_tool.py sync-branch . --dry-run
-  python3 git_sync_tool.py publish ~/projects --dry-run
-"""
+Analysis / deduplication ------------------------ - ``autopull.py`` (subprocess ``git pull --ff-only``), ``gitpuller.py`` (same via GitPython) and ``gitrestorer.py`` (same walker but it runs ``git restore .`` despite its name) are one ``pull-all`` command; the restore variant is ``pull-all --restore`` (discards local changes, hence ``--yes`` is required).
+GitPython was dropped: plain ``git -C`` subprocess calls do the same with no dependency.
+- ``gitfix.py`` rebase-onto-upstream + force-with-lease is ``sync-branch`` (the buggy plumbing alternative was removed; the rebase itself is unchanged, guarded by ``--yes`` and a clean tree).
+- ``git_pull_newrepo.py`` (create a GitHub repo for local repos without a remote and push) is ``publish``; it uses the GitHub REST API via stdlib ``urllib`` and reads the token from ``$GITHUB_TOKEN`` (the original also loaded ``.env`` via python-dotenv - a tiny built-in ``.env`` reader covers that file).
+Nothing network- or history-changing runs without an explicit subcommand; destructive subcommands additionally need ``--yes`` or will only report with ``--dry-run``.
+Examples -------- python3 git_sync_tool.py pull-all ~/projects python3 git_sync_tool.py pull-all .
+--restore --dry-run python3 git_sync_tool.py sync-branch .
+--dry-run python3 git_sync_tool.py publish ~/projects --dry-run"""
 
 import argparse
 from collections.abc import Sequence

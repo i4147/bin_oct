@@ -1,62 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Renaming and normalisation toolkit.
-
-Subcommands: ``lowercase`` lowercases the names, the extensions or the content, ``images`` appends the
-``WxH`` dimensions, ``clean-names`` strips the common prefixes and the junk patterns (release tags,
-quality markers) from the media files, ``jscss`` normalises the ``.js``/``.css`` names (and the HTML
-references), ``suggest-names`` proposes names for the ``.py`` files from their docstrings and ``pnr`` does the
-remove/replace/template renames.
-
-Usage: renametools {lowercase,images,clean-names,jscss,suggest-names,pnr} [options]
-
-Positional arguments:
-    paths ...
-        Files or directories (default: current directory).
-
-Subcommands:
-    lowercase
-        Lowercase names, extensions, or file content.
-    images
-        Rename image files to include WxH dimensions.
-    clean-names
-        Strip common prefix/suffix and junk patterns from media files.
-    jscss
-        Normalize .js/.css filenames and optionally HTML content.
-    suggest-names
-        Suggest meaningful names for .py files from their docstrings.
-    pnr
-        Remove / replace / template-number names.
-
-Options:
-    -v, --verbose
-        Enable debug logging.
-    --target
-        What to lowercase (default: name).
-    -r, --recursive
-        Recurse into subdirectories (default).
-    --no-recursive
-        Only operate on top-level entries.
-    --dry-run
-        Preview only.
-    --root
-        Root directory to scan (default: current).
-    --separator
-        Separator between name and dimensions (default: _).
-    --apply
-        Actually rename (default: dry-run).
-    --pattern
-        Regex of junk to strip (repeatable; overrides defaults).
-    --query-style
-        'any' strips everything after ? or # (default); 'param' strips only ?key=value
-        patterns.
-    ... plus 6 more; run ``renametools --help`` for the full list.
-
-Examples:
-    $ renametools images --dry-run ~/photos
-    $ renametools clean-names ~/media --apply
-
-Command-line script: run ``python renametools.py`` or the ``renametools`` command. The module is importable as well.
-"""
+Subcommands: ``lowercase`` lowercases the names, the extensions or the content, ``images`` appends the ``WxH`` dimensions, ``clean-names`` strips the common prefixes and the junk patterns (release tags, quality markers) from the media files, ``jscss`` normalises the ``.js``/``.css`` names (and the HTML references), ``suggest-names`` proposes names for the ``.py`` files from their docstrings and ``pnr`` does the remove/replace/template renames.
+Usage: renametools {lowercase,images,clean-names,jscss,suggest-names,pnr} [options] Positional arguments: paths ...
+Files or directories (default: current directory).
+Subcommands: lowercase Lowercase names, extensions, or file content.
+images Rename image files to include WxH dimensions.
+clean-names Strip common prefix/suffix and junk patterns from media files.
+jscss Normalize .js/.css filenames and optionally HTML content.
+suggest-names Suggest meaningful names for .py files from their docstrings.
+pnr Remove / replace / template-number names.
+Options: -v, --verbose Enable debug logging.
+--target What to lowercase (default: name).
+-r, --recursive Recurse into subdirectories (default).
+--no-recursive Only operate on top-level entries.
+--dry-run Preview only.
+--root Root directory to scan (default: current).
+--separator Separator between name and dimensions (default: _).
+--apply Actually rename (default: dry-run).
+--pattern Regex of junk to strip (repeatable; overrides defaults).
+--query-style 'any' strips everything after ?
+or # (default); 'param' strips only ?key=value patterns.
+...
+plus 6 more; run ``renametools --help`` for the full list.
+Examples: $ renametools images --dry-run ~/photos $ renametools clean-names ~/media --apply Command-line script: run ``python renametools.py`` or the ``renametools`` command.
+The module is importable as well."""
 
 import argparse
 import ast

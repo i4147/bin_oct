@@ -1,44 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """LZ4 compression tool for files and folders.
-
-``compress`` writes ``.lz4`` for the files and ``.tar.lz4`` for the folders (``--mode auto|files|folders``), ``decompress`` reverses it, and the
-level, minimum size, chunk settings, the skip list and ``--keep`` control the behaviour.
-
-Usage: lz4er {compress,decompress} [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Paths to process (default: current directory)
-
-Subcommands:
-    compress
-        Compress files and/or folders
-    decompress
-        Decompress .lz4 and .tar.lz4 files
-
-Options:
-    --mode
-        Auto (lzr): files -> .lz4, folders -> .tar.lz4. files (lzer): compress files
-        only. folders (lz5): compress each subfolder as .tar.lz4. Default: auto
-    --level
-    --min-size
-    --chunk-size
-    --chunk-threshold
-    --recursive
-        Walk directories recursively (mode=files)
-    --keep
-        Keep original files/folders after successful compression
-    --skip-ext
-        File extensions to skip (default: archive formats)
-    --no-checksum
-        Disable LZ4 content checksum
-
-Examples:
-    $ lz4er compress dist/ --mode folders
-    $ lz4er decompress dist.tar.lz4
-
-Command-line script: run ``python lz4er.py`` or the ``lz4er`` command. The module is importable as well.
-"""
+``compress`` writes ``.lz4`` for the files and ``.tar.lz4`` for the folders (``--mode auto|files|folders``), ``decompress`` reverses it, and the level, minimum size, chunk settings, the skip list and ``--keep`` control the behaviour.
+Usage: lz4er {compress,decompress} [options] [paths ...] Positional arguments: paths ...
+Paths to process (default: current directory) Subcommands: compress Compress files and/or folders decompress Decompress .lz4 and .tar.lz4 files Options: --mode Auto (lzr): files -> .lz4, folders -> .tar.lz4.
+files (lzer): compress files only.
+folders (lz5): compress each subfolder as .tar.lz4.
+Default: auto --level --min-size --chunk-size --chunk-threshold --recursive Walk directories recursively (mode=files) --keep Keep original files/folders after successful compression --skip-ext File extensions to skip (default: archive formats) --no-checksum Disable LZ4 content checksum Examples: $ lz4er compress dist/ --mode folders $ lz4er decompress dist.tar.lz4 Command-line script: run ``python lz4er.py`` or the ``lz4er`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor

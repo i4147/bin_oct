@@ -1,61 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Translate files to and from Farsi.
-
-Subcommands: ``to-fa`` translates a file into Persian, ``lines-to-en`` translates the Farsi lines of one
-file, ``inplace-to-en`` walks a tree and rewrites the Farsi files in English and ``batch-json`` writes one JSON
-map per ``.txt`` file. The chunks are retried and slept between the requests.
-
-Usage: fatrans {to-fa,lines-to-en,inplace-to-en,batch-json} [options]
-
-Positional arguments:
-    input
-        Input file
-    source
-        Source language code (default: 'auto').
-    path
-        Root directory to walk (default: current dir).
-    directory
-        Directory containing the .txt files (default: current dir).
-
-Subcommands:
-    to-fa
-        Translate a single file to Farsi (auto-detect source by default).
-    lines-to-en
-        Translate Farsi lines of one file into English (line-by-line).
-    inplace-to-en
-        Recursively translate Farsi files into English, in place.
-    batch-json
-        Translate every *.txt in a directory into per-file JSON maps.
-
-Options:
-    --target
-        Target language (default: fa)
-    --output-suffix
-        Suffix appended to the stem of the output file (default: fa).
-    --chunk-size
-        Max chars per request (default: 5000, as in tofa.py).
-    --retries
-        Translation retries per chunk (default: 3).
-    --overwrite
-        Overwrite output if it already exists (default: skip).
-    --encoding
-        Input encoding (default: utf-8).
-    --sleep
-        Sleep seconds after each translated chunk (default: 1.5).
-    --final-sleep
-        Sleep seconds after finishing each file (default: 2.0).
-    --suffixes
-        File suffixes to process.
-    --exclude
-        Directory names to skip.
-    ... plus 2 more; run ``fatrans --help`` for the full list.
-
-Examples:
-    $ fatrans to-fa README.md
-    $ fatrans inplace-to-en notes/
-
-Command-line script: run ``python fatrans.py`` or the ``fatrans`` command. The module is importable as well.
-"""
+Subcommands: ``to-fa`` translates a file into Persian, ``lines-to-en`` translates the Farsi lines of one file, ``inplace-to-en`` walks a tree and rewrites the Farsi files in English and ``batch-json`` writes one JSON map per ``.txt`` file.
+The chunks are retried and slept between the requests.
+Usage: fatrans {to-fa,lines-to-en,inplace-to-en,batch-json} [options] Positional arguments: input Input file source Source language code (default: 'auto').
+path Root directory to walk (default: current dir).
+directory Directory containing the .txt files (default: current dir).
+Subcommands: to-fa Translate a single file to Farsi (auto-detect source by default).
+lines-to-en Translate Farsi lines of one file into English (line-by-line).
+inplace-to-en Recursively translate Farsi files into English, in place.
+batch-json Translate every *.txt in a directory into per-file JSON maps.
+Options: --target Target language (default: fa) --output-suffix Suffix appended to the stem of the output file (default: fa).
+--chunk-size Max chars per request (default: 5000, as in tofa.py).
+--retries Translation retries per chunk (default: 3).
+--overwrite Overwrite output if it already exists (default: skip).
+--encoding Input encoding (default: utf-8).
+--sleep Sleep seconds after each translated chunk (default: 1.5).
+--final-sleep Sleep seconds after finishing each file (default: 2.0).
+--suffixes File suffixes to process.
+--exclude Directory names to skip.
+...
+plus 2 more; run ``fatrans --help`` for the full list.
+Examples: $ fatrans to-fa README.md $ fatrans inplace-to-en notes/ Command-line script: run ``python fatrans.py`` or the ``fatrans`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed

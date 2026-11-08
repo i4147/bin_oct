@@ -1,19 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Crawl a website, store the HTML in SQLite and harvest the e-mail addresses.
-
-Follows links on the same hostname (two levels deep) for the given start URL, keeps the
-pages in ``data/crawler.sqlite`` with the HTML under ``data/html/``, extracts the e-mail addresses it finds and writes
-them to ``data/emails.csv`` (domains to ``data/domains.csv``). ``--emails``/``-e`` only exports what is already in the database.
-
-Usage: email_collector URL | --emails
-
-Examples:
-    $ email_collector https://example.com
-    $ email_collector --emails
-
-Runs as a script (``python email_collector.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Follows links on the same hostname (two levels deep) for the given start URL, keeps the pages in ``data/crawler.sqlite`` with the HTML under ``data/html/``, extracts the e-mail addresses it finds and writes them to ``data/emails.csv`` (domains to ``data/domains.csv``).
+``--emails``/``-e`` only exports what is already in the database.
+Usage: email_collector URL | --emails Examples: $ email_collector https://example.com $ email_collector --emails Runs as a script (``python email_collector.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import re

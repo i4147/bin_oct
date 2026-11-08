@@ -1,20 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Strip the docstrings from Python files while keeping the module docstrings.
-
-Removes the class and function docstrings with ast-driven source rewriting, validates
-that the result still parses and processes the tree in a pool.
-
-Usage: brmc [paths ...]
-
-Positional arguments:
-    targets ...
-        Files or directories to process (default: current directory, recursive).
-
-Examples:
-    $ brmc src/
-
-Command-line script: run ``python brmc.py`` or the ``brmc`` command. The module is importable as well.
-"""
+Removes the class and function docstrings with ast-driven source rewriting, validates that the result still parses and processes the tree in a pool.
+Usage: brmc [paths ...] Positional arguments: targets ...
+Files or directories to process (default: current directory, recursive).
+Examples: $ brmc src/ Command-line script: run ``python brmc.py`` or the ``brmc`` command.
+The module is importable as well."""
 
 import argparse
 import ast

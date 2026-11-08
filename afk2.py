@@ -1,37 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Report unused imports in Python files and archives, optionally rewriting them in place.
-
-Collects every import statement of the scanned sources (``.py`` files plus ``.whl``/``.zip``/``.tar``
-members), compares the bound names against the names actually used and prints one line
-per unused import. ``--autofix`` removes the unused names, ``--dry-run`` previews the edits and ``--ignore-init`` treats
-imports in ``__init__.py`` as re-exports.
-
-Usage: afk2 [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to scan (default: current directory).
-
-Options:
-    -a, --autofix
-        Remove unused imports in-place.
-    --dry-run
-        Preview changes without writing files (implies --autofix mode).
-    -v, --verbose
-        Detailed output with per-name breakdown and progress.
-    --exclude
-        Regex pattern to exclude files/dirs (repeatable).
-    --ignore-init
-        Treat all imports in __init__.py as used.
-    --no-color
-        Disable ANSI color codes in output.
-
-Examples:
-    $ afk2 src/ --autofix
-    $ afk2 pkg --dry-run -v
-
-Command-line script: run ``python afk2.py`` or the ``afk2`` command. The module is importable as well.
-"""
+Collects every import statement of the scanned sources (``.py`` files plus ``.whl``/``.zip``/``.tar`` members), compares the bound names against the names actually used and prints one line per unused import.
+``--autofix`` removes the unused names, ``--dry-run`` previews the edits and ``--ignore-init`` treats imports in ``__init__.py`` as re-exports.
+Usage: afk2 [options] [paths ...] Positional arguments: paths ...
+Files or directories to scan (default: current directory).
+Options: -a, --autofix Remove unused imports in-place.
+--dry-run Preview changes without writing files (implies --autofix mode).
+-v, --verbose Detailed output with per-name breakdown and progress.
+--exclude Regex pattern to exclude files/dirs (repeatable).
+--ignore-init Treat all imports in __init__.py as used.
+--no-color Disable ANSI color codes in output.
+Examples: $ afk2 src/ --autofix $ afk2 pkg --dry-run -v Command-line script: run ``python afk2.py`` or the ``afk2`` command.
+The module is importable as well."""
 
 import argparse
 import ast

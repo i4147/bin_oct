@@ -1,21 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Strip the comments and docstrings of Python files with LibCST.
-
-Rewrites each file without its comments and docstrings while preserving the shebangs,
-the ``# type:`` hints and the ``# fmt:`` markers, validates the syntax and processes the targets in a
-pool.
-
-Usage: grmcst [paths ...]
-
-Positional arguments:
-    paths ...
-        Target files or directories to process. Defaults to '.' if empty.
-
-Examples:
-    $ grmcst src/
-
-Command-line script: run ``python grmcst.py`` or the ``grmcst`` command. The module is importable as well.
-"""
+Rewrites each file without its comments and docstrings while preserving the shebangs, the ``# type:`` hints and the ``# fmt:`` markers, validates the syntax and processes the targets in a pool.
+Usage: grmcst [paths ...] Positional arguments: paths ...
+Target files or directories to process.
+Defaults to '.' if empty.
+Examples: $ grmcst src/ Command-line script: run ``python grmcst.py`` or the ``grmcst`` command.
+The module is importable as well."""
 
 import argparse
 import ast

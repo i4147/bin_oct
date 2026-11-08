@@ -1,54 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Python 2 to 3 migration toolbox.
-
-Subcommands: ``detect`` classifies the sources as Py2 or Py3, ``refactor`` applies the lib2to3 fixers
-(dry run by default, ``-a`` writes), ``fixprint`` rewrites the ``print x`` and ``except X, e:`` lines, ``run2to3`` shells out to
-the external ``2to3`` and ``strip-tag`` removes the ``Tag:py2-none-any`` lines from the WHEEL members of the archives.
-
-Usage: py3migrate {detect,refactor,fixprint,run2to3,strip-tag} [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to process (default: current directory).
-
-Subcommands:
-    detect
-        Detect Py2 vs Py3 in source files.
-    refactor
-        Rewrite Py2 → Py3 using lib2to3 fixers (dry-run by default).
-    fixprint
-        Line-based fixes for `print x` and (with --all) `except X, e:` etc.
-    run2to3
-        Shell out to the external `2to3 -w -n -f all` CLI (run223.py).
-    strip-tag
-        Strip a `Tag:py2-none-any` line from WHEEL members in archives.
-
-Options:
-    -v, --verbose
-        Enable debug logging.
-    --ext
-    -a, --apply
-        Write changes in place (default: dry-run).
-    --fixers
-        'auto' (discover from --fixer-module) or comma-separated list of fixer module
-        names.
-    --fixer-module
-    --print-function
-        Pass ``{'print_function': True}`` to RefactoringTool (my2to3.py).
-    --diff-mode
-        Diff style: 'compact' (f23.py), 'full' (2232.py), 'none'.
-    --max-diff-lines
-    --context-chars
-    --backup
-        Write a ``.bak`` next to each modified file.
-    ... plus 7 more; run ``py3migrate --help`` for the full list.
-
-Examples:
-    $ py3migrate refactor src/ --diff-mode compact
-    $ py3migrate fixprint -a src/
-
-Command-line script: run ``python py3migrate.py`` or the ``py3migrate`` command. The module is importable as well.
-"""
+Subcommands: ``detect`` classifies the sources as Py2 or Py3, ``refactor`` applies the lib2to3 fixers (dry run by default, ``-a`` writes), ``fixprint`` rewrites the ``print x`` and ``except X, e:`` lines, ``run2to3`` shells out to the external ``2to3`` and ``strip-tag`` removes the ``Tag:py2-none-any`` lines from the WHEEL members of the archives.
+Usage: py3migrate {detect,refactor,fixprint,run2to3,strip-tag} [options] [paths ...] Positional arguments: paths ...
+Files or directories to process (default: current directory).
+Subcommands: detect Detect Py2 vs Py3 in source files.
+refactor Rewrite Py2 → Py3 using lib2to3 fixers (dry-run by default).
+fixprint Line-based fixes for `print x` and (with --all) `except X, e:` etc.
+run2to3 Shell out to the external `2to3 -w -n -f all` CLI (run223.py).
+strip-tag Strip a `Tag:py2-none-any` line from WHEEL members in archives.
+Options: -v, --verbose Enable debug logging.
+--ext -a, --apply Write changes in place (default: dry-run).
+--fixers 'auto' (discover from --fixer-module) or comma-separated list of fixer module names.
+--fixer-module --print-function Pass ``{'print_function': True}`` to RefactoringTool (my2to3.py).
+--diff-mode Diff style: 'compact' (f23.py), 'full' (2232.py), 'none'.
+--max-diff-lines --context-chars --backup Write a ``.bak`` next to each modified file.
+...
+plus 7 more; run ``py3migrate --help`` for the full list.
+Examples: $ py3migrate refactor src/ --diff-mode compact $ py3migrate fixprint -a src/ Command-line script: run ``python py3migrate.py`` or the ``py3migrate`` command.
+The module is importable as well."""
 
 import argparse
 import ast

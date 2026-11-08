@@ -1,23 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find the repeated top-level Python objects and optionally move or copy them to ``utils.py``.
-
-Hashes every function, class and constant (ast or tree-sitter, archives included),
-groups the identical ones and, with ``-m``, writes them to ``utils.py``, removes them from the
-sources and adds the import; ``-c`` copies them without touching the originals.
-
-Usage: dduper [-m|-c] [paths ...]
-
-Options:
-    -m, --move
-        Move duplicate objects to utils.py and add imports
-    -c, --copy
-        Copy duplicate objects to utils.py without changing source files
-
-Examples:
-    $ dduper -m src/
-
-Command-line script: run ``python dduper.py`` or the ``dduper`` command. The module is importable as well.
-"""
+Hashes every function, class and constant (ast or tree-sitter, archives included), groups the identical ones and, with ``-m``, writes them to ``utils.py``, removes them from the sources and adds the import; ``-c`` copies them without touching the originals.
+Usage: dduper [-m|-c] [paths ...] Options: -m, --move Move duplicate objects to utils.py and add imports -c, --copy Copy duplicate objects to utils.py without changing source files Examples: $ dduper -m src/ Command-line script: run ``python dduper.py`` or the ``dduper`` command.
+The module is importable as well."""
 
 import argparse
 import ast

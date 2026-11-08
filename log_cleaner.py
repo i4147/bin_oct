@@ -1,30 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Clean terminal transcripts/logs and shell histories; trim audio tails.
-
-Analysis / deduplication
-------------------------
-- ``cleaner.py`` strips real ANSI/control sequences from one
-  transcript; ``cliner.py`` (mmap + pool) and ``cliner2.py`` (plain)
-  strip *literal* ``^[[…m``-style garbage from every ``*.log`` - the
-  two cliners are duplicates, now one ``logs`` command; the real-ANSI
-  variant is ``transcript`` (both behaviours selected by command).
-- ``cleanhistory.py`` (drop ``cd \"`printf`` lines + set-dedup, order
-  destroyed) and ``histdup.py`` (order-preserving dedup) -> one
-  ``history`` command (order-preserving; original drop-pattern kept).
-- ``mchist.py`` (Midnight Commander ``[cmdline]`` history appended to
-  ``.bash_history``, Termux paths) -> ``mc-import``.
-- ``last5minutes.py`` is misfiled here: it trims the tail of an audio
-  file with moviepy (and used 230 s for "5 minutes"). It is
-  ``trim-audio --minutes 5`` (300 s; adds an ffmpeg fallback).
-
-Examples
---------
-  python3 log_clean_tool.py transcript session.log
-  python3 log_clean_tool.py logs ~/logs --dry-run
-  python3 log_clean_tool.py history
-  python3 log_clean_tool.py mc-import
-  python3 log_clean_tool.py trim-audio lecture.mp3 --minutes 5
-"""
+Analysis / deduplication ------------------------ - ``cleaner.py`` strips real ANSI/control sequences from one transcript; ``cliner.py`` (mmap + pool) and ``cliner2.py`` (plain) strip *literal* ``^[[…m``-style garbage from every ``*.log`` - the two cliners are duplicates, now one ``logs`` command; the real-ANSI variant is ``transcript`` (both behaviours selected by command).
+- ``cleanhistory.py`` (drop ``cd "`printf`` lines + set-dedup, order destroyed) and ``histdup.py`` (order-preserving dedup) -> one ``history`` command (order-preserving; original drop-pattern kept).
+- ``mchist.py`` (Midnight Commander ``[cmdline]`` history appended to ``.bash_history``, Termux paths) -> ``mc-import``.
+- ``last5minutes.py`` is misfiled here: it trims the tail of an audio file with moviepy (and used 230 s for "5 minutes").
+It is ``trim-audio --minutes 5`` (300 s; adds an ffmpeg fallback).
+Examples -------- python3 log_clean_tool.py transcript session.log python3 log_clean_tool.py logs ~/logs --dry-run python3 log_clean_tool.py history python3 log_clean_tool.py mc-import python3 log_clean_tool.py trim-audio lecture.mp3 --minutes 5"""
 
 import argparse
 from collections.abc import Sequence

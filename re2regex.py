@@ -1,23 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Swap ``import re`` for ``import regex as re`` across a tree.
-
-Walks the Python files and rewrites the import lines (``-r`` reverses it, dropping the ``regex``
-alias back to ``re``), reporting each file it touched from a process pool.
-
-Usage: re2regex [-r] [--pool-method MAP]
-
-Options:
-    -r, --reverse
-        Reverse the replacement (regex as re -> re)
-    --pool-method
-        Multiprocessing pool method to use for updates.
-
-Examples:
-    $ re2regex
-    $ re2regex -r
-
-Command-line script: run ``python re2regex.py`` or the ``re2regex`` command. The module is importable as well.
-"""
+Walks the Python files and rewrites the import lines (``-r`` reverses it, dropping the ``regex`` alias back to ``re``), reporting each file it touched from a process pool.
+Usage: re2regex [-r] [--pool-method MAP] Options: -r, --reverse Reverse the replacement (regex as re -> re) --pool-method Multiprocessing pool method to use for updates.
+Examples: $ re2regex $ re2regex -r Command-line script: run ``python re2regex.py`` or the ``re2regex`` command.
+The module is importable as well."""
 
 import argparse
 from multiprocessing.pool import AsyncResult, Pool

@@ -1,51 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """HTML, CSS, JS and JSON formatter with several backends.
-
-The ``format`` subcommand beautifies with tree-sitter (HTML), js-beautifier, prettier or
-prettify (``--tool``), the ``list-large`` one reports the big HTML files; it can move the failures with
-``--move-errors-to`` and runs the batches with the chosen executor.
-
-Usage: pyfmt {format,list-large} [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to scan (default: $HOME).
-
-Subcommands:
-    list-large
-        List HTML files larger than a size threshold (bightml.py).
-    format
-        Beautify / reformat files using the selected backend.
-
-Options:
-    -v, --verbose
-        Enable debug logging.
-    --min-size-mb
-        Minimum size in MiB (default: 1.0).
-    --tool
-        Formatting backend.
-    -e, --ext
-        Override file extensions (e.g. --ext .js .css).
-    --executor
-        Parallelism strategy (default: auto).
-    --dry-run
-        List files that would be processed without modifying them.
-    --progress
-        Show a tqdm progress bar (requires tqdm).
-    --move-errors-to
-        Move failed files into a DIR next to them (pret4.py).
-    --skip-dir
-        Directory names to skip while scanning.
-    --max-bytes
-        Tree-sitter: skip files larger than this (default: 50 MiB).
-    ... plus 5 more; run ``pyfmt --help`` for the full list.
-
-Examples:
-    $ pyfmt format --tool prettier dist/
-    $ pyfmt list-large --min-size-mb 2
-
-Command-line script: run ``python pyfmt.py`` or the ``pyfmt`` command. The module is importable as well.
-"""
+The ``format`` subcommand beautifies with tree-sitter (HTML), js-beautifier, prettier or prettify (``--tool``), the ``list-large`` one reports the big HTML files; it can move the failures with ``--move-errors-to`` and runs the batches with the chosen executor.
+Usage: pyfmt {format,list-large} [options] [paths ...] Positional arguments: paths ...
+Files or directories to scan (default: $HOME).
+Subcommands: list-large List HTML files larger than a size threshold (bightml.py).
+format Beautify / reformat files using the selected backend.
+Options: -v, --verbose Enable debug logging.
+--min-size-mb Minimum size in MiB (default: 1.0).
+--tool Formatting backend.
+-e, --ext Override file extensions (e.g.
+--ext .js .css).
+--executor Parallelism strategy (default: auto).
+--dry-run List files that would be processed without modifying them.
+--progress Show a tqdm progress bar (requires tqdm).
+--move-errors-to Move failed files into a DIR next to them (pret4.py).
+--skip-dir Directory names to skip while scanning.
+--max-bytes Tree-sitter: skip files larger than this (default: 50 MiB).
+...
+plus 5 more; run ``pyfmt --help`` for the full list.
+Examples: $ pyfmt format --tool prettier dist/ $ pyfmt list-large --min-size-mb 2 Command-line script: run ``python pyfmt.py`` or the ``pyfmt`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed

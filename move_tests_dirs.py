@@ -1,19 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Move the ``tests`` folders of the installed packages into ``~/tmp/tests_dirs``.
-
-Scans the Termux ``site-packages`` (skipping numpy, pandas, scipy and numba) for ``tests``/``test`` directories,
-moves each one to the destination with its package prefix and reports the results; ``-d``
-only lists what would move.
-
-Usage: move_tests_dirs [-d]
-
-Examples:
-    $ move_tests_dirs -d
-    $ move_tests_dirs
-
-Runs as a script (``python move_tests_dirs.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Scans the Termux ``site-packages`` (skipping numpy, pandas, scipy and numba) for ``tests``/``test`` directories, moves each one to the destination with its package prefix and reports the results; ``-d`` only lists what would move.
+Usage: move_tests_dirs [-d] Examples: $ move_tests_dirs -d $ move_tests_dirs Runs as a script (``python move_tests_dirs.py``) in the directory it should act on; the module can also be imported."""
 
 from multiprocessing.pool import Pool
 from pathlib import Path

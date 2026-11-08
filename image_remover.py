@@ -1,35 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Remove the images from documentation files.
-
-Subcommands: ``fast`` deletes the Markdown/HTML images, ``smart`` the badges and remote images, ``markdown``
-only the Markdown ones, ``remote`` the ``http(s)`` references and ``html`` uses BeautifulSoup; the RST ``image::``
-directives and the badge domains are recognised.
-
-Usage: image_remover {fast,smart,markdown,remote,html} [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Paths to process
-    extensions ...
-        File extensions
-
-Subcommands:
-    fast
-        Fast MD/HTML removal
-    smart
-        Smart badge/remote removal
-    markdown
-        Markdown-only removal
-    remote
-        Remote URL removal
-    html
-        HTML BeautifulSoup removal
-
-Examples:
-    $ image_remover smart README.md
-
-Command-line script: run ``python image_remover.py`` or the ``image_remover`` command. The module is importable as well.
-"""
+Subcommands: ``fast`` deletes the Markdown/HTML images, ``smart`` the badges and remote images, ``markdown`` only the Markdown ones, ``remote`` the ``http(s)`` references and ``html`` uses BeautifulSoup; the RST ``image::`` directives and the badge domains are recognised.
+Usage: image_remover {fast,smart,markdown,remote,html} [options] [paths ...] Positional arguments: paths ...
+Paths to process extensions ...
+File extensions Subcommands: fast Fast MD/HTML removal smart Smart badge/remote removal markdown Markdown-only removal remote Remote URL removal html HTML BeautifulSoup removal Examples: $ image_remover smart README.md Command-line script: run ``python image_remover.py`` or the ``image_remover`` command.
+The module is importable as well."""
 
 import argparse
 from dataclasses import dataclass

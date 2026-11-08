@@ -1,29 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract imports from Python files (raw lines, module sets, requirements).
-
-Analysis / deduplication
-------------------------
-Seven scripts did three jobs, each reimplemented with tree-sitter
-*and* with ``ast``. The AST flavour is stdlib-only and strictly more
-accurate, so tree-sitter was dropped:
-- ``ex_imports.py`` / ``eximports2.py`` (write each file's import lines
-  to an output tree) -> ``lines`` command.
-- ``eximports.py`` / ``eximports3.py`` (collect unique imports /
-  requirements) -> ``modules`` / ``requirements``.
-- ``fimport.py`` (imports with top-level vs nested context) ->
-  ``modules --details``.
-- ``import_collector.py`` + ``importz.py`` (third-party detection with
-  the import->pip name map and an install script) -> ``requirements``
-  (writes ``requirements.txt`` + ``install_deps.sh`` for missing ones).
-Extension-less files with a python shebang count as Python, as in
-``importz.py``.
-
-Examples
---------
-  python3 python_imports_tool.py modules ~/project
-  python3 python_imports_tool.py lines ~/project -o imports_out/
-  python3 python_imports_tool.py requirements ~/project
-"""
+Analysis / deduplication ------------------------ Seven scripts did three jobs, each reimplemented with tree-sitter *and* with ``ast``.
+The AST flavour is stdlib-only and strictly more accurate, so tree-sitter was dropped: - ``ex_imports.py`` / ``eximports2.py`` (write each file's import lines to an output tree) -> ``lines`` command.
+- ``eximports.py`` / ``eximports3.py`` (collect unique imports / requirements) -> ``modules`` / ``requirements``.
+- ``fimport.py`` (imports with top-level vs nested context) -> ``modules --details``.
+- ``import_collector.py`` + ``importz.py`` (third-party detection with the import->pip name map and an install script) -> ``requirements`` (writes ``requirements.txt`` + ``install_deps.sh`` for missing ones).
+Extension-less files with a python shebang count as Python, as in ``importz.py``.
+Examples -------- python3 python_imports_tool.py modules ~/project python3 python_imports_tool.py lines ~/project -o imports_out/ python3 python_imports_tool.py requirements ~/project"""
 
 import argparse
 import ast

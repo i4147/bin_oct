@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Fix unbalanced or JSON-bracket parentheses inside the strings of a JSON file.
-
-Walks every string value, converts ``[``/``{`` into ``(`` (and the closing counterparts) and
-pads missing parentheses, then validates the result with :func:`json.loads` and rewrites
-the file with two-space indentation.
-
-Usage: fixparanthes FILE.json
-
-Examples:
-    $ fixparanthes data.json
-
-Runs as a script (``python fixparanthes.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Walks every string value, converts ``[``/``{`` into ``(`` (and the closing counterparts) and pads missing parentheses, then validates the result with :func:`json.loads` and rewrites the file with two-space indentation.
+Usage: fixparanthes FILE.json Examples: $ fixparanthes data.json Runs as a script (``python fixparanthes.py``) in the directory it should act on; the module can also be imported."""
 
 import json
 from pathlib import Path

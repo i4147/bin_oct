@@ -1,29 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Fast xxhash-based duplicate file finder.
-
-Pre-hashes the file heads, confirms with a 128 KB-chunked xxhash, keeps one copy per set
-and only deletes with the explicit ``-r``; ``-l`` lists the duplicates and ``-b`` benchmarks
-xxhash against hashlib.
-
-Usage: gdupfx [PATH] [-r] [-l] [-b]
-
-Positional arguments:
-    path
-        Target directory path to search (defaults to current directory '.').
-
-Options:
-    -r, --remove
-        Explicit flag required to delete duplicate files. Keeps 1 original per set.
-    -l, --list
-        List all duplicate file paths found in detail.
-    -b, --benchmark
-        Run speed benchmark comparing xxHash against hashlib.
-
-Examples:
-    $ gdupfx ~/Downloads -l
-
-Command-line script: run ``python gdupfx.py`` or the ``gdupfx`` command. The module is importable as well.
-"""
+Pre-hashes the file heads, confirms with a 128 KB-chunked xxhash, keeps one copy per set and only deletes with the explicit ``-r``; ``-l`` lists the duplicates and ``-b`` benchmarks xxhash against hashlib.
+Usage: gdupfx [PATH] [-r] [-l] [-b] Positional arguments: path Target directory path to search (defaults to current directory '.').
+Options: -r, --remove Explicit flag required to delete duplicate files.
+Keeps 1 original per set.
+-l, --list List all duplicate file paths found in detail.
+-b, --benchmark Run speed benchmark comparing xxHash against hashlib.
+Examples: $ gdupfx ~/Downloads -l Command-line script: run ``python gdupfx.py`` or the ``gdupfx`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

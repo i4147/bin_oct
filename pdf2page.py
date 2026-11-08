@@ -1,46 +1,23 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract every PDF page into its own text file.
-
-Chooses between pdfminer, pypdf, PyMuPDF and pdfplumber (``-b``), writes one file per page
-into ``<pdf_dir>/<stem>/`` with a configurable name template, uses threads for the fitz/plumber backends
-and processes the rest, with ``--skip-existing`` for the resumes.
-
-Usage: pdf2page [inputs ...] [-b pdfminer|fitz|pypdf|pdfplumber] [--name-template T]
-
-Positional arguments:
-    inputs ...
-        PDF files and/or directories (default: cwd).
-
-Options:
-    -b, --backend
-        PDF library backend (default: pdfminer).
-    -o, --output-dir
-        Base output directory (default: <pdf_dir>/<stem>/).
-    -P, --parallel
-        Parallelism mode (default: auto — thread for fitz/plumber, process for
-        pypdf/pypdf2/pdfminer).
-    --name-template
-        Output filename template. Placeholders: {stem} {page} {total} {w}. Default:
-        page_{page:0{w}d}.txt
-    -e, --encoding
-        Output file encoding (default: utf-8).
-    --skip-existing
-        Skip pages whose output file already exists.
-    --no-recursive
-        Do not descend into subdirectories.
-    --sort
-        Sort text blocks top-to-bottom/left-to-right (fitz backend only).
-    --password
-        Password for encrypted PDFs (pdfminer backend).
-    -m, --maxpages
-        Maximum pages per PDF (0 = all).
-    ... plus 9 more; run ``pdf2page --help`` for the full list.
-
-Examples:
-    $ pdf2page book.pdf -b fitz
-
-Command-line script: run ``python pdf2page.py`` or the ``pdf2page`` command. The module is importable as well.
-"""
+Chooses between pdfminer, pypdf, PyMuPDF and pdfplumber (``-b``), writes one file per page into ``<pdf_dir>/<stem>/`` with a configurable name template, uses threads for the fitz/plumber backends and processes the rest, with ``--skip-existing`` for the resumes.
+Usage: pdf2page [inputs ...] [-b pdfminer|fitz|pypdf|pdfplumber] [--name-template T] Positional arguments: inputs ...
+PDF files and/or directories (default: cwd).
+Options: -b, --backend PDF library backend (default: pdfminer).
+-o, --output-dir Base output directory (default: <pdf_dir>/<stem>/).
+-P, --parallel Parallelism mode (default: auto — thread for fitz/plumber, process for pypdf/pypdf2/pdfminer).
+--name-template Output filename template.
+Placeholders: {stem} {page} {total} {w}.
+Default: page_{page:0{w}d}.txt -e, --encoding Output file encoding (default: utf-8).
+--skip-existing Skip pages whose output file already exists.
+--no-recursive Do not descend into subdirectories.
+--sort Sort text blocks top-to-bottom/left-to-right (fitz backend only).
+--password Password for encrypted PDFs (pdfminer backend).
+-m, --maxpages Maximum pages per PDF (0 = all).
+...
+plus 9 more; run ``pdf2page --help`` for the full list.
+Examples: $ pdf2page book.pdf -b fitz Command-line script: run ``python pdf2page.py`` or the ``pdf2page`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed

@@ -1,21 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Compress Python sources for an LLM prompt, with a header note.
-
-Same pipeline as :doc:`compy` (comments, docstrings, annotations and stdlib imports
-removed, short names, joined statements) and a ``COMPRESSION_NOTE`` header that explains the
-transformation to the model, written to ``compressed.txt``.
-
-Usage: compy2 [paths ...]
-
-Positional arguments:
-    inputs ...
-        Python files and/or directories. Defaults to the current directory.
-
-Examples:
-    $ compy2 src/
-
-Command-line script: run ``python compy2.py`` or the ``compy2`` command. The module is importable as well.
-"""
+Same pipeline as :doc:`compy` (comments, docstrings, annotations and stdlib imports removed, short names, joined statements) and a ``COMPRESSION_NOTE`` header that explains the transformation to the model, written to ``compressed.txt``.
+Usage: compy2 [paths ...] Positional arguments: inputs ...
+Python files and/or directories.
+Defaults to the current directory.
+Examples: $ compy2 src/ Command-line script: run ``python compy2.py`` or the ``compy2`` command.
+The module is importable as well."""
 
 import argparse
 import ast

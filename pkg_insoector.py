@@ -1,71 +1,32 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Inspect the installed Python packages for duplicates, versions and scripts.
-
-Subcommands: ``duplicates`` finds the packages in both the system and user site-packages, ``multi-version`` the
-repeated versions, ``missing-scripts``/``entrypoints`` check the console scripts, ``binary`` lists the packages with
-compiled extensions, ``orphans`` the files no distribution owns and ``small`` the undersized packages;
-``--report`` and ``--split`` export the results.
-
-Usage: pkg_insoector
-{duplicates,multi-version,missing-scripts,entrypoints,binary,orphans,small} [options]
-
-Positional arguments:
-    input
-        Path to the input JSON file.
-
-Subcommands:
-    duplicates
-        Packages in both system and user site-packages.
-    multi-version
-        Packages with more than one installed version.
-    missing-scripts
-        Check that console-script shims exist in bin/.
-    entrypoints
-        Analyze entry_points.txt / console-script presence.
-    binary
-        List non-pure (compiled-extension) packages.
-    orphans
-        Detect unowned files in system site-packages.
-    small
-        List packages smaller than a threshold.
-    zpkg-list
-        List pure single-top-level user-site packages.
-    git-urls
-        Extract git repository URLs for installed packages.
-    save-deb
-        Dump installed dpkg binary packages.
-    save-keys
-        Extract 'pkgname' values from a JSON file.
-    rename-node
-        Rename node_modules .../package dirs safely.
-
-Options:
-    --method
-        Detection strategy (default: dist-info).
-    --report
-        Optional path to write a report.
-    --mode
-    --user-only
-        Scan only the user site-packages directory.
-    --system-only
-        Scan only system site-packages directories.
-    --write-files
-        Classify mode: write noep_pure.txt / ep_*.txt etc.
-    --split
-        Write pure.txt + notpure.txt instead of printing.
-    -o, --output
-        Write non-pure package list to FILE.
-    --pure-output
-        --split: pure list filename (default: pure.txt).
-    --nonpure-output
-        --split: non-pure list filename (default: notpure.txt).
-    ... plus 5 more; run ``pkg_insoector --help`` for the full list.
-
-Examples:
-    $ pkg_insoector multi-version --report dupes.txt
-
-Command-line script: run ``python pkg_insoector.py`` or the ``pkg_insoector`` command. The module is importable as well.
-"""
+Subcommands: ``duplicates`` finds the packages in both the system and user site-packages, ``multi-version`` the repeated versions, ``missing-scripts``/``entrypoints`` check the console scripts, ``binary`` lists the packages with compiled extensions, ``orphans`` the files no distribution owns and ``small`` the undersized packages; ``--report`` and ``--split`` export the results.
+Usage: pkg_insoector {duplicates,multi-version,missing-scripts,entrypoints,binary,orphans,small} [options] Positional arguments: input Path to the input JSON file.
+Subcommands: duplicates Packages in both system and user site-packages.
+multi-version Packages with more than one installed version.
+missing-scripts Check that console-script shims exist in bin/.
+entrypoints Analyze entry_points.txt / console-script presence.
+binary List non-pure (compiled-extension) packages.
+orphans Detect unowned files in system site-packages.
+small List packages smaller than a threshold.
+zpkg-list List pure single-top-level user-site packages.
+git-urls Extract git repository URLs for installed packages.
+save-deb Dump installed dpkg binary packages.
+save-keys Extract 'pkgname' values from a JSON file.
+rename-node Rename node_modules .../package dirs safely.
+Options: --method Detection strategy (default: dist-info).
+--report Optional path to write a report.
+--mode --user-only Scan only the user site-packages directory.
+--system-only Scan only system site-packages directories.
+--write-files Classify mode: write noep_pure.txt / ep_*.txt etc.
+--split Write pure.txt + notpure.txt instead of printing.
+-o, --output Write non-pure package list to FILE.
+--pure-output --split: pure list filename (default: pure.txt).
+--nonpure-output --split: non-pure list filename (default: notpure.txt).
+...
+plus 5 more; run ``pkg_insoector --help`` for the full list.
+Examples: $ pkg_insoector multi-version --report dupes.txt Command-line script: run ``python pkg_insoector.py`` or the ``pkg_insoector`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

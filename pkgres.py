@@ -1,24 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Detect and replace the deprecated ``pkg_resources`` usage.
-
-Rewrites the common calls (``get_distribution`` version/entry points, ``resource_filename``, ``require`` ...) to ``importlib.metadata``/``importlib.resources``, reports
-the generic leftovers, and with ``-a`` applies the rewrite in a pool.
-
-Usage: pkgres [-a] [paths ...]
-
-Positional arguments:
-    paths ...
-        Python files or directories to process
-
-Options:
-    -a, --autofix
-        Autofix pkg_resources usage
-
-Examples:
-    $ pkgres -a src/
-
-Command-line script: run ``python pkgres.py`` or the ``pkgres`` command. The module is importable as well.
-"""
+Rewrites the common calls (``get_distribution`` version/entry points, ``resource_filename``, ``require`` ...) to ``importlib.metadata``/``importlib.resources``, reports the generic leftovers, and with ``-a`` applies the rewrite in a pool.
+Usage: pkgres [-a] [paths ...] Positional arguments: paths ...
+Python files or directories to process Options: -a, --autofix Autofix pkg_resources usage Examples: $ pkgres -a src/ Command-line script: run ``python pkgres.py`` or the ``pkgres`` command.
+The module is importable as well."""
 
 import argparse
 from multiprocessing import Pool

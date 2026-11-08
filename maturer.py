@@ -1,16 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Build a Rust/maturin extension and repackage it as a wheel.
-
-Runs ``cargo build --release``, computes the platform wheel tag (``cp3XX``/free-threaded, normalised for 32-bit ARM)
-and packs the shared library with the expected ``.dist-info`` metadata into ``<name>-<version>-<tag>.whl``.
-
-Usage: maturer
-
-Examples:
-    $ maturer
-
-Run from the crate root; it needs ``Cargo.toml`` and a working cargo toolchain.
-"""
+Runs ``cargo build --release``, computes the platform wheel tag (``cp3XX``/free-threaded, normalised for 32-bit ARM) and packs the shared library with the expected ``.dist-info`` metadata into ``<name>-<version>-<tag>.whl``.
+Usage: maturer Examples: $ maturer Run from the crate root; it needs ``Cargo.toml`` and a working cargo toolchain."""
 
 import base64
 import hashlib

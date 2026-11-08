@@ -1,37 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Bulk git chores: scan local changes, pull all clones, create repositories, edit ``.gitignore``.
-
-``scan-changes`` reports the status of every repository below a path, ``pull-all`` fast-forwards all of them
-in parallel, ``newrepo`` creates a GitHub repository through the API and pushes to it (with an
-optional ``--env-file`` token) and ``gitignore-add`` appends a line to the ``.gitignore`` files it finds.
-
-Usage: gittools {scan-changes,pull-all,newrepo,gitignore-add} [options]
-
-Positional arguments:
-    path
-    line
-    paths ...
-
-Subcommands:
-    scan-changes
-    pull-all
-    newrepo
-    gitignore-add
-
-Options:
-    --name
-    --private
-    --description
-    --message
-    --branch
-    --env-file
-
-Examples:
-    $ gittools pull-all ~/code
-    $ gittools newrepo --name demo --push
-
-Command-line script: run ``python gittools.py`` or the ``gittools`` command. The module is importable as well.
-"""
+``scan-changes`` reports the status of every repository below a path, ``pull-all`` fast-forwards all of them in parallel, ``newrepo`` creates a GitHub repository through the API and pushes to it (with an optional ``--env-file`` token) and ``gitignore-add`` appends a line to the ``.gitignore`` files it finds.
+Usage: gittools {scan-changes,pull-all,newrepo,gitignore-add} [options] Positional arguments: path line paths ...
+Subcommands: scan-changes pull-all newrepo gitignore-add Options: --name --private --description --message --branch --env-file Examples: $ gittools pull-all ~/code $ gittools newrepo --name demo --push Command-line script: run ``python gittools.py`` or the ``gittools`` command.
+The module is importable as well."""
 
 import argparse
 import concurrent.futures

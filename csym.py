@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Create extension-less symlinks for the scripts in the personal bin folders.
-
-For ``~/bashbin`` (``.sh``) and ``~/bin`` plus ``~/.local/bin`` (``.py``) it adds a symlink without the extension pointing at
-the script, so the tools can be called by name. Existing non-symlink entries with the
-same name are replaced.
-
-Usage: csym
-
-Examples:
-    $ csym
-
-Runs as a script (``python csym.py``) in the directory it should act on; the module can also be
-imported.
-"""
+For ``~/bashbin`` (``.sh``) and ``~/bin`` plus ``~/.local/bin`` (``.py``) it adds a symlink without the extension pointing at the script, so the tools can be called by name.
+Existing non-symlink entries with the same name are replaced.
+Usage: csym Examples: $ csym Runs as a script (``python csym.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 

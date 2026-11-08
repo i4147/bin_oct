@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Rebuild a project tree from a Markdown answer file.
-
-Each ``## `path/to/file``` heading starts a section whose fenced code block becomes the content of that
-file. Relative paths are recreated below the output directory, so a pasted answer from a
-chat model turns back into a set of files.
-
-Usage: ans2proj SOURCE.md [OUTPUT_DIR]
-
-Examples:
-    $ ans2proj answer.md ./project
-
-Runs as a script (``python ans2proj.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Each ``## `path/to/file``` heading starts a section whose fenced code block becomes the content of that file.
+Relative paths are recreated below the output directory, so a pasted answer from a chat model turns back into a set of files.
+Usage: ans2proj SOURCE.md [OUTPUT_DIR] Examples: $ ans2proj answer.md ./project Runs as a script (``python ans2proj.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import re

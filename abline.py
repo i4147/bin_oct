@@ -1,10 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Keep text before or near a marker in each nonempty input line.
-
-Pass mode, file path, and marker as arguments; nonempty results replace
-the file. Mode -a selects text before the first marker; other modes select
-from one character after its start.
-"""
+Pass mode, file path, and marker as arguments; nonempty results replace the file.
+Mode -a selects text before the first marker; other modes select from one character after its start."""
 
 from pathlib import Path
 import sys

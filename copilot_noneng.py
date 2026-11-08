@@ -1,29 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Detect the non-English lines of text files.
-
-Runs gcld3, pycld2 and langdetect on each line, combines their votes, reports the lines
-that are not English in a JSON file and parallelises either by file (default) or by
-line.
-
-Usage: copilot_noneng [paths ...] [--out report.json] [--parallel-mode file|line]
-
-Positional arguments:
-    paths ...
-        Files or directories (default: .)
-
-Options:
-    --out, -o
-        Output JSON file.
-    --max-line-length
-        Max chars per line.
-    --parallel-mode
-        Parallelism mode: file (default) or line (inside each file).
-
-Examples:
-    $ copilot_noneng docs/ -o noneng.json
-
-Command-line script: run ``python copilot_noneng.py`` or the ``copilot_noneng`` command. The module is importable as well.
-"""
+Runs gcld3, pycld2 and langdetect on each line, combines their votes, reports the lines that are not English in a JSON file and parallelises either by file (default) or by line.
+Usage: copilot_noneng [paths ...] [--out report.json] [--parallel-mode file|line] Positional arguments: paths ...
+Files or directories (default: .) Options: --out, -o Output JSON file.
+--max-line-length Max chars per line.
+--parallel-mode Parallelism mode: file (default) or line (inside each file).
+Examples: $ copilot_noneng docs/ -o noneng.json Command-line script: run ``python copilot_noneng.py`` or the ``copilot_noneng`` command.
+The module is importable as well."""
 
 import argparse
 import json

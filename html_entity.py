@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Replace HTML entities with their characters in text files.
-
-Substitutes a built-in table of entities (``&lt;``, ``&gt;``, ``&amp;``, ``&nbsp;``, ``&copy;`` ...) and rewrites the
-matching files in place, in parallel.
-
-Usage: html_entity [paths ...]
-
-Examples:
-    $ html_entity page.html
-
-Runs as a script (``python html_entity.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Substitutes a built-in table of entities (``&lt;``, ``&gt;``, ``&amp;``, ``&nbsp;``, ``&copy;`` ...) and rewrites the matching files in place, in parallel.
+Usage: html_entity [paths ...] Examples: $ html_entity page.html Runs as a script (``python html_entity.py``) in the directory it should act on; the module can also be imported."""
 
 import multiprocessing as mp
 from pathlib import Path

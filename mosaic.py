@@ -1,17 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Build a photo mosaic from a folder of tile images.
-
-Loads and resizes the tiles, matches each grid cell of the target image to the tile with
-the closest average colour and blends the tile layer with the target (``OVERLAY_STRENGTH``) before saving
-the mosaic. The paths, grid size, tile size and blend strength are module constants.
-
-Usage: python mosaic.py
-
-Examples:
-    $ python mosaic.py
-
-Configure ``FOLDER_OF_IMAGES``, ``IMAGE_TO_MAKE`` and the grid constants before running.
-"""
+Loads and resizes the tiles, matches each grid cell of the target image to the tile with the closest average colour and blends the tile layer with the target (``OVERLAY_STRENGTH``) before saving the mosaic.
+The paths, grid size, tile size and blend strength are module constants.
+Usage: python mosaic.py Examples: $ python mosaic.py Configure ``FOLDER_OF_IMAGES``, ``IMAGE_TO_MAKE`` and the grid constants before running."""
 
 import os
 from pathlib import Path

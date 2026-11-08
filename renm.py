@@ -1,23 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Rename the non-English file names below a directory to their English translation.
-
-Detects names that contain non-ASCII characters, translates the stem with ``deep_translator`` in a
-worker pool, resolves collisions and renames the files and directories (deepest paths
-first). ``--directory`` selects the root, ``--pool-method`` the multiprocessing style.
-
-Usage: renm [--directory DIR] [--pool-method map|starmap|imap_unordered|apply_async]
-
-Options:
-    --directory
-        Directory to scan and rename.
-    --pool-method
-        Multiprocessing pool method to use for translation.
-
-Examples:
-    $ renm --directory ~/downloads
-
-Command-line script: run ``python renm.py`` or the ``renm`` command. The module is importable as well.
-"""
+Detects names that contain non-ASCII characters, translates the stem with ``deep_translator`` in a worker pool, resolves collisions and renames the files and directories (deepest paths first).
+``--directory`` selects the root, ``--pool-method`` the multiprocessing style.
+Usage: renm [--directory DIR] [--pool-method map|starmap|imap_unordered|apply_async] Options: --directory Directory to scan and rename.
+--pool-method Multiprocessing pool method to use for translation.
+Examples: $ renm --directory ~/downloads Command-line script: run ``python renm.py`` or the ``renm`` command.
+The module is importable as well."""
 
 import argparse
 from multiprocessing.pool import AsyncResult, Pool

@@ -1,38 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Convert, inspect or dump pickle files.
-
-The ``to-json`` subcommand serialises the payload (bytes as base64, the non-JSON types as
-strings), ``inspect`` describes the structure and the types with a ``--max-repr`` preview and ``to-raw`` writes a
-bytes payload verbatim.
-
-Usage: pkl_tool {to-json,inspect,to-raw} FILE.pkl [-o OUT] [--stdout]
-
-Positional arguments:
-    files ...
-    file
-
-Subcommands:
-    to-json
-        Convert .pkl to .json
-    inspect
-        Describe a pickle's payload
-    to-raw
-        Write a bytes payload verbatim
-
-Options:
-    -o, --output
-        Single-file output
-    --indent
-    --stdout
-    --max-repr
-    --force-repr
-        Non-bytes: write repr() as text
-
-Examples:
-    $ pkl_tool inspect model.pkl
-
-Unpickling executes code; only open files you trust.
-"""
+The ``to-json`` subcommand serialises the payload (bytes as base64, the non-JSON types as strings), ``inspect`` describes the structure and the types with a ``--max-repr`` preview and ``to-raw`` writes a bytes payload verbatim.
+Usage: pkl_tool {to-json,inspect,to-raw} FILE.pkl [-o OUT] [--stdout] Positional arguments: files ...
+file Subcommands: to-json Convert .pkl to .json inspect Describe a pickle's payload to-raw Write a bytes payload verbatim Options: -o, --output Single-file output --indent --stdout --max-repr --force-repr Non-bytes: write repr() as text Examples: $ pkl_tool inspect model.pkl Unpickling executes code; only open files you trust."""
 
 import argparse
 import base64

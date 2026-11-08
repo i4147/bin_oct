@@ -1,28 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find duplicate folders by content hash or by tree structure.
-
-Analysis / deduplication
-------------------------
-``find_dup_folders.py`` (content hash per folder, JSON dump) and
-``dupdirs.py`` (content hash + ``--structure`` mode, multiprocessing,
-nested-duplicate filtering) overlap almost completely; they are one
-tool with two ``--mode`` values. ``xxhash`` is used when installed and
-``hashlib.blake2b`` (stdlib, equally collision-resistant for this job)
-otherwise, so the tool runs with zero dependencies. The hardcoded
-``/sdcard/dupdirs.json`` output is ``-o dupdirs.json``.
-
-How it works: every folder under the root gets a signature built from
-its file names alone (structure) or from file names + content hashes
-(content). Folders sharing a signature are reported as a group; a
-folder that merely *contains* another duplicate folder can be hidden
-with ``--prune-nested``.
-
-Examples
---------
-  python3 duplicate_folders_tool.py find ~/projects
-  python3 duplicate_folders_tool.py find . --mode structure
-  python3 duplicate_folders_tool.py find . --prune-nested -o report.json
-"""
+Analysis / deduplication ------------------------ ``find_dup_folders.py`` (content hash per folder, JSON dump) and ``dupdirs.py`` (content hash + ``--structure`` mode, multiprocessing, nested-duplicate filtering) overlap almost completely; they are one tool with two ``--mode`` values.
+``xxhash`` is used when installed and ``hashlib.blake2b`` (stdlib, equally collision-resistant for this job) otherwise, so the tool runs with zero dependencies.
+The hardcoded ``/sdcard/dupdirs.json`` output is ``-o dupdirs.json``.
+How it works: every folder under the root gets a signature built from its file names alone (structure) or from file names + content hashes (content).
+Folders sharing a signature are reported as a group; a folder that merely *contains* another duplicate folder can be hidden with ``--prune-nested``.
+Examples -------- python3 duplicate_folders_tool.py find ~/projects python3 duplicate_folders_tool.py find .
+--mode structure python3 duplicate_folders_tool.py find .
+--prune-nested -o report.json"""
 
 import argparse
 from collections import defaultdict

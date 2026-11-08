@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """List the installed packages by size in a table.
-
-Queries dpkg for the installed packages, caches the result in ``installed.json`` (``-r`` refreshes it) and
-prints a width-adaptive table with human-readable sizes, optionally filtered to the
-biggest ones.
-
-Usage: sorted_pkgs [-r] [N]
-
-Examples:
-    $ sorted_pkgs 20
-
-Runs as a script (``python sorted_pkgs.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Queries dpkg for the installed packages, caches the result in ``installed.json`` (``-r`` refreshes it) and prints a width-adaptive table with human-readable sizes, optionally filtered to the biggest ones.
+Usage: sorted_pkgs [-r] [N] Examples: $ sorted_pkgs 20 Runs as a script (``python sorted_pkgs.py``) in the directory it should act on; the module can also be imported."""
 
 import json
 from pathlib import Path

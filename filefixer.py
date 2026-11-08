@@ -1,60 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Detect and fix file-extension mismatches, or extract Python-like lines.
-
-The ``fix`` subcommand sniffs each file (shebang, puremagic, libmagic, filetype, ``file``,
-signatures, mimetypes) and renames the ones whose suffix does not match, ``validate`` checks a
-set of binary/text extensions and ``extract-python`` pulls the Python-looking lines out of a mixed
-file; ``--apply``/``--confirm`` control the renames.
-
-Usage: filefixer {fix,validate,extract-python} [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files/directories to scan. Default: current directory.
-    kind
-        Which extension set to validate.
-    path
-        Root path to scan.
-    file
-        Input file.
-
-Subcommands:
-    fix
-        Detect and optionally fix extension mismatches.
-    validate
-        Validate binary or text extensions.
-    extract-python
-        Extract Python-like lines from a file.
-
-Options:
-    --debug
-        Enable debug logging.
-    --scan-cwd
-        Ignore paths and scan CWD (fix_ext.py behavior).
-    --apply, --commit, -a
-        Actually rename files.
-    --confirm
-        Ask before live renames (fixext3.py behavior).
-    --engines
-        Comma list: auto,
-        shebang,puremagic,magic,filetype,file-mime,file-b,signature,mimetypes,text
-    --no-recursive
-        Do not recurse into directories.
-    --include-hidden
-        Do not skip hidden files/dirs.
-    --follow-symlinks
-        Follow symlinks while walking.
-    --skip-mount-points
-        Do not cross filesystem boundaries.
-    --collision
-        Collision policy.
-    ... plus 7 more; run ``filefixer --help`` for the full list.
-
-Examples:
-    $ filefixer fix --apply ~/Downloads
-
-Command-line script: run ``python filefixer.py`` or the ``filefixer`` command. The module is importable as well.
-"""
+The ``fix`` subcommand sniffs each file (shebang, puremagic, libmagic, filetype, ``file``, signatures, mimetypes) and renames the ones whose suffix does not match, ``validate`` checks a set of binary/text extensions and ``extract-python`` pulls the Python-looking lines out of a mixed file; ``--apply``/``--confirm`` control the renames.
+Usage: filefixer {fix,validate,extract-python} [options] [paths ...] Positional arguments: paths ...
+Files/directories to scan.
+Default: current directory.
+kind Which extension set to validate.
+path Root path to scan.
+file Input file.
+Subcommands: fix Detect and optionally fix extension mismatches.
+validate Validate binary or text extensions.
+extract-python Extract Python-like lines from a file.
+Options: --debug Enable debug logging.
+--scan-cwd Ignore paths and scan CWD (fix_ext.py behavior).
+--apply, --commit, -a Actually rename files.
+--confirm Ask before live renames (fixext3.py behavior).
+--engines Comma list: auto, shebang,puremagic,magic,filetype,file-mime,file-b,signature,mimetypes,text --no-recursive Do not recurse into directories.
+--include-hidden Do not skip hidden files/dirs.
+--follow-symlinks Follow symlinks while walking.
+--skip-mount-points Do not cross filesystem boundaries.
+--collision Collision policy.
+...
+plus 7 more; run ``filefixer --help`` for the full list.
+Examples: $ filefixer fix --apply ~/Downloads Command-line script: run ``python filefixer.py`` or the ``filefixer`` command.
+The module is importable as well."""
 
 import argparse
 import concurrent.futures

@@ -1,21 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Normalize line endings in text files (CRLF -> LF, or LF -> CRLF).
-
-Analysis / deduplication
-------------------------
-``dostounix.py`` (hand-rolled CRLF->LF) and ``pydos2unix.py`` (the
-third-party ``dos2unix`` package) are the same converter; the stdlib
-byte replacement below covers both, so no dependency remains. Binary
-files (private ``dh.is_binary`` before) are skipped by a NUL-byte sniff
-on the first 8 KiB. ``--to dos`` is the inverse conversion, exposed for
-symmetry.
-
-Examples
---------
-  python3 line_endings_tool.py convert . --dry-run
-  python3 line_endings_tool.py convert notes.txt src/
-  python3 line_endings_tool.py convert . --to dos -q
-"""
+Analysis / deduplication ------------------------ ``dostounix.py`` (hand-rolled CRLF->LF) and ``pydos2unix.py`` (the third-party ``dos2unix`` package) are the same converter; the stdlib byte replacement below covers both, so no dependency remains.
+Binary files (private ``dh.is_binary`` before) are skipped by a NUL-byte sniff on the first 8 KiB.
+``--to dos`` is the inverse conversion, exposed for symmetry.
+Examples -------- python3 line_endings_tool.py convert .
+--dry-run python3 line_endings_tool.py convert notes.txt src/ python3 line_endings_tool.py convert .
+--to dos -q"""
 
 import argparse
 from collections.abc import Sequence

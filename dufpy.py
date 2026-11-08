@@ -1,25 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find the Python files with identical normalized ASTs.
-
-Normalizes each file (comments, formatting and names of the local definitions), hashes
-the result with xxhash, groups the matches and caches them in ``.cache.json``; ``-r`` keeps the first
-file of each group and deletes the others, ``--rich`` adds a progress bar.
-
-Usage: dufpy [-r] [--root DIR] [--rich]
-
-Options:
-    -r, --remove
-        Remove duplicate files, keeping the first path in each group
-    --rich
-        Show a progress bar while processing files
-    --root
-        Directory to scan (default: current directory)
-
-Examples:
-    $ dufpy --root src --rich
-
-Command-line script: run ``python dufpy.py`` or the ``dufpy`` command. The module is importable as well.
-"""
+Normalizes each file (comments, formatting and names of the local definitions), hashes the result with xxhash, groups the matches and caches them in ``.cache.json``; ``-r`` keeps the first file of each group and deletes the others, ``--rich`` adds a progress bar.
+Usage: dufpy [-r] [--root DIR] [--rich] Options: -r, --remove Remove duplicate files, keeping the first path in each group --rich Show a progress bar while processing files --root Directory to scan (default: current directory) Examples: $ dufpy --root src --rich Command-line script: run ``python dufpy.py`` or the ``dufpy`` command.
+The module is importable as well."""
 
 import argparse
 import ast

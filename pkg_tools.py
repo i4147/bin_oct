@@ -1,71 +1,35 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Package-management toolkit for apt, pip and wheels.
-
-Subcommands: ``apt-install``/``apt-reinstall`` install the apt packages by wildcard or from a list, ``wheel-install``/``wheel-install-local``
-install the local ``.whl`` files (optionally deleting them), ``wheel-move-installed`` sorts the wheels of the
-installed distributions and ``pip-uninstall``/``pip-uninstall-flake8`` fuzzy-uninstall the packages by prefix.
-
-Usage: pkg_tools {apt-install,apt-reinstall,wheel-install,pip-uninstall,...} [options]
-
-Positional arguments:
-    pattern
-        Wildcard pattern (* and ? supported).
-    file
-        Path to the package list (default: ~/missing.txt).
-    wheels ...
-        One or more .whl paths.
-
-Subcommands:
-    apt-install
-        Wildcard-install apt/pkg packages (aptin.py).
-    apt-reinstall
-        Reinstall apt packages from a list file.
-    wheel-install
-        Install every *.whl in a directory.
-    wheel-install-local
-        Install local wheel files (piu.py).
-    wheel-move-installed
-        Sort wheels matching installed dists.
-    pip-uninstall
-        Fuzzy-uninstall installed packages by prefix.
-    pip-uninstall-flake8
-        Uninstall every flake8 plugin.
-    pip-reinstall-list
-        Reinstall packages from a list file (parallel).
-    pip-reinstall-pypi
-        Reinstall PyPI packages and prune successes.
-    pip-reinstall-entry-points
-        Reinstall every dist with entry points.
-
-Options:
-    -y, --no-confirm
-        Skip the confirmation prompt.
-    --dir
-        Directory containing wheels (default: .).
-    --no-user
-        Do NOT pass --user to pip.
-    --with-deps
-        Allow pip to install dependencies.
-    --no-compile
-        Pass --no-compile (default: True).
-    --keep-file
-        Keep the wheel file after installing (default: delete).
-    --src
-        Source directory (default: /sdcard/whl).
-    --dst
-        Where matching wheels go (default: /sdcard/installed).
-    --invalid
-        Where invalid wheels go (default: /sdcard/invalid).
-    --exclude
-        Distributions to leave alone.
-    ... plus 17 more; run ``pkg_tools --help`` for the full list.
-
-Examples:
-    $ pkg_tools wheel-install --dir ~/wheels
-    $ pkg_tools pip-uninstall requests
-
-Command-line script: run ``python pkg_tools.py`` or the ``pkg_tools`` command. The module is importable as well.
-"""
+Subcommands: ``apt-install``/``apt-reinstall`` install the apt packages by wildcard or from a list, ``wheel-install``/``wheel-install-local`` install the local ``.whl`` files (optionally deleting them), ``wheel-move-installed`` sorts the wheels of the installed distributions and ``pip-uninstall``/``pip-uninstall-flake8`` fuzzy-uninstall the packages by prefix.
+Usage: pkg_tools {apt-install,apt-reinstall,wheel-install,pip-uninstall,...} [options] Positional arguments: pattern Wildcard pattern (* and ?
+supported).
+file Path to the package list (default: ~/missing.txt).
+wheels ...
+One or more .whl paths.
+Subcommands: apt-install Wildcard-install apt/pkg packages (aptin.py).
+apt-reinstall Reinstall apt packages from a list file.
+wheel-install Install every *.whl in a directory.
+wheel-install-local Install local wheel files (piu.py).
+wheel-move-installed Sort wheels matching installed dists.
+pip-uninstall Fuzzy-uninstall installed packages by prefix.
+pip-uninstall-flake8 Uninstall every flake8 plugin.
+pip-reinstall-list Reinstall packages from a list file (parallel).
+pip-reinstall-pypi Reinstall PyPI packages and prune successes.
+pip-reinstall-entry-points Reinstall every dist with entry points.
+Options: -y, --no-confirm Skip the confirmation prompt.
+--dir Directory containing wheels (default: .).
+--no-user Do NOT pass --user to pip.
+--with-deps Allow pip to install dependencies.
+--no-compile Pass --no-compile (default: True).
+--keep-file Keep the wheel file after installing (default: delete).
+--src Source directory (default: /sdcard/whl).
+--dst Where matching wheels go (default: /sdcard/installed).
+--invalid Where invalid wheels go (default: /sdcard/invalid).
+--exclude Distributions to leave alone.
+...
+plus 17 more; run ``pkg_tools --help`` for the full list.
+Examples: $ pkg_tools wheel-install --dir ~/wheels $ pkg_tools pip-uninstall requests Command-line script: run ``python pkg_tools.py`` or the ``pkg_tools`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor

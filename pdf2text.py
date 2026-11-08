@@ -1,44 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract the text of PDF files with PyPDF2 or pdfplumber.
-
-The ``concat`` subcommand writes the whole document to one ``.txt``, ``split`` one file per page into a
-folder named after the PDF; the engine, the encoding, the page-number padding and the
-quiet mode are configurable.
-
-Usage: pdf2text {concat,split} PDF [--engine pypdf2|pdfplumber] [-o OUT]
-
-Positional arguments:
-    pdf
-        Path to the input PDF file.
-
-Subcommands:
-    concat
-        Extract all pages into a single text file.
-    split
-        Extract each page into its own text file.
-
-Options:
-    --encoding
-        Text encoding used when writing output files. Default: utf-8
-    --quiet
-        Suppress progress messages.
-    --engine
-        PDF extraction engine. Defaults: pypdf2 for concat, pdfplumber for split.
-    -o, --output
-        Output .txt file. Default: input path with .pdf replaced by .txt.
-    -d, --output-dir
-        Directory for per-page text files. Default: directory named after the PDF stem.
-    --pad-width
-        Minimum page-number width. Default: 3 (001, 002, ...).
-    --parents
-        Create parent directories for --output-dir if needed.
-
-Examples:
-    $ pdf2text concat book.pdf -o book.txt
-    $ pdf2text split book.pdf
-
-Command-line script: run ``python pdf2text.py`` or the ``pdf2text`` command. The module is importable as well.
-"""
+The ``concat`` subcommand writes the whole document to one ``.txt``, ``split`` one file per page into a folder named after the PDF; the engine, the encoding, the page-number padding and the quiet mode are configurable.
+Usage: pdf2text {concat,split} PDF [--engine pypdf2|pdfplumber] [-o OUT] Positional arguments: pdf Path to the input PDF file.
+Subcommands: concat Extract all pages into a single text file.
+split Extract each page into its own text file.
+Options: --encoding Text encoding used when writing output files.
+Default: utf-8 --quiet Suppress progress messages.
+--engine PDF extraction engine.
+Defaults: pypdf2 for concat, pdfplumber for split.
+-o, --output Output .txt file.
+Default: input path with .pdf replaced by .txt.
+-d, --output-dir Directory for per-page text files.
+Default: directory named after the PDF stem.
+--pad-width Minimum page-number width.
+Default: 3 (001, 002, ...).
+--parents Create parent directories for --output-dir if needed.
+Examples: $ pdf2text concat book.pdf -o book.txt $ pdf2text split book.pdf Command-line script: run ``python pdf2text.py`` or the ``pdf2text`` command.
+The module is importable as well."""
 
 import argparse
 from pathlib import Path

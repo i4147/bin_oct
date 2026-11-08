@@ -1,56 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Language-detection and filtering toolkit.
-
-Subcommands: ``move-chinese`` moves the files containing Chinese characters, ``filter-lines`` strips the
-non-English lines out of one file, ``find-files`` reports the non-English files with pycld2 and ``find-lines``
-collects the non-English lines of a tree into a TSV (the strict mode adds gcld3 plus an
-NLTK word ratio).
-
-Usage: langtools {move-chinese,filter-lines,find-files,find-lines} [options]
-
-Positional arguments:
-    directory
-        Directory to scan (default: current dir).
-    file
-        File to inspect line-by-line.
-
-Subcommands:
-    move-chinese
-        Move files containing Chinese characters.
-    filter-lines
-        Filter non-English lines out of one file.
-    find-files
-        Recursively find non-English files (pycld2).
-    find-lines
-        Find non-English lines across many files, save TSV.
-
-Options:
-    --target
-    -m, --move
-        Extract non-English lines to noneng.txt and edit source in place.
-    --strict
-        Use gcld3 + NLTK word-ratio (strict).
-    -t, --threshold
-        Strict mode: minimum ratio of NLTK English words (default 0.5).
-    -o, --out
-    --min-bytes
-        Minimum bytes to consider a file (default 100).
-    --max-bytes
-        Maximum bytes to read from each file (default 10000).
-    -a, --all
-        Report all files, including English ones.
-    -np, --no-progress
-        Don't print per-file progress.
-    -o, --output
-        Write the report to this file instead of stdout.
-    ... plus 9 more; run ``langtools --help`` for the full list.
-
-Examples:
-    $ langtools find-files docs/
-    $ langtools filter-lines -m page.txt
-
-Command-line script: run ``python langtools.py`` or the ``langtools`` command. The module is importable as well.
-"""
+Subcommands: ``move-chinese`` moves the files containing Chinese characters, ``filter-lines`` strips the non-English lines out of one file, ``find-files`` reports the non-English files with pycld2 and ``find-lines`` collects the non-English lines of a tree into a TSV (the strict mode adds gcld3 plus an NLTK word ratio).
+Usage: langtools {move-chinese,filter-lines,find-files,find-lines} [options] Positional arguments: directory Directory to scan (default: current dir).
+file File to inspect line-by-line.
+Subcommands: move-chinese Move files containing Chinese characters.
+filter-lines Filter non-English lines out of one file.
+find-files Recursively find non-English files (pycld2).
+find-lines Find non-English lines across many files, save TSV.
+Options: --target -m, --move Extract non-English lines to noneng.txt and edit source in place.
+--strict Use gcld3 + NLTK word-ratio (strict).
+-t, --threshold Strict mode: minimum ratio of NLTK English words (default 0.5).
+-o, --out --min-bytes Minimum bytes to consider a file (default 100).
+--max-bytes Maximum bytes to read from each file (default 10000).
+-a, --all Report all files, including English ones.
+-np, --no-progress Don't print per-file progress.
+-o, --output Write the report to this file instead of stdout.
+...
+plus 9 more; run ``langtools --help`` for the full list.
+Examples: $ langtools find-files docs/ $ langtools filter-lines -m page.txt Command-line script: run ``python langtools.py`` or the ``langtools`` command.
+The module is importable as well."""
 
 import argparse
 from collections import Counter, defaultdict

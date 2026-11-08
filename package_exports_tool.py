@@ -1,25 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Check (and optionally fix) a package's ``__init__.py`` exports.
-
-Analysis / deduplication
-------------------------
-``check_funcs.py`` is a strict subset of ``check_exports.py`` (same AST
-scanning, no autofix), so it maps to the ``check`` subcommand and the
-larger script maps to ``check --fix``. The ``loguru`` dependency was
-dropped in favour of plain printing; the duplicated autofix/__all__
-assembly logic was factored into one helper.
-
-A name counts as "defined" when it is a top-level public function,
-class or UPPER_CASE constant in a sibling module, and as "exported"
-when it (or its module) is imported in ``__init__.py`` or listed in
-``__all__``.
-
-Examples
---------
-  python3 package_exports_tool.py check mypackage/
-  python3 package_exports_tool.py check mypackage/ --fix --dry-run
-  python3 package_exports_tool.py check mypackage/ --fix
-"""
+Analysis / deduplication ------------------------ ``check_funcs.py`` is a strict subset of ``check_exports.py`` (same AST scanning, no autofix), so it maps to the ``check`` subcommand and the larger script maps to ``check --fix``.
+The ``loguru`` dependency was dropped in favour of plain printing; the duplicated autofix/__all__ assembly logic was factored into one helper.
+A name counts as "defined" when it is a top-level public function, class or UPPER_CASE constant in a sibling module, and as "exported" when it (or its module) is imported in ``__init__.py`` or listed in ``__all__``.
+Examples -------- python3 package_exports_tool.py check mypackage/ python3 package_exports_tool.py check mypackage/ --fix --dry-run python3 package_exports_tool.py check mypackage/ --fix"""
 
 import argparse
 import ast

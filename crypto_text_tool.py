@@ -1,32 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """File/text ciphers: AES files, Morse code, and a ZIP password tester.
-
-Analysis / deduplication
-------------------------
-- ``decryptor.py`` and ``encryptor.py`` are the same AES-CBC program
-  (one walks files with the author's ``fastwalk`` package, the other
-  ``Path.glob``; both dangerously rewrote *every* file in the CWD).
-  They are now explicit ``aes-encrypt`` / ``aes-decrypt`` commands over
-  the files you actually name. ``AES_BLOCK_SIZE=128`` in one original
-  was a bug (AES-CBC IVs are 16 bytes); the on-disk format is unchanged,
-  so old files still decrypt. Keys are derived from the passphrase
-  string directly (must be 16/24/32 bytes as before; a generated key
-  is printed once when encrypting without ``--key``).
+Analysis / deduplication ------------------------ - ``decryptor.py`` and ``encryptor.py`` are the same AES-CBC program (one walks files with the author's ``fastwalk`` package, the other ``Path.glob``; both dangerously rewrote *every* file in the CWD).
+They are now explicit ``aes-encrypt`` / ``aes-decrypt`` commands over the files you actually name.
+``AES_BLOCK_SIZE=128`` in one original was a bug (AES-CBC IVs are 16 bytes); the on-disk format is unchanged, so old files still decrypt.
+Keys are derived from the passphrase string directly (must be 16/24/32 bytes as before; a generated key is printed once when encrypting without ``--key``).
 - ``morseconverter.py`` -> ``morse`` (text or files).
-- ``zip_crack.py`` (which did not parse: an f-string was split across
-  lines and the dataclass fields were never annotated) -> ``zip-crack``,
-  stdlib-only, sequential-with-optional-process-pool.
-
+- ``zip_crack.py`` (which did not parse: an f-string was split across lines and the dataclass fields were never annotated) -> ``zip-crack``, stdlib-only, sequential-with-optional-process-pool.
 AES needs the third-party ``cryptography`` package; import is lazy.
-
-Examples
---------
-  python3 crypto_text_tool.py aes-encrypt secret.txt
-  python3 crypto_text_tool.py aes-decrypt secret.txt.enc --key <KEY>
-  python3 crypto_text_tool.py morse encode "SOS"
-  python3 crypto_text_tool.py morse decode "... --- ..."
-  python3 crypto_text_tool.py zip-crack secret.zip -w wordlist.txt
-"""
+Examples -------- python3 crypto_text_tool.py aes-encrypt secret.txt python3 crypto_text_tool.py aes-decrypt secret.txt.enc --key <KEY> python3 crypto_text_tool.py morse encode "SOS" python3 crypto_text_tool.py morse decode "...
+--- ..." python3 crypto_text_tool.py zip-crack secret.zip -w wordlist.txt"""
 
 import argparse
 from collections.abc import Iterator, Sequence

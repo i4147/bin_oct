@@ -1,52 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find and manage the exact and fuzzy duplicate files.
-
-Hashes the files, groups the exact duplicates and the ones above a similarity threshold
-(ssdeep), and the ``scan``/``report``/``move`` subcommands copy, move, delete or export the groups as
-CSV, JSON or a similarity matrix.
-
-Usage: fuzzy_dedup {scan,report,move} [options] [--root DIR]
-
-Positional arguments:
-    threshold
-        Similarity threshold from 0 through 100.
-
-Subcommands:
-    scan
-        Scan, compare, and optionally copy, move, or delete groups.
-    report
-        Generate CSV, JSON, or matrix reports.
-    move
-        Move fuzzy groups into numbered output directories.
-
-Options:
-    --root
-        Directory or file to scan.
-    --output
-        Output directory.
-    --profile
-        Compatibility profile for the original scanners.
-    --action
-        Action for matched groups.
-    --include-symlinks
-        Include symbolic links.
-    --ignore
-        Directory name to ignore. Repeat for multiple names.
-    --min-size
-        Minimum file size in bytes.
-    --max-bytes
-        Maximum number of bytes read from each file.
-    --exclude-exact
-        Do not fuzzy-compare byte-identical files.
-    --mark-on-match
-        Prevent already matched files from entering later groups.
-    ... plus 6 more; run ``fuzzy_dedup --help`` for the full list.
-
-Examples:
-    $ fuzzy_dedup scan 80 --root ~/photos
-
-Command-line script: run ``python fuzzy_dedup.py`` or the ``fuzzy_dedup`` command. The module is importable as well.
-"""
+Hashes the files, groups the exact duplicates and the ones above a similarity threshold (ssdeep), and the ``scan``/``report``/``move`` subcommands copy, move, delete or export the groups as CSV, JSON or a similarity matrix.
+Usage: fuzzy_dedup {scan,report,move} [options] [--root DIR] Positional arguments: threshold Similarity threshold from 0 through 100.
+Subcommands: scan Scan, compare, and optionally copy, move, or delete groups.
+report Generate CSV, JSON, or matrix reports.
+move Move fuzzy groups into numbered output directories.
+Options: --root Directory or file to scan.
+--output Output directory.
+--profile Compatibility profile for the original scanners.
+--action Action for matched groups.
+--include-symlinks Include symbolic links.
+--ignore Directory name to ignore.
+Repeat for multiple names.
+--min-size Minimum file size in bytes.
+--max-bytes Maximum number of bytes read from each file.
+--exclude-exact Do not fuzzy-compare byte-identical files.
+--mark-on-match Prevent already matched files from entering later groups.
+...
+plus 6 more; run ``fuzzy_dedup --help`` for the full list.
+Examples: $ fuzzy_dedup scan 80 --root ~/photos Command-line script: run ``python fuzzy_dedup.py`` or the ``fuzzy_dedup`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

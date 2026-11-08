@@ -1,25 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Detect and fix the Python 2 ``print`` statements.
-
-Finds the ``print x`` lines with a regex confirmed by tokenize (skipping the Rich ``print`` imports
-and the commented-out code), reports them and with ``-a`` rewrites them as ``print(x)`` calls; large
-files are read through an mmap.
-
-Usage: oldpi [path] [-a]
-
-Positional arguments:
-    path
-        Path to file or directory to scan
-
-Options:
-    -a, --autofix
-        Automatically fix print statements
-
-Examples:
-    $ oldpi legacy/ -a
-
-Command-line script: run ``python oldpi.py`` or the ``oldpi`` command. The module is importable as well.
-"""
+Finds the ``print x`` lines with a regex confirmed by tokenize (skipping the Rich ``print`` imports and the commented-out code), reports them and with ``-a`` rewrites them as ``print(x)`` calls; large files are read through an mmap.
+Usage: oldpi [path] [-a] Positional arguments: path Path to file or directory to scan Options: -a, --autofix Automatically fix print statements Examples: $ oldpi legacy/ -a Command-line script: run ``python oldpi.py`` or the ``oldpi`` command.
+The module is importable as well."""
 
 from collections import deque
 import mmap
@@ -28,7 +11,7 @@ from pathlib import Path
 import re
 import tokenize
 
-from dh import mpf,SKIP_DIRS
+from dh import mpf, SKIP_DIRS
 
 
 def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:

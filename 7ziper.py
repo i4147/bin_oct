@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Compress or decompress entries in the current directory using 7-Zip modes.
-
-The basic, named, and full subcommands can remove inputs after processing.
-"""
+The basic, named, and full subcommands can remove inputs after processing."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor

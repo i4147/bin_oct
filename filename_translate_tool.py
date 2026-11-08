@@ -1,27 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Rename non-English filenames to English (translate or transliterate).
-
-Analysis / deduplication
-------------------------
-- ``renm.py``, ``renneng.py`` and ``translate_noneng_filenames.py``
-  are the same program three times (Google Translate via
-  ``deep-translator``, private ``fastwalk`` walking, unique-path
-  disambiguation); later copies only dropped the cache/progress bar.
-  They are one ``translate`` command that caches translations,
-  renames deepest paths first (so parent dirs can be renamed too),
-  and is dry-run by default - the originals renamed immediately.
-- ``finglish.py`` transliterates Persian filenames to Finglish
-  (Latin) locally with no network -> ``finglish`` command.
-
-Translation needs the optional ``deep-translator`` package and
-network access; transliteration is fully local.
-
-Examples
---------
-  python3 filename_translate_tool.py translate ~/Downloads
-  python3 filename_translate_tool.py translate ~/Downloads --apply
-  python3 filename_translate_tool.py finglish ~/Music --apply
-"""
+Analysis / deduplication ------------------------ - ``renm.py``, ``renneng.py`` and ``translate_noneng_filenames.py`` are the same program three times (Google Translate via ``deep-translator``, private ``fastwalk`` walking, unique-path disambiguation); later copies only dropped the cache/progress bar.
+They are one ``translate`` command that caches translations, renames deepest paths first (so parent dirs can be renamed too), and is dry-run by default - the originals renamed immediately.
+- ``finglish.py`` transliterates Persian filenames to Finglish (Latin) locally with no network -> ``finglish`` command.
+Translation needs the optional ``deep-translator`` package and network access; transliteration is fully local.
+Examples -------- python3 filename_translate_tool.py translate ~/Downloads python3 filename_translate_tool.py translate ~/Downloads --apply python3 filename_translate_tool.py finglish ~/Music --apply"""
 
 import argparse
 from collections.abc import Sequence

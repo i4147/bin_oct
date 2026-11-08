@@ -1,27 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Diff two files line by line.
-
-Reads both files in parallel, compares the hashes first, prints the differing lines with
-their line numbers and, with ``-s -m``, moves the files that match after the whitespace strip
-into a numbered ``group_N`` folder.
-
-Usage: pydiff FILE1 FILE2 [-s] [-m]
-
-Positional arguments:
-    file1
-    file2
-
-Options:
-    -s, --strip
-        Strip leading and trailing whitespace from lines before comparing
-    -m, --move
-        With -s, if files match, move both into a group_N subdir in the current folder
-
-Examples:
-    $ pydiff a.txt b.txt -s
-
-Command-line script: run ``python pydiff.py`` or the ``pydiff`` command. The module is importable as well.
-"""
+Reads both files in parallel, compares the hashes first, prints the differing lines with their line numbers and, with ``-s -m``, moves the files that match after the whitespace strip into a numbered ``group_N`` folder.
+Usage: pydiff FILE1 FILE2 [-s] [-m] Positional arguments: file1 file2 Options: -s, --strip Strip leading and trailing whitespace from lines before comparing -m, --move With -s, if files match, move both into a group_N subdir in the current folder Examples: $ pydiff a.txt b.txt -s Command-line script: run ``python pydiff.py`` or the ``pydiff`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed

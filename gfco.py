@@ -1,31 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Convert font files between the TTF/OTF/WOFF/WOFF2/EOT containers.
-
-Converts each input to the ``--to`` format with fontTools through a four-worker executor
-(``--pool-method``), writes the results into ``--output-dir`` or next to the source and removes the originals with
-``-r``.
-
-Usage: gfco FONT [...] --to ttf|otf|woff|woff2|eot [--output-dir DIR] [-r]
-
-Positional arguments:
-    input_files ...
-        Path(s) to font file(s) to convert.
-
-Options:
-    --to
-        Target format (ttf, otf, woff, woff2, eot). Defaults to 'ttf'.
-    --output-dir
-        Optional output directory for converted fonts.
-    -r, --remove
-        Remove the original font file if conversion is successful.
-    --pool-method
-        Method/Executor strategy to use with 4 workers. Defaults to 'imap_unordered'.
-
-Examples:
-    $ gfco fonts/*.otf --to woff2
-
-Command-line script: run ``python gfco.py`` or the ``gfco`` command. The module is importable as well.
-"""
+Converts each input to the ``--to`` format with fontTools through a four-worker executor (``--pool-method``), writes the results into ``--output-dir`` or next to the source and removes the originals with ``-r``.
+Usage: gfco FONT [...] --to ttf|otf|woff|woff2|eot [--output-dir DIR] [-r] Positional arguments: input_files ...
+Path(s) to font file(s) to convert.
+Options: --to Target format (ttf, otf, woff, woff2, eot).
+Defaults to 'ttf'.
+--output-dir Optional output directory for converted fonts.
+-r, --remove Remove the original font file if conversion is successful.
+--pool-method Method/Executor strategy to use with 4 workers.
+Defaults to 'imap_unordered'.
+Examples: $ gfco fonts/*.otf --to woff2 Command-line script: run ``python gfco.py`` or the ``gfco`` command.
+The module is importable as well."""
 
 import argparse
 import concurrent.futures

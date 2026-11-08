@@ -1,22 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Recursively strip the comments from Python files with tree-sitter.
-
-Removes the comment nodes (keeping the shebang), verifies with ast that the result still
-parses and no comment is left, and processes the files of the current directory or of
-the given paths in a pool, logging a per-file result.
-
-Usage: armc [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to scan (defaults to recursively checking current
-        directory).
-
-Examples:
-    $ armc src/
-
-Command-line script: run ``python armc.py`` or the ``armc`` command. The module is importable as well.
-"""
+Removes the comment nodes (keeping the shebang), verifies with ast that the result still parses and no comment is left, and processes the files of the current directory or of the given paths in a pool, logging a per-file result.
+Usage: armc [paths ...] Positional arguments: paths ...
+Files or directories to scan (defaults to recursively checking current directory).
+Examples: $ armc src/ Command-line script: run ``python armc.py`` or the ``armc`` command.
+The module is importable as well."""
 
 import argparse
 import ast

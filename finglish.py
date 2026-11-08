@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Rename Persian file names below the current directory to Finglish (Latin script).
-
-Maps the Persian letters to their usual Latin transliterations, normalises the result
-with Unicode NFKD and renames the files that contain non-ASCII characters.
-
-Usage: finglish
-
-Examples:
-    $ finglish
-
-Runs as a script (``python finglish.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Maps the Persian letters to their usual Latin transliterations, normalises the result with Unicode NFKD and renames the files that contain non-ASCII characters.
+Usage: finglish Examples: $ finglish Runs as a script (``python finglish.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import unicodedata

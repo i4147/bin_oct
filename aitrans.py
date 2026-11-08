@@ -1,24 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Translate text files in place with an AI model.
-
-Collects the files of the requested extensions (``txt`` and ``md`` by default), translates each
-one with the OpenAI client and falls back to Gemini when OpenAI is unavailable, writing
-the translation over the original in the target language.
-
-Usage: aitrans [-e txt,md] [-l LANGUAGE]
-
-Options:
-    -e, --extensions
-        Comma-separated file extensions to look for (default: txt,md)
-    -l, --lang
-        Target translation destination language (default: English)
-
-Examples:
-    $ aitrans -l English -e md
-
-Needs an API key for OpenAI or Gemini and overwrites the source files with their
-translation.
-"""
+Collects the files of the requested extensions (``txt`` and ``md`` by default), translates each one with the OpenAI client and falls back to Gemini when OpenAI is unavailable, writing the translation over the original in the target language.
+Usage: aitrans [-e txt,md] [-l LANGUAGE] Options: -e, --extensions Comma-separated file extensions to look for (default: txt,md) -l, --lang Target translation destination language (default: English) Examples: $ aitrans -l English -e md Needs an API key for OpenAI or Gemini and overwrites the source files with their translation."""
 
 import argparse
 import glob

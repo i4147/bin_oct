@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Remove the ``if [ $(...) -ne 0 ]; then exit 1; fi`` root checks from shell scripts.
-
-Scans the executable or ``#!``-shell files below the current directory and deletes the
-matching guard blocks (typically the ``must run as root`` checks) with a regular expression, rewriting
-only the files that changed.
-
-Usage: noroot
-
-Examples:
-    $ noroot
-
-Runs as a script (``python noroot.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Scans the executable or ``#!``-shell files below the current directory and deletes the matching guard blocks (typically the ``must run as root`` checks) with a regular expression, rewriting only the files that changed.
+Usage: noroot Examples: $ noroot Runs as a script (``python noroot.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import re

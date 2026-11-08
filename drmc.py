@@ -1,44 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Strip the comments, docstrings and annotations of Python files.
-
-``-c`` removes the comments, ``-d`` the docstrings, ``-a``/``-x`` everything, ``-t`` the annotations;
-the backend is ast, LibCST or tree-sitter (``-b``), the writes are atomic, and ``--dry-run``, ``--diff``,
-``--backup`` and every pool method are available.
-
-Usage: drmc [-c] [-d] [-t] [-b BACKEND] [--diff] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories (default: cwd)
-
-Options:
-    -c, --comments
-        Remove all comments
-    -d, --docstring
-        Remove all docstrings except module docstring.
-    -a, --all
-        Remove all comments and docstrings, even preserved ones.
-    -t, --type
-        Remove type annotations.
-    -x
-        Equivalent to -a -t; nothing written, output copied to clipboard.
-    -b, --backend
-        Backend (default: libcst if installed, else ast).
-    --dry-run
-        Show changes without writing.
-    --diff
-        Show unified diff of changes.
-    --backup
-        Create .bak backup before writing.
-    --remove-module-docstring
-        Also strip module-level docstrings.
-    ... plus 2 more; run ``drmc --help`` for the full list.
-
-Examples:
-    $ drmc -c -d --diff src/
-
-Command-line script: run ``python drmc.py`` or the ``drmc`` command. The module is importable as well.
-"""
+``-c`` removes the comments, ``-d`` the docstrings, ``-a``/``-x`` everything, ``-t`` the annotations; the backend is ast, LibCST or tree-sitter (``-b``), the writes are atomic, and ``--dry-run``, ``--diff``, ``--backup`` and every pool method are available.
+Usage: drmc [-c] [-d] [-t] [-b BACKEND] [--diff] [paths ...] Positional arguments: paths ...
+Files or directories (default: cwd) Options: -c, --comments Remove all comments -d, --docstring Remove all docstrings except module docstring.
+-a, --all Remove all comments and docstrings, even preserved ones.
+-t, --type Remove type annotations.
+-x Equivalent to -a -t; nothing written, output copied to clipboard.
+-b, --backend Backend (default: libcst if installed, else ast).
+--dry-run Show changes without writing.
+--diff Show unified diff of changes.
+--backup Create .bak backup before writing.
+--remove-module-docstring Also strip module-level docstrings.
+...
+plus 2 more; run ``drmc --help`` for the full list.
+Examples: $ drmc -c -d --diff src/ Command-line script: run ``python drmc.py`` or the ``drmc`` command.
+The module is importable as well."""
 
 import argparse
 import ast

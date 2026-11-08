@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Move a directory into ``~/repos``.
-
-Resolves the given path, moves it into ``~/repos`` under the same name and appends a numeric
-suffix when that name is taken.
-
-Usage: tore PATH
-
-Examples:
-    $ tore ~/Downloads/project
-
-Runs as a script (``python tore.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Resolves the given path, moves it into ``~/repos`` under the same name and appends a numeric suffix when that name is taken.
+Usage: tore PATH Examples: $ tore ~/Downloads/project Runs as a script (``python tore.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import shutil

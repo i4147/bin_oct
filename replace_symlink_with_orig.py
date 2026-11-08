@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Replace symlinks with copies of the files they point to.
-
-Walks the given paths, copies the target content over each symlink (preserving
-metadata), logs the replacements to ``replaced.txt`` and the failures to ``errors.txt``, and processes the tree
-in parallel.
-
-Usage: replace_symlink_with_orig [paths ...]
-
-Examples:
-    $ replace_symlink_with_orig ./bin
-
-Runs as a script (``python replace_symlink_with_orig.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Walks the given paths, copies the target content over each symlink (preserving metadata), logs the replacements to ``replaced.txt`` and the failures to ``errors.txt``, and processes the tree in parallel.
+Usage: replace_symlink_with_orig [paths ...] Examples: $ replace_symlink_with_orig ./bin Runs as a script (``python replace_symlink_with_orig.py``) in the directory it should act on; the module can also be imported."""
 
 from multiprocessing.pool import Pool
 from pathlib import Path

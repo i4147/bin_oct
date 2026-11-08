@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Ask the felo superagent for a script and save the reply as a dated log file.
-
-Runs ``felo-sa.mjs`` with the arguments given on the command line, writes a header with the prompt
-and a footer with the elapsed time around the returned text and stores everything under
-``~/tmp/apps`` as a timestamped Markdown file.
-
-Usage: feloai PROMPT
-
-Examples:
-    $ feloai 'write a python script that renames files'
-
-Runs as a script (``python feloai.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Runs ``felo-sa.mjs`` with the arguments given on the command line, writes a header with the prompt and a footer with the elapsed time around the returned text and stores everything under ``~/tmp/apps`` as a timestamped Markdown file.
+Usage: feloai PROMPT Examples: $ feloai 'write a python script that renames files' Runs as a script (``python feloai.py``) in the directory it should act on; the module can also be imported."""
 
 import datetime as dt
 import os

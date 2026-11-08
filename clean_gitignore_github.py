@@ -1,20 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Recursively scan the current directory and remove:
-  * .gitignore files
-  * .github directories
-...but ONLY when the folder containing them is NOT a git repository
-(i.e. it has no .git entry next to them).
-
-The user's home directory is exempt for .gitignore (~/.gitignore is preserved,
-since it's commonly used as a global gitignore).
-
+"""Recursively scan the current directory and remove: * .gitignore files * .github directories ...but ONLY when the folder containing them is NOT a git repository (i.e.
+it has no .git entry next to them).
+The user's home directory is exempt for .gitignore (~/.gitignore is preserved, since it's commonly used as a global gitignore).
 Prints the total space freed at the end.
-
-Usage:
-    python clean_gitignore_and_github.py            # delete
-    python clean_gitignore_and_github.py --dry-run  # preview only
-"""
+Usage: python clean_gitignore_and_github.py # delete python clean_gitignore_and_github.py --dry-run # preview only"""
 
 from __future__ import annotations
 import argparse

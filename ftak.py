@@ -1,17 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """List functions and classes that contain nothing but a docstring.
-
-Parses every ``.py`` file below the current directory and prints ``file:line: kind name`` for each definition
-whose body is a single string literal, i.e. a placeholder that was never implemented.
-
-Usage: ftak
-
-Examples:
-    $ ftak
-
-Runs as a script (``python ftak.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Parses every ``.py`` file below the current directory and prints ``file:line: kind name`` for each definition whose body is a single string literal, i.e.
+a placeholder that was never implemented.
+Usage: ftak Examples: $ ftak Runs as a script (``python ftak.py``) in the directory it should act on; the module can also be imported."""
 
 import ast
 from pathlib import Path

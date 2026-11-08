@@ -1,50 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Python and Rust project scaffolding and packaging toolkit.
-
-Subcommands: ``init`` scaffolds a project (setuptools, hatchling or the typer/click CLI
-variants) with the README, ``.gitignore``, tests and metadata, ``make-setup`` generates a ``setup.py`` from a
-directory, a wheel or a config, ``cargo-toml`` turns a ``Cargo.lock`` into a ``Cargo.toml``, ``dev`` bootstraps the
-development environment and the pre-commit hooks, ``new-script`` emits a script template.
-
-Usage: pydevtools {init,make-setup,cargo-toml,dev,new-script} [options]
-
-Positional arguments:
-    name
-        Project / package directory name.
-    path
-        Target path or wheel.
-
-Subcommands:
-    init
-        Scaffold a new Python project.
-    make-setup
-        Generate setup.py from various sources.
-    cargo-toml
-        Generate Cargo.toml from Cargo.lock.
-    dev
-        Bootstrap dev environment.
-    new-script
-        Emit a Python script template.
-
-Options:
-    --style
-    --version
-    --description
-    --author
-    --email
-    --url
-    --requires-python
-    --simple-cli
-    --force
-    --from
-    ... plus 9 more; run ``pydevtools --help`` for the full list.
-
-Examples:
-    $ pydevtools init mylib --style hatchling
-    $ pydevtools cargo-toml -i Cargo.lock -o Cargo.toml
-
-Command-line script: run ``python pydevtools.py`` or the ``pydevtools`` command. The module is importable as well.
-"""
+Subcommands: ``init`` scaffolds a project (setuptools, hatchling or the typer/click CLI variants) with the README, ``.gitignore``, tests and metadata, ``make-setup`` generates a ``setup.py`` from a directory, a wheel or a config, ``cargo-toml`` turns a ``Cargo.lock`` into a ``Cargo.toml``, ``dev`` bootstraps the development environment and the pre-commit hooks, ``new-script`` emits a script template.
+Usage: pydevtools {init,make-setup,cargo-toml,dev,new-script} [options] Positional arguments: name Project / package directory name.
+path Target path or wheel.
+Subcommands: init Scaffold a new Python project.
+make-setup Generate setup.py from various sources.
+cargo-toml Generate Cargo.toml from Cargo.lock.
+dev Bootstrap dev environment.
+new-script Emit a Python script template.
+Options: --style --version --description --author --email --url --requires-python --simple-cli --force --from ...
+plus 9 more; run ``pydevtools --help`` for the full list.
+Examples: $ pydevtools init mylib --style hatchling $ pydevtools cargo-toml -i Cargo.lock -o Cargo.toml Command-line script: run ``python pydevtools.py`` or the ``pydevtools`` command.
+The module is importable as well."""
 
 import argparse
 import configparser

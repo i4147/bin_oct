@@ -1,63 +1,32 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """SQLite/JSON conversion toolkit.
-
-Subcommands: ``add-files`` stores every file of the directory (text truncated, binaries
-7z-compressed) in a table, ``sqlite-to-json`` dumps a database to one or per-table JSON files, ``md-to-sqlite``
-parses a ruff-style rule file, ``search-rule`` looks a rule up, ``mdb-to-json`` converts Access databases
-through pyodbc and ``sql-to-json`` turns INSERT dumps into NDJSON.
-
-Usage: dbtools
-{add-files,sqlite-to-json,md-to-sqlite,search-rule,mdb-to-json,sql-to-json} [options]
-
-Positional arguments:
-    database
-    code
-        Rule code (e.g. TRY400). Prompts if omitted.
-    inputs ...
-        Files or directories. Defaults to CWD recursively.
-
-Subcommands:
-    add-files
-        Add every file in the current directory to a SQLite table.
-    sqlite-to-json
-        Convert a SQLite database to JSON.
-    md-to-sqlite
-        Parse a ruff-style Markdown file into SQLite.
-    search-rule
-        Look up a Ruff rule from a SQLite database.
-    mdb-to-json
-        Convert .mdb/.accdb files to JSON (requires pyodbc).
-    sql-to-json
-        Convert SQL INSERT dumps to newline-delimited JSON.
-
-Options:
-    --db
-        Target SQLite database.
-    --table
-        Table name (default: current directory name).
-    --prompt
-        Interactively prompt for the table name (add7db).
-    --compress
-        Compress binary files with 7z (add7db behaviour).
-    --text-only
-        Force text mode (add2db behaviour).
-    --max-chars
-        Truncate text files to N characters.
-    --encodings
-        Comma-separated list of encodings to try, in order.
-    -o, --output
-        Output file (single mode) or directory (per-table mode).
-    -m, --mode
-        Output shape: one JSON file, or one JSON per table.
-    --indent
-        JSON indentation.
-    ... plus 12 more; run ``dbtools --help`` for the full list.
-
-Examples:
-    $ dbtools add-files --db files.db --table docs
-
-Command-line script: run ``python dbtools.py`` or the ``dbtools`` command. The module is importable as well.
-"""
+Subcommands: ``add-files`` stores every file of the directory (text truncated, binaries 7z-compressed) in a table, ``sqlite-to-json`` dumps a database to one or per-table JSON files, ``md-to-sqlite`` parses a ruff-style rule file, ``search-rule`` looks a rule up, ``mdb-to-json`` converts Access databases through pyodbc and ``sql-to-json`` turns INSERT dumps into NDJSON.
+Usage: dbtools {add-files,sqlite-to-json,md-to-sqlite,search-rule,mdb-to-json,sql-to-json} [options] Positional arguments: database code Rule code (e.g.
+TRY400).
+Prompts if omitted.
+inputs ...
+Files or directories.
+Defaults to CWD recursively.
+Subcommands: add-files Add every file in the current directory to a SQLite table.
+sqlite-to-json Convert a SQLite database to JSON.
+md-to-sqlite Parse a ruff-style Markdown file into SQLite.
+search-rule Look up a Ruff rule from a SQLite database.
+mdb-to-json Convert .mdb/.accdb files to JSON (requires pyodbc).
+sql-to-json Convert SQL INSERT dumps to newline-delimited JSON.
+Options: --db Target SQLite database.
+--table Table name (default: current directory name).
+--prompt Interactively prompt for the table name (add7db).
+--compress Compress binary files with 7z (add7db behaviour).
+--text-only Force text mode (add2db behaviour).
+--max-chars Truncate text files to N characters.
+--encodings Comma-separated list of encodings to try, in order.
+-o, --output Output file (single mode) or directory (per-table mode).
+-m, --mode Output shape: one JSON file, or one JSON per table.
+--indent JSON indentation.
+...
+plus 12 more; run ``dbtools --help`` for the full list.
+Examples: $ dbtools add-files --db files.db --table docs Command-line script: run ``python dbtools.py`` or the ``dbtools`` command.
+The module is importable as well."""
 
 import argparse
 import base64

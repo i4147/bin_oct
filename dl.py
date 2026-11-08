@@ -1,61 +1,46 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Unified downloader with wget, check and size subcommands.
-
-Subcommands: ``wget`` downloads the URLs of a list (or the one given) with urllib, requests
-or pycurl, ``check`` tests whether the links are alive and ``size`` prints the remote sizes without
-downloading; ``--download-small`` fetches the files under the size limit, ``--filter-ext`` restricts the extension and
-``--update-file`` rewrites the list with only the failed URLs.
-
-Usage: dl {wget,check,size} [options] [URL|URLS_FILE]
-
-Positional arguments:
-    url
-    input
-        URL or file of URLs
-    output
-    sha256
+"""
+Unified downloader with wget, check and size subcommands.
 
 Subcommands:
-    wget
-        Single-URL download with progress (pywget.py).
-    check
-        Check remote size, optionally download (download_checker.py).
-    size
-        Show remote size (dsize.py / dsized.py).
-    batch
-        Batch download URLs from a file (cget / pycurl_downloader / url_downloader /
-        rget).
-    threaded
-        Multi-chunk threaded downloader (ghost_downloader.py).
-    chunked
-        Resumable chunked downloader with SHA-256 (gget.py).
+``wget`` downloads the URLs of a list
+(or the one given) with urllib,requests or pycurl,
+``check`` tests whether the links are alive and
+``size`` prints the remote sizes without downloading;
+``--download-small`` fetches the files under the size limit,
+``--filter-ext`` restricts the extension and
+``--update-file`` rewrites the list with only the failed URLs.
+
+Usage:
+  dl {wget,check,size} [options] [URL|URLS_FILE]
+
+Positional arguments:
+url input URL or file of URLs output sha256
+
+Subcommands:
+wget Single-URL download with progress
+check Check remote size, optionally download
+size Show remote size
+batch Batch download URLs from a file
+threaded Multi-chunk threaded downloader
+chunked Resumable chunked downloader with SHA-256
 
 Options:
-    -o, --output
-        Output file or directory
-    --timeout
-    --resume
-        Resume partial file if present
-    -q, --quiet
-    -d, --download
-        Download after checking
-    --download-small
-        Prompt+download files ≤ --max-size
-    --download
-        Directory for downloaded small files
-    --max-size
-        Threshold for --download-small (e.g. 1M, 512K)
-    --urls
-        URL list file
-    --dir
-        Destination directory
-    ... plus 7 more; run ``dl --help`` for the full list.
+  -o, --output Output file or directory
+  --timeout
+  --resume Resume partial file if present
+  -q, --quiet
+  -d, --download Download after checking
+  --download-small Prompt+download files ≤ --max-size
+  --download Directory for downloaded small files
+  --max-size Threshold for --download-small (e.g. 1M, 512K) --urls URL list file --dir Destination directory ...
+plus 7 more; run ``dl --help`` for the full list.
 
 Examples:
-    $ dl size urls.txt
-    $ dl wget --download-small urls.txt
-
-Command-line script: run ``python dl.py`` or the ``dl`` command. The module is importable as well.
+  $ dl size urls.txt
+  $ dl wget --download-small urls.txt
+  Command-line script:
+  run ``python dl.py`` or the ``dl`` command.
 """
 
 import argparse
@@ -77,43 +62,16 @@ from dh import MAX_WORKERS
 from loguru import logger
 import requests
 from tqdm import tqdm
+from dh import fsz
 
+import pycurl
 
-try:
-    import pycurl
+_HAS_PYCURL = True
+from loguru import logger
 
-    _HAS_PYCURL = True
-except ImportError:
-    pycurl = None
-    _HAS_PYCURL = False
-try:
-    from loguru import logger as _logger
-except ImportError:
-
-    class _LoggerShim:
-        def __getattr__(self, _):
-            def _p(msg, *a, **k):
-                print(msg, *a)
-
-            return _p
-
-    _logger = _LoggerShim()
-logger = _logger
 _DEFAULT_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
-
-
-def human_size(num: float) -> str:
-    try:
-        num = float(num)
-    except (TypeError, ValueError):
-        return str(num)
-    for unit in ("B", "KB", "MB", "GB", "TB"):
-        if abs(num) < 1024.0:
-            return f"{num:.2f} {unit}"
-        num /= 1024.0
-    return f"{num:.2f} PB"
 
 
 def read_url_list(path: Path) -> list[str]:
@@ -354,7 +312,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     if size is None:
         size = remote_size_urllib(url, timeout=args.timeout)
     if size:
-        print(f"Remote file size: {human_size(size)}")
+        print(f"Remote file size: {fsz(size)}")
     else:
         print("Remote file size: Unknown (server didn't provide Content-Length)")
     if not args.download:
@@ -383,10 +341,10 @@ def cmd_check(args: argparse.Namespace) -> int:
             pct = downloaded / size * 100
             eta = (size - downloaded) / speed if speed > 0 else 0
             eta_s = time.strftime("%H:%M:%S", time.gmtime(eta))
-            info = f"{human_size(downloaded)}/{human_size(size)}"
+            info = f"{fsz(downloaded)}/{fsz(size)}"
         else:
-            pct, eta_s, info = 0.0, "Unknown", f"{human_size(downloaded)}/Unknown"
-        sys.stdout.write(f"\r[{pct:5.1f}%] {info} | Speed: {human_size(speed)}/s | ETA: {eta_s}   ")
+            pct, eta_s, info = 0.0, "Unknown", f"{fsz(downloaded)}/Unknown"
+        sys.stdout.write(f"\r[{pct:5.1f}%] {info} | Speed: {fsz(speed)}/s | ETA: {eta_s}   ")
         sys.stdout.flush()
 
     c = pycurl.Curl()
@@ -414,7 +372,7 @@ def _process_size_url(url: str, download_small: bool, dest_dir: Path, max_size: 
     size = remote_size_urllib(url, timeout=timeout)
     if size is None:
         return f"{url}\tUnknown"
-    label = human_size(size)
+    label = fsz(size)
     print(f"URL: {url}  Size: {label}")
     if download_small and size <= max_size:
         try:
@@ -433,7 +391,7 @@ def _process_size_url(url: str, download_small: bool, dest_dir: Path, max_size: 
         else:
             print("Download skipped.")
     elif download_small:
-        print(f"File too large (> {human_size(max_size)}); skipping download.")
+        print(f"File too large (> {fsz(max_size)}); skipping download.")
     return f"{url}\t{label}"
 
 
@@ -643,7 +601,7 @@ def cmd_threaded(args: argparse.Namespace) -> int:
     if total == 0 or accept_ranges != "bytes":
         use_chunks = 1
     print(f"Target: {out}")
-    print(f"Size  : {human_size(total) if total else 'Unknown'}")
+    print(f"Size  : {fsz(total) if total else 'Unknown'}")
     print(f"Slices: {use_chunks}")
     if use_chunks == 1:
         with (

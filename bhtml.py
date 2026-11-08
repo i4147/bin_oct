@@ -1,26 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Beautify HTML files in parallel with js-beautify.
-
-Runs ``html-beautify`` on the ``.html``/``.htm``/``.xhtml`` files (plus the suffixes passed with ``--ext``) through a
-temporary file and eight workers, logging only the warnings with ``--quiet``.
-
-Usage: bhtml [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to process
-
-Options:
-    --ext
-        Extra file suffix to include (repeatable), e.g. --ext .vue
-    -q, --quiet
-        Only log warnings and errors.
-
-Examples:
-    $ bhtml --ext .vue templates/
-
-Command-line script: run ``python bhtml.py`` or the ``bhtml`` command. The module is importable as well.
-"""
+Runs ``html-beautify`` on the ``.html``/``.htm``/``.xhtml`` files (plus the suffixes passed with ``--ext``) through a temporary file and eight workers, logging only the warnings with ``--quiet``.
+Usage: bhtml [options] [paths ...] Positional arguments: paths ...
+Files or directories to process Options: --ext Extra file suffix to include (repeatable), e.g.
+--ext .vue -q, --quiet Only log warnings and errors.
+Examples: $ bhtml --ext .vue templates/ Command-line script: run ``python bhtml.py`` or the ``bhtml`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed

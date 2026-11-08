@@ -1,19 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Delete the lines containing a string from many text files.
-
-Removes every line that contains the given substring (the last argument; the preceding
-arguments are the files, defaulting to all non-binary files below the current directory)
-and reports the lines removed per file plus the space freed. Work is spread over a
-process pool.
-
-Usage: remove_lines_containing_str_from_files [files ...] STRING
-
-Examples:
-    $ remove_lines_containing_str_from_files src/ 'DEBUG'
-
-Runs as a script (``python remove_lines_containing_str_from_files.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Removes every line that contains the given substring (the last argument; the preceding arguments are the files, defaulting to all non-binary files below the current directory) and reports the lines removed per file plus the space freed.
+Work is spread over a process pool.
+Usage: remove_lines_containing_str_from_files [files ...] STRING Examples: $ remove_lines_containing_str_from_files src/ 'DEBUG' Runs as a script (``python remove_lines_containing_str_from_files.py``) in the directory it should act on; the module can also be imported."""
 
 from multiprocessing import Pool
 from pathlib import Path

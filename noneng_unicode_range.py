@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Flag files that contain Arabic/Persian, CJK, kana or Hangul characters.
-
-Checks every text file (binaries are skipped with ``binaryornot``) against the Unicode ranges of the
-major non-Latin scripts and reports the files with the detected scripts plus a short
-sample, optionally as JSON.
-
-Usage: noneng_unicode_range
-
-Examples:
-    $ noneng_unicode_range
-
-Runs as a script (``python noneng_unicode_range.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Checks every text file (binaries are skipped with ``binaryornot``) against the Unicode ranges of the major non-Latin scripts and reports the files with the detected scripts plus a short sample, optionally as JSON.
+Usage: noneng_unicode_range Examples: $ noneng_unicode_range Runs as a script (``python noneng_unicode_range.py``) in the directory it should act on; the module can also be imported."""
 
 import json
 import os

@@ -1,46 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Generate a ``requirements.txt`` from a project tree.
-
-The ``scan`` subcommand collects the imports (ast or regex, notebooks and archives included),
-resolves them against the stdlib, the local modules and a package mapping and writes the
-requirements; ``metadata`` extracts the ``Requires-Dist`` lines of the installed ``METADATA`` files. A file cache and a
-pip package list keep the runs fast.
-
-Usage: merge_reqs {scan,metadata} [-d DIR] [-o requirements.txt] [--pip-file PATH]
-
-Subcommands:
-    scan
-        Scan a tree for imports and write requirements.
-    metadata
-        Extract Requires-Dist lines from METADATA files.
-
-Options:
-    --ignore
-        Directories to skip (default: common VCS/build/cache dirs)
-    -v, --verbose
-        Verbose logging
-    -d, --directory
-        Root directory (default: .)
-    -o, --output
-        Output file (default: requirements.txt)
-    -p, --pip-file
-    -m, --mapping
-        Module=package mapping file (optional)
-    --stdlib-file
-        Extra stdlib names file (optional)
-    --stdlib-source
-        Where to get stdlib list (default: both)
-    --extractor
-        Import extraction strategy (default: ast)
-    --include-archives
-        Scan .zip/.whl/.tar.* archives (default: on)
-    ... plus 14 more; run ``merge_reqs --help`` for the full list.
-
-Examples:
-    $ merge_reqs scan -d . -o requirements.txt
-
-Command-line script: run ``python merge_reqs.py`` or the ``merge_reqs`` command. The module is importable as well.
-"""
+The ``scan`` subcommand collects the imports (ast or regex, notebooks and archives included), resolves them against the stdlib, the local modules and a package mapping and writes the requirements; ``metadata`` extracts the ``Requires-Dist`` lines of the installed ``METADATA`` files.
+A file cache and a pip package list keep the runs fast.
+Usage: merge_reqs {scan,metadata} [-d DIR] [-o requirements.txt] [--pip-file PATH] Subcommands: scan Scan a tree for imports and write requirements.
+metadata Extract Requires-Dist lines from METADATA files.
+Options: --ignore Directories to skip (default: common VCS/build/cache dirs) -v, --verbose Verbose logging -d, --directory Root directory (default: .) -o, --output Output file (default: requirements.txt) -p, --pip-file -m, --mapping Module=package mapping file (optional) --stdlib-file Extra stdlib names file (optional) --stdlib-source Where to get stdlib list (default: both) --extractor Import extraction strategy (default: ast) --include-archives Scan .zip/.whl/.tar.* archives (default: on) ...
+plus 14 more; run ``merge_reqs --help`` for the full list.
+Examples: $ merge_reqs scan -d .
+-o requirements.txt Command-line script: run ``python merge_reqs.py`` or the ``merge_reqs`` command.
+The module is importable as well."""
 
 import argparse
 import ast

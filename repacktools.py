@@ -1,46 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Repack the installed packages into wheels, and the unpacked wheels back into ``.whl`` files.
-
-The ``repack`` subcommand rebuilds the wheels from a site-packages directory (from ``RECORD`` or from
-the plain directories), computing the hash lines and the platform/ABI tags, and ``pack-dirs`` zips
-the pre-unpacked wheel folders back, with ``--packages``/``--all`` and ``--source``/``--site-packages`` selection.
-
-Usage: repacktools {repack,pack-dirs} [options]
-
-Subcommands:
-    repack
-        Repack installed packages from a site-packages dir into wheels
-    pack-dirs
-        Pack pre-unpacked wheel directories into .whl files
-
-Options:
-    -v, --verbose
-        Verbose output
-    --source
-        Where to look for site-packages (default: current)
-    --site-packages
-        Explicit site-packages directory (overrides --source)
-    --output
-        Output directory for wheels (default: ~/tmp/whl)
-    --packages
-        Repack only these packages (by name)
-    --all
-        Repack every package (explicit; default is implicit if --packages omitted)
-    --method
-        Simple = copy dirs; record = rebuild from RECORD (default: simple)
-    --on-missing
-        Behaviour for missing files in RECORD mode (default: warn)
-    --missing-dir
-        Where to stash packages that fail (--on-missing copy)
-    --builder
-        Low-level wheel writer (default: zip)
-    ... plus 7 more; run ``repacktools --help`` for the full list.
-
-Examples:
-    $ repacktools repack --site-packages ~/site-pkgs --output ~/tmp/whl --all
-
-Command-line script: run ``python repacktools.py`` or the ``repacktools`` command. The module is importable as well.
-"""
+The ``repack`` subcommand rebuilds the wheels from a site-packages directory (from ``RECORD`` or from the plain directories), computing the hash lines and the platform/ABI tags, and ``pack-dirs`` zips the pre-unpacked wheel folders back, with ``--packages``/``--all`` and ``--source``/``--site-packages`` selection.
+Usage: repacktools {repack,pack-dirs} [options] Subcommands: repack Repack installed packages from a site-packages dir into wheels pack-dirs Pack pre-unpacked wheel directories into .whl files Options: -v, --verbose Verbose output --source Where to look for site-packages (default: current) --site-packages Explicit site-packages directory (overrides --source) --output Output directory for wheels (default: ~/tmp/whl) --packages Repack only these packages (by name) --all Repack every package (explicit; default is implicit if --packages omitted) --method Simple = copy dirs; record = rebuild from RECORD (default: simple) --on-missing Behaviour for missing files in RECORD mode (default: warn) --missing-dir Where to stash packages that fail (--on-missing copy) --builder Low-level wheel writer (default: zip) ...
+plus 7 more; run ``repacktools --help`` for the full list.
+Examples: $ repacktools repack --site-packages ~/site-pkgs --output ~/tmp/whl --all Command-line script: run ``python repacktools.py`` or the ``repacktools`` command.
+The module is importable as well."""
 
 import argparse
 import asyncio

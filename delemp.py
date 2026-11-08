@@ -1,29 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Remove the blank lines from text files recursively and in parallel.
-
-Deletes the empty lines (``-s`` also the whitespace-only ones) from the given paths, skips
-the binaries with a short report, prints per-file and summary statistics and supports
-``--no-color``.
-
-Usage: delemp [-s] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files and/or directories to process (default: current directory)
-
-Options:
-    -s, --space
-        Also remove lines containing only whitespace
-    --show-binary
-        Show all skipped binary files instead of just first 5
-    --no-color
-        Disable ANSI color codes
-
-Examples:
-    $ delemp -s docs/
-
-Command-line script: run ``python delemp.py`` or the ``delemp`` command. The module is importable as well.
-"""
+Deletes the empty lines (``-s`` also the whitespace-only ones) from the given paths, skips the binaries with a short report, prints per-file and summary statistics and supports ``--no-color``.
+Usage: delemp [-s] [paths ...] Positional arguments: paths ...
+Files and/or directories to process (default: current directory) Options: -s, --space Also remove lines containing only whitespace --show-binary Show all skipped binary files instead of just first 5 --no-color Disable ANSI color codes Examples: $ delemp -s docs/ Command-line script: run ``python delemp.py`` or the ``delemp`` command.
+The module is importable as well."""
 
 import argparse
 from dataclasses import dataclass, field

@@ -1,25 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Deobfuscate a bash script whose commands are assembled from variables and ``eval``.
-
-Parses the string assignments in the file, substitutes the variables into the ``eval``
-string, removes the escape noise and prints (or writes with ``-o``) the readable script.
+Parses the string assignments in the file, substitutes the variables into the ``eval`` string, removes the escape noise and prints (or writes with ``-o``) the readable script.
 Variables that cannot be resolved are reported instead of guessed.
-
-Usage: deob OBFUSCATED.sh [-o OUTPUT]
-
-Positional arguments:
-    input
-        Obfuscated bash file
-
-Options:
-    -o, --output
-        Output path (optional)
-
-Examples:
-    $ deob payload.sh -o cleaned.sh
-
-Command-line script: run ``python deob.py`` or the ``deob`` command. The module is importable as well.
-"""
+Usage: deob OBFUSCATED.sh [-o OUTPUT] Positional arguments: input Obfuscated bash file Options: -o, --output Output path (optional) Examples: $ deob payload.sh -o cleaned.sh Command-line script: run ``python deob.py`` or the ``deob`` command.
+The module is importable as well."""
 
 import argparse
 from pathlib import Path

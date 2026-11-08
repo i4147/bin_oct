@@ -1,20 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Check the Python files for comments and docstrings that were not stripped.
-
-Parses each file, counts the remaining comment lines and docstrings and reports the
-files that still have them, working through a directory in a pool.
-
-Usage: hasdoc [paths ...]
-
-Positional arguments:
-    inputs ...
-        Files or directories to check (defaults to '.' recursively)
-
-Examples:
-    $ hasdoc src/
-
-Command-line script: run ``python hasdoc.py`` or the ``hasdoc`` command. The module is importable as well.
-"""
+Parses each file, counts the remaining comment lines and docstrings and reports the files that still have them, working through a directory in a pool.
+Usage: hasdoc [paths ...] Positional arguments: inputs ...
+Files or directories to check (defaults to '.' recursively) Examples: $ hasdoc src/ Command-line script: run ``python hasdoc.py`` or the ``hasdoc`` command.
+The module is importable as well."""
 
 import argparse
 import ast

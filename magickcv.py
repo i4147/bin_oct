@@ -1,35 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Run ImageMagick-style edit operations on images with Pillow and OpenCV.
-
-Parses the classic command line (``-resize``, ``-crop``, ``-rotate``, ``-flip``/``-flop``, ``-blur``, ``-sharpen``, ``-modulate``, ``-grayscale``, ``-negate``, ``-sepia-tone``,
-``-threshold``, ``-alpha``, ``-gravity``, ``-strip`` ...) and applies the operations to the input image(s), writing
-the result to the output path. ``-identify`` prints the image properties instead of editing.
-
-Usage: magickcv INPUT OUTPUT [operations ...]
-
-Positional arguments:
-    inputs ...
-    output
-    +append
-
-Options:
-    -identify, --identify
-    -resize
-    -thumbnail
-    -sample
-    -scale
-    -crop
-    -extent
-    -rotate
-    -flip
-    -flop
-    ... plus 51 more; run ``magickcv --help`` for the full list.
-
-Examples:
-    $ magickcv in.jpg out.jpg -resize 800x600 -grayscale -strip
-
-Command-line script: run ``python magickcv.py`` or the ``magickcv`` command. The module is importable as well.
-"""
+Parses the classic command line (``-resize``, ``-crop``, ``-rotate``, ``-flip``/``-flop``, ``-blur``, ``-sharpen``, ``-modulate``, ``-grayscale``, ``-negate``, ``-sepia-tone``, ``-threshold``, ``-alpha``, ``-gravity``, ``-strip`` ...) and applies the operations to the input image(s), writing the result to the output path.
+``-identify`` prints the image properties instead of editing.
+Usage: magickcv INPUT OUTPUT [operations ...] Positional arguments: inputs ...
+output +append Options: -identify, --identify -resize -thumbnail -sample -scale -crop -extent -rotate -flip -flop ...
+plus 51 more; run ``magickcv --help`` for the full list.
+Examples: $ magickcv in.jpg out.jpg -resize 800x600 -grayscale -strip Command-line script: run ``python magickcv.py`` or the ``magickcv`` command.
+The module is importable as well."""
 
 import argparse
 from pathlib import Path

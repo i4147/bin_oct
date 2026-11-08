@@ -1,60 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Unified archive extractor, fixer and integrity checker.
-
-Subcommands: ``extract`` unpacks 7z/zip/rar/tar and the stream-compressed formats with a Python
-backend or the external tools, ``fix`` repairs the directory and file name collisions of a
-bad extraction, ``whl`` unpacks the wheels into version-stripped folders and ``check`` verifies
-the archives without extracting them. ``--organize``, ``--keep`` and ``--dry-run`` control the layout and the
-cleanup.
-
-Usage: archive_tools {extract,fix,whl,check} [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to process (default: cwd).
-    root
-        Root directory to scan (default: cwd).
-
-Subcommands:
-    extract
-        Extract archives.
-    fix
-        Fix mis-extracted dir/file name collisions.
-    whl
-        Extract .whl wheels into version-stripped dirs.
-    check
-        Integrity-check archives without extracting.
-
-Options:
-    -r, --recursive
-        Recurse into directories.
-    -e, --engine
-        Extraction backend (default: auto = try python, fall back to CLI tools).
-    -k, --keep
-        Keep the original archive after extraction.
-    -n, --dry-run
-        Only print what would be done.
-    --organize
-        Flat = extract next to the archive; stem = subdir named after archive stem;
-        versioned = stem with version stripped (whl-style).
-    --single-file-subdir
-        Ar_extract.py behaviour: only create a subdir when the archive's contents share
-        a single top-level directory.
-    --subdir-truncate
-        Truncate subdir names to first N characters (subdir.py uses 8).
-    --formats
-        Comma-separated extensions to process (e.g. .tar.gz,.zip).
-    --integrity-check
-        Validate each archive before extracting.
-    -o, --output-dir
-        Force a single output directory (overrides --organize).
-    ... plus 3 more; run ``archive_tools --help`` for the full list.
-
-Examples:
-    $ archive_tools extract -r downloads/
-
-Command-line script: run ``python archive_tools.py`` or the ``archive_tools`` command. The module is importable as well.
-"""
+Subcommands: ``extract`` unpacks 7z/zip/rar/tar and the stream-compressed formats with a Python backend or the external tools, ``fix`` repairs the directory and file name collisions of a bad extraction, ``whl`` unpacks the wheels into version-stripped folders and ``check`` verifies the archives without extracting them.
+``--organize``, ``--keep`` and ``--dry-run`` control the layout and the cleanup.
+Usage: archive_tools {extract,fix,whl,check} [options] [paths ...] Positional arguments: paths ...
+Files or directories to process (default: cwd).
+root Root directory to scan (default: cwd).
+Subcommands: extract Extract archives.
+fix Fix mis-extracted dir/file name collisions.
+whl Extract .whl wheels into version-stripped dirs.
+check Integrity-check archives without extracting.
+Options: -r, --recursive Recurse into directories.
+-e, --engine Extraction backend (default: auto = try python, fall back to CLI tools).
+-k, --keep Keep the original archive after extraction.
+-n, --dry-run Only print what would be done.
+--organize Flat = extract next to the archive; stem = subdir named after archive stem; versioned = stem with version stripped (whl-style).
+--single-file-subdir Ar_extract.py behaviour: only create a subdir when the archive's contents share a single top-level directory.
+--subdir-truncate Truncate subdir names to first N characters (subdir.py uses 8).
+--formats Comma-separated extensions to process (e.g.
+.tar.gz,.zip).
+--integrity-check Validate each archive before extracting.
+-o, --output-dir Force a single output directory (overrides --organize).
+...
+plus 3 more; run ``archive_tools --help`` for the full list.
+Examples: $ archive_tools extract -r downloads/ Command-line script: run ``python archive_tools.py`` or the ``archive_tools`` command.
+The module is importable as well."""
 
 import argparse
 import bz2

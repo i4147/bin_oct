@@ -1,31 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Report how the local scripts use a Python package.
-
-Counts the imports and the attribute calls of the package (``dh`` by default) across a
-directory of scripts, writes ``~/dh_usage.txt`` and the ``charts`` subcommand adds the matplotlib bar charts
-of the most used names.
-
-Usage: module_usage {report,charts} [--dir DIR] [--package dh] [--top-n N]
-
-Subcommands:
-    report
-        Text report only (original module_usage.py).
-    charts
-        Text report + matplotlib charts (original module_usage_with_charts.py).
-
-Options:
-    --dir
-    --output
-    --package
-    --chart-dir
-    --top-n
-    --style
-
-Examples:
-    $ module_usage charts --package dh --top-n 15
-
-Command-line script: run ``python module_usage.py`` or the ``module_usage`` command. The module is importable as well.
-"""
+Counts the imports and the attribute calls of the package (``dh`` by default) across a directory of scripts, writes ``~/dh_usage.txt`` and the ``charts`` subcommand adds the matplotlib bar charts of the most used names.
+Usage: module_usage {report,charts} [--dir DIR] [--package dh] [--top-n N] Subcommands: report Text report only (original module_usage.py).
+charts Text report + matplotlib charts (original module_usage_with_charts.py).
+Options: --dir --output --package --chart-dir --top-n --style Examples: $ module_usage charts --package dh --top-n 15 Command-line script: run ``python module_usage.py`` or the ``module_usage`` command.
+The module is importable as well."""
 
 import argparse
 import ast

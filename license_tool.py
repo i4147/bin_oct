@@ -1,26 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """License-file utilities: find, collect, truncate, strip license text.
-
-Analysis / deduplication
-------------------------
-- ``licr.py`` finds ``license*`` files and immediately truncates them
-  to empty (via private ``dh`` lookups) -> ``find`` (truncate only
-  with ``--truncate --yes``) and ``collectlic.py`` (concatenate every
-  ``*license*`` file into one bundle, hardcoded ``/sdcard/all2.txt``)
-  -> ``collect -o all2.txt``.
-- ``rmlic.py`` removes license *blocks* (blank-line-separated patterns
-  read from ``/sdcard/lic``) from every text file -> ``strip-text``;
-  it now reports first and needs ``--apply`` to rewrite files.
-
+Analysis / deduplication ------------------------ - ``licr.py`` finds ``license*`` files and immediately truncates them to empty (via private ``dh`` lookups) -> ``find`` (truncate only with ``--truncate --yes``) and ``collectlic.py`` (concatenate every ``*license*`` file into one bundle, hardcoded ``/sdcard/all2.txt``) -> ``collect -o all2.txt``.
+- ``rmlic.py`` removes license *blocks* (blank-line-separated patterns read from ``/sdcard/lic``) from every text file -> ``strip-text``; it now reports first and needs ``--apply`` to rewrite files.
 All destructive modes are opt-in; everything lists what it would do.
-
-Examples
---------
-  python3 license_tool.py find ~/projects
-  python3 license_tool.py find . --truncate --yes
-  python3 license_tool.py collect . -o all_licenses.txt
-  python3 license_tool.py strip-text . --patterns ~/lic
-"""
+Examples -------- python3 license_tool.py find ~/projects python3 license_tool.py find .
+--truncate --yes python3 license_tool.py collect .
+-o all_licenses.txt python3 license_tool.py strip-text .
+--patterns ~/lic"""
 
 import argparse
 from collections.abc import Sequence

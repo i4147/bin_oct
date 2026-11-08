@@ -1,28 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Size-based file listings: largest files, thresholds, same-size groups.
-
-Analysis / deduplication
-------------------------
-- ``top11.py`` (N largest, default 11, via ``dh``) and ``top12.py``
-  (heap-based top 10 despite the name) -> ``largest -n N`` (heapq,
-  works on huge trees without sorting everything).
-- ``find_big_files.py`` (everything over MiB threshold; it referenced
-  an undefined ``should_skip``) -> ``above --mb 1``.
+Analysis / deduplication ------------------------ - ``top11.py`` (N largest, default 11, via ``dh``) and ``top12.py`` (heap-based top 10 despite the name) -> ``largest -n N`` (heapq, works on huge trees without sorting everything).
+- ``find_big_files.py`` (everything over MiB threshold; it referenced an undefined ``should_skip``) -> ``above --mb 1``.
 - ``similar_size_files.py`` (groups sharing a byte size) -> ``similar``.
-- ``ssize.py`` (top-level entries by size, ANSI colors, grand total)
-  and ``sortbysize.py`` (same thing written to ``<dirname>.json``)
-  -> ``entries`` with optional ``--json FILE``.
-- ``outcast.py`` (copy the single largest file out of a hardcoded
-  Telegram cache dir) -> ``copy-largest SRC` with the original paths
-  as defaults.
-
-Examples
---------
-  python3 file_size_tool.py largest ~ -n 20
-  python3 file_size_tool.py above . --mb 50
-  python3 file_size_tool.py similar .
-  python3 file_size_tool.py entries . --json sizes.json
-"""
+- ``ssize.py`` (top-level entries by size, ANSI colors, grand total) and ``sortbysize.py`` (same thing written to ``<dirname>.json``) -> ``entries`` with optional ``--json FILE``.
+- ``outcast.py`` (copy the single largest file out of a hardcoded Telegram cache dir) -> ``copy-largest SRC` with the original paths as defaults.
+Examples -------- python3 file_size_tool.py largest ~ -n 20 python3 file_size_tool.py above .
+--mb 50 python3 file_size_tool.py similar .
+python3 file_size_tool.py entries .
+--json sizes.json"""
 
 import argparse
 from collections import defaultdict

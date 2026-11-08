@@ -1,28 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Build the C, C++ and Cython sources of a directory in parallel.
-
-Compiles each ``.c``/``.cpp``/``.cc``/``.cxx`` file with clang/clang++ (``--cflags`` passes extra flags, ``--strip``
-strips the binaries), the ``cythonize`` subcommand builds the ``.pyx`` modules and the jobs run in a
-thread pool with a 60-second timeout.
-
-Usage: c_build_tool [build] [--strip] [--cflags FLAGS] [paths ...] | c_build_tool
-cythonize
-
-Positional arguments:
-    paths ...
-        Files or dirs (default: current dir)
-
-Options:
-    --strip
-        Strip each binary after compiling
-    --cflags
-        Extra compiler flags, e.g. --cflags="-O2 -Wall"
-
-Examples:
-    $ c_build_tool --cflags '-O2 -Wall' src/
-
-Command-line script: run ``python c_build_tool.py`` or the ``c_build_tool`` command. The module is importable as well.
-"""
+Compiles each ``.c``/``.cpp``/``.cc``/``.cxx`` file with clang/clang++ (``--cflags`` passes extra flags, ``--strip`` strips the binaries), the ``cythonize`` subcommand builds the ``.pyx`` modules and the jobs run in a thread pool with a 60-second timeout.
+Usage: c_build_tool [build] [--strip] [--cflags FLAGS] [paths ...] | c_build_tool cythonize Positional arguments: paths ...
+Files or dirs (default: current dir) Options: --strip Strip each binary after compiling --cflags Extra compiler flags, e.g.
+--cflags="-O2 -Wall" Examples: $ c_build_tool --cflags '-O2 -Wall' src/ Command-line script: run ``python c_build_tool.py`` or the ``c_build_tool`` command.
+The module is importable as well."""
 
 import argparse
 from collections.abc import Sequence

@@ -1,20 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Check and fix the tag balance of HTML files.
-
-Walks the markup with the stdlib parser, reports the missing, unclosed and unexpected
-closing tags and with ``-a`` appends the missing ones and removes the stray ones in place.
-
-Usage: html_tag_balancer [-a] [paths ...]
-
-Options:
-    -a, --autofix
-        Fix files in-place (append missing closing tags, remove unexpected ones)
-
-Examples:
-    $ html_tag_balancer -a pages/
-
-Command-line script: run ``python html_tag_balancer.py`` or the ``html_tag_balancer`` command. The module is importable as well.
-"""
+Walks the markup with the stdlib parser, reports the missing, unclosed and unexpected closing tags and with ``-a`` appends the missing ones and removes the stray ones in place.
+Usage: html_tag_balancer [-a] [paths ...] Options: -a, --autofix Fix files in-place (append missing closing tags, remove unexpected ones) Examples: $ html_tag_balancer -a pages/ Command-line script: run ``python html_tag_balancer.py`` or the ``html_tag_balancer`` command.
+The module is importable as well."""
 
 import argparse
 import contextlib

@@ -1,30 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Scan a directory tree for filesystem problems.
-
-Individual checks (also selectable one by one, ``--all`` runs everything) report duplicate
-files, badly named entries, non-UTF-8 names, broken symlinks, empty directories, bad
-UID/GID ownership, non-stripped binaries, shadowed ``PATH`` executables, temporary/junk
-files, world-writable items and names with redundant whitespace. ``--summary`` adds a one-line
-result table; the docstring doubles as the ``--help`` text.
-
-Usage: pyfslint [options] [PATH ...]
-
-Positional arguments:
-    paths ...
-        Directory/directories to scan (default: current directory)
-
-Options:
-    --all, -a
-        Run all checks (default when no check flag is given)
-    --summary, -s
-        Print a one-line summary table at the end
-
-Examples:
-    $ pyfslint --all --summary ~/bin
-    $ pyfslint --findbl --findem .
-
-Command-line script: run ``python pyfslint.py`` or the ``pyfslint`` command. The module is importable as well.
-"""
+Individual checks (also selectable one by one, ``--all`` runs everything) report duplicate files, badly named entries, non-UTF-8 names, broken symlinks, empty directories, bad UID/GID ownership, non-stripped binaries, shadowed ``PATH`` executables, temporary/junk files, world-writable items and names with redundant whitespace.
+``--summary`` adds a one-line result table; the docstring doubles as the ``--help`` text.
+Usage: pyfslint [options] [PATH ...] Positional arguments: paths ...
+Directory/directories to scan (default: current directory) Options: --all, -a Run all checks (default when no check flag is given) --summary, -s Print a one-line summary table at the end Examples: $ pyfslint --all --summary ~/bin $ pyfslint --findbl --findem .
+Command-line script: run ``python pyfslint.py`` or the ``pyfslint`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

@@ -1,35 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Optimise PNG files in place with optipng.
-
-Runs optipng (``-o`` level 7, ``--strip all``) on each PNG, validates the result and keeps it only when
-the new file is smaller; ``--dry-run``, ``-q``, extra optipng arguments and a timeout are supported,
-and the tree is walked with a process pool.
-
-Usage: opng [paths ...] [-o LEVEL] [--strip] [--dry-run]
-
-Positional arguments:
-    paths ...
-        Files or directories to process (default: current directory).
-
-Options:
-    -q, --quiet
-        Do not print optipng's own stdout/stderr; only summary lines.
-    --dry-run
-        Run and validate, but do not modify any files.
-    -o
-    --strip
-        Pass '-strip all' to optipng to remove ancillary chunks.
-    --optipng
-        Path to the optipng executable (default: search PATH).
-    --optipng-arg
-        Extra argument to pass to optipng; may be repeated.
-    --timeout
-
-Examples:
-    $ opng assets/ -o 7 --strip
-
-Command-line script: run ``python opng.py`` or the ``opng`` command. The module is importable as well.
-"""
+Runs optipng (``-o`` level 7, ``--strip all``) on each PNG, validates the result and keeps it only when the new file is smaller; ``--dry-run``, ``-q``, extra optipng arguments and a timeout are supported, and the tree is walked with a process pool.
+Usage: opng [paths ...] [-o LEVEL] [--strip] [--dry-run] Positional arguments: paths ...
+Files or directories to process (default: current directory).
+Options: -q, --quiet Do not print optipng's own stdout/stderr; only summary lines.
+--dry-run Run and validate, but do not modify any files.
+-o --strip Pass '-strip all' to optipng to remove ancillary chunks.
+--optipng Path to the optipng executable (default: search PATH).
+--optipng-arg Extra argument to pass to optipng; may be repeated.
+--timeout Examples: $ opng assets/ -o 7 --strip Command-line script: run ``python opng.py`` or the ``opng`` command.
+The module is importable as well."""
 
 import argparse
 import contextlib

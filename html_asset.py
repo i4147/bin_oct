@@ -1,26 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract inline CSS/JS from HTML files into external asset files.
-
-Analysis / deduplication
-------------------------
-- ``excss.py`` / ``exjs.py`` (BeautifulSoup, dump every ``<style>`` /
-  ``<script>`` body into randomly named files under ``css/`` / ``js/``,
-  HTML left untouched) -> ``extract --mode dump``.
-- ``htmlcleaner.py`` (stdlib parser, hash-named files under
-  ``assets/css|js``, rewrites the HTML to link them) ->
-  ``extract --mode rewrite`` (the new default: it is the only variant
-  that keeps pages working). Its global ``MIN_INLINE_SIZE`` hack is a
-  normal parameter now, and its regex-based replacement was replaced
-  by exact span splicing from parser positions, which cannot mismatch
-  duplicate blocks.
+Analysis / deduplication ------------------------ - ``excss.py`` / ``exjs.py`` (BeautifulSoup, dump every ``<style>`` / ``<script>`` body into randomly named files under ``css/`` / ``js/``, HTML left untouched) -> ``extract --mode dump``.
+- ``htmlcleaner.py`` (stdlib parser, hash-named files under ``assets/css|js``, rewrites the HTML to link them) -> ``extract --mode rewrite`` (the new default: it is the only variant that keeps pages working).
+Its global ``MIN_INLINE_SIZE`` hack is a normal parameter now, and its regex-based replacement was replaced by exact span splicing from parser positions, which cannot mismatch duplicate blocks.
 Everything is stdlib (``html.parser``); BeautifulSoup is not needed.
-
-Examples
---------
-  python3 html_asset_tool.py extract site/              # rewrite+assets
-  python3 html_asset_tool.py extract index.html --mode dump
-  python3 html_asset_tool.py extract . --assets-dir static --dry-run
-"""
+Examples -------- python3 html_asset_tool.py extract site/ # rewrite+assets python3 html_asset_tool.py extract index.html --mode dump python3 html_asset_tool.py extract .
+--assets-dir static --dry-run"""
 
 import argparse
 from collections.abc import Sequence

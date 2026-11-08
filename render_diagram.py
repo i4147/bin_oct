@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Wrap a Mermaid or SVG diagram in a self-contained HTML page.
-
-Reads the ``.mmd``/``.svg`` file, embeds the diagram (Mermaid loaded from its CDN, or the SVG
-inlined as a data URI) into a minimal HTML document and writes it next to the source
-with an ``.html`` suffix.
-
-Usage: render_diagram FILE.mmd
-
-Examples:
-    $ render_diagram flow.mmd
-
-Runs as a script (``python render_diagram.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Reads the ``.mmd``/``.svg`` file, embeds the diagram (Mermaid loaded from its CDN, or the SVG inlined as a data URI) into a minimal HTML document and writes it next to the source with an ``.html`` suffix.
+Usage: render_diagram FILE.mmd Examples: $ render_diagram flow.mmd Runs as a script (``python render_diagram.py``) in the directory it should act on; the module can also be imported."""
 
 import base64
 from pathlib import Path

@@ -1,24 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find the similar files of a directory with five different similarity hashes.
-
-``--alg`` selects tlsh (default), ssdeep, sdhash, simhash or minhash; the hashes are computed
-for every file, compared pairwise and stored in ``simz.json``, and ``--group-similar`` moves the related files
-into ``group001``, ``group002``... folders.
-
-Usage: ssdiper [-a tlsh|ssdeep|sdhash|simhash|minhash] [-g]
-
-Options:
-    -g, --group-similar
-        Move similar files into group001, group002, ... subdirs based on simz.json
-    -a, --alg
-        Hashing algorithm to use (default: tlsh)
-
-Examples:
-    $ ssdiper --alg ssdeep
-    $ ssdiper -g
-
-Command-line script: run ``python ssdiper.py`` or the ``ssdiper`` command. The module is importable as well.
-"""
+``--alg`` selects tlsh (default), ssdeep, sdhash, simhash or minhash; the hashes are computed for every file, compared pairwise and stored in ``simz.json``, and ``--group-similar`` moves the related files into ``group001``, ``group002``...
+folders.
+Usage: ssdiper [-a tlsh|ssdeep|sdhash|simhash|minhash] [-g] Options: -g, --group-similar Move similar files into group001, group002, ...
+subdirs based on simz.json -a, --alg Hashing algorithm to use (default: tlsh) Examples: $ ssdiper --alg ssdeep $ ssdiper -g Command-line script: run ``python ssdiper.py`` or the ``ssdiper`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

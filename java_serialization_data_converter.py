@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Convert a Java serialized binary into JSON.
-
-Parses the stream with ``javaobj``, turns the Java objects and strings into dictionaries
-(dropping the internal fields) and writes the list to the requested JSON file.
-
-Usage: java_serialization_data_converter INPUT.bin OUTPUT.json
-
-Examples:
-    $ java_serialization_data_converter session.bin session.json
-
-Runs as a script (``python java_serialization_data_converter.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Parses the stream with ``javaobj``, turns the Java objects and strings into dictionaries (dropping the internal fields) and writes the list to the requested JSON file.
+Usage: java_serialization_data_converter INPUT.bin OUTPUT.json Examples: $ java_serialization_data_converter session.bin session.json Runs as a script (``python java_serialization_data_converter.py``) in the directory it should act on; the module can also be imported."""
 
 import json
 from pathlib import Path

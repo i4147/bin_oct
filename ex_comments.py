@@ -1,17 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Collect the import statements of every Python file into per-folder ``imports.py`` files.
-
-Parses the tree below the current directory with tree-sitter, takes the import (and
-comment) statements of each module and writes them grouped by folder to ``output/<folder>/imports.py``. Hidden
-folders and ``site-packages`` are skipped.
-
-Usage: python ex_comments.py
-
-Examples:
-    $ python ex_comments.py
-
-Runs at import time; start it from the tree to scan.
-"""
+Parses the tree below the current directory with tree-sitter, takes the import (and comment) statements of each module and writes them grouped by folder to ``output/<folder>/imports.py``.
+Hidden folders and ``site-packages`` are skipped.
+Usage: python ex_comments.py Examples: $ python ex_comments.py Runs at import time; start it from the tree to scan."""
 
 from collections import defaultdict
 from pathlib import Path

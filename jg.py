@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Empty every repository below the current directory, keeping only its ``.git`` folder.
-
-For each ``.git`` directory found it removes all sibling files and folders, leaving a clean
-checkout directory with the history in place. This is destructive: run it from the tree
-you want to strip and keep a backup.
-
-Usage: jg
-
-Examples:
-    $ jg
-
-Irreversible — it deletes the working tree of every repository below the current
-directory.
-"""
+For each ``.git`` directory found it removes all sibling files and folders, leaving a clean checkout directory with the history in place.
+This is destructive: run it from the tree you want to strip and keep a backup.
+Usage: jg Examples: $ jg Irreversible — it deletes the working tree of every repository below the current directory."""
 
 from pathlib import Path
 import shutil

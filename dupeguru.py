@@ -1,30 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find the duplicate files and optionally delete them.
-
-Sizes the files, then hashes a 64 KB prefix and the full content in a pool, groups the
-identical ones and reports the space that could be freed; ``-a`` deletes the duplicates
-(dry run by default), ``-m`` sets the minimum size.
-
-Usage: dupeguru [-a] [-m MIN_BYTES] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to scan (default: current directory)
-
-Options:
-    -a, --apply
-        Delete the duplicates (default: dry run)
-    -m, --min-size
-        Ignore files smaller than this many bytes (default: 1)
-    -q, --quiet
-        Suppress progress messages
-
-Examples:
-    $ dupeguru ~/Downloads
-    $ dupeguru -a ~/Downloads
-
-Command-line script: run ``python dupeguru.py`` or the ``dupeguru`` command. The module is importable as well.
-"""
+Sizes the files, then hashes a 64 KB prefix and the full content in a pool, groups the identical ones and reports the space that could be freed; ``-a`` deletes the duplicates (dry run by default), ``-m`` sets the minimum size.
+Usage: dupeguru [-a] [-m MIN_BYTES] [paths ...] Positional arguments: paths ...
+Files or directories to scan (default: current directory) Options: -a, --apply Delete the duplicates (default: dry run) -m, --min-size Ignore files smaller than this many bytes (default: 1) -q, --quiet Suppress progress messages Examples: $ dupeguru ~/Downloads $ dupeguru -a ~/Downloads Command-line script: run ``python dupeguru.py`` or the ``dupeguru`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

@@ -1,26 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Environment-variable inventory, secret-leak scan, and token harvesting.
-
-Analysis / deduplication
-------------------------
-- ``collect_env_vars.py`` and ``xenv_vars.py`` are near-identical
-  top-level scripts collecting ``^NAME=`` lines into ``env_vars.txt``:
-  one ``collect-vars`` command (now also matching ``os.environ[...]``
-  and ``${VAR}`` uses with ``--also-code``).
-- ``secretleak.py`` -> ``scan-secrets`` (stdlib only; the loguru
-  reporting became plain output, the magic "skip signature" hack is an
-  explicit ``--allow`` substring list instead).
-- ``to.env.py`` (harvest ``sk-…`` tokens from a markdown file, map
-  models to variable names, append to ``~/.env`` files) ->
-  ``extract-tokens``. Matches are *never printed in full* by default
-  in ``scan-secrets`` (first 12 chars shown).
-
-Examples
---------
-  python3 env_secret_tool.py collect-vars ~/project
-  python3 env_secret_tool.py scan-secrets ~/project
-  python3 env_secret_tool.py extract-tokens README.md
-"""
+Analysis / deduplication ------------------------ - ``collect_env_vars.py`` and ``xenv_vars.py`` are near-identical top-level scripts collecting ``^NAME=`` lines into ``env_vars.txt``: one ``collect-vars`` command (now also matching ``os.environ[...]`` and ``${VAR}`` uses with ``--also-code``).
+- ``secretleak.py`` -> ``scan-secrets`` (stdlib only; the loguru reporting became plain output, the magic "skip signature" hack is an explicit ``--allow`` substring list instead).
+- ``to.env.py`` (harvest ``sk-…`` tokens from a markdown file, map models to variable names, append to ``~/.env`` files) -> ``extract-tokens``.
+Matches are *never printed in full* by default in ``scan-secrets`` (first 12 chars shown).
+Examples -------- python3 env_secret_tool.py collect-vars ~/project python3 env_secret_tool.py scan-secrets ~/project python3 env_secret_tool.py extract-tokens README.md"""
 
 import argparse
 from collections import defaultdict

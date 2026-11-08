@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Browse the files of the current directory with a curses preview.
-
-Lists the directory in a curses window, shows the first 20 lines of the highlighted file
-and lets you move with the arrow keys and quit with ``q``.
-
-Usage: quickview
-
-Examples:
-    $ quickview
-
-Runs as a script (``python quickview.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Lists the directory in a curses window, shows the first 20 lines of the highlighted file and lets you move with the arrow keys and quit with ``q``.
+Usage: quickview Examples: $ quickview Runs as a script (``python quickview.py``) in the directory it should act on; the module can also be imported."""
 
 import curses
 from pathlib import Path

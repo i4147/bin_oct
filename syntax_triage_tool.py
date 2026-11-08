@@ -1,25 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Syntax-check files and move/copy the invalid ones aside.
-
-Analysis / deduplication
-------------------------
-- ``asteval.py`` (AST parse, copies bad files to ``<dir>/error/``) and
-  ``black_check_mp.py`` (AST parse despite the name, moves files into
-  top-level ``ok/``/``error/``) differ only in layout/action:
-  ``--layout per-dir|split`` and ``--action copy|move``.
+Analysis / deduplication ------------------------ - ``asteval.py`` (AST parse, copies bad files to ``<dir>/error/``) and ``black_check_mp.py`` (AST parse despite the name, moves files into top-level ``ok/``/``error/``) differ only in layout/action: ``--layout per-dir|split`` and ``--action copy|move``.
 - ``okerror.py`` is the real ``black --check`` variant -> ``--checker black``.
-- ``luaeval.py`` does the same job for Lua via tree-sitter ->
-  ``--language lua`` (optional deps: ``tree-sitter``, ``tree-sitter-lua``).
-- Hardcoded pool size 8 -> ``-j/--workers``; ``error``/``ok`` dir names
-  are options. The private ``dh`` walker is stdlib ``pathlib`` now.
-
-Examples
---------
-  python3 syntax_triage_tool.py triage --dry-run
-  python3 syntax_triage_tool.py triage src/ --layout split --action move
-  python3 syntax_triage_tool.py triage --checker black --layout split
-  python3 syntax_triage_tool.py triage --language lua
-"""
+- ``luaeval.py`` does the same job for Lua via tree-sitter -> ``--language lua`` (optional deps: ``tree-sitter``, ``tree-sitter-lua``).
+- Hardcoded pool size 8 -> ``-j/--workers``; ``error``/``ok`` dir names are options.
+The private ``dh`` walker is stdlib ``pathlib`` now.
+Examples -------- python3 syntax_triage_tool.py triage --dry-run python3 syntax_triage_tool.py triage src/ --layout split --action move python3 syntax_triage_tool.py triage --checker black --layout split python3 syntax_triage_tool.py triage --language lua"""
 
 import argparse
 import ast

@@ -1,17 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Optimise PDF files with qpdf's object streams.
-
-Runs ``qpdf --linearize --object-streams=generate`` into a temporary file and keeps it only when it is smaller than the original,
-reporting the sizes and the total space freed. Files are processed in parallel.
-
-Usage: spdf2 [pdfs ...]
-
-Examples:
-    $ spdf2 books/
-
-Runs as a script (``python spdf2.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Runs ``qpdf --linearize --object-streams=generate`` into a temporary file and keeps it only when it is smaller than the original, reporting the sizes and the total space freed.
+Files are processed in parallel.
+Usage: spdf2 [pdfs ...] Examples: $ spdf2 books/ Runs as a script (``python spdf2.py``) in the directory it should act on; the module can also be imported."""
 
 from pathlib import Path
 import sys

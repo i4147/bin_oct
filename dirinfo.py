@@ -1,31 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Report the file types and sizes of a directory.
-
-Scans the given path, groups the files by extension with their counts and sizes, prints
-the report (``-s`` saves it to ``/sdcard/.dirinfo``) and ``-i`` renders the same data as a Matplotlib bar chart
-in English or Persian.
-
-Usage: dirinfo [-s] [-i chart.png] [-t english|persian] [PATH]
-
-Positional arguments:
-    path
-        The directory to scan (default: current directory).
-
-Options:
-    -s, --save
-        Save the report to a file named .dirinfo in the current directory.
-    -i, --image
-        Save a Matplotlib bar chart of file types and sizes to the specified image file
-        (e.g., chart.png).
-    -t, --type
-        Specify the language/type of the Matplotlib chart title and labels (default:
-        english).
-
-Examples:
-    $ dirinfo -i chart.png ~/projects
-
-Command-line script: run ``python dirinfo.py`` or the ``dirinfo`` command. The module is importable as well.
-"""
+Scans the given path, groups the files by extension with their counts and sizes, prints the report (``-s`` saves it to ``/sdcard/.dirinfo``) and ``-i`` renders the same data as a Matplotlib bar chart in English or Persian.
+Usage: dirinfo [-s] [-i chart.png] [-t english|persian] [PATH] Positional arguments: path The directory to scan (default: current directory).
+Options: -s, --save Save the report to a file named .dirinfo in the current directory.
+-i, --image Save a Matplotlib bar chart of file types and sizes to the specified image file (e.g., chart.png).
+-t, --type Specify the language/type of the Matplotlib chart title and labels (default: english).
+Examples: $ dirinfo -i chart.png ~/projects Command-line script: run ``python dirinfo.py`` or the ``dirinfo`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

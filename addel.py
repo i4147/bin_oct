@@ -1,45 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Report the files added or removed in every commit of a git repository.
-
-Walks the revision range (HEAD by default) with ``git diff-tree`` or by checking out each commit,
-explodes the renames into a removal plus an addition, cross-checks the result against
-the working tree and renders a text, JSON, CSV or Markdown ledger.
-
-Usage: addel [repo] [--revision RANGE] [--mode diff-tree|walk] [--json PATH]
-
-Positional arguments:
-    repo
-        Any path inside the repository (default: cwd)
-
-Options:
-    --revision
-        Revision or range to walk (default: HEAD)
-    --mode
-        Diff-tree: one batched git call (fast); walk: check out each commit and rglob it
-        (paranoid)
-    --first-parent
-        Follow only the first parent of merge commits
-    --no-diff-merges
-        Report no changes for merge commits at all
-    --keep-renames
-        Let git detect renames (they are still exploded into a removal plus an addition)
-    --no-verify
-        Skip the pathlib cross-check against the working tree
-    --json
-        Write a JSON report
-    --csv
-        Write a CSV report
-    --md
-        Write a Markdown report
-    --max-files
-        Paths printed per commit in the console ledger (default: 25)
-    ... plus 3 more; run ``addel --help`` for the full list.
-
-Examples:
-    $ addel . --json ledger.json
-
-Command-line script: run ``python addel.py`` or the ``addel`` command. The module is importable as well.
-"""
+Walks the revision range (HEAD by default) with ``git diff-tree`` or by checking out each commit, explodes the renames into a removal plus an addition, cross-checks the result against the working tree and renders a text, JSON, CSV or Markdown ledger.
+Usage: addel [repo] [--revision RANGE] [--mode diff-tree|walk] [--json PATH] Positional arguments: repo Any path inside the repository (default: cwd) Options: --revision Revision or range to walk (default: HEAD) --mode Diff-tree: one batched git call (fast); walk: check out each commit and rglob it (paranoid) --first-parent Follow only the first parent of merge commits --no-diff-merges Report no changes for merge commits at all --keep-renames Let git detect renames (they are still exploded into a removal plus an addition) --no-verify Skip the pathlib cross-check against the working tree --json Write a JSON report --csv Write a CSV report --md Write a Markdown report --max-files Paths printed per commit in the console ledger (default: 25) ...
+plus 3 more; run ``addel --help`` for the full list.
+Examples: $ addel .
+--json ledger.json Command-line script: run ``python addel.py`` or the ``addel`` command.
+The module is importable as well."""
 
 import argparse
 from collections import Counter

@@ -1,18 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract ``python`` here-documents from shell scripts into standalone Python files.
-
-Finds ``python <<EOF`` style blocks, re-indents the captured code and writes it next to the caller as
-``<script>.py`` (``<script>_1.py``, ``_2`` ... when a script contains several blocks), formatting the result along
-the way.
-
-Usage: bash2py SCRIPT.sh
-
-Examples:
-    $ bash2py install.sh
-
-Runs as a script (``python bash2py.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Finds ``python <<EOF`` style blocks, re-indents the captured code and writes it next to the caller as ``<script>.py`` (``<script>_1.py``, ``_2`` ...
+when a script contains several blocks), formatting the result along the way.
+Usage: bash2py SCRIPT.sh Examples: $ bash2py install.sh Runs as a script (``python bash2py.py``) in the directory it should act on; the module can also be imported."""
 
 import io
 from pathlib import Path

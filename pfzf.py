@@ -1,19 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """A dependency-free fuzzy finder with an interactive prompt.
-
-Scores and ranks the lines read from stdin (or a built-in demo list) while you type,
-rendering the matches with the matched characters highlighted; arrow keys move the
-selection and Enter prints it. ``--filter QUERY`` prints the ranked matches non-interactively.
-
-Usage: pfzf [--filter QUERY]
-
-Examples:
-    $ ls | pfzf
-    $ pfzf --filter btn
-
-Runs as a script (``python pfzf.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Scores and ranks the lines read from stdin (or a built-in demo list) while you type, rendering the matches with the matched characters highlighted; arrow keys move the selection and Enter prints it.
+``--filter QUERY`` prints the ranked matches non-interactively.
+Usage: pfzf [--filter QUERY] Examples: $ ls | pfzf $ pfzf --filter btn Runs as a script (``python pfzf.py``) in the directory it should act on; the module can also be imported."""
 
 import os
 import select

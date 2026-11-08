@@ -1,61 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Clean text files with a set of dedicated subcommands.
-
-Subcommands: ``empty-lines`` drops the blank lines, ``invisible`` strips the non-printable characters, ``pattern``
-removes a multi-line pattern (read from ``/sdcard/lic`` or given inline), ``lines`` removes the lines
-matching substrings or regexes, ``header`` removes the ``# Author/# Email/# Time`` header and ``json-fields`` renames the JSON keys
-to ``field_1``, ``field_2``... ``--dry-run`` and ``--no-backup`` control the writes.
-
-Usage: textclean {empty-lines,invisible,pattern,lines,header,json-fields} [options]
-[paths ...]
-
-Positional arguments:
-    paths ...
-        Files or directories to process (default: current directory).
-    path
-        File to clean.
-
-Subcommands:
-    empty-lines
-        Remove blank/whitespace-only lines.
-    invisible
-        Strip non-printable chars from a single file.
-    pattern
-        Remove a multi-line pattern (from a file) from many files.
-    lines
-        Remove lines matching substrings (or regexes).
-    header
-        Remove a header block matching a regex.
-    json-fields
-        Rewrite JSON list items so keys become field_1, field_2, ...
-
-Options:
-    --dry-run
-        Do not modify files.
-    --no-recursive
-        Do not descend into sub-directories.
-    -v, --verbose
-    --no-backup
-        Do not create <file>.bak before writing.
-    --pattern-file
-    --inline
-        Use this literal pattern instead of --pattern-file.
-    --apply, --auto-remove
-        Actually remove the pattern (default: list matches only).
-    -p, --pattern
-        Substring (or regex with -r). Repeatable.
-    -r, --regex
-        Treat patterns as regexes.
-    --multiline
-        Compile regexes with re.MULTILINE (only with -r).
-    ... plus 4 more; run ``textclean --help`` for the full list.
-
-Examples:
-    $ textclean empty-lines src/
-    $ textclean lines -p TODO -p FIXME .
-
-Command-line script: run ``python textclean.py`` or the ``textclean`` command. The module is importable as well.
-"""
+Subcommands: ``empty-lines`` drops the blank lines, ``invisible`` strips the non-printable characters, ``pattern`` removes a multi-line pattern (read from ``/sdcard/lic`` or given inline), ``lines`` removes the lines matching substrings or regexes, ``header`` removes the ``# Author/# Email/# Time`` header and ``json-fields`` renames the JSON keys to ``field_1``, ``field_2``...
+``--dry-run`` and ``--no-backup`` control the writes.
+Usage: textclean {empty-lines,invisible,pattern,lines,header,json-fields} [options] [paths ...] Positional arguments: paths ...
+Files or directories to process (default: current directory).
+path File to clean.
+Subcommands: empty-lines Remove blank/whitespace-only lines.
+invisible Strip non-printable chars from a single file.
+pattern Remove a multi-line pattern (from a file) from many files.
+lines Remove lines matching substrings (or regexes).
+header Remove a header block matching a regex.
+json-fields Rewrite JSON list items so keys become field_1, field_2, ...
+Options: --dry-run Do not modify files.
+--no-recursive Do not descend into sub-directories.
+-v, --verbose --no-backup Do not create <file>.bak before writing.
+--pattern-file --inline Use this literal pattern instead of --pattern-file.
+--apply, --auto-remove Actually remove the pattern (default: list matches only).
+-p, --pattern Substring (or regex with -r).
+Repeatable.
+-r, --regex Treat patterns as regexes.
+--multiline Compile regexes with re.MULTILINE (only with -r).
+...
+plus 4 more; run ``textclean --help`` for the full list.
+Examples: $ textclean empty-lines src/ $ textclean lines -p TODO -p FIXME .
+Command-line script: run ``python textclean.py`` or the ``textclean`` command.
+The module is importable as well."""
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor

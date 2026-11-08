@@ -1,18 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Diagnose a zsh setup: duplicate aliases, functions and shadowed binaries.
-
-Collects the aliases and functions defined in ``~/.zshrc``, ``~/.config/zsh.d`` and ``~/.oh-my-zsh``, lists the definitions
-that appear more than once with their source files and shows which commands are shadowed
-by other binaries on ``PATH``.
-
-Usage: zshdiag
-
-Examples:
-    $ zshdiag
-
-Runs as a script (``python zshdiag.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Collects the aliases and functions defined in ``~/.zshrc``, ``~/.config/zsh.d`` and ``~/.oh-my-zsh``, lists the definitions that appear more than once with their source files and shows which commands are shadowed by other binaries on ``PATH``.
+Usage: zshdiag Examples: $ zshdiag Runs as a script (``python zshdiag.py``) in the directory it should act on; the module can also be imported."""
 
 from collections import defaultdict
 import contextlib

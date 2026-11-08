@@ -1,32 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Create a GitHub repository from the current folder and push it.
-
-Reads the token from ``~/.env``, copies ``~/.gitignore``, initialises the repository if needed, creates it
-through the REST API (``-p`` for private) and commits and pushes the current branch;
-``-y``/``-f`` skip the confirmations.
-
-Usage: nr [-n NAME] [-p] [-d DESCRIPTION] [-m MESSAGE] [-y]
-
-Options:
-    -n, --name
-        Repository name (default: current directory name)
-    -p, --private
-        Create as private repo (default: public)
-    -d, --description
-        Repository description
-    -m, --message
-    -y, --yes
-        Assume yes to prompts (non-interactive).
-    -f, --force
-        Skip confirmation prompts (same as --yes).
-    --no-gitignore
-        Do not copy ~/.gitignore.
-
-Examples:
-    $ nr -n myproject -p -y
-
-Command-line script: run ``python nr.py`` or the ``nr`` command. The module is importable as well.
-"""
+Reads the token from ``~/.env``, copies ``~/.gitignore``, initialises the repository if needed, creates it through the REST API (``-p`` for private) and commits and pushes the current branch; ``-y``/``-f`` skip the confirmations.
+Usage: nr [-n NAME] [-p] [-d DESCRIPTION] [-m MESSAGE] [-y] Options: -n, --name Repository name (default: current directory name) -p, --private Create as private repo (default: public) -d, --description Repository description -m, --message -y, --yes Assume yes to prompts (non-interactive).
+-f, --force Skip confirmation prompts (same as --yes).
+--no-gitignore Do not copy ~/.gitignore.
+Examples: $ nr -n myproject -p -y Command-line script: run ``python nr.py`` or the ``nr`` command.
+The module is importable as well."""
 
 import argparse
 import os

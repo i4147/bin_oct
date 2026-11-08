@@ -1,35 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Commit, push and sync a repository in one command.
-
-The ``commit``, ``push`` and ``sync`` subcommands stage the changes (optionally formatting them with
-black first), build the commit message, create or fork the GitHub repository when asked,
-configure the token remote from the environment and push the current branch.
-
-Usage: gitsynctools {commit,push,sync} [options]
-
-Subcommands:
-    commit
-    push
-    sync
-
-Options:
-    --commit
-    --allow-dirty
-    --repo
-    --search-parent
-    --init-if-missing
-    --remote-name
-    --branch
-    --message
-    --message-prefix
-    --add-mode
-    ... plus 22 more; run ``gitsynctools --help`` for the full list.
-
-Examples:
-    $ gitsynctools sync --message 'update' --set-upstream
-
-Command-line script: run ``python gitsynctools.py`` or the ``gitsynctools`` command. The module is importable as well.
-"""
+The ``commit``, ``push`` and ``sync`` subcommands stage the changes (optionally formatting them with black first), build the commit message, create or fork the GitHub repository when asked, configure the token remote from the environment and push the current branch.
+Usage: gitsynctools {commit,push,sync} [options] Subcommands: commit push sync Options: --commit --allow-dirty --repo --search-parent --init-if-missing --remote-name --branch --message --message-prefix --add-mode ...
+plus 22 more; run ``gitsynctools --help`` for the full list.
+Examples: $ gitsynctools sync --message 'update' --set-upstream Command-line script: run ``python gitsynctools.py`` or the ``gitsynctools`` command.
+The module is importable as well."""
 
 import argparse
 import contextlib

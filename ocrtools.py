@@ -1,59 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """OCR and image pre-processing toolkit.
-
-Subcommands: ``enhance``/``prepare`` binarise and deskew the images for Tesseract, ``grid-variants``/``grid-search`` try the image
-variants and the oem/psm settings, ``ocr`` extracts the text (plus a JSON report and CSV
-with ``-j``) and ``translate`` OCRs and translates the result.
-
-Usage: ocrtools {enhance,prepare,grid-variants,grid-search,ocr,translate} [options]
-[paths ...]
-
-Positional arguments:
-    paths ...
-        Image files or directories (default: cwd).
-    image
-    input_path
-
-Subcommands:
-    enhance
-        Binarise/enhance images, saving alongside originals (image2text.py).
-    prepare
-        Prepare images for Tesseract OCR, in-place (ocr_prepare.py).
-    grid-variants
-        Tesseract grid over 5 image variants (ocrgrid.py).
-    grid-search
-        Tesseract grid over oem/psm on preprocessed images (ocrgrid2.py).
-    ocr
-        Extract text from image(s) (pyocr.py / ruimg.py).
-    translate
-        OCR a text/image file and translate it to English (transocr.py).
-
-Options:
-    --backend
-    --variants
-        Output suffix set. 'auto' = pil for one file, both for many (matches
-        image2text.py).
-    -r, --recursive
-        Process subdirectories recursively.
-    -v, --verbose
-        Enable DEBUG logging (requires loguru).
-    -o, --out
-    --psm
-    --oem
-    --dpi
-    --lang
-        Tesseract language(s) (default: eng).
-    -l, --lang
-        Tesseract language(s), e.g. 'eng' or 'rus+eng'. Default: tesseract default
-        (pyocr.py behaviour).
-    ... plus 3 more; run ``ocrtools --help`` for the full list.
-
-Examples:
-    $ ocrtools ocr scans/ -l eng -j
-    $ ocrtools grid-search page.png
-
-Command-line script: run ``python ocrtools.py`` or the ``ocrtools`` command. The module is importable as well.
-"""
+Subcommands: ``enhance``/``prepare`` binarise and deskew the images for Tesseract, ``grid-variants``/``grid-search`` try the image variants and the oem/psm settings, ``ocr`` extracts the text (plus a JSON report and CSV with ``-j``) and ``translate`` OCRs and translates the result.
+Usage: ocrtools {enhance,prepare,grid-variants,grid-search,ocr,translate} [options] [paths ...] Positional arguments: paths ...
+Image files or directories (default: cwd).
+image input_path Subcommands: enhance Binarise/enhance images, saving alongside originals (image2text.py).
+prepare Prepare images for Tesseract OCR, in-place (ocr_prepare.py).
+grid-variants Tesseract grid over 5 image variants (ocrgrid.py).
+grid-search Tesseract grid over oem/psm on preprocessed images (ocrgrid2.py).
+ocr Extract text from image(s) (pyocr.py / ruimg.py).
+translate OCR a text/image file and translate it to English (transocr.py).
+Options: --backend --variants Output suffix set.
+'auto' = pil for one file, both for many (matches image2text.py).
+-r, --recursive Process subdirectories recursively.
+-v, --verbose Enable DEBUG logging (requires loguru).
+-o, --out --psm --oem --dpi --lang Tesseract language(s) (default: eng).
+-l, --lang Tesseract language(s), e.g.
+'eng' or 'rus+eng'.
+Default: tesseract default (pyocr.py behaviour).
+...
+plus 3 more; run ``ocrtools --help`` for the full list.
+Examples: $ ocrtools ocr scans/ -l eng -j $ ocrtools grid-search page.png Command-line script: run ``python ocrtools.py`` or the ``ocrtools`` command.
+The module is importable as well."""
 
 import argparse
 import csv

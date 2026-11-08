@@ -1,17 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Print a random quote from ``/sdcard/data/quotes/quotes.json``.
-
-Reads the JSON list of ``{"quote", "author"}`` objects, picks one at random and prints it in a box that
-spans the terminal width, with the quote and the author in different colours.
-
-Usage: rquote
-
-Examples:
-    $ rquote
-
-Runs as a script (``python rquote.py``) in the directory it should act on; the module can also be
-imported.
-"""
+Reads the JSON list of ``{"quote", "author"}`` objects, picks one at random and prints it in a box that spans the terminal width, with the quote and the author in different colours.
+Usage: rquote Examples: $ rquote Runs as a script (``python rquote.py``) in the directory it should act on; the module can also be imported."""
 
 import json
 from pathlib import Path

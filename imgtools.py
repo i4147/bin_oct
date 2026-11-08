@@ -1,69 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Image and media optimisation toolkit.
-
-Subcommands: ``auto-enhance``/``pil-enhance`` improve the photos in place, ``downscale``/``resize`` shrink them by a factor, ``upscale``
-enlarges the small ones, ``strip-exif`` removes the metadata, ``optimize-png`` calls optipng/oxipng and ``embed-optimize``
-compresses the base64 assets inside CSS/HTML/JS.
-
-Usage: imgtools
-{auto-enhance,downscale,embed-optimize,optimize-png,pil-enhance,resize,strip-exif,upscale}
-[options]
-
-Positional arguments:
-    inputs ...
-        Files or folders. Defaults to recursive '.'.
-    scale_factor
-        Scale factor (0 < f <= 1.0).
-    paths ...
-        Files or directories. Default: current directory.
-
-Subcommands:
-    auto-enhance
-        Google-Photos-style in-place image enhancement
-    downscale
-        Downscale images in-place by a scale factor
-    embed-optimize
-        Optimize base64 resources inside CSS/HTML/JS
-    optimize-png
-        Optimize PNG files with optipng or oxipng
-    pil-enhance
-        PIL ImageEnhance in-place enhancement
-    resize
-        PIL in-place downscale by scale factor
-    strip-exif
-        Strip EXIF data from images
-    upscale
-        Upscale small images by width-based factors
-
-Options:
-    -v, --verbose
-        Print per-image details.
-    --parallel
-        Enable multiprocessing.
-    --root
-        Root directory to scan. Default: current directory.
-    --dry-run
-        List files without processing.
-    --timeout
-        External command timeout in seconds.
-    --png-command
-        PNG optimizer command.
-    --jpg-command
-        JPEG optimizer command.
-    --webp-to-jpg-command
-        WebP-to-JPEG command.
-    --svg-command
-        SVG optimizer command.
-    --js-command
-        JS optimizer command.
-    ... plus 16 more; run ``imgtools --help`` for the full list.
-
-Examples:
-    $ imgtools resize 0.5 photos/
-    $ imgtools strip-exif shots/
-
-Command-line script: run ``python imgtools.py`` or the ``imgtools`` command. The module is importable as well.
-"""
+Subcommands: ``auto-enhance``/``pil-enhance`` improve the photos in place, ``downscale``/``resize`` shrink them by a factor, ``upscale`` enlarges the small ones, ``strip-exif`` removes the metadata, ``optimize-png`` calls optipng/oxipng and ``embed-optimize`` compresses the base64 assets inside CSS/HTML/JS.
+Usage: imgtools {auto-enhance,downscale,embed-optimize,optimize-png,pil-enhance,resize,strip-exif,upscale} [options] Positional arguments: inputs ...
+Files or folders.
+Defaults to recursive '.'.
+scale_factor Scale factor (0 < f <= 1.0).
+paths ...
+Files or directories.
+Default: current directory.
+Subcommands: auto-enhance Google-Photos-style in-place image enhancement downscale Downscale images in-place by a scale factor embed-optimize Optimize base64 resources inside CSS/HTML/JS optimize-png Optimize PNG files with optipng or oxipng pil-enhance PIL ImageEnhance in-place enhancement resize PIL in-place downscale by scale factor strip-exif Strip EXIF data from images upscale Upscale small images by width-based factors Options: -v, --verbose Print per-image details.
+--parallel Enable multiprocessing.
+--root Root directory to scan.
+Default: current directory.
+--dry-run List files without processing.
+--timeout External command timeout in seconds.
+--png-command PNG optimizer command.
+--jpg-command JPEG optimizer command.
+--webp-to-jpg-command WebP-to-JPEG command.
+--svg-command SVG optimizer command.
+--js-command JS optimizer command.
+...
+plus 16 more; run ``imgtools --help`` for the full list.
+Examples: $ imgtools resize 0.5 photos/ $ imgtools strip-exif shots/ Command-line script: run ``python imgtools.py`` or the ``imgtools`` command.
+The module is importable as well."""
 
 import argparse
 import base64

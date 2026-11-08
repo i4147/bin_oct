@@ -1,31 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Recursively replace or remove text in files.
-
-Searches for the text below the current directory (or only in ``-f``), replaces it (or
-removes it with ``-r``), shows the surrounding context, skips the binary files and previews
-with ``--dry-run``.
-
-Usage: replacer SEARCH [REPLACE] [-r] [--dry-run] [-f FILE]
-
-Positional arguments:
-    search
-        Text to search for
-    replace
-        Replacement text (optional, defaults to empty string)
-
-Options:
-    -r, --remove
-        Remove the search text instead of replacing it
-    --dry-run
-        Show changes without applying them
-    -f, --file
-        Process only the specified file instead of recursive directory search
-
-Examples:
-    $ replacer 'old.host' 'new.host' --dry-run
-
-Command-line script: run ``python replacer.py`` or the ``replacer`` command. The module is importable as well.
-"""
+Searches for the text below the current directory (or only in ``-f``), replaces it (or removes it with ``-r``), shows the surrounding context, skips the binary files and previews with ``--dry-run``.
+Usage: replacer SEARCH [REPLACE] [-r] [--dry-run] [-f FILE] Positional arguments: search Text to search for replace Replacement text (optional, defaults to empty string) Options: -r, --remove Remove the search text instead of replacing it --dry-run Show changes without applying them -f, --file Process only the specified file instead of recursive directory search Examples: $ replacer 'old.host' 'new.host' --dry-run Command-line script: run ``python replacer.py`` or the ``replacer`` command.
+The module is importable as well."""
 
 import argparse
 import os

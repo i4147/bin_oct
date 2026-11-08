@@ -1,27 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Extract the text of PDF files with a choice of backends.
-
-``--backend`` selects fitz (PyMuPDF), pypdf, pdfplumber or pdfminer; pages can be joined or
-written one file per page with ``--perpage``, spaces are normalised, and ``--password`` opens protected
-documents.
-
-Usage: pdftotext FILE.pdf [more.pdf ...] [--backend fitz|pypdf|pdfplumber|pdfminer]
-[--perpage]
-
-Positional arguments:
-    pdffiles ...
-
-Options:
-    -p, --perpage
-    -b, --backend
-    --password
-
-Examples:
-    $ pdftotext report.pdf --backend pypdf
-    $ pdftotext book.pdf --perpage
-
-Command-line script: run ``python pdftotext.py`` or the ``pdftotext`` command. The module is importable as well.
-"""
+``--backend`` selects fitz (PyMuPDF), pypdf, pdfplumber or pdfminer; pages can be joined or written one file per page with ``--perpage``, spaces are normalised, and ``--password`` opens protected documents.
+Usage: pdftotext FILE.pdf [more.pdf ...] [--backend fitz|pypdf|pdfplumber|pdfminer] [--perpage] Positional arguments: pdffiles ...
+Options: -p, --perpage -b, --backend --password Examples: $ pdftotext report.pdf --backend pypdf $ pdftotext book.pdf --perpage Command-line script: run ``python pdftotext.py`` or the ``pdftotext`` command.
+The module is importable as well."""
 
 import argparse
 from io import StringIO

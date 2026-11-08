@@ -1,40 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find the non-English content of text files with a chosen language-detection backend.
-
-``--backend`` picks gcld3, pycld2, langdetect, lingua or fast-langdetect, the files are filtered
-by extension, excluded directories and size, and the result goes to a text or JSON
-report (``-l`` adds the per-line findings) with a confidence threshold.
-
-Usage: detect_nonenglish [-b BACKEND] [-l] [-o REPORT] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files and/or directories to scan.
-
-Options:
-    --backend, -b
-        Language-detection backend to use.
-    -e, --extensions
-        Additional file extensions to include (e.g. '.foo .bar').
-    --exclude-dirs
-        Additional directory names to skip (e.g. 'vendor tmp').
-    -o, --output
-        Output report path. Extension decides the format (.txt/.json).
-    -f, --format
-        Force output format (overrides the one inferred from --output).
-    -l, --detailed
-        Also scan and report each non-English line within files.
-    --min-confidence
-    --max-size-mb
-        Maximum file size in MB to analyse (default: 10).
-    --list-backends
-        List available backends and exit.
-
-Examples:
-    $ detect_nonenglish -b langdetect -l -o report.json docs/
-
-Command-line script: run ``python detect_nonenglish.py`` or the ``detect_nonenglish`` command. The module is importable as well.
-"""
+``--backend`` picks gcld3, pycld2, langdetect, lingua or fast-langdetect, the files are filtered by extension, excluded directories and size, and the result goes to a text or JSON report (``-l`` adds the per-line findings) with a confidence threshold.
+Usage: detect_nonenglish [-b BACKEND] [-l] [-o REPORT] [paths ...] Positional arguments: paths ...
+Files and/or directories to scan.
+Options: --backend, -b Language-detection backend to use.
+-e, --extensions Additional file extensions to include (e.g.
+'.foo .bar').
+--exclude-dirs Additional directory names to skip (e.g.
+'vendor tmp').
+-o, --output Output report path.
+Extension decides the format (.txt/.json).
+-f, --format Force output format (overrides the one inferred from --output).
+-l, --detailed Also scan and report each non-English line within files.
+--min-confidence --max-size-mb Maximum file size in MB to analyse (default: 10).
+--list-backends List available backends and exit.
+Examples: $ detect_nonenglish -b langdetect -l -o report.json docs/ Command-line script: run ``python detect_nonenglish.py`` or the ``detect_nonenglish`` command.
+The module is importable as well."""
 
 import argparse
 from collections import Counter

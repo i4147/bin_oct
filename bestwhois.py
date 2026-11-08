@@ -1,51 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Query the WhoisXML API for a domain and print the record.
-
-Reads the API key from the rc file or ``--apikey``, queries the service for the domain (Unicode
-or IDN), purges the empty fields and prints the record as coloured JSON or as plain
-text.
-
-Usage: bestwhois DOMAIN [--apikey KEY] [--text] [--nocolor]
-
-Positional arguments:
-    domainName
-        The domain to be queried. Domains with national characters can be Unicode or
-        IDN.
-
-Options:
-    --version
-        Print version information and exit.
-    --rcfile
-        Use this rc file. Will override all default ini locations.
-    --apikey
-        Directly specify the API key. Overrides any ini file.
-    --nocolor
-        Do not colorize output. Useful in scripts. Colors are not supported on Windows,
-        so there it is default.
-    --text
-        Print a textual output instead of a JSON-style format. Results in a behavior
-        similar to the whois command.
-    --fullrawtext
-        Print all raw text field contents. The default is to suppress raw texts fully.
-    --strippedrawtext
-        Print the first 128 characters of raw text fields. The default is to suppress
-        raw texts fully.
-    --keep-empty
-        Keep and display fields with empty and null values
-    --history
-        Get historic records from the history API. The following option imply this
-        automatically.
-    --since-date
-        (history) If present, search through activities discovered since the given date.
-        Sometimes there is a latency between the actual added/renewal/expired date and
-        the date when our system detected this change.
-    ... plus 6 more; run ``bestwhois --help`` for the full list.
-
-Examples:
-    $ bestwhois example.com --text
-
-Command-line script: run ``python bestwhois.py`` or the ``bestwhois`` command. The module is importable as well.
-"""
+Reads the API key from the rc file or ``--apikey``, queries the service for the domain (Unicode or IDN), purges the empty fields and prints the record as coloured JSON or as plain text.
+Usage: bestwhois DOMAIN [--apikey KEY] [--text] [--nocolor] Positional arguments: domainName The domain to be queried.
+Domains with national characters can be Unicode or IDN.
+Options: --version Print version information and exit.
+--rcfile Use this rc file.
+Will override all default ini locations.
+--apikey Directly specify the API key.
+Overrides any ini file.
+--nocolor Do not colorize output.
+Useful in scripts.
+Colors are not supported on Windows, so there it is default.
+--text Print a textual output instead of a JSON-style format.
+Results in a behavior similar to the whois command.
+--fullrawtext Print all raw text field contents.
+The default is to suppress raw texts fully.
+--strippedrawtext Print the first 128 characters of raw text fields.
+The default is to suppress raw texts fully.
+--keep-empty Keep and display fields with empty and null values --history Get historic records from the history API.
+The following option imply this automatically.
+--since-date (history) If present, search through activities discovered since the given date.
+Sometimes there is a latency between the actual added/renewal/expired date and the date when our system detected this change.
+...
+plus 6 more; run ``bestwhois --help`` for the full list.
+Examples: $ bestwhois example.com --text Command-line script: run ``python bestwhois.py`` or the ``bestwhois`` command.
+The module is importable as well."""
 
 from argparse import ArgumentParser, ArgumentTypeError
 import contextlib

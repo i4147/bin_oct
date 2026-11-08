@@ -1,19 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Evaluate arithmetic expressions, either from the command line or in a Textual TUI.
-
-With arguments the expression is evaluated once and printed (the exit status reports
-success); called without arguments a small full-screen calculator opens with the same
-parser behind its buttons.
-
-Usage: calc [EXPRESSION ...]
-
-Examples:
-    $ calc '(3 + 4) * 2'
-    $ calc
-
-Runs as a script (``python calc.py``) in the directory it should act on; the module can also be
-imported.
-"""
+With arguments the expression is evaluated once and printed (the exit status reports success); called without arguments a small full-screen calculator opens with the same parser behind its buttons.
+Usage: calc [EXPRESSION ...] Examples: $ calc '(3 + 4) * 2' $ calc Runs as a script (``python calc.py``) in the directory it should act on; the module can also be imported."""
 
 import re
 import sys

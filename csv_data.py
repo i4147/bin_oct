@@ -1,27 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """CSV utilities: CSV->JSON, duplicated-line reports, dpkg inventory.
-
-Analysis / deduplication
-------------------------
-- ``csv2json.py`` (first two columns -> JSON object) vs
-  ``csv2json2.py`` (DictReader -> JSON list): one ``to-json`` command
-  with ``--mode rows|map`` (new default ``rows``, the safer superset;
-  ``map`` preserves the original first script).
-- ``lcsv.py`` vs ``ltxt.py`` count identical lines per extension and
-  report lines seen >= 2 times as ``<ext>.csv`` vs ``<ext>.txt``:
-  one ``dup-lines`` command with ``--format csv|txt``. The exclusion
-  list formerly read from ``/sdcard/bin`` / the private ``dh.BIN_EXT``
-  is now ``--exclude`` with a built-in binary-extension default.
-- ``savepkgstocsv.py`` (``dpkg-query`` -> installed.tsv/csv in
-  ``/sdcard/backups``) is ``dpkg-export`` with ``-o DIR``.
-
-Examples
---------
-  python3 csv_data_tool.py to-json data.csv
-  python3 csv_data_tool.py to-json data.csv --mode map -o map.json
-  python3 csv_data_tool.py dup-lines --min-count 3
-  python3 csv_data_tool.py dpkg-export -o ./backups
-"""
+Analysis / deduplication ------------------------ - ``csv2json.py`` (first two columns -> JSON object) vs ``csv2json2.py`` (DictReader -> JSON list): one ``to-json`` command with ``--mode rows|map`` (new default ``rows``, the safer superset; ``map`` preserves the original first script).
+- ``lcsv.py`` vs ``ltxt.py`` count identical lines per extension and report lines seen >= 2 times as ``<ext>.csv`` vs ``<ext>.txt``: one ``dup-lines`` command with ``--format csv|txt``.
+The exclusion list formerly read from ``/sdcard/bin`` / the private ``dh.BIN_EXT`` is now ``--exclude`` with a built-in binary-extension default.
+- ``savepkgstocsv.py`` (``dpkg-query`` -> installed.tsv/csv in ``/sdcard/backups``) is ``dpkg-export`` with ``-o DIR``.
+Examples -------- python3 csv_data_tool.py to-json data.csv python3 csv_data_tool.py to-json data.csv --mode map -o map.json python3 csv_data_tool.py dup-lines --min-count 3 python3 csv_data_tool.py dpkg-export -o ./backups"""
 
 import argparse
 from collections import Counter, defaultdict

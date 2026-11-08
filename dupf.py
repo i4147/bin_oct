@@ -1,21 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Find duplicate files by hashing their contents with xxhash.
-
-Hashes every file below the given paths (``.git``, ``__pycache__`` and the other cache directories are
-skipped) and prints the groups of files that share a hash, largest duplicates first. ``--pool-method``
-selects how the hashing jobs are distributed.
-
-Usage: dupf [paths ...] [--pool-method map|starmap|imap_unordered|apply_async]
-
-Options:
-    --pool-method
-        Multiprocessing pool method to use for hashing.
-
-Examples:
-    $ dupf ~/downloads
-
-Command-line script: run ``python dupf.py`` or the ``dupf`` command. The module is importable as well.
-"""
+Hashes every file below the given paths (``.git``, ``__pycache__`` and the other cache directories are skipped) and prints the groups of files that share a hash, largest duplicates first.
+``--pool-method`` selects how the hashing jobs are distributed.
+Usage: dupf [paths ...] [--pool-method map|starmap|imap_unordered|apply_async] Options: --pool-method Multiprocessing pool method to use for hashing.
+Examples: $ dupf ~/downloads Command-line script: run ``python dupf.py`` or the ``dupf`` command.
+The module is importable as well."""
 
 import argparse
 from collections import defaultdict

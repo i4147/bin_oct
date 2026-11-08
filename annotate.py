@@ -1,45 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Add or remove the type annotations of Python files.
-
-In annotate mode it applies the annotations of a ``.pyi`` stub (typeshed included) with
-LibCST, keeping or overriding the existing hints, and in ``--remove`` mode it strips the
-annotations and the ``# type:`` comments through tree-sitter. ``--diff``, ``--backup``, ``--dry-run`` and parallel
-processing are available.
-
-Usage: annotate [annotate]|--remove [options] [paths ...]
-
-Positional arguments:
-    paths ...
-        Files, directories, or globs to process (default: current directory).
-
-Options:
-    -r, --remove, --strip
-        Remove all type annotations (and `# type:` comments) instead of adding them.
-    -s, --stub-file
-        Custom .pyi stub (annotate mode only, single input file only).
-    --no-overwrite
-        (annotate) Do not overwrite existing type annotations.
-    --future-annotations
-        (annotate) Emit `from __future__ import annotations`.
-    -b, --backup
-        Write a '<file>.py.bak' backup before modifying.
-    -d, --diff
-        Show a unified diff for each modified file.
-    -n, --dry-run
-        Report what would change without writing anything.
-    -q, --quiet
-        Suppress normal output (errors are still printed).
-    --validate-compile
-        Also run the built-in compile() on the modified output.
-    --validate-mypy
-        After writing, run mypy on the updated file (slow, annotate mode).
-
-Examples:
-    $ annotate module.py --diff
-    $ annotate --remove module.py
-
-Command-line script: run ``python annotate.py`` or the ``annotate`` command. The module is importable as well.
-"""
+In annotate mode it applies the annotations of a ``.pyi`` stub (typeshed included) with LibCST, keeping or overriding the existing hints, and in ``--remove`` mode it strips the annotations and the ``# type:`` comments through tree-sitter.
+``--diff``, ``--backup``, ``--dry-run`` and parallel processing are available.
+Usage: annotate [annotate]|--remove [options] [paths ...] Positional arguments: paths ...
+Files, directories, or globs to process (default: current directory).
+Options: -r, --remove, --strip Remove all type annotations (and `# type:` comments) instead of adding them.
+-s, --stub-file Custom .pyi stub (annotate mode only, single input file only).
+--no-overwrite (annotate) Do not overwrite existing type annotations.
+--future-annotations (annotate) Emit `from __future__ import annotations`.
+-b, --backup Write a '<file>.py.bak' backup before modifying.
+-d, --diff Show a unified diff for each modified file.
+-n, --dry-run Report what would change without writing anything.
+-q, --quiet Suppress normal output (errors are still printed).
+--validate-compile Also run the built-in compile() on the modified output.
+--validate-mypy After writing, run mypy on the updated file (slow, annotate mode).
+Examples: $ annotate module.py --diff $ annotate --remove module.py Command-line script: run ``python annotate.py`` or the ``annotate`` command.
+The module is importable as well."""
 
 import argparse
 import ast
