@@ -92,35 +92,40 @@ def to_question(sentence):
     return "Is it true that " + sentence[0].lower() + sentence[1:] + "?"
 
 
-results = []
+def main() -> None:
+    results = []
 
-for path in Path(".").rglob("*"):
-    if not path.is_file():
-        continue
+    for path in Path(".").rglob("*"):
+        if not path.is_file():
+            continue
 
-    if path.name in {"qmade.txt"}:
-        continue
+        if path.name in {"qmade.txt"}:
+            continue
 
-    if path.suffix.lower() not in EXTENSIONS:
-        continue
+        if path.suffix.lower() not in EXTENSIONS:
+            continue
 
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError):
-        continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
 
-    sentences = re.split(r"(?<=[.!?])\s+", text)
+        sentences = re.split(r"(?<=[.!?])\s+", text)
 
-    for sentence in sentences:
-        question = to_question(sentence)
+        for sentence in sentences:
+            question = to_question(sentence)
 
-        if question:
-            results.append(question)
+            if question:
+                results.append(question)
 
-# Remove duplicates while preserving order
-results = list(dict.fromkeys(results))
+    # Remove duplicates while preserving order
+    results = list(dict.fromkeys(results))
 
-Path("qmade.txt").write_text("\n".join(results), encoding="utf-8")
+    Path("qmade.txt").write_text("\n".join(results), encoding="utf-8")
 
-print(f"Converted {len(results)} sentences.")
-print("Saved to qmade.txt")
+    print(f"Converted {len(results)} sentences.")
+    print("Saved to qmade.txt")
+
+
+if __name__ == "__main__":
+    main()

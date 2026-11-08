@@ -9,30 +9,36 @@ EXTENSIONS = {".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".log", "
 # Match sentences ending with Persian or English question marks
 QUESTION_PATTERN = re.compile(r"[^؟?]*[؟?]")
 
-questions = []
 
-for path in Path(".").rglob("*"):
-    if not path.is_file():
-        continue
+def main() -> None:
+    questions = []
 
-    if path.name == "q.txt" or path.suffix.lower() not in EXTENSIONS:
-        continue
+    for path in Path(".").rglob("*"):
+        if not path.is_file():
+            continue
 
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError):
-        continue
+        if path.name == "q.txt" or path.suffix.lower() not in EXTENSIONS:
+            continue
 
-    for match in QUESTION_PATTERN.finditer(text):
-        sentence = match.group().strip()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
 
-        if sentence:
-            questions.append(sentence)
+        for match in QUESTION_PATTERN.finditer(text):
+            sentence = match.group().strip()
 
-# Remove duplicates while preserving order
-questions = list(dict.fromkeys(questions))
+            if sentence:
+                questions.append(sentence)
 
-# Save results
-Path("q.txt").write_text("\n".join(questions), encoding="utf-8")
+    # Remove duplicates while preserving order
+    questions = list(dict.fromkeys(questions))
 
-print(f"Extracted {len(questions)} questions into q.txt")
+    # Save results
+    Path("q.txt").write_text("\n".join(questions), encoding="utf-8")
+
+    print(f"Extracted {len(questions)} questions into q.txt")
+
+
+if __name__ == "__main__":
+    main()
